@@ -76,7 +76,7 @@
           },
           {
             "path": "packages/designer/src/blocks/PageBar.tsx",
-            "sha256": "5600e772273765eb654c98e38a652671dd65c1f17bbc3e21be4c0440c486a285"
+            "sha256": "8e068a21259de806129cc0d0d6f9ffa7a6ad5e2e02329314b0b08ac44141d316"
           },
           {
             "path": "packages/designer/src/blocks/shell-menu.tsx",

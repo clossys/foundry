@@ -57,7 +57,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/CommandMenu.tsx",
-            "sha256": "6923e4613411d1e873ffb10f418557f47f57e3121843934c2be2893bca165e5d"
+            "sha256": "4fdf131af8e1c8f7ad1018b0110d7d3dbe4b35f7c7e15abf1c9e30a20670f3f2"
           },
           {
             "path": "packages/designer/src/components/Banner.copy-context.tsx",

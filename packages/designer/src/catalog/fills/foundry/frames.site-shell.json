@@ -65,7 +65,7 @@
           },
           {
             "path": "packages/designer/src/components/button-classes.ts",
-            "sha256": "796a1c56174ce3e56fce85fed8de8550a63edc9b3f7f2ea51b40a74c0f2cba16"
+            "sha256": "c3665729b5bcd613fcfb36ff68eaa2f8607e8efe1fc74e5f8a0bc9f47c1825ab"
           },
           {
             "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",

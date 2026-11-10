@@ -84,11 +84,11 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
-            "sha256": "8a32466e76d2c5b46fd8dc4761cac190ba8f1a6ac2319d887ce737cbf23dcc7e"
+            "sha256": "11f20d1918e847f5a3c26acd0f3e731f8e41dc9d4fdb34fa3ec1a32603a4abdd"
           },
           {
             "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
-            "sha256": "698120d91a2ec0fef3f634701d9f49eb4ef98eb54159e4aa249db40309e40bf3"
+            "sha256": "0eaeeb5dbf3d4fbf13034bb5c49f6a6f6225172d2d8593168ead0ea29146bfcc"
           },
           {
             "path": "packages/designer/src/blocks/data-table/messages.ts",
@@ -96,7 +96,7 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-            "sha256": "c90467c5bfe3a2c0f8d1850cdd06be7c6d9c2db3a0f4cff4e9a0f961eafe5936"
+            "sha256": "70d396221def96251f13a0eddde48aa2f300258b452e7d41b83c5621e3def6d1"
           },
           {
             "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
@@ -116,15 +116,19 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
-            "sha256": "e9220e7b17e7f7cc9b8bf7c9a6be50f2af900f6cbb22cc96d6d78752e15691f0"
+            "sha256": "5d6e56d231997411c386844b20b6896be222bad0331276dc9c831f9bd719e4e9"
           },
           {
             "path": "packages/designer/src/blocks/DataTable.tsx",
-            "sha256": "0c426159b76924e7cce49cdda833353f60932d94798805cc351d54610be88cc1"
+            "sha256": "df52d679fe7ade59ae3c782b344cdd25f321bf407ba2003d47879b15c592fbe1"
+          },
+          {
+            "path": "packages/designer/src/blocks/stock-field.tsx",
+            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
           },
           {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "316ad54080647abe4c8d4c8d8b224c13424261675eca3f1326064326afb72514"
+            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
           },
           {
             "path": "packages/designer/src/blocks/table-model/index.ts",

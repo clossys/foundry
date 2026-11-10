@@ -81,7 +81,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/policies.ts",
-            "sha256": "64cb8c3d85df5e6d1cc846d6bdb36755dbb26b935be7e4964d8e636a3f78631a"
+            "sha256": "5f5021cbedb8dc65384c4ca045e164f644f7acd536835f8f5a8a3f5b2df0bdc3"
           },
           {
             "path": "packages/designer/src/blocks/items/render.tsx",
@@ -97,7 +97,7 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
+            "sha256": "20c899ae1a637fe6ece7a4a7bca2f94065462d7fcb3a0d09a24fea28c275fd8f"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

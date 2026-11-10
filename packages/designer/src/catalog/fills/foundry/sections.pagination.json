@@ -61,11 +61,15 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Pagination.tsx",
-            "sha256": "cce79082903a0254e44feebc2fce8c675e6fe8137362e1ff6644dfe4ae0b4fb5"
+            "sha256": "6940f4d9c7da059ed79352cc68e50530e540b025a654c1279f1f9cf8381463e4"
+          },
+          {
+            "path": "packages/designer/src/blocks/stock-field.tsx",
+            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
           },
           {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "316ad54080647abe4c8d4c8d8b224c13424261675eca3f1326064326afb72514"
+            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

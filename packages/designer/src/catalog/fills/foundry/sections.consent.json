@@ -51,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ConsentBanner.tsx",
-            "sha256": "87785c63094ea2b9de381d98bffe1dbfe4972828377d761bc07f399bd333753c"
+            "sha256": "ca0d93a1969ccab0fa0cc502a4da8d7fa8e1714cb918aeb3d75942eef857c08d"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

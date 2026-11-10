@@ -72,7 +72,7 @@
           },
           {
             "path": "packages/designer/src/blocks/AppNavigation.tsx",
-            "sha256": "2f8a280c933b4092b5e24eed161e63d3b995326b64cb2b29a74da3f0edb2f917"
+            "sha256": "0e88a367c1f5190fa9cde4ace6348bdb14e6b682a1ed5b817090ab6cffaa3424"
           },
           {
             "path": "packages/designer/src/blocks/frame-navigation.ts",

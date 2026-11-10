@@ -52,7 +52,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Testimonial.server.tsx",
-            "sha256": "4efdf7396f032cdb0f1bed7da15b9ae65371b148721a46798878c8db079f4e5f"
+            "sha256": "d470dd9fd5a2208a1fe249acfde1990a28b5235d8a35ebef8b93b26577e92bb3"
           },
           {
             "path": "packages/designer/src/blocks/TestimonialSet.tsx",

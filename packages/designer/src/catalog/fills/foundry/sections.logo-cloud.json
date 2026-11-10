@@ -53,7 +53,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/LogoCloud.tsx",
-            "sha256": "5966c3128d689374b9b380b282b1125d7dd385152741406bd1c044e60e09c349"
+            "sha256": "323409a2530818c0c2cb59f161f9d95fb8ea3e8997a1a80eac0c31216b0e1a18"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",

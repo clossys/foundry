@@ -87,7 +87,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/policies.ts",
-            "sha256": "64cb8c3d85df5e6d1cc846d6bdb36755dbb26b935be7e4964d8e636a3f78631a"
+            "sha256": "5f5021cbedb8dc65384c4ca045e164f644f7acd536835f8f5a8a3f5b2df0bdc3"
           },
           {
             "path": "packages/designer/src/blocks/library-board/candidate-prompt.ts",
@@ -99,7 +99,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
-            "sha256": "efe935c61e90950b059bde2b4a22b07641340136708a60dfb126686432a81d67"
+            "sha256": "bf2cb72671fe2f7317fa6b3877571ce1209b2208cbf59774dc30e438428bf38a"
           },
           {
             "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
@@ -111,15 +111,15 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-            "sha256": "ef3621ffd2696e89b531492771b37785bd12efde5e75e76f468d3eb0cc769716"
+            "sha256": "7958ae9f74f6a9ea73dc6d64b165e3768b981a5d44201c9115d9ec677345d9a7"
           },
           {
             "path": "packages/designer/src/blocks/Matrix.tsx",
-            "sha256": "7aa44221303dcc9619aa5f257f70e95bf17c67aa7c0efd21232b14481964158e"
+            "sha256": "9628decb6d37c6574b160cda0e4a6fbef7b1c3655389e51f5d003d945ce4c561"
           },
           {
             "path": "packages/designer/src/blocks/matrix/choices.tsx",
-            "sha256": "8b2e542f097f35a9bd42115e2979274c073e319155efb1d9027a0717bfc23b20"
+            "sha256": "f8cc1527f91db1a08910348838ba2da11e43865e878dd66fd4cce9af9b4c5ade"
           },
           {
             "path": "packages/designer/src/blocks/matrix/grid.tsx",

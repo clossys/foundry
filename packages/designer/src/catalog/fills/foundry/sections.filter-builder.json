@@ -60,8 +60,12 @@
             "sha256": "183f0848ec67b950ddf311dce71bd8afedf9db62c6332996a1798eb6ff286515"
           },
           {
+            "path": "packages/designer/src/blocks/stock-field.tsx",
+            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
+          },
+          {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "316ad54080647abe4c8d4c8d8b224c13424261675eca3f1326064326afb72514"
+            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
