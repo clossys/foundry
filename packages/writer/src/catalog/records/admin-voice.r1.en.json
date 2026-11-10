@@ -4418,7 +4418,7 @@
         "commit": "9966f3d283471a39ad4f2fb27c72225c58e2780b",
         "path": "packages/designer/src/studio/system-canvas/inspector/Inspector.tsx",
         "line": 12,
-        "key": "DEFAULT_USAGE_LABELS.layer.tokens"
+        "key": "DEFAULT_USAGE_LABELS.layer.themes"
       },
       "before": "Tokens",
       "after": "Themes",
