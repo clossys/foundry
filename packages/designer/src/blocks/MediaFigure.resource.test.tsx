@@ -67,9 +67,12 @@ describe("structured media wiring", () => {
     expect(html).toContain('width="1200" height="630"');
     expect(IMAGE_RATIOS.share).toEqual({ width: 191, height: 100 });
   });
-  it("paints a color placeholder and reserves intrinsic dimensions without an explicit crop", () => {
+  it("paints a color placeholder with the stock placeholder surface, never an inline data colour, and reserves intrinsic dimensions without an explicit crop", () => {
     const html = renderToStaticMarkup(<MediaFigure image={{ ...image, placeholder: { kind: "color", value: "#abcdef" } }} />);
-    expect(html).toContain("background-color:#abcdef");
+    expect(html).toMatch(/class="[^"]*\bbg-accent\b[^"]*"[^>]*style="aspect-ratio:1200 \/ 630"/);
+    expect(html).not.toContain("background-color");
+    expect(html).not.toContain("#abcdef");
+    expect(renderToStaticMarkup(<MediaFigure image={image} />)).not.toMatch(/\bbg-accent\b/);
     expect(html).toContain("aspect-ratio:1200 / 630");
   });
   it("composes through the existing hero and gallery media slots", () => {

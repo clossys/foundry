@@ -102,7 +102,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "Drawer", source: "src/blocks/Drawer.tsx", contrastPairs: ["ink-primary/surface-raised"] },
   {
     exportName: "ResizablePane", source: "src/blocks/ResizablePane.tsx",
-    contrastPairs: ["link-grid/accent/surface-raised", "link-grid/accent-on-inverse/surface-inverse-raised"],
+    contrastPairs: ["focus-outline/primary/surface-raised", "link-grid/accent-on-inverse/surface-inverse-raised"],
   },
   { exportName: "CommandMenu", source: "src/blocks/CommandMenu.tsx", contrastPairs: RAISED_READING },
   { exportName: "PageBar", source: "src/blocks/PageBar.tsx", contrastPairs: BASE_READING },

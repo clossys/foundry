@@ -3,6 +3,8 @@ import { completedCatalogLibrary } from './__fixtures__/completed-catalog-librar
 import { applyLibraryChange, check, generateSelection, libraryHash, loadCatalog, resolve, stableStringify, type CatalogData, type ChangeSet, type LibraryData } from './index.js';
 import { derivationInputsHash } from './library.js';
 import { flatten, metaOf } from './model.js';
+import themeSlots from '../catalog/slots/themes.json' with { type: 'json' };
+import assetSlots from '../catalog/slots/assets.json' with { type: 'json' };
 
 const catalog = loadCatalog();
 const complete = completedCatalogLibrary(catalog,{id:'example-raw-identity',kind:'consumer',author:'consumer',license:'MIT'},'2026-10-23');
@@ -36,7 +38,7 @@ describe('builtin identity rules through ordinary library changes',()=>{
     expect(stableStringify(seed)).toBe(original);
     expect(stableStringify(raw(catalog,seed))).toBe(stableStringify(result));
     expect(resolve({catalog,library:result})).toEqual(resolve({catalog,library:complete}));
-    expect(result.fills).toHaveLength(105); expect(errors(catalog,result)).toEqual([]);
+    expect(result.fills).toHaveLength(themeSlots.length+assetSlots.length); expect(errors(catalog,result)).toEqual([]);
     for(const fill of result.fills) for(const token of Object.values(flatten(fill))) {
       const origin=token.$extensions?.['com.clossys.origin'];
       if(origin?.kind==='derived'&&origin.rule.startsWith('identity-')) {
@@ -64,7 +66,7 @@ describe('builtin identity rules through ordinary library changes',()=>{
     expect(errors(catalog,damaged).some(finding=>finding.message.includes('identity output differs'))).toBe(true);
   });
   it('keeps saved outputs stale until an explicit ordinary derive refresh',()=>{
-    const changed=applyLibraryChange(catalog,complete,{baseHash:libraryHash(complete),changes:[{op:'author',slot:'themes.foreground',tokens:{primary:{$type:'color',$value:'#111111',$extensions:{'com.clossys.css':{raw:'#111111'},'com.clossys.modes':{dark:'#ffffff'}}}}}]});
+    const changed=applyLibraryChange(catalog,complete,{baseHash:libraryHash(complete),changes:[{op:'author',slot:'themes.foreground',tokens:{default:{$type:'color',$value:'#111111',$extensions:{'com.clossys.css':{raw:'#111111'},'com.clossys.modes':{dark:'#ffffff'}}}}}]});
     const before=resolve({catalog,library:complete}).members['assets.favicon.vector']!.value.light;
     expect(resolve({catalog,library:changed}).members['assets.favicon.vector']!.value.light).toBe(before);
     expect(errors(catalog,changed).some(finding=>finding.code==='C10'&&finding.message.includes('stale inputsHash'))).toBe(true);

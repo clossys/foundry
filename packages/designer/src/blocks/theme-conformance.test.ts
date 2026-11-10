@@ -12,6 +12,7 @@ import { CONTRAST_PAIRS, contrastPairsForTheme } from "../tokens/contrast-pairs.
 import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "../catalog/blocks.js";
 import { BLOCK_THEME_CONFORMANCE, NON_BLOCK_THEME_EXPORTS, type BlockThemeRegistration } from "./theme-conformance.js";
 import { marketingComponentSelection } from "../studio/marketing-component-selection.js";
+import { STOCK_COLOR_BY_PROPERTY, STOCK_COLOR_KEYS, THEME_CONTRAST_PAIRS, shippedThemeCss } from "../catalog-core/theme-vocabulary.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");
 const blocksRoot = resolve(packageRoot, "src/blocks");
@@ -81,6 +82,9 @@ function colorUtility(candidate: string): { token?: string; invalid?: string } {
   if (!match) return {};
   const [, prefix, suffix] = match as unknown as [string, string, string];
   const property = `--color-${suffix}`;
+  // Stock wins: a generated shadcn key (`--color-primary: var(--primary)`) paints the themes variable.
+  const stock = STOCK_COLOR_KEYS.get(property);
+  if (stock) return { token: stock.property };
   if (TOKENS[property]) return { token: property };
   if (INHERITED_COLOR.has(suffix)) return {};
   if (prefix === "text" && (TOKENS[`--text-${suffix}`] || /^(?:left|right|start|end|center|justify|balance|pretty|wrap|nowrap|ellipsis|clip|xs|sm|base|lg|xl|[2-9]xl)$/.test(suffix))) return {};
@@ -171,6 +175,8 @@ function blockSources(directory = blocksRoot): Map<string, string> {
 interface ConformanceInputs {
   sources: Map<string, string>;
   css: string;
+  /** The shipped themes fills' variables (light, OS dark, explicit dark), as emitted. */
+  themeCss: string;
   themeKeys: string;
   registrations: readonly BlockThemeRegistration[];
 }
@@ -186,6 +192,7 @@ function realInputs(): ConformanceInputs {
   return {
     sources: new Map([...blockSources(), ...blockSources(resolve(packageRoot, "src/components"))]),
     css: readFileSync(resolve(packageRoot, "styles/tokens.css"), "utf8"),
+    themeCss: shippedThemeCss(),
     themeKeys: readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8"),
     registrations: BLOCK_THEME_CONFORMANCE,
   };
@@ -380,9 +387,10 @@ function conformanceFindings(input: ConformanceInputs): string[] {
     if (entry.contrastPairs.length) findings.push(`stale exemption with contrast coverage ${entry.exportName}`);
   }
 
-  const light = parseRootDeclarations(input.css);
-  const darkExplicit = parseDeclarationsForSelector(input.css, ':root[data-theme="dark"]');
-  const darkOs = parseDeclarationsForSelector(input.css, ':root:not([data-theme="light"])');
+  // Foundry tokens come from tokens.css; stock themes variables from the shipped themes emit.
+  const light = mergeDeclarations(parseRootDeclarations(input.css), parseRootDeclarations(input.themeCss));
+  const darkExplicit = mergeDeclarations(parseDeclarationsForSelector(input.css, ':root[data-theme="dark"]'), parseDeclarationsForSelector(input.themeCss, ':root[data-theme="dark"]'));
+  const darkOs = mergeDeclarations(parseDeclarationsForSelector(input.css, ':root:not([data-theme="light"])'), parseDeclarationsForSelector(input.themeCss, ':root:not([data-theme="light"])'));
   const themeKeys = parseDeclarationsForSelector(input.themeKeys, "@theme inline");
   const themes = [
     { label: "light", policy: "light" as const, declarations: light },
@@ -411,19 +419,21 @@ function conformanceFindings(input: ConformanceInputs): string[] {
       for (const property of data.foregroundTokens) foreground.add(property);
     }
     for (const property of used) {
-      if (!TOKENS[property] || !light.get(property)?.trim()) findings.push(`${entry.exportName}: missing light token ${property}`);
-      if (!themeKeys.get(property)?.includes(`var(${property},`)) findings.push(`${entry.exportName}: missing live utility token ${property}`);
+      const stock = STOCK_COLOR_BY_PROPERTY.get(property);
+      if ((!TOKENS[property] && !stock) || !light.get(property)?.trim()) findings.push(`${entry.exportName}: missing light token ${property}`);
+      // A stock utility must read its themes variable through the generated key; a Foundry one through its own fallback key.
+      if (stock ? themeKeys.get(stock.key)?.trim() !== `var(${property})` : !themeKeys.get(property)?.includes(`var(${property},`)) findings.push(`${entry.exportName}: missing live utility token ${property}`);
       for (const theme of themes) {
         const resolved = resolveTokenValue(property, theme.registry);
         if (!resolved.value || resolved.cycle || resolved.missingProperty) findings.push(`${entry.exportName}: unresolved ${theme.label} token ${property}`);
         for (const dependency of resolved.chain) {
-          if (TOKENS[dependency]?.themeDependent && (!darkExplicit.get(dependency)?.trim() || !darkOs.get(dependency)?.trim())) findings.push(`${entry.exportName}: missing dark value ${dependency}`);
+          if ((TOKENS[dependency]?.themeDependent || STOCK_COLOR_BY_PROPERTY.get(dependency)?.themeDependent) && (!darkExplicit.get(dependency)?.trim() || !darkOs.get(dependency)?.trim())) findings.push(`${entry.exportName}: missing dark value ${dependency}`);
         }
       }
     }
     if (!entry.exemptionReason?.trim() && !entry.contrastPairs.length) findings.push(`${entry.exportName}: no registered contrast pair or reason`);
     for (const id of entry.contrastPairs) {
-      const pair = CONTRAST_PAIRS.find(candidate => candidate.id === id);
+      const pair = [...CONTRAST_PAIRS, ...THEME_CONTRAST_PAIRS].find(candidate => candidate.id === id);
       if (!pair) findings.push(`${entry.exportName}: unknown contrast pair ${id}`);
       else if (!paint.has(pair.foreground)) findings.push(`${entry.exportName}: contrast foreground is not used or delegated ${id}`);
     }
@@ -434,7 +444,7 @@ function conformanceFindings(input: ConformanceInputs): string[] {
       continue;
     }
     for (const theme of themes) {
-      const pairs = contrastPairsForTheme(theme.policy).filter(pair => entry.contrastPairs.includes(pair.id));
+      const pairs = [...contrastPairsForTheme(theme.policy), ...THEME_CONTRAST_PAIRS].filter(pair => entry.contrastPairs.includes(pair.id));
       if (pairs.length !== entry.contrastPairs.length) findings.push(`${entry.exportName}: incomplete ${theme.label} pair registration`);
       const report = checkTokenContrast(pairs, { tokens: theme.registry });
       if (!report.ok) findings.push(`${entry.exportName}: ${theme.label} contrast failed ${JSON.stringify({ findings: report.findings, unchecked: report.unchecked })}`);
@@ -753,5 +763,63 @@ describe("raw inline custom color properties", () => {
       ? source.replace("<header {...rest}", `<header {...rest} ${fragment}`)
       : source + `\nfunction preserveLayout(element: HTMLElement) { ${fragment} }`);
     expect(conformanceFindings(input)).toEqual([]);
+  });
+});
+
+describe("stock shadcn colour vocabulary", () => {
+  it.each([
+    ["bg-primary", "--primary"], ["text-primary-foreground", "--primary-foreground"], ["bg-secondary", "--secondary"],
+    ["text-muted-foreground", "--muted-foreground"], ["hover:bg-accent", "--accent"], ["bg-destructive", "--destructive"],
+    ["border-border", "--border"], ["focus-visible:outline-ring", "--ring"], ["fill-chart-1", "--chart-1"], ["stroke-chart-5", "--chart-5"],
+  ])("resolves %s through its generated themes key to %s, stock winning over a Foundry name", (candidate, property) => {
+    expect(colorUtility(candidate)).toEqual({ token: property });
+    const key = STOCK_COLOR_BY_PROPERTY.get(property)!.key;
+    expect(parseDeclarationsForSelector(realInputs().themeKeys, "@theme inline").get(key)).toBe(`var(${property})`);
+  });
+
+  it("keeps Foundry tokens, variable shorthands and unknown names on their existing rules", () => {
+    expect(colorUtility("bg-surface-raised")).toEqual({ token: "--color-surface-raised" });
+    expect(colorUtility("bg-(--color-action)")).toEqual({ token: "--color-action" });
+    expect(colorUtility("bg-primary-imaginary")).toEqual({ invalid: "bg-primary-imaginary" });
+  });
+
+  const STOCK_BLOCK = "ResizablePane";
+  it(`checks ${STOCK_BLOCK}'s stock focus outline in light, OS dark and explicit dark`, () => {
+    const findings = conformanceFindings(realInputs()).filter(finding => finding.startsWith(`${STOCK_BLOCK}:`));
+    expect(findings).toEqual([]);
+  });
+
+  it("refuses a stock utility whose generated key is removed [mutant: drop --color-primary]", () => {
+    const input = realInputs();
+    expect(input.themeKeys).toContain("--color-primary: var(--primary);");
+    input.themeKeys = input.themeKeys.replace("--color-primary: var(--primary);", "");
+    expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing live utility token --primary`);
+  });
+
+  it("refuses a stock utility retargeted to a Foundry variable [mutant: --color-primary reads --color-action]", () => {
+    const input = realInputs();
+    input.themeKeys = input.themeKeys.replace("--color-primary: var(--primary);", "--color-primary: var(--color-action);");
+    expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing live utility token --primary`);
+  });
+
+  it("refuses a stock variable without its shipped dark value [mutant: drop dark --primary]", () => {
+    const input = realInputs();
+    const split = input.themeCss.indexOf("@media");
+    expect(split).toBeGreaterThan(0);
+    input.themeCss = input.themeCss.slice(0, split) + input.themeCss.slice(split).replace(/^\s*--primary:[^;]+;\n/gm, "");
+    expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing dark value --primary`);
+  });
+
+  it("refuses a stock variable without its shipped light value [mutant: drop every --primary]", () => {
+    const input = realInputs();
+    input.themeCss = input.themeCss.replace(/^\s*--primary:[^;]+;\n/gm, "");
+    expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing light token --primary`);
+  });
+
+  it("contrast-checks the registered stock pair against the shipped values [mutant: light --primary on its plate]", () => {
+    const input = realInputs();
+    const raised = parseRootDeclarations(input.css).get("--color-surface-raised")!;
+    input.themeCss = input.themeCss.replace(/^(\s*--primary:)[^;]+;/m, `$1 ${raised};`);
+    expect(conformanceFindings(input).some(finding => finding.startsWith(`${STOCK_BLOCK}: light contrast failed`))).toBe(true);
   });
 });
