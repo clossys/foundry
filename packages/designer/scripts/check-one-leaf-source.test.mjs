@@ -147,3 +147,32 @@ test("a re-export of an installed package component is that package identity; a 
   write("packages/designer/src/wrapper.tsx", 'import { Control as Original } from "example-aria"; export function Control(props: any) { return <Original className="copy" {...props} />; }\n');
   assert.deepEqual(checkOneLeafSource(root, ["components"]).violations.map(row => [row.rule, row.leaf]), [["duplicate-leaf-source", "components.example"]]);
 });
+test("one verified stock file exporting a part family is one source; a modified or hand-written family is a duplicate", async () => {
+  const { createHash } = await import("node:crypto");
+  const { root, write } = fixture();
+  const entry = "components/control/control.tsx";
+  const stock = 'export function Control(props: any) { return <div className="ml-2">{props.children}</div>; }\nexport function ControlRange(props: any) { return <div className="range">{props.children}</div>; }\n';
+  const sha = createHash("sha256").update(stock).digest("hex");
+  const runtime = "packages/designer/src/components/preview-runtime";
+  const fill = { $extensions: { "com.clossys.fill": { id: "shadcn@aria/components.example", slot: "components.example", source: "shadcn@aria", mode: "implementation", trust: "pinned-upstream" } }, components: { example: { slot: "components.example", source: "shadcn@aria", impl: { kind: "source", entry, export: "Control" }, outputSha256: [{ path: entry, sha256: sha }] } } };
+  const adapter = 'import { createElement } from "react";\nimport { Control as Impl0, ControlRange as Impl1 } from "./control.js";\nconst targets = { Impl0, Impl1 };\nexport function Control(props: any) { return createElement((targets as any)[props.range ? "Impl1" : "Impl0"], props); }\n';
+  const install = (runtimeBytes, proofKey = `tsx:${sha}`) => {
+    write(`${runtime}/${entry}`, runtimeBytes);
+    write(`${runtime}/components/control/index.ts`, adapter);
+    write("packages/designer/src/studio/default-component-preview-profile.json", { files: [{ path: entry, content: stock }] });
+    write("packages/designer/src/catalog-core/component-source-proofs.json", { proofs: { [proofKey]: { functions: [], exports: [], namespaces: {}, reads: [] } } });
+    write("packages/designer/src/catalog/fills/shadcn@aria/components.example.json", fill);
+    write("packages/designer/src/components.tsx", `export { Control } from "./components/preview-runtime/${entry.replace(/\.tsx$/, ".js")}";\n`);
+  };
+  const duplicates = () => checkOneLeafSource(root, ["components"]).violations.filter(row => row.rule === "duplicate-leaf-source").map(row => row.leaf);
+  install(stock.replace("ml-2", "ms-2"));
+  assert.deepEqual(duplicates(), [], "the verified stock family is one source");
+  install(stock.replace("ml-2", "ms-2").replace('"range"', '"edited"'));
+  assert.deepEqual(duplicates(), ["components.example"], "modified stock bytes are not stock");
+  install(stock.replace("ml-2", "ms-2"), `tsx:${"0".repeat(64)}`);
+  assert.deepEqual(duplicates(), ["components.example"], "bytes without a generated stock proof are not stock");
+  install(stock.replace("ml-2", "ms-2"));
+  fill.$extensions["com.clossys.fill"].trust = "foundry";
+  write("packages/designer/src/catalog/fills/shadcn@aria/components.example.json", fill);
+  assert.deepEqual(duplicates(), ["components.example"], "a hand-written family is two sources");
+});

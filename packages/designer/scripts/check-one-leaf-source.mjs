@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { previewModuleSource } from "./lib/preview-source.mjs";
 
 const allLayers = ["components", "sections", "frames"];
 const filesBelow = directory => fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? filesBelow(path.join(directory, entry.name)) : [path.join(directory, entry.name)]);
@@ -20,6 +21,23 @@ export function checkOneLeafSource(repository, layers = allLayers) {
   const add = (rule, leaf, detail, file) => findings.push({ rule, leaf, detail, ...(file ? { file: relative(file) } : {}) });
   const read = file => JSON.parse(fs.readFileSync(file, "utf8"));
   const roster = read(path.join(catalog, "rules/source-roster.json"));
+  // A pinned-upstream source entry is stock only when its preview-runtime bytes
+  // are the deterministic preview of the default profile output, and that output
+  // has both the fill's sha256 receipt and a generated stock AST proof.
+  const sha = text => createHash("sha256").update(text).digest("hex");
+  const runtime = path.join(directory, "src/components/preview-runtime");
+  const optional = file => fs.existsSync(file) ? read(file) : undefined;
+  const profileFiles = new Map((optional(path.join(directory, "src/studio/default-component-preview-profile.json"))?.files ?? []).map(file => [file.path, file.content]));
+  const proofs = optional(path.join(directory, "src/catalog-core/component-source-proofs.json"))?.proofs ?? {};
+  const stockEntries = new Map();
+  const stockEntry = (meta, entry) => {
+    const impl = entry.impl, emitted = profileFiles.get(impl.entry), file = path.join(runtime, impl.entry);
+    if (meta.trust !== "pinned-upstream" || typeof emitted !== "string" || !/\.tsx?$/.test(impl.entry) || !fs.existsSync(file)) return;
+    const receipt = (entry.outputSha256 ?? []).find(item => item.path === impl.entry);
+    if (receipt?.sha256 !== sha(emitted) || !Object.hasOwn(proofs, `${impl.entry.endsWith(".tsx") ? "tsx" : "ts"}:${receipt.sha256}`)) return;
+    if (fs.readFileSync(file, "utf8") !== previewModuleSource(emitted, impl.entry, { root: directory, target: runtime })) return;
+    const leaves = stockEntries.get(relative(file)) ?? new Set(); leaves.add(meta.slot); stockEntries.set(relative(file), leaves);
+  };
   for (const layer of layers) {
     const slots = read(path.join(catalog, `slots/${layer}.json`));
     if (!Array.isArray(slots) || !slots.length || !Array.isArray(roster[layer]) || !roster[layer].length) throw new Error(`Missing or empty ${layer} catalog/roster input`);
@@ -176,6 +194,7 @@ export function checkOneLeafSource(repository, layers = allLayers) {
       for (const input of entry.consumption?.sourceFiles ?? []) if (!fs.existsSync(path.resolve(root, input.path))) add("missing-source-input", meta.slot, input.path, file);
       const impl = entry.impl;
       if (impl?.export) { const ids = names.get(impl.export) ?? new Set(); ids.add(meta.slot); names.set(impl.export, ids); }
+      if (impl?.kind === "source" && typeof impl.entry === "string") stockEntry(meta, entry);
       const resolved = impl?.kind === "package" ? packageEntry(impl, entry.pin ?? meta.pin) : impl?.kind === "source" && typeof impl.entry === "string" ? exported(path.join(directory, "src/components/preview-runtime", impl.entry), impl.export) : [];
       if (!resolved.length) add("unresolved-fill-source", meta.slot, `${meta.id}: ${JSON.stringify(impl)}`, file);
       insert(meta.slot, resolved, relative(file));
@@ -227,7 +246,9 @@ export function checkOneLeafSource(repository, layers = allLayers) {
     for (const source of new Set(row.offers)) if (!row.descriptors.some(item => item.source === source)) add("missing-offered-fill", row.leaf, source);
     const implementations = [...row.implementations.values()].sort((a, b) => a.key.localeCompare(b.key));
     if (!implementations.length) add("missing-leaf-source", row.leaf, "No resolvable native implementation");
-    if (implementations.length > 1) add("duplicate-leaf-source", row.leaf, implementations.map(item => `${item.file}:${item.line}#${item.name}`).join(", "));
+    // One verified stock file exporting a part family (Calendar/RangeCalendar) is one source.
+    const files = new Set(implementations.map(item => item.file)), family = files.size === 1 && stockEntries.get([...files][0])?.has(row.leaf);
+    if (implementations.length > 1 && !family) add("duplicate-leaf-source", row.leaf, implementations.map(item => `${item.file}:${item.line}#${item.name}`).join(", "));
     return { leaf: row.leaf, offers: [...new Set(row.offers)], descriptors: row.descriptors, implementations };
   });
   const inputs = [...new Set([...sources, ...fillFiles, path.join(catalog, "rules/source-roster.json"), ...layers.map(layer => path.join(catalog, `slots/${layer}.json`)), ...owners.map(owner => path.join(owner.directory, "package.json"))])].sort();
