@@ -17,6 +17,10 @@ function heroNode(members: readonly string[] = ["size.display"]): ReactNode {
   return surfaceRuntimeRenderers["sections.hero"]!.render({
     fill: { leaf: "sections.hero", slots: ["header"], members },
     selection: { leaf: "sections.hero", members }, content: content({ header: { heading: "Native home" } }),
+    // The hero's words come from the host's Writer copy port, never from section content.
+    sectionHost: { heroCopy: { "header.heading": "Native home" } },
+    // The render cell and resolved profile are host ports too (the backdrop reads both).
+    cell: { theme: "light", state: "default", width: 1280 }, profile: {},
   } as unknown as RuntimeRenderInput<ReactNode>);
 }
 function shellInput(main: ReactNode, overlay = true): RuntimeRenderInput<ReactNode> {
@@ -96,7 +100,8 @@ describe("native site-shell after Landing retirement", () => {
       const content = values => Object.fromEntries(Object.entries(values).map(([key,value])=>[key,{value}]));
       const delegated = frames.surfaceRuntimeRenderers["sections.hero"].render({
         fill:{leaf:"sections.hero",slots:["header"],members:["size.display"]},
-        selection:{leaf:"sections.hero",members:["size.display"]},content:content({header:{heading:"RSC native home"}})
+        selection:{leaf:"sections.hero",members:["size.display"]},content:content({header:{heading:"RSC native home"}}),
+        sectionHost:{heroCopy:{"header.heading":"RSC native home"}},cell:{theme:"light",state:"default",width:1280},profile:{}
       });
       const hero = createElement(Hero, { heading: "RSC native home" });
       const input = {
@@ -111,22 +116,31 @@ describe("native site-shell after Landing retirement", () => {
         return [...(node.type === Hero ? [node] : []),...find(node.props?.children)];
       }
       const selected = find(tree);
-      const tags=[]; const text=[];
+      const tags=[]; const text=[]; const boundaries=[];
+      // Under react-server a semantic element is the components.semantic-content client
+      // boundary (React.lazy) carrying its tag as componentProps.as; its children stay server elements.
       function evaluate(node) {
         if (Array.isArray(node)) return node.forEach(evaluate);
         if (typeof node === "string") { text.push(node); return; }
         if (!node || typeof node !== "object") return;
+        if (node.type?.$$typeof === Symbol.for("react.lazy")) {
+          const { as, children } = node.props.componentProps; boundaries.push({ leaf: node.props.leaf, as });
+          if (typeof as === "string") tags.push(as);
+          return evaluate(children);
+        }
+        if (node.type?.$$typeof === Symbol.for("react.forward_ref")) return evaluate(node.type.render(node.props, null));
         if (typeof node.type === "function") return evaluate(node.type(node.props));
         if (typeof node.type === "string") tags.push(node.type);
         evaluate(node.props?.children);
       }
       selected.forEach(evaluate);
       console.log(JSON.stringify({designerLanding:"LandingView" in frames,serverLanding:"ServerLandingView" in frames,publisherLanding:"LandingView" in web,
-        registered:hero.type===Hero,sectionClientBoundary:delegated.type?.$$typeof===Symbol.for("react.lazy"),siteFrame:element.type===frames.SiteFrame,heroes:selected.length,grows:selected[0]?.props.className.includes("flex-1"),tags,text}));
+        registered:hero.type===Hero,sectionClientBoundary:delegated.type?.$$typeof===Symbol.for("react.lazy"),siteFrame:element.type===frames.SiteFrame,heroes:selected.length,grows:selected[0]?.props.className.includes("flex-1"),tags,text,boundaries}));
     `;
     const result = JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { cwd: process.cwd(), encoding: "utf8" }));
     expect(result).toMatchObject({ designerLanding: false, serverLanding: false, publisherLanding: false, registered: true, sectionClientBoundary: true, siteFrame: true, heroes: 1, grows: true });
     expect(result.tags.filter((tag: string) => tag === "h1")).toHaveLength(1);
+    expect(result.boundaries.filter((boundary: { as?: string }) => boundary.as === "h1")).toEqual([{ leaf: "components.semantic-content", as: "h1" }]);
     expect(result.text).toContain("RSC native home");
   }, 20_000);
 });

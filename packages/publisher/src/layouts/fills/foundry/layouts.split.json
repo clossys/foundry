@@ -11,15 +11,15 @@
       },
       {
         "path": "src/layouts/resolve.ts",
-        "sha256": "3ee2833802beba32c38f39b93fa177746a59465acb9cccd066ee164e47e14fb5"
+        "sha256": "e6632965345c116aad03b89cd254977657d89caf762b3a972524c43c05ec607b"
       },
       {
         "path": "src/layouts/slots/layouts.json",
-        "sha256": "d5c5e8f6a1f11f5d81637fe49e1a08bf27a84fb344a676fa8bf0f55868cbbc6e"
+        "sha256": "426bea89fb7f046ddffdbab34d2265b928e664638c30682060b44a39320983e6"
       },
       {
         "path": "src/web/layouts/Split.tsx",
-        "sha256": "70171d5ed8d8f36bc04f78bde31fc91a57edcd96122853deb7e32a2d38673780"
+        "sha256": "e5a3cac4e009323e0c466c1db6c9abce76f1f939617b0919b902130883718152"
       },
       {
         "path": "src/web/layouts/preview/structure.tsx",

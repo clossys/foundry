@@ -207,9 +207,9 @@ describe("bounded layout source closure", () => {
 
   const matrix = LAYOUT_LEAVES.filter(leaf => leaf.status !== "held").flatMap(leaf => leaf.contract.configs.map(config => ({ leaf, config: config.id,
     entry: `web/layouts/${({ "layouts.stack": "Stack", "layouts.split": "Split", "layouts.sidebar-content": "SidebarContent", "layouts.bento": "Bento" } as Record<string, string>)[leaf.id]}.tsx` })));
-  it("measures four leaves and eight registered configurations", () => {
+  it("measures four leaves and nine registered configurations", () => {
     expect(new Set(matrix.map(row => row.entry)).size).toBe(4);
-    expect(matrix.map(row => row.config)).toEqual(["stack.landing", "stack.document", "stack.focus", "stack.index", "split.default", "sidebar-content.record", "sidebar-content.docs", "bento.default"]);
+    expect(matrix.map(row => row.config)).toEqual(["stack.landing", "stack.document", "stack.focus", "stack.index", "stack.workspace", "split.default", "sidebar-content.record", "sidebar-content.docs", "bento.default"]);
   });
   it.each(matrix)("clears source closure for $config", ({ leaf, config, entry }) => {
     const reachable = closure(entry);

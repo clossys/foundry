@@ -3,12 +3,13 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { applyLibraryChange, importFoundryComponents, libraryHash, loadBuildCatalog, planSurfaceRuntime, resolve, runtimeAssemblyCells, runtimeHash } from "@clossys/designer/catalog";
+import { applyLibraryChange, libraryHash, loadBuildCatalog, planSurfaceRuntime, resolve, runtimeAssemblyCells, runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeContent, RuntimeJson } from "@clossys/designer/catalog";
 import { readSurfacePackageEvidence } from "@clossys/designer/catalog/server";
 import { surfaceRuntimeRenderers } from "@clossys/designer/frames";
 import { packageSurfaceLibrary } from "../../../../designer/dist/library-cli/__fixtures__/package-surface-library.js";
-import { selectedPackageClosure } from "../../../../designer/src/catalog-core/__fixtures__/surface-engine/selected-package-closure.js";
+import { componentAdoptions, selectedComponentFills, selectedPackageClosure } from "../../../../designer/src/catalog-core/__fixtures__/surface-engine/selected-package-closure.js";
+import { loadCatalogBundles } from "../../../../designer/src/catalog-bundles.js";
 import { createAdminPageRegistry, adminPageRef, adminPageStaticContent, configs, fixtureSources } from "./__fixtures__/consumer-pages.mjs";
 import { adminPageContent, writerCopy, createConsumerPageRegistry, consumerPageRef, type ConsumerPageConfig, type ConsumerPageSkeleton as AdminPageSkeleton } from "./index.js";
 import { adminCopyFixture } from "./__fixtures__/copy.mjs";
@@ -26,8 +27,8 @@ let componentOptions: ReturnType<typeof selectedPackageClosure>["componentOption
 let packages: Awaited<ReturnType<typeof readSurfacePackageEvidence>>;
 beforeAll(async () => {
   fixture = await packageSurfaceLibrary();
-  // Package surfaces must close over real selected consumer components too.
-  const catalog = { ...fixture.catalog, components: { ...fixture.catalog.components, fills: importFoundryComponents().fills } };
+  // Package surfaces must close over real selected consumer components too: stock first, Foundry only where no stock item exists.
+  const catalog = { ...fixture.catalog, components: { ...fixture.catalog.components, fills: selectedComponentFills() } };
   const selected = selectedPackageClosure(catalog);
   componentOptions = selected.componentOptions;
   // Adoption checks each operation, while library snapshots are canonically sorted.
@@ -48,7 +49,9 @@ beforeAll(async () => {
   for (const doc of selected.library.components.fills) visit(doc.$extensions["com.clossys.fill"].slot);
   const library = applyLibraryChange(catalog, fixture.library, {
     baseHash: libraryHash(fixture.library),
-    changes: ordered.map(slot => ({ portion: "components", change: { op: "adopt", slot, source: "foundry" } })),
+    // Each adoption names its own candidate's source (stock or Foundry) and carries the materialized stock bundles.
+    changes: componentAdoptions(catalog, ordered),
+    bundles: loadCatalogBundles().sourceBundles,
   }, { componentOptions, surfaceOptions: fixture.options });
   fixture = { ...fixture, catalog, library };
   packages = await readSurfacePackageEvidence(["@clossys/designer/frames", "@clossys/designer/shell"].map(module => ({ frames: { pointer: { impl: { kind: "package", module } } } })) as Parameters<typeof readSurfacePackageEvidence>[0]);
@@ -85,9 +88,8 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:
     }
   }
   values.set("admin.frame/skip-link", content({ kind: "copy", ref: "admin.frame/skip-link" }, copy("strings.admin.action.backToPage", {page:copy("strings.admin.page.writer")})));
-  const pixels = Object.fromEntries(Object.entries(profile.values.members).filter(([id]) => id.startsWith("tokens.breakpoint.")).map(([id, member]) => { const value = member.value.light as { unit: string; value: number }; return [id, value.value * (value.unit === "px" ? 1 : 16)]; }));
   const renderers = Object.fromEntries(manifest.fills.map(fill => [fill.renderer.id, fill.kind === "frame" ? (input: any) => input.slots.main : surfaceRuntimeRenderers[fill.leaf]!.render]));
-  const runtime: RegisteredRouteRuntime = { assembly: { identity: { kind: "git", head: "a".repeat(40), tree: "b".repeat(40) }, engine, contracts: contracts as never, ports: { manifest, renderers, resolveContent: reference => values.get(reference.ref), frameOrder: ({layout,slots}) => [...Object.values(slots).flat(), ...layout], frameHost: { navigate: vi.fn() } }, themes: ["light"], states: ["default"], breakpointPixels: pixels, breakpointBasis: { renderer: layoutRenderer, environment: { kind: "SYNTHETIC 16px root font" } }, css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(profile, "layouts.stack", "stack.workspace") }], assets: [], stageMeasurements: { renderer: layoutRenderer, environment: { kind: "SYNTHETIC width basis" }, cells: runtimeAssemblyCells(["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) } }, instanceLibrary: { id: profile.consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === "stack.workspace" ? { library: profile.consumer, leaf, config, headings: [], states: ["default"], renderer: layoutSource } : undefined, resolveContent: reference => reference }, registries, layoutRenderer, cell: { theme: "light", state: "default", width: 320 } };
+  const runtime: RegisteredRouteRuntime = { assembly: { identity: { kind: "git", head: "a".repeat(40), tree: "b".repeat(40) }, engine, contracts: contracts as never, ports: { manifest, renderers, resolveContent: reference => values.get(reference.ref), frameOrder: ({layout,slots}) => [...Object.values(slots).flat(), ...layout], frameHost: { navigate: vi.fn() } }, themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(profile, "layouts.stack", "stack.workspace") }], assets: [], stageMeasurements: { renderer: layoutRenderer, environment: { kind: "SYNTHETIC width basis" }, cells: runtimeAssemblyCells(["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) } }, instanceLibrary: { id: profile.consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === "stack.workspace" ? { library: profile.consumer, leaf, config, headings: [], states: ["default"], renderer: layoutSource } : undefined, resolveContent: reference => reference }, registries, layoutRenderer, cell: { theme: "light", state: "default", width: 320 } };
   return { registry, pages, runtime, session, host, values, copy, publicationHosts };
 }
 describe("six native admin records through prepareRegisteredRoute (fixture declarations)", () => {

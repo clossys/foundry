@@ -66,7 +66,9 @@ describe('specimen runtime source boundaries', () => {
       files: [{ path: 'studio-shell.json', content: JSON.stringify(item) }], preview: item.meta.preview, contentHash: shell.pin!.sha256 });
     expect(shellRecord.payload.files.find(file => file.path.endsWith('.tsx'))!.path).toBe('PageNotice.tsx');
     expect(specimenEntry(shellRecord)?.path).toBe('index.tsx');
-    expect(shellRecord.preview.fixtures).toEqual({});
+    // The shell's preview fixtures are exactly the pinned descriptor's declared props: none invented, none dropped.
+    expect(item.meta.preview.fixtures).toMatchObject({ file: expect.any(String), export: expect.any(String) });
+    expect(shellRecord.preview.fixtures).toEqual(item.meta.preview.fixtures.props);
   });
 
   it('does not resolve a virtual alias by basename, escape to the filesystem, or mount a bundle on build failure', async () => {
