@@ -233,7 +233,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Testimonial.tsx",
-            "sha256": "4df4f8c75a8ae09244140e63597345efd7e6be2b187e0daf6a3a328d9fe837cd"
+            "sha256": "26fdf7117bf1f3b4f9a614a63f6f137eed1dd93259e896bc290d827ddb62bc83"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
