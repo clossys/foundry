@@ -6,7 +6,6 @@ import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
 import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { isImageResource, isVideoResource } from "../catalog-assets/media.js";
-import { defaultSourceModules } from "../components/preview-runtime/modules.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
 import componentData from "./default-component-preview-profile.json" with { type: "json" };
 import { readStudioCopy, type StudioCopyBinding, type StudioCopyRef } from "./copy-binding.js";
@@ -100,7 +99,7 @@ const NO_PROFILE = {};
 function sampleContext(host: ComponentSpecimenHost): DesignerSpecimenContext {
   const key = host.profile ?? NO_PROFILE;
   const cached = contexts.get(key);
-  if (cached && host.modules && Object.entries(host.modules).every(([name, module]) => cached.modules[name] === module)) return cached;
+  if (cached && Object.entries(host.modules ?? {}).every(([name, module]) => cached.modules[name] === module)) return cached;
   const base = sampleValues(), profile = host.profile as Partial<CompositeResolved> | undefined;
   const hostComponents = profile?.components as Partial<Components> | undefined;
   const files = new Map(defaultComponents.files.map(file => [file.path, file]));
@@ -117,7 +116,8 @@ function sampleContext(host: ComponentSpecimenHost): DesignerSpecimenContext {
       components: { ...defaultComponents, ...hostComponents, selectionHash, components: { ...defaultComponents.components, ...hostComponents?.components }, files: [...files.values()] },
       surfaces: { ...hostSurfaces, fills: { ...Object.fromEntries(Object.entries(sample).map(([leaf, row]) => [leaf, row.fill])), ...hostSurfaces?.fills } },
     } as CompositeResolved,
-    modules: { ...defaultSourceModules, ...host.modules },
+    // Only the host's modules: importing the preview runtime here would cycle through the components barrel.
+    modules: { ...host.modules },
     surfaces: Object.fromEntries(Object.entries(sample).map(([leaf, row]) => [leaf, row.specimen])),
   };
   contexts.set(key, context);
