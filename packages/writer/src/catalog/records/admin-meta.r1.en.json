@@ -12,7 +12,7 @@
   "sourceFiles": {
     "packages/writer/src/catalog/records/admin-voice.r1.en.json": "128e9d020ef04664f8a501c969f7315be9680825d9c578d77ae5996165ee569e",
     "packages/publisher/src/web/publisher/publisher-sections.ts": "0fa778db70effc53426b213058037569fe5583228569b9a038bf8a562f0329be",
-    "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "598cce9b14c34a1f3f54568e915eaf688dd1c53a335dff6fcc0b25ae84e051ec"
+    "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "b641cc1368d3618e603b781ec801adc229c7b26a891d0aac61423fb6395ea11b"
   },
   "records": [
     {
