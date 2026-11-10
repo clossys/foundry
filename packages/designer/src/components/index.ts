@@ -94,8 +94,8 @@ export type CheckboxProps = import("react").ComponentProps<typeof import("./prev
 export { Switch } from "./preview-runtime/components/switch/switch.js";
 export type SwitchProps = import("react").ComponentProps<typeof import("./preview-runtime/components/switch/switch.js").Switch>;
 
-export { Slider } from "./Slider.js";
-export type { SliderProps, SliderValue } from "./Slider.js";
+export { Slider } from "./preview-runtime/components/slider/slider.js";
+export type SliderProps = import("react").ComponentProps<typeof import("./preview-runtime/components/slider/slider.js").Slider>;
 
 export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./preview-runtime/components/select/select.js";
 export type SelectProps = import("react").ComponentProps<typeof import("./preview-runtime/components/select/select.js").Select>;
@@ -146,8 +146,8 @@ export type RangeCalendarProps = import("react").ComponentProps<typeof import(".
 export { DateField } from "./DateField.js";
 export type { DateFieldProps } from "./DateField.js";
 
-export { ComboBox } from "./ComboBox.js";
-export type { ComboBoxProps, ComboBoxOption } from "./ComboBox.js";
+export { Combobox as ComboBox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem } from "./preview-runtime/components/combo-box/combobox.js";
+export type ComboBoxProps = import("react").ComponentProps<typeof import("./preview-runtime/components/combo-box/combobox.js").Combobox>;
 
 export { SearchField } from "./SearchField.js";
 export type { SearchFieldProps } from "./SearchField.js";

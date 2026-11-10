@@ -3,6 +3,8 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { previewModuleSource } from "./lib/preview-source.mjs";
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outputFlag = process.argv.indexOf("--output-root");
 const outputRoot = outputFlag < 0 ? root : resolve(process.argv[outputFlag + 1] ?? (() => { throw new Error("--output-root needs a directory"); })());
@@ -71,12 +73,6 @@ for (const component of sourceComponents) visit(component.impl.entry);
 retained.add("adapters/glyphs.ts");
 for (const file of emitted) if (file.path.startsWith("notices/")) retained.add(file.path);
 const target = resolve(root, "src/components/preview-runtime");
-const logical = { "left-": "start-", "right-": "end-", "ml-": "ms-", "mr-": "me-", "pl-": "ps-", "pr-": "pe-", "border-l-": "border-s-", "border-r-": "border-e-", "rounded-l-": "rounded-s-", "rounded-r-": "rounded-e-", "text-left": "text-start", "text-right": "text-end" };
-function previewSource(content, path) {
-  let code = content.replace(/(?<![\w-])(?:-?(?:left|right)-|[mp][lr]-|border-[lr]-|rounded-[lr]-|text-(?:left|right)(?![\w-]))/g, token => (token.startsWith("-") ? "-" : "") + logical[token.startsWith("-") ? token.slice(1) : token]).replaceAll("max-w-xs", "max-w-[20rem]").replaceAll("max-w-sm", "max-w-[24rem]");
-  if (path.endsWith("/dialog.tsx") || path.endsWith("/radio-group.tsx")) code = code.replaceAll("-translate-x-1/2 ", "-translate-x-1/2 rtl:translate-x-1/2 ");
-  return code;
-}
 function write(path, content) {
   path = resolve(outputRoot, posix.relative(root, path));
   if (process.argv.includes("--check")) {
@@ -86,15 +82,7 @@ function write(path, content) {
 for (const file of emitted) {
   let content = "// Consumer-only adapter omitted from the private preview dependency closure.\nexport {};\n";
   if (retained.has(file.path)) {
-    content = /\.[cm]?tsx?$/.test(file.path) ? file.content.replace(/((?:from\s*|import\s*)["'])([^"']+)(["'])/g, (_all, before, original, after) => {
-      let specifier = original;
-      if (specifier.startsWith("@clossys/designer/")) {
-        specifier = posix.relative(posix.dirname(posix.join(target, file.path)), posix.join(root, "src", specifier.slice("@clossys/designer/".length), "index.js"));
-        if (!specifier.startsWith(".")) specifier = `./${specifier}`;
-      } else if (specifier.startsWith(".") && !/\.(?:js|json|mjs)$/.test(specifier)) specifier += ".js";
-      return before + specifier + after;
-    }) : file.content;
-    content = previewSource(content, file.path);
+    content = previewModuleSource(file.content, file.path, { root, target });
   }
   write(resolve(target, file.path), content);
 }

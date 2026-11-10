@@ -80,6 +80,10 @@ export {
   PopoverDescription,
   DateField,
   ComboBox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
   SearchField,
   FileTrigger,
   Accordion,
@@ -148,7 +152,6 @@ export type {
   PopoverProps,
   DateFieldProps,
   ComboBoxProps,
-  ComboBoxOption,
   SearchFieldProps,
   FileTriggerProps,
   AccordionProps,
@@ -519,6 +522,8 @@ export { StockItem } from "./blocks/items/StockItem.js";
 export type { StockItemProps } from "./blocks/items/StockItem.js";
 export { StockSelect } from "./blocks/stock-select.js";
 export type { StockSelectProps, StockSelectOption } from "./blocks/stock-select.js";
+export { StockCombobox } from "./blocks/stock-combobox.js";
+export type { StockComboboxProps, StockComboboxOption } from "./blocks/stock-combobox.js";
 export { AppNavigation } from "./blocks/AppNavigation.js";
 export type { AppNavigationProps } from "./blocks/AppNavigation.js";
 export { PageBar } from "./blocks/PageBar.js";

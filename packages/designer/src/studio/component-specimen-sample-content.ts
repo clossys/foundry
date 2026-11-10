@@ -12,7 +12,6 @@ import { specimenDataset as d } from "./specimen-dataset.js";
 export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   "./components#Avatar": d.avatar,
   "./components#Alert": d.banner,
-  "./components#ComboBox": d.combobox,
   "./components#DateField": d.dates.field,
   "./components#Icon": d.icon,
   "./components#Logomark": d.logo,
@@ -26,7 +25,6 @@ export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<str
   "./components#SemanticContent": d.semantic,
   "./components#Separator": d.separator,
   "./components#Skeleton": d.skeleton,
-  "./components#Slider": d.slider,
   "./components#Spinner": d.spinner,
   "./components#StatusMark": d.statusMark,
   "./components#TextField": d.textField,

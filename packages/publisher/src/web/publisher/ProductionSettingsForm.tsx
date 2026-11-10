@@ -1,7 +1,7 @@
 "use client";
-import { Button, Checkbox, ComboBox } from "@clossys/designer/components";
+import { Button, Checkbox } from "@clossys/designer/components";
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { DetailView, FieldGroup, Form, SectionHeader, StockSelect } from "@clossys/designer/blocks";
+import { DetailView, FieldGroup, Form, SectionHeader, StockCombobox, StockSelect } from "@clossys/designer/blocks";
 import type { PublisherConfiguration, PublisherMediaSettings } from "../../planning/configuration.js";
 import type { FormatLeaf, PublisherDeliveryChoice } from "../../formats/contract.js";
 import type { InstanceRegistries } from "../../core/instance-binding.js";
@@ -218,7 +218,7 @@ function NamedValueComboBox({ label, value, onChange, ids, parent, names, isRequ
   const [editing, setEditing] = useState<{ readonly id: string; readonly text: string }>();
   const options = ids.map(id => ({ id, label: valueName(names, parent, id, label) }));
   const inputValue = editing?.id === value ? editing.text : value ? valueName(names, parent, value, label) : "";
-  return <ComboBox label={label} isRequired={isRequired} allowsCustomValue placeholder={placeholder} selectedKey={ids.includes(value) ? value : null} inputValue={inputValue}
+  return <StockCombobox label={label} isRequired={isRequired} allowsCustomValue placeholder={placeholder} selectedKey={ids.includes(value) ? value : null} inputValue={inputValue}
     onSelectionChange={key => {
       if (key === null) return;
       const id = String(key);

@@ -1,7 +1,7 @@
 import { CalendarDate } from "@internationalized/date";
 import type { AlertProps, AvatarProps, SkeletonProps } from "../components/index.js";
 import { ALERT_TONE, SKELETON_SHAPE } from "../components/surface-tones.js";
-import type { ComboBoxOption } from "../components/ComboBox.js";
+import type { StockComboboxOption } from "../blocks/stock-combobox.js";
 import type { LogomarkProps } from "../components/Logomark.js";
 import type { MeterProps } from "../components/Meter.js";
 import type { ProgressBarProps } from "../components/ProgressBar.js";
@@ -141,7 +141,7 @@ const selectOptions: readonly StockSelectOption[] = [
   { id: "published", label: "Published" },
   { id: "archived", label: "Archived" },
 ];
-const assignees: readonly ComboBoxOption[] = people.slice(0, 5).map(person => ({ id: person.id, label: person.name }));
+const assignees: readonly StockComboboxOption[] = people.slice(0, 5).map(person => ({ id: person.id, label: person.name }));
 
 const visits = series(4, 10, 30), returns = series(4, 4, 14);
 

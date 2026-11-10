@@ -343,11 +343,14 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
   }
 }
 
-const stockAnatomy: Readonly<Record<string, string>> = {
+/** Package exports that are the stock shadcn@aria modules, drawn from their stock source sample. */
+export const componentSpecimenStockAnatomy: Readonly<Record<string, string>> = {
   "./components#Select": "components/select/select.tsx#Select",
   "./components#Switch": "components/switch/switch.tsx#Switch",
   "./components#RadioGroup": "components/radio-group/radio-group.tsx#RadioGroup",
   "./components#Calendar": "components/calendar/calendar.tsx#Calendar",
+  "./components#ComboBox": "components/combo-box/combobox.tsx#Combobox",
+  "./components#Slider": "components/slider/slider.tsx#Slider",
 };
 
 /** Why sample data cannot draw this export (`./shell#Brandmark`), or undefined when it can. */
@@ -371,8 +374,8 @@ export const componentSpecimenStockOverlays: Readonly<Record<string, string>> = 
 export function componentSpecimenSample(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
   if (!key.startsWith("./")) return sourceSample(key, exports);
   if (Object.hasOwn(componentSpecimenStockOverlays, key)) return sourceSample(componentSpecimenStockOverlays[key]!, exports);
-  // The package Select, Switch, RadioGroup and Calendar are the stock shadcn@aria modules, drawn with their own barrel-exported parts.
-  if (Object.hasOwn(stockAnatomy, key)) return sourceSample(stockAnatomy[key]!, exports);
+  // The package Select, Switch, RadioGroup, Calendar, ComboBox and Slider are the stock shadcn@aria modules, drawn with their own barrel-exported parts.
+  if (Object.hasOwn(componentSpecimenStockAnatomy, key)) return sourceSample(componentSpecimenStockAnatomy[key]!, exports);
   if (key === "./components#Table") return table(exports);
   // override: field-host-control. Field's contract is a render prop that hands its label, description and ids to
   // a host-owned native control, so its specimen is that native control.

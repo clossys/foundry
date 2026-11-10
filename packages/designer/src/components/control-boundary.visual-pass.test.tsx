@@ -4,12 +4,12 @@ import { DatePicker, Group } from "react-aria-components";
 import { describe, expect, it } from "vitest";
 import { buttonClassName } from "./button-classes.js";
 import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
-import { ComboBox } from "./ComboBox.js";
 import { DateField } from "./DateField.js";
 import { NumberField } from "./NumberField.js";
 import { RadioGroup, RadioGroupItem } from "./preview-runtime/components/radio-group/radio-group.js";
 import { SearchField } from "./SearchField.js";
 import { StockSelect } from "../blocks/stock-select.js";
+import { StockCombobox } from "../blocks/stock-combobox.js";
 import { Switch } from "./preview-runtime/components/switch/switch.js";
 import { Textarea } from "./Textarea.js";
 import { TextField } from "./TextField.js";
@@ -36,7 +36,6 @@ const fields: Array<[string, Mount, Mount]> = [
   ["TextField", () => { render(<TextField label="Name" />); return screen.getByRole("textbox"); }, () => { render(<TextField label="Name" isInvalid />); return screen.getByRole("textbox"); }],
   ["Textarea", () => { render(<Textarea label="Notes" />); return screen.getByRole("textbox"); }, () => { render(<Textarea label="Notes" isInvalid />); return screen.getByRole("textbox"); }],
   ["SearchField", () => { render(<SearchField label="Search" />); return screen.getByRole("searchbox"); }, () => { render(<SearchField label="Search" isInvalid />); return screen.getByRole("searchbox"); }],
-  ["ComboBox", () => { render(<ComboBox label="Fruit" options={OPTIONS} />); return screen.getByRole("combobox").parentElement; }, () => { render(<ComboBox label="Fruit" options={OPTIONS} isInvalid />); return screen.getByRole("combobox").parentElement; }],
   ["NumberField", () => { render(<NumberField {...names} label="Qty" />); return screen.getByRole("textbox").closest("[role=group]"); }, () => { render(<NumberField {...names} label="Qty" isInvalid />); return screen.getByRole("textbox").closest("[role=group]"); }],
   ["DateField", () => { render(<DateField label="Start" defaultValue={new CalendarDate(2024, 1, 15)} />); return screen.getByRole("group", { name: /Start/ }); }, () => { render(<DateField label="Start" defaultValue={new CalendarDate(2024, 1, 15)} isInvalid />); return screen.getByRole("group", { name: /Start/ }); }],
 ];
@@ -53,6 +52,7 @@ describe("control boundary line (VF-8)", () => {
 
   it.each([
     ["Select", (isInvalid: boolean) => { render(<StockSelect label="Fruit" options={OPTIONS} isInvalid={isInvalid} errorMessage="Pick a fruit" />); return screen.getByRole("button", { name: /Fruit/ }); }],
+    ["ComboBox", (isInvalid: boolean) => { render(<StockCombobox label="Fruit" options={OPTIONS} isInvalid={isInvalid} errorMessage="Pick a fruit" />); return screen.getByRole("combobox", { name: /Fruit/ }); }],
   ] as const)("%s: the stock control is named by its field label and carries the invalid state with its error", (_name, mount) => {
     const rest = mount(false);
     expect(rest).toHaveAccessibleName(/Fruit/);

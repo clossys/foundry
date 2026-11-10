@@ -282,6 +282,8 @@ export { StockItem } from "./items/StockItem.js";
 export type { StockItemProps } from "./items/StockItem.js";
 export { StockSelect } from "./stock-select.js";
 export type { StockSelectProps, StockSelectOption } from "./stock-select.js";
+export { StockCombobox } from "./stock-combobox.js";
+export type { StockComboboxProps, StockComboboxOption } from "./stock-combobox.js";
 export { Tree } from "./tree/Tree.js";
 export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.js";

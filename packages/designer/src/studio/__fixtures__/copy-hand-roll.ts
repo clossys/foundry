@@ -62,6 +62,8 @@ export function expectOnlyResolvedCopy(container: HTMLElement) {
   for (const element of container.querySelectorAll("[aria-label],[aria-valuetext],[title],[placeholder]")) {
     for (const name of ["aria-label", "aria-valuetext", "title", "placeholder"]) {
       const value = element.getAttribute(name)?.trim();
+      // The stock shadcn@aria slider speaks its number in react-aria's Intl format (R2F-33c): data, not copy, so it may carry no letters.
+      if (value && name === "aria-valuetext" && element.matches('[data-slot="slider-thumb"] input[type="range"]')) { expect(value, `${name}: ${value}`).toMatch(/^[^\p{L}]+$/u); continue; }
       if (value) expect(value, `${name}: ${value}`).toMatch(/^(?:\[\[st\.[a-z0-9]+\]\]\s*)+$/);
     }
   }

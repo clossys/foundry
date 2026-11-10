@@ -65,19 +65,18 @@
         "selection.single": "./components#Slider"
       },
       "props": [
+        "aria-label",
+        "aria-labelledby",
         "className",
         "defaultValue",
         "formatOptions",
         "isDisabled",
-        "label",
         "maxValue",
         "minValue",
         "onChange",
         "onChangeEnd",
         "orientation",
-        "showValue",
         "step",
-        "thumbLabels",
         "value"
       ],
       "rac": {

@@ -267,7 +267,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("Select", "SelectValue", "Button", "Popover", "ListBox", "ListBoxItem", "Label", "Text", "FieldError"),
     disposition: "keep",
   }),
-  onMain("ComboBox", ["src/components/ComboBox.tsx"], {
+  onMain("ComboBox", ["src/components/preview-runtime/components/combo-box/combobox.tsx"], {
     id: "enter.combo-box",
     label: "Combo box",
     racBase: rac("ComboBox", "Input", "Button", "Popover", "ListBox", "ListBoxItem", "Label", "Text", "FieldError"),
@@ -295,7 +295,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("NumberField"),
     disposition: "finish",
   }),
-  onMain("Slider", ["src/components/Slider.tsx"], {
+  onMain("Slider", ["src/components/preview-runtime/components/slider/slider.tsx"], {
     id: "enter.slider",
     label: "Slider",
     racBase: rac("Slider", "SliderTrack", "SliderFill", "SliderThumb", "SliderOutput"),

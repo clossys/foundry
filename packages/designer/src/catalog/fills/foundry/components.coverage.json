@@ -255,6 +255,7 @@
     {
       "missing": [],
       "notes": [
+        "The stock shadcn@aria combobox over ComboboxInput, ComboboxContent, ComboboxList and ComboboxItem; it has no label part, so its name is aria-label or aria-labelledby (blocks StockCombobox).",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.combo-box",
@@ -713,7 +714,7 @@
     {
       "missing": [],
       "notes": [
-        "A range is a value array with one thumbLabels name per thumb; the fill spans the selected range. Source and runtime qualification remain unmeasured.",
+        "The stock shadcn@aria slider: a value array is a range with one thumb per value; it has no label or output part, so its name is aria-label or aria-labelledby and its value text is the formatOptions Intl format.",
         "Frozen reads omit source-consumed themes.radius, themes.foreground, themes.font-sans; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],

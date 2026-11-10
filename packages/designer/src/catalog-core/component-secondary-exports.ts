@@ -3,6 +3,7 @@ import { CatalogError } from "./api.js";
 import type { ComponentCandidate, ComponentFile } from "./resolve-components.js";
 import { sha256 } from "./digest.js";
 import { componentSourceValues } from "./component-source-values.js";
+import { componentSourceProof } from "./component-source-proofs.js";
 
 type Secondary = NonNullable<ComponentCandidate["secondaryExports"]>[number];
 const refuse = (): never => { throw new CatalogError("components: unsupported secondary export source or inventory"); };
@@ -76,8 +77,14 @@ export function componentSecondaryExports(fill: ComponentCandidate, files: reado
   const entry = files.find(file => file.path === path);
   if (!entry) return refuse();
   const selected = selectedFunctionSources[path];
-  const proof = selected && sha256(entry.content) === selected.sha256
+  // Unmodified stock bytes carry a generated TypeScript AST proof keyed by their sha256, applied only to the fill's own
+  // output receipt at this path (a relocated receipt has none); any other bytes use the bounded grammar.
+  const digest = sha256(entry.content);
+  const receipted = fill.outputSha256?.some(receipt => receipt.path === path && receipt.sha256 === digest) === true;
+  const stock = receipted ? componentSourceProof(path, entry.content) : undefined;
+  const proof = selected && digest === selected.sha256
     ? { functions: new Set(selected.functions), exports: new Set(selected.functions), types: new Set<string>() }
+    : stock ? { functions: new Set(stock.functions), exports: new Set(stock.exports), types: new Set<string>() }
     : componentSourceValues(entry.content);
   for (const row of rows) if (!proof.exports.has(row.export) || !proof.functions.has(row.export)) return refuse();
   return rows;

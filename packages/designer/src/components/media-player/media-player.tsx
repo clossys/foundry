@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { ImageResource, VideoResource } from "../../catalog-assets/media.js";
 import { Button } from "../preview-runtime/components/button/button.js";
 import { Toggle as ToggleButton } from "../preview-runtime/components/toggle-button/toggle.js";
-import { Slider } from "../Slider.js";
+import { Slider } from "../preview-runtime/components/slider/slider.js";
 import { Icon } from "../preview-runtime/components/icon/icon.js";
 import { ChevronRight } from "../../icons/ChevronRight.js";
 import { SemanticContent } from "../SemanticContent.js";
@@ -149,8 +149,8 @@ function MediaPlayerSession({ video, poster, passage, captions = video.captions,
       {started ? <Button variant="secondary" onPress={togglePlayback}>{playing ? passage.pause : passage.play}</Button> : null}
       <ToggleButton isSelected={isMuted} onChange={setMuted}>{passage.mute}</ToggleButton>
       {captions ? <ToggleButton isSelected={captionsOn} onChange={setCaptionsOn}>{passage.captions}</ToggleButton> : null}
-      {controls === "full" ? <Slider label={passage.seek} minValue={0} maxValue={duration || 1} step={5} value={position}
-        isDisabled={duration <= 0} showValue={false} onChange={seek} /> : null}
+      {controls === "full" ? <Slider aria-label={passage.seek} minValue={0} maxValue={duration || 1} step={5} value={position}
+        isDisabled={duration <= 0} onChange={seek} /> : null}
     </div>}
   </div>;
 }
