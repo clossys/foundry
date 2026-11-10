@@ -82,7 +82,9 @@
     "themes.spacing"
   ],
   "table": [],
-  "tabs": [],
+  "tabs": [
+    "themes.spacing"
+  ],
   "tag-group": [],
   "text-field": [],
   "toast": [],

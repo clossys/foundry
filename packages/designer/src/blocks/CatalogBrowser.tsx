@@ -5,7 +5,7 @@ import { SearchField } from "../components/SearchField.js";
 import { StockSelect } from "./stock-select.js";
 import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
 import { StockSwitch } from "./stock-switch.js";
-import { Tabs } from "../components/Tabs.js";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/preview-runtime/components/tabs/tabs.js";
 import { cx } from "../components/internal/cx.js";
 import { CatalogWorkspace } from "./CatalogWorkspace.js";
 import { EmptyState } from "./EmptyState.js";
@@ -120,12 +120,12 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
   return <section role="region" aria-label={label} dir={dir} className={cx("flex h-full min-h-0 min-w-0 flex-col gap-md text-ink-primary", className)}>
     {catalogs.length > 1 ? <Tabs selectedKey={active.kind} className="min-h-0 flex-1"
       onSelectionChange={kind => { fromTree.current = null; select({ catalog: String(kind), entryId: null }); }}>
-      <Tabs.List aria-label={labels.catalogs}>
-        {catalogs.map(item => <Tabs.Tab key={item.kind} id={item.kind}>
+      <TabsList aria-label={labels.catalogs}>
+        {catalogs.map(item => <TabsTrigger key={item.kind} id={item.kind}>
           <span className="inline-flex items-center gap-xs">{own(kinds, item.kind)!.label} <Badge {...BADGE_TONE.neutral}>{item.entries.length}</Badge></span>
-        </Tabs.Tab>)}
-      </Tabs.List>
-      {catalogs.map(item => <Tabs.Panel key={item.kind} id={item.kind} className="flex min-h-0 flex-1 flex-col">{item.kind === active.kind ? body : null}</Tabs.Panel>)}
+        </TabsTrigger>)}
+      </TabsList>
+      {catalogs.map(item => <TabsContent key={item.kind} id={item.kind} className="flex min-h-0 flex-1 flex-col">{item.kind === active.kind ? body : null}</TabsContent>)}
     </Tabs> : body}
   </section>;
 }

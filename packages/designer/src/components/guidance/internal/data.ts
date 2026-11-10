@@ -1335,18 +1335,18 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use Meter for a measurement; Spinner for compact indeterminate activity.",
   "content": "Name the operation and provide truthful completion values or an indeterminate state.",
   "anatomy": "An operation label and a progress track with an optional value readout.",
-  "composition": "In a consumer-owned upload-status block, connect ProgressBar to actual transferred work.",
+  "composition": "In a consumer-owned upload-status block, connect the stock Progress to actual transferred work and name it with ProgressLabel.",
   "accessibility": "Indeterminate progress must not announce a fabricated numeric completion value."
 },
 {
   "exportName": "ProgressBar",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry exports the stock shadcn@aria Progress under the ProgressBar name.",
   "options": [
     {
       "prop": "isIndeterminate",
       "label": "Completion knowledge",
-      "purpose": "Completion knowledge selects the existing ProgressBar isIndeterminate behavior.",
+      "purpose": "Completion knowledge selects the stock Progress isIndeterminate behavior.",
       "values": [
         {
           "value": false,
@@ -1365,7 +1365,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/ProgressBar.tsx"),
+}, "src/components/preview-runtime/components/progress-bar/progress.tsx"),
   "inform.spinner": entry(
 {
   "purpose": "Signal compact indeterminate activity.",
@@ -1843,18 +1843,18 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use Link for route navigation; Disclosure for inline supplementary sections.",
   "content": "Give each tab a distinct label and match it to the corresponding panel identity.",
   "anatomy": "A repeated set of tab labels and one associated panel per label.",
-  "composition": "In a consumer-owned account-details block, compose Tabs.List, multiple Tabs.Tab items and matched Tabs.Panel content.",
-  "accessibility": "Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout, indicator edge and keyboard navigation."
+  "composition": "In a consumer-owned account-details block, compose TabsList, multiple TabsTrigger items and matched TabsContent panels.",
+  "accessibility": "Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout and keyboard navigation."
 },
 {
   "exportName": "Tabs",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the list to a row with bottom indicators or a column with start-edge indicators and forwards matching semantics to AriaTabs. A single-option specimen cannot prove panel switching.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry exports the stock shadcn@aria Tabs, TabsList, TabsTrigger and TabsContent. Orientation stacks the list as a row or a column and forwards matching semantics to the react-aria-components Tabs. A single-option specimen cannot prove panel switching.",
   "options": [
     {
       "prop": "isDisabled",
       "label": "Availability",
-      "purpose": "Availability selects the existing Tabs isDisabled behavior.",
+      "purpose": "Availability selects the stock Tabs isDisabled behavior.",
       "values": [
         {
           "value": false,
@@ -1874,15 +1874,15 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     {
       "prop": "orientation",
       "label": "ARIA orientation",
-      "purpose": "Orientation aligns the list layout and indicator edge with keyboard semantics.",
+      "purpose": "Orientation aligns the list layout with keyboard semantics.",
       "values": [
         {
           "value": "horizontal",
-          "purpose": "Horizontal list with bottom indicators and keyboard semantics."
+          "purpose": "Horizontal list with matching keyboard semantics."
         },
         {
           "value": "vertical",
-          "purpose": "Vertical list with start-edge indicators and keyboard semantics."
+          "purpose": "Vertical list with matching keyboard semantics."
         }
       ],
       "applicability": "Layout and keyboard semantics follow the supplied orientation.",
@@ -1893,7 +1893,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Tabs.tsx"),
+}, "src/components/preview-runtime/components/tabs/tabs.tsx"),
   "depict.bar-chart": entry(
 {
   "purpose": "Compare magnitudes across discrete categories.",
@@ -3384,7 +3384,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "inform.progress-bar": {
     "exportName": "ProgressBar",
-    "source": "src/components/ProgressBar.tsx",
+    "source": "src/components/preview-runtime/components/progress-bar/progress.tsx",
     "options": [
       {
         "prop": "isIndeterminate",
@@ -3397,8 +3397,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/ProgressBar.tsx",
-          "evidence": "<AriaProgressBar {...rest}"
+          "source": "src/components/preview-runtime/components/progress-bar/progress.tsx",
+          "evidence": "data-slot=\"progress\""
         }
       }
     ],
@@ -3413,8 +3413,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "evidence": "--color-surface-sunken:",
           "via": [
             {
-              "source": "src/components/ProgressBar.tsx",
-              "evidence": "bg-surface-sunken"
+              "source": "src/components/preview-runtime/components/progress-bar/progress.tsx",
+              "evidence": "bg-(--color-surface-sunken)"
             }
           ]
         }
@@ -3812,7 +3812,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "reveal.tabs": {
     "exportName": "Tabs",
-    "source": "src/components/Tabs.tsx",
+    "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
     "options": [
       {
         "prop": "isDisabled",
@@ -3825,8 +3825,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Tabs.tsx",
-          "evidence": "AriaTabs"
+          "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+          "evidence": "<TabsPrimitive"
         }
       },
       {
@@ -3840,8 +3840,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Tabs.tsx",
-          "evidence": "<AriaTabs {...rest}"
+          "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+          "evidence": "data-slot=\"tabs\""
         }
       }
     ],
@@ -3850,14 +3850,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-focus-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
           "via": [
             {
-              "source": "src/components/Tabs.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
             }
           ]
         }

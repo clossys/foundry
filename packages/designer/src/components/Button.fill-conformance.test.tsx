@@ -11,7 +11,6 @@ import { StockSelect as Select } from "../blocks/stock-select.js";
 import { Toggle } from "./toggle-button/toggle.js";
 import { Toggle as StockToggle } from "./preview-runtime/components/toggle-button/toggle.js";
 import { ToggleGroup, ToggleGroupItem } from "./ToggleGroup.js";
-import { Tabs } from "./Tabs.js";
 import { Popover, PopoverTrigger } from "./preview-runtime/components/popover/popover.js";
 import { X } from "../icons/X.js";
 import { CommandMenu as CommandMenuBase } from "../blocks/CommandMenu.js";
@@ -27,7 +26,6 @@ const cases: [string, (disabled: boolean) => ReactElement, () => HTMLElement][] 
   ["SearchField", d => <SearchField isDisabled={d} label={name} placeholder="Search here" />, () => screen.getByRole("searchbox", { name })],
   ["Toggle", d => <Toggle isDisabled={d}>{name}</Toggle>, () => screen.getByRole("button", { name })],
   ["ToggleGroup", d => <ToggleGroup isDisabled={d} aria-label="Format" selectionMode="multiple"><ToggleGroupItem id="one">{name}</ToggleGroupItem></ToggleGroup>, () => screen.getByRole("button", { name })],
-  ["Tabs", d => <Tabs><Tabs.List aria-label="Sections"><Tabs.Tab id="one" isDisabled={d}>{name}</Tabs.Tab></Tabs.List><Tabs.Panel id="one">Panel</Tabs.Panel></Tabs>, () => screen.getByRole("tab", { name })],
   ["Popover trigger", d => <PopoverTrigger><IconButton isDisabled={d} icon={X} label={name} /><Popover aria-label="Details">Details</Popover></PopoverTrigger>, () => screen.getByRole("button", { name })],
 ];
 const layer = (control: HTMLElement) => control.style.backgroundImage;
@@ -161,13 +159,6 @@ describe("control fill conformance", () => {
     await user.click(trigger);
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(onSelectionChange).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(["horizontal", "vertical"] as const)("%s tabs have a separate indicator only on the selected tab", orientation => {
-    render(<Tabs orientation={orientation}><Tabs.List aria-label="Sections"><Tabs.Tab id="a">A</Tabs.Tab><Tabs.Tab id="b">B</Tabs.Tab></Tabs.List><Tabs.Panel id="a">A panel</Tabs.Panel><Tabs.Panel id="b">B panel</Tabs.Panel></Tabs>);
-    expect(screen.getByRole("tab", { name: "A" }).querySelector("[data-tab-indicator]")).not.toBeNull();
-    expect(screen.getByRole("tab", { name: "B" }).querySelector("[data-tab-indicator]")).toBeNull();
-    for (const tab of screen.getAllByRole("tab")) expect(tab).not.toHaveClass("border-b-2", "border-s-2");
   });
 
   it("command results compose states, use disabled ink and suppress descriptions repeating the group", async () => {

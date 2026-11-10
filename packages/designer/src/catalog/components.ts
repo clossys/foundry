@@ -187,7 +187,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("Breadcrumbs", "Breadcrumb", "Link"),
     disposition: "keep",
   }),
-  onMain("Tabs", ["src/components/Tabs.tsx"], {
+  onMain("Tabs", ["src/components/preview-runtime/components/tabs/tabs.tsx"], {
     id: "reveal.tabs",
     label: "Tabs",
     racBase: rac("Tabs", "TabList", "Tab", "TabPanel"),
@@ -592,7 +592,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Feedback / Progress and loading
-  onMain("ProgressBar", ["src/components/ProgressBar.tsx"], {
+  onMain("ProgressBar", ["src/components/preview-runtime/components/progress-bar/progress.tsx"], {
     id: "inform.progress-bar",
     label: "Progress bar",
     racBase: rac("ProgressBar", "Label"),

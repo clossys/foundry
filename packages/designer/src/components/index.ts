@@ -113,8 +113,8 @@ export type MenuProps = import("react").ComponentProps<typeof import("./preview-
 export { Dialog, DialogTrigger, DialogClose, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "./preview-runtime/components/dialog/dialog.js";
 export type DialogProps = import("react").ComponentProps<typeof import("./preview-runtime/components/dialog/dialog.js").Dialog>;
 
-export { Tabs } from "./Tabs.js";
-export type { TabsProps, TabsListProps, TabsTabProps, TabsPanelProps } from "./Tabs.js";
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./preview-runtime/components/tabs/tabs.js";
+export type TabsProps = import("react").ComponentProps<typeof import("./preview-runtime/components/tabs/tabs.js").Tabs>;
 
 export { Table, TableHeader, TableHead, TableBody, TableRow, TableCell, TableFooter, TableCaption } from "./preview-runtime/components/table/table.js";
 export type TableProps = import("react").ComponentProps<typeof import("./preview-runtime/components/table/table.js").Table>;
@@ -156,8 +156,8 @@ export type { FileTriggerProps } from "./preview-runtime/components/file-trigger
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./preview-runtime/components/disclosure/accordion.js";
 export type AccordionProps = import("react").ComponentProps<typeof import("./preview-runtime/components/disclosure/accordion.js").Accordion>;
 
-export { ProgressBar } from "./ProgressBar.js";
-export type { ProgressBarProps } from "./ProgressBar.js";
+export { Progress as ProgressBar } from "./preview-runtime/components/progress-bar/progress.js";
+export type ProgressBarProps = import("react").ComponentProps<typeof import("./preview-runtime/components/progress-bar/progress.js").Progress>;
 
 export { Separator } from "./preview-runtime/components/separator/separator.js";
 export type SeparatorProps = import("react").ComponentProps<typeof import("./preview-runtime/components/separator/separator.js").Separator>;
