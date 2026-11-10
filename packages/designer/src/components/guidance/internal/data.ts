@@ -591,7 +591,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "Select",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. options is required data. Placeholder defaults to Select an option. isInvalid forwards to AriaSelect and the trigger is associated with rendered error text.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Compose SelectTrigger, SelectValue, SelectContent and SelectItem; isInvalid and isDisabled reach the react-aria Select through its forwarded props.",
   "options": [
     {
       "prop": "isDisabled",
@@ -635,7 +635,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Select.tsx"),
+}, "src/components/preview-runtime/components/select/select.tsx"),
   "enter.combo-box": entry(
 {
   "purpose": "Choose one value by typing to narrow a known option set.",
@@ -773,7 +773,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Checkbox.tsx"),
+}, "src/components/preview-runtime/components/checkbox/checkbox.tsx"),
   "enter.switch": entry(
 {
   "purpose": "Turn an immediately applied setting on or off.",
@@ -832,7 +832,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Switch.tsx"),
+}, "src/components/preview-runtime/components/switch/switch.tsx"),
   "enter.radio-group": entry(
 {
   "purpose": "Choose one value while keeping a small option set visible.",
@@ -841,13 +841,13 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use Select for compact choice; Checkbox for independent options.",
   "content": "Name the group and each choice; optional per-choice descriptions explain differences.",
   "anatomy": "One group label and repeated mutually exclusive labelled choices.",
-  "composition": "In a consumer-owned preference-selection block, render at least two RadioGroup.Radio choices.",
-  "accessibility": "Use the group’s label and roving keyboard selection; orientation aligns option layout and keyboard navigation."
+  "composition": "In a consumer-owned preference-selection block, render at least two RadioGroupItem choices.",
+  "accessibility": "Use the group’s label and roving keyboard selection; orientation sets the arrow-key direction of keyboard navigation."
 },
 {
   "exportName": "RadioGroup",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the options to a row or column and forwards matching semantics to AriaRadioGroup. A single-option specimen cannot prove selection differences.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation forwards to the react-aria RadioGroup for keyboard semantics; the stock grid lays the items out in one column either way. A single-option specimen cannot prove selection differences.",
   "options": [
     {
       "prop": "isDisabled",
@@ -903,7 +903,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
           "purpose": "Vertical option layout and keyboard semantics."
         }
       ],
-      "applicability": "Layout and keyboard semantics follow the supplied orientation.",
+      "applicability": "Keyboard semantics follow the supplied orientation; the stock layout does not change.",
       "support": {
         "state": "implemented",
         "reason": "The component uses orientation for layout and forwards it to the ARIA primitive."
@@ -911,7 +911,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/RadioGroup.tsx"),
+}, "src/components/preview-runtime/components/radio-group/radio-group.tsx"),
   "enter.file-trigger": entry(
 {
   "purpose": "Start device file selection from an authored trigger.",
@@ -1044,32 +1044,36 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "Badge",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry tones (neutral, success, warning, danger, info) are caller data in BADGE_TONE: each is a stock variant plus at most one token class.",
   "options": [
     {
       "prop": "variant",
-      "label": "Label tone",
-      "purpose": "Label tone selects the existing Badge variant behavior.",
+      "label": "Label style",
+      "purpose": "Label style selects the stock Badge variant.",
       "values": [
         {
-          "value": "neutral",
-          "purpose": "Neutral category."
+          "value": "default",
+          "purpose": "Action-filled label."
         },
         {
-          "value": "success",
-          "purpose": "Success label."
+          "value": "secondary",
+          "purpose": "Tonal neutral label."
         },
         {
-          "value": "warning",
-          "purpose": "Warning label."
+          "value": "destructive",
+          "purpose": "Danger-tinted label."
         },
         {
-          "value": "danger",
-          "purpose": "Danger label."
+          "value": "outline",
+          "purpose": "Bordered label without a fill."
         },
         {
-          "value": "info",
-          "purpose": "Information label."
+          "value": "ghost",
+          "purpose": "Unfilled label that gains hover emphasis."
+        },
+        {
+          "value": "link",
+          "purpose": "Text label styled as a link."
         }
       ],
       "applicability": "Effective for this component when supplied.",
@@ -1080,7 +1084,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Badge.tsx"),
+}, "src/components/preview-runtime/components/badge/badge.tsx"),
   "inform.banner": entry(
 {
   "purpose": "Deliver a persistent inline message with a meaningful severity.",
@@ -1088,35 +1092,27 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "avoidWhen": "The message is a queued transient notification or neutral content without severity.",
   "alternatives": "Use a consumer-owned toast flow for transient notices; Card for ordinary grouped content.",
   "content": "Write the message so its severity is understandable without its status color.",
-  "anatomy": "One persistent message region with an optional dismissal affordance.",
-  "composition": "In a consumer-owned form-status block, place Banner above the affected fields and let the owner handle dismissal.",
+  "anatomy": "One persistent message region with a title, a description and an optional action slot.",
+  "composition": "In a consumer-owned form-status block, place the Alert above the affected fields and let the owner handle any action.",
   "accessibility": "Danger is an assertive alert; other severities are polite status messages, not independently configurable live-region modes."
 },
 {
-  "exportName": "Banner",
+  "exportName": "Alert",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry severities (info, success, warning, danger) are caller data in ALERT_TONE: a stock variant, role and aria-live, plus at most one token class.",
   "options": [
     {
       "prop": "variant",
-      "label": "Message severity",
-      "purpose": "Message severity selects the existing Banner variant behavior.",
+      "label": "Message style",
+      "purpose": "Message style selects the stock Alert variant.",
       "values": [
         {
-          "value": "info",
-          "purpose": "Polite information message."
+          "value": "default",
+          "purpose": "Neutral message on a raised surface."
         },
         {
-          "value": "success",
-          "purpose": "Polite success message."
-        },
-        {
-          "value": "warning",
-          "purpose": "Polite warning message."
-        },
-        {
-          "value": "danger",
-          "purpose": "Destructive danger appearance coupled to an assertive alert."
+          "value": "destructive",
+          "purpose": "Danger-coloured message."
         }
       ],
       "applicability": "Effective for this component when supplied.",
@@ -1132,15 +1128,15 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       "props": [
         "variant"
       ],
-      "reason": "danger couples danger appearance with alert/assertive; other severities use status/polite. No independent live-region option.",
+      "reason": "The stock Alert has no live-region option; ALERT_TONE derives danger as destructive with alert/assertive and every other severity as default with status/polite.",
       "enforcement": "derived",
       "evidence": {
-        "source": "src/components/Banner.tsx",
-        "evidence": "aria-live={isAssertive ? \"assertive\" : \"polite\"}"
+        "source": "src/components/surface-tones.ts",
+        "evidence": "danger: { variant: \"destructive\", role: \"alert\", \"aria-live\": \"assertive\" }"
       }
     }
   ]
-}, "src/components/Banner.tsx"),
+}, "src/components/preview-runtime/components/banner/alert.tsx"),
   "inform.chip": entry(
 {
   "purpose": "Represent a compact label with an optional removal action.",
@@ -1487,35 +1483,10 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "Skeleton",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
-  "options": [
-    {
-      "prop": "shape",
-      "label": "Placeholder shape",
-      "purpose": "Placeholder shape selects the existing Skeleton shape behavior.",
-      "values": [
-        {
-          "value": "text",
-          "purpose": "One text-height line."
-        },
-        {
-          "value": "block",
-          "purpose": "Block filling its authored container."
-        },
-        {
-          "value": "circle",
-          "purpose": "Circular placeholder requiring authored size."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock Skeleton has no options; a Foundry shape (text, block, circle) is caller size data in SKELETON_SHAPE.",
+  "options": [],
   "constraints": []
-}, "src/components/Skeleton.tsx"),
+}, "src/components/preview-runtime/components/skeleton/skeleton.tsx"),
   "group.card": entry(
 {
   "purpose": "Give a small unit of related content a coherent surface.",
@@ -1530,48 +1501,20 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "Card",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry surfaces (raised, outline, plate) are caller className data in CARD_SURFACE; raised is the stock card.",
   "options": [
     {
-      "prop": "ground",
-      "label": "Surrounding ground",
-      "purpose": "Surrounding ground selects the existing Card ground behavior.",
+      "prop": "size",
+      "label": "Card density",
+      "purpose": "Card density selects the stock Card size.",
       "values": [
         {
-          "value": "base",
-          "purpose": "Page ground."
+          "value": "default",
+          "purpose": "Stock card spacing."
         },
         {
-          "value": "sunken",
-          "purpose": "Sunken section ground."
-        },
-        {
-          "value": "inverse",
-          "purpose": "Inverse section ground."
-        }
-      ],
-      "applicability": "Accepted but ignored for raised; read by plate and outline.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    },
-    {
-      "prop": "variant",
-      "label": "Surface treatment",
-      "purpose": "Surface treatment selects the existing Card variant behavior.",
-      "values": [
-        {
-          "value": "raised",
-          "purpose": "Raised fill and elevation."
-        },
-        {
-          "value": "plate",
-          "purpose": "Opposite ground without an edge."
-        },
-        {
-          "value": "outline",
-          "purpose": "Panel edge without a shadow."
+          "value": "sm",
+          "purpose": "Compact card spacing."
         }
       ],
       "applicability": "Effective for this component when supplied.",
@@ -1581,29 +1524,8 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       }
     }
   ],
-  "constraints": [
-    {
-      "kind": "effective-when",
-      "props": [
-        "ground",
-        "variant"
-      ],
-      "reason": "raised ignores ground; plate and outline consume it.",
-      "enforcement": "ignored",
-      "evidence": {
-        "source": "src/components/Card.tsx",
-        "evidence": "PLATE_CLASSES[ground]"
-      },
-      "effectiveWhen": {
-        "prop": "variant",
-        "values": [
-          "plate",
-          "outline"
-        ]
-      }
-    }
-  ]
-}, "src/components/Card.tsx"),
+  "constraints": []
+}, "src/components/preview-runtime/components/card/card.tsx"),
   "group.grid-list": entry({
     purpose: "Work through interactive records with independent selection and actions.",
     useWhen: "Records have flexible content, selection controls or secondary actions within each row.",
@@ -1734,10 +1656,10 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "useWhen": "A compact identity cue helps readers recognize an associated entity.",
   "avoidWhen": "The image is explanatory content, a general illustration or the only identification text needed.",
   "alternatives": "Use an ordinary content image for illustration; pair Avatar with a visible name in a consumer-owned identity block.",
-  "content": "Supply the represented entity’s name and an optional image source.",
+  "content": "Supply the represented entity’s name, its initials and an optional image source.",
   "anatomy": "One identity image or its initials alternative.",
   "composition": "In a consumer-owned author block, place Avatar beside the author name and affiliation.",
-  "accessibility": "The same required alt name identifies the image and its load-failure initials fallback."
+  "accessibility": "Give AvatarImage the entity’s name as alt; AvatarFallback shows the initials when the image fails to load."
 },
 {
   "exportName": "Avatar",
@@ -1746,20 +1668,20 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "options": [
     {
       "prop": "size",
-      "label": "Size",
-      "purpose": "Size selects the existing Avatar size behavior.",
+      "label": "Mark size",
+      "purpose": "Mark size selects the stock Avatar size.",
       "values": [
         {
-          "value": "sm",
-          "purpose": "sm size within the existing component scale."
+          "value": "default",
+          "purpose": "Medium identity mark."
         },
         {
-          "value": "md",
-          "purpose": "md size within the existing component scale."
+          "value": "sm",
+          "purpose": "Small identity mark."
         },
         {
           "value": "lg",
-          "purpose": "lg size within the existing component scale."
+          "purpose": "Large identity mark."
         }
       ],
       "applicability": "Effective for this component when supplied.",
@@ -1770,7 +1692,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Avatar.tsx"),
+}, "src/components/preview-runtime/components/avatar/avatar.tsx"),
   "depict.icon": entry(
 {
   "purpose": "Render one symbolic glyph with a consistent visual and naming contract.",
@@ -1822,7 +1744,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       "reason": "decorative true excludes label; informative icons require label with decorative false or omitted.",
       "enforcement": "type",
       "evidence": {
-        "source": "src/components/Icon.tsx",
+        "source": "src/components/preview-runtime/components/icon/icon.tsx",
         "evidence": "decorative: true;"
       },
       "when": {
@@ -1844,7 +1766,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       "reason": "Supply glyph data or inner SVG children, never both; children is content, not a scalar configuration.",
       "enforcement": "type",
       "evidence": {
-        "source": "src/components/Icon.tsx",
+        "source": "src/components/preview-runtime/components/icon/icon.tsx",
         "evidence": "glyph: IconNode; children?: undefined"
       },
       "presence": "exactly-one"
@@ -1857,8 +1779,8 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       "reason": "An informative icon needs label when decorative is false or omitted.",
       "enforcement": "type",
       "evidence": {
-        "source": "src/components/Icon.tsx",
-        "evidence": "label: string;"
+        "source": "src/components/preview-runtime/components/icon/icon.tsx",
+        "evidence": "decorative?: false; label: string"
       },
       "when": {
         "any": [
@@ -1879,7 +1801,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       ]
     }
   ]
-}, "src/components/Icon.tsx"),
+}, "src/components/preview-runtime/components/icon/icon.tsx"),
   "reveal.dialog": entry(
 {
   "purpose": "Focus attention on a modal task that temporarily suspends the page.",
@@ -2920,7 +2842,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "enter.select": {
     "exportName": "Select",
-    "source": "src/components/Select.tsx",
+    "source": "src/components/preview-runtime/components/select/select.tsx",
     "options": [
       {
         "prop": "isDisabled",
@@ -2933,8 +2855,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Select.tsx",
-          "evidence": "AriaSelect"
+          "source": "src/components/preview-runtime/components/select/select.tsx",
+          "evidence": "{...props}"
         }
       },
       {
@@ -2948,8 +2870,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Select.tsx",
-          "evidence": "isInvalid={isInvalid}"
+          "source": "src/components/preview-runtime/components/select/select.tsx",
+          "evidence": "{...props}"
         }
       }
     ],
@@ -2958,14 +2880,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-focus-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
           "via": [
             {
-              "source": "src/components/Select.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/select/select.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
             }
           ]
         }
@@ -3028,7 +2950,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "enter.checkbox": {
     "exportName": "Checkbox",
-    "source": "src/components/Checkbox.tsx",
+    "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
     "options": [
       {
         "prop": "isDisabled",
@@ -3041,8 +2963,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Checkbox.tsx",
-          "evidence": "AriaCheckbox"
+          "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
+          "evidence": "{...props}"
         }
       },
       {
@@ -3056,8 +2978,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Checkbox.tsx",
-          "evidence": "<AriaCheckbox\n      {...rest}"
+          "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
+          "evidence": "{...props}"
         }
       },
       {
@@ -3071,8 +2993,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Checkbox.tsx",
-          "evidence": "renderProps.isIndeterminate"
+          "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
+          "evidence": "{ isSelected, isIndeterminate }"
         }
       }
     ],
@@ -3081,14 +3003,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-focus-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
           "via": [
             {
-              "source": "src/components/Checkbox.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
             }
           ]
         }
@@ -3097,7 +3019,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "enter.switch": {
     "exportName": "Switch",
-    "source": "src/components/Switch.tsx",
+    "source": "src/components/preview-runtime/components/switch/switch.tsx",
     "options": [
       {
         "prop": "isDisabled",
@@ -3110,8 +3032,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Switch.tsx",
-          "evidence": "AriaSwitch"
+          "source": "src/components/preview-runtime/components/switch/switch.tsx",
+          "evidence": "{...props}"
         }
       },
       {
@@ -3125,8 +3047,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Switch.tsx",
-          "evidence": "<AriaSwitch\n      {...rest}"
+          "source": "src/components/preview-runtime/components/switch/switch.tsx",
+          "evidence": "{...props}"
         }
       }
     ],
@@ -3135,14 +3057,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-focus-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
           "via": [
             {
-              "source": "src/components/Switch.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/switch/switch.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
             }
           ]
         }
@@ -3151,7 +3073,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "enter.radio-group": {
     "exportName": "RadioGroup",
-    "source": "src/components/RadioGroup.tsx",
+    "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
     "options": [
       {
         "prop": "isDisabled",
@@ -3164,8 +3086,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/RadioGroup.tsx",
-          "evidence": "AriaRadioGroup"
+          "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+          "evidence": "{...props}"
         }
       },
       {
@@ -3179,8 +3101,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/RadioGroup.tsx",
-          "evidence": "<AriaRadioGroup {...rest}"
+          "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+          "evidence": "{...props}"
         }
       },
       {
@@ -3194,8 +3116,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/RadioGroup.tsx",
-          "evidence": "<AriaRadioGroup {...rest}"
+          "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+          "evidence": "{...props}"
         }
       }
     ],
@@ -3204,14 +3126,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-focus-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
           "via": [
             {
-              "source": "src/components/RadioGroup.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
             }
           ]
         }
@@ -3319,26 +3241,27 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "inform.badge": {
     "exportName": "Badge",
-    "source": "src/components/Badge.tsx",
+    "source": "src/components/preview-runtime/components/badge/badge.tsx",
     "options": [
       {
         "prop": "variant",
         "values": [
-          "neutral",
-          "success",
-          "warning",
-          "danger",
-          "info"
+          "default",
+          "secondary",
+          "destructive",
+          "outline",
+          "ghost",
+          "link"
         ],
         "default": {
           "kind": "value",
-          "value": "neutral",
-          "source": "src/components/Badge.tsx",
-          "evidence": "variant = \"neutral\""
+          "value": "default",
+          "source": "src/components/preview-runtime/components/badge/badge.tsx",
+          "evidence": "variant = \"default\""
         },
         "forwarding": {
-          "source": "src/components/Badge.tsx",
-          "evidence": "VARIANT_CLASSES[variant]"
+          "source": "src/components/preview-runtime/components/badge/badge.tsx",
+          "evidence": "badgeVariants({ variant })"
         }
       }
     ],
@@ -3347,14 +3270,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-surface-sunken",
+          "property": "--color-action",
           "kind": "transitive",
           "source": "styles/theme-keys.css",
-          "evidence": "--color-surface-sunken:",
+          "evidence": "--color-action:",
           "via": [
             {
-              "source": "src/components/Badge.tsx",
-              "evidence": "bg-surface-sunken"
+              "source": "src/components/preview-runtime/components/badge/badge.tsx",
+              "evidence": "bg-(--color-action)"
             }
           ]
         }
@@ -3362,26 +3285,22 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
     }
   },
   "inform.banner": {
-    "exportName": "Banner",
-    "source": "src/components/Banner.tsx",
+    "exportName": "Alert",
+    "source": "src/components/preview-runtime/components/banner/alert.tsx",
     "options": [
       {
         "prop": "variant",
         "values": [
-          "info",
-          "success",
-          "warning",
-          "danger"
+          "default",
+          "destructive"
         ],
         "default": {
-          "kind": "value",
-          "value": "info",
-          "source": "src/components/Banner.tsx",
-          "evidence": "variant = \"info\""
+          "kind": "omitted",
+          "reason": "No local initializer; an omitted variant resolves to default through the alertVariants defaultVariants."
         },
         "forwarding": {
-          "source": "src/components/Banner.tsx",
-          "evidence": "variant === \"danger\""
+          "source": "src/components/preview-runtime/components/banner/alert.tsx",
+          "evidence": "alertVariants({ variant })"
         }
       }
     ],
@@ -3390,14 +3309,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-status-danger-text",
+          "property": "--color-status-danger",
           "kind": "transitive",
           "source": "styles/theme-keys.css",
-          "evidence": "--color-status-danger-text:",
+          "evidence": "--color-status-danger:",
           "via": [
             {
-              "source": "src/components/Banner.server.tsx",
-              "evidence": "text-status-danger-text"
+              "source": "src/components/preview-runtime/components/banner/alert.tsx",
+              "evidence": "text-(--color-status-danger)"
             }
           ]
         }
@@ -3647,40 +3566,21 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "inform.skeleton": {
     "exportName": "Skeleton",
-    "source": "src/components/Skeleton.tsx",
-    "options": [
-      {
-        "prop": "shape",
-        "values": [
-          "text",
-          "block",
-          "circle"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "text",
-          "source": "src/components/Skeleton.tsx",
-          "evidence": "shape = \"text\""
-        },
-        "forwarding": {
-          "source": "src/components/Skeleton.tsx",
-          "evidence": "SHAPE_CLASSES[shape]"
-        }
-      }
-    ],
+    "source": "src/components/preview-runtime/components/skeleton/skeleton.tsx",
+    "options": [],
     "tokens": {
       "coverage": "partial",
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-skeleton-fill",
+          "property": "--color-surface-sunken",
           "kind": "transitive",
           "source": "styles/theme-keys.css",
-          "evidence": "--color-skeleton-fill:",
+          "evidence": "--color-surface-sunken:",
           "via": [
             {
-              "source": "src/components/Skeleton.tsx",
-              "evidence": "bg-skeleton-fill"
+              "source": "src/components/preview-runtime/components/skeleton/skeleton.tsx",
+              "evidence": "bg-(--color-surface-sunken)"
             }
           ]
         }
@@ -3689,42 +3589,23 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "group.card": {
     "exportName": "Card",
-    "source": "src/components/Card.tsx",
+    "source": "src/components/preview-runtime/components/card/card.tsx",
     "options": [
       {
-        "prop": "ground",
+        "prop": "size",
         "values": [
-          "base",
-          "sunken",
-          "inverse"
+          "default",
+          "sm"
         ],
         "default": {
           "kind": "value",
-          "value": "base",
-          "source": "src/components/Card.tsx",
-          "evidence": "ground = \"base\""
+          "value": "default",
+          "source": "src/components/preview-runtime/components/card/card.tsx",
+          "evidence": "size = \"default\""
         },
         "forwarding": {
-          "source": "src/components/Card.tsx",
-          "evidence": "PLATE_CLASSES[ground]"
-        }
-      },
-      {
-        "prop": "variant",
-        "values": [
-          "raised",
-          "plate",
-          "outline"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "raised",
-          "source": "src/components/Card.tsx",
-          "evidence": "variant = \"raised\""
-        },
-        "forwarding": {
-          "source": "src/components/Card.tsx",
-          "evidence": "variant === \"plate\""
+          "source": "src/components/preview-runtime/components/card/card.tsx",
+          "evidence": "data-size={size}"
         }
       }
     ],
@@ -3733,14 +3614,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-border-panel",
+          "property": "--color-surface-raised",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-border-panel,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-surface-raised:",
           "via": [
             {
-              "source": "src/components/Card.tsx",
-              "evidence": "borderWidth: UI_BORDER_PANEL"
+              "source": "src/components/preview-runtime/components/card/card.tsx",
+              "evidence": "bg-(--color-surface-raised)"
             }
           ]
         }
@@ -3851,24 +3732,24 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "depict.avatar": {
     "exportName": "Avatar",
-    "source": "src/components/Avatar.tsx",
+    "source": "src/components/preview-runtime/components/avatar/avatar.tsx",
     "options": [
       {
         "prop": "size",
         "values": [
+          "default",
           "sm",
-          "md",
           "lg"
         ],
         "default": {
           "kind": "value",
-          "value": "md",
-          "source": "src/components/Avatar.tsx",
-          "evidence": "size = \"md\""
+          "value": "default",
+          "source": "src/components/preview-runtime/components/avatar/avatar.tsx",
+          "evidence": "size = \"default\""
         },
         "forwarding": {
-          "source": "src/components/Avatar.tsx",
-          "evidence": "AVATAR_SIZE_CLASSES[size]"
+          "source": "src/components/preview-runtime/components/avatar/avatar.tsx",
+          "evidence": "data-size={size}"
         }
       }
     ],
@@ -3883,12 +3764,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "evidence": "--color-surface-sunken:",
           "via": [
             {
-              "source": "src/components/Avatar.tsx",
-              "evidence": "AVATAR_BASE_CLASSES"
-            },
-            {
-              "source": "src/components/Avatar.server.tsx",
-              "evidence": "bg-surface-sunken"
+              "source": "src/components/preview-runtime/components/avatar/avatar.tsx",
+              "evidence": "bg-(--color-surface-sunken)"
             }
           ]
         }
@@ -3897,7 +3774,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "depict.icon": {
     "exportName": "Icon",
-    "source": "src/components/Icon.tsx",
+    "source": "src/components/preview-runtime/components/icon/icon.tsx",
     "options": [
       {
         "prop": "size",
@@ -3908,28 +3785,20 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
         ],
         "default": {
           "kind": "value",
-          "value": "md",
-          "source": "src/components/Icon.tsx",
-          "evidence": "size = \"md\""
+          "value": "sm",
+          "source": "src/components/preview-runtime/components/icon/icon.tsx",
+          "evidence": "size = \"sm\""
         },
         "forwarding": {
-          "source": "src/components/Icon.tsx",
-          "evidence": "SIZE_VARS[size]"
+          "source": "src/components/preview-runtime/components/icon/icon.tsx",
+          "evidence": "SIZES[size]"
         }
       }
     ],
     "tokens": {
-      "coverage": "partial",
-      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
-      "dependencies": [
-        {
-          "property": "--ui-icon-stroke",
-          "kind": "direct",
-          "source": "src/components/Icon.tsx",
-          "evidence": "var(--ui-icon-stroke, 2)",
-          "via": []
-        }
-      ]
+      "coverage": "none-owned",
+      "reason": "The stock Icon owns no token: it draws in currentColor with a fixed 2px stroke and a size utility.",
+      "dependencies": []
     }
   },
   "reveal.dialog": {
@@ -4517,8 +4386,7 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "inform.meter": comparison("inform.meter", "tone", "emphasis"),
   "inform.progress-bar": comparison("inform.progress-bar", "isIndeterminate"),
   "inform.spinner": comparison("inform.spinner", "size"),
-  "inform.skeleton": comparison("inform.skeleton", "shape"),
-  "group.card": comparison("group.card", "variant"),
+  "group.card": comparison("group.card", "size"),
   "group.table": comparison("group.table", "selectionMode"),
   "group.separator": comparison("group.separator", "orientation"),
   "depict.avatar": comparison("depict.avatar", "size"),

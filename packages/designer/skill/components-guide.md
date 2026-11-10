@@ -100,28 +100,26 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Use when: Several related commands should be revealed on demand.
 - Avoid when: The content is an input choice set or a rich explanatory panel.
 - Alternatives and boundary: Use Select for choosing a value; Popover for arbitrary panel content.
-- Content: Name the trigger and each command. Use Menu.Section for a real section heading and separators between groups.
-- Anatomy: One trigger and a repeated collection of actionable items, optionally grouped in Menu.Section with a real heading.
-- Block composition example: AccountMenu composes Menu.Item commands and Menu.Section preference groups with an actor trigger.
-- Accessibility: Name the trigger and each section. Section headings use the menu primitive's Header; section selection provides menuitemcheckbox preferences. Disabled items and keyboard navigation belong to the primitive.
+- Content: Name the trigger and each command. Use MenuGroup with MenuLabel for a real section heading and MenuSeparator between groups.
+- Anatomy: A DropdownMenuTrigger holding the trigger control and the DropdownMenu panel of MenuItem commands, optionally grouped in MenuGroup with a MenuLabel heading.
+- Block composition example: AccountMenu composes MenuItem commands and MenuGroup preference groups behind an actor trigger.
+- Accessibility: Name the trigger and each group. Group headings use MenuLabel; group selection provides menuitemcheckbox preferences. Disabled items and keyboard navigation belong to the primitive.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Menu.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/menu/dropdown-menu.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Menu`. Source: `src/components/Menu.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level. Menu.Section supplies a real heading through Header and forwards selectionMode, selectedKeys, onSelectionChange and shouldCloseOnSelect to the peer MenuSection. Checkbox preferences use multiple selection with caller-owned keys and callbacks.
+Web implementation: `@clossys/designer/components` → `Menu`. Source: `src/components/preview-runtime/components/menu/dropdown-menu.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. DropdownMenu is the stock menu panel; DropdownMenuTrigger owns the opening interaction. Destructive emphasis is item-level. InlineMenu is the stock always-visible list for the inline presentation.
 
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `triggerAction` — Opening interaction | `press`: Press to open.<br>`longPress`: Long press to open.<br>`contextMenu`: Context-menu gesture to open. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Menu.tsx`: `trigger={triggerAction}` |
+No finite scalar options are represented here; read the real prop type for authored content and data.
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-elevation-floating` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-elevation-floating,`; consumed via `src/components/Menu.tsx`: `boxShadow: UI_ELEVATION_FLOATING`.
+- `--color-overlay-surface` (transitive): `styles/theme-keys.css`: `--color-overlay-surface:`; consumed via `src/components/preview-runtime/components/menu/dropdown-menu.tsx`: `bg-(--color-overlay-surface)`.
 
 #### Toolbars
 
@@ -237,22 +235,22 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Checkbox.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/checkbox/checkbox.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Checkbox`. Source: `src/components/Checkbox.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Checkbox`. Source: `src/components/preview-runtime/components/checkbox/checkbox.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Checkbox.tsx`: `AriaCheckbox` |
-| `isSelected` — Controlled selection | `false`: Unselected controlled state.<br>`true`: Selected controlled state. | peer: No local initializer; any inherited default belongs to the installed peer. | A consumer-controlled value requires a corresponding change handler; a fixed fixture cannot demonstrate toggling. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Checkbox.tsx`: `<AriaCheckbox       {...rest}` |
-| `isIndeterminate` — Aggregate state | `false`: Ordinary binary presentation.<br>`true`: Mixed aggregate presentation independent of isSelected. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Checkbox.tsx`: `renderProps.isIndeterminate` |
+| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/checkbox/checkbox.tsx`: `{...props}` |
+| `isSelected` — Controlled selection | `false`: Unselected controlled state.<br>`true`: Selected controlled state. | peer: No local initializer; any inherited default belongs to the installed peer. | A consumer-controlled value requires a corresponding change handler; a fixed fixture cannot demonstrate toggling. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/checkbox/checkbox.tsx`: `{...props}` |
+| `isIndeterminate` — Aggregate state | `false`: Ordinary binary presentation.<br>`true`: Mixed aggregate presentation independent of isSelected. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/checkbox/checkbox.tsx`: `{ isSelected, isIndeterminate }` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/Checkbox.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
+- `--color-focus-ring` (transitive): `styles/theme-keys.css`: `--color-focus-ring:`; consumed via `src/components/preview-runtime/components/checkbox/checkbox.tsx`: `focus-visible:outline-(--color-focus-ring)`.
 
 ##### `enter.combo-box` — ComboBox
 
@@ -292,28 +290,28 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Alternatives and boundary: Use Select for compact choice; Checkbox for independent options.
 - Content: Name the group and each choice; optional per-choice descriptions explain differences.
 - Anatomy: One group label and repeated mutually exclusive labelled choices.
-- Block composition example: In a consumer-owned preference-selection block, render at least two RadioGroup.Radio choices.
-- Accessibility: Use the group’s label and roving keyboard selection; orientation aligns option layout and keyboard navigation.
+- Block composition example: In a consumer-owned preference-selection block, render at least two RadioGroupItem choices.
+- Accessibility: Use the group’s label and roving keyboard selection; orientation sets the arrow-key direction of keyboard navigation.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/RadioGroup.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/radio-group/radio-group.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `RadioGroup`. Source: `src/components/RadioGroup.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the options to a row or column and forwards matching semantics to AriaRadioGroup. A single-option specimen cannot prove selection differences.
+Web implementation: `@clossys/designer/components` → `RadioGroup`. Source: `src/components/preview-runtime/components/radio-group/radio-group.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation forwards to the react-aria RadioGroup for keyboard semantics; the stock grid lays the items out in one column either way. A single-option specimen cannot prove selection differences.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/RadioGroup.tsx`: `AriaRadioGroup` |
-| `isInvalid` — Validation state | `false`: No invalid state requested.<br>`true`: Expose validation state and the authored error. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/RadioGroup.tsx`: `<AriaRadioGroup {...rest}` |
-| `orientation` — ARIA orientation | `horizontal`: Horizontal option layout and keyboard semantics.<br>`vertical`: Vertical option layout and keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | Layout and keyboard semantics follow the supplied orientation. implemented: The component uses orientation for layout and forwards it to the ARIA primitive. Evidence: `src/components/RadioGroup.tsx`: `<AriaRadioGroup {...rest}` |
+| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/radio-group/radio-group.tsx`: `{...props}` |
+| `isInvalid` — Validation state | `false`: No invalid state requested.<br>`true`: Expose validation state and the authored error. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/radio-group/radio-group.tsx`: `{...props}` |
+| `orientation` — ARIA orientation | `horizontal`: Horizontal option layout and keyboard semantics.<br>`vertical`: Vertical option layout and keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | Keyboard semantics follow the supplied orientation; the stock layout does not change. implemented: The component uses orientation for layout and forwards it to the ARIA primitive. Evidence: `src/components/preview-runtime/components/radio-group/radio-group.tsx`: `{...props}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/RadioGroup.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
+- `--color-focus-ring` (transitive): `styles/theme-keys.css`: `--color-focus-ring:`; consumed via `src/components/preview-runtime/components/radio-group/radio-group.tsx`: `focus-visible:outline-(--color-focus-ring)`.
 
 ##### `enter.select` — Select
 
@@ -329,21 +327,21 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Select.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/select/select.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Select`. Source: `src/components/Select.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. options is required data. Placeholder defaults to Select an option. isInvalid forwards to AriaSelect and the trigger is associated with rendered error text.
+Web implementation: `@clossys/designer/components` → `Select`. Source: `src/components/preview-runtime/components/select/select.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Compose SelectTrigger, SelectValue, SelectContent and SelectItem; isInvalid and isDisabled reach the react-aria Select through its forwarded props.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Select.tsx`: `AriaSelect` |
-| `isInvalid` — Validation state | `false`: No invalid state requested.<br>`true`: Expose validation state and the authored error. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Select.tsx`: `isInvalid={isInvalid}` |
+| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/select/select.tsx`: `{...props}` |
+| `isInvalid` — Validation state | `false`: No invalid state requested.<br>`true`: Expose validation state and the authored error. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/select/select.tsx`: `{...props}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/Select.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
+- `--color-focus-ring` (transitive): `styles/theme-keys.css`: `--color-focus-ring:`; consumed via `src/components/preview-runtime/components/select/select.tsx`: `focus-visible:outline-(--color-focus-ring)`.
 
 ##### `enter.switch` — Switch
 
@@ -359,21 +357,21 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Switch.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/switch/switch.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Switch`. Source: `src/components/Switch.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Controlled isSelected without a state-updating onChange handler stays fixed; this does not mean the package lacks interactive switching.
+Web implementation: `@clossys/designer/components` → `Switch`. Source: `src/components/preview-runtime/components/switch/switch.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Controlled isSelected without a state-updating onChange handler stays fixed; this does not mean the package lacks interactive switching.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Switch.tsx`: `AriaSwitch` |
-| `isSelected` — Controlled selection | `false`: Unselected controlled state.<br>`true`: Selected controlled state. | peer: No local initializer; any inherited default belongs to the installed peer. | A consumer-controlled value requires a corresponding change handler; a fixed fixture cannot demonstrate toggling. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Switch.tsx`: `<AriaSwitch       {...rest}` |
+| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/switch/switch.tsx`: `{...props}` |
+| `isSelected` — Controlled selection | `false`: Unselected controlled state.<br>`true`: Selected controlled state. | peer: No local initializer; any inherited default belongs to the installed peer. | A consumer-controlled value requires a corresponding change handler; a fixed fixture cannot demonstrate toggling. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/switch/switch.tsx`: `{...props}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/Switch.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
+- `--color-focus-ring` (transitive): `styles/theme-keys.css`: `--color-focus-ring:`; consumed via `src/components/preview-runtime/components/switch/switch.tsx`: `focus-visible:outline-(--color-focus-ring)`.
 
 #### Tags
 
@@ -485,26 +483,26 @@ Token dependency coverage: partial. Representative row state dependencies; check
 - Alternatives and boundary: Use a consumer-owned list block for prose items; build sorting and filtering around Table primitives.
 - Content: Author meaningful column headings, row identities and cell values.
 - Anatomy: Column headings and repeated records made of corresponding cells.
-- Block composition example: In a consumer-owned records block, assemble Table.Header, Table.Body, rows and cells with selection controls.
+- Block composition example: In a consumer-owned records block, assemble TableHeader, TableBody, rows and cells with selection controls.
 - Accessibility: Name the table and identify row headers; controlled sorting and selection need consumer state.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Table.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/table/table.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Table`. Source: `src/components/Table.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Compound Header/Column/Body/Row/Cell parts own content. Selection checkboxes reuse Checkbox. Sorting and selection are controlled by consumer state; a one-row fixture is limited demonstration evidence.
+Web implementation: `@clossys/designer/components` → `Table`. Source: `src/components/preview-runtime/components/table/table.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. TableHeader/TableHead/TableBody/TableRow/TableCell parts own content. Selection checkboxes reuse Checkbox. Sorting and selection are controlled by consumer state; a one-row fixture is limited demonstration evidence.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `selectionMode` — Row selection | `none`: No row selection.<br>`single`: Select one row.<br>`multiple`: Select multiple rows. | peer: No local initializer; any inherited default belongs to the installed peer. | Controlled selectedKeys requires a state-updating handler; multiple rows are needed to demonstrate selection differences. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Table.tsx`: `<AriaTable       {...rest}` |
+| `selectionMode` — Row selection | `none`: No row selection.<br>`single`: Select one row.<br>`multiple`: Select multiple rows. | peer: No local initializer; any inherited default belongs to the installed peer. | Controlled selectedKeys requires a state-updating handler; multiple rows are needed to demonstrate selection differences. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/table/table.tsx`: `<TablePrimitive         data-slot="table"` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/Table.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
+- `--color-ink-primary` (transitive): `styles/theme-keys.css`: `--color-ink-primary:`; consumed via `src/components/preview-runtime/components/table/table.tsx`: `text-(--color-ink-primary)`.
 
 ##### `inform.meter` — Meter
 
@@ -555,20 +553,20 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Badge.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/badge/badge.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Badge`. Source: `src/components/Badge.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Badge`. Source: `src/components/preview-runtime/components/badge/badge.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry tones (neutral, success, warning, danger, info) are caller data in BADGE_TONE: each is a stock variant plus at most one token class.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `variant` — Label tone | `neutral`: Neutral category.<br>`success`: Success label.<br>`warning`: Warning label.<br>`danger`: Danger label.<br>`info`: Information label. | `neutral` (`src/components/Badge.tsx`: `variant = "neutral"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Badge.tsx`: `VARIANT_CLASSES[variant]` |
+| `variant` — Label style | `default`: Action-filled label.<br>`secondary`: Tonal neutral label.<br>`destructive`: Danger-tinted label.<br>`outline`: Bordered label without a fill.<br>`ghost`: Unfilled label that gains hover emphasis.<br>`link`: Text label styled as a link. | `default` (`src/components/preview-runtime/components/badge/badge.tsx`: `variant = "default"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/badge/badge.tsx`: `badgeVariants({ variant })` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-surface-sunken` (transitive): `styles/theme-keys.css`: `--color-surface-sunken:`; consumed via `src/components/Badge.tsx`: `bg-surface-sunken`.
+- `--color-action` (transitive): `styles/theme-keys.css`: `--color-action:`; consumed via `src/components/preview-runtime/components/badge/badge.tsx`: `bg-(--color-action)`.
 
 #### Media
 
@@ -578,28 +576,28 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Use when: A compact identity cue helps readers recognize an associated entity.
 - Avoid when: The image is explanatory content, a general illustration or the only identification text needed.
 - Alternatives and boundary: Use an ordinary content image for illustration; pair Avatar with a visible name in a consumer-owned identity block.
-- Content: Supply the represented entity’s name and an optional image source.
+- Content: Supply the represented entity’s name, its initials and an optional image source.
 - Anatomy: One identity image or its initials alternative.
 - Block composition example: In a consumer-owned author block, place Avatar beside the author name and affiliation.
-- Accessibility: The same required alt name identifies the image and its load-failure initials fallback.
+- Accessibility: Give AvatarImage the entity’s name as alt; AvatarFallback shows the initials when the image fails to load.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Avatar.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/avatar/avatar.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Avatar`. Source: `src/components/Avatar.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Avatar`. Source: `src/components/preview-runtime/components/avatar/avatar.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `size` — Size | `sm`: sm size within the existing component scale.<br>`md`: md size within the existing component scale.<br>`lg`: lg size within the existing component scale. | `md` (`src/components/Avatar.tsx`: `size = "md"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Avatar.tsx`: `AVATAR_SIZE_CLASSES[size]` |
+| `size` — Mark size | `default`: Medium identity mark.<br>`sm`: Small identity mark.<br>`lg`: Large identity mark. | `default` (`src/components/preview-runtime/components/avatar/avatar.tsx`: `size = "default"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/avatar/avatar.tsx`: `data-size={size}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-surface-sunken` (transitive): `styles/theme-keys.css`: `--color-surface-sunken:`; consumed via `src/components/Avatar.tsx`: `AVATAR_BASE_CLASSES` → `src/components/Avatar.server.tsx`: `bg-surface-sunken`.
+- `--color-surface-sunken` (transitive): `styles/theme-keys.css`: `--color-surface-sunken:`; consumed via `src/components/preview-runtime/components/avatar/avatar.tsx`: `bg-(--color-surface-sunken)`.
 
 #### Assets
 
@@ -617,23 +615,22 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Icon.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/icon/icon.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Icon`. Source: `src/components/Icon.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Icon`. Source: `src/components/preview-runtime/components/icon/icon.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `size` — Size | `sm`: sm size within the existing component scale.<br>`md`: md size within the existing component scale.<br>`lg`: lg size within the existing component scale. | `md` (`src/components/Icon.tsx`: `size = "md"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Icon.tsx`: `SIZE_VARS[size]` |
+| `size` — Size | `sm`: sm size within the existing component scale.<br>`md`: md size within the existing component scale.<br>`lg`: lg size within the existing component scale. | `sm` (`src/components/preview-runtime/components/icon/icon.tsx`: `size = "sm"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/icon/icon.tsx`: `SIZES[size]` |
 
-- exclusive (type; `decorative`, `label`): decorative true excludes label; informative icons require label with decorative false or omitted. Evidence: `src/components/Icon.tsx`: `decorative: true;`.
-- exclusive (type; `glyph`, `children`): Supply glyph data or inner SVG children, never both; children is content, not a scalar configuration. Evidence: `src/components/Icon.tsx`: `glyph: IconNode; children?: undefined`.
-- requires (type; `label`): An informative icon needs label when decorative is false or omitted. Evidence: `src/components/Icon.tsx`: `label: string;`.
+- exclusive (type; `decorative`, `label`): decorative true excludes label; informative icons require label with decorative false or omitted. Evidence: `src/components/preview-runtime/components/icon/icon.tsx`: `decorative: true;`.
+- exclusive (type; `glyph`, `children`): Supply glyph data or inner SVG children, never both; children is content, not a scalar configuration. Evidence: `src/components/preview-runtime/components/icon/icon.tsx`: `glyph: IconNode; children?: undefined`.
+- requires (type; `label`): An informative icon needs label when decorative is false or omitted. Evidence: `src/components/preview-runtime/components/icon/icon.tsx`: `decorative?: false; label: string`.
 
-Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-icon-stroke` (direct): `src/components/Icon.tsx`: `var(--ui-icon-stroke, 2)`.
+Token dependency coverage: none-owned. The stock Icon owns no token: it draws in currentColor with a fixed 2px stroke and a size utility.
 
 ##### `depict.logomark` — Logomark
 
@@ -942,35 +939,35 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 #### Messages
 
-##### `inform.banner` — Banner
+##### `inform.banner` — Alert
 
 - Purpose: Deliver a persistent inline message with a meaningful severity.
 - Use when: Information or a warning belongs in the normal content flow until the reader responds.
 - Avoid when: The message is a queued transient notification or neutral content without severity.
 - Alternatives and boundary: Use a consumer-owned toast flow for transient notices; Card for ordinary grouped content.
 - Content: Write the message so its severity is understandable without its status color.
-- Anatomy: One persistent message region with an optional dismissal affordance.
-- Block composition example: In a consumer-owned form-status block, place Banner above the affected fields and let the owner handle dismissal.
+- Anatomy: One persistent message region with a title, a description and an optional action slot.
+- Block composition example: In a consumer-owned form-status block, place the Alert above the affected fields and let the owner handle any action.
 - Accessibility: Danger is an assertive alert; other severities are polite status messages, not independently configurable live-region modes.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Banner.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/banner/alert.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Banner`. Source: `src/components/Banner.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Alert`. Source: `src/components/preview-runtime/components/banner/alert.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry severities (info, success, warning, danger) are caller data in ALERT_TONE: a stock variant, role and aria-live, plus at most one token class.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `variant` — Message severity | `info`: Polite information message.<br>`success`: Polite success message.<br>`warning`: Polite warning message.<br>`danger`: Destructive danger appearance coupled to an assertive alert. | `info` (`src/components/Banner.tsx`: `variant = "info"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Banner.tsx`: `variant === "danger"` |
+| `variant` — Message style | `default`: Neutral message on a raised surface.<br>`destructive`: Danger-coloured message. | omitted: No local initializer; an omitted variant resolves to default through the alertVariants defaultVariants. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/banner/alert.tsx`: `alertVariants({ variant })` |
 
-- derived (derived; `variant`): danger couples danger appearance with alert/assertive; other severities use status/polite. No independent live-region option. Evidence: `src/components/Banner.tsx`: `aria-live={isAssertive ? "assertive" : "polite"}`.
+- derived (derived; `variant`): The stock Alert has no live-region option; ALERT_TONE derives danger as destructive with alert/assertive and every other severity as default with status/polite. Evidence: `src/components/surface-tones.ts`: `danger: { variant: "destructive", role: "alert", "aria-live": "assertive" }`.
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-status-danger-text` (transitive): `styles/theme-keys.css`: `--color-status-danger-text:`; consumed via `src/components/Banner.server.tsx`: `text-status-danger-text`.
+- `--color-status-danger` (transitive): `styles/theme-keys.css`: `--color-status-danger:`; consumed via `src/components/preview-runtime/components/banner/alert.tsx`: `text-(--color-status-danger)`.
 
 #### Indicators
 
@@ -1049,20 +1046,18 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Skeleton.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/skeleton/skeleton.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Skeleton`. Source: `src/components/Skeleton.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Skeleton`. Source: `src/components/preview-runtime/components/skeleton/skeleton.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock Skeleton has no options; a Foundry shape (text, block, circle) is caller size data in SKELETON_SHAPE.
 
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `shape` — Placeholder shape | `text`: One text-height line.<br>`block`: Block filling its authored container.<br>`circle`: Circular placeholder requiring authored size. | `text` (`src/components/Skeleton.tsx`: `shape = "text"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Skeleton.tsx`: `SHAPE_CLASSES[shape]` |
+No finite scalar options are represented here; read the real prop type for authored content and data.
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-skeleton-fill` (transitive): `styles/theme-keys.css`: `--color-skeleton-fill:`; consumed via `src/components/Skeleton.tsx`: `bg-skeleton-fill`.
+- `--color-surface-sunken` (transitive): `styles/theme-keys.css`: `--color-surface-sunken:`; consumed via `src/components/preview-runtime/components/skeleton/skeleton.tsx`: `bg-(--color-surface-sunken)`.
 
 ##### `inform.spinner` — Spinner
 
@@ -1238,22 +1233,20 @@ Token dependency coverage: partial. Representative consumed target, edge and nat
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Card.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/card/card.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Card`. Source: `src/components/Card.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Card`. Source: `src/components/preview-runtime/components/card/card.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry surfaces (raised, outline, plate) are caller className data in CARD_SURFACE; raised is the stock card.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `ground` — Surrounding ground | `base`: Page ground.<br>`sunken`: Sunken section ground.<br>`inverse`: Inverse section ground. | `base` (`src/components/Card.tsx`: `ground = "base"`) | Accepted but ignored for raised; read by plate and outline. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Card.tsx`: `PLATE_CLASSES[ground]` |
-| `variant` — Surface treatment | `raised`: Raised fill and elevation.<br>`plate`: Opposite ground without an edge.<br>`outline`: Panel edge without a shadow. | `raised` (`src/components/Card.tsx`: `variant = "raised"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Card.tsx`: `variant === "plate"` |
+| `size` — Card density | `default`: Stock card spacing.<br>`sm`: Compact card spacing. | `default` (`src/components/preview-runtime/components/card/card.tsx`: `size = "default"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/card/card.tsx`: `data-size={size}` |
 
-- effective-when (ignored; `ground`, `variant`): raised ignores ground; plate and outline consume it. Evidence: `src/components/Card.tsx`: `PLATE_CLASSES[ground]`.
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-border-panel` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-border-panel,`; consumed via `src/components/Card.tsx`: `borderWidth: UI_BORDER_PANEL`.
+- `--color-surface-raised` (transitive): `styles/theme-keys.css`: `--color-surface-raised:`; consumed via `src/components/preview-runtime/components/card/card.tsx`: `bg-(--color-surface-raised)`.
 
 ##### `group.separator` — Separator
 
@@ -1321,27 +1314,26 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Alternatives and boundary: Use Disclosure for inline content; Popover for an anchored task; Tooltip for a short description.
 - Content: Supply a clear dialog heading and purposeful task content through the content slot.
 - Anatomy: An opening trigger, a modal content surface and a dismissal path.
-- Block composition example: In a consumer-owned confirmation block, compose Dialog.Heading, the explanation and explicit action controls.
-- Accessibility: Retain focus containment, Escape dismissal and focus return; use Dialog.Heading for the content name.
+- Block composition example: In a consumer-owned confirmation block, compose DialogHeader with DialogTitle and DialogDescription, then DialogFooter with explicit action controls.
+- Accessibility: Retain focus containment, Escape dismissal and focus return; use DialogTitle for the content name.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Dialog.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/dialog/dialog.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Dialog`. Source: `src/components/Dialog.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Dialog`. Source: `src/components/preview-runtime/components/dialog/dialog.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `size` — Dialog width | `sm`: Small modal surface.<br>`md`: Medium modal surface.<br>`lg`: Large modal surface. | `md` (`src/components/Dialog.tsx`: `size = "md"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Dialog.tsx`: `SIZE_CLASSES[size]` |
-| `isDismissable` — Outside dismissal | `false`: Outside click leaves the dialog open; Escape still closes it.<br>`true`: Outside click dismisses the dialog; Escape also closes it. | `true` (`src/components/Dialog.tsx`: `isDismissable = true`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Dialog.tsx`: `isDismissable={isDismissable}` |
+| `isDismissable` — Outside dismissal | `false`: Outside click leaves the dialog open; Escape still closes it.<br>`true`: Outside click dismisses the dialog; Escape also closes it. | `true` (`src/components/preview-runtime/components/dialog/dialog.tsx`: `isDismissable = true`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/dialog/dialog.tsx`: `isDismissable={isDismissable}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-elevation-floating` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-elevation-floating,`; consumed via `src/components/Dialog.tsx`: `boxShadow: UI_ELEVATION_FLOATING`.
+- `--color-overlay-surface` (transitive): `styles/theme-keys.css`: `--color-overlay-surface:`; consumed via `src/components/preview-runtime/components/dialog/dialog.tsx`: `bg-(--color-overlay-surface)`.
 
 ##### `reveal.popover` — Popover
 
@@ -1357,18 +1349,18 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Popover.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/popover/popover.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Popover`. Source: `src/components/Popover.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to bottom and offset to 8. The inner AriaDialog supplies dialog behavior; this is not a nonmodal arbitrary HTML tooltip.
+Web implementation: `@clossys/designer/components` → `Popover`. Source: `src/components/preview-runtime/components/popover/popover.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to bottom and offset to 4. PopoverTrigger opens it and supplies dialog behavior; PopoverHeader, PopoverTitle and PopoverDescription name the panel.
 
 No finite scalar options are represented here; read the real prop type for authored content and data.
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-elevation-floating` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-elevation-floating,`; consumed via `src/components/Popover.tsx`: `boxShadow: UI_ELEVATION_FLOATING`.
+- `--color-overlay-surface` (transitive): `styles/theme-keys.css`: `--color-overlay-surface:`; consumed via `src/components/preview-runtime/components/popover/popover.tsx`: `bg-(--color-overlay-surface)`.
 
 ##### `reveal.tooltip` — Tooltip
 
@@ -1384,20 +1376,18 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Tooltip.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/tooltip/tooltip.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Tooltip`. Source: `src/components/Tooltip.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to top. triggerAction is forwarded without a local initializer. Any peer timing defaults are separate from package-authored defaults.
+Web implementation: `@clossys/designer/components` → `Tooltip`. Source: `src/components/preview-runtime/components/tooltip/tooltip.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to top and offset to 4. TooltipTrigger owns the opening interaction and reads its delay and close timing from behaviorTiming.
 
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `triggerAction` — Description interaction | `hover`: Hover and keyboard focus behavior.<br>`focus`: Keyboard focus behavior only. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Tooltip.tsx`: `trigger={triggerAction}` |
+No finite scalar options are represented here; read the real prop type for authored content and data.
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-elevation-floating` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-elevation-floating,`; consumed via `src/components/Tooltip.tsx`: `boxShadow: UI_ELEVATION_FLOATING`.
+- `--color-ink-primary` (transitive): `styles/theme-keys.css`: `--color-ink-primary:`; consumed via `src/components/preview-runtime/components/tooltip/tooltip.tsx`: `bg-(--color-ink-primary)`.
 
 ### Legacy guidance outside navigation
 

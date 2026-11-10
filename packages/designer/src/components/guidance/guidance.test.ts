@@ -250,8 +250,8 @@ describe("shared component guidance", () => {
     const find = (id: string, prop: string) => rules(id).find((rule: any) => rule.props[0] === prop);
     // The stock Button has no ground or trailing-icon option, so nothing is ineffective.
     expect(rules("act.button")).toEqual([]);
-    expect(effective(find("group.card", "ground"), { variant: "raised" })).toBe(false);
-    for (const variant of ["plate", "outline"]) expect(effective(find("group.card", "ground"), { variant })).toBe(true);
+    // The stock Card has no ground; Foundry surfaces are caller className data.
+    expect(rules("group.card")).toEqual([]);
     expect(effective(find("inform.meter", "direction"), {})).toBe(false);
     expect(effective(find("inform.meter", "direction"), { limit: 0 })).toBe(true);
     expect(rules("act.link")).toEqual([]);
@@ -430,14 +430,14 @@ const comparisonGolden: Record<string, {
     retainedCells: 4,
   },
   "inform.badge": {
-    columns: {"option": "variant", "values": ["neutral", "success", "warning", "danger", "info"]},
-    maxCells: 5,
-    retainedCells: 5,
+    columns: {"option": "variant", "values": ["default", "secondary", "destructive", "outline", "ghost", "link"]},
+    maxCells: 6,
+    retainedCells: 6,
   },
   "inform.banner": {
-    columns: {"option": "variant", "values": ["info", "success", "warning", "danger"]},
-    maxCells: 4,
-    retainedCells: 4,
+    columns: {"option": "variant", "values": ["default", "destructive"]},
+    maxCells: 2,
+    retainedCells: 2,
   },
   "inform.chip": {
     columns: {"option": "isDisabled", "values": [false, true]},
@@ -465,15 +465,10 @@ const comparisonGolden: Record<string, {
     maxCells: 3,
     retainedCells: 3,
   },
-  "inform.skeleton": {
-    columns: {"option": "shape", "values": ["text", "block", "circle"]},
-    maxCells: 3,
-    retainedCells: 3,
-  },
   "group.card": {
-    columns: {"option": "variant", "values": ["raised", "plate", "outline"]},
-    maxCells: 3,
-    retainedCells: 3,
+    columns: {"option": "size", "values": ["default", "sm"]},
+    maxCells: 2,
+    retainedCells: 2,
   },
   "group.table": {
     columns: {"option": "selectionMode", "values": ["none", "single", "multiple"]},
@@ -486,7 +481,7 @@ const comparisonGolden: Record<string, {
     retainedCells: 2,
   },
   "depict.avatar": {
-    columns: {"option": "size", "values": ["sm", "md", "lg"]},
+    columns: {"option": "size", "values": ["default", "sm", "lg"]},
     maxCells: 3,
     retainedCells: 3,
   },
@@ -584,20 +579,21 @@ describe("finite component comparisons", () => {
 
   it("retains Card's raised default and LinkButton's six stock appearances", () => {
     const card = comparisons()!["group.card"];
-    expect(comparisonCells(card)).toEqual([{ variant: "raised" }, { variant: "plate" }, { variant: "outline" }]);
+    // The raised surface is the stock card at either size.
+    expect(comparisonCells(card)).toEqual([{ size: "default" }, { size: "sm" }]);
     expect(comparisonCells(comparisons()!["act.link"])).toEqual([
       { variant: "default" }, { variant: "outline" }, { variant: "secondary" }, { variant: "ghost" }, { variant: "destructive" }, { variant: "link" },
     ]);
-    expect(comparisonViolations(card.constraints, { variant: "raised", ground: "base" })).toEqual([]);
+    expect(comparisonViolations(card.constraints, { size: "default" })).toEqual([]);
   });
 
   it("never excludes cells for applicability, derivation or data guidance", () => {
     const fixtures = [
       ["act.button", { variant: "default" }],
       ["act.link", { variant: "link" }],
-      ["group.card", { variant: "raised", ground: "base" }],
+      ["group.card", { size: "default" }],
       ["inform.meter", { direction: "higher-is-better" }],
-      ["inform.banner", { variant: "danger" }],
+      ["inform.banner", { variant: "destructive" }],
       ["inform.status-mark", { tone: "warning" }],
       ["enter.resize-handle", { value: Number.NaN }],
     ] as const;
