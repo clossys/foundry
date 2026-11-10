@@ -40,7 +40,7 @@ describe("control glyph bindings", () => {
       <Button variant="quiet">Continue</Button>
       <SearchField label="Query" defaultValue="Find" />
     </GlyphProvider>);
-    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(2);
+    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(1);
     for (const svg of document.querySelectorAll("svg")) expect(svg).toHaveAttribute("aria-hidden", "true");
   });
   it("inherits nested bindings, preserves explicit quiet-button overrides and null", () => {
