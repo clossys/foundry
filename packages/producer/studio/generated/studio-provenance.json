@@ -17,27 +17,27 @@
   "sections.module.outline": {
     "data-clossys-slot": "sections.module.outline",
     "data-clossys-candidate": "module-outline-v7.json",
-    "data-clossys-hash": "sha256:65620f94b37cb632c1aa87e9cf796ac150b3eec4b33c6fd884c6763f0de81348"
+    "data-clossys-hash": "sha256:169e00b973e8965a17604f63643e804284ce4db0b6ca366d1ff3a651f5be7233"
   },
   "sections.module.checks": {
     "data-clossys-slot": "sections.module.checks",
     "data-clossys-candidate": "module-checks-v6.json",
-    "data-clossys-hash": "sha256:ee046f560f04e715a37a636bf9586789431fda3503374d6f9eea277acd3e7171"
+    "data-clossys-hash": "sha256:2627c9d6800742919132939e8b34f7daf4da1f24ee15f9979976acda8c793c3d"
   },
   "sections.producer.team-strip": {
     "data-clossys-slot": "sections.producer.team-strip",
     "data-clossys-candidate": "producer-team-strip-v3.json",
-    "data-clossys-hash": "sha256:4b77c15a14cbb63cfd4c63a92ca78cc9b7fca5934e2cf6ae04177df4979dabc7"
+    "data-clossys-hash": "sha256:1e1c2a19ab7444e2200fe015c8af6ea8f4f384c0564297ab39dff7f89a14b198"
   },
   "sections.producer.pipeline-legend": {
     "data-clossys-slot": "sections.producer.pipeline-legend",
     "data-clossys-candidate": "producer-pipeline-legend-v3.json",
-    "data-clossys-hash": "sha256:41fc6a637ad8ad4dac154506a8b97c86d0b283d7157799b1ff0676c4eee95525"
+    "data-clossys-hash": "sha256:799312f4ec7c8eec2590a9434ea7ceb4f366f039eb3a5eeeceba2338a0bcd1da"
   },
   "sections.producer.pipeline-flow": {
     "data-clossys-slot": "sections.producer.pipeline-flow",
     "data-clossys-candidate": "producer-pipeline-flow-v13.json",
-    "data-clossys-hash": "sha256:a329ee393461c84c5b074b6f6be61c2a64e46b7b60e49646bfe1b2628c2d7cb2"
+    "data-clossys-hash": "sha256:8f972eee9374ab8d7c046d930bcdb2361c69dba276ac9e06b843354f34bf8109"
   },
   "sections.studio.page-tabs": {
     "data-clossys-slot": "sections.studio.page-tabs",
@@ -52,7 +52,7 @@
   "sections.producer.system-empty": {
     "data-clossys-slot": "sections.producer.system-empty",
     "data-clossys-candidate": "producer-system-empty-v1.json",
-    "data-clossys-hash": "sha256:b1c13669e7c6e4a0483b72d4806b8802f43b124728d8a254bc52bbae91c57ad2"
+    "data-clossys-hash": "sha256:158b602a8116c220e2a08d7361e3125d3cb3e493e2c87935a2b8d0ce1584e686"
   },
   "sections.studio.leaf-header": {
     "data-clossys-slot": "sections.studio.leaf-header",
