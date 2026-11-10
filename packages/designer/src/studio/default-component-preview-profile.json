@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:2b9a7075836063baf9e5d07050aafe7ecf750d7b939c73c893d8b89e41d20452",
+  "selectionHash": "sha256:328c5e2e37cccda0f7562cebbe5a983564e99294665174b98daa4568fde4537f",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -11389,6 +11389,1008 @@
         }
       }
     },
+    "components.specimen-copy-in-context": {
+      "slot": "components.specimen-copy-in-context",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-copy-in-context",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenCopyInContext"
+        },
+        "license": "MIT",
+        "sha256": "674259f2065d2f7117fe6ef63992e1c309aff28cb2262b826f9f3f88b3de32b4",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenCopyInContext"
+      },
+      "propMap": {},
+      "reads": {
+        "themes": {
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.button",
+          "components.disclosure",
+          "components.grid-list",
+          "components.navigation-tree",
+          "components.rich-text",
+          "components.semantic-content",
+          "components.table"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-copy-in-context",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts"
+        ],
+        "propMap": {},
+        "reads": {
+          "themes": [
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.disclosure",
+            "components.grid-list",
+            "components.navigation-tree",
+            "components.rich-text",
+            "components.semantic-content",
+            "components.table"
+          ]
+        },
+        "composes": [
+          "components.button",
+          "components.disclosure",
+          "components.grid-list",
+          "components.navigation-tree",
+          "components.rich-text",
+          "components.semantic-content",
+          "components.table"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenCopyInContext"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenCopyInContext"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-copy-in-context",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenCopyInContext"
+          },
+          "license": "MIT",
+          "sha256": "674259f2065d2f7117fe6ef63992e1c309aff28cb2262b826f9f3f88b3de32b4",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-grid": {
+      "slot": "components.specimen-grid",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-grid",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenGrid"
+        },
+        "license": "MIT",
+        "sha256": "c315a1ab4c145f019b6b65073cc4bcbfb83113b6225e62dc01b3637d80567b4d",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenGrid"
+      },
+      "propMap": {
+        "variant.asset": "./components#SpecimenGrid.variant=asset",
+        "variant.icon": "./components#SpecimenGrid.variant=icon"
+      },
+      "reads": {
+        "themes": {
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-grid",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [
+          "variant.asset",
+          "variant.icon"
+        ],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts",
+          "variant"
+        ],
+        "propMap": {
+          "variant.asset": "./components#SpecimenGrid.variant=asset",
+          "variant.icon": "./components#SpecimenGrid.variant=icon"
+        },
+        "reads": {
+          "themes": [
+            "themes.accent",
+            "themes.border",
+            "themes.card",
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.disclosure",
+            "components.grid-list",
+            "components.icon",
+            "components.logo",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenGrid"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenGrid"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-grid",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenGrid"
+          },
+          "license": "MIT",
+          "sha256": "c315a1ab4c145f019b6b65073cc4bcbfb83113b6225e62dc01b3637d80567b4d",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-ladder": {
+      "slot": "components.specimen-ladder",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-ladder",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenLadder"
+        },
+        "license": "MIT",
+        "sha256": "19e64b72f33095d09ea10a0db005d6e1aa11d4f849061908062cb4f2428b7d63",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenLadder"
+      },
+      "propMap": {
+        "variant.radius": "./components#SpecimenLadder.variant=radius",
+        "variant.spacing": "./components#SpecimenLadder.variant=spacing",
+        "variant.type": "./components#SpecimenLadder.variant=type"
+      },
+      "reads": {
+        "themes": {
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-ladder",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [
+          "variant.radius",
+          "variant.spacing",
+          "variant.type"
+        ],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts",
+          "variant"
+        ],
+        "propMap": {
+          "variant.radius": "./components#SpecimenLadder.variant=radius",
+          "variant.spacing": "./components#SpecimenLadder.variant=spacing",
+          "variant.type": "./components#SpecimenLadder.variant=type"
+        },
+        "reads": {
+          "themes": [
+            "themes.accent",
+            "themes.border",
+            "themes.card",
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenLadder"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenLadder"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-ladder",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenLadder"
+          },
+          "license": "MIT",
+          "sha256": "19e64b72f33095d09ea10a0db005d6e1aa11d4f849061908062cb4f2428b7d63",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-matrix": {
+      "slot": "components.specimen-matrix",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-matrix",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenMatrix"
+        },
+        "license": "MIT",
+        "sha256": "9123cde06fcd9742854de5e44ffc694466d50acf025ae72205df3e4603d0c986",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenMatrix"
+      },
+      "propMap": {},
+      "reads": {
+        "themes": {
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.badge",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content",
+          "components.table"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-matrix",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts"
+        ],
+        "propMap": {},
+        "reads": {
+          "themes": [
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.badge",
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content",
+            "components.table"
+          ]
+        },
+        "composes": [
+          "components.badge",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content",
+          "components.table"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenMatrix"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenMatrix"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-matrix",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenMatrix"
+          },
+          "license": "MIT",
+          "sha256": "9123cde06fcd9742854de5e44ffc694466d50acf025ae72205df3e4603d0c986",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-passage": {
+      "slot": "components.specimen-passage",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-passage",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenPassage"
+        },
+        "license": "MIT",
+        "sha256": "8ad9825f99237ef767dbb963dc618c8dfa671b9bf58f69ea1c75b2c5758afa67",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenPassage"
+      },
+      "propMap": {},
+      "reads": {
+        "themes": {
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.rich-text",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-passage",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts"
+        ],
+        "propMap": {},
+        "reads": {
+          "themes": [
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.disclosure",
+            "components.grid-list",
+            "components.rich-text",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.rich-text",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenPassage"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenPassage"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-passage",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenPassage"
+          },
+          "license": "MIT",
+          "sha256": "8ad9825f99237ef767dbb963dc618c8dfa671b9bf58f69ea1c75b2c5758afa67",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-player": {
+      "slot": "components.specimen-player",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-player",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenPlayer"
+        },
+        "license": "MIT",
+        "sha256": "9c8fd76d210518dd491325de18351cc8d0600bf4ab2f24fac65830a80b5e8c10",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenPlayer"
+      },
+      "propMap": {},
+      "reads": {
+        "themes": {
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.button",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-player",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts"
+        ],
+        "propMap": {},
+        "reads": {
+          "themes": [
+            "themes.accent",
+            "themes.border",
+            "themes.card",
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.button",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenPlayer"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenPlayer"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-player",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenPlayer"
+          },
+          "license": "MIT",
+          "sha256": "9c8fd76d210518dd491325de18351cc8d0600bf4ab2f24fac65830a80b5e8c10",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-swatch": {
+      "slot": "components.specimen-swatch",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-swatch",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenSwatch"
+        },
+        "license": "MIT",
+        "sha256": "94319042aaf8c64785b70308c8e7574cdb551789dcc53dc8479d0e1e3959e0dd",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenSwatch"
+      },
+      "propMap": {
+        "variant.color-ramp": "./components#SpecimenSwatch.variant=color-ramp",
+        "variant.swatch": "./components#SpecimenSwatch.variant=swatch"
+      },
+      "reads": {
+        "themes": {
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-swatch",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [
+          "variant.color-ramp",
+          "variant.swatch"
+        ],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts",
+          "variant"
+        ],
+        "propMap": {
+          "variant.color-ramp": "./components#SpecimenSwatch.variant=color-ramp",
+          "variant.swatch": "./components#SpecimenSwatch.variant=swatch"
+        },
+        "reads": {
+          "themes": [
+            "themes.accent",
+            "themes.border",
+            "themes.card",
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenSwatch"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenSwatch"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-swatch",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenSwatch"
+          },
+          "license": "MIT",
+          "sha256": "94319042aaf8c64785b70308c8e7574cdb551789dcc53dc8479d0e1e3959e0dd",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-viewport": {
+      "slot": "components.specimen-viewport",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-viewport",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenViewport"
+        },
+        "license": "MIT",
+        "sha256": "8dc323a90678ac7cfde19bbb4e03dd4847007bfd1e0ca82d3e3135a2b59a58b7",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenViewport"
+      },
+      "propMap": {
+        "variant.frame": "./components#SpecimenViewport.variant=frame",
+        "variant.page": "./components#SpecimenViewport.variant=page",
+        "variant.section": "./components#SpecimenViewport.variant=section"
+      },
+      "reads": {
+        "themes": {
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.badge",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content",
+          "components.table"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-viewport",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [
+          "variant.frame",
+          "variant.page",
+          "variant.section"
+        ],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts",
+          "variant"
+        ],
+        "propMap": {
+          "variant.frame": "./components#SpecimenViewport.variant=frame",
+          "variant.page": "./components#SpecimenViewport.variant=page",
+          "variant.section": "./components#SpecimenViewport.variant=section"
+        },
+        "reads": {
+          "themes": [
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.badge",
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content",
+            "components.table"
+          ]
+        },
+        "composes": [
+          "components.badge",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content",
+          "components.table"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenViewport"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenViewport"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-viewport",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenViewport"
+          },
+          "license": "MIT",
+          "sha256": "8dc323a90678ac7cfde19bbb4e03dd4847007bfd1e0ca82d3e3135a2b59a58b7",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
     "components.spinner": {
       "slot": "components.spinner",
       "originKind": "adopted",
@@ -14426,6 +15428,62 @@
       {
         "code": "K10",
         "rule": "K10",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -15000,6 +16058,62 @@
       {
         "code": "K12",
         "rule": "K12",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -15490,6 +16604,62 @@
       {
         "code": "K2",
         "rule": "K2",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -15980,6 +17150,62 @@
       {
         "code": "K4",
         "rule": "K4",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -16470,6 +17696,62 @@
       {
         "code": "K5",
         "rule": "K5",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -16960,6 +18242,62 @@
       {
         "code": "K6",
         "rule": "K6",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -17444,6 +18782,62 @@
         "code": "K7",
         "rule": "K7",
         "subject": "components.slider",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-viewport",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
       },
@@ -17568,15 +18962,28 @@
       "WaterfallChart"
     ],
     "@clossys/designer/components": [
+      "ALERT_TONE",
       "Accordion",
       "AccordionContent",
       "AccordionItem",
       "AccordionTrigger",
+      "Alert",
+      "AlertAction",
+      "AlertDescription",
+      "AlertTitle",
       "Avatar",
+      "AvatarFallback",
+      "AvatarImage",
+      "BADGE_TONE",
       "Badge",
-      "Banner",
       "Breadcrumb",
+      "BreadcrumbEllipsis",
+      "BreadcrumbItem",
+      "BreadcrumbLink",
+      "BreadcrumbList",
+      "BreadcrumbPage",
       "Button",
+      "CARD_SURFACE",
       "COMPONENT_API_FACTS",
       "COMPONENT_COMPARISON",
       "COMPONENT_GUIDANCE",
@@ -17588,6 +18995,10 @@
       "Chip",
       "ColorPicker",
       "ComboBox",
+      "ComboboxContent",
+      "ComboboxInput",
+      "ComboboxItem",
+      "ComboboxList",
       "Command",
       "CommandDialog",
       "CommandEmpty",
@@ -17599,6 +19010,13 @@
       "CommandShortcut",
       "DateField",
       "Dialog",
+      "DialogClose",
+      "DialogContent",
+      "DialogDescription",
+      "DialogFooter",
+      "DialogHeader",
+      "DialogTitle",
+      "DialogTrigger",
       "DropdownMenu",
       "DropdownMenuGroup",
       "DropdownMenuItem",
@@ -17620,8 +19038,10 @@
       "Form",
       "GlyphProvider",
       "GridList",
+      "INVERSE_CONTROL_INK",
       "Icon",
       "IconButton",
+      "InlineMenu",
       "Item",
       "ItemActions",
       "ItemContent",
@@ -17645,13 +19065,24 @@
       "NavigationTreeSection",
       "NumberField",
       "Popover",
+      "PopoverDescription",
+      "PopoverHeader",
+      "PopoverTitle",
+      "PopoverTrigger",
       "ProgressBar",
       "RadioGroup",
+      "RadioGroupItem",
+      "RangeCalendar",
       "ResizeHandle",
       "RichText",
+      "SKELETON_SHAPE",
       "ScrollArea",
       "SearchField",
       "Select",
+      "SelectContent",
+      "SelectItem",
+      "SelectTrigger",
+      "SelectValue",
       "SemanticContent",
       "Separator",
       "Sheet",
@@ -17687,6 +19118,14 @@
       "SidebarTrigger",
       "Skeleton",
       "Slider",
+      "SpecimenCopyInContext",
+      "SpecimenGrid",
+      "SpecimenLadder",
+      "SpecimenMatrix",
+      "SpecimenPassage",
+      "SpecimenPlayer",
+      "SpecimenSwatch",
+      "SpecimenViewport",
       "Spinner",
       "StatusMark",
       "Switch",
@@ -17707,6 +19146,7 @@
       "ToggleGroupItem",
       "Toolbar",
       "Tooltip",
+      "TooltipTrigger",
       "Tree",
       "buttonLinkClassName",
       "iconButtonClassName",

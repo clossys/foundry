@@ -30,11 +30,13 @@ const { buildComponentsConsumption } = await import(pathToFileURL(resolve(src, "
 const { stableStringify } = await import(pathToFileURL(resolve(src, "catalog-core/stable.ts")).href);
 const { importShadcnAriaComponents } = await import(pathToFileURL(resolve(src, "importers/shadcn-aria-components.ts")).href);
 const inventory = Object.fromEntries(["themes", "assets", "components"].map(layer => [layer, json(`src/catalog/slots/${layer}.json`)]));
-for (const [layer, count] of [["themes", 42], ["assets", 45], ["components", 57]]) {
-  const ids = inventory[layer].map(slot => slot.id).sort();
-  assert.equal(ids.length, count, `${layer} leaf count changed`);
-  assert.equal(new Set(ids).size, count, `${layer} duplicate leaf`);
-  assert.deepEqual(ids, [...json(`src/catalog/ia/${layer}.leaf-freeze.json`).leafIds].sort(), `${layer} signed leaf inventory changed`);
+// Expected leaves are the signed freeze plus its explicit amendment files, exactly as the source loader checks them.
+const { checkFrozenLeafSets } = await import(pathToFileURL(resolve(src, "catalog-core/leaf-freeze.ts")).href);
+for (const layer of ["themes", "assets", "components"]) {
+  const ids = inventory[layer].map(slot => slot.id);
+  assert.equal(new Set(ids).size, ids.length, `${layer} duplicate leaf`);
+  const drift = checkFrozenLeafSets([], inventory[layer].map(slot => ({ id: slot.id, layer })), [layer]).filter(finding => finding.source === "slots");
+  assert.deepEqual(drift, [], `${layer} signed leaf inventory changed`);
 }
 const docs = ["foundry", "shadcn@aria"].flatMap(source => readdirSync(resolve(src, `catalog/fills/${source}`)).filter(name => /^components\.(?!coverage\.)[^/]+\.json$/.test(name)).sort().map(name => json(`src/catalog/fills/${source}/${name}`)));
 const fills = docs.flatMap(doc => Object.values(doc.components).map(fill => ({ ...fill, id: doc.$extensions["com.clossys.fill"].id, conforms: doc.$extensions["com.clossys.fill"].conforms, evidence: doc.$extensions["com.clossys.fill"].evidence })));
@@ -51,13 +53,14 @@ const names = node => ts.isIdentifier(node) ? [node.text] : ts.isObjectBindingPa
 function moduleInfo(file) {
   if (modules.has(file)) return modules.get(file);
   const ast = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true);
-  const info = { ast, declarations: new Map(), imports: new Map(), exports: new Map() };
+  const info = { ast, declarations: new Map(), imports: new Map(), exports: new Map(), externals: new Set() };
   modules.set(file, info);
   for (const statement of ast.statements) {
     if (ts.isImportDeclaration(statement) && statement.importClause && !statement.importClause.isTypeOnly) {
       const target = localPath(file, statement.moduleSpecifier.text);
-      if (!target) continue;
       const clause = statement.importClause;
+      // A package import (`react-aria-components`) is outside the scan; a local re-export of it ends there.
+      if (!target) { if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) for (const binding of clause.namedBindings.elements) info.externals.add(binding.name.text); continue; }
       if (clause.name) info.imports.set(clause.name.text, { file: target, name: "default" });
       if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) for (const binding of clause.namedBindings.elements) {
         if (!binding.isTypeOnly) info.imports.set(binding.name.text, { file: target, name: binding.propertyName?.text ?? binding.name.text });
@@ -66,7 +69,11 @@ function moduleInfo(file) {
     }
     if (ts.isExportDeclaration(statement) && !statement.isTypeOnly && statement.exportClause && ts.isNamedExports(statement.exportClause)) {
       const target = statement.moduleSpecifier ? localPath(file, statement.moduleSpecifier.text) : file;
-      for (const binding of statement.exportClause.elements) if (!binding.isTypeOnly && target) info.exports.set(binding.name.text, { file: target, name: binding.propertyName?.text ?? binding.name.text });
+      for (const binding of statement.exportClause.elements) if (!binding.isTypeOnly) {
+        if (target) info.exports.set(binding.name.text, { file: target, name: binding.propertyName?.text ?? binding.name.text });
+        // A package re-export (`export { Form } from "react-aria-components"`) is terminal: nothing local to scan.
+        else info.exports.set(binding.name.text, { file, name: binding.name.text });
+      }
     }
     const exported = statement.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword);
     if (ts.isVariableStatement(statement)) for (const declaration of statement.declarationList.declarations) for (const name of names(declaration.name)) {
@@ -85,7 +92,10 @@ function exportTarget(file, name, seen = new Set()) {
   const key = `${file}#${name}`;
   if (seen.has(key)) throw new Error("Cyclic export alias");
   seen.add(key);
-  const target = moduleInfo(file).exports.get(name);
+  const info = moduleInfo(file), target = info.exports.get(name);
+  // `export { Local as Public }` names a local binding: an import is followed, a package import is terminal.
+  if (!target && seen.size > 1 && info.imports.has(name)) return exportTarget(info.imports.get(name).file, info.imports.get(name).name, seen);
+  if (!target && seen.size > 1 && info.externals.has(name)) return { file, name };
   assert(target, `Missing package export ${relative(root, file)}#${name}`);
   return target.file === file && target.name === name ? target : exportTarget(target.file, target.name, seen);
 }
@@ -94,9 +104,13 @@ const pointerTarget = pointer => {
   assert(match, "Invalid package pointer");
   return exportTarget(resolve(src, match[1], "index.ts"), match[2]);
 };
+// A pinned fill names package pointers; a composed source fill (`impl.kind: "source"`) names exports of its entry file.
+const fillTargets = fill => fill.pin ? [fill.pin.export, ...Object.values(fill.propMap)].map(pointerTarget)
+  : (assert.equal(fill.impl?.kind, "source", `Foundry fill ${fill.id} has neither pin nor source impl`),
+    [fill.impl.export, ...Object.values(fill.propMap)].map(name => exportTarget(resolve(src, "components/preview-runtime", fill.impl.entry), name)));
 const owners = new Map();
-for (const fill of fills.filter(fill => fill.source === "foundry")) for (const pointer of [fill.pin.export, ...Object.values(fill.propMap)]) {
-  const target = pointerTarget(pointer), key = `${target.file}#${target.name}`;
+for (const fill of fills.filter(fill => fill.source === "foundry")) for (const target of fillTargets(fill)) {
+  const key = `${target.file}#${target.name}`;
   owners.set(key, [...new Set([...(owners.get(key) ?? []), fill.slot])]);
 }
 // Data tables and glyph-provider defaults are dependency injection boundaries. Reading
@@ -131,7 +145,7 @@ function scanPackage(fill) {
       } else if (info.declarations.has(symbol)) visit(file, symbol);
     }
   }
-  for (const pointer of [fill.pin.export, ...Object.values(fill.propMap)]) { const target = pointerTarget(pointer); visit(target.file, target.name); }
+  for (const target of fillTargets(fill)) visit(target.file, target.name);
   return { fill: fill.id, files: [...selected].sort(([a], [b]) => a.localeCompare(b)).map(([file, snippets]) => ({ path: relative(root, file).split("\\").join("/"), content: [...snippets].sort(([a], [b]) => a.localeCompare(b)).map(([, text]) => text).join("\n") })), components: [...components].sort() };
 }
 const fixture = "src/importers/__fixtures__/shadcn-aria";

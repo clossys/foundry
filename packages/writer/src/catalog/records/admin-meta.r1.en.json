@@ -12,7 +12,7 @@
   "sourceFiles": {
     "packages/writer/src/catalog/records/admin-voice.r1.en.json": "128e9d020ef04664f8a501c969f7315be9680825d9c578d77ae5996165ee569e",
     "packages/publisher/src/web/publisher/publisher-sections.ts": "0fa778db70effc53426b213058037569fe5583228569b9a038bf8a562f0329be",
-    "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "b31967b602b3500216ee76be0cfb888a0018b47ec221eff6bcb30de7ed762b44"
+    "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "598cce9b14c34a1f3f54568e915eaf688dd1c53a335dff6fcc0b25ae84e051ec"
   },
   "records": [
     {
@@ -15459,7 +15459,7 @@
       ],
       "sourceFiles": {
         "packages/publisher/src/formats/slots/formats.ts": "2767f227c2c1cdf96e8d972e53c915e1879c654776e3c17188a92ee9ca2c4a8d",
-        "packages/designer/src/catalog/slots/frames.json": "4afddf0f2ba37dbbd8156a16df3660d618f62d5e29f4e7fe3e2335674ce52db7",
+        "packages/designer/src/catalog/slots/frames.json": "5d54fe891496e161636a8a6ee408fffba1af12332cc44fba4516a70594b71b36",
         "packages/publisher/src/layouts/slots/layouts.json": "426bea89fb7f046ddffdbab34d2265b928e664638c30682060b44a39320983e6",
         "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "3a0c0ade71b7188e2322500e48c551d78442863b533000f9ae96cd3f07cbe48b",
         "packages/publisher/src/formats/contract.ts": "037ffa3d60f4a8de9dc490d9659b8623be3eebcc80fab2b2f8b00f54890880c5",
