@@ -8,10 +8,12 @@ import profileData from "./default-component-preview-profile.json" with { type: 
 
 const profile = () => ({ selectionHash: profileData.selectionHash, components: structuredClone(profileData), values: { members: Object.fromEntries(Object.entries(glyphs).map(([slot, value]) => [slot, { slot, value: { light: value } }])) } }) as unknown as CompositeResolved;
 // 59 -> 67: ab36457b2 adopts the eight composed defaults (command, dropdown-menu, empty, item, rich-text, scroll-area, sheet, sidebar).
-it("renders all 67 selected default component leaves with zero unavailable previews", () => {
+// 67 -> 75 (planner:R2F-15b): generate-default-component-preview.mjs selects the eight owner-signed components.specimen-*
+// leaves (25a8fc7b2) once R2F-33d1 ships their preview-runtime modules.
+it("renders all 75 selected default component leaves with zero unavailable previews", () => {
   const selected = profile();
   const leaves = Object.keys(selected.components.components);
-  expect(leaves).toHaveLength(67);
+  expect(leaves).toHaveLength(75);
   const failures: Record<string,string> = {};
   for (const leaf of leaves) {
     const node = defaultComponentPreviews.preview(leaf, selected);
