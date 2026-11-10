@@ -1,6 +1,6 @@
 {
   "schema": "designer-foundation/v1",
-  "sourceTree": "19fa275c13e73ea0508dbd647bbf95ecffb6c516",
+  "sourceTree": "12521d85e96d4a8179cc2ba48ab5e1dcaea724f6",
   "files": {
     "src/backdrop/consumer-art.ts": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e",
     "src/backdrop/contract.ts": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8",
@@ -485,7 +485,7 @@
     "src/catalog/fills/foundry/sections.record-detail.json": "408d2cc53bc7c5b945e0b525e4ad8824742103645de206f70e4a5a43c198de90",
     "src/catalog/fills/foundry/sections.resource-list.json": "6784c7975fcf7b74407c4385a85afbbf38e7c34ef83aedc1e4bcaf95945b2fe7",
     "src/catalog/fills/foundry/sections.section-header.json": "f699be3f37bda5e84a1c40b4db704aba5a6390f88bc2bdc6d0010fe2792316d3",
-    "src/catalog/fills/foundry/sections.sectioned-document.json": "f06001825e00058c4e03c659bd73f14f16ca804be45a90ded78629b042d1ba6a",
+    "src/catalog/fills/foundry/sections.sectioned-document.json": "f491e645501521bdca2e11a908197e93df9749e4560793cac58112d6dd0faa37",
     "src/catalog/fills/foundry/sections.settings.json": "8f21281c250776e39b5d9031a536e813aa2b4ffa2c18c5d47aa720757deb53c9",
     "src/catalog/fills/foundry/sections.sign-in-form.json": "be523353ad39f52aebc83cac738fbc287213c9a83194a6a135795d8abfae53f2",
     "src/catalog/fills/foundry/sections.stats.json": "eb4c9aea4e50ee736591ed4f2808ac8e4600419988d2670b92a5be9811c2ec18",
@@ -739,7 +739,7 @@
     "src/catalog/standards/tailwind-v4-theme.json": "595a26a150278cbe029dc28a5b1f196908dd33249e69037df414e4e31dafa8aa",
     "src/catalog/standards/wcag-2.2.json": "d142986d3581575786dcf992d9cddeb4b49d9eb5cee566dafc2e94955d0dd53c",
     "src/catalog/standards/web-app-manifest.json": "e7a1ae1f34823f9a6ef8a2601971b11984998665268992f9ff1fe46fc0257d4b",
-    "src/catalog/surface-consumption.data.json": "47788798f2b99b24987a4717833ded3cada3a3c409f6dd21aadfcb901446e556",
+    "src/catalog/surface-consumption.data.json": "0708cd1dc51ba7c0e1f451b2b74e4921e05e2a3b9d1399ebb4c123bdd36eb80b",
     "src/catalog/surface-package-history.json": "11098afa263d0c3c3d9ef6d192079557103a79bae377f6c3dff48a0c3a7eeb9b",
     "src/catalog/tokens.ts": "3c0788f5b6205bbeec894a87fb9e0e668b1e36ec7f02fd53714de6d4fc595a34",
     "src/catalog/types.ts": "ced949e244283129f54395e8c850757353132116bb903d347d3a6dd46bbf71cd",
