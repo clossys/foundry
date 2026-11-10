@@ -105,7 +105,7 @@ async function writerSuite(): Promise<SuiteReport> {
 }
 
 /** The Director's own contract checks over each pinned Director candidate. */
-async function directorSuite(root: string): Promise<SuiteReport> {
+export async function directorSuite(root: string): Promise<SuiteReport> {
   const checks = await agentModule("director", "slot-contracts/checks.js");
   const format = await agentModule("director", "slot-contracts/format.js");
   const director = await readPinnedDirector(join(root, "clossys"));

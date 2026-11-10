@@ -6,6 +6,7 @@
  * Attribution is by owner, never by severity downgrade:
  * - slot integrity rows (`check --slots`): the row's own agent; a slot-model input error is every agent's,
  *   except the Designer references manifest, which is the Designer's;
+ * - Director: also every error of the Director slots suite (`check --suites`: D-SPEC and the cell checks);
  * - Designer: also every ref-verbatim finding (the Designer's own check, already enforcing in `clossys check`);
  * - Publisher: every error of the Publisher's page conformance suite (archetype, format, links, meta, copy);
  * - Writer: the conformance errors about copy the Writer supplies (copy binding, copy fit, page meta and nav labels).
@@ -13,7 +14,7 @@
  */
 import { join } from "node:path";
 import type { AgentKind } from "../agents.js";
-import { archetypeSuite, refVerbatimSuite, type SuiteReport } from "../check/record-suites.js";
+import { archetypeSuite, directorSuite, refVerbatimSuite, type SuiteReport } from "../check/record-suites.js";
 import { runSlotResolve, type SlotResolveReport } from "../check/slot-resolve.js";
 
 export interface StrictFinding { code: string; where: string; message: string }
@@ -54,6 +55,13 @@ export function refVerbatimShare(suite: Pick<SuiteReport, "status" | "findings" 
   return suite.findings.filter(finding => finding.severity === "error").map(finding => ({ code: `suites/ref-verbatim/${finding.code}`, where: finding.where, message: finding.message }));
 }
 
+/** The Director's director-slots suite errors (`check --suites`). */
+export function directorSlotsShare(suite: Pick<SuiteReport, "status" | "findings" | "error">, agent: AgentKind): StrictFinding[] {
+  if (agent !== "director") return [];
+  if (suite.status === "error") return [{ code: "suites/director-slots-unavailable", where: "director-slots", message: `Director slots suite could not run: ${suite.error ?? "unknown error"}` }];
+  return suite.findings.filter(finding => finding.severity === "error").map(finding => ({ code: `suites/director-slots/${finding.code}`, where: finding.where, message: finding.message }));
+}
+
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 /** Run the strict checks this agent has a share in, over the consumer at `<root>/clossys`. A check that cannot run is a limit. */
@@ -64,6 +72,10 @@ export async function strictShare(root: string, agent: AgentKind): Promise<Stric
   if (agent === "publisher" || agent === "writer") {
     try { findings.push(...conformanceShare(await archetypeSuite(root, true), agent)); }
     catch (error) { limits.push(`strict page conformance: ${message(error)}`); }
+  }
+  if (agent === "director") {
+    try { findings.push(...directorSlotsShare(await directorSuite(root), agent)); }
+    catch (error) { limits.push(`strict director slots: ${message(error)}`); }
   }
   if (agent === "designer") {
     try { findings.push(...refVerbatimShare(await refVerbatimSuite(root), agent)); }

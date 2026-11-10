@@ -147,7 +147,9 @@ export async function runDirect(args: CliArgs, root: string): Promise<DirectResu
     // Completion and handoff: `direct --check` is clean only when `director check complete --level mvs` and every `director check handoff` would be.
     let readiness: DirectReadiness | undefined;
     try { readiness = readDirectorReadiness(consumer); findings.push(...readinessFindings(readiness)); }
-    catch (error) { limits.push(`readiness: ${error instanceof Error ? error.message : String(error)}`); }
+    // A Director root the strategy reader refuses (drifted or invalid records) cannot be complete: that is a finding about
+    // the records (red, exit 1), not a tool that could not run.
+    catch (error) { findings.push({ code: "readiness-unreadable", slot: "director", message: `MVS and handoff readiness could not be evaluated: ${error instanceof Error ? error.message : String(error)}` }); }
     // The Director's share of the strict checks (`check --slots` rows of the Director's slots).
     const strict = await strictShare(root, "director");
     for (const finding of strict.findings) findings.push({ code: finding.code, slot: finding.where, message: finding.message });

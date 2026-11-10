@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SuiteFinding, SuiteReport } from "../check/record-suites.js";
-import { conformanceShare, refVerbatimShare, slotShare, strictShareLine } from "./strict-share.js";
+import { conformanceShare, directorSlotsShare, refVerbatimShare, slotShare, strictShareLine } from "./strict-share.js";
 
 const slots = (findings: { rule: string; message: string; path?: string }[]) => ({ findings }) as never;
 const suite = (findings: SuiteFinding[], status: SuiteReport["status"] = "ran") => ({ status, findings, ...(status === "error" ? { error: "boom" } : {}) });
@@ -55,6 +55,14 @@ describe("strict share attribution (pure)", () => {
     expect(refVerbatimShare(suite([error("REF-DRIFT", "components.button")]), "designer")).toEqual([expect.objectContaining({ code: "suites/ref-verbatim/REF-DRIFT" })]);
     expect(refVerbatimShare(suite([error("REF-DRIFT")]), "writer")).toEqual([]);
     expect(refVerbatimShare(suite([], "error"), "designer")).toHaveLength(1);
+  });
+
+  it("director-slots errors are the Director's; mutation: empty is empty, a suite that could not run is a finding", () => {
+    expect(directorSlotsShare(suite([error("D-SPEC", "focus.lifecycle.retention")]), "director")).toEqual([expect.objectContaining({ code: "suites/director-slots/D-SPEC", where: "focus.lifecycle.retention" })]);
+    expect(directorSlotsShare(suite([error("D-SPEC")]), "writer")).toEqual([]);
+    expect(directorSlotsShare(suite([]), "director")).toEqual([]);
+    expect(directorSlotsShare(suite([{ severity: "warning", code: "D-SPEC", where: "x", message: "w" }]), "director")).toEqual([]);
+    expect(directorSlotsShare(suite([], "error"), "director")).toHaveLength(1);
   });
 
   it("summarises counts by code", () => {

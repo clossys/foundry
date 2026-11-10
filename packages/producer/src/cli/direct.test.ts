@@ -3,11 +3,11 @@ import { join } from "node:path";
 import { discoverBriefContracts, loadCatalog, type CompletionReport } from "@clossys/director";
 import { directorStoreReader } from "../records/slots.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { firstPinned, flatConsumer, runVerb, snapshot } from "./__fixtures__/flat-consumer.js";
+import { firstPinned, flatConsumer, runVerb, snapshot, withBriefContracts } from "./__fixtures__/flat-consumer.js";
 import { directorReadiness, readinessFindings } from "./direct.js";
 
 let root: string;
-beforeEach(() => { root = flatConsumer(["director", "writer"]); });
+beforeEach(() => { root = withBriefContracts(flatConsumer(["director", "writer"])); });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe("clossys direct over the flat slot model", () => {
