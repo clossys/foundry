@@ -99,6 +99,60 @@
           "--font-mono"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "chart-scatter.tsx",
+        "export": "ChartScatter",
+        "props": {
+          "xLabel": "Sessions",
+          "yLabel": "Conversions",
+          "className": "h-48 w-full max-w-md aspect-auto",
+          "series": [
+            {
+              "key": "desktop",
+              "label": "Desktop",
+              "points": [
+                {
+                  "x": 10,
+                  "y": 30
+                },
+                {
+                  "x": 35,
+                  "y": 62
+                },
+                {
+                  "x": 60,
+                  "y": 88
+                }
+              ]
+            },
+            {
+              "key": "mobile",
+              "label": "Mobile",
+              "points": [
+                {
+                  "x": 12,
+                  "y": 18
+                },
+                {
+                  "x": 38,
+                  "y": 34
+                },
+                {
+                  "x": 64,
+                  "y": 55
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

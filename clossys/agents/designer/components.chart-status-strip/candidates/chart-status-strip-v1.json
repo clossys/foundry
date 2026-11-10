@@ -91,6 +91,63 @@
           "--font-mono"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "chart-status-strip.tsx",
+        "export": "ChartStatusStrip",
+        "props": {
+          "label": "Uptime, last 10 days",
+          "className": "max-w-md",
+          "segments": [
+            {
+              "label": "Day 1",
+              "status": "ok"
+            },
+            {
+              "label": "Day 2",
+              "status": "ok"
+            },
+            {
+              "label": "Day 3",
+              "status": "ok"
+            },
+            {
+              "label": "Day 4",
+              "status": "ok"
+            },
+            {
+              "label": "Day 5",
+              "status": "ok"
+            },
+            {
+              "label": "Day 6",
+              "status": "degraded"
+            },
+            {
+              "label": "Day 7",
+              "status": "ok"
+            },
+            {
+              "label": "Day 8",
+              "status": "ok"
+            },
+            {
+              "label": "Day 9",
+              "status": "down"
+            },
+            {
+              "label": "Day 10",
+              "status": "ok"
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

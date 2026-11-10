@@ -99,6 +99,58 @@
           "--font-mono"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "chart-range.tsx",
+        "export": "ChartRange",
+        "props": {
+          "className": "h-48 w-full max-w-md aspect-auto",
+          "data": [
+            {
+              "label": "Jan",
+              "low": 120,
+              "high": 210,
+              "value": 165
+            },
+            {
+              "label": "Feb",
+              "low": 140,
+              "high": 236,
+              "value": 188
+            },
+            {
+              "label": "Mar",
+              "low": 132,
+              "high": 228,
+              "value": 180
+            },
+            {
+              "label": "Apr",
+              "low": 150,
+              "high": 250,
+              "value": 200
+            },
+            {
+              "label": "May",
+              "low": 160,
+              "high": 262,
+              "value": 211
+            },
+            {
+              "label": "Jun",
+              "low": 172,
+              "high": 284,
+              "value": 228
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

@@ -97,6 +97,100 @@
           "--font-mono"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "chart.tsx",
+        "export": "ChartContainer",
+        "props": {
+          "config": {
+            "visitors": {
+              "label": "Visitors",
+              "color": "var(--chart-1)"
+            }
+          },
+          "className": "h-16 w-full max-w-xs aspect-auto",
+          "children": {
+            "$component": "recharts.LineChart",
+            "props": {
+              "data": [
+                {
+                  "day": 1,
+                  "visitors": 120
+                },
+                {
+                  "day": 2,
+                  "visitors": 132
+                },
+                {
+                  "day": 3,
+                  "visitors": 101
+                },
+                {
+                  "day": 4,
+                  "visitors": 134
+                },
+                {
+                  "day": 5,
+                  "visitors": 190
+                },
+                {
+                  "day": 6,
+                  "visitors": 230
+                },
+                {
+                  "day": 7,
+                  "visitors": 210
+                },
+                {
+                  "day": 8,
+                  "visitors": 182
+                },
+                {
+                  "day": 9,
+                  "visitors": 191
+                },
+                {
+                  "day": 10,
+                  "visitors": 234
+                },
+                {
+                  "day": 11,
+                  "visitors": 290
+                },
+                {
+                  "day": 12,
+                  "visitors": 330
+                }
+              ],
+              "margin": {
+                "top": 4,
+                "right": 4,
+                "bottom": 4,
+                "left": 4
+              }
+            },
+            "children": [
+              {
+                "$component": "recharts.Line",
+                "props": {
+                  "dataKey": "visitors",
+                  "type": "monotone",
+                  "stroke": "var(--color-visitors)",
+                  "strokeWidth": 2,
+                  "dot": false,
+                  "isAnimationActive": false
+                }
+              }
+            ]
+          }
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

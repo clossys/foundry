@@ -7,16 +7,20 @@
  * - `open`: the item's surface is opened on mount through the slot's opener
  *   (a toast region shows one toast instead of nothing);
  * - `visible`: content hidden until focus (`sr-only` with a focus-visible reveal) renders
- *   in its revealed form (a skip link shows instead of nothing).
+ *   in its revealed form (a skip link shows instead of nothing);
+ * - `provider`: the item reads a context its stock provider supplies, so it mounts inside that
+ *   provider (a sidebar row calls `useSidebar`, which throws outside `SidebarProvider`).
  * A slot with no declaration renders the item at rest.
  */
 export type SpecimenState =
   | { readonly state: "open"; readonly opener: { readonly module: string; readonly export: string }; readonly sample: string }
-  | { readonly state: "visible" };
+  | { readonly state: "visible" }
+  | { readonly state: "provider"; readonly provider: { readonly module: string; readonly export: string } };
 
 export const SLOT_SPECIMEN_STATES: Readonly<Record<string, SpecimenState>> = {
   "components.toast": { state: "open", opener: { module: "sonner", export: "toast" }, sample: "Changes saved" },
   "components.skip-nav": { state: "visible" },
+  "components.studio.sidebar-static-row": { state: "provider", provider: { module: "@/components/ui/sidebar", export: "SidebarProvider" } },
 };
 
 export function specimenStateOf(slot: string): SpecimenState | undefined {
