@@ -9,7 +9,7 @@ import { glyphs } from "../components/preview-runtime/adapters/glyphs.js";
 import componentProfile from "./default-component-preview-profile.json" with { type: "json" };
 import { defaultComponentPreviews } from "./default-component-previews.js";
 import { componentSpecimenPreview } from "./component-specimens.js";
-import { SPECIMEN_SHOW_ALL_COPY } from "./component-specimen-leaf-samples.js";
+import { SPECIMEN_SHOW_ALL_COPY, componentSpecimenLeafSamples } from "./component-specimen-leaf-samples.js";
 import { specimenDataset } from "./specimen-dataset.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 
@@ -52,7 +52,7 @@ it("takes Writer-owned copy from the Writer snapshot, unchanged from the catalog
     expect(record, id).toBeDefined();
     expect({ context: record!.context, text: record!.text }, id).toEqual(row);
   }
-  const html = renderToStaticMarkup(<>{componentSpecimenPreview({ modules: { "@clossys/designer/components": components } }).preview("components.media-player", mediaPlayerProfile())}</>);
+  const html = renderToStaticMarkup(<>{componentSpecimenPreview({ modules: { "@clossys/designer/components": components }, leafSamples: componentSpecimenLeafSamples }).preview("components.media-player", mediaPlayerProfile())}</>);
   expect(html).toContain(specimenDataset.writer["st.7mpayr0001"].text);
   expect(html).not.toMatch(/data-specimen-(?:unavailable|error)=/);
 });

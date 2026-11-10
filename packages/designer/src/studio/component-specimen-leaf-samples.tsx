@@ -18,6 +18,7 @@ import { packageSurfacePreview } from "./planned-surface-previews.js";
 import { componentSpecimenKey, componentSpecimenPreview, type ComponentSpecimenModule } from "./component-specimens.js";
 import { componentSpecimenSample, type ComponentSpecimenSample } from "./component-specimen-samples.js";
 import { SPECIMEN_ANCHOR_DATE, specimenDataset } from "./specimen-dataset.js";
+import { componentSpecimenHostSampled, componentSpecimenProps } from "./component-specimen-sample-content.js";
 
 /**
  * Sample content for the registered `components.specimen-*` leaves (planner:R2F-48). Each leaf draws one
@@ -34,7 +35,12 @@ export interface ComponentSpecimenHost {
   readonly modules?: Readonly<Record<string, ComponentSpecimenModule>>;
   /** The host's Writer resolver. Without one, Writer-owned Studio chrome (the show-all action) is a NEED. */
   readonly copy?: StudioCopyBinding;
+  /** The host's sampler for these leaves, normally componentSpecimenLeafSamples. */
+  readonly samples?: ComponentSpecimenLeafSampler;
 }
+
+/** Draws the sample for one sample key, or undefined when the key is not one this sampler owns. */
+export type ComponentSpecimenLeafSampler = (key: string, host: ComponentSpecimenHost) => ComponentSpecimenSample | undefined;
 
 /** Writer reference for the specimen sections' show-all action: strings.admin.action.showAll. */
 export const SPECIMEN_SHOW_ALL_COPY: StudioCopyRef = Object.freeze({ id: "st.aegf3kwazy" });
@@ -45,8 +51,7 @@ type Recipe =
 type Recipes = Readonly<Record<string, Recipe>>;
 
 /** The package exports whose sample is a specimen section, by sample key. */
-const LEAF_KEYS = new Set(["SpecimenSwatch", "SpecimenLadder", "SpecimenPlayer", "SpecimenGrid", "SpecimenMatrix", "SpecimenViewport", "SpecimenPassage", "SpecimenCopyInContext"].map(name => `./components#${name}`));
-export const isSpecimenLeafKey = (key: string): boolean => LEAF_KEYS.has(key);
+export const isSpecimenLeafKey = (key: string): boolean => componentSpecimenHostSampled.has(key) && key !== "./components#MediaPlayer";
 
 /** tokenAssetSpecimenLeaves order: the validator that admits one token or asset item for a variant. */
 const TOKEN_DEFINITION: Readonly<Record<string, number>> = { swatch: 0, "color-ramp": 1, type: 2, spacing: 3, radius: 4, player: 5, asset: 6, icon: 7 };
@@ -200,3 +205,10 @@ export function mediaPlayerSample(host: ComponentSpecimenHost): ComponentSpecime
   if (!video || !poster) return undefined;
   return { props: { video: video.value.light, poster: poster.value.light, passage: recipe.passage } };
 }
+
+/** The sampler a host passes as `leafSamples`: the 8 specimen leaves from their dataset recipes, and media-player. */
+export const componentSpecimenLeafSamples: ComponentSpecimenLeafSampler = (key, host) => {
+  if (isSpecimenLeafKey(key)) return specimenLeafSample(key, host, componentSpecimenProps[key] as Recipes);
+  if (key === "./components#MediaPlayer") return mediaPlayerSample(host);
+  return undefined;
+};

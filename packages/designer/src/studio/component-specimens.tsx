@@ -5,6 +5,7 @@ import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index
 import { componentSpecimenSample, componentSpecimenStateProps, componentSpecimenUnavailableReason, type ComponentSpecimenProbeState, type ComponentSpecimenSample } from "./component-specimen-samples.js";
 import { PreviewOutcomeContext, type SpecimenUnavailableReason } from "./preview-outcome.js";
 import type { StudioCopyBinding } from "./copy-binding.js";
+import type { ComponentSpecimenLeafSampler } from "./component-specimen-leaf-samples.js";
 
 /** The named exports of one module the host imported, e.g. `import * as components from "@clossys/designer/components"`. */
 export type ComponentSpecimenModule = Readonly<Record<string, unknown>>;
@@ -82,6 +83,8 @@ export interface ComponentSpecimenOptions {
   readonly probes?: Readonly<Record<string, ComponentSpecimenProbe>>;
   /** The host's Writer resolver, for Writer-owned chrome a sample draws (a specimen section's show-all action). */
   readonly copy?: StudioCopyBinding;
+  /** The host's sampler for the specimen leaves and media-player (componentSpecimenLeafSamples); injected to keep the preview runtime out of the components barrel. */
+  readonly leafSamples?: ComponentSpecimenLeafSampler;
 }
 
 /**
@@ -214,7 +217,7 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     // came from; resolve() stamps the adopter's id on descriptor.source. A composed leaf is Foundry's rule source.
     const samples = !render && (binding.source === "foundry" && component.impl.kind === "package" || (binding.source === "shadcn@aria" || binding.source === "shadcn-charts" || component.origin.kind === "composed") && component.impl.kind === "source");
     const keyOf = (specifier: string, exportName: string) => componentSpecimenKey(component, specifier, exportName);
-    const sample = samples ? componentSpecimenSample(keyOf(binding.specifier, binding.exportName), binding.Component, binding.exports, { profile, modules: options.modules, copy: options.copy }) : undefined;
+    const sample = samples ? componentSpecimenSample(keyOf(binding.specifier, binding.exportName), binding.Component, binding.exports, { profile, modules: options.modules, copy: options.copy, samples: options.leafSamples }) : undefined;
     // A row that would get the leaf label as children it cannot take is declared unavailable instead of thrown.
     const structured = structuredChildren(component.descriptor.root);
     // Where designer samples apply, a row with no sample is declared unavailable: it never falls back to its label.

@@ -8,6 +8,12 @@ import { specimenDataset as d } from "./specimen-dataset.js";
  * implementation export with it. Foundry entries are keyed by the descriptor's `pin.export`.
  */
 
+/** Sample keys whose dataset entry is a recipe the host's leaf sampler draws (componentSpecimenLeafSamples), never plain props. */
+export const componentSpecimenHostSampled: ReadonlySet<string> = new Set([
+  ...["SpecimenSwatch", "SpecimenLadder", "SpecimenPlayer", "SpecimenGrid", "SpecimenMatrix", "SpecimenViewport", "SpecimenPassage", "SpecimenCopyInContext"].map(name => `./components#${name}`),
+  "./components#MediaPlayer",
+]);
+
 /** Props objects for components whose whole input is data. */
 export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   "./components#Avatar": d.avatar,

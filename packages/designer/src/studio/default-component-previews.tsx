@@ -12,6 +12,7 @@ import { glyphs } from "../components/preview-runtime/adapters/glyphs.js";
 import identities from "../components/preview-runtime/identities.json" with { type: "json" };
 import { componentSpecimenPreview } from "./component-specimens.js";
 import { componentSpecimenProps } from "./component-specimen-sample-content.js";
+import { componentSpecimenLeafSamples } from "./component-specimen-leaf-samples.js";
 
 /** Implementation identity excludes consumer stamps and expanded open token scales. */
 function identity(component: ResolvedComponent): string {
@@ -34,7 +35,7 @@ const modules = {
  * source), so no designer sample covers it and its whole input is data: its sample content is set through its own
  * props from the shared dataset, on the one rest specimen.
  */
-const specimens = componentSpecimenPreview({ modules, probes: {
+const specimens = componentSpecimenPreview({ modules, leafSamples: componentSpecimenLeafSamples, probes: {
   "components.rich-text": { props: componentSpecimenProps["./components#RichText"] },
 }, provider: ({ children }: { children?: ReactNode }) => <components.GlyphProvider glyphs={glyphs}>{children}</components.GlyphProvider>, restOnly: true });
 

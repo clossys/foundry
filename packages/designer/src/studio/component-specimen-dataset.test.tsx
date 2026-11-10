@@ -14,6 +14,7 @@ import * as content from "./component-specimen-sample-content.js";
 import { COMPONENT_SPECIMEN_PROBE_STATES, componentSpecimenPreview } from "./index.js";
 import { SPECIMEN_ANCHOR_DATE, SPECIMEN_DATASET_SEED, specimenDataset } from "./specimen-dataset.js";
 import { componentSpecimenSample, componentSpecimenStockAnatomy, componentSpecimenStockOverlays } from "./component-specimen-samples.js";
+import { componentSpecimenLeafSamples } from "./component-specimen-leaf-samples.js";
 
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
 const source = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
@@ -121,7 +122,7 @@ it("draws every fed Foundry component with dataset content, never its leaf label
   const errors = vi.spyOn(console, "error").mockImplementation(() => {});
   const strings = [...datasetIndex().primitives].filter((value): value is string => typeof value === "string" && value.length > 2)
     .map(value => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;"));
-  const specimens = componentSpecimenPreview({ modules: hostModules });
+  const specimens = componentSpecimenPreview({ modules: hostModules, leafSamples: componentSpecimenLeafSamples });
   const fills = loadCatalogBundles().componentFills.flatMap(doc => Object.values(doc.components))
     .filter(fill => fill.source === "foundry" && fill.impl.kind === "package" && fedKeys().has(keyOf(fill)));
   expect(fills.length).toBeGreaterThan(50);
