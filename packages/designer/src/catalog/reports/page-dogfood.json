@@ -3214,63 +3214,97 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/account-summary.tsx#SemanticContent@224f716ed37f",
-      "evidence": "Unknown visual import or local component <SemanticContent>; no registered slot resolves.",
-      "file": "src/runtime/sections/account-summary.tsx",
-      "line": 29,
-      "missing": "SemanticContent visual capability",
-      "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
-      "slotId": null,
-      "tag": "SemanticContent"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/account-summary.tsx#SemanticContent@77055776d0ec",
-      "evidence": "Unknown visual import or local component <SemanticContent>; no registered slot resolves.",
-      "file": "src/runtime/sections/account-summary.tsx",
-      "line": 48,
-      "missing": "SemanticContent visual capability",
-      "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
-      "slotId": null,
-      "tag": "SemanticContent"
-    },
-    {
-      "code": "DF2",
-      "elementId": "src/runtime/sections/account-summary.tsx#SemanticContent@77055776d0ec",
-      "evidence": "unresolved class utilities: gap-sm",
-      "file": "src/runtime/sections/account-summary.tsx",
-      "line": 48,
-      "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
-      "slotId": null,
-      "tag": "SemanticContent"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/account-summary.tsx#Avatar@79dd1404a986",
+      "elementId": "src/runtime/sections/account-summary.tsx#Avatar@8886ed2d8ae3",
       "evidence": "Unknown visual import or local component <Avatar>; no registered slot resolves.",
       "file": "src/runtime/sections/account-summary.tsx",
-      "line": 48,
+      "line": 42,
       "missing": "Avatar visual capability",
       "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
       "slotId": null,
       "tag": "Avatar"
     },
     {
-      "code": "DF2",
-      "elementId": "src/runtime/sections/account-summary.tsx#Avatar@79dd1404a986",
-      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "code": "DF5",
+      "elementId": "src/runtime/sections/account-summary.tsx#AvatarImage@008ab4e2c25d",
+      "evidence": "Unknown visual import or local component <AvatarImage>; no registered slot resolves.",
       "file": "src/runtime/sections/account-summary.tsx",
-      "line": 48,
+      "line": 42,
+      "missing": "AvatarImage visual capability",
+      "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
+      "slotId": null,
+      "tag": "AvatarImage"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/runtime/sections/account-summary.tsx#AvatarFallback@e95a232f3192",
+      "evidence": "Unknown visual import or local component <AvatarFallback>; no registered slot resolves.",
+      "file": "src/runtime/sections/account-summary.tsx",
+      "line": 42,
+      "missing": "AvatarFallback visual capability",
+      "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
+      "slotId": null,
+      "tag": "AvatarFallback"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/runtime/sections/account-summary.tsx#Avatar@8d301cef4734",
+      "evidence": "Unknown visual import or local component <Avatar>; no registered slot resolves.",
+      "file": "src/runtime/sections/account-summary.tsx",
+      "line": 43,
+      "missing": "Avatar visual capability",
       "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
       "slotId": null,
       "tag": "Avatar"
     },
     {
       "code": "DF5",
+      "elementId": "src/runtime/sections/account-summary.tsx#AvatarFallback@e95a232f3192.2",
+      "evidence": "Unknown visual import or local component <AvatarFallback>; no registered slot resolves.",
+      "file": "src/runtime/sections/account-summary.tsx",
+      "line": 43,
+      "missing": "AvatarFallback visual capability",
+      "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
+      "slotId": null,
+      "tag": "AvatarFallback"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/runtime/sections/account-summary.tsx#SemanticContent@224f716ed37f",
+      "evidence": "Unknown visual import or local component <SemanticContent>; no registered slot resolves.",
+      "file": "src/runtime/sections/account-summary.tsx",
+      "line": 45,
+      "missing": "SemanticContent visual capability",
+      "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
+      "slotId": null,
+      "tag": "SemanticContent"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/runtime/sections/account-summary.tsx#SemanticContent@8f55dafd24ff",
+      "evidence": "Unknown visual import or local component <SemanticContent>; no registered slot resolves.",
+      "file": "src/runtime/sections/account-summary.tsx",
+      "line": 64,
+      "missing": "SemanticContent visual capability",
+      "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
+      "slotId": null,
+      "tag": "SemanticContent"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/runtime/sections/account-summary.tsx#SemanticContent@8f55dafd24ff",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/runtime/sections/account-summary.tsx",
+      "line": 64,
+      "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
+      "slotId": null,
+      "tag": "SemanticContent"
+    },
+    {
+      "code": "DF5",
       "elementId": "src/runtime/sections/account-summary.tsx#Link@4b86cad2d368",
       "evidence": "Unknown visual import or local component <Link>; no registered slot resolves.",
       "file": "src/runtime/sections/account-summary.tsx",
-      "line": 57,
+      "line": 73,
       "missing": "Link visual capability",
       "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
       "slotId": null,
@@ -3281,7 +3315,7 @@
       "elementId": "src/runtime/sections/account-summary.tsx#DetailView@624df0f1f581",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "src/runtime/sections/account-summary.tsx",
-      "line": 59,
+      "line": 75,
       "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
       "slotId": null,
       "tag": "DetailView"
@@ -3291,7 +3325,7 @@
       "elementId": "src/runtime/sections/account-summary.tsx#DetailView@624df0f1f581",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "src/runtime/sections/account-summary.tsx",
-      "line": 59,
+      "line": 75,
       "raisedBy": "src/runtime/sections/account-summary.tsx#surface",
       "slotId": null,
       "tag": "DetailView"
@@ -3841,21 +3875,31 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/features.tsx#FeatureCard@b8775a280ad9",
+      "elementId": "src/runtime/sections/features.tsx#FeatureCard@09b383addb66",
       "evidence": "Unknown visual import or local component <FeatureCard>; no registered slot resolves.",
       "file": "src/runtime/sections/features.tsx",
-      "line": 34,
+      "line": 35,
       "missing": "FeatureCard visual capability",
       "raisedBy": "src/runtime/sections/features.tsx#surface",
       "slotId": null,
       "tag": "FeatureCard"
     },
     {
+      "code": "DF2",
+      "elementId": "src/runtime/sections/features.tsx#FeatureCard@09b383addb66",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/runtime/sections/features.tsx",
+      "line": 35,
+      "raisedBy": "src/runtime/sections/features.tsx#surface",
+      "slotId": null,
+      "tag": "FeatureCard"
+    },
+    {
       "code": "DF5",
-      "elementId": "src/runtime/sections/features.tsx#FeatureSurface@2dbbb7ddb04d",
+      "elementId": "src/runtime/sections/features.tsx#FeatureSurface@73970013cb56",
       "evidence": "Unknown visual import or local component <FeatureSurface>; no registered slot resolves.",
       "file": "src/runtime/sections/features.tsx",
-      "line": 34,
+      "line": 35,
       "missing": "FeatureSurface visual capability",
       "raisedBy": "src/runtime/sections/features.tsx#surface",
       "slotId": null,
@@ -3874,42 +3918,22 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/form.tsx#Select@8cf9b154da8c",
+      "elementId": "src/runtime/sections/form.tsx#Select@f2688be3a842",
       "evidence": "Unknown visual import or local component <Select>; no registered slot resolves.",
       "file": "src/runtime/sections/form.tsx",
-      "line": 69,
+      "line": 70,
       "missing": "Select visual capability",
       "raisedBy": "src/runtime/sections/form.tsx#surface",
       "slotId": null,
       "tag": "Select"
     },
     {
-      "code": "DF2",
-      "elementId": "src/runtime/sections/form.tsx#Select@8cf9b154da8c",
-      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
-      "file": "src/runtime/sections/form.tsx",
-      "line": 69,
-      "raisedBy": "src/runtime/sections/form.tsx#surface",
-      "slotId": null,
-      "tag": "Select"
-    },
-    {
       "code": "DF5",
-      "elementId": "src/runtime/sections/form.tsx#ComboBox@d446e7a09a5b",
+      "elementId": "src/runtime/sections/form.tsx#ComboBox@afacf06d3b8d",
       "evidence": "Unknown visual import or local component <ComboBox>; no registered slot resolves.",
       "file": "src/runtime/sections/form.tsx",
-      "line": 70,
+      "line": 71,
       "missing": "ComboBox visual capability",
-      "raisedBy": "src/runtime/sections/form.tsx#surface",
-      "slotId": null,
-      "tag": "ComboBox"
-    },
-    {
-      "code": "DF2",
-      "elementId": "src/runtime/sections/form.tsx#ComboBox@d446e7a09a5b",
-      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
-      "file": "src/runtime/sections/form.tsx",
-      "line": 70,
       "raisedBy": "src/runtime/sections/form.tsx#surface",
       "slotId": null,
       "tag": "ComboBox"
@@ -3919,7 +3943,7 @@
       "elementId": "src/runtime/sections/form.tsx#Checkbox@a13591f7d6c1",
       "evidence": "Unknown visual import or local component <Checkbox>; no registered slot resolves.",
       "file": "src/runtime/sections/form.tsx",
-      "line": 73,
+      "line": 74,
       "missing": "Checkbox visual capability",
       "raisedBy": "src/runtime/sections/form.tsx#surface",
       "slotId": null,
@@ -3927,42 +3951,22 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/form.tsx#Textarea@6f9a85cd8da2",
+      "elementId": "src/runtime/sections/form.tsx#Textarea@b6a400c2af60",
       "evidence": "Unknown visual import or local component <Textarea>; no registered slot resolves.",
       "file": "src/runtime/sections/form.tsx",
-      "line": 75,
+      "line": 76,
       "missing": "Textarea visual capability",
       "raisedBy": "src/runtime/sections/form.tsx#surface",
       "slotId": null,
       "tag": "Textarea"
     },
     {
-      "code": "DF2",
-      "elementId": "src/runtime/sections/form.tsx#Textarea@6f9a85cd8da2",
-      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
-      "file": "src/runtime/sections/form.tsx",
-      "line": 75,
-      "raisedBy": "src/runtime/sections/form.tsx#surface",
-      "slotId": null,
-      "tag": "Textarea"
-    },
-    {
       "code": "DF5",
-      "elementId": "src/runtime/sections/form.tsx#TextField@32a3df6f5d4a",
+      "elementId": "src/runtime/sections/form.tsx#TextField@cc99106b62f6",
       "evidence": "Unknown visual import or local component <TextField>; no registered slot resolves.",
       "file": "src/runtime/sections/form.tsx",
-      "line": 77,
+      "line": 78,
       "missing": "TextField visual capability",
-      "raisedBy": "src/runtime/sections/form.tsx#surface",
-      "slotId": null,
-      "tag": "TextField"
-    },
-    {
-      "code": "DF2",
-      "elementId": "src/runtime/sections/form.tsx#TextField@32a3df6f5d4a",
-      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
-      "file": "src/runtime/sections/form.tsx",
-      "line": 77,
       "raisedBy": "src/runtime/sections/form.tsx#surface",
       "slotId": null,
       "tag": "TextField"
@@ -3970,17 +3974,6 @@
     {
       "code": "DF5",
       "elementId": "src/runtime/sections/form.tsx#Banner@dff401237346",
-      "evidence": "Unknown visual import or local component <Banner>; no registered slot resolves.",
-      "file": "src/runtime/sections/form.tsx",
-      "line": 84,
-      "missing": "Banner visual capability",
-      "raisedBy": "src/runtime/sections/form.tsx#surface",
-      "slotId": null,
-      "tag": "Banner"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/form.tsx#Banner@a910ff68d840",
       "evidence": "Unknown visual import or local component <Banner>; no registered slot resolves.",
       "file": "src/runtime/sections/form.tsx",
       "line": 85,
@@ -3991,10 +3984,21 @@
     },
     {
       "code": "DF5",
+      "elementId": "src/runtime/sections/form.tsx#Banner@a910ff68d840",
+      "evidence": "Unknown visual import or local component <Banner>; no registered slot resolves.",
+      "file": "src/runtime/sections/form.tsx",
+      "line": 86,
+      "missing": "Banner visual capability",
+      "raisedBy": "src/runtime/sections/form.tsx#surface",
+      "slotId": null,
+      "tag": "Banner"
+    },
+    {
+      "code": "DF5",
       "elementId": "src/runtime/sections/form.tsx#Button@dffc1ceedbe4",
       "evidence": "Unknown visual import or local component <Button>; no registered slot resolves.",
       "file": "src/runtime/sections/form.tsx",
-      "line": 91,
+      "line": 92,
       "missing": "Button visual capability",
       "raisedBy": "src/runtime/sections/form.tsx#surface",
       "slotId": null,
@@ -4237,6 +4241,16 @@
       "raisedBy": "src/runtime/sections/hero.tsx#surface",
       "slotId": null,
       "tag": "LineChart"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/runtime/sections/hero.tsx#Hero@1c92ce52c9ab",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/runtime/sections/hero.tsx",
+      "line": 60,
+      "raisedBy": "src/runtime/sections/hero.tsx#surface",
+      "slotId": null,
+      "tag": "Hero"
     },
     {
       "code": "DF5",
@@ -13100,14 +13114,6 @@
   "scanned": [
     {
       "elements": 0,
-      "file": "src/backdrop/consumer-art.ts"
-    },
-    {
-      "elements": 0,
-      "file": "src/backdrop/contract.ts"
-    },
-    {
-      "elements": 0,
       "file": "src/catalog-assets/backdrop-graphic.ts"
     },
     {
@@ -13747,7 +13753,7 @@
       "file": "src/runtime/sections/access-matrix.tsx"
     },
     {
-      "elements": 5,
+      "elements": 9,
       "file": "src/runtime/sections/account-summary.tsx"
     },
     {
@@ -14492,23 +14498,7 @@
     },
     {
       "elements": 0,
-      "file": "src/tokens/assert-token-styles-loaded.ts"
-    },
-    {
-      "elements": 0,
-      "file": "src/tokens/check-brand-file-coverage.ts"
-    },
-    {
-      "elements": 0,
       "file": "src/tokens/color.ts"
-    },
-    {
-      "elements": 0,
-      "file": "src/tokens/contrast-gate.ts"
-    },
-    {
-      "elements": 0,
-      "file": "src/tokens/contrast-pairs.ts"
     },
     {
       "elements": 0,
@@ -14528,19 +14518,7 @@
     },
     {
       "elements": 0,
-      "file": "src/tokens/index.ts"
-    },
-    {
-      "elements": 0,
       "file": "src/tokens/internal/resolve-token-value.ts"
-    },
-    {
-      "elements": 0,
-      "file": "src/tokens/master-mark.ts"
-    },
-    {
-      "elements": 0,
-      "file": "src/tokens/parse-brand-declarations.ts"
     },
     {
       "elements": 0,
@@ -14565,10 +14543,6 @@
     {
       "elements": 0,
       "file": "src/tokens/tokens.ts"
-    },
-    {
-      "elements": 0,
-      "file": "src/type-record/check-type-record.ts"
     }
   ],
   "schemaVersion": 1,
@@ -14590,8 +14564,8 @@
     "ul": 5
   },
   "summary": {
-    "elements": 1104,
-    "findings": 1236,
+    "elements": 1108,
+    "findings": 1237,
     "library": 241,
     "structural": 97
   }

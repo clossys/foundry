@@ -40,7 +40,9 @@
           "components": [
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.accent"
+          ]
         },
         "sourceFiles": [
           {
@@ -69,7 +71,7 @@
           },
           {
             "path": "packages/designer/src/blocks/MediaFigure.tsx",
-            "sha256": "584bd94f4c9a17a0685ffac72f9f5a614efe30bfcab04dd003f1f375001915eb"
+            "sha256": "93ceb4d51bfb326f2998b28e3c028d0d1272c1c4f34f917646e6927fbe26fa99"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -132,7 +134,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.accent"
+        ]
       },
       "slot": "sections.media",
       "slotMap": {
