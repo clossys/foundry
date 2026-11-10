@@ -74,7 +74,7 @@ export type { FieldProps, FieldRenderProps } from "./Field.js";
 
 export { Icon } from "./preview-runtime/components/icon/icon.js";
 export type { IconProps, IconNode } from "./preview-runtime/components/icon/icon.js";
-export type { IconSize } from "../catalog/types.js";
+export type IconSize = NonNullable<import("./preview-runtime/components/icon/icon.js").IconProps["size"]>;
 
 export { Meter } from "./Meter.server.js";
 export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Meter.js";

@@ -493,7 +493,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "presentational-exception",
     notes: [PRESENTATIONAL, "Used by the account menu, testimonial and chat blocks."],
   }),
-  onMain("Icon", ["src/components/Icon.tsx"], {
+  onMain("Icon", ["src/components/preview-runtime/components/icon/icon.tsx"], {
     id: "depict.icon",
     label: "Icon",
     racBase: none("presentational"),

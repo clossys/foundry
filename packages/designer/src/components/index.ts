@@ -67,7 +67,7 @@ export type { IconButtonProps } from "./IconButton.js";
 
 export { Icon } from "./preview-runtime/components/icon/icon.js";
 export type { IconProps, IconNode } from "./preview-runtime/components/icon/icon.js";
-export type { IconSize } from "../catalog/types.js";
+export type IconSize = NonNullable<import("./preview-runtime/components/icon/icon.js").IconProps["size"]>;
 
 export { TextField } from "./TextField.js";
 export type { TextFieldProps } from "./TextField.js";
