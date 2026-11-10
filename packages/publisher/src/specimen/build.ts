@@ -41,6 +41,23 @@ export interface SpecimenBuilderOptions {
   /** Directory npm imports resolve from (the preview workspace). Defaults to the process cwd. */
   readonly workspace?: string;
   readonly esbuild?: SpecimenEsbuild;
+  /** Cold builds (Tailwind compile + esbuild bundle) that run at once; the rest queue. Defaults to 2. */
+  readonly coldBuilds?: number;
+}
+
+/** Cold builds a builder runs at once: each holds a Tailwind compile and an esbuild bundle. */
+export const SPECIMEN_COLD_BUILDS = 2;
+
+/** At most `limit` tasks run at once; the rest wait their turn in arrival order. */
+function limiter(limit: number): <T>(task: () => Promise<T>) => Promise<T> {
+  let active = 0;
+  const waiting: (() => void)[] = [];
+  return async task => {
+    // A finishing task hands its place straight to the next waiter, so `active` never exceeds the limit.
+    if (active < limit) active++;
+    else await new Promise<void>(resolve => waiting.push(resolve));
+    try { return await task(); } finally { const next = waiting.shift(); if (next) next(); else active--; }
+  };
 }
 
 const publisherDir = dirname(fileURLToPath(import.meta.url));
@@ -189,26 +206,55 @@ function resolvable(id: string, workspace: string): boolean {
   try { resolveStyle(id, workspace); return true; } catch { return false; }
 }
 
-async function compileCss(sources: readonly { content: string; extension: string }[], workspace: string): Promise<string> {
-  const tailwind = await import("tailwindcss") as { compile: (css: string, options: Record<string, unknown>) => Promise<{ build(candidates: string[]): string }> };
-  const entry = [
-    "@layer theme, base, components, utilities;",
-    '@import "tailwindcss/theme.css" layer(theme);',
-    '@import "tailwindcss/preflight.css" layer(base);',
-    '@import "tailwindcss/utilities.css" layer(utilities);',
-    // The app build imports shadcn's layer; without it a React Aria `data-orientation` never meets `data-horizontal:`.
-    ...APP_LAYERS.filter(id => resolvable(id, workspace)).map(id => `@import "${id}";`),
-    SHADCN_THEME_INLINE,
-  ].join("\n");
-  const compiled = await tailwind.compile(entry, {
-    base: workspace,
-    loadStylesheet: async (id: string) => {
-      const path = resolveStyle(id, workspace);
-      return { path, base: dirname(path), content: await readFile(path, "utf8") };
-    },
-  });
+/** Per workspace: the Tailwind entry and every stylesheet it loads, resolved and read once. */
+const tailwindInputs = new Map<string, { entry: string; sheets: Map<string, Promise<{ path: string; base: string; content: string }>> }>();
+function tailwindInputsOf(workspace: string) {
+  let inputs = tailwindInputs.get(workspace);
+  if (!inputs) {
+    const entry = [
+      "@layer theme, base, components, utilities;",
+      '@import "tailwindcss/theme.css" layer(theme);',
+      '@import "tailwindcss/preflight.css" layer(base);',
+      '@import "tailwindcss/utilities.css" layer(utilities);',
+      // The app build imports shadcn's layer; without it a React Aria `data-orientation` never meets `data-horizontal:`.
+      ...APP_LAYERS.filter(id => resolvable(id, workspace)).map(id => `@import "${id}";`),
+      SHADCN_THEME_INLINE,
+    ].join("\n");
+    inputs = { entry, sheets: new Map() };
+    tailwindInputs.set(workspace, inputs);
+  }
+  return inputs;
+}
+
+/** `compiledCss`: one builder's stylesheets by workspace, entry and candidate set, so the same inputs compile once. */
+async function compileCss(sources: readonly { content: string; extension: string }[], workspace: string, compiledCss: Map<string, Promise<string>>): Promise<string> {
+  const inputs = tailwindInputsOf(workspace);
   const candidates = [...new Set(await candidatesOf(sources))].sort();
-  return `${compiled.build(candidates)}\n${SPECIMEN_CHROME_CSS}`;
+  const key = sha256(JSON.stringify([workspace, inputs.entry, candidates]));
+  let css = compiledCss.get(key);
+  if (!css) {
+    // A Tailwind compiler accumulates every candidate it was ever given, so one is never shared
+    // between specimens; what is shared is the parsed inputs (entry and stylesheet reads) and the output.
+    css = (async () => {
+      const tailwind = await import("tailwindcss") as { compile: (css: string, options: Record<string, unknown>) => Promise<{ build(candidates: string[]): string }> };
+      const compiled = await tailwind.compile(inputs.entry, {
+        base: workspace,
+        loadStylesheet: (id: string) => {
+          let sheet = inputs.sheets.get(id);
+          if (!sheet) {
+            sheet = (async () => { const path = resolveStyle(id, workspace); return { path, base: dirname(path), content: await readFile(path, "utf8") }; })();
+            inputs.sheets.set(id, sheet);
+            sheet.catch(() => inputs.sheets.delete(id));
+          }
+          return sheet;
+        },
+      });
+      return `${compiled.build(candidates)}\n${SPECIMEN_CHROME_CSS}`;
+    })();
+    compiledCss.set(key, css);
+    css.catch(() => compiledCss.delete(key));
+  }
+  return css;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
@@ -370,34 +416,51 @@ async function bundle(esbuild: SpecimenEsbuild, graph: Closure, entry: string, w
 export function createSpecimenBuilder(options: SpecimenBuilderOptions = {}) {
   const workspace = options.workspace ?? process.cwd();
   const builds = new Map<string, Promise<SpecimenBuild>>();
+  const compiledCss = new Map<string, Promise<string>>();
+  const cold = limiter(Math.max(1, options.coldBuilds ?? SPECIMEN_COLD_BUILDS));
+  // The content hash needs the closure, so a finished build is found only after the walk. A
+  // request for a record already being built (same record bytes, preview and source) joins
+  // that build instead of walking the closure again; a settled one walks it again, because
+  // another slot's pin can change which items the closure resolves to.
+  const inflight = new Map<string, { source: SpecimenRecordSource | undefined; pending: Promise<SpecimenBuild> }>();
+  const build = async (record: SpecimenRecord, source?: SpecimenRecordSource): Promise<SpecimenBuild> => {
+    const errors: string[] = [];
+    const visual = record.kind === "visual";
+    const graph: Closure = visual ? await closure(record, source, errors) : { files: new Map(), aliases: new Map() };
+    const files = graph.files;
+    const entry = visual ? specimenEntry(record) : undefined;
+    if (visual && !entry) errors.push(`${record.id}: payload has no code file to mount`);
+    const mounted = visual ? specimenExport(record, entry) : undefined;
+    if (visual && entry && !mounted) errors.push(`${record.id}: ${entry.path} exports no component to mount`);
+    // Fixture props (an element tree's class names included) are styled like the payload's own sources.
+    const fixtures = visual && record.preview.fixtures ? JSON.stringify(record.preview.fixtures) : "";
+    const hash = sha256(JSON.stringify([SPECIMEN_RENDERER_VERSION, BOOTSTRAP, record.kind, entry?.path ?? null, mounted ?? null, [...files].sort(), errors, fixtures])).slice(0, 24);
+    let pending = builds.get(hash);
+    if (!pending) {
+      pending = cold(async () => {
+        const sources = [...files].filter(([path]) => CODE.test(path)).map(([path, content]) => ({ content, extension: extname(path).slice(1) }));
+        const css = await compileCss([...sources, { content: BOOTSTRAP, extension: "js" }, ...(fixtures ? [{ content: fixtures, extension: "json" }] : [])], workspace, compiledCss);
+        const exported = mounted ? { export: mounted } : {};
+        if (!visual || !entry) return { hash, css, errors, ...exported };
+        const esbuild = options.esbuild ?? await import("esbuild" as string) as SpecimenEsbuild;
+        const built = await bundle(esbuild, graph, posix.normalize(entry.path), workspace);
+        return { hash, css: built.css ? `${css}\n${built.css}` : css, errors: [...errors, ...built.errors], ...exported, ...(built.js ? { js: built.js } : {}) };
+      });
+      builds.set(hash, pending);
+      pending.catch(() => builds.delete(hash));
+    }
+    return pending;
+  };
   return {
     workspace,
-    async build(record: SpecimenRecord, source?: SpecimenRecordSource): Promise<SpecimenBuild> {
-      const errors: string[] = [];
-      const visual = record.kind === "visual";
-      const graph: Closure = visual ? await closure(record, source, errors) : { files: new Map(), aliases: new Map() };
-      const files = graph.files;
-      const entry = visual ? specimenEntry(record) : undefined;
-      if (visual && !entry) errors.push(`${record.id}: payload has no code file to mount`);
-      const mounted = visual ? specimenExport(record, entry) : undefined;
-      if (visual && entry && !mounted) errors.push(`${record.id}: ${entry.path} exports no component to mount`);
-      // Fixture props (an element tree's class names included) are styled like the payload's own sources.
-      const fixtures = visual && record.preview.fixtures ? JSON.stringify(record.preview.fixtures) : "";
-      const hash = sha256(JSON.stringify([SPECIMEN_RENDERER_VERSION, BOOTSTRAP, record.kind, entry?.path ?? null, mounted ?? null, [...files].sort(), errors, fixtures])).slice(0, 24);
-      let pending = builds.get(hash);
-      if (!pending) {
-        pending = (async () => {
-          const sources = [...files].filter(([path]) => CODE.test(path)).map(([path, content]) => ({ content, extension: extname(path).slice(1) }));
-          const css = await compileCss([...sources, { content: BOOTSTRAP, extension: "js" }, ...(fixtures ? [{ content: fixtures, extension: "json" }] : [])], workspace);
-          const exported = mounted ? { export: mounted } : {};
-          if (!visual || !entry) return { hash, css, errors, ...exported };
-          const esbuild = options.esbuild ?? await import("esbuild" as string) as SpecimenEsbuild;
-          const built = await bundle(esbuild, graph, posix.normalize(entry.path), workspace);
-          return { hash, css: built.css ? `${css}\n${built.css}` : css, errors: [...errors, ...built.errors], ...exported, ...(built.js ? { js: built.js } : {}) };
-        })();
-        builds.set(hash, pending);
-        pending.catch(() => builds.delete(hash));
-      }
+    build(record: SpecimenRecord, source?: SpecimenRecordSource): Promise<SpecimenBuild> {
+      const key = JSON.stringify([record.id, record.version, record.kind, record.contentHash, record.preview]);
+      const joined = inflight.get(key);
+      if (joined && joined.source === source) return joined.pending;
+      const pending = build(record, source);
+      inflight.set(key, { source, pending });
+      const settle = () => { if (inflight.get(key)?.pending === pending) inflight.delete(key); };
+      pending.then(settle, settle);
       return pending;
     },
     /** A built asset by hash, for `/__specimen/assets/<hash>.<js|css>`. */

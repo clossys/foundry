@@ -24,7 +24,7 @@ import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
 import { slotCensus } from "./slot-census.js";
 import { withSlotReadScope } from "../records/slots.js";
 import { DEFAULT_AVATAR_PATH, defaultAvatarSvg } from "./default-avatar.js";
-import { specimenMount } from "../publish/site-server.js";
+import { specimenMount, writerSnapshot } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { hasAgentModel } from "../records/slots.js";
@@ -79,7 +79,9 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
   // Pinned items render through the install pipeline; the record handler stays for other versions.
   const installed = hasLibrary ? installedSpecimens({ root: options.root, library }) : undefined;
   // No default theme id: a specimen that names none renders in the consumer's whole pinned theme.
-  const specimen = hasLibrary ? await specimenMount({ records: [library], workspace: specimenNpmRoot(library) }) : undefined;
+  // One Writer scan per Writer change, not per specimen request: the watcher below refreshes it.
+  const writer = writerSnapshot(library);
+  const specimen = hasLibrary ? await specimenMount({ records: [library], workspace: specimenNpmRoot(library), writerCopy: writer.read }) : undefined;
   const token = randomBytes(32).toString("base64url");
   const aborter = new AbortController();
   const streams = new Set<ServerResponse>();
@@ -273,6 +275,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     });
     stopWatch = await watchCells(options.root, event => {
       renders.clear();
+      if (event.agent === null || event.agent === "writer") writer.refresh();
       for (const stream of streams) {
         if (stream.writableLength > 64 * 1024) stream.destroy();
         else stream.write(`event: change\ndata: ${JSON.stringify(event)}\n\n`);
