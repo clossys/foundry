@@ -218,7 +218,7 @@ describe("pinned shadcn aria component import", () => {
     expect(componentSecondaryExports(select, materializeShadcnComponent(result, "select"))).toEqual(five);
     expect(select.impl).toEqual({ kind: "source", entry: "components/select/select.tsx", export: "Select" });
     for (const name of ["SelectList", "SelectInput", "SelectLabel", "SelectPopover", "SelectSeparator", "SelectEmpty", "Select"]) expect(select.secondaryExports!.map(row => row.name)).not.toContain(name);
-    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.avatar", "components.breadcrumbs", "components.button", "components.card", "components.dialog", "components.disclosure", "components.menu", "components.progress-bar", "components.select", "components.table", "components.tabs"]);
+    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.avatar", "components.breadcrumbs", "components.button", "components.card", "components.combo-box", "components.dialog", "components.disclosure", "components.menu", "components.progress-bar", "components.select", "components.table", "components.tabs"]);
     // T14 (fe11dce93) admits the Avatar image/fallback; R2F-05 admits the Progress label and Breadcrumb anatomy from real callers.
     for (const [slot, names] of [["components.button", ["LinkButton"]], ["components.tabs", ["TabsList", "TabsTrigger", "TabsContent"]], ["components.avatar", ["AvatarImage", "AvatarFallback"]],
       ["components.progress-bar", ["ProgressLabel"]], ["components.breadcrumbs", ["BreadcrumbList", "BreadcrumbItem", "BreadcrumbLink", "BreadcrumbPage"]]] as const) {

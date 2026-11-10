@@ -255,6 +255,7 @@
     {
       "missing": [],
       "notes": [
+        "The stock shadcn@aria combobox over ComboboxInput, ComboboxContent, ComboboxList and ComboboxItem; it has no label part, so its name is aria-label or aria-labelledby (blocks StockCombobox).",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.combo-box",

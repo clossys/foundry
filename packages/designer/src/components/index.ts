@@ -146,8 +146,8 @@ export type RangeCalendarProps = import("react").ComponentProps<typeof import(".
 export { DateField } from "./DateField.js";
 export type { DateFieldProps } from "./DateField.js";
 
-export { ComboBox } from "./ComboBox.js";
-export type { ComboBoxProps, ComboBoxOption } from "./ComboBox.js";
+export { Combobox as ComboBox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem } from "./preview-runtime/components/combo-box/combobox.js";
+export type ComboBoxProps = import("react").ComponentProps<typeof import("./preview-runtime/components/combo-box/combobox.js").Combobox>;
 
 export { SearchField } from "./SearchField.js";
 export type { SearchFieldProps } from "./SearchField.js";

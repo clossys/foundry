@@ -29,7 +29,9 @@
     "themes.spacing"
   ],
   "color-picker": [],
-  "combo-box": [],
+  "combo-box": [
+    "themes.spacing"
+  ],
   "date-field": [],
   "dialog": [],
   "disclosure": [

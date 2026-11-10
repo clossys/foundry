@@ -3576,7 +3576,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "018da38c104eff29559f3346f06b96ca07777fed46398168fac9545509ea5925",
+        "sha256": "b52655bd07a13a9f85ca757fc904d32cf2b6c2a6f2d727fc5dc8c79057dfc376",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -3781,6 +3781,24 @@
           }
         ],
         "blockers": [],
+        "secondaryExports": [
+          {
+            "name": "ComboboxContent",
+            "export": "ComboboxContent"
+          },
+          {
+            "name": "ComboboxInput",
+            "export": "ComboboxInput"
+          },
+          {
+            "name": "ComboboxItem",
+            "export": "ComboboxItem"
+          },
+          {
+            "name": "ComboboxList",
+            "export": "ComboboxList"
+          }
+        ],
         "rac": {
           "range": "^1.20.0",
           "peer": false,
@@ -3813,7 +3831,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "018da38c104eff29559f3346f06b96ca07777fed46398168fac9545509ea5925",
+          "sha256": "b52655bd07a13a9f85ca757fc904d32cf2b6c2a6f2d727fc5dc8c79057dfc376",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [

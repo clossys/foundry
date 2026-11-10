@@ -267,7 +267,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("Select", "SelectValue", "Button", "Popover", "ListBox", "ListBoxItem", "Label", "Text", "FieldError"),
     disposition: "keep",
   }),
-  onMain("ComboBox", ["src/components/ComboBox.tsx"], {
+  onMain("ComboBox", ["src/components/preview-runtime/components/combo-box/combobox.tsx"], {
     id: "enter.combo-box",
     label: "Combo box",
     racBase: rac("ComboBox", "Input", "Button", "Popover", "ListBox", "ListBoxItem", "Label", "Text", "FieldError"),

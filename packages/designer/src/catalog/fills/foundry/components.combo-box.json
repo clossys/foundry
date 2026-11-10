@@ -62,13 +62,19 @@
       },
       "props": [
         "allowsCustomValue",
+        "aria-label",
+        "aria-labelledby",
+        "children",
         "className",
-        "description",
-        "errorMessage",
+        "defaultItems",
+        "defaultSelectedKey",
+        "inputValue",
+        "isDisabled",
         "isInvalid",
-        "label",
-        "options",
-        "placeholder"
+        "isRequired",
+        "onInputChange",
+        "onSelectionChange",
+        "selectedKey"
       ],
       "rac": {
         "instance": "react-aria-components",

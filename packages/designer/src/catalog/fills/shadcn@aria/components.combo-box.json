@@ -172,6 +172,24 @@
         ]
       },
       "root": "rac:ComboBox",
+      "secondaryExports": [
+        {
+          "export": "ComboboxContent",
+          "name": "ComboboxContent"
+        },
+        {
+          "export": "ComboboxInput",
+          "name": "ComboboxInput"
+        },
+        {
+          "export": "ComboboxItem",
+          "name": "ComboboxItem"
+        },
+        {
+          "export": "ComboboxList",
+          "name": "ComboboxList"
+        }
+      ],
       "slot": "components.combo-box",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"
