@@ -16,9 +16,14 @@ import { IndexView, type IndexViewProps } from "./IndexView.js";
 import * as web from "../index.js";
 import * as client from "../client.js";
 import * as server from "../server.js";
-import { hostedRender, hostedMarkup } from "../__fixtures__/shell-copy.js";
-const render = hostedRender(renderBare);
-const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
+import { ShellCopyProvider, type ShellCopyResolver } from "@clossys/designer/frames";
+import { shellCopyFixtureResolver } from "../__fixtures__/shell-copy.js";
+import { sectionCopyFixtureResolver } from "../../../../writer/src/catalog/__fixtures__/section-copy-resolver.fixture.js";
+// The consumer host: section labels (the grouped Index toggle) resolve from Writer records; shell labels from the shared test host.
+const hostCopy: ShellCopyResolver = ref => sectionCopyFixtureResolver(ref) ?? shellCopyFixtureResolver(ref);
+function WriterHost({ children }: { children?: React.ReactNode }) { return <ShellCopyProvider resolver={hostCopy}>{children}</ShellCopyProvider>; }
+const render: typeof renderBare = ((ui: React.ReactElement, options?: object) => renderBare(ui, { wrapper: WriterHost, ...options })) as typeof renderBare;
+const renderToStaticMarkup = (node: React.ReactNode) => renderToStaticMarkupBare(<WriterHost>{node}</WriterHost>);
 
 afterEach(cleanup);
 type Row = { id: string; name: string; state: string };
@@ -210,7 +215,8 @@ describe("IndexView table view model", () => {
     expect(html).toContain("View options");
     expect(html).toContain("First record");
     expect(html).not.toContain("Available");
-    const groupedHtml = renderToStaticMarkup(<View {...base} table={{ model: grouped, onModelChange: vi.fn() }} />);
+    // Group toggles exist only when the host controls expansion (Designer DataTable contract).
+    const groupedHtml = renderToStaticMarkup(<View {...base} table={{ model: grouped, onModelChange: vi.fn(), onExpandedGroupKeysChange: vi.fn() }} />);
     expect(groupedHtml).toContain("Collapse group Available");
     expect(groupedHtml).toContain("Collapse group Planned");
   });
@@ -223,7 +229,7 @@ describe("IndexView table view model", () => {
   });
 
   it.each(views)("uses host messages for visible copy through the %s View", (_channel, View) => {
-    const html = renderToStaticMarkup(<View {...base} table={{ model: grouped, onModelChange: vi.fn(), messages: { viewOptionsLabel: "Table settings", groupToggleMessage: (path, expanded) => `${expanded ? "Fold" : "Unfold"} ${path.join("/")}` } }} />);
+    const html = renderToStaticMarkup(<View {...base} table={{ model: grouped, onModelChange: vi.fn(), onExpandedGroupKeysChange: vi.fn(), messages: { viewOptionsLabel: "Table settings", groupToggleMessage: (path, expanded) => `${expanded ? "Fold" : "Unfold"} ${path.join("/")}` } }} />);
     expect(html).toContain("Table settings");
     expect(html).not.toContain("View options");
     expect(html).toContain("Fold Available");

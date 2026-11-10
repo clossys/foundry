@@ -13,6 +13,7 @@ import { usageBlockRelations, usageConsumers, usageModel } from "./model.js";
 import { loadCommittedUsage } from "./committed-graph.js";
 import { studioTestCopy } from "../__fixtures__/copy.js";
 import type { StudioCopyBinding } from "../copy-binding.js";
+import { studioHostCopy } from "../__fixtures__/copy-hand-roll.js";
 
 // The panel has no words of its own: a not-linked finding's message is the host's Writer record for its code.
 const findingCopy: StudioCopyBinding = { ...studioTestCopy, messages: { "studio.usage.finding.WL5": { id: "fixture.usage.finding.WL5" } },
@@ -53,7 +54,7 @@ const graph = buildUsageGraph(inputs);
 /** A host that follows navigation, as a frame does: it shows whatever element the panel asks for. */
 function Host({ graph, onNavigate, initial = "components.button" }: { graph: UsageGraph; onNavigate: (id: string) => void; initial?: string }) {
   const [id, setId] = useState(initial);
-  return <UsagePanel id={id} graph={graph} labels={labels} onNavigate={next => { onNavigate(next); setId(next); }} />;
+  return <UsagePanel copy={studioHostCopy} id={id} graph={graph} labels={labels} onNavigate={next => { onNavigate(next); setId(next); }} />;
 }
 const list = (name: string) => screen.getByRole("heading", { name, level: 4 }).closest("section")!;
 const layers = (section: HTMLElement) => [...section.querySelectorAll("[data-usage-layer]")].map(group => group.getAttribute("data-usage-layer"));
@@ -104,7 +105,7 @@ describe("UsagePanel", () => {
   });
 
   it("an element the host cannot show renders as text, never a dead control", () => {
-    render(<UsagePanel id="components.button" graph={graph} labels={labels} onNavigate={vi.fn()} canNavigate={id => !id.startsWith("frames.")} />);
+    render(<UsagePanel copy={studioHostCopy} id="components.button" graph={graph} labels={labels} onNavigate={vi.fn()} canNavigate={id => !id.startsWith("frames.")} />);
     const frame = list("U-used-where").querySelector<HTMLElement>('[data-usage-row="frames.app-shell"]')!;
     expect(within(frame).queryByRole("button")).toBeNull();
     expect(within(frame).getByText("frames.app-shell")).toBeInTheDocument();
@@ -113,7 +114,7 @@ describe("UsagePanel", () => {
   it("shows exception rows, not-linked findings and a used-nowhere leaf inline", () => {
     const owned: WiringException = { name: "hero-geometry", file: "src/blocks/Hero.tsx", elementId: "hero-grid", hash: "sha256:0", reason: "layout", owner: "design", expiry: "2026-12-31", read: "themes.unused.gap", reasonCode: "layout-geometry", status: "proposed" };
     const other: WiringException = { ...owned, name: "elsewhere", file: "src/blocks/Other.tsx", read: "themes.color" };
-    render(<UsagePanel id="sections.hero" graph={graph} labels={labels} onNavigate={vi.fn()} exceptions={[owned, other]} />);
+    render(<UsagePanel copy={studioHostCopy} id="sections.hero" graph={graph} labels={labels} onNavigate={vi.fn()} exceptions={[owned, other]} />);
     // Owns: the exception recorded in a file this section's scanned edges point at.
     const owns = list("U-owns").querySelector<HTMLElement>('[data-usage-exception="hero-geometry"]')!;
     for (const text of ["hero-geometry", "layout-geometry", "design", "2026-12-31", "proposed"]) expect(within(owns).getByText(text)).toBeInTheDocument();
@@ -128,7 +129,7 @@ describe("UsagePanel", () => {
     expect(notLinked).toHaveLength(1);
     for (const text of ["U-not-linked", "WL5", "no provenance stamp"]) expect(within(notLinked[0]!).getByText(text)).toBeInTheDocument();
     cleanup();
-    render(<UsagePanel id="components.button" graph={graph} labels={labels} onNavigate={vi.fn()} />);
+    render(<UsagePanel copy={studioHostCopy} id="components.button" graph={graph} labels={labels} onNavigate={vi.fn()} />);
     expect(screen.queryByText("U-used-nowhere")).toBeNull();
   });
 
@@ -142,7 +143,7 @@ describe("UsagePanel", () => {
     const committed = await loadCommittedUsage();
     expect(committed?.graph.schemaVersion).toBe(1);
     expect(usageModel(committed!.graph, "components.button").usedWhere.flatMap(group => group.rows).length).toBeGreaterThan(0);
-    render(<UsagePanel id="components.button" labels={labels} onNavigate={vi.fn()} />);
+    render(<UsagePanel copy={studioHostCopy} id="components.button" labels={labels} onNavigate={vi.fn()} />);
     expect(screen.getByText("U-loading")).toBeInTheDocument();
     await waitFor(() => expect(document.querySelectorAll('[data-studio-usage="components.button"] [data-usage-row]').length).toBeGreaterThan(0));
   });
