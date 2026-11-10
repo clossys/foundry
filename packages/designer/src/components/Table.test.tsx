@@ -2,7 +2,7 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ColumnSize, Key, SortDescriptor } from "react-aria-components";
+import type { SortDescriptor } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
 import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { DateField } from "./DateField.js";
@@ -242,32 +242,6 @@ describe("Table", () => {
   });
 });
 
-function ResizableTable({ onResize, onResizeEnd }: { onResize?: (widths: Map<Key, ColumnSize>) => void; onResizeEnd?: (widths: Map<Key, ColumnSize>) => void } = {}) {
-  return (
-    // R2F-31: the stock table anatomy has no column resizer; these four tests stay as the owner's record of the dropped behaviour.
-    <div data-on-resize={onResize ? "" : undefined} data-on-resize-end={onResizeEnd ? "" : undefined}>
-      <Table aria-label="Prompts">
-        <TableHeader>
-          <TableHead id="name" isRowHeader>
-            Name
-          </TableHead>
-          <TableHead id="runs">
-            Runs
-          </TableHead>
-        </TableHeader>
-        <TableBody>
-          {ROWS.map((row) => (
-            <TableRow key={row.id} id={row.id}>
-              <TableCell>{row.name}</TableCell>
-              <TableCell>{row.runs}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
 /** Two rows whose second column holds a text-entry control: a DateField, then a plain text input. */
 function EditableTable() {
   return (
@@ -331,44 +305,7 @@ describe("Table text entry inside a cell", () => {
 });
 
 describe("Table column resizing", () => {
-  it("renders a labelled resizer only on columns that allow resizing", () => {
-    render(<ResizableTable />);
-    const resizers = screen.getAllByRole("slider");
-    expect(resizers).toHaveLength(1);
-    // Named by the resizer label plus its own column header.
-    expect(resizers[0]).toHaveAccessibleName("Resize Name");
-    const header = screen.getByRole("columnheader", { name: /Name/ });
-    expect(header.contains(resizers[0]!)).toBe(true);
-    expect(screen.getByRole("columnheader", { name: "Runs" }).querySelector("[data-table-resizer]")).toBeNull();
-  });
-
-  it("keyboard: Enter on the header starts resizing, arrows change the width, Escape finishes with the committed width", async () => {
-    const onResize = vi.fn();
-    const onResizeEnd = vi.fn();
-    const user = userEvent.setup();
-    render(<ResizableTable onResize={onResize} onResizeEnd={onResizeEnd} />);
-    const header = screen.getByRole("columnheader", { name: /Name/ });
-    header.focus();
-    await user.keyboard("{Enter}");
-    expect(document.activeElement).toBe(screen.getByRole("slider"));
-    await user.keyboard("{ArrowRight}");
-    expect(onResize).toHaveBeenCalled();
-    const widths = onResize.mock.lastCall![0] as Map<Key, ColumnSize>;
-    expect(widths.get("name")).toBeGreaterThan(200);
-    await user.keyboard("{Escape}");
-    expect(onResizeEnd).toHaveBeenCalledTimes(1);
-    expect((onResizeEnd.mock.lastCall![0] as Map<Key, ColumnSize>).get("name")).toBe(widths.get("name"));
-  });
-
-  it("the resizer sits on the logical inline-end edge and marks the active state with the accent", () => {
-    render(<ResizableTable />);
-    const resizer = document.querySelector<HTMLElement>("[data-table-resizer]")!;
-    expect(resizer).not.toBeNull();
-    expect(resizer.className).toContain("end-0");
-    expect(resizer.className).not.toMatch(/\bright-0\b/);
-    expect(resizer.querySelector("[aria-hidden='true']")!.getAttribute("class")).toContain("group-data-resizing:bg-primary");
-  });
-
+  // R2F-31/R2F-39: the stock table anatomy has no column resizer (owner-approved drop of the three resizer tests).
   it("a table outside a resizable container keeps its non-resizing markup", () => {
     render(<BasicTable />);
     expect(screen.queryByRole("slider")).toBeNull();

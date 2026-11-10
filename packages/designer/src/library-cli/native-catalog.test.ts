@@ -93,8 +93,10 @@ it("reads explicit native source policy and leaves ambiguous or absent policy un
   expect(policy["themes.animate-marquee"]).toBe("foundry");
   // An explicit asset decision (H3-A01..A12) wins over a roster that offers both lucide and phosphor.
   expect(policy["assets.icon-home"]).toBe("lucide");
+  // A single source-roster offer is the policy (owner 2026-11-10: sections.logo-mark is foundry).
+  expect(policy["sections.logo-mark"]).toBe("foundry");
   // Absent policy: a registered slot with no decision and no roster offer stays undefined.
-  expect(policy["sections.logo-mark"]).toBeUndefined();
+  expect(policy["sections.specimen-swatch"]).toBeUndefined();
   expect(policy["themes.unknown"]).toBeUndefined();
 });
 
@@ -118,7 +120,7 @@ it("adopts and reselects the existing RichText package candidate with its source
 
 it("does not infer a source from an existing candidate when the native policy is unknown", () => {
   const build = loadBuildCatalog(), catalog = loadNativeCompositeCatalog();
-  // sections.logo-mark has a foundry candidate but no source decision and no roster offer.
-  expect(catalog.surfaces!.fills.some(fill => fill.$extensions["com.clossys.fill"].slot === "sections.logo-mark")).toBe(true);
-  expect(loadNativeDefaultSources(build)["sections.logo-mark"]).toBeUndefined();
+  // sections.specimen-swatch has a candidate but no source decision and no roster offer.
+  expect(catalog.surfaces!.fills.some(fill => fill.$extensions["com.clossys.fill"].slot === "sections.specimen-swatch")).toBe(true);
+  expect(loadNativeDefaultSources(build)["sections.specimen-swatch"]).toBeUndefined();
 });
