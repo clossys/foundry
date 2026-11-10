@@ -7,7 +7,9 @@ import { fileURLToPath } from "node:url";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(directory, "../../..");
-const scratch = path.join(repository, "tmp/p0-gate-process/runner-tests");
+// Fixtures run git in the checkout, so they stay inside it, under the ignored coverage/tmp/ like
+// the sibling gate tests: an unignored write dirties the tree emit-studio-check-inputs requires clean.
+const scratch = path.join(repository, "coverage/tmp/p0-gate-process/runner-tests");
 fs.mkdirSync(scratch, { recursive: true });
 const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 function fixture(statuses, candidateStatus = 0) {

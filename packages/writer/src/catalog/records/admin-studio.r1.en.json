@@ -4711,6 +4711,39 @@
       }
     },
     {
+      "id": "st.gr5z6m2rch",
+      "leaf": "strings.names",
+      "context": "designer.item.components.specimen-ladder",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Scale ladder",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.91whqwsc29",
+      "leaf": "strings.names",
+      "context": "designer.item.components.specimen-grid",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Asset and icon grid",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.n9yfzh7sd4",
+      "leaf": "strings.names",
+      "context": "designer.item.components.specimen-viewport",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Viewport sizes",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
       "id": "st.3rssm8ztcx",
       "leaf": "strings.names",
       "context": "designer.item.sections.sectioned-document",
@@ -13859,6 +13892,60 @@
       "budget": 60
     },
     {
+      "recordId": "st.gr5z6m2rch",
+      "cellId": "designer.item.components.specimen-ladder",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "40cd2f9c9bdfecf4f0858ea409bb13f5b5c0b412",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 3479,
+        "key": "designer.item.components.specimen-ladder"
+      },
+      "before": "components.specimen-ladder",
+      "after": "Scale ladder",
+      "rationale": "Name components.specimen-ladder for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.91whqwsc29",
+      "cellId": "designer.item.components.specimen-grid",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "40cd2f9c9bdfecf4f0858ea409bb13f5b5c0b412",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 3570,
+        "key": "designer.item.components.specimen-grid"
+      },
+      "before": "components.specimen-grid",
+      "after": "Asset and icon grid",
+      "rationale": "Name components.specimen-grid for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.n9yfzh7sd4",
+      "cellId": "designer.item.components.specimen-viewport",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "40cd2f9c9bdfecf4f0858ea409bb13f5b5c0b412",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 3663,
+        "key": "designer.item.components.specimen-viewport"
+      },
+      "before": "components.specimen-viewport",
+      "after": "Viewport sizes",
+      "rationale": "Name components.specimen-viewport for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
       "recordId": "st.3rssm8ztcx",
       "cellId": "designer.item.sections.sectioned-document",
       "severity": "P1",
@@ -14829,6 +14916,12 @@
     {
       "cellId": "designer.ia.components.display-content",
       "recordId": "st.ne29tsc3gn",
+      "target": "packages/designer/src/catalog/ia/components.json",
+      "kind": "ia-name"
+    },
+    {
+      "cellId": "designer.ia.components.display-specimens",
+      "recordId": "st.nevhwv4t5n",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -17279,6 +17372,54 @@
     {
       "cellId": "designer.item.components.media-player",
       "recordId": "st.q9yej4b759",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.specimen-swatch",
+      "recordId": "st.cjqh0xwhnk",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.specimen-ladder",
+      "recordId": "st.gr5z6m2rch",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.specimen-player",
+      "recordId": "st.4z8j4g6a93",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.specimen-grid",
+      "recordId": "st.91whqwsc29",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.specimen-matrix",
+      "recordId": "st.wz9kb2dwjc",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.specimen-viewport",
+      "recordId": "st.n9yfzh7sd4",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.specimen-passage",
+      "recordId": "st.q2ap1p1dt2",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.specimen-copy-in-context",
+      "recordId": "st.mb0qw39cd5",
       "target": "packages/designer/src/catalog/slots/components.json",
       "kind": "item-name"
     },
@@ -20778,6 +20919,27 @@
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     },
     {
+      "recordId": "st.gr5z6m2rch",
+      "cellId": "designer.item.components.specimen-ladder",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.91whqwsc29",
+      "cellId": "designer.item.components.specimen-grid",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.n9yfzh7sd4",
+      "cellId": "designer.item.components.specimen-viewport",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
       "recordId": "st.3rssm8ztcx",
       "cellId": "designer.item.sections.sectioned-document",
       "severity": "P0",
@@ -20900,7 +21062,7 @@
   "coverage": {
     "kind": "planned binding fixture; not rendered-page coverage",
     "productionBound": 0,
-    "proposedBindings": 519,
+    "proposedBindings": 528,
     "draftRecords": 486,
     "reusedExistingRecords": 10
   },
@@ -21236,6 +21398,22 @@
       "revisions": [],
       "defaults": [
         "Leaves registered after the last naming pass get plain display names. Specimen sections are named for Explorer even though Writer does not mirror them as passages."
+      ]
+    },
+    {
+      "unit": "R2F-36-WKEY",
+      "sourceCommit": "40cd2f9c9bdfecf4f0858ea409bb13f5b5c0b412",
+      "recordIds": [
+        "st.gr5z6m2rch",
+        "st.91whqwsc29",
+        "st.n9yfzh7sd4"
+      ],
+      "sourceFiles": {
+        "packages/designer/src/catalog/slots/components.json": "011fa6fa47afc056beeb931b4e72e204f8e003d5749813ad2ac9058a10c912b7"
+      },
+      "revisions": [],
+      "defaults": [
+        "Specimen components are named for Explorer, graph and Inspector; five reuse the matching specimen section names, three get new plain names."
       ]
     }
   ],

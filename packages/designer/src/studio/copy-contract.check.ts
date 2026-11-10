@@ -2,7 +2,7 @@
 import { createRouteStudioLabels } from "./route-labels.js";
 import type { StudioCopyBinding } from "./copy-binding.js";
 import type { DesignerRoutePageProps } from "./route-data.js";
-import type { DesignerPageProps } from "./system-canvas/DesignerPage.js";
+import type { DesignerPageProps } from "./DesignerPage.js";
 import type { StudioCanvasProps } from "./types.js";
 
 export function checkRequiredStudioCopy(copy: StudioCopyBinding, serverData: DesignerRoutePageProps["serverData"]) {

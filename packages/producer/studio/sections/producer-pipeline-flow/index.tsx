@@ -1,5 +1,5 @@
 'use client';
-import { Background, Badge, BaseNode, BaseNodeContent, Card, CardDescription, CardHeader, CardTitle, Controls, Field, FieldDescription, FieldGroup, FieldTitle, Item, ItemActions, ItemContent, ItemTitle, LabeledHandle, MiniMap, NodeStatusIndicator, Panel, Position, ReactFlow, Sheet, SheetDescription, SheetHeader, SheetTitle, SmoothStepEdge, useReactFlow, type Edge, type Node, type NodeProps, type ReactFlowProps } from '@clossys/designer-ui';
+import { Background, Badge, BaseNode, BaseNodeContent, Card, CardContent, CardDescription, CardHeader, CardTitle, Controls, Field, FieldDescription, FieldGroup, FieldTitle, Item, ItemActions, ItemContent, ItemTitle, LabeledHandle, MiniMap, NodeStatusIndicator, Panel, Position, ReactFlow, Sheet, SheetDescription, SheetHeader, SheetTitle, SmoothStepEdge, useReactFlow, type Edge, type Node, type NodeProps, type ReactFlowProps } from '@clossys/designer-ui';
 
 /** The node kinds a pipeline step carries; graph.json names one per step. */
 export type StepKind = 'plumb' | 'decide:creative' | 'decide:judgment';
@@ -197,7 +197,7 @@ function StepSheet({ step, copy, isOpen, onOpenChange }: { step: StepData; copy:
   </Sheet>;
 }
 
-/** `sections.producer.pipeline-flow`: the standard canvas-app layout, as a swimlane: lanes are WHO (one per seat holder), columns are WHEN (one per stage, grouped by round). graph.json rendered by @xyflow/react in a stock Card that fills the content area: components.flow.* step nodes with their status, one lane label per swim row, one round header above each round's columns, one stage header per column, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
+/** `sections.producer.pipeline-flow`: the standard canvas-app layout, as a swimlane: lanes are WHO (one per seat holder), columns are WHEN (one per stage, grouped by round). graph.json rendered by @xyflow/react in the stock fixed-height Card of the shadcn message-scroller-example block (Card h-140, its CardContent min-h-0 flex-1 overflow-hidden p-0 holding the canvas): components.flow.* step nodes with their status, one lane label per swim row, one round header above each round's columns, one stage header per column, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
 export default function PipelineFlowSection({ flow, ...provenance }: { flow: PipelineFlowInput } & { [marker: `data-clossys-${string}`]: string }) {
   const { graph, copy, seat } = flow;
   if (!graph.nodes.length) return <Card size="sm" {...provenance}>
@@ -226,9 +226,10 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
   const viewport = { x: INSET - left * READABLE_ZOOM, y: INSET - top * READABLE_ZOOM, zoom: READABLE_ZOOM };
   // Uncontrolled (defaultNodes, defaultEdges): React Flow keeps the measured node sizes, which the stock MiniMap draws from.
   // The flow is read-only and mounts once graph.json has loaded (the empty state renders until then).
-  // The stock Card is the canvas's frame and fills the content area below the page's header rows (flex-1); the canvas fills the Card.
+  // The stock Card is the canvas's frame at the block's fixed height; its stock CardContent takes the Card's height and the canvas fills it.
   // A new highlighted lane (`?seat=`) remounts the uncontrolled flow with that lane's nodes marked.
-  return <Card size="sm" {...provenance}>
+  return <Card size="sm" className="h-140" {...provenance}>
+    <CardContent className="min-h-0 flex-1 overflow-hidden p-0">
     <ReactFlow key={seat ?? ''} aria-label={copy.label} defaultNodes={[...rounds, ...stages, ...lanes, ...steps]} defaultEdges={[...graph.edges]} nodeTypes={NODE_TYPES} edgeTypes={EDGE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}
       ariaLabelConfig={copy.aria} proOptions={HIDE_ATTRIBUTION}
       nodesDraggable={false} nodesConnectable={false} selectionKeyCode={null} multiSelectionKeyCode={null} defaultViewport={viewport} minZoom={MIN_ZOOM}>
@@ -238,5 +239,6 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
       {/* React Flow's own attribution, kept as its stock panel and link, with Writer words. */}
       <Panel position="bottom-right"><a href="https://reactflow.dev" target="_blank" rel="noopener noreferrer" aria-label={copy.attributionLabel}>{copy.attribution}</a></Panel>
     </ReactFlow>
+    </CardContent>
   </Card>;
 }

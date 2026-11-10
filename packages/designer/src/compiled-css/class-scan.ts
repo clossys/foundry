@@ -98,24 +98,10 @@ export interface ClassScanResult {
  * own container rather than the viewport (Specimen panels use them).
  */
 const CANDIDATE_SHAPE_RE = /^@?[a-zA-Z][a-zA-Z0-9_:/.@-]*(\[[^\]\s()]*\])?$/;
-/**
- * Tailwind v4 grammar used verbatim by the stock shadcn@aria sources this
- * package ships (D1: one stock source per leaf): bracketed variants such as
- * `aria-[orientation=vertical]:` or `[:is(hr)]:`, the `(--var)` value
- * shorthand (`bg-(--color-line-base)`, `ring-(--color-ink-primary)/10`) and
- * `var(...)` inside an arbitrary value (`h-[var(--spacing-xl)]`). A token is a
- * candidate when it matches either shape, so nothing the original shape kept
- * is lost. Commas stay disqualifying inside `(...)`, so a prose
- * `var(--x, fallback)` read is still never emitted.
- */
-const V4_VARIANT = String.raw`(?:@?[a-zA-Z*][a-zA-Z0-9_.@*-]*(?:\[[^\]\s]*\]|\([^)\s,]*\))?(?:/[a-zA-Z0-9_-]+)?|\[[^\]\s]*\]):`;
-const V4_UTILITY = String.raw`!?-?@?[a-zA-Z][a-zA-Z0-9_./@-]*(?:\[[^\]\s]*\]|\((?:[a-z-]+:)?--[a-zA-Z0-9_-]+\))?(?:/[a-zA-Z0-9._-]+)?!?`;
-const V4_PROPERTY = String.raw`\[--?[a-zA-Z][a-zA-Z0-9_-]*:[^\]\s]+\]`;
-const V4_CANDIDATE_SHAPE_RE = new RegExp(`^(?:${V4_VARIANT})*(?:${V4_UTILITY}|${V4_PROPERTY})$`);
 const MAX_CANDIDATE_LENGTH = 60;
 /**
  * The stock shadcn@aria button and breadcrumb write Tailwind v4 values the
- * two regexes above cannot express: a `(--var,fallback)` shorthand with a
+ * plain shape above cannot express: a `(--var,fallback)` shorthand with a
  * fallback (`border-(length:--ui-border-hairline,1px)`), a nested
  * `calc(var(...))` fallback, and a variant holding a nested selector
  * (`[&_svg:not([class*='size-'])]:`). This shape walks the token with a
@@ -158,56 +144,152 @@ function balancedCandidate(token: string): boolean {
 }
 
 /**
- * Extracts every DOUBLE-quoted string literal, and every template literal
- * with no `${...}` interpolation, from `content`. Deliberately NOT
- * comment-aware, unlike `style-scan.ts`'s `computeSkipRegions` — a class
- * token that happens to appear only inside a comment is harmless to include
- * (see this file's header — Tailwind ignores anything it doesn't
- * recognize). Skipping comment-awareness is what keeps this scanner small;
- * that cost is bounded and accepted, not silent.
+ * Tailwind v4 candidate shapes the plain test above rejects, which the
+ * shadcn-derived components use throughout: a negative utility (`-mx-lg`,
+ * `-translate-x-1/2`), a CSS-variable shorthand value (`h-(--ui-control-h-md)`,
+ * `border-(length:--ui-border-hairline,1px)`), an arbitrary property
+ * (`[--cell-size:var(--ui-control-h-sm)]`), an arbitrary or universal variant
+ * (`[&>svg]:size-(--spacing-lg)`, `*:data-[slot=kbd]:z-10`) and an important
+ * marker (`!p-0`). Before this, every such class shipped no rule at all.
  *
- * DELIBERATELY EXCLUDES single-quoted strings — not an oversight, a fix for
- * a real bug found while building this: this package's own doc comments
- * are full of English contractions and possessives (`components' own`,
- * `isn't`, `element's`), each a single unmatched apostrophe. A naive
- * single-quote-paired regex treats the FIRST apostrophe in one comment and
- * the NEXT apostrophe in a LATER, unrelated comment as one giant
- * "single-quoted string" spanning everything between them — silently
- * SWALLOWING any real double-quoted class literal that happens to fall in
- * that span (verified against `Separator.tsx`'s own `ORIENTATION_CLASSES`
- * table, which was dropped entirely this way before this fix) while also
- * emitting a pile of garbage prose-fragment candidates. That is exactly the
- * UNDER-inclusion failure this file's header says is the only one that
- * matters — so rather than add real comment-awareness (`style-scan.ts`'s
- * heavier `computeSkipRegions` machinery) for a case this codebase never
- * actually needs, this scanner drops single-quote matching entirely:
- * confirmed by inspection that no component anywhere in this package writes a
- * class-bearing string literal in single quotes — every real example
- * (`Button.tsx`, `Badge.tsx`, `Card.tsx`, every other component) uses double
- * quotes exclusively, including for `cx(...)` calls and object-literal
- * class tables. A single-quoted arbitrary-value bracket segment like
- * Tailwind's own `content-['/']` still gets through fine: it lives INSIDE a
- * double-quoted string (`className="...content-['/']..."`), not as its own
- * JS string literal, so the double-quote branch already captures it whole,
- * and `CANDIDATE_SHAPE_RE`'s own bracket-content group is written to accept
- * the quote character *inside* a bracket.
+ * It stays bounded the same way: one start character a candidate can begin
+ * with, no quote, backtick, backslash, brace or semicolon at the top level,
+ * every bracket and parenthesis balanced and properly nested, and a comma or
+ * apostrophe only inside a bracket or parenthesis. That keeps the prose cases
+ * this file guards against out: `var(--ui-ring-focus,` and `2px)` are
+ * unbalanced, `isn't` has a top-level apostrophe. Over-inclusion stays
+ * harmless for the reason the header gives.
+ */
+const V4_CANDIDATE_START_RE = /^[@a-zA-Z[*!-]/;
+const V4_TOP_LEVEL_FORBIDDEN = new Set(['"', "`", "\\", "{", "}", ";", ",", "'"]);
+const MAX_V4_CANDIDATE_LENGTH = 200;
+
+function isV4CandidateShape(token: string): boolean {
+  if (token.length > MAX_V4_CANDIDATE_LENGTH || !V4_CANDIDATE_START_RE.test(token)) return false;
+  if (!/[a-zA-Z]/.test(token)) return false;
+  const open: string[] = [];
+  for (const ch of token) {
+    if (ch === "[" || ch === "(") {
+      open.push(ch === "[" ? "]" : ")");
+    } else if (ch === "]" || ch === ")") {
+      if (open.pop() !== ch) return false;
+    } else if (ch === "\\" || ch === "`" || ch === '"') {
+      return false;
+    } else if (open.length === 0 && V4_TOP_LEVEL_FORBIDDEN.has(ch)) {
+      return false;
+    }
+  }
+  return open.length === 0;
+}
+
+/**
+ * Extracts every double-quoted string literal, every single-line
+ * single-quoted string literal, and the static text of every template literal
+ * from `content`. Deliberately NOT comment-aware, unlike `style-scan.ts`'s
+ * `computeSkipRegions` — a class token that happens to appear only inside a
+ * comment is harmless to include (see this file's header — Tailwind ignores
+ * anything it doesn't recognize). Skipping comment-awareness is what keeps
+ * this scanner small; that cost is bounded and accepted, not silent.
+ *
+ * TEMPLATE LITERALS. The static chunks of a template literal are class text
+ * like any other (`\`flex ${gap}\`` ships `flex`), and the code inside each
+ * `${...}` is scanned for its own literals (`${open ? "w-40" : "w-0"}`). An
+ * earlier regex skipped any template that held an interpolation, and its
+ * closing backtick then opened a phantom template that ran to the next
+ * backtick in the file, swallowing every double-quoted class literal in
+ * between (`CanvasSurface.tsx`'s `bottom-sm`, `PageBar.tsx`'s
+ * `justify-self-start`, `ViewOptions.tsx`'s `max-h-full` all shipped no rule
+ * that way).
+ *
+ * SINGLE QUOTES. A naive single-quote pairing is wrong here: doc comments are
+ * full of English contractions and possessives (`components' own`, `isn't`),
+ * and pairing the apostrophe in one comment with the next one in a LATER
+ * comment swallows every real double-quoted class literal between them
+ * (`Separator.tsx`'s `ORIENTATION_CLASSES` table was once dropped entirely
+ * that way). JavaScript strings cannot span a line, so a single-quoted
+ * literal is accepted only when it closes on the same line and holds no
+ * double quote or backtick; otherwise the apostrophe is ordinary text and
+ * scanning resumes on the next character. Two apostrophes on one comment line
+ * yield a harmless prose fragment, never a swallowed class literal.
  */
 function extractStringLiterals(content: string): string[] {
   const literals: string[] = [];
-  const re = /"((?:[^"\\]|\\.)*)"|`((?:[^`\\$]|\\.|\$(?!\{))*)`/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(content)) !== null) {
-    const value = m[1] ?? m[2] ?? "";
-    literals.push(value);
+  let i = 0;
+
+  function readQuoted(quote: string): string | undefined {
+    // `content[i]` is the opening quote. Returns the raw body and advances past
+    // the closing quote, or returns undefined without advancing.
+    let j = i + 1;
+    while (j < content.length) {
+      const ch = content[j];
+      if (ch === "\\") { j += 2; continue; }
+      if (ch === quote) {
+        const body = content.slice(i + 1, j);
+        i = j + 1;
+        return body;
+      }
+      if (quote === "'" && (ch === "\n" || ch === '"' || ch === "`")) return undefined;
+      j++;
+    }
+    return undefined;
   }
+
+  function readTemplate(): void {
+    // `content[i]` is the opening backtick.
+    i++;
+    let chunk = "";
+    while (i < content.length) {
+      const ch = content[i];
+      if (ch === "\\") { chunk += content.slice(i, i + 2); i += 2; continue; }
+      if (ch === "`") { i++; break; }
+      if (ch === "$" && content[i + 1] === "{") {
+        literals.push(chunk);
+        chunk = "";
+        i += 2;
+        scan("}");
+        continue;
+      }
+      chunk += ch;
+      i++;
+    }
+    literals.push(chunk);
+  }
+
+  function scan(until?: string): void {
+    // Scans code, collecting literals, until the `}` that closes the current
+    // interpolation (when `until` is set) or the end of the file.
+    let depth = 0;
+    while (i < content.length) {
+      const ch = content[i];
+      if (until !== undefined) {
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          if (depth === 0) { i++; return; }
+          depth--;
+        }
+      }
+      if (ch === '"') {
+        const body = readQuoted('"');
+        if (body !== undefined) { literals.push(body); continue; }
+      } else if (ch === "'") {
+        const body = readQuoted("'");
+        if (body !== undefined) { literals.push(body); continue; }
+      } else if (ch === "`") {
+        readTemplate();
+        continue;
+      }
+      i++;
+    }
+  }
+
+  scan();
   return literals;
 }
 
 function candidatesFromLiteral(literal: string, out: Set<string>): void {
   for (const token of literal.split(/\s+/)) {
     if (token.length === 0) continue;
-    if (token.length <= MAX_CANDIDATE_LENGTH && (CANDIDATE_SHAPE_RE.test(token) || V4_CANDIDATE_SHAPE_RE.test(token))) out.add(token);
-    else if (balancedCandidate(token)) out.add(token);
+    if ((token.length <= MAX_CANDIDATE_LENGTH && CANDIDATE_SHAPE_RE.test(token)) || isV4CandidateShape(token) || balancedCandidate(token)) out.add(token);
   }
 }
 

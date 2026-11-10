@@ -13,7 +13,7 @@ function input(page: RuntimeJson, total?: RuntimeJson): RuntimeRenderInput<React
 }
 describe("MR-1 registered pagination copy",()=>{
  it("delivers resolved passage fields to the real pagination block",()=>{
-   render(<>{renderPagination(input({page:2,pageCount:4,label:"Records navigation",previousLabel:"Earlier records",nextLabel:"Later records",pageText:"Second of four",noResultsLabel:"Empty collection",pageSizeLabel:"Record count"}))}</>);
+   render(<>{renderPagination(input({page:2,pageCount:4,label:"Records navigation","previous-label":"Earlier records","next-label":"Later records","page-text":"Second of four","no-results-label":"Empty collection","page-size-label":"Record count"}))}</>);
    expect(screen.getByRole("navigation",{name:"Records navigation"})).toBeInTheDocument();
    expect(screen.getByRole("button",{name:"Earlier records"})).toBeEnabled();
    expect(screen.getByRole("button",{name:"Later records"})).toBeEnabled();

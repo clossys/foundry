@@ -1607,15 +1607,15 @@
     },
     {
       "path": "clossys/agents/designer/frames.site-shell/slot.json",
-      "sha256": "3f4f3b2baa16de28242c9e964cf41590697d7c0ed8754c83a29db64fd1fb7f6b"
+      "sha256": "a6e7ba14961dfa72f812ce1c43239b22c6ee2c218f365295349569cc901932fa"
     },
     {
-      "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v20.json",
-      "sha256": "e65dda2f40ccc8edf8649d73dc2f3d633635a6b2312e2ddb562c811d5c497e30"
+      "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v21.json",
+      "sha256": "dbdb2f92cf5fcbeffa47a7a775d8e2dbcba89ca75f5bfa3b9c12889a80c04069"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/pin.json",
-      "sha256": "11c79d48841b8f565afa30d689b57ce8ae3dbf0d48ea18f4376f58c3425a8b8f"
+      "sha256": "74ded98fe6c1fad20da857f59862865a2235e84df86958ecc218d8796dd37445"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/slot.json",
@@ -1771,7 +1771,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.data-grid/slot.json",
-      "sha256": "aba492eb185459d7275124bcf2f1caa601ec76b0077e2f616bc0ac07419b51aa"
+      "sha256": "974021ae7da2c77a8f0aff1bccbbc6cd5fc35c3301579c680e70af850164dd4d"
     },
     {
       "path": "clossys/agents/designer/sections.data-table/candidates/data-table-v3.json",
@@ -1783,7 +1783,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.data-table/slot.json",
-      "sha256": "84143556e3347b7a426b84ea50f30aae075ae0fce41a083600ed8fec382157ad"
+      "sha256": "baee4892644d3fcdb7982d387d6ce6bfd891f86071448883d4ced119a820e20f"
     },
     {
       "path": "clossys/agents/designer/sections.empty-state/candidates/empty-state-v3.json",
@@ -1835,7 +1835,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.features/slot.json",
-      "sha256": "e6a04c12f8be50349159a4308e7f3ae33176ebf7eb8527b5e5332f84ab4a721f"
+      "sha256": "465b00bb01e52c68382358df77cee0c43c556f8bc517b5d20eb16160bf2ed805"
     },
     {
       "path": "clossys/agents/designer/sections.filter-builder/slot.json",
@@ -2014,12 +2014,12 @@
       "sha256": "e9e9d0bc9572c066a9cfd6db98af0539a88ac563a9dc224b3497fa7b85f699f4"
     },
     {
-      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v12.json",
-      "sha256": "715cb26b08fd895a918a0aab4a0f1d400fd249dde5ffab97cd455c662ecaf1fc"
+      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v13.json",
+      "sha256": "a329ee393461c84c5b074b6f6be61c2a64e46b7b60e49646bfe1b2628c2d7cb2"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/pin.json",
-      "sha256": "1c34051716054260a5b3c6bd214f7d04e8df7fbd1805ce668593658d3be4d01a"
+      "sha256": "a66c88bce1f2d1881f3502332ebf2f3eb2de15362670e9bfcf681966e9d5ae3a"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/slot.json",
@@ -2058,16 +2058,16 @@
       "sha256": "c3d14692d85d7dca1160d1aaba1fd5f1d8d6a894b002f229c90218e10b225882"
     },
     {
-      "path": "clossys/agents/designer/sections.producer.team-strip/candidates/producer-team-strip-v2.json",
-      "sha256": "d1bcc39f3eea5370bea2b2b14875c00791b706c2b86382d4a07f291d32751085"
+      "path": "clossys/agents/designer/sections.producer.team-strip/candidates/producer-team-strip-v3.json",
+      "sha256": "4b77c15a14cbb63cfd4c63a92ca78cc9b7fca5934e2cf6ae04177df4979dabc7"
     },
     {
       "path": "clossys/agents/designer/sections.producer.team-strip/pin.json",
-      "sha256": "23b2996edd7d9154a1bf908831cc8ae69c750d511df0396212886897d5b01d22"
+      "sha256": "6c3b749895079df7037cfb5aa73295b977c0be3fcbfe7222c78c9a419d00b9c3"
     },
     {
       "path": "clossys/agents/designer/sections.producer.team-strip/slot.json",
-      "sha256": "1c2ef49fd93c25de38eb64b5b03a3b2a43a9610dba3436ab0d59536fcc46f06d"
+      "sha256": "430fbb2bade535dc11133cae82b1e056e5ab12b24bdbb9b348f661ea2b8f035f"
     },
     {
       "path": "clossys/agents/designer/sections.record-detail/slot.json",
@@ -2083,7 +2083,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.resource-list/slot.json",
-      "sha256": "8d1e6743c5e4f5a58d91580310cc6b906322d7bc60830de08a0860c9aae7054e"
+      "sha256": "ca1304202ac9cde4ae119b8b59bdf146b7ce0b40e27fd7ade4fe57711c510154"
     },
     {
       "path": "clossys/agents/designer/sections.section-header/candidates/section-header-v6.json",
@@ -3774,12 +3774,12 @@
       "sha256": "7f55136bc8185021ad0cd83e8cc04c830856017bb0a3d200232ee752308007a9"
     },
     {
-      "path": "clossys/agents/publisher/page.build-overview/candidates/page-v3.json",
-      "sha256": "7a206303671ff91b404f982b5691c5c8b84c6ae04ec5c26839205ef01dbaa356"
+      "path": "clossys/agents/publisher/page.build-overview/candidates/page-v4.json",
+      "sha256": "e47eca2eb5a08f77099fa6b59ffad2723361da1aeb4370e38bd702736152c1a3"
     },
     {
       "path": "clossys/agents/publisher/page.build-overview/pin.json",
-      "sha256": "e63f18c1f85b432040d079faf4b291a9dc973e21688e71f97196ca4fa73ef639"
+      "sha256": "a0099c1f45b18667d569614e3b827f70e143aa43ae4ea9c2d41a8eea2a143a7b"
     },
     {
       "path": "clossys/agents/publisher/page.build-overview/slot.json",
@@ -5700,7 +5700,7 @@
   ],
   "outputs": [
     {
-      "path": "app/build/page.tsx",
+      "path": "app/build-overview/page.tsx",
       "sha256": "2d00e2f59d5c99fd741eb8fa90efd524173d7a98a99509280b448cf7e6bf1074"
     },
     {
@@ -6557,7 +6557,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "f0e27fd065e5d03f7ce18dfbc15fe43daecbbc5939b81c82223111fd6f69bbcf"
+      "sha256": "c1a2cefca00d2fed2e678407024309b23f2ee35e2b7eae6e0f24b621e47d9974"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6565,7 +6565,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "a3020f00029ef33354074efdaa7933e94f1ec26552dcf93165a9eaa184ee88c3"
+      "sha256": "8aae20895c1c3b1a7bda81e2bb4ea152121bb2ef666563e176371ddb193c52d3"
     }
   ]
 }

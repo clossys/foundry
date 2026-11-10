@@ -7,7 +7,7 @@ import { compileBrief } from "../brief.js";
 import { main } from "../cli.js";
 import { readStrategyRoot } from "../store.js";
 import { buildCitationIndex } from "./index.js";
-import { stageSlot } from "../ground/fixtures.js";
+import { stageSlot } from "../__fixtures__/slot-model.js";
 
 const roots: string[] = [];
 const id = "context.customer.need";

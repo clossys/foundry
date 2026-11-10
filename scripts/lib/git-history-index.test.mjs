@@ -17,6 +17,7 @@ import {
   buildGitHistoryIndex,
   commitParentLine,
   pathBlobOid,
+  pathContent,
   pathHasHistory,
   pathIntroductions,
   pathRangeTouches,
@@ -186,6 +187,8 @@ test("the scoped helpers return the same answers with and without the index", ()
           out[`rev-list ${name} ${path}`] = sorted(pathRangeTouches(root, commit, "HEAD", path, { command: "rev-list" }));
           out[`has ${name} ${path}`] = pathHasHistory(root, commit, path);
           out[`blob ${name} ${path}`] = pathBlobOid(root, commit, path);
+          try { out[`show ${name} ${path}`] = pathContent(root, commit, path); }
+          catch (error) { out[`show ${name} ${path}`] = `error ${error.status}: ${error.message}`; }
         }
       }
       for (const [name, commit] of Object.entries(subset)) {

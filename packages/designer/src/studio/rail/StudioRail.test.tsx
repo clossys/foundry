@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * DESIGNER-RO part B1: the Designer has no page tabs. A right rail of five collapsible cards (Explorer, Inspector,
- * Canvas map, Zoom) holds the modules that used to register into FrameDock and the AppFrame right panel.
+ * DESIGNER-RO part B1: the Designer has no page tabs. A right rail of collapsible cards (Explorer, Checks) holds the
+ * modules that used to register into FrameDock and the AppFrame right panel. R2F-19 retired the canvas map and zoom cards.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -16,7 +16,7 @@ import * as studioApi from "../index.js";
 import { componentIntegration } from "../../catalog-core/__fixtures__/component-integration.js";
 import type { CompositeStudioLabels } from "../types.js";
 import { studioTestCopy } from "../__fixtures__/copy.js";
-import { systemLayout } from "../system-canvas/layout.js";
+import type { Placement, PlacementNode } from "../../catalog-core/types.js";
 import type { StudioCopyBinding, StudioCopyRef } from "../copy-binding.js";
 import { loadBuildCatalog } from "../../catalog-core/index.js";
 
@@ -34,13 +34,19 @@ function addFixtureMessage(cell: string, value: string) {
 }
 // WholeStudioProvider uses build contracts for its composite graph; bind those
 // display names as well as the legacy value-only fixture names.
-for (const placements of [loadBuildCatalog().placements, smallCatalog.placements]) {
-const fixtureLayout = systemLayout(placements);
-for (const board of fixtureLayout.boards.values()) addFixtureMessage(`studio.ia.board.${board.id}`, board.label);
-for (const line of fixtureLayout.lines.values()) addFixtureMessage(`studio.ia.line.${line.id}`, line.label);
-for (const cell of fixtureLayout.cells.values()) {
-  addFixtureMessage(`studio.ia.item.${cell.leaf}`, cell.leaf);
-}
+const leavesOf = (node: PlacementNode): readonly string[] => "leaves" in node ? node.leaves : node.children.flatMap(leavesOf);
+const linesOf = (node: PlacementNode) => "leaves" in node ? [{ id: node.id, label: node.label, leaves: node.leaves }] : node.children.map(child => ({ id: child.id, label: child.label, leaves: leavesOf(child) }));
+const seen = new Set<string>();
+for (const placements of [loadBuildCatalog().placements, smallCatalog.placements] as readonly (readonly Placement[])[]) {
+  for (const { layer, nodes } of placements) for (const node of nodes) {
+    const board = `${layer}/${node.id}`;
+    if (!seen.has(board)) { seen.add(board); addFixtureMessage(`studio.ia.board.${board}`, node.label); }
+    for (const line of linesOf(node)) {
+      const id = `${board}/${line.id}`;
+      if (!seen.has(id)) { seen.add(id); addFixtureMessage(`studio.ia.line.${id}`, line.label); }
+      for (const leaf of line.leaves) if (!seen.has(leaf)) { seen.add(leaf); addFixtureMessage(`studio.ia.item.${leaf}`, leaf); }
+    }
+  }
 }
 addFixtureMessage("designer.scorecard.resolved-count", "fixture-count");
 for (let number = 1; number <= 10; number++) {
@@ -78,13 +84,13 @@ describe("no page tabs", () => {
 });
 
 describe("right rail of cards", () => {
-  it("renders four collapsible cards in order: Explorer, Canvas map, Zoom, Checks", async () => {
+  it("renders two collapsible cards in order: Explorer, Checks", async () => {
     render(legacy());
     await studioReady();
     expect(screen.getByRole("complementary", { name: labels.rail.label })).toBeTruthy();
-    expect(railCards().map(card => card.dataset.studioRailCard)).toEqual(["explorer", "map", "zoom", "checks"]);
+    expect(railCards().map(card => card.dataset.studioRailCard)).toEqual(["explorer", "checks"]);
     const user = userEvent.setup();
-    for (const id of ["explorer", "map", "zoom"] as const) {
+    for (const id of ["explorer"] as const) {
       const trigger = cardTrigger(id);
       expect(trigger.getAttribute("aria-expanded"), id).toBe("true");
       await user.click(trigger);
@@ -96,7 +102,7 @@ describe("right rail of cards", () => {
     const user = userEvent.setup();
     const first = render(legacy());
     await studioReady();
-    await user.click(cardTrigger("map"));
+    await user.click(cardTrigger("explorer"));
     await user.click(screen.getByRole("button", { name: labels.rail.hide }));
     expect(railCards()).toEqual([]);
     first.unmount();
@@ -104,9 +110,9 @@ describe("right rail of cards", () => {
     await studioReady();
     expect(railCards()).toEqual([]);
     await user.click(screen.getByRole("button", { name: labels.rail.show }));
-    expect(railCards().length).toBe(4);
-    expect(cardTrigger("map").getAttribute("aria-expanded")).toBe("false");
-    expect(cardTrigger("explorer").getAttribute("aria-expanded")).toBe("true");
+    expect(railCards().length).toBe(2);
+    expect(cardTrigger("explorer").getAttribute("aria-expanded")).toBe("false");
+    expect(cardTrigger("checks").getAttribute("aria-expanded")).toBe("false");
   }, 30_000);
 
   it("becomes an overlay drawer on a narrow viewport", async () => {
@@ -116,7 +122,7 @@ describe("right rail of cards", () => {
     expect(railCards()).toEqual([]);
     await userEvent.click(screen.getByRole("button", { name: labels.rail.show }));
     const sheet = await screen.findByRole("dialog");
-    expect([...sheet.querySelectorAll<HTMLElement>("[data-studio-rail-card]")].map(card => card.dataset.studioRailCard)).toEqual(["explorer", "map", "zoom", "checks"]);
+    expect([...sheet.querySelectorAll<HTMLElement>("[data-studio-rail-card]")].map(card => card.dataset.studioRailCard)).toEqual(["explorer", "checks"]);
   }, 30_000);
 
   it("registers no Designer module into FrameDock or the AppFrame right panel", async () => {

@@ -1,10 +1,12 @@
 /** @vitest-environment node */
 import { describe, expect, it } from "vitest";
 import { build, type Plugin } from "esbuild";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import * as client from "./index.js";
 import * as server from "./server.js";
 import { flatten, metaOf } from "./model.js";
+import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
+import assetSlots from "../catalog/slots/assets.json" with { type: "json" };
 import type { DtcgToken, LibraryData } from "./types.js";
 
 async function catalogBrowserClosure(plugins: Plugin[] = []) {
@@ -40,13 +42,18 @@ function assetLibrary(): { catalog: client.CatalogData; library: LibraryData } {
 }
 
 describe("asset integration through the public catalog", () => {
-  it("loads 56 token leaves and 49 asset leaves as fresh owned data", () => {
+  it("loads every ratified themes and assets leaf as fresh owned data", () => {
     const catalog = client.loadCatalog();
-    expect(catalog.slots.filter(slot => slot.layer === "themes")).toHaveLength(56);
-    expect(catalog.slots.filter(slot => slot.layer === "assets")).toHaveLength(49);
-    expect(catalog.fills.filter(fill => !!fill.assets)).toHaveLength(89);
-    expect(catalog.fills.filter(fill => !!fill.assets && metaOf(fill).source === "phosphor")).toHaveLength(40);
-    expect(catalog.fills.filter(fill => !!fill.assets && metaOf(fill).source === "open-props")).toHaveLength(1);
+    // Counts are read from the ratified leaf data, never pinned as literals.
+    expect(catalog.slots.filter(slot => slot.layer === "themes").map(slot => slot.id).sort()).toEqual(themeSlots.map(slot => slot.id).sort());
+    expect(catalog.slots.filter(slot => slot.layer === "assets").map(slot => slot.id).sort()).toEqual(assetSlots.map(slot => slot.id).sort());
+    // One loaded asset fill per shipped `fills/<source>/assets.*.json` file, per source.
+    const fillsRoot = new URL("../catalog/fills/", import.meta.url);
+    const shippedAssetFills = Object.fromEntries(readdirSync(fillsRoot).map(dir => [dir, readdirSync(new URL(`${dir}/`, fillsRoot)).filter(file => /^assets\..+\.json$/.test(file)).length]).filter(([, count]) => count));
+    const loadedAssetFills: Record<string, number> = {};
+    for (const fill of catalog.fills.filter(fill => !!fill.assets)) loadedAssetFills[metaOf(fill).source] = (loadedAssetFills[metaOf(fill).source] ?? 0) + 1;
+    expect(loadedAssetFills).toEqual(shippedAssetFills);
+    expect(Object.keys(shippedAssetFills)).toEqual(expect.arrayContaining(["phosphor", "open-props"]));
     metaOf(catalog.fills.find(fill => !!fill.assets)!).license = "changed";
     expect(client.loadCatalog().fills.some(fill => metaOf(fill).license === "changed")).toBe(false);
   });

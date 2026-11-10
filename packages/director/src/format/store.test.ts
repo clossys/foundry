@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readStrategyRoot } from "../store.js";
 import type { DirectorStoreReader } from "../store-io.js";
-import { evidenceDir, stageFinding, stageSlot, strategyRoot } from "../ground/fixtures.js";
+import { evidenceDir, stageFinding, stageSlot, strategyRoot } from "../__fixtures__/slot-model.js";
 
 const temps: string[] = [];
 afterEach(() => { for (const path of temps.splice(0)) rmSync(path, { recursive: true, force: true }); });

@@ -295,10 +295,12 @@ export function themePage(html: string, theme: PreviewTheme): string {
 /**
  * A served route's render as the static page a preview publishes: the app's client runtime (its
  * script tags, inline bootstrap and script preloads) is not part of the page. The preview runs no
- * script, so emitting chunk references would only ask the sandbox to block them.
+ * script, so emitting chunk references would only ask the sandbox to block them. A refresh meta is
+ * not part of it either: a static preview never navigates its own frame (to a live route).
  */
 export function staticPage(html: string): string {
   return html
+    .replace(/<meta\b(?=[^>]*\bhttp-equiv\s*=\s*["']?refresh\b)[^>]*>/gi, "")
     .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "")
     .replace(/<script\b[^>]*\/>/gi, "")
     .replace(/<link\b(?=[^>]*\brel\s*=\s*["']?(?:modulepreload|preload)\b)(?=[^>]*\bas\s*=\s*["']?script\b|[^>]*\brel\s*=\s*["']?modulepreload\b)[^>]*>/gi, "");

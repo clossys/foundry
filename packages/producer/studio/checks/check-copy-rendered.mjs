@@ -24,7 +24,7 @@
  * Anything else is a literal the Studio rendered without a registry entry, and fails.
  *
  * Usage: node studio/checks/check-copy-rendered.mjs [origin] [--root DIR] [--pages DIR] [--routes N] [--json FILE]
- *   origin   the running Studio (default $STUDIO_ORIGIN or http://127.0.0.1:4617)
+ *   origin   the running Studio (default $STUDIO_ORIGIN or http://127.0.0.1:4503, studio-origin.mjs)
  *   --root   the repository whose clossys/ the Studio serves (default this repository)
  *   --pages  read each route's rendered page from DIR/<route>/index.html instead of an origin (a fixture)
  *   --routes only the first N routes (a probe; the gate itself always runs every route)
@@ -35,6 +35,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { studioOrigin } from './studio-origin.mjs';
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -292,10 +293,23 @@ export function installedRoutes(repo) {
   return [...new Set(paths)];
 }
 
+/** Chrome pages reading routes at once. The Studio renders each route's document in turn, so more add little. */
+export const WORKERS = 3;
+/**
+ * One route's share of the bound per worker: measured at 990 s for 606 routes on three workers (about 4.9 s each,
+ * load 12, 2026-11-07), with headroom. The check's work grows with the installed routes, so its bound does too.
+ */
+export const ROUTE_SECONDS = 8;
+
+/** The wall-clock bound a runner gives this check: Chrome start and the registry universe, then each route's share. */
+export function timeoutSeconds(routes = installedRoutes(join(here, '../../../..')).length, startSeconds = 120) {
+  return startSeconds + Math.ceil(routes / WORKERS) * ROUTE_SECONDS;
+}
+
 async function main() {
   const repo = resolve(flag('--root') ?? join(here, '../../../..'));
   const pages = flag('--pages') ? resolve(flag('--pages')) : undefined;
-  const origin = pages ? pathToFileURL(pages).href : new URL(positional[0] ?? process.env.STUDIO_ORIGIN ?? 'http://127.0.0.1:4617').origin;
+  const origin = pages ? pathToFileURL(pages).href : new URL(positional[0] ?? studioOrigin()).origin;
   const address = route => pages ? pathToFileURL(join(pages, route, 'index.html')).href : origin + route;
   const limit = flag('--routes') ? Number(flag('--routes')) : undefined;
   const universe = await registryUniverse(repo);
@@ -308,6 +322,12 @@ async function main() {
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
     await context.route(`${origin}/api/events`, route => route.fulfill({ contentType: 'text/event-stream', body: ': connected\n\n' }));
+    // The check reads the route's own document only (collectRendered never enters a frame, and a specimen frame is
+    // an opaque sandbox): a child frame's document is answered empty, so it loads without a server render per frame.
+    if (!pages) await context.route(() => true, route => {
+      const request = route.request();
+      return request.isNavigationRequest() && request.frame().parentFrame() ? route.fulfill({ contentType: 'text/html', body: '' }) : route.fallback();
+    });
     const queue = [...routes];
     const worker = async () => {
       const page = await context.newPage();
@@ -339,7 +359,7 @@ async function main() {
       }
       await page.close();
     };
-    await Promise.all(Array.from({ length: 3 }, worker));
+    await Promise.all(Array.from({ length: WORKERS }, worker));
   } finally {
     await browser.close();
   }

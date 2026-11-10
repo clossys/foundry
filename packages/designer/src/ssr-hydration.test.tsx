@@ -9,6 +9,7 @@ import { CommandMenu, useCommandMenuShortcut } from "./blocks/CommandMenu.js";
 import { Shell } from "./shell/Shell.js";
 import { DEFAULT_STORAGE_KEY, ThemeProvider } from "./theme/ThemeProvider.js";
 import { ThemeToggle } from "./theme/ThemeToggle.js";
+import { ShellCopyTestHost } from "./frames/__fixtures__/shell-copy.js";
 
 afterEach(() => {
   document.documentElement.removeAttribute("data-theme");
@@ -28,13 +29,15 @@ describe("SSR and hydration", () => {
           emptyMessage="No commands" groups={[]} isOpen={isOpen} onOpenChange={setOpen} query={query} onQueryChange={setQuery} />
       </>;
     }
+    // The consumer supplies the Writer resolver on both the server and the hydrating client.
+    const hosted = <ShellCopyTestHost><Host /></ShellCopyTestHost>;
     const container = document.createElement("div");
-    container.innerHTML = renderToString(<Host />);
+    container.innerHTML = renderToString(hosted);
     expect(container.querySelector('[role="dialog"]')).toBeNull();
     document.body.append(container);
     const onRecoverableError = vi.fn();
     let root: ReturnType<typeof hydrateRoot> | undefined;
-    await act(async () => { root = hydrateRoot(container, <Host />, { onRecoverableError }); });
+    await act(async () => { root = hydrateRoot(container, hosted, { onRecoverableError }); });
     const opener = container.querySelector("button")!;
     await userEvent.click(opener);
     expect(document.querySelector('input[role="combobox"]')).toHaveFocus();
@@ -92,9 +95,11 @@ describe("SSR and hydration", () => {
     );
 
     const tree = (
-      <ThemeProvider>
-        <ThemeToggle />
-      </ThemeProvider>
+      <ShellCopyTestHost>
+        <ThemeProvider>
+          <ThemeToggle />
+        </ThemeProvider>
+      </ShellCopyTestHost>
     );
     const serverHtml = renderToString(tree);
     const container = document.createElement("div");

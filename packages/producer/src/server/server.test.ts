@@ -39,6 +39,16 @@ async function director(): Promise<string> {
   throw new Error("No pinned Director slot");
 }
 
+/**
+ * A Designer slot model with no pins: /api/config then reads the consumer's (empty) pinned
+ * selection instead of compiling the whole Foundry default fill (about 38 s measured
+ * 2026-11-06), which the guard and proxy tests below do not exercise.
+ */
+async function designerModel(): Promise<void> {
+  await mkdir(agentRoot(root, "designer"), { recursive: true });
+  await cp(join(repoConsumer, "agents", "designer", "ia.json"), join(agentRoot(root, "designer"), "ia.json"));
+}
+
 describe("loopback Producer", () => {
   it("serves health and the flat Director slot model over /api/slots", async () => {
     // The gallery labels its slots by their Writer names, which have no fallback.
@@ -53,7 +63,7 @@ describe("loopback Producer", () => {
   });
 
   it("guards every local route, mutations, ambiguous headers and traversal before proxying", async () => {
-    await launch();
+    await designerModel(); await launch();
     for (const path of ["/api/health", "/api/config", "/api/events", "/studio"]) {
       for (const host of ["example.test", "localhost", `127.0.0.1:${server!.port + 1}`, `LOCALHOST:${server!.port}`]) expect((await request(path, { headers: { Host: host } })).status).toBe(403);
     }
@@ -78,7 +88,7 @@ describe("loopback Producer", () => {
   }, 60_000);
 
   it("reverse proxies the real child, strips hop headers and isolates the token per run", async () => {
-    await launch();
+    await designerModel(); await launch();
     const firstToken = (await request("/api/config")).body.token;
     const result = await request("/nested/path?hello=world", { headers: { "X-Forwarded-Host": "example.test", Connection: "x-custom", "X-Custom": "hidden", "X-Clossys-Token": firstToken } });
     expect(result.body).toMatchObject({ studio: true, path: "/nested/path?hello=world", origin: server!.url });

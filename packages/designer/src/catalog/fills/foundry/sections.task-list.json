@@ -69,7 +69,7 @@
           },
           {
             "path": "packages/designer/src/blocks/TaskList.tsx",
-            "sha256": "0f743fc94e24080b68b6c347a78f7e8c211d0733f910c76266db20fad71a9e45"
+            "sha256": "fa3977a43d5e5b9d5883924d555e1384f3568a02d7d8e9b664c381887dbd7d9e"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

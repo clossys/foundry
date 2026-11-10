@@ -12,6 +12,7 @@ import { labels, smallCatalog } from "../__fixtures__/studio.js";
 import { componentIntegration } from "../../catalog-core/__fixtures__/component-integration.js";
 import { Studio, WholeStudioProvider } from "../index.js";
 import type { CompositeStudioLabels } from "../types.js";
+import { studioHostCopy } from "../__fixtures__/copy-hand-roll.js";
 
 afterEach(() => { cleanup(); try { localStorage.clear(); } catch { /* jsdom always has storage */ } window.history.replaceState(null, "", "/"); vi.restoreAllMocks(); });
 
@@ -21,7 +22,7 @@ function composite() {
   const catalog = { ...input.catalog, values: smallCatalog };
   const library = { ...input.library, values: { fills: [] } };
   const adapter = { kind: "composite" as const, catalog, load: async () => ({ library, componentOptions: input.componentOptions }), save: vi.fn() };
-  return <WholeStudioProvider adapter={adapter} labels={wholeLabels}><Studio /></WholeStudioProvider>;
+  return <WholeStudioProvider adapter={adapter} labels={wholeLabels}><Studio copy={studioHostCopy} /></WholeStudioProvider>;
 }
 const valueCanvas = () => document.querySelector("style[data-studio-candidates]");
 

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, it } from "vitest";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
-import { renderStudioRoute, startStudio } from "./studio.js";
+import { memoizedRender, renderStudioRoute, startStudio } from "./studio.js";
 
 it("checks the shipped static asset without starting a slow dynamic root render", async () => {
   const root = await mkdtemp(join(tmpdir(), "producer-studio-ready-"));
@@ -33,6 +33,10 @@ it("renders a page that lands on its first tab by following the same-origin redi
     if (request.url === "/director/context") { response.writeHead(307, { Location: "/director/context/market" }); response.end(); return; }
     if (request.url === "/loop") { response.writeHead(307, { Location: "/loop" }); response.end(); return; }
     if (request.url === "/away") { response.writeHead(307, { Location: "http://example.com/director" }); response.end(); return; }
+    // Next streams a server redirect() as a 200 page-redirect body; it is a redirect, not the page.
+    if (request.url === "/designer/themes") { response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }); response.end('<!DOCTYPE html><html><head><meta charSet="utf-8"/><meta id="__next-page-redirect" http-equiv="refresh" content="1;url=/director/context/market"/></head><body></body></html>'); return; }
+    if (request.url === "/streamed-away") { response.writeHead(200, { "Content-Type": "text/html" }); response.end('<meta id="__next-page-redirect" http-equiv="refresh" content="1;url=http://example.com/x"/>'); return; }
+    if (request.url === "/streamed-loop") { response.writeHead(200, { "Content-Type": "text/html" }); response.end('<meta id="__next-page-redirect" http-equiv="refresh" content="0;url=/streamed-loop"/>'); return; }
     if (request.url === "/director/context/market") { response.writeHead(200, { "Content-Type": "text/html" }); response.end("<h1>Market</h1>"); return; }
     response.writeHead(404); response.end();
   });
@@ -44,5 +48,25 @@ it("renders a page that lands on its first tab by following the same-origin redi
     expect(await renderStudioRoute(port, "/loop")).toBeUndefined();
     expect(await renderStudioRoute(port, "/away")).toBeUndefined();
     expect(await renderStudioRoute(port, "/missing")).toBeUndefined();
+    expect(await renderStudioRoute(port, "/designer/themes")).toBe("<h1>Market</h1>");
+    expect(await renderStudioRoute(port, "/streamed-away")).toBeUndefined();
+    expect(await renderStudioRoute(port, "/streamed-loop")).toBeUndefined();
   } finally { await new Promise(done => server.close(done)); }
+});
+
+it("renders each Studio path once until cleared, sharing a render in flight and keeping no failed render", async () => {
+  const calls: string[] = [];
+  let fail = true;
+  const renders = memoizedRender(async path => { calls.push(path); await new Promise(next => setTimeout(next, 5)); if (path === "/missing") return undefined; if (path === "/flaky" && fail) { fail = false; throw new Error("boom"); } return `<h1>${path}</h1>`; });
+  const [first, second] = await Promise.all([renders.render("/designer/themes"), renders.render("/designer/themes")]);
+  expect([first, second]).toEqual(["<h1>/designer/themes</h1>", "<h1>/designer/themes</h1>"]);
+  expect(await renders.render("/designer/themes")).toBe("<h1>/designer/themes</h1>");
+  expect(calls).toEqual(["/designer/themes"]);
+  expect(await renders.render("/missing")).toBeUndefined();
+  expect(await renders.render("/missing")).toBeUndefined();
+  await expect(renders.render("/flaky")).rejects.toThrow("boom");
+  expect(await renders.render("/flaky")).toBe("<h1>/flaky</h1>");
+  renders.clear();
+  expect(await renders.render("/designer/themes")).toBe("<h1>/designer/themes</h1>");
+  expect(calls).toEqual(["/designer/themes", "/missing", "/missing", "/flaky", "/flaky", "/designer/themes"]);
 });

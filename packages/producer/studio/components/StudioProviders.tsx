@@ -39,8 +39,11 @@ export function StudioDocument({ head, children }: { head?: ReactNode; children:
 }
 
 function framedPage(): boolean {
-  // A frame whose top the browser will not compare is treated as framed.
-  try { return window.self !== window.top; } catch { return true; }
+  // A frame whose top the browser will not compare (a cross-origin parent) is framed; any other failure is not hidden.
+  try { return window.self !== window.top; } catch (error) {
+    if (error instanceof DOMException && error.name === 'SecurityError') return true;
+    throw error;
+  }
 }
 
 function storedMode(): ThemeMode {

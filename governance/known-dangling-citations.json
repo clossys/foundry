@@ -33,18 +33,6 @@
         "skills-manifest.test.ts",
         "src/ci/cli.test.ts"
       ],
-      "README.md": [
-        "../composition.ts",
-        "../types.ts",
-        "./bin.ts",
-        "./cli.ts",
-        "./discovery.ts",
-        "./machine-layer.ts",
-        "./report.ts",
-        "./skills-manifest.test.ts",
-        "./skills-manifest.ts",
-        "./third-party.ts"
-      ],
       "src/ci/cli.ts": [
         "cli.test.ts"
       ],
@@ -62,9 +50,6 @@
       ]
     },
     "butler": {
-      "README.md": [
-        "./intents.json"
-      ],
       "src/audit-shape.check.ts": [
         "scripts/check-typechecked-assertions.mjs"
       ],
@@ -103,25 +88,6 @@
         "src/repository/installed-bin.test.ts",
         "src/repository/validate.test.ts",
         "src/testing/permission-enforcement.ts"
-      ],
-      "README.md": [
-        "./routines.ts",
-        "./schedules.ts",
-        "docs/contracts/repository-package-adoption.fixture.json",
-        "gates/index.ts",
-        "gates/secrets.ts",
-        "gates/typescript-required.test.ts",
-        "governance/repository-profile.json",
-        "installed-bin.test.ts",
-        "packages/controller/src/cleanup/classify.ts",
-        "packages/controller/src/cleanup/types.ts",
-        "packages/controller/src/gates/secret-gates.ts",
-        "packages/controller/src/review/types.ts",
-        "packages/controller/src/review/validate.ts",
-        "scripts/check-neutrality.mjs",
-        "src/artifacts/verify.test.ts",
-        "src/cleanup/no-deletion-api.test.ts",
-        "src/cleanup/parity.test.ts"
       ],
       "src/artifacts/verify.ts": [
         "scripts/check-release-readiness.mjs",
@@ -192,10 +158,7 @@
     },
     "designer": {
       "CHANGELOG.md": [
-        "atoms/ProgressBar.tsx",
-        "atoms/Skeleton.tsx",
         "atoms/internal/cx.optional-peer.test.ts",
-        "atoms/internal/cx.ts",
         "blocks/DataTable.tsx",
         "environment-conformance.adversarial.test.ts",
         "gates/secret-gates.ts",
@@ -205,124 +168,11 @@
         "public-contract.test.ts",
         "theme/server.ts"
       ],
-      "README.md": [
-        "ArticleBody.test.tsx",
-        "AuthView.test.tsx",
-        "Avatar.test.tsx",
-        "Badge.test.tsx",
-        "Banner.test.tsx",
-        "BarChart.test.tsx",
-        "Breadcrumb.test.tsx",
-        "Button.test.tsx",
-        "Card.test.tsx",
-        "ChartFrame.test.tsx",
-        "Checkbox.test.tsx",
-        "Chip.test.tsx",
-        "ComboBox.test.tsx",
-        "ConfirmDialog.test.tsx",
-        "DataTable.test.tsx",
-        "DateField.test.tsx",
-        "DetailView.test.tsx",
-        "Dialog.test.tsx",
-        "Disclosure.test.tsx",
-        "EmptyState.test.tsx",
-        "ErrorView.test.tsx",
-        "Faq.test.tsx",
-        "FeatureGrid.test.tsx",
-        "Field.test.tsx",
-        "FieldGroup.test.tsx",
-        "FileTrigger.test.tsx",
-        "Form.test.tsx",
-        "Hero.test.tsx",
-        "LineChart.test.tsx",
-        "Link.test.tsx",
-        "Menu.test.tsx",
-        "NavGrid.test.tsx",
-        "NavShell.test.tsx",
-        "PageHeader.test.tsx",
-        "Pagination.test.tsx",
-        "Popover.test.tsx",
-        "PricingTable.test.tsx",
-        "ProgressBar.test.tsx",
-        "RadioGroup.test.tsx",
-        "SearchField.test.tsx",
-        "SectionHeader.test.tsx",
-        "Select.test.tsx",
-        "Separator.test.tsx",
-        "Shell.test.tsx",
-        "SiteFooter.test.tsx",
-        "SiteHeader.test.tsx",
-        "Skeleton.test.tsx",
-        "SkipLink.test.tsx",
-        "Sparkline.test.tsx",
-        "Spinner.test.tsx",
-        "Stat.test.tsx",
-        "Switch.test.tsx",
-        "Table.test.tsx",
-        "Tabs.test.tsx",
-        "Testimonial.test.tsx",
-        "TextField.test.tsx",
-        "Textarea.test.tsx",
-        "ThemeProvider.test.tsx",
-        "ThemeToggle.test.tsx",
-        "Toaster.test.tsx",
-        "Toolbar.test.tsx",
-        "Tooltip.test.tsx",
-        "atoms/Icon.tsx",
-        "atoms/internal/cx.ts",
-        "atoms/internal/ui-vars.ts",
-        "blocks/index.ts",
-        "contrast.test.ts",
-        "environment-conformance-cli.test.ts",
-        "environment-conformance-worker.test.ts",
-        "environment-conformance.adversarial.test.ts",
-        "environment-conformance.test.ts",
-        "icons/types.ts",
-        "initScript.test.ts",
-        "internal/chart-vars.test.ts",
-        "internal/cx.test.ts",
-        "internal/scale.test.ts",
-        "internal/theme-core.test.ts",
-        "ladder.test.ts",
-        "override.test.ts",
-        "render-environment.test.ts",
-        "scripts/generate-icons.mjs",
-        "scripts/icon-source-data.json",
-        "src/compiled-css/coverage.test.tsx",
-        "src/contrast.test.ts",
-        "src/icons/icons.test.ts",
-        "src/icons/tree-shake.test.ts",
-        "src/ladder.test.ts",
-        "theme/theme-script-parity.test.ts",
-        "token-parity.test.ts"
-      ],
       "THIRD-PARTY-NOTICES.md": [
         "scripts/generate-icons.mjs",
         "scripts/icon-source-data.json"
       ],
       "TOKENS.md": [
-      ],
-      "src/atoms/Banner.tsx": [
-        "ladder.test.ts"
-      ],
-      "src/atoms/Icon.tsx": [
-        "src/types.ts"
-      ],
-      "src/atoms/Select.tsx": [
-        "ladder.test.ts"
-      ],
-      "src/atoms/Table.tsx": [
-        "ladder.test.ts"
-      ],
-      "src/atoms/internal/cx.ts": [
-        "cx.test.ts"
-      ],
-      "src/atoms/internal/icon-contract.check.tsx": [
-        "Icon.test.tsx",
-        "src/ladder.test.ts"
-      ],
-      "src/atoms/server.ts": [
-        "render-environment.test.ts"
       ],
       "src/blocks/index.ts": [
         "ladder.test.ts"
@@ -390,11 +240,7 @@
       ],
       "src/shell/internal/shell-contract.check.tsx": [
         "../Shell.test.tsx",
-        "Shell.test.tsx",
-        "packages/ui/src/atoms/internal/icon-contract.check.tsx"
-      ],
-      "src/shell/internal/shell-vars.ts": [
-        "token-parity.test.ts"
+        "Shell.test.tsx"
       ],
       "src/shell/server.ts": [
         "render-environment.test.ts"
@@ -417,12 +263,6 @@
       ],
       "src/theme/server.ts": [
         "render-environment.test.ts"
-      ],
-      "src/token-gate.ts": [
-        "packages/ui/src/atoms/internal/ui-vars.ts"
-      ],
-      "src/tokens/assert-tailwind-merge-version.ts": [
-        "atoms/internal/cx.test.ts"
       ],
       "src/tokens/check-brand-file-coverage.ts": [
         "brand-coverage.test.ts",
@@ -479,9 +319,6 @@
       ]
     },
     "giver": {
-      "README.md": [
-        "./obligations.json"
-      ],
       "src/cli.ts": [
         "cli.test.ts"
       ]
@@ -499,11 +336,6 @@
     },
     "integrator": {
       "CHANGELOG.md": [
-        "scripts/check-package-visibility.mjs"
-      ],
-      "README.md": [
-        "./package-lock.json",
-        "./supersession-map.json",
         "scripts/check-package-visibility.mjs"
       ],
       "src/cli.ts": [
@@ -534,9 +366,6 @@
         "governance/release-qualifications/clossys-locksmith-0.2.3.json",
         "infisical/cli.ts",
         "no-value-escapes.test.ts"
-      ],
-      "README.md": [
-        "no-value-escapes.test.ts"
       ]
     },
     "messenger": {
@@ -554,12 +383,6 @@
         "ci/cli.ts",
         "coverage.test.ts",
         "metrics-non-combination.test.ts",
-        "redaction.test.ts"
-      ],
-      "README.md": [
-        "metrics-non-combination.test.ts",
-        "observation.test.ts",
-        "packages/integrator/src/inventory.ts",
         "redaction.test.ts"
       ],
       "src/bin.ts": [
@@ -586,11 +409,6 @@
       ]
     },
     "publisher": {
-      "README.md": [
-        "../internal/assets.ts",
-        "internal/errors.ts",
-        "packages/auth/src/redirect.ts"
-      ],
       "src/document/types.ts": [
         "packages/surface/src/web/views/ErrorView.tsx"
       ],
@@ -646,25 +464,13 @@
       ]
     },
     "starter": {
-      "README.md": [
-        "evidence/assessment.json"
-      ],
       "documents/caller-workflow.md": [
         "evidence/assessment.json"
       ]
     },
     "director": {
-      "README.md": [
-        "brand-coverage.test.ts"
-      ],
-      "src/brand-derivation.ts": [
-        "brand-coverage.test.ts"
-      ],
       "src/cli.ts": [
         "cli.test.ts"
-      ],
-      "src/index.ts": [
-        "brand-coverage.test.ts"
       ],
       "src/scan.ts": [
         "scripts/check-contamination-classes.mjs"
@@ -672,10 +478,6 @@
     },
     "writer": {
       "CHANGELOG.md": [
-        "passage.adversarial.test.ts"
-      ],
-      "README.md": [
-        "packages/writer/src/voice/checker.test.ts",
         "passage.adversarial.test.ts"
       ],
       "src/addressability.ts": [

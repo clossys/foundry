@@ -4,13 +4,15 @@
 const assert = require('node:assert/strict');
 const { launchChrome, failureExitCode } = require('./chrome-launch.cjs');
 const { inspectStudioBody, inspectStudioSelection, assertCovered, assertSelection } = require('./check-no-handrolling.cjs');
+const { inspectSelectionRecord } = require('./check-theme-parity.cjs');
 
 /** Run against a native standalone Studio with a real emitted publication fixture. */
 async function checkPublisherPreview(origin, mode = 'ready', output) {
   const response = await fetch(`${origin}/api/publication`);
   const publication = await response.json();
   const selectedRuntime = (await (await fetch(`${origin}/api/config`)).json()).selection;
-  assert.ok(selectedRuntime?.runtimeUrl, selectedRuntime?.message ?? 'The consumer selection runtime is unavailable.');
+  // Slot model: pinned leaves replace the removed preview runtimeUrl; the page DOM is audited against them below.
+  inspectSelectionRecord(selectedRuntime, 'Publisher selection');
   const browser = await launchChrome({ headless: true, args: ['--no-sandbox'] });
   try {
     const page = await browser.newPage({ viewport: { width: 1680, height: 1100 } });

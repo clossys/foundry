@@ -8,7 +8,7 @@ import type { AgentKind } from "../agents.js";
 import { resolveAgent } from "../agents.js";
 import { AGENT_KINDS } from "./cells.js";
 import { TOKEN_HEADER } from "./contract.js";
-import { renderStudioRoute, startStudio, STUDIO_APP, studioEntry, type StudioChild } from "./studio.js";
+import { memoizedRender, renderStudioRoute, startStudio, STUDIO_APP, studioEntry, type StudioChild } from "./studio.js";
 import { watchCells } from "./watch.js";
 import { studioTheme } from "./theme.js";
 import { publication, servePreview, type ServedApp } from "./publication.js";
@@ -104,8 +104,10 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
   const onSignal = () => { void close(); };
   if (options.handleSignals !== false) { process.once("SIGINT", onSignal); process.once("SIGTERM", onSignal); }
 
-  // Studio's own publication previews through the Studio this server runs.
-  const served: ServedApp = { app: STUDIO_APP, render: async path => child ? renderStudioRoute(child.port, path) : undefined };
+  // Studio's own publication previews through the Studio this server runs: one render per route
+  // until a watched record changes, so every preview frame of a route does not re-render it.
+  const renders = memoizedRender(async path => child ? renderStudioRoute(child.port, path) : undefined);
+  const served: ServedApp = { app: STUDIO_APP, render: renders.render };
   async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const host = request.headers.host;
     if (headerCount(request, "host") !== 1 || (host !== `127.0.0.1:${port}` && host !== `localhost:${port}`)) {
@@ -159,7 +161,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (pathname === "/api/designer/globals.css") {
         const globals = await consumerGlobals(options.root).catch(() => undefined);
         response.writeHead(200, { "Content-Type": "text/css; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...(globals ? { ETag: `"${globals.hash}"` } : {}) });
-        response.end(globals?.css ?? "/* The consumer has no Designer globals; Studio keeps its stock component theme. */\n"); return;
+        response.end(globals?.css ?? "/* The consumer's Designer globals could not be compiled. */\n"); return;
       }
       if (pathname.startsWith(DESIGNER_FONT_PREFIX)) {
         const font = await consumerFontFile(options.root, pathname).catch(() => undefined);
@@ -270,6 +272,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       void close();
     });
     stopWatch = await watchCells(options.root, event => {
+      renders.clear();
       for (const stream of streams) {
         if (stream.writableLength > 64 * 1024) stream.destroy();
         else stream.write(`event: change\ndata: ${JSON.stringify(event)}\n\n`);

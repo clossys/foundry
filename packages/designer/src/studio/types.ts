@@ -1,7 +1,3 @@
-/** Host-supplied, view-only Designer data. The page never invokes a write command. */
-export interface DesignerAgentData {
-  readonly renderStaticThumbnail?: (leaf: string) => ReactNode;
-}
 import type { CanvasFilter } from "./canvas-model.js";
 import type { CSSProperties, ReactNode, Ref } from "react";
 import type { CheckCategory } from "./matrix-model.js";
@@ -102,7 +98,7 @@ export interface StudioCandidateWorkflow {
   actions?: Omit<import("./StudioActions.js").StudioActionsProps, "promptContext" | "taskPrompt">;
   checkCandidates?(slot: string): Promise<StudioCandidateCheckResult>;
 }
-export interface StudioCanvasProps extends DesignerAgentData {
+export interface StudioCanvasProps {
   /** Host-owned Writer resolution and explicit requested locale. */
   copy: import("./copy-binding.js").StudioCopyBinding;
   /** @deprecated Ignored: the Studio has no layer tabs; the right rail's Explorer card switches layers. */

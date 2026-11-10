@@ -1,7 +1,7 @@
 {
-  "candidate": "producer-pipeline-flow-v12.json",
-  "sha256": "715cb26b08fd895a918a0aab4a0f1d400fd249dde5ffab97cd455c662ecaf1fc",
-  "decidedBy": "planner:SPECIMEN-RENDER",
+  "candidate": "producer-pipeline-flow-v13.json",
+  "sha256": "a329ee393461c84c5b074b6f6be61c2a64e46b7b60e49646bfe1b2628c2d7cb2",
+  "decidedBy": "planner:R2F-42c",
   "basis": "planner",
-  "at": "2026-11-05T17:03:59.202Z"
+  "at": "2026-11-07T16:08:29.386Z"
 }

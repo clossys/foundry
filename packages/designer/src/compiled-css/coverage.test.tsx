@@ -27,7 +27,7 @@
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render as renderBare, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Logomark } from "../components/Logomark.js";
 import { Lockup } from "../blocks/Lockup.js";
@@ -74,6 +74,9 @@ import { SpecimenPanel } from "../blocks/specimen/SpecimenPanel.js";
 import type { SpecimenPanelItem } from "../blocks/specimen/SpecimenPanel.js";
 import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
+import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
+/** The consumer supplies the Writer shell copy resolver for every rendered specimen. */
+const render = hostedRender(renderBare);
 
 const packageRoot = resolve(import.meta.dirname, "..", "..");
 

@@ -43,6 +43,8 @@ const SHA1 = /^[a-f0-9]{40}$/;
 const ZERO = "0000000000000000000000000000000000000000";
 // A literal, magic-free, glob-free relative file path.
 const LITERAL_PATH = /^[A-Za-z0-9._@+-]+(\/[A-Za-z0-9._@+-]+)*$/;
+// Tree entry modes whose `git show <commit>:<path>` output is the blob's own bytes.
+const REGULAR_FILE_MODES = new Set(["100644", "100755"]);
 export const GIT_HISTORY_INDEX_SCOPE = "governance";
 
 export const GIT_HISTORY_INDEX_ARGS = Object.freeze([
@@ -136,6 +138,21 @@ export class GitHistoryIndex {
     for (const sha of walked) memo.set(sha, key);
     return key;
   }
+  /** The `{ mode, oid }` entry `path` has at `commit`, or null when absent. */
+  blobEntry(commit, path) {
+    const key = this.#key(commit, path);
+    if (key === null) return null;
+    const space = key.indexOf(" ");
+    return { mode: key.slice(0, space), oid: key.slice(space + 1) };
+  }
+  /** Every regular-file blob id any indexed path ever held, sorted. */
+  regularBlobOids() {
+    const oids = new Set();
+    for (const entries of this.#changed.values()) {
+      for (const { key, oid } of entries.values()) if (key !== null && REGULAR_FILE_MODES.has(key.slice(0, key.indexOf(" ")))) oids.add(oid);
+    }
+    return [...oids].sort();
+  }
   /** `git rev-parse --verify <commit>:<path>` — the blob id, or null. */
   blobOid(commit, path) {
     const key = this.#key(commit, path);
@@ -200,7 +217,7 @@ let active = null;
  */
 export function withGitHistoryIndex(root, fn, { build = buildGitHistoryIndex } = {}) {
   const previous = active;
-  active = { root: realpathSync(root), originalRoot: root, state: "pending", index: null, build, contents: new Map() };
+  active = { root: realpathSync(root), originalRoot: root, state: "pending", index: null, build, contents: new Map(), blobs: null };
   try { return fn(); } finally { active = previous; }
 }
 
@@ -277,10 +294,48 @@ export function assertAncestor(root, ancestor, descendant) {
 // lockfile) are not retained.
 const CONTENT_MEMO_MAX_BYTES = 256 * 1024;
 
+// The bytes of every regular-file blob the indexed scope ever held, read by
+// ONE `git cat-file --batch` the first time a scoped content question is
+// asked (the governance scope's whole history is about a thousand blobs). A
+// record's content at an exact indexed commit is then its blob's bytes, the
+// same bytes `git show <commit>:<path>` prints for a regular file (show
+// applies no textconv or filter unless asked). Any batch it cannot parse
+// exactly leaves every question on the per-record command.
+function indexedBlobs(index) {
+  if (active.blobs === null) {
+    try {
+      const oids = index.regularBlobOids();
+      const out = execFileSync("git", ["cat-file", "--batch"], { cwd: active.originalRoot, input: oids.map((oid) => `${oid}\n`).join(""), maxBuffer: 1024 * 1024 * 1024 });
+      const blobs = new Map();
+      let at = 0;
+      for (const oid of oids) {
+        const newline = out.indexOf(10, at);
+        if (newline < 0) throw new Error("truncated blob batch");
+        const [id, type, size, ...rest] = out.toString("latin1", at, newline).split(" ");
+        const length = Number(size);
+        if (id !== oid || type !== "blob" || rest.length !== 0 || !/^\d+$/.test(size ?? "") || !Number.isSafeInteger(length)) throw new Error("unexpected blob batch entry");
+        const start = newline + 1, end = start + length;
+        if (out[end] !== 10) throw new Error("unterminated blob batch entry");
+        blobs.set(oid, out.toString("utf8", start, end));
+        at = end + 1;
+      }
+      if (at !== out.length) throw new Error("unexpected blob batch trailer");
+      active.blobs = blobs;
+    } catch { active.blobs = "unavailable"; }
+  }
+  return active.blobs === "unavailable" ? null : active.blobs;
+}
+
 /** Exactly `git show <ref>:<path>` decoded as UTF-8. */
 export function pathContent(root, ref, path) {
   const index = indexFor(root, "HEAD");
-  const key = index && SHA1.test(ref ?? "") && index.commit(ref) === ref ? `${ref}:${path}` : null;
+  const exact = Boolean(index) && SHA1.test(ref ?? "") && index.commit(ref) === ref;
+  if (exact && index.covers(path)) {
+    const entry = index.blobEntry(ref, path);
+    const text = entry !== null && REGULAR_FILE_MODES.has(entry.mode) ? indexedBlobs(index)?.get(entry.oid) : undefined;
+    if (text !== undefined) return text;
+  }
+  const key = exact ? `${ref}:${path}` : null;
   if (key !== null && active.contents.has(key)) return active.contents.get(key);
   const bytes = execFileSync("git", ["show", `${ref}:${path}`], { cwd: root, encoding: "utf8" });
   if (key !== null && bytes.length <= CONTENT_MEMO_MAX_BYTES) active.contents.set(key, bytes);

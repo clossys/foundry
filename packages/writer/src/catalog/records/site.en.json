@@ -908,6 +908,174 @@
       "status": "draft",
       "origin": "authored",
       "text": "Your message could not be sent. Please try again."
+    },
+    {
+      "id": "st.7mpayr0001",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player title",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Example Co. overview"
+    },
+    {
+      "id": "st.7mpayr0002",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player play",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Play video"
+    },
+    {
+      "id": "st.7mpayr0003",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player pause",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pause video"
+    },
+    {
+      "id": "st.7mpayr0004",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player mute",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Mute sound"
+    },
+    {
+      "id": "st.7mpayr0005",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player seek",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Playback position"
+    },
+    {
+      "id": "st.7mpayr0006",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player captions",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Captions"
+    },
+    {
+      "id": "st.7mpayr0007",
+      "leaf": "strings.errors",
+      "context": "Inline media player load failure heading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Video unavailable",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.7mpayr0008",
+      "leaf": "strings.errors",
+      "context": "Inline media player load failure description",
+      "status": "draft",
+      "origin": "authored",
+      "text": "This video could not load. Try again later.",
+      "limits": {
+        "maxChars": 480
+      }
+    },
+    {
+      "id": "ps.7mpayr0001",
+      "leaf": "passages.error-state",
+      "context": "Inline media player load failure",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.error-state",
+      "schemaDigest": "5a1153ac50a43d8fb11e8a8baf922f5bff73d3c15769a28a1c0e067d38b29db3",
+      "fields": {
+        "header.heading": {
+          "ref": "string",
+          "id": "st.7mpayr0007"
+        },
+        "header.description": {
+          "ref": "string",
+          "id": "st.7mpayr0008"
+        }
+      }
+    }
+  ],
+  "reviews": [
+    {
+      "recordId": "st.7mpayr0007",
+      "cellId": "designer.components.media-player.error.header.heading",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "f962710bce08b93535132765a9c02faf890e73aa",
+        "path": "packages/designer/src/components/media-player/media-player.tsx",
+        "line": 146,
+        "key": "passage.error.title"
+      },
+      "before": "(missing ps.7mpayr0001)",
+      "after": "Video unavailable",
+      "rationale": "Name the load failure plainly so the alert says what is wrong without technical decoding detail.",
+      "role": "error",
+      "budget": 160
+    },
+    {
+      "recordId": "st.7mpayr0008",
+      "cellId": "designer.components.media-player.error.header.description",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "f962710bce08b93535132765a9c02faf890e73aa",
+        "path": "packages/designer/src/components/media-player/media-player.tsx",
+        "line": 147,
+        "key": "passage.error.description"
+      },
+      "before": "(missing ps.7mpayr0001)",
+      "after": "This video could not load. Try again later.",
+      "rationale": "Give a neutral recovery step for the failed video without blaming the viewer or naming the browser error.",
+      "role": "error",
+      "budget": 480
+    }
+  ],
+  "needs": [
+    {
+      "recordId": "st.7mpayr0007",
+      "cellId": "designer.components.media-player.error.header.heading",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.7mpayr0008",
+      "cellId": "designer.components.media-player.error.header.description",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "ps.7mpayr0001",
+      "cellId": "designer.components.media-player.error",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    }
+  ],
+  "sourceBatches": [
+    {
+      "unit": "R2F-36C",
+      "sourceCommit": "f962710bce08b93535132765a9c02faf890e73aa",
+      "recordIds": [
+        "st.7mpayr0007",
+        "st.7mpayr0008",
+        "ps.7mpayr0001"
+      ],
+      "sourceFiles": {
+        "packages/designer/src/components/media-player/media-player.tsx": "8bd94aa4e50817378d44a8a94ea16c5138a8892f8adada00ee66b6f67310726d"
+      },
+      "revisions": [],
+      "defaults": [
+        "The media player load-failure alert reads one error-state passage with header.heading and header.description; code, retry and report stay unset."
+      ]
     }
   ],
   "externalRecords": [

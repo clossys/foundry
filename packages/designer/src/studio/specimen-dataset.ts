@@ -9,6 +9,7 @@ import type { StockSelectOption } from "../blocks/stock-select.js";
 import type { SpinnerProps } from "../components/Spinner.js";
 import type { StatusMarkTone } from "../components/StatusMark.js";
 import type { IconNode } from "../icons/types.js";
+import type { StillBackdropArt } from "../backdrop/consumer-art.js";
 import { FileText } from "../icons/FileText.js";
 import { identityStarterSeeds } from "../tokens/identity-kit.js";
 import { defaultPreset, presetValues, sourceRoster, tokenContract } from "../catalog-core/token-contract.js";
@@ -180,6 +181,16 @@ const assetSamples = {
     sun: { x: { from: 0.58, span: 0.16 }, y: { from: 0.26, span: 0.08 }, radius: 0.09 },
     frequencies: [1, 2, 5],
   },
+  /**
+   * The Hero's still backdrop art: a checked decorative lazy consumer art contract whose inline token-painted
+   * geometry is the complete fixture, so rendering it needs no remote asset.
+   */
+  heroBackdrop: {
+    slot: "backdrop", purpose: "decorative", alt: "", width: 1600, height: 900,
+    aspect: "16:9", fit: "cover", loading: "lazy", bytes: 128,
+    backgroundToken: "--color-surface-base",
+    source: { format: "svg", paths: [{ d: "M0 0H1600V900H0Z", fillToken: "--color-action" }] },
+  } as const satisfies StillBackdropArt,
 } as const;
 
 /** One order row of the Section data table samples. */
@@ -352,7 +363,13 @@ const sections = {
     action: "/subscribe",
   },
   command,
-  articleBody: { heading: "Getting started", body: "Set up a workspace, invite your team and publish the first page." },
+  articleBody: {
+    heading: "Getting started",
+    body: "Set up a workspace, invite your team and publish the first page.",
+    /** In-page anchors the article's headings, footnote reference and note use, and the reference's mark. */
+    anchors: { introduction: "article-introduction", notes: "article-notes", reference: "article-reference-1", note: "article-note-1" },
+    referenceMark: "1",
+  },
   detailView: {
     title: "Order 1042",
     fields: [{ label: "Customer", value: "Northwind" }, { label: "Status", value: "Shipped" }, { label: "Total", value: "$1,280.00" }, { label: "Placed", value: "12 March 2026" }],
@@ -423,6 +440,14 @@ const sections = {
       { id: "billing", title: "Billing portal", description: "Self-serve plans and invoices.", href: "#billing", meta: "Updated last week" },
     ],
   } satisfies Pick<RecordCardsProps, "records">,
+  /** Editorial metadata the blog card specimens attach to each record card, one reading time per record. */
+  recordEditorial: {
+    badge: "Journal",
+    author: { name: "Studio author", label: "By" },
+    readingTimeLabel: "Reading time",
+    readingTimes: ["3 minutes", "4 minutes", "5 minutes"],
+    tags: [{ id: "journal", label: "Journal" }],
+  },
   consentBanner: {
     title: "Cookies on this site",
     body: "We use analytics cookies to understand how the site is used. You can change your choice at any time.",

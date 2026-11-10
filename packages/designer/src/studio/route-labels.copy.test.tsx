@@ -6,6 +6,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createRouteStudioLabels, routeStudioLabels } from "./route-labels.js";
 import type { StudioCopyBinding } from "./copy-binding.js";
+import { canonicalWriterId, writerRecordsWithExternals } from "./__fixtures__/copy-hand-roll.js";
 
 const draftPath = "packages/writer/src/catalog/records/admin-voice.r1.en.json";
 const repositoryRoot = [process.cwd(), resolve(process.cwd(), "../..")]
@@ -19,14 +20,15 @@ const drafts = JSON.parse(readFileSync(resolve(repositoryRoot, draftPath), "utf8
 const routeIds = new Set(drafts.reviews.filter(row => row.source.path === "packages/designer/src/studio/route-labels.ts").map(row => row.recordId));
 const expectedIdsByPath = new Map(drafts.reviews.flatMap(row => {
   if (row.source.path === "packages/designer/src/studio/route-labels.ts" && row.source.key?.startsWith("routeStudioLabels.")) {
-    return [[row.source.key.slice("routeStudioLabels.".length), row.recordId] as const];
+    return [[row.source.key.slice("routeStudioLabels.".length), canonicalWriterId(row.recordId)] as const];
   }
   if (row.source.path === "packages/designer/src/studio/system-canvas/inspector/Inspector.tsx" && row.source.key?.startsWith("DEFAULT_USAGE_LABELS.")) {
-    return [[`usage.${row.source.key.slice("DEFAULT_USAGE_LABELS.".length)}`, row.recordId] as const];
+    return [[`usage.${row.source.key.slice("DEFAULT_USAGE_LABELS.".length)}`, canonicalWriterId(row.recordId)] as const];
   }
   return [];
 }));
-const knownIds = new Set(drafts.records.map(row => row.id));
+// Labels canonicalized into common-labels stay external references of admin-voice; follow them rather than copy them.
+const knownIds = new Set(writerRecordsWithExternals("admin-voice.r1.en.json").map(row => row.id));
 const marker = /^\[\[st\.[0123456789abcdefghjkmnpqrstvwxyz]{10}\]\]$/;
 
 afterEach(cleanup);
@@ -87,7 +89,7 @@ describe("host-resolved route studio labels", () => {
     expect(text.length).toBeGreaterThan(100);
     for (const value of text) expect(value).toMatch(marker);
     for (const element of container.querySelectorAll("[aria-label]")) expect(element.getAttribute("aria-label")).toMatch(marker);
-    for (const id of routeIds) expect(calls.some(call => call.id === id), id).toBe(true);
+    for (const id of routeIds) expect(calls.some(call => call.id === canonicalWriterId(id)), id).toBe(true);
     expect(routeIds.size).toBe(117);
     expect(calls.every(call => call.locale === locale)).toBe(true);
     expect(drafts.records).toEqual(before);

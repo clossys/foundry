@@ -67,13 +67,14 @@ export const BOARD_SURFACE_CLASS = 'flex h-max w-max shrink-0 flex-col gap-sm ro
 
 /**
  * A leaf's row label, one treatment in view and edit mode: the human label (when it is not the id)
- * in the body face, then the leaf id underneath in the mono face with tabular figures. The weight is
+ * in the body face, then the leaf id underneath in the mono face with tabular figures. The id is a
+ * data value (an identifier), never Writer copy, so it carries the Studio data-value marker. The weight is
  * set to regular so a row-header cell (`th`) never bolds it.
  */
 export function LeafLabel({ id, label }: { readonly id: string; readonly label: ReactNode }) {
   const human = label !== id && label != null && label !== '' ? label : undefined;
   return <SemanticContent as="span" data-leaf-label="" className="flex min-w-0 flex-col text-start font-normal">
     {human !== undefined ? <SemanticContent as="span" className="break-words text-ink-primary">{human}</SemanticContent> : null}
-    <SemanticContent as="span" data-leaf-id="" className={human !== undefined ? 'break-words font-mono tabular-nums text-caption text-ink-secondary' : 'break-words font-mono tabular-nums text-ink-primary'}>{id}</SemanticContent>
+    <SemanticContent as="span" data-leaf-id="" data-studio-data-value="" data-studio-data-kind="identifier" className={human !== undefined ? 'break-words font-mono tabular-nums text-caption text-ink-secondary' : 'break-words font-mono tabular-nums text-ink-primary'}>{id}</SemanticContent>
   </SemanticContent>;
 }

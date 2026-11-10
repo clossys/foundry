@@ -37,6 +37,17 @@ describe("Hero checked still backdrop", () => {
     expect(container.querySelector('[data-hero-backdrop] img')).toHaveAttribute('src', art.source.src);
     expect(container.querySelector('video,canvas,iframe,source')).toBeNull();
   });
+  it("paints the declared ground with its surface utility, never an inline colour, and refuses a non-surface ground", () => {
+    for (const [token, utility] of [["--color-surface-base", "bg-surface-base"], ["--color-surface-inverse", "bg-surface-inverse"]] as const) {
+      const { container, unmount } = render(<Hero heading="Heading" backdrop={{ ...art, backgroundToken: token }} />);
+      const layer = container.querySelector<HTMLElement>('[data-hero-backdrop]')!;
+      expect(layer).toHaveClass(utility);
+      expect(layer.style.backgroundColor).toBe('');
+      expect(layer.getAttribute('style') ?? '').not.toMatch(/--color-|background/);
+      unmount();
+    }
+    expect(() => render(<Hero heading="Heading" backdrop={{ ...art, backgroundToken: "--color-status-danger" }} />)).toThrow(/opaque surface/);
+  });
   it("fails closed on motion formats, eager loading and wrong placement", () => {
     for (const invalid of [{...art, loading:'eager'}, {...art,slot:'media'}, {...art,source:{format:'gif',src:'/moving.gif'}}]) {
       expect(() => render(<Hero heading="Heading" backdrop={invalid as typeof art} />)).toThrow();

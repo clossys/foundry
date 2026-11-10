@@ -17,6 +17,7 @@ import { readPinnedPublication as readPinned } from "../publish/pinned-publicati
 const readPinnedPublication = (publisher: string, id: string) => readPinned(dirname(dirname(publisher)), id);
 import { slotGallery } from "./slot-gallery.js";
 import { writerCopy } from "../records/writer-copy.js";
+import { repoConsumer } from "../cli/__fixtures__/flat-consumer.js";
 
 let root: string;
 let server: ProducerServer | undefined;
@@ -46,6 +47,9 @@ it("serves only emitted preview HTML and known assets with the existing loopback
   await put(join(base, "theme.css"), generated("body { color: rebeccapurple; }"));
   await put(join(base, "assets/mark.svg"), '<svg xmlns="http://www.w3.org/2000/svg"/>');
   await put(join(base, "source.tsx"), "export default function Page() {}\n");
+  // A Designer slot model with no pins keeps /api/config (read below only for its token) on the
+  // consumer's pinned selection instead of compiling the whole Foundry default fill (~38 s measured 2026-11-06).
+  await mkdir(agentRoot(root, "designer"), { recursive: true }); await cp(join(repoConsumer, "agents", "designer", "ia.json"), join(agentRoot(root, "designer"), "ia.json"));
   await launch();
   const metadata = JSON.parse((await get("/api/publication")).text);
   expect(metadata).toMatchObject({ state: "ready", publication: "example", pages: [{ id: "home", route: "/", title: "Published home", description: "Actual descriptor description", emitted: true, previewUrl: "/preview/example/pages/home.html" }] });
@@ -149,31 +153,11 @@ it("previews clossys publish --install output from its default out dir, with the
   } finally { await rm(installs, { recursive: true, force: true }); }
 });
 
-// Writes a pinned publication slot plus one pinned page slot per entry: the flat slot model, no legacy store.
-async function nativePublication(publisher: string, publicationId: string, pages: { id: string; title: string; path: string; planItemId: string }[]) {
-  const pubId = `publication.${publicationId}`, pageIds = pages.map(page => `page.${page.id}`), ids = [...pageIds, pubId];
-  const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
-  await put(join(publisher, "ia.json"), json({ schema: "clossys.ia/1", source: "consumer#publisher", extensions: [], nodes: [{ id: "catalog", label: "Catalog", children: [{ id: "bindings", label: "Bindings", slots: ids }] }] }));
-  for (const [order, id] of ids.entries()) {
-    const publication = id === pubId, page = pages[order];
-    await put(join(publisher, id, "slot.json"), json({ schema: "clossys.slot/1", id, agent: "publisher", ia: { l1: "catalog", l2: "bindings", order }, kind: publication ? "publication" : "page", contract: {},
-      inputs: publication ? pageIds : [], uses: publication ? pageIds : [] }));
-    const bytes = json(publication
-      ? { schema: "clossys.publication/1", format: "web.page.responsive", entryOrder: pages.map(entry => entry.id), meta: { source: { kind: "derived", ref: ["publisher:fixture"] },
-        tree: { id: publicationId, name: publicationId, children: [{ id: `${publicationId}.pages`, name: "Pages", cells: pageIds }] } } }
-      : { schema: "clossys.page/1", title: page!.title, path: page!.path, frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] },
-        entry: { publication: publicationId, entryId: page!.id, fields: { kind: "page", planItemId: page!.planItemId }, entryMeta: {}, blocks: {} } } });
-    await put(join(publisher, id, "candidates", "record-v1.json"), bytes);
-    await put(join(publisher, id, "pin.json"), json({ candidate: "record-v1.json", sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "migrated", basis: "bulk", at: "2026-10-31T00:00:00Z" }));
-  }
-}
-
 it("reads installs written with --out from the folder produce --out names, under the Publisher's declared publication", async () => {
   const publisher = await nativePublisherFixture(), outs = join(root, "outs");
   await editNative(publisher, "page.designer-themes", value => { value.path = "/contact-us"; });
   await installFixture(join(outs, "contact"), "designer-themes");
   await put(join(outs, "notes", "install-report.json"), JSON.stringify({ page: "notes", findings: [] }));
-  await nativePublication(agentRoot(root, "publisher"), "example-site", [{ id: "contact", title: "Contact", path: "/contact-us", planItemId: "site.contact" }]);
   await launch(outs);
   const metadata = JSON.parse((await get("/api/publication")).text);
   expect(metadata).toMatchObject({ state: "ready", publication: "studio", pages: [{ id: "designer-themes", route: "/contact-us", cellId: "page.designer-themes", emitted: true, previewUrl: "/preview/studio/pages/designer-themes.html" }] });
@@ -310,6 +294,9 @@ it("applies the preview theme on <html> without dropping the page's own classes"
   expect(themePage("<HTML><body></body></HTML>", "dark")).toBe('<html class="dark" style="color-scheme:dark"><body></body></HTML>');
   expect(staticPage('<html><head><link rel="stylesheet" href="/a.css"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/a.js"/><link rel="modulepreload" href="/m.js"/><link rel="preload" as="image" href="/i.svg"/><script src="/_next/static/chunks/b.js" async=""></script></head><body><h1>x</h1><script>self.__next_f.push([1,"</div>"])</script><SCRIPT id="_R_">$RC()</SCRIPT></body></html>'))
     .toBe('<html><head><link rel="stylesheet" href="/a.css"/><link rel="preload" as="image" href="/i.svg"/></head><body><h1>x</h1></body></html>');
+  // A static preview never navigates its own frame: no refresh meta survives, any spelling.
+  expect(staticPage('<head><meta id="__next-page-redirect" http-equiv="refresh" content="1;url=/designer/themes/colors"/><META HTTP-EQUIV=Refresh CONTENT="0; url=/x"><meta name="description" content="d"/></head>'))
+    .toBe('<head><meta name="description" content="d"/></head>');
 });
 
 it("lists the Studio publication's installed pages as ready with frame previews once publish --install --next put them in the app Producer serves", async () => {

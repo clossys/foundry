@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Foundry's real director facts subject: clossys/evidence/director/findings/
- * checked against docs/PUBLISHING.md only. Runs `clossys director check`
+ * Foundry's real director facts subject: the findings under clossys/evidence/director/
+ * (top-level *.md, read through the flat-store root clossys/agents/director),
+ * checked against docs/ minus the exclusions below. Runs `clossys director check`
  * through the compiled clossys CLI (packages/producer/dist/cli/index.js):
  * @clossys/director ships no store-reading bin, and the clossys CLI injects
  * its single slot-model store reader and writer.
@@ -14,6 +15,10 @@ import { fileURLToPath } from "node:url";
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 export const directorCli = join(repoRoot, "packages/producer/dist/cli/index.js");
 
+// The flat-store Director root. The engine reads findings only from
+// <consumer>/evidence/director/*.md, and only when the root is
+// <consumer>/agents/director (packages/director/src/store.ts readStrategyRoot).
+const strategyRoot = "clossys/agents/director";
 const scanRoot = "docs";
 const otherRootMarkdown = [
   "ADOPTION.md",
@@ -42,7 +47,7 @@ const excludeGlobs = ["contracts/**", "changelogs/**", ...otherRootMarkdown];
 // The `clossys director check` argv this gate runs, relative to `cwd` (the repository
 // root in real use; a fixture root in scripts/check-director-subject.test.mjs).
 export function directorSubjectArgs(cli = directorCli) {
-  return [cli, "director", "check", "clossys/evidence/director", scanRoot, "--extensions", ".md", ...excludeGlobs.flatMap((glob) => ["--exclude", glob])];
+  return [cli, "director", "check", strategyRoot, scanRoot, "--extensions", ".md", ...excludeGlobs.flatMap((glob) => ["--exclude", glob])];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

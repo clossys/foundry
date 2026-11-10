@@ -10,15 +10,16 @@
  *
  * Live sub-checks (`kind: "live"`) need a running Studio. When STUDIO_ORIGIN is not set, this runner
  * starts its own: it builds dist/studio from the current source (scripts/build-studio.mjs), starts
- * `produce --root <repository> --port 4617 --no-open` from dist/cli (built by the root `build`),
- * waits for /api/health to report the Studio ready, runs the live sub-checks against
- * http://127.0.0.1:4617 and stops the server afterwards. A failed build or start is reported, and
+ * `produce --root <repository> --port 4503 --no-open` from dist/cli (built by the root `build`) on the
+ * single preview port (studio/checks/studio-origin.mjs), waits for /api/health to report the Studio
+ * ready, runs the live sub-checks against http://127.0.0.1:4503 and stops the server afterwards. A failed build or start is reported, and
  * the live sub-checks still run (and fail). With STUDIO_ORIGIN set, that Studio is used as is.
  *
  * Each sub-check gets the --timeout bound (default 600 s). A sub-check whose manifest row names
- * `"timeout": "studio-routes"` walks every Studio map entry, so its bound is sized from the route
- * count instead: the check module's own `timeoutSeconds()` (Chrome start plus the worst case per
- * route, shared across its bounded worker pool), never less than the --timeout bound. A sub-check
+ * `"timeout": "studio-routes"` walks every Studio map entry, and one naming `"timeout": "copy-routes"`
+ * reads every installed route, so its bound is sized from the route count instead: the check module's
+ * own `timeoutSeconds()` (Chrome start plus each route's share, across its bounded worker pool), never
+ * less than the --timeout bound. A sub-check
  * that still runs past its bound is killed and reported red with its timeout; it never passes.
  *
  * Usage: node scripts/check-studio.mjs [--only <id substring>]... [--id <exact id>]... [--json FILE] [--timeout SECONDS]
@@ -29,11 +30,13 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { STUDIO_DEFAULT_ORIGIN, studioPort } from "../studio/checks/studio-origin.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repository = resolve(here, "../../..");
 export const MANIFEST = join(here, "check-studio.json");
-export const STUDIO_PORT = 4617;
+/** The port a self-started Studio listens on: the single preview port of the default origin. */
+export const STUDIO_PORT = studioPort({});
 const producer = resolve(here, "..");
 
 /** Best-effort failure count from a sub-check's output: node:test, vitest, or a JSON findings report. */
@@ -67,6 +70,7 @@ const delay = ms => new Promise(accept => setTimeout(accept, ms));
 /** Sized bounds a manifest row may name in `timeout`: each resolves to seconds from the current tree. */
 export const SIZED_TIMEOUTS = {
   "studio-routes": async () => (await import("../studio/checks/check-rendered-provenance.mjs")).timeoutSeconds(),
+  "copy-routes": async () => (await import("../studio/checks/check-copy-rendered.mjs")).timeoutSeconds(),
 };
 
 /** The bound for one sub-check: the runner's bound, or for a sized row the larger of that and its sized bound. */
@@ -78,15 +82,18 @@ export async function checkTimeoutMs(check, timeoutMs) {
 }
 
 /**
- * Build dist/studio from the current source and start `produce` on STUDIO_PORT. Resolves to
- * { origin, stop } once /api/health reports the Studio ready; rejects with the reason otherwise.
+ * Build dist/studio from the current source (unless `build: false`) and start `produce` on `port`
+ * (STUDIO_PORT by default). Resolves to { origin, stop } once /api/health reports the Studio ready;
+ * rejects with the reason otherwise.
  */
-export async function startStudio({ log = console.log, port = STUDIO_PORT, readyMs = 300_000 } = {}) {
+export async function startStudio({ log = console.log, port = STUDIO_PORT, readyMs = 300_000, build: rebuild = true } = {}) {
   const cli = join(producer, "dist/cli/index.js");
   if (!existsSync(cli)) throw new Error("dist/cli/index.js is missing: run the root `npm run build` first");
-  log(`check:studio: building dist/studio from the current source for the live sub-checks`);
-  const build = spawnSync(process.execPath, [join(here, "build-studio.mjs")], { cwd: producer, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
-  if (build.status !== 0) throw new Error(`scripts/build-studio.mjs exited ${build.status}: ${`${build.stdout}\n${build.stderr}`.trim().split("\n").slice(-10).join(" / ")}`);
+  if (rebuild) {
+    log(`check:studio: building dist/studio from the current source for the live sub-checks`);
+    const build = spawnSync(process.execPath, [join(here, "build-studio.mjs")], { cwd: producer, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
+    if (build.status !== 0) throw new Error(`scripts/build-studio.mjs exited ${build.status}: ${`${build.stdout}\n${build.stderr}`.trim().split("\n").slice(-10).join(" / ")}`);
+  }
   const origin = `http://127.0.0.1:${port}`;
   try { await fetch(`${origin}/api/health`); throw new Error(`port ${port} is already serving; stop it or set STUDIO_ORIGIN to use it`); } catch (error) { if (/already serving/.test(error.message)) throw error; }
   const child = spawn(process.execPath, [cli, "produce", "--root", repository, "--port", String(port), "--no-open"], { cwd: producer, stdio: ["ignore", "pipe", "pipe"], detached: true, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
@@ -121,7 +128,7 @@ export async function checkStudio({ only = [], ids = [], timeoutMs = 600_000, lo
   for (const check of checks) bounds.set(check, await checkTimeoutMs(check, timeoutMs));
   const out = mkdtempSync(join(tmpdir(), "check-studio-"));
   const external = process.env.STUDIO_ORIGIN;
-  const env = { ...process.env, STUDIO_ORIGIN: external ?? `http://127.0.0.1:${STUDIO_PORT}`, STUDIO_CHECK_OUT: out, FORCE_COLOR: "0", NO_COLOR: "1" };
+  const env = { ...process.env, STUDIO_ORIGIN: external || STUDIO_DEFAULT_ORIGIN, STUDIO_CHECK_OUT: out, FORCE_COLOR: "0", NO_COLOR: "1" };
   let studio, studioError;
   if (!external && checks.some(check => check.kind === "live")) {
     try { studio = await startStudio({ log }); } catch (error) { studioError = error.message; log(`check:studio: could not start the Studio; the live sub-checks run and fail: ${studioError}`); }

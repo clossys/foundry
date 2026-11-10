@@ -5,7 +5,7 @@
 // in ci.yml's build job instead, after the build.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -13,14 +13,20 @@ import { fileURLToPath } from "node:url";
 import { directorCli, directorSubjectArgs } from "./check-director-subject.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const evidenceDir = join(repoRoot, "clossys", "evidence", "director");
 const CLAIM = "This is the only way to release a package.\n";
 
 // A fixture repository root with the real findings subject and a docs/ tree.
 function withFixture(docs, fn) {
   const root = mkdtempSync(join(tmpdir(), "director-subject-"));
   try {
+    // The flat-store layout the real gate reads: an (empty) Director agent root and
+    // the real findings as top-level clossys/evidence/director/*.md files.
+    mkdirSync(join(root, "clossys", "agents", "director"), { recursive: true });
     mkdirSync(join(root, "clossys", "evidence", "director"), { recursive: true });
-    cpSync(join(repoRoot, "clossys", "evidence", "director", "findings"), join(root, "clossys", "evidence", "director", "findings"), { recursive: true });
+    for (const name of readdirSync(evidenceDir)) {
+      if (name.endsWith(".md")) cpSync(join(evidenceDir, name), join(root, "clossys", "evidence", "director", name));
+    }
     for (const [path, text] of Object.entries(docs)) {
       mkdirSync(dirname(join(root, "docs", path)), { recursive: true });
       writeFileSync(join(root, "docs", path), text);

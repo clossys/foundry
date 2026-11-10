@@ -15,8 +15,6 @@ export interface StudioRailProps {
   /** The Explorer card: its layer select (header) and its body. */
   readonly explorer: ReactNode;
   readonly explorerHeader?: ReactNode;
-  readonly map: ReactNode;
-  readonly zoom: ReactNode;
   readonly checks?: ReactNode;
 }
 
@@ -48,19 +46,17 @@ function RailCard({ id, title, expanded, onExpandedChange, header, children }: {
 }
 
 /**
- * The Designer's right rail: a page Section (not frame chrome) holding four independent collapsible cards in
- * rail order, Explorer, Canvas map, Zoom and Checks. The whole rail can be hidden; hidden and collapsed state
+ * The Designer's right rail: a page Section (not frame chrome) holding two independent collapsible cards in
+ * rail order, Explorer and Checks. The whole rail can be hidden; hidden and collapsed state
  * persist per user. On a narrow viewport the rail is an overlay drawer instead.
  */
-export function StudioRail({ labels, explorer, explorerHeader, map, zoom, checks }: StudioRailProps) {
+export function StudioRail({ labels, explorer, explorerHeader, checks }: StudioRailProps) {
   const [view, update] = useRailView();
   const wide = useWideRail();
   const card = (id: RailCardId) => ({ id, expanded: !view.collapsed.includes(id),
     onExpandedChange: (expanded: boolean) => update(current => ({ ...current, collapsed: expanded ? current.collapsed.filter(other => other !== id) : [...current.collapsed, id] })) });
   const cards = <>
     <RailCard {...card("explorer")} title={labels.treeLabel} header={explorerHeader}>{explorer}</RailCard>
-    <RailCard {...card("map")} title={labels.canvas.minimap}>{map}</RailCard>
-    <RailCard {...card("zoom")} title={labels.canvas.zoomLabel}>{zoom}</RailCard>
     <RailCard {...card("checks")} title={labels.scorecard.title}>{checks}</RailCard>
   </>;
   if (!wide) return <div data-studio-rail="overlay" className="absolute end-sm top-sm">

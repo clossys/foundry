@@ -39,7 +39,7 @@ import { Studio as StudioView } from "./index.js";
 import { WholeStudioProvider, useWholeStudio } from "./WholeStudioProvider.js";
 import { useStudioSession } from "./StudioProvider.js";
 import { boardRowLeaf } from "./canvas-boards.js";
-import { STUDIO_LAYERS } from "./system-canvas/url.js";
+import { STUDIO_LAYERS } from "./studio-url.js";
 import { applyLibraryChange, libraryHash, type LayerId } from "../catalog-core/index.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
 

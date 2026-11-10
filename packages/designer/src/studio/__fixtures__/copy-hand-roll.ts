@@ -14,6 +14,32 @@ export const studioHostCopy = { ...studioTestCopy, messages: Object.fromEntries(
 // Shared labels were canonicalized into common-labels, whose external declarations resolve from their owners (sign-in, paging).
 const common = catalogFixture<{ records: { id: string }[]; externalRecords: { recordId: string }[] }>("packages/writer/src/catalog/records/common-labels.r1.en.json");
 const knownIds = new Set([...draftEnvelopes.flatMap(envelope => envelope.records.map(record => record.id)), ...common.records.map(record => record.id), ...common.externalRecords.map(row => row.recordId)]);
+type WriterRecord = { id: string; status: string; text: string; args?: { name: string; type: string }[] };
+type WriterEnvelope = { records?: WriterRecord[]; locales?: Record<string, { records: WriterRecord[] }>; externalRecords?: { recordId: string; source: string }[] };
+const writerEnvelope = (name: string) => catalogFixture<WriterEnvelope>(`packages/writer/src/catalog/records/${name}`);
+/** One record by id: the envelope's own, or the one it declares external, read from its owner (transitively); never copied (WX6_DUPLICATE). */
+export function writerRecord(name: string, id: string, seen: ReadonlySet<string> = new Set()): WriterRecord | undefined {
+  const key = `${name}#${id}`;
+  if (seen.has(key)) throw new Error(`writer.external-cycle ${key}`);
+  const envelope = writerEnvelope(name);
+  const own = (envelope.records ?? envelope.locales?.en?.records ?? []).find(record => record.id === id);
+  if (own) return own;
+  const external = envelope.externalRecords?.find(row => row.recordId === id);
+  return external ? writerRecord(external.source, id, new Set([...seen, key])) : undefined;
+}
+// Review rows keep the id a label had before canonicalization; common-labels usages map each legacy id to its canonical record.
+const canonicalIds = new Map(catalogFixture<{ usages: { recordId: string; legacyRecordId: string }[] }>("packages/writer/src/catalog/records/common-labels.r1.en.json").usages.map(row => [row.legacyRecordId, row.recordId]));
+export function canonicalWriterId(id: string): string { return canonicalIds.get(id) ?? id; }
+/** An envelope's own records followed by every record it declares external, each resolved from its owner. */
+export function writerRecordsWithExternals(name: string): WriterRecord[] {
+  const envelope = writerEnvelope(name);
+  const external = (envelope.externalRecords ?? []).map(row => {
+    const record = writerRecord(row.source, row.recordId);
+    if (!record) throw new Error(`writer.external-missing ${row.recordId} in ${row.source}`);
+    return record;
+  });
+  return [...(envelope.records ?? envelope.locales?.en?.records ?? []), ...external];
+}
 export function pseudoStudioCopy(locale = "en") {
   const requests: StudioCopyRef[] = [];
   const copy: StudioCopyBinding = { locale, resolver(ref) {

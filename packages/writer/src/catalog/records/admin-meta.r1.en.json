@@ -10,7 +10,7 @@
   ],
   "activation": "none",
   "sourceFiles": {
-    "packages/writer/src/catalog/records/admin-voice.r1.en.json": "493eb75ddec5d75a5430bbacea2212c346837c554dea8ad3ded9bead404e6e06",
+    "packages/writer/src/catalog/records/admin-voice.r1.en.json": "128e9d020ef04664f8a501c969f7315be9680825d9c578d77ae5996165ee569e",
     "packages/publisher/src/web/publisher/publisher-sections.ts": "0fa778db70effc53426b213058037569fe5583228569b9a038bf8a562f0329be",
     "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "b31967b602b3500216ee76be0cfb888a0018b47ec221eff6bcb30de7ed762b44"
   },

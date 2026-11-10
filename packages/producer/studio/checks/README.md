@@ -106,7 +106,7 @@ Run against a production Studio server after building Designer and Studio:
 
 ```sh
 node --test packages/producer/studio/checks/check-no-handrolling.test.cjs
-node packages/producer/studio/checks/check-no-handrolling.cjs http://127.0.0.1:4301
+node packages/producer/studio/checks/check-no-handrolling.cjs "${STUDIO_ORIGIN:-http://127.0.0.1:4503}"
 ```
 
 The runner needs Playwright available to Node. Every Playwright check launches the
@@ -116,11 +116,11 @@ Its HTTP cell fixtures are installed through browser interception; no consumer
 repository or private fixture path is required.
 
 The DOM rule checks every element beneath `body`, including open shadow roots.
-Each application element must be a Designer leaf root (`data-ds-leaf`) or a
-descendant of one. Text and comment nodes are not elements. Document containers
-(`html`, `head`, `body`) are outside this application check; a document-level
-leaf stamp does not cover body children. An unstamped wrapper around a stamped
-child fails. Hidden application elements receive the same check as visible ones.
+Each application element must be a frame or section root carrying the generated
+provenance marker (`data-clossys-slot`) or a descendant of one. Text and comment
+nodes are not elements. Document containers (`html`, `head`, `body`) are outside
+this application check; a document-level marker does not cover body children. An
+unmarked wrapper around a marked child fails. Hidden application elements receive the same check as visible ones.
 
 The only framework exceptions are narrowly recognized direct-body Next static
 runtime scripts, Flight/bootstrap scripts, React's empty hidden suspense comment
@@ -129,14 +129,21 @@ with its specific single shadow alert. The hydrated metadata state must be a
 direct-body, hidden-only, empty div whose actual React host Fiber has the
 immediate framework owner `__next_metadata_boundary__`; hidden application
 nodes without that owner still fail.
+React's own streaming-SSR reveal scripts (the `$RT` timing stamp, the `$RB`/`$RV`
+and `$RS` runtime definitions by their exact prefixes, and `$RC`/`$RS`/`$RX` calls
+over boundary ids) are recognized the same way. While a dialog is open, its
+`inert`/`aria-hidden` marks on the scaffolding are accepted; nothing else is.
+A body-level portal (a stock dialog, popover or menu) is covered when its React
+host Fiber sits inside a marked root; an element React did not render has no
+Fiber and fails like any other body sibling.
 Their descendants are still visited. There is no blanket script, hidden,
 custom-element, class-name, or framework-wrapper exemption. Development overlay
 elements fail; use a production server.
 
-The runner covers Home and all four agent routes, plus opened command
-menus, selected-cell, empty, and API-error states. On each route it proves that unstamped descendants
-of an existing Designer leaf pass, bare text passes, and both visible and hidden
-unstamped body siblings fail. It does not add leaf stamps for those proofs.
+The runner covers Home and all four agent routes, plus the command menu opened
+from the keyboard (Ctrl/Cmd+K), selected-cell, empty, and API-error states. On each route it proves that unmarked descendants
+of an existing marked root pass, bare text passes, and both visible and hidden
+unmarked body siblings fail. It does not add provenance markers for those proofs.
 
 DOM ancestry alone cannot distinguish a host-authored tree inside AppFrame from
 Designer-authored content: both are within an existing leaf subtree. The separate
@@ -154,17 +161,23 @@ Disclosure trigger opens, and hide it again when Source closes. The runner
 checks that the raw text belongs to `components.disclosure` and that selecting a
 different cell resets Source to closed.
 
-The same runner also compares every rendered `data-ds-leaf` and `data-ds-fill`
-with Producer's compiled `/api/config` selection and checks the live selection
-hash. A missing consumer leaf may use its compiled Designer default only with a
-per-leaf `NEED` on the Designer page. Unknown rendered leaves, stale fill stamps,
-unavailable selected fills, or a fallback without its `NEED` fail.
+The same runner also compares every rendered provenance marker
+(`data-clossys-slot`, `data-clossys-candidate`, `data-clossys-hash`) with
+Producer's `/api/config` selection: the slot must be a selected leaf, the hash
+must be that leaf's pinned content hash and the candidate version must be the
+pinned fill version. The selection itself must name at least one pinned leaf, and
+its hash is recomputed from those leaves. A fallback leaf may render only with a
+per-leaf `NEED` on the Designer page. Unknown rendered leaves, altered hashes,
+non-pinned candidates, unavailable selected fills, or a fallback without its
+`NEED` fail. When Producer compiles a selected stylesheet, its live bytes and
+hash are compared as well.
 
-Every React Aria element (`data-rac` or `data-rac-*`) must have a component leaf
-ancestor; a frame or section ancestor alone is insufficient. Each route proves
-both checks reject mutations by changing an existing fill stamp and inserting
-an unowned React Aria element inside the existing frame. These proofs preserve
-the original subtree coverage and framework checks.
+Every React Aria element (`data-rac` or `data-rac-*`) must be the root of a stock
+component part (its own shadcn `data-slot`) inside a selected marked root; a frame
+or section ancestor alone is insufficient. Each route proves both checks reject
+mutations by altering an existing marker hash, bumping its candidate version and
+inserting an unowned React Aria element inside the existing frame. These proofs
+preserve the original subtree coverage and framework checks.
 
 ## Applied consumer theme
 

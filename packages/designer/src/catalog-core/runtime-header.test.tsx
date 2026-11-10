@@ -11,6 +11,7 @@ import { prepareRuntimeAssembly } from "./runtime-assembly.js";
 import { runtimeHash } from "./runtime-ports.js";
 import type { RuntimeFlowAssemblyInput } from "./runtime-assembly.js";
 import type { RuntimePageHeaderModule } from "./runtime-ports.js";
+import { ShellCopyTestHost } from "../frames/__fixtures__/shell-copy.js";
 const Source = createContext("missing"), callbacks = new Set<() => void>(); let available = 1440;
 beforeEach(() => {
   available = 1440; localStorage.clear();
@@ -41,7 +42,7 @@ function fixture(onNavigate = vi.fn()): RuntimeFlowAssemblyInput<ReactElement> {
 describe("bounded selected Frame header port", () => {
   it("mounts one real lease inside the actual Frame, preserving owner context, compact state and native navigation", async () => {
     const navigate = vi.fn(), input = fixture(navigate), result = prepareRuntimeAssembly(input); expect(result.status, JSON.stringify(result)).toBe("ready"); if (result.status !== "ready") return;
-    render(<Source.Provider value="owner">{result.assembly.render(result.assembly.snapshot.cells[0]!)}</Source.Provider>);
+    render(<Source.Provider value="owner">{result.assembly.render(result.assembly.snapshot.cells[0]!)}</Source.Provider>, { wrapper: ShellCopyTestHost });
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1); expect(screen.getByRole("heading", { name: "Tools" })).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "owner:false:0" }));
     act(() => { available = 660; for (const callback of callbacks) callback(); });

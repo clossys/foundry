@@ -9,7 +9,7 @@ import { readFindings } from "../facts-dir.js";
 import { parseFinding } from "../format/finding.js";
 import { readStrategyRoot } from "../store.js";
 import { checkWontClaimDrift } from "../wont-claim-drift.js";
-import { evidenceDir, findingFixture, stageFinding, stageSlot, stageWontClaimCells, strategyRoot } from "./fixtures.js";
+import { evidenceDir, findingFixture, stageFinding, stageSlot, stageWontClaimCells, strategyRoot } from "../__fixtures__/slot-model.js";
 let base: string; let root: string; let scan: string;
 beforeEach(() => {
   base = mkdtempSync(join(tmpdir(), "ground-root-")); root = strategyRoot(base); scan = mkdtempSync(join(tmpdir(), "ground-scan-"));

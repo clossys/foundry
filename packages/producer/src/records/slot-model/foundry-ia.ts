@@ -94,7 +94,10 @@ export function designerIa(): FoundryIa {
   const reads = new Map<string, string[]>();
   for (const layer of DESIGNER_LAYERS) {
     let rows: { slot: string; inputs?: { name: string; kind: string }[] }[] = [];
-    try { rows = readJson(root, `src/catalog/slot-contracts/${layer}.json`) as typeof rows; } catch { /* Older designer builds carry no slot contracts. */ }
+    try { rows = readJson(root, `src/catalog/slot-contracts/${layer}.json`) as typeof rows; } catch (error) {
+      // Older designer builds carry no slot contracts file for a layer; a present but unreadable one is an error.
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
     for (const row of rows) reads.set(row.slot, (row.inputs ?? []).filter(input => input.kind === "theme" || input.kind === "asset").map(input => input.name));
   }
   const brief = DESIGN_BRIEF_INPUTS.map(([, id]) => id as string);

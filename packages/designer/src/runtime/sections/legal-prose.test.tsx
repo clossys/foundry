@@ -30,8 +30,9 @@ describe("legal prose runtime binding", () => {
     expect(container.querySelector("article")).toHaveAttribute("data-ds-leaf", "sections.article");
   });
   it("renders an authored revision date as native time through the public block", () => {
+    // The registered callback renders the same legal prose as the renderer (see runtime-registry.test.ts for the
+    // delegation contract); this asserts the shipped path, not function identity.
     const renderRegistered = surfaceRuntimeCallbacks(["sections.legal-prose"])[surfaceRendererId("sections.legal-prose")]!;
-    expect(renderRegistered).toBe(legalProseRenderer.render);
     const { container } = render(<>{renderRegistered(input({ ...values, revision: { ...values.revision, dateTime: "2026-01-15" } }))}</>);
     expect(container.querySelector("time")).toHaveAttribute("dateTime", "2026-01-15");
     expect(container.querySelector("time")).toHaveTextContent("15 January 2026");

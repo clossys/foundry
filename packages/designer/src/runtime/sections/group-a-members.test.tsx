@@ -34,6 +34,11 @@ function withContent(input: Input, values: Readonly<Record<string, RuntimeJson>>
   }
   return { ...input, content, selection: { ...input.selection, content: references } };
 }
+/** The input with `slot` unbound, as a consumer that maps no content to it would hand the assembly. */
+function withoutContent(input: Input, slot: string): Input {
+  const { [slot]: _content, ...content } = input.content, { [slot]: _reference, ...references } = input.selection.content;
+  return { ...input, content, selection: { ...input.selection, content: references } };
+}
 function mounted(html: string): HTMLElement {
   const container = document.createElement("div");
   container.innerHTML = html;
@@ -108,7 +113,9 @@ describe("group-a renderers pass the contract members and slots the blocks now t
 
   it("sections.article: no toc content keeps the dataset render, and a malformed toc is refused, never dropped", () => {
     const plain = groupASectionInput("article", fill("article"));
-    expect(mounted(draw("article", plain)).querySelector("[data-article-toc]")).toBeNull();
+    // The dataset binds a toc (L7), so the no-toc case unbinds it explicitly.
+    expect(mounted(draw("article", plain)).querySelector("[data-article-toc]")).not.toBeNull();
+    expect(mounted(draw("article", withoutContent(plain, "toc"))).querySelector("[data-article-toc]")).toBeNull();
     expect(() => draw("article", withContent(plain, { toc: { items: plainJson(S.tableOfContents.items) } }))).toThrow(/toc.label must be text/);
     expect(() => draw("article", withContent(plain, { toc: { label: "On this page", items: [{ id: "intro" }] } }))).toThrow(/toc.items.0.label must be text/);
     expect(() => draw("article", withContent(plain, { toc: { label: "On this page", items: [{ id: "intro", label: "Intro", level: 4 }, { id: "b", label: "B" }] } }))).toThrow(/level/);

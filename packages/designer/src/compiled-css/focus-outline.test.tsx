@@ -6,6 +6,7 @@ import { NoticeList } from "../blocks/NoticeList.js";
 import { Faq } from "../blocks/Faq.server.js";
 import { Home } from "../icons/index.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
+import { ShellCopyTestHost } from "../frames/__fixtures__/shell-copy.js";
 
 const compiledCss = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
 
@@ -39,6 +40,7 @@ describe("compiled focus-outline cascade", () => {
         <Faq items={[{ id: "one", question: "Question", answer: "Answer" }]} />
         <SiteHeader.ActionLink href="/" label="Home" icon={Home} />
       </>,
+      { wrapper: ShellCopyTestHost },
     );
     const controls = [
       screen.getByRole("button", { name: "Dismiss" }),

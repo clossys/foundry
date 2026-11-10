@@ -2,7 +2,9 @@
 // string may resolve to, pinned on a synthetic universe so each rule fails on its own.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { provenance, recordWords, shortHash, templateMatcher } from '../studio/checks/check-copy-rendered.mjs';
+import { readFileSync } from 'node:fs';
+import { ROUTE_SECONDS, WORKERS, installedRoutes, provenance, recordWords, shortHash, templateMatcher, timeoutSeconds } from '../studio/checks/check-copy-rendered.mjs';
+import { checkTimeoutMs } from './check-studio.mjs';
 
 const universe = (extra = {}) => ({
   copy: new Set(['Pinned', 'Options']),
@@ -48,4 +50,14 @@ test('a structured record gives every string field but its key', () => {
 test('a short hash is the first 8 hex characters, prefix dropped', () => {
   assert.equal(shortHash('sha256:8a3f19c2d4e5'), '8a3f19c2');
   assert.equal(shortHash('8a3f19c2d4e5'), '8a3f19c2');
+});
+
+test("the live gate's bound grows with the installed routes, and check:studio gives it that bound", async () => {
+  assert.equal(timeoutSeconds(0), 120);
+  assert.equal(timeoutSeconds(606), 120 + Math.ceil(606 / WORKERS) * ROUTE_SECONDS);
+  const repository = new URL('../../../', import.meta.url).pathname;
+  assert.equal(timeoutSeconds(), timeoutSeconds(installedRoutes(repository).length));
+  const row = JSON.parse(readFileSync(new URL('./check-studio.json', import.meta.url), 'utf8')).checks.find(check => check.id === 'producer check-copy-rendered (live)');
+  assert.equal(row?.timeout, 'copy-routes');
+  assert.equal(await checkTimeoutMs(row, 600_000), Math.max(600, timeoutSeconds()) * 1000);
 });

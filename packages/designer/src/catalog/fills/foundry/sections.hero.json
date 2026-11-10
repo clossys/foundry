@@ -74,7 +74,7 @@
           },
           {
             "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-            "sha256": "3552086cc372bba12b17cc8b8a3f5e92379c63791393b6414b481501de0537e8"
+            "sha256": "7e4f970b58593caf96074a117298fd901901db942e38217c18b45e2789bafda5"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",

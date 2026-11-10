@@ -66,16 +66,17 @@ export const renderForm: SectionRenderer = input => {
   const { heading } = anatomyOf(input);
   const children = fields.map(field => {
     const name = contact ? field.id : undefined;
-    const validation = { isInvalid: field.error ? true : undefined, errorMessage: field.error };
-    if (field.kind === "select") return <StockSelect key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder ?? ""} description={field.description} options={field.options} {...validation} />;
-    if (field.kind === "combo-box") return <ComboBox key={field.id} id={field.id} name={name} label={field.label} triggerLabel={field.label} placeholder={field.placeholder} description={field.description} options={field.options} {...validation} />;
+    // Named validation props, not a spread: the wiring check reads every attribute statically (DF2).
+    const isInvalid = field.error ? true : undefined, errorMessage = field.error;
+    if (field.kind === "select") return <StockSelect key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder ?? ""} description={field.description} options={field.options} isInvalid={isInvalid} errorMessage={errorMessage} />;
+    if (field.kind === "combo-box") return <ComboBox key={field.id} id={field.id} name={name} label={field.label} triggerLabel={field.label} placeholder={field.placeholder} description={field.description} options={field.options} isInvalid={isInvalid} errorMessage={errorMessage} />;
     if (field.kind === "checkbox") {
       if (field.error) throw new TypeError(`${LEAF}: field ${field.id} NEED registered checkbox error presentation; supply the error-summary slot`);
       return <Checkbox key={field.id} id={field.id} name={name}>{field.label}</Checkbox>;
     }
-    if (field.kind === "textarea") return <Textarea key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder} description={field.description} {...validation} />;
+    if (field.kind === "textarea") return <Textarea key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder} description={field.description} isInvalid={isInvalid} errorMessage={errorMessage} />;
     if (!(TEXT_TYPES as readonly string[]).includes(field.kind)) throw new TypeError(`${LEAF}: field ${field.id} kind ${field.kind} has no registered component`);
-    return <TextField key={field.id} id={field.id} name={name} type={field.kind} label={field.label} placeholder={field.placeholder} description={field.description} {...validation} />;
+    return <TextField key={field.id} id={field.id} name={name} type={field.kind} label={field.label} placeholder={field.placeholder} description={field.description} isInvalid={isInvalid} errorMessage={errorMessage} />;
   });
   return (
     <Form

@@ -7,7 +7,8 @@
  * - media: the asset itself, from the item's DTCG members and SVG files (render-tokens.ts);
  * - flow: no renderer yet, reported as a problem so the host shows the page as unavailable.
  *
- * The health reporter runs first in `<head>`, so it sees every error the page raises.
+ * The health reporter runs first in `<head>`, so it sees every error the page raises; the hidden-frame
+ * gate runs next, before any stylesheet or bundle is requested.
  */
 import { specimenReporterScript } from "./health-reporter.js";
 import { themeCss, type SpecimenMode } from "./theme.js";
@@ -114,6 +115,18 @@ export const SPECIMEN_SIZE_SCRIPT = `(()=>{if(parent===window)return;const stage
   + `if(window.ResizeObserver){const sizes=new ResizeObserver(soon);sizes.observe(stage);sizes.observe(document.body);}if(window.MutationObserver)new MutationObserver(soon).observe(document.body,{subtree:true,childList:true,attributes:true,characterData:true});`
   + `if(document.fonts&&document.fonts.ready)document.fonts.ready.then(soon);})();`;
 
+/**
+ * Holds a specimen page that loads in a frame the host is not rendering. A host page that streams
+ * (React's Suspense reveal) first parses its frames inside a hidden segment, then moves them into
+ * place, and every move reloads the frame: without this gate each hidden load fetched and booted the
+ * whole specimen before it was thrown away. A frame with no layout box (`display: none` on it or an
+ * ancestor) stops its own load before any stylesheet or bundle is requested, and reloads once it is
+ * laid out (its viewport gains a width). A top-level page, a laid-out frame and a cross-origin host
+ * (no `frameElement`) load as before.
+ */
+export const SPECIMEN_HIDDEN_GATE_SCRIPT = `(()=>{try{const frame=window.frameElement;if(!frame||frame.getClientRects().length)return;window.stop();`
+  + `addEventListener("resize",()=>{if(innerWidth>0)location.reload();});}catch{}})();`;
+
 export function renderSpecimenPage(input: SpecimenPageInput): string {
   const { record, query, build } = input;
   const width = query.width ?? record?.preview.width ?? null;
@@ -149,6 +162,7 @@ export function renderSpecimenPage(input: SpecimenPageInput): string {
     `<title>${escapeHtml(record ? `${record.id}@v${record.version}` : query.element)} specimen</title>`,
     '<link rel="icon" href="data:,">',
     `<script nonce="${escapeHtml(input.nonce)}">${reporter}</script>`,
+    `<script nonce="${escapeHtml(input.nonce)}">${SPECIMEN_HIDDEN_GATE_SCRIPT}</script>`,
     ...(build ? [`<link rel="stylesheet" href="${escapeHtml(input.assetBase + build.hash)}.css">`] : []),
     `<style>${themeCss(input.theme)}${width ? `:root{--specimen-width:${width}px}` : ""}</style>`,
   ].join("");

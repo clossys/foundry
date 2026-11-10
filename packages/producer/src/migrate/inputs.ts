@@ -50,14 +50,20 @@ export function planInputsMigration(consumer: string, catalog: InputsCatalog = f
       const before = readSlotRecordText(entry.dir, "slot.json");
       if (before === undefined) continue;
       let doc: { inputs?: unknown };
-      try { doc = JSON.parse(before); } catch { continue; }
+      try { doc = JSON.parse(before); } catch (error) {
+        findings.push({ agent, slot: entry.id, message: `${agent}/${entry.id}: slot.json is not JSON (${(error as Error).message}); inputs stay undeclared` });
+        continue;
+      }
       const declared = Array.isArray(doc.inputs) ? doc.inputs.filter((input): input is string => typeof input === "string") : [];
       const read = new Set([...(agent === "designer" ? DESIGN_BRIEF_INPUTS.map(([, id]) => id as string) : []), ...(catalog[agent].get(entry.id) ?? [])]);
       if (agent === "writer" && entry.pin) {
         try {
           const candidate = readCandidate(consumer, agent, entry.id, entry.pin.candidate);
           for (const ref of agentRefs(candidateDocument({ bytes: candidate.bytes, path: entry.pin.candidate }).fields, "director")) read.add(ref.slot);
-        } catch { /* An unreadable pinned candidate is the slot check's finding, not this plan's. */ }
+        } catch (error) {
+          // The plan still runs on the inputs it can read; the unread pinned candidate is named, never skipped silently.
+          findings.push({ agent, slot: entry.id, message: `${agent}/${entry.id}: pinned candidate ${entry.pin.candidate} cannot be read (${(error as Error).message}); its Director reads are not planned` });
+        }
       }
       const added = [...read].filter(input => input !== entry.id && known.has(input) && !declared.includes(input)).sort();
       if (!declared.length && !added.length) findings.push({ agent, slot: entry.id, message: `${agent}/${entry.id}: no input in the read graph; inputs stay undeclared` });

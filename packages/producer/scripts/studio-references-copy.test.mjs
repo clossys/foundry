@@ -16,8 +16,11 @@ const expected = { title: 'Uses and used by', description: "Links to the other a
   uses: 'Uses', usedBy: 'Used by', lineage: 'Lineage', version: 'Version', source: 'Source', none: 'None' };
 
 test('References copy resolves all existing labels as draft and its normal pinned payload matches', async () => {
-  await checkPayload({ slot: 'sections.studio.references', element: 'studio-references', version: 2, files: await candidateFiles(join(root, 'clossys'), 'sections.studio.references', 'studio-references-v2.json'), studioDir: source,
-    payload: ['LICENCE.md', 'index.tsx', 'registry-item.json'] });
+  // The normal payload is the one the Designer slot model pins today (re-pinned past v2 by later adoptions).
+  const pinned = JSON.parse(await readFile(join(root, 'clossys/agents/designer/sections.studio.references/pin.json'), 'utf8')).candidate;
+  const files = await candidateFiles(join(root, 'clossys'), 'sections.studio.references', pinned);
+  await checkPayload({ slot: 'sections.studio.references', element: 'studio-references', version: Number(/-v([1-9][0-9]*)\.json$/.exec(pinned)[1]), files, studioDir: source,
+    payload: [...files.keys()] });
   const registry = await studioCopyRegistry(join(root, 'clossys'));
   for (const [field, text] of Object.entries(expected)) {
     const id = `studio.references-${field.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`;

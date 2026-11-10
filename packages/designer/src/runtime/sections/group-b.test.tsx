@@ -10,6 +10,8 @@ import { loadSectionRegistry } from "../../catalog-core/sections-contract.js";
 import type { CompositeResolved } from "../../catalog-core/types.js";
 import { checkWiring } from "../../catalog-core/wiring.js";
 import { copyPortsFor } from "./__fixtures__/copy-ports.js";
+import { STATS_COPY_REFS, statsCopyFrom } from "./stats.copy.js";
+import { sectionCopyFixtureResolver } from "../../../../writer/src/catalog/__fixtures__/section-copy-resolver.fixture.js";
 import { GROUP_B_SECTIONS, groupBRenderers } from "./group-b.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 import { groupBDataset } from "./group-b-dataset.js";
@@ -27,6 +29,12 @@ const fillOf = (leaf: Leaf): FillDoc => JSON.parse(readFileSync(resolve(fillsDir
 const slotMapOf = (leaf: Leaf) => Object.values(fillOf(leaf).sections)[0]!.slotMap;
 const contractOf = (leaf: Leaf) => registry.slots.find(slot => slot.id === leaf)!.contract;
 
+/** The consumer host: sections.stats reads its trend and state labels from Writer records, its label from content. */
+function hostPortsFor(leaf: Leaf, state: string) {
+  if (leaf !== "sections.stats") return copyPortsFor(leaf, state);
+  return { statsCopy: statsCopyFrom(sectionCopyFixtureResolver, specimenDataset.sections.statGroup["aria-label"]) };
+}
+
 /** One runtime-assembly-shaped input: the leaf's fill, its dataset content keyed by slot, and one board cell. */
 function inputFor(leaf: Leaf, state = "default"): SectionRenderInput {
   const contract = contractOf(leaf), slots = Object.keys(slotMapOf(leaf)).sort(), fill = fillOf(leaf).$extensions["com.clossys.fill"].id;
@@ -42,7 +50,7 @@ function inputFor(leaf: Leaf, state = "default"): SectionRenderInput {
     kind: "section", library: "foundry", fill, leaf, config: null, slots, members: [], states: contract.states ?? [],
     renderer: { id: `${leaf}#test`, source: { entry: `${leaf}.tsx`, files: {}, dependencies: {} }, sourceHash: runtimeHash(leaf) },
   };
-  return { sectionHost: copyPortsFor(leaf, state), path: "body/0", fill: descriptor, selection: { leaf, fill, config: null, members: [], content: refs }, cell: { theme: "light", state, width: 1280 }, content, slots: {}, profile: {} as CompositeResolved };
+  return { sectionHost: hostPortsFor(leaf, state), path: "body/0", fill: descriptor, selection: { leaf, fill, config: null, members: [], content: refs }, cell: { theme: "light", state, width: 1280 }, content, slots: {}, profile: {} as CompositeResolved };
 }
 
 function renderLeaf(leaf: Leaf, state = "default") {
@@ -125,6 +133,9 @@ const ROLES: Readonly<Record<Leaf, (root: HTMLElement) => void>> = {
   "sections.stats": root => {
     expect(within(root).getByRole("list", { name: S.statGroup["aria-label"] })).toBeTruthy();
     expect(within(root).getAllByRole("listitem").length).toBe(S.statGroup.items.length);
+    // Every trend beside a delta is announced with its Writer label.
+    const announced = [...root.querySelectorAll(".sr-only")].map(node => node.textContent);
+    for (const item of S.statGroup.items) expect(announced).toContain(`${sectionCopyFixtureResolver(STATS_COPY_REFS.trendLabels[item.trend])!.text}, `);
   },
   "sections.status-list": root => {
     expect(within(root).getAllByRole("list").length).toBeGreaterThanOrEqual(1);

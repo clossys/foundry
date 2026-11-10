@@ -185,7 +185,7 @@ function fallbackSolves(directory, role, clientProblems) {
       problem: seed.id,
       statement: seed.statement,
       metric: role.metric?.name ?? "",
-      proofCase: `Restates ${directory}'s own jobQuestion in docs/contracts/role-loop-archetypes.json ("${role.jobQuestion ?? ""}"); no measured proof case exists yet.`,
+      proofCase: `Restates ${directory}'s own jobQuestion in docs/contracts/role-loop-archetypes.json, a Foundry-repository contract that does not ship in any package ("${role.jobQuestion ?? ""}"); no measured proof case exists yet.`,
       evidence: "designed",
     },
   ];

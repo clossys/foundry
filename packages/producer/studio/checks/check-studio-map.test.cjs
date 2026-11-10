@@ -22,6 +22,21 @@ test('the renderer feeds the pinned frame only by spreading the map projection',
   assert.deepEqual(inspectFrameProjection(source), []);
 });
 
+test('the renderer that is handed the pinned frame as frame={Shell} is held to the same projection rules', () => {
+  const fed = `const Shell = studioFrames[page.frameId]; const projection = studioShellProjection(map, entry.id);
+    const view = <StudioShell frame={Shell} {...projection} copy={copy} popovers={popovers} />;`;
+  assert.deepEqual(inspectFrameProjection(fed), []);
+  const overridden = `const Shell = studioFrames[page.frameId]; const projection = studioShellProjection(map, entry.id);
+    const view = <StudioShell frame={Shell} {...projection} navigation={{ tree: [] }} />;`;
+  assert.deepEqual(inspectFrameProjection(overridden).map(row => row.input), ['navigation']);
+  const unprojected = `const Shell = studioFrames[page.frameId]; const view = <StudioShell frame={Shell} {...{ navigation, commands }} />;`;
+  assert.deepEqual(inspectFrameProjection(unprojected).map(row => row.required), ['studioShellProjection']);
+  const unrelated = `const Shell = studioFrames[page.frameId]; const view = <StudioShell frame={Other} {...studioShellProjection(map, id)} />;`;
+  assert.deepEqual(inspectFrameProjection(unrelated).map(row => row.rule), ['missing-studio-frame']);
+  const actual = fs.readFileSync(path.join(studioRoot, 'components/StudioPage.tsx'), 'utf8');
+  assert.deepEqual(inspectFrameProjection(actual), []);
+});
+
 test('a redundant route list inserted into the renderer fails even when it is unused', () => {
   const source = fs.readFileSync(path.join(studioRoot, 'components/StudioPage.tsx'), 'utf8');
   const mutation = source + `\nconst redundantDestinations = [{ id: 'fixture', label: 'Fixture', href: '/fixture-page' }];\n`;
@@ -99,6 +114,21 @@ test('data requests, asset URLs, URL shape checks and cell/Source query state ar
   assert.deepEqual(findRouteLiterals(source), []);
 });
 
+test('a constant used only as an asset attribute is an asset URL; any other use keeps it a route literal', () => {
+  assert.deepEqual(findRouteLiterals('const AVATAR = "/avatars/fixture.jpg"; const v = <Image src={user.avatar ?? AVATAR} />;', 'x.tsx'), []);
+  // Mutation proofs: the same constant also used as a destination, never used, or not const, still fails.
+  assert.deepEqual(findRouteLiterals('const A = "/avatars/fixture.jpg"; const v = <Image src={A} />; const w = <Link href={A} />;', 'x.tsx').map(row => row.value), ['/avatars/fixture.jpg']);
+  assert.deepEqual(findRouteLiterals('const A = "/avatars/fixture.jpg";', 'x.tsx').map(row => row.value), ['/avatars/fixture.jpg']);
+  assert.deepEqual(findRouteLiterals('let A = "/avatars/fixture.jpg"; const v = <Image src={A} />;', 'x.tsx').map(row => row.value), ['/avatars/fixture.jpg']);
+  assert.deepEqual(findRouteLiterals('const P = "/fixture-page"; const v = <Image src={P} />;', 'x.tsx').map(row => row.value), ['/fixture-page']);
+});
+
+test('a link to another site is not a Studio route; a local absolute or protocol-relative destination still is', () => {
+  assert.deepEqual(findRouteLiterals('const v = <a href="https://library.example">credit</a>;', 'x.tsx'), []);
+  assert.deepEqual(['http://127.0.0.1:4503/designer', 'http://localhost/fixture', '//fixture', 'mailto:fixture'].flatMap(value =>
+    findRouteLiterals(`const v = <a href="${value}">x</a>;`, 'x.tsx').map(row => row.value)), ['http://127.0.0.1:4503/designer', 'http://localhost/fixture', '//fixture', 'mailto:fixture']);
+});
+
 test('the checked-in Studio projection matches its ordinary Publisher cells and production consumers', async () => {
   assert.deepEqual(await checkStudioMap(), []);
 });
@@ -117,13 +147,13 @@ test('changing a pinned Publisher page without regenerating fails projection dri
   fs.cpSync(path.join(studioRoot, 'app'), path.join(temporary, 'app'), { recursive: true });
   const generator = await import(pathToFileURL(path.resolve(studioRoot, '../scripts/generate-studio-map.mjs')).href);
   await generator.generateStudioMap({ clossysRoot, outputDir, check: true });
-  // A published page title is map input, so re-pinning a changed title must change projected bytes.
+  // A published page title is map input (a Writer key), so re-pinning a page onto another title key must change projected bytes.
   const slot = path.join(clossysRoot, 'agents/publisher/page.designer-themes');
   const pin = JSON.parse(fs.readFileSync(path.join(slot, 'pin.json'), 'utf8'));
   const candidate = path.join(slot, 'candidates', pin.candidate);
   const record = JSON.parse(fs.readFileSync(candidate, 'utf8'));
-  assert.ok(typeof record.title === 'string' && record.title !== 'Fixture changed title');
-  const bytes = JSON.stringify({ ...record, title: 'Fixture changed title' }, null, 2) + '\n';
+  assert.equal(record.title, 'studio.page.designer-themes');
+  const bytes = JSON.stringify({ ...record, title: 'studio.page.designer-assets' }, null, 2) + '\n';
   fs.writeFileSync(candidate, bytes);
   fs.writeFileSync(path.join(slot, 'pin.json'), JSON.stringify({ ...pin, sha256: require('node:crypto').createHash('sha256').update(bytes).digest('hex') }, null, 2) + '\n');
   const findings = await checkStudioMap({ clossysRoot, outputDir });

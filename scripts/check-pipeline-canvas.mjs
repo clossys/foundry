@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * check:pipeline-canvas: the Studio page /content (the Content overview) draws packages/producer/pipeline/graph.json
- * and nothing else. It starts the built Producer (`clossys produce`), opens the page headless in the
+ * and nothing else. It builds dist/studio from the current source (packages/producer/scripts/build-studio.mjs, the
+ * same build check:studio runs), starts the built Producer (`clossys produce`) on the single preview port
+ * (packages/producer/studio/checks/studio-origin.mjs, 4503 unless --port), opens the page headless in the
  * Chrome already installed on this machine (playwright, never a downloaded browser) and fails unless
  *
  *   node-ids   the rendered React Flow node ids equal the graph's step ids;
@@ -44,15 +46,17 @@
  * `--color-scheme` emulates prefers-color-scheme for the run (default light).
  * Exit 0 when every condition holds, 1 on any finding, 2 when Producer, Studio or a browser is missing.
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { studioPort } from "../packages/producer/studio/checks/studio-origin.mjs";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const producerDir = join(repo, "packages/producer");
-export const DEFAULT_PORT = 4619;
+/** The single preview port; a check never carries a port of its own. */
+export const DEFAULT_PORT = studioPort({});
 export const ROUTE = "/content";
 export const VIEWPORT = Object.freeze({ width: 1440, height: 900 });
 /** The smallest on-screen step title size at the initial view, in CSS pixels. */
@@ -201,7 +205,7 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
     for (const id of steps.keys()) if (!rendered.parts.some(part => part.id === id && part.part === "badge")) findings.push({ rule: "contain", message: `step ${id} draws no kind badge` });
   }
   if (rendered.sheet !== undefined) {
-    if (!rendered.sheet?.click) findings.push({ rule: "sheet", message: "a click on a step node away from its title does not open the step sheet" });
+    if (!rendered.sheet?.click) findings.push({ rule: "sheet", message: `a click on a step node away from its title does not open the step sheet${rendered.sheet?.clickError ? ` (the click did not land: ${rendered.sheet.clickError})` : ""}` });
     if (!rendered.sheet?.enter) findings.push({ rule: "sheet", message: "Enter on the focused step node does not open the step sheet" });
   }
   const legend = rendered.legend;
@@ -236,7 +240,12 @@ const envError = message => Object.assign(new Error(message), { env: true });
 async function startProducer({ port, root }) {
   const cli = join(producerDir, "dist/cli/index.js");
   if (!existsSync(cli)) throw envError("producer is not built: dist/cli/index.js is missing");
-  if (!existsSync(join(producerDir, "dist/studio/manifest.json"))) throw envError("Studio is not built: dist/studio/manifest.json is missing");
+  // Measure the current source, never a stale or missing dist/studio: the root `build` does not build the Studio.
+  const build = spawnSync(process.execPath, [join(producerDir, "scripts/build-studio.mjs")], { cwd: producerDir, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
+  if (build.status !== 0) throw envError(`scripts/build-studio.mjs exited ${build.status}: ${`${build.stdout}\n${build.stderr}`.trim().split("\n").slice(-10).join(" / ")}`);
+  if (!existsSync(join(producerDir, "dist/studio/manifest.json"))) throw envError("Studio is not built: dist/studio/manifest.json is missing after scripts/build-studio.mjs");
+  const serving = await fetch(`http://127.0.0.1:${port}/api/health`).then(() => true, () => false);
+  if (serving) throw envError(`port ${port} is already serving; stop it or pass --port`);
   const child = spawn(process.execPath, [cli, "produce", "--port", String(port), "--no-open", "--root", root], { stdio: ["ignore", "pipe", "pipe"] });
   const output = [];
   child.stdout.on("data", chunk => output.push(String(chunk)));
@@ -334,8 +343,9 @@ async function renderPage({ origin, expected, screenshot, sheetScreenshot, color
       sheet.enter = await opens();
       if (sheet.enter) { await page.keyboard.press("Escape"); await dialog.waitFor({ state: "hidden", timeout: 5_000 }).catch(() => {}); }
       const size = await step.boundingBox();
-      if (size) await step.click({ position: { x: size.width / 2, y: size.height - 6 } });
-      sheet.click = await opens();
+      // A click another element intercepts (the step lies outside the drawn canvas) is the sheet finding, not a crash.
+      const clicked = size ? await step.click({ position: { x: size.width / 2, y: size.height - 6 }, timeout: 10_000 }).then(() => true, error => { sheet.clickError = String(error?.message ?? error).split("\n")[0]; return false; }) : false;
+      sheet.click = clicked && await opens();
       if (sheet.click && sheetScreenshot) {
         await page.waitForTimeout(500);
         mkdirSync(dirname(sheetScreenshot), { recursive: true });

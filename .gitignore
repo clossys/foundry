@@ -1,8 +1,6 @@
 node_modules/
 dist/
 build/
-# The Studio's /build route is a Publisher-installed page, not build output.
-!packages/producer/studio/app/build/
 coverage/
 *.tsbuildinfo
 *.tgz
@@ -62,3 +60,7 @@ packages/producer/dist/
 # Writer mechanical-audit report, rewritten by every run of
 # packages/writer/src/catalog/records/mechanical-audit.test.ts; nothing reads it.
 packages/writer/reports/mechanical-audit.json
+
+# Studio check inputs, emitted fresh per run by packages/producer/scripts/emit-studio-check-inputs.mjs
+# (the check:studio fill-source-imports row); evidence, never source.
+/.clossys/check-inputs/

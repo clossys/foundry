@@ -9,6 +9,7 @@ export const chatCopyFixture: ChatCopy = {
 };
 export function copyPortsFor(leaf: string, state = "default") {
   if (leaf === "sections.hero") return { heroCopy: heroCopyFromDataset(specimenDataset) };
+  if (leaf === "sections.timeline") return { timelineLabel: S.timeline["aria-label"] };
   if (!["sections.data-table", "sections.data-grid", "sections.record-detail", "sections.chat"].includes(leaf)) return undefined;
   return {
     tableCopy: { label: leaf === "sections.data-grid" ? S.dataGrid.label : S.dataTable.label, emptyTitle: S.states.tableEmpty.title, emptyDescription: S.states.tableEmpty.description, paginationLabel: S.dataTable.paginationLabel },

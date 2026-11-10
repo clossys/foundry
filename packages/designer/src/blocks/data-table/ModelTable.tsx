@@ -1,14 +1,15 @@
-import { defaultGroupToggleMessage, defaultGroupPathMessage, defaultAggregateMessage, type DataTableMessages } from "./messages.js";
+import { DATA_TABLE_COPY_REFS, defaultGroupPathMessage, defaultAggregateMessage, type DataTableMessages } from "./messages.js";
 import type { Key } from "react-aria-components";
 import { TOKENS } from "../../tokens/tokens.js";
 
 import { useGlyph } from "../../components/glyph-context.js";
+import { useShellCopy } from "../../components/Banner.copy-context.js";
 import { cx } from "../../components/internal/cx.js";
 import type { DataTableColumn, DataTableProps } from "../DataTable.js";
 import { filterRows, groupRows, type TableGroup } from "../table-model/index.js";
 import { FlatGrid } from "./FlatGrid.js";
 import { PivotGrid } from "./PivotGrid.js";
-import { sortViewRows } from "./presentation.js";
+import { pathLabel, sortViewRows } from "./presentation.js";
 import { ViewOptions } from "./ViewOptions.js";
 import { editView, parseDataTableViewModel, type DataTableViewModel, type DataTableViewModelV1 } from "./view-model.js";
 import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
@@ -21,8 +22,8 @@ const SemanticContent = componentLeaf<typeof import("../../components/SemanticCo
 type DisplayRow<Row> = { kind: "leaf"; key: string; row: Row } | { kind: "group"; key: string; group: TableGroup<Row>; open: boolean };
 const leafKey = (key: Key) => "leaf:" + JSON.stringify([typeof key, key]);
 export function ModelTable<Row>({
-  /** @default (path, expanded) => `${expanded ? "Collapse" : "Expand"} group ${pathLabel(path)}` */
-  groupToggleMessage = defaultGroupToggleMessage,
+  /** @default the host's Writer text for `DATA_TABLE_COPY_REFS.groupToggleMessage`, read only when a toggle renders */
+  groupToggleMessage: hostGroupToggleMessage,
   /** @default path => pathLabel(path) */
   groupPathMessage = defaultGroupPathMessage,
   /** @default (id, value) => `${id}: ${valueLabel(value)}` */
@@ -31,6 +32,9 @@ export function ModelTable<Row>({
 }: DataTableProps<Row> & DataTableMessages & { model: DataTableViewModel | DataTableViewModelV1 }) {
   const expandedGlyph = useGlyph("assets.icon-chevron-down");
   const collapsedGlyph = useGlyph("assets.icon-chevron-right");
+  const copy = useShellCopy();
+  const groupToggleMessage: NonNullable<DataTableMessages["groupToggleMessage"]> = hostGroupToggleMessage
+    ?? ((path, expanded) => copy(DATA_TABLE_COPY_REFS.groupToggleMessage, { expanded: String(expanded), path: pathLabel(path) }));
   const { model: inputModel, onModelChange, expandedGroupKeys = "all", onExpandedGroupKeysChange, toolbar, footer } = props;
   const model = parseDataTableViewModel(inputModel);
   if (!onModelChange) throw new TypeError("DataTable with model requires onModelChange.");

@@ -14,7 +14,7 @@
     "slot": "sections.producer.team-strip",
     "package": "producer",
     "layer": "sections",
-    "purpose": "The system's team: one stock outline Item per seat holder in one stock Card, with a stock Avatar initial, its name, one line on what it does, and stock Badges for its seat kinds (You, AI, Code), AI tier and step count. Each Item links to its lane on the workflow map (?seat=<id>); the highlighted holder shows the stock muted Item.",
+    "purpose": "The system's team in one compact stock Card: one small stock outline LinkButton per seat holder in one wrapping line, with a small stock Avatar initial, its name and stock Badges for its seat kinds (You, AI, Code), AI tier and step count; its one line on what it does is the link's stock Tooltip. Each links to its lane on the workflow map (?seat=<id>); the highlighted holder shows the stock secondary LinkButton.",
     "inputs": [
       {
         "name": "team",
@@ -41,17 +41,17 @@
       },
       {
         "registry": "shadcn",
+        "item": "button",
+        "version": "4.23.0",
+        "hash": "sha256:9e41c76cf882fc46d3518f621c87ac7e58ec381ea546fda891de2cabe95fc350",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/button.json"
+      },
+      {
+        "registry": "shadcn",
         "item": "card",
         "version": "4.23.0",
         "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
         "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
-      },
-      {
-        "registry": "shadcn",
-        "item": "item",
-        "version": "4.23.0",
-        "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9",
-        "url": "https://ui.shadcn.com/r/styles/radix-nova/item.json"
       }
     ],
     "checkSuite": "studio",
@@ -70,7 +70,8 @@
   "uses": [
     "components.avatar",
     "components.badge",
+    "components.button",
     "components.card",
-    "components.item"
+    "components.tooltip"
   ]
 }

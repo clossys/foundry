@@ -87,7 +87,7 @@ export interface StudioShellProps {
 function CopyBody({ id, copy, words }: { id: string; copy: NonNullable<ShellPopover['copy']>; words: StudioShellCopy }) {
   return <>
     <PopoverDescription data-popover-text={id}>{copy.text}</PopoverDescription>
-    <Button size="sm" data-popover-copy={id} onPress={copy.onCopy}>{copy.copied ? words.copied : words.copyPrompt}</Button>
+    <Button data-popover-copy={id} onPress={copy.onCopy}>{copy.copied ? words.copied : words.copyPrompt}</Button>
   </>;
 }
 

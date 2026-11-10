@@ -2,6 +2,11 @@ import type { TableFilter, TableFilterNode, TableValue, TableAggregateValue, Tab
 import type { DataTableSortRule } from "./view-model.js";
 import { pathLabel, valueLabel } from "./presentation.js";
 
+/** Stable Writer references the table resolves through the host's shell copy resolver when no host message is supplied. */
+export const DATA_TABLE_COPY_REFS = Object.freeze({
+  groupToggleMessage: Object.freeze({ id: "st.z6cvcn5vhs" }),
+});
+
 /** Host copy, separate from the persisted view. Every field is optional. */
 export interface DataTableMessages {
   /** @default "View options" */
@@ -108,7 +113,7 @@ export interface DataTableMessages {
   readonly allTagsLabel?: string;
   /** @default "None" */
   readonly noTagsLabel?: string;
-  /** @default (path, expanded) => `${expanded ? "Collapse" : "Expand"} group ${pathLabel(path)}` */
+  /** @default the host's Writer text for `DATA_TABLE_COPY_REFS.groupToggleMessage`; no resolver throws the named shell copy error */
   readonly groupToggleMessage?: (path: readonly TableValue[], expanded: boolean) => string;
   /** @default path => pathLabel(path) */
   readonly groupPathMessage?: (path: readonly TableValue[]) => string;
@@ -169,7 +174,6 @@ export const defaultFilterValueMessage: NonNullable<DataTableMessages["filterVal
 export const defaultMatchingMessage: NonNullable<DataTableMessages["matchingMessage"]> = column => `${column} matching`;
 export const defaultBooleanFilterMessage: NonNullable<DataTableMessages["booleanFilterMessage"]> = column => `${column} is true`;
 export const defaultFacetValueMessage: NonNullable<DataTableMessages["facetValueMessage"]> = (column, value) => `${column}: ${value}`;
-export const defaultGroupToggleMessage: NonNullable<DataTableMessages["groupToggleMessage"]> = (path, expanded) => `${expanded ? "Collapse" : "Expand"} group ${pathLabel(path)}`;
 export const defaultGroupPathMessage: NonNullable<DataTableMessages["groupPathMessage"]> = path => pathLabel(path);
 export const defaultAggregateMessage: NonNullable<DataTableMessages["aggregateMessage"]> = (id, value) => `${id}: ${valueLabel(value)}`;
 export const defaultPivotAxisMessage: NonNullable<DataTableMessages["pivotAxisMessage"]> = axis => axis.kind === "total" ? "Total" : (axis.kind === "subtotal" ? "Subtotal " : "") + pathLabel(axis.path);

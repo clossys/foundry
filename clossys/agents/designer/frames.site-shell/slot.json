@@ -148,14 +148,7 @@
       "components.icon",
       "components.logo",
       "components.semantic-content",
-      "components.status-mark",
-      "sections.features",
-      "sections.hero",
-      "sections.media",
-      "sections.pricing",
-      "sections.section-header",
-      "sections.status-list",
-      "sections.steps"
+      "components.status-mark"
     ],
     "skipTarget": "main-content"
   },

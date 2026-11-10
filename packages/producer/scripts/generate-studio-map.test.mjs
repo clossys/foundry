@@ -13,6 +13,7 @@ import { pinnedBindings } from './studio-draft-items.mjs';
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 /** Every Designer slot the Studio pages assemble. */
 const STUDIO_SLOTS = ['frames.studio-shell', ...['checks', 'outline'].map(id => `sections.module.${id}`),
+  ...['pipeline-flow', 'pipeline-legend', 'system-empty', 'team-strip'].map(id => `sections.producer.${id}`),
   ...['checks', 'contract', 'history', 'home', 'leaf-header', 'options', 'page-header', 'page-tabs', 'references', 'slot-groups', 'specimen'].map(id => `sections.studio.${id}`)];
 /** The route files Publisher installs for one Studio page: its page and, for a gallery, its leaf template. */
 const installedEntry = (instanceId, path, label, leaf = true) => {
@@ -34,11 +35,11 @@ async function fixture(t) {
   for (const node of ia.nodes) for (const child of node.children) for (const slot of child.slots) {
     await cp(join(designer, slot), join(copy, slot), { recursive: true });
   }
-  // Parameterized page records expand through each agent's IA, so the fixture carries every ia.json.
-  for (const agent of ['director', 'writer']) {
-    await mkdir(join(clossysRoot, 'agents', agent), { recursive: true });
-    await cp(join(clossys, 'agents', agent, 'ia.json'), join(clossysRoot, 'agents', agent, 'ia.json'));
-  }
+  // Parameterized page records expand through each agent's IA, so the fixture carries every ia.json;
+  // the generator binds every visible string to the pinned Writer copy, so it carries the Writer slots too.
+  await mkdir(join(clossysRoot, 'agents', 'director'), { recursive: true });
+  await cp(join(clossys, 'agents', 'director', 'ia.json'), join(clossysRoot, 'agents', 'director', 'ia.json'));
+  await cp(join(clossys, 'agents', 'writer'), join(clossysRoot, 'agents', 'writer'), { recursive: true });
   return { clossysRoot, outputDir, appDir: join(dir, 'app'), installOut: join(dir, 'install'), publisherRoot: join(clossysRoot, 'agents', 'publisher') };
 }
 async function replace(path, before, after) {
@@ -107,20 +108,18 @@ async function editSlot(path, edit) {
   await writeFile(path, JSON.stringify(doc));
 }
 
-/** The Writer slots Studio copy reads (generate-studio-map STUDIO_COPY_SLOTS). */
-const STUDIO_COPY = ['strings.descriptions', 'strings.statuses', 'strings.common', 'strings.field-labels'];
 async function writerCallerFixture(t) {
   const options = await fixture(t);
   const writer = join(options.clossysRoot, 'agents/writer');
   const placement = 'strings.interface/interface-field-labels/strings.common';
   const dir = join(writer, 'strings.common');
+  // The fixture carries the real Writer slots; this caller owns strings.common, starting with no pin and no candidate.
+  await rm(dir, { recursive: true, force: true });
   await mkdir(join(dir, 'candidates'), { recursive: true });
-  // The real Writer IA expands the Writer tabs; the test keeps strings.common as the only Studio copy slot it places.
-  const ia = JSON.parse(await readFile(join(writer, 'ia.json'), 'utf8'));
-  for (const node of ia.nodes) for (const group of node.children) group.slots = group.slots.filter(slot => slot === 'strings.common' || !STUDIO_COPY.includes(slot));
-  await writeFile(join(writer, 'ia.json'), JSON.stringify(ia));
+  // The real Writer IA and its other pinned strings.* slots stay (every strings.* slot is Studio copy and the
+  // page titles resolve through them); this caller places only strings.common, the slot under test.
   const previewItems = await pinnedBindings(options.clossysRoot, STUDIO_SLOTS);
-  assert.equal(previewItems.length, 14);
+  assert.equal(previewItems.length, STUDIO_SLOTS.length);
   // Draft binds what the slot model pins: options v8 and specimen v12 (stock re-adoption, planner:R2F-03).
   assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 8], ['sections.studio.specimen', 12]]);
   async function candidate(text, version, pin = false) {
@@ -132,10 +131,10 @@ async function writerCallerFixture(t) {
     return { placement, candidate: name, version: String(version), sha256 };
   }
   async function generate(preview) {
-    // Only the default path skips old Designer payload parity. Preview validates all 14 native bindings.
+    // Only the default path skips old Designer payload parity. Preview validates every native binding.
     const projection = await run(options, preview ? { target: 'preview', previewItems } : { payloads: false });
     if (preview) {
-      assert.equal(projection.items.length, 14);
+      assert.equal(projection.items.length, STUDIO_SLOTS.length);
       assert.equal(projection.assembly.status, 'DRAFT');
       for (const item of projection.items) {
         assert.equal(item.previewEvidence.status, 'DRAFT');
@@ -144,7 +143,10 @@ async function writerCallerFixture(t) {
         assert.equal(item.previewEvidence.matchesPin, true);
       }
     }
-    return JSON.parse(await readFile(join(options.outputDir, 'studio-copy.json'), 'utf8'));
+    const copy = JSON.parse(await readFile(join(options.outputDir, 'studio-copy.json'), 'utf8'));
+    // Only what the slot under test contributes: its key and its recorded source row.
+    return { entries: copy.entries.filter(entry => entry.id === 'studio.greeting'),
+      sources: preview ? JSON.parse(copy.source.reference.split('#')[1]).filter(row => row.placement === placement) : undefined };
   }
   return { dir, candidate, generate };
 }
@@ -155,7 +157,7 @@ test('Studio Writer caller keeps absent pins empty by default and projects draft
   assert.deepEqual((await f.generate(false)).entries, []);
   const preview = await f.generate(true);
   assert.deepEqual(preview.entries, [{ id: 'studio.greeting', text: 'Preview greeting', context: 'test', status: 'draft' }]);
-  assert.deepEqual(JSON.parse(preview.source.reference.split('#')[1]), [{ ...selected, selectedBy: 'absent-pin-preview' }]);
+  assert.deepEqual(preview.sources, [{ ...selected, selectedBy: 'absent-pin-preview' }]);
 });
 
 test('Studio Writer caller honors a valid pin over a newer draft in default and preview generation', async t => {
@@ -165,7 +167,7 @@ test('Studio Writer caller honors a valid pin over a newer draft in default and 
   for (const preview of [false, true]) {
     const copy = await f.generate(preview);
     assert.deepEqual(copy.entries, [{ id: 'studio.greeting', text: 'Pinned greeting', context: 'test', status: 'draft' }]);
-    if (preview) assert.deepEqual(JSON.parse(copy.source.reference.split('#')[1]), [{ ...selected, selectedBy: 'pin' }]);
+    if (preview) assert.deepEqual(copy.sources, [{ ...selected, selectedBy: 'pin' }]);
   }
 });
 
@@ -199,6 +201,14 @@ async function editPinned(options, id, edit) {
   await writeFile(value.path, bytes);
   await writeFile(value.pinPath, JSON.stringify({ ...value.pin, sha256: createHash('sha256').update(bytes).digest('hex') }));
 }
+async function editWriterPinned(options, id, edit) {
+  const dir = join(options.clossysRoot, 'agents/writer', id), pinPath = join(dir, 'pin.json');
+  const pin = JSON.parse(await readFile(pinPath, 'utf8')), path = join(dir, 'candidates', pin.candidate);
+  const before = await readFile(path, 'utf8'), bytes = edit(before);
+  assert.notEqual(bytes, before, `${id}: the Writer edit applies`);
+  await writeFile(path, bytes);
+  await writeFile(pinPath, JSON.stringify({ ...pin, sha256: createHash('sha256').update(bytes).digest('hex') }));
+}
 async function selectedBytes(options) {
   const ia = JSON.parse(await readFile(join(options.publisherRoot, 'ia.json'), 'utf8'));
   const records = await Promise.all(ia.nodes.flatMap(node => node.children.flatMap(child => child.slots)).map(id => selected(options, id)));
@@ -215,11 +225,11 @@ async function nativeFixture(t) {
 }
 
 /** The pinned Publisher page records: one per Studio page, parameterized records expand into tabs and leaves. */
-const PAGE_NAMES = ['home',
+const PAGE_NAMES = ['home', 'producer-pipeline',
   ...['context', 'aspiration', 'focus', 'advantage', 'identity', 'capability', 'execution'].map(ns => `director-${ns}`),
   ...['themes', 'assets', 'components', 'sections', 'frames'].map(ns => `designer-${ns}`),
   ...['lexicon', 'strings', 'patterns', 'passages', 'narratives'].map(ns => `writer-${ns}`),
-  'publisher-studio'];
+  'publisher-studio', 'build-overview', 'run-overview'];
 const pageSlot = name => `page.${name}`;
 /** Every route the pinned publication declares, with its content-map entry. */
 async function pinnedRoutes(options) {
@@ -233,6 +243,7 @@ test('L16 pinned records carry no Copy link and keep the request-change prompt o
   assert.deepEqual(HANDLERS, ['copy-prompt']);
   const routes = await pinnedRoutes(options);
   assert.deepEqual(routes.map(({ route }) => route.instanceId), PAGE_NAMES);
+  const leafless = [];
   for (const { route, entry } of routes) {
     const page = assemblyOf(entry, route, contracts);
     assert.doesNotMatch(JSON.stringify(page), /copy-link/);
@@ -240,10 +251,13 @@ test('L16 pinned records carry no Copy link and keep the request-change prompt o
     if (page.leaf) {
       assert.deepEqual(page.leaf.manifest.actions.map(action => action.id), ['request-change']);
       assert.equal(page.leaf.manifest.actions[0].handler.kind, 'copy-prompt');
-      assert.match(page.leaf.manifest.actions[0].handler.prompt, /What should change/);
+      // The prompt is Writer copy: the record names its key and the pinned Writer text resolves it.
+      assert.equal(page.leaf.manifest.actions[0].handler.prompt, 'studio.request-change-prompt');
       assert.ok(page.leaf.manifest.wiring.some(line => line.do === 'copy request-change' && line.expect === 'clipboard prompt'));
-    } else assert.equal(entry.id, 'home', 'only Home has no leaf template');
+    } else leafless.push(entry.id);
   }
+  // Galleries carry the leaf template; Home, the Pipeline and the Build and Run overviews are single pages.
+  assert.deepEqual(leafless, ['home', 'producer-pipeline', 'build-overview', 'run-overview']);
 });
 
 test('L16 active generation contains no copy-link and leaves native candidates and pins byte-identical', async t => {
@@ -312,7 +326,8 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
   assert.deepEqual(projection.pages.map(page => page.id), pageIds);
   assert.deepEqual(pageIds.slice(0, PAGE_NAMES.length), PAGE_NAMES);
   for (const page of projection.pages) assert.equal(page.frameId, 'frames.studio-shell', page.id);
-  assert.deepEqual(projection.map.entries.filter(row => row.kind === 'group' && !row.parentId).map(row => row.id), ['director', 'designer', 'writer', 'publisher']);
+  // The agent groups sit beneath Content; Build and Run are top-level groups of their own.
+  assert.deepEqual(projection.map.entries.filter(row => row.kind === 'group' && !row.parentId).map(row => row.id), ['content', 'build', 'run']);
   assert.deepEqual(projection.pages.find(page => page.id === 'home').sectionIds, ['sections.studio.page-header', 'sections.studio.home']);
   assert.deepEqual(projection.pages.find(page => page.id === 'publisher-studio').sectionIds, ['sections.studio.page-header', 'sections.studio.page-tabs', 'sections.studio.slot-groups']);
   const leafPages = projection.pages.filter(page => page.leaf);
@@ -337,7 +352,7 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
   for (const page of projection.map.entries.filter(row => row.kind === 'page')) assert.deepEqual(projection.pageActions[page.id], page.actions ?? []);
   assert.deepEqual(projection.items.map(item => item.slot).sort(), [...STUDIO_SLOTS].sort());
   const bindings = await readFile(join(options.outputDir, 'assembly-bindings.ts'), 'utf8');
-  assert.match(bindings, /"frames\.studio-shell": Frame0/);
+  assert.match(bindings, /"frames\.studio-shell": marked\(Frame0, /);
   for (const item of projection.items.filter(row => row.slot.startsWith('sections.'))) assert.match(bindings, new RegExp(`from "\\.\\./sections/${item.element}"`));
   const module = await readFile(join(options.outputDir, 'studio-map.ts'), 'utf8');
   assert.match(module, /export const studioPageActions = projection\.pageActions/);
@@ -347,7 +362,12 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
 test('active title and path edits drive the map, the page records and the commands', async t => {
   const options = await fixture(t);
   await run(options);
-  await editPinned(options, 'page.designer-themes', record => { record.title = 'Visual design'; record.path = '/designer/design'; });
+  // A page title is a Writer key: a literal title in the page record is refused, never shown.
+  await editPinned(options, 'page.designer-themes', record => { record.title = 'Visual design'; });
+  await assert.rejects(run(options, { check: true }), /designer-themes title is a literal "Visual design"; it must be a Writer key/);
+  // A title edit is a Writer edit; a path edit is a page-record edit.
+  await editPinned(options, 'page.designer-themes', record => { record.title = 'studio.page.designer-themes'; record.path = '/designer/design'; });
+  await editWriterPinned(options, 'strings.page-titles', text => text.replace('"studio.page.designer-themes","bindings":[]} -->\nThemes\n', '"studio.page.designer-themes","bindings":[]} -->\nVisual design\n'));
   await assert.rejects(run(options, { check: true }), /drift/i);
   const changed = await run(options);
   assert.deepEqual(changed.routes.find(row => row.instanceId === 'designer-themes'), installedEntry('designer-themes', '/designer/design', 'Visual design', false));
@@ -408,7 +428,7 @@ test('a slot with no pin, a tampered candidate, or an item with no trusted refer
   await editCandidate(options, 'sections.studio.history', item => { item.meta.source = { kind: 'composition', ref: [], parts: [] }; });
   await assert.rejects(run(options), /must declare its stock parts/);
   await editCandidate(options, 'sections.studio.history', item => { item.meta.source = { kind: 'composition', ref: [], parts: [{ slot: 'sections.studio.home', files: ['index.tsx'] }] }; });
-  await assert.rejects(run(options), /not pinned with registry \(stock\) lineage/);
+  await assert.rejects(run(options), /not pinned with registry or npm \(stock\) lineage/);
   await rm(join(slot.dir, 'pin.json'));
   await assert.rejects(run(options), /no pin/);
 });
@@ -465,12 +485,15 @@ test('checkManifest names what a manifest lacks', () => {
 test('Studio runs exactly the pinned payload: code that drifts from the pinned candidate fails', async t => {
   const options = await fixture(t);
   await run(options);
+  // The build installs the pinned payload; --check only compares, so a re-pinned candidate the Studio
+  // folder does not run fails there (and the check never writes the drifted code into Studio).
+  const version = Number(/-v([1-9][0-9]*)\.json$/.exec((await pinnedDesignerSlot(options, 'sections.studio.checks')).pin.candidate)[1]);
   await editCandidate(options, 'sections.studio.checks', item => {
     const file = item.files.find(entry => entry.path === 'index.tsx');
     assert.ok(file.content.includes('<Card size="sm" {...provenance}>'));
     file.content = file.content.replace('<Card size="sm" {...provenance}>', '<Card size="sm" {...provenance} data-drifted="">');
   });
-  await assert.rejects(run(options), /index.tsx differs from studio-checks v3 as pinned/);
+  await assert.rejects(run(options, { check: true }), new RegExp(`index\\.tsx differs from studio-checks v${version} as pinned`));
 });
 
 test('stale generated products and unexpected files fail closed', async t => {
@@ -501,7 +524,7 @@ test('a missing native page pin rejects despite intact legacy stores', async t =
 
 test('selected candidate hash drift rejects despite intact legacy stores', async t => {
   const options = await fixture(t), record = await selected(options, 'page.designer-themes');
-  await replace(record.path, '"title": "Themes"', '"title": "Tampered"');
+  await replace(record.path, '"title": "studio.page.designer-themes"', '"title": "studio.page.tampered"');
   await assert.rejects(run(options), /hash drift/);
 });
 
@@ -518,5 +541,5 @@ test('Foundry pinned Publisher inventory exposes the Studio publication and its 
   assert.equal(map.publicationId, 'studio');
   assert.equal(routePack.packId, 'studio');
   assert.deepEqual(map.entries.filter(entry => entry.kind === 'page').map(entry => entry.id), PAGE_NAMES);
-  assert.deepEqual(map.entries.filter(entry => entry.kind === 'group').map(entry => entry.id), ['director', 'designer', 'writer', 'publisher']);
+  assert.deepEqual(map.entries.filter(entry => entry.kind === 'group').map(entry => entry.id), ['content', 'director', 'designer', 'writer', 'publisher', 'build', 'run']);
 });

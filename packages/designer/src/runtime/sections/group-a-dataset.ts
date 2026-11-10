@@ -12,7 +12,6 @@ import type { CompositeResolved } from "../../catalog-core/types.js";
 import { runtimeHash, type RuntimeContent, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeJson, type RuntimeRenderInput, type RuntimeSourceClosure } from "../../catalog-core/runtime-ports.js";
 import { specimenDataset as data } from "../../studio/specimen-dataset.js";
 import { heroCopyFromDataset, HERO_SPECIMEN_BACKDROP, HERO_PREVIEW_MEMBERS } from "../../studio/hero-specimen.js";
-import { featuresSpecimenContent } from "../../studio/features-specimens.js";
 import { plainJson } from "./dataset-json.js";
 
 export const GROUP_A_LEAVES = ["article", "band", "call-to-action", "comparison", "content", "faq", "features", "gallery", "hero", "logo-cloud", "media", "newsletter", "people", "pricing", "testimonials"] as const;
@@ -29,7 +28,18 @@ const markMedia = (title: string) => ({ kind: "mark", src: data.assets.mark.src,
  * the shared asset and chart records.
  */
 export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string, RuntimeJson>>>> = {
-  article: { body: [{ kind: "heading", id: "article-introduction", text: S.articleBody.heading }, { kind: "paragraph", text: S.articleBody.body }, { kind: "pull-quote", text: S.articleBody.body, items: [S.articleBody.heading] }, { kind: "heading", id: "article-notes", text: S.tableOfContents.label }, { kind: "footnote-reference", id: "article-reference-1", noteId: "article-note-1", text: "1" }, { kind: "footnotes", text: S.tableOfContents.label, items: [S.articleBody.body], references: [{ id: "article-note-1", referenceId: "article-reference-1" }] }], toc: { label: S.tableOfContents.label, items: [{ id: "article-introduction", label: S.articleBody.heading }, { id: "article-notes", label: S.tableOfContents.label }] } },
+  article: (() => {
+    const A = S.articleBody, anchor = A.anchors;
+    return {
+      body: plainJson([
+        { kind: "heading", id: anchor.introduction, text: A.heading }, { kind: "paragraph", text: A.body },
+        { kind: "pull-quote", text: A.body, items: [A.heading] }, { kind: "heading", id: anchor.notes, text: S.tableOfContents.label },
+        { kind: "footnote-reference", id: anchor.reference, noteId: anchor.note, text: A.referenceMark },
+        { kind: "footnotes", text: S.tableOfContents.label, items: [A.body], references: [{ id: anchor.note, referenceId: anchor.reference }] },
+      ]),
+      toc: { label: S.tableOfContents.label, items: [{ id: anchor.introduction, label: A.heading }, { id: anchor.notes, label: S.tableOfContents.label }] },
+    };
+  })(),
   band: {},
   "call-to-action": {
     header: { eyebrow: S.callToAction.eyebrow, title: S.callToAction.title, description: S.callToAction.description },
@@ -49,7 +59,7 @@ export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string
     footnote: data.popover.content,
   },
   faq: { items: plainJson(S.faq.items) },
-  features: featuresSpecimenContent,
+  features: { header: { heading: S.featureGrid.heading }, items: plainJson(S.featureGrid.items) },
   gallery: { images: { label: S.gallery.label, items: S.gallery.images.map(image => ({ id: image.id, label: image.label, media: markMedia(image.label), caption: image.caption })) } },
   hero: {
     backdrop: plainJson(HERO_SPECIMEN_BACKDROP),

@@ -8,13 +8,16 @@ import { agentRoot } from "./cells.js";
 import { pinnedBrand, type ConsumerBrand } from "./consumer-brand.js";
 import { specimenSubstrate } from "./specimen-substrate.js";
 import { isAbsent, isModuleAbsent } from "../errors.js";
+import { studioTheme } from "./theme.js";
 
 /**
- * The consumer's Designer output (`clossys/agents/designer/globals.css`) is a stock
- * shadcn/Tailwind v4 stylesheet. Studio applies it as authored: Producer compiles it
- * with Tailwind, keeping its variables, base layer and the font/radius utilities its
- * theme redefines, and serves the font files its imports name from the consumer's
- * own installed packages. No consumer value is copied into Producer.
+ * The consumer's Designer output is its compiled theme (the pinned `themes.*` tokens as
+ * stock shadcn variables, `studioTheme`) after any authored stock shadcn/Tailwind v4
+ * stylesheet (`clossys/agents/designer/globals.css`). Studio applies it as compiled:
+ * Producer compiles it with Tailwind, keeping its variables, base layer and the
+ * font/radius utilities its theme redefines, and serves the font files its imports name
+ * from the consumer's own installed packages. The compiled theme comes last, so it owns
+ * the tokens; no consumer value is copied into Producer or into a Studio stylesheet.
  *
  * Fonts follow the theme pipeline: each pinned `registry:font` item (`themes.font-*`) adds
  * its font package's stylesheet and sets its own variable (`font.variable`) in the theme,
@@ -78,11 +81,11 @@ function withPinnedFonts(source: string, fonts: readonly PinnedFont[]): string {
 
 let cached: { key: string; value: ConsumerGlobals } | undefined;
 
-/** Compile the consumer's Designer globals. Undefined when the consumer has none. */
-export async function consumerGlobals(root: string): Promise<ConsumerGlobals | undefined> {
+/** Compile the consumer's Designer globals: any authored globals, then the compiled consumer theme. */
+export async function consumerGlobals(root: string): Promise<ConsumerGlobals> {
   const designer = agentRoot(root, "designer");
   const authored = readAgentFile(join(root, "clossys"), "designer", "globals.css");
-  if (authored === undefined) return undefined;
+  const theme = await studioTheme(root);
   const pinned = pinnedFonts(root);
   // Packages resolve from the consumer workspace that owns the Designer output, then from the specimen substrate.
   const consumerRequire = createRequire(join(root, "clossys", "package.json"));
@@ -94,7 +97,9 @@ export async function consumerGlobals(root: string): Promise<ConsumerGlobals | u
   };
   // A pinned font only joins once its package resolves somewhere, so the cache key tracks that too.
   const available = pinned.filter(font => { try { resolvePackage(font.dependency); return true; } catch { return false; } });
-  const source = withPinnedFonts(authored, available);
+  // With no authored globals the compiled theme still needs the utility engine for its font/radius utilities.
+  const head = authored ?? '@import "tailwindcss";\n';
+  const source = withPinnedFonts(`${head}\n/* Compiled consumer theme (${theme.source}, ${theme.hash}). */\n${theme.css}`, available);
   const key = createHash("sha256").update(root).update("\0").update(source).digest("hex");
   if (cached?.key === key) return cached.value;
   const fonts = new Map<string, string>();
@@ -135,7 +140,7 @@ export async function consumerGlobals(root: string): Promise<ConsumerGlobals | u
 /** A font file named by the consumer globals' own imports, confined to its package. */
 export async function consumerFontFile(root: string, path: string): Promise<{ body: Buffer; type: string } | undefined> {
   const globals = await consumerGlobals(root);
-  if (!globals || !path.startsWith(DESIGNER_FONT_PREFIX)) return undefined;
+  if (!path.startsWith(DESIGNER_FONT_PREFIX)) return undefined;
   const rest = path.slice(DESIGNER_FONT_PREFIX.length);
   const name = [...globals.fonts.keys()].find(entry => rest.startsWith(`${entry}/`));
   if (!name) return undefined;

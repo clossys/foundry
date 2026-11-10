@@ -45,7 +45,7 @@ export function TaskList({ items, statusLabels, progressText, emptyState, classN
         {icon ? <SemanticContent as="div">{icon}</SemanticContent> : null}
         <SectionHeader title={title} description={description} actions={action} level={2} />
       </SemanticContent> : <>
-        <Meter value={doneCount} scaleMax={items.length} tone="accent" valueText={progressText} role="meter" aria-label={progressText} aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={items.length} aria-valuetext={progressText} />
+        <Meter value={doneCount} scaleMax={items.length} tone="accent" valueText={progressText} label={progressText} role="meter" aria-label={progressText} aria-valuemin={0} aria-valuenow={doneCount} aria-valuemax={items.length} aria-valuetext={progressText} />
         <ol>
           {items.map((item, index) => {
             if (item.href !== undefined) assertNoNestedInteractive("TaskList", item.id, [item.title, item.description, item.meta]);

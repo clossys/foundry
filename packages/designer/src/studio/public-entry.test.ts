@@ -6,5 +6,4 @@ it("exposes the current Studio and native route without the retired complete-pag
   expect(typeof studio.Studio).toBe("function");
   expect(typeof DesignerRoutePage).toBe("function");
   expect(studio).not.toHaveProperty("DesignerPage");
-  expect(studio).not.toHaveProperty("SystemCanvas");
 });

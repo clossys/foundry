@@ -12,7 +12,11 @@ type Values = Readonly<Record<string, string | number | boolean>>;
 
 /** One Writer key's text from `consumer` (`<root>/clossys`); empty when the consumer pins no Writer copy for it. */
 export function writerText(consumer: string, id: string, values?: Values): string {
-  try { return writerCopy(consumer).text(id, values); } catch { return ""; }
+  try { return writerCopy(consumer).text(id, values); } catch (error) {
+    // The person still gets no literal; the operator is told why the Writer text is missing.
+    console.warn(`Producer: Writer text ${id} is unavailable`, error);
+    return "";
+  }
 }
 
 /** A plain-text response whose body is one Writer key's text. */

@@ -368,6 +368,12 @@ async function captureShot(browser, contextId, origin, job, outDir) {
   const consoleErrors = [];
   const failed = [];
   const inflight = new Map();
+  // Frame navigations by request: an isolated frame's own session can report its finish before
+  // that session is enabled, and a frame removed mid-navigation may report neither finish nor
+  // failure. So a navigation also leaves the inflight set when its frame's own document is
+  // complete, or when its frame is removed from the document (it can never finish).
+  const navigations = new Map();
+  const retireFrame = frameId => { for (const [id, frame] of navigations) if (frame === frameId) { navigations.delete(id); inflight.delete(id); } };
   let lastActivity = Date.now();
   let loaded = false;
   // A sandboxed opaque iframe runs out of process, as its own target: the page session sees its
@@ -380,7 +386,7 @@ async function captureShot(browser, contextId, origin, job, outDir) {
   const probeErrors = [];
   const unobserved = (child, step) => error => { if (children.has(child)) probeErrors.push(`${step} ${children.get(child).url || child}: ${error?.message ?? error}`); };
   const attachChild = async (child, info) => {
-    children.set(child, { url: info?.url ?? "", type: info?.type ?? "" });
+    children.set(child, { url: info?.url ?? "", type: info?.type ?? "", targetId: info?.targetId ?? "" });
     browser.on(child, listener);
     const sendChild = (method, params) => browser.send(method, params, child);
     try {
@@ -389,23 +395,28 @@ async function captureShot(browser, contextId, origin, job, outDir) {
     finally { await sendChild("Runtime.runIfWaitingForDebugger").catch(unobserved(child, "resume")); }
   };
   const paintProbe = `(${framePaint.toString()})()`;
-  const probeChildren = async () => (await Promise.all([...children].filter(([, info]) => info.type === "iframe").map(([child]) =>
-    browser.send("Runtime.evaluate", { expression: paintProbe, returnByValue: true }, child).then(result => result.result?.value, () => undefined)))).filter(Boolean);
+  const probeChildren = async () => (await Promise.all([...children].filter(([, info]) => info.type === "iframe").map(([child, info]) =>
+    browser.send("Runtime.evaluate", { expression: paintProbe, returnByValue: true }, child).then(result => result.result?.value && { ...result.result.value, targetId: info.targetId }, () => undefined)))).filter(Boolean);
+  // An isolated frame's target id is its frame id: a frame whose own document is complete has finished its navigation.
+  const retireNavigations = painted => {
+    for (const frame of painted) if (frame.readyState === "complete" && frame.targetId) retireFrame(frame.targetId);
+  };
   function listener(method, params) {
     if (method === "Target.attachedToTarget") { attachChild(params.sessionId, params.targetInfo).catch(unobserved(params.sessionId, "attach")); return; }
     if (method === "Target.detachedFromTarget") { browser.off(params.sessionId); children.delete(params.sessionId); return; }
+    if (method === "Page.frameDetached") { if (params.reason === "remove") retireFrame(params.frameId); return; }
     if (method === "Runtime.consoleAPICalled" && params.type === "error") consoleErrors.push(params.args.map(arg => arg.value ?? arg.description ?? "").join(" "));
     else if (method === "Runtime.exceptionThrown") consoleErrors.push(params.exceptionDetails?.exception?.description ?? params.exceptionDetails?.text ?? "exception");
     else if (method === "Log.entryAdded" && params.entry.level === "error" && params.entry.source !== "console-api") consoleErrors.push(`${params.entry.source}: ${params.entry.text} ${params.entry.url ?? ""}`.trim());
     // A long-lived event stream never finishes, so it is not part of network idle.
     else if (method === "Network.requestWillBeSent" && params.type === "EventSource") return;
-    else if (method === "Network.requestWillBeSent") { inflight.set(params.requestId, params.request.url); lastActivity = Date.now(); }
+    else if (method === "Network.requestWillBeSent") { inflight.set(params.requestId, params.request.url); if (params.type === "Document" && params.frameId) navigations.set(params.requestId, params.frameId); lastActivity = Date.now(); }
     else if (method === "Network.responseReceived") {
       if (params.response.status >= 400) failed.push({ url: params.response.url, status: params.response.status });
-    } else if (method === "Network.loadingFinished") { inflight.delete(params.requestId); lastActivity = Date.now(); }
+    } else if (method === "Network.loadingFinished") { inflight.delete(params.requestId); navigations.delete(params.requestId); lastActivity = Date.now(); }
     else if (method === "Network.loadingFailed") {
       const url = inflight.get(params.requestId);
-      inflight.delete(params.requestId); lastActivity = Date.now();
+      inflight.delete(params.requestId); navigations.delete(params.requestId); lastActivity = Date.now();
       // A request the page itself cancelled (navigation, aborted prefetch) is not a failed load.
       if (!params.canceled) failed.push({ url: url ?? params.requestId, errorText: params.errorText });
     } else if (method === "Page.loadEventFired") loaded = true;
@@ -426,14 +437,16 @@ async function captureShot(browser, contextId, origin, job, outDir) {
       if (loaded) {
         await send("Runtime.evaluate", { expression: eager });
         const result = await send("Runtime.evaluate", { expression: probe, returnByValue: true, awaitPromise: false });
-        facts = mergeFramePaint(result.result?.value, await probeChildren(), origin + job.path);
+        const painted = await probeChildren();
+        retireNavigations(painted);
+        facts = mergeFramePaint(result.result?.value, painted, origin + job.path);
         const idle = inflight.size === 0 && Date.now() - lastActivity >= IDLE_MS;
         if (facts && idle && isSettled(facts)) {
           await send("Runtime.evaluate", { expression: "document.fonts.ready.then(() => true)", awaitPromise: true });
           break;
         }
       }
-      if (Date.now() > deadline) { timedOut = `not settled after ${job.timeoutMs}ms (inflight ${inflight.size}, load ${loaded})`; break; }
+      if (Date.now() > deadline) { timedOut = `not settled after ${job.timeoutMs}ms (inflight ${inflight.size}${inflight.size ? `: ${[...inflight.values()].slice(0, 3).join(", ")}` : ""}, load ${loaded})`; break; }
       await new Promise(next => setTimeout(next, 100));
     }
     const metrics = await send("Page.getLayoutMetrics");

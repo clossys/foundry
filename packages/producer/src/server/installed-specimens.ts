@@ -189,7 +189,8 @@ async function buildPass(options: { library: string; substrate: string; pins: In
   await mkdir(pagesDir, { recursive: true });
   await mkdir(join(substrate, "components"), { recursive: true });
   await writeFile(join(substrate, "components", SPECIMEN_DOCUMENT), await specimenDocument());
-  const source = libraryRecordSource({ roots: [library] });
+  // One Writer snapshot for the pass: a Writer scan per candidate load held the server's event loop for minutes.
+  const source = libraryRecordSource({ roots: [library], writerCopy: pinnedWriterCopy(library) });
   const runner = shadcnRunner();
   const include = Object.keys(pins).filter(slot => slot.startsWith("themes.")).sort();
   const findings: InstallFinding[] = [];

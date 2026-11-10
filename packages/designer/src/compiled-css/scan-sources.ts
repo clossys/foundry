@@ -1,13 +1,15 @@
 /**
- * Class candidates for `styles/compiled.css` — components, blocks, shell, canonical Frames, and public Studio.
+ * Class candidates for `styles/compiled.css` — components, blocks, shell, canonical Frames, public Studio,
+ * and the surface runtime Studio renders sections and frames through.
  * Pre-auth pages mount Hero and shell chrome; limiting the scan to components
- * left those classes Tailwind-only and unstyled on the default CSS path.
+ * left those classes Tailwind-only and unstyled on the default CSS path. The
+ * list matches the source roots the rendered-class-rules gate (PROC-3) measures.
  */
 
 import { join } from "node:path";
 import { scanClassCandidates, type ClassScanResult } from "./class-scan.js";
 
-export const COMPILED_CSS_SOURCE_DIRS = ["components", "blocks", "shell", "frames", "studio"] as const;
+export const COMPILED_CSS_SOURCE_DIRS = ["components", "blocks", "shell", "frames", "runtime", "studio"] as const;
 
 export interface CompiledCssScanResult extends ClassScanResult {
   /** Per-directory file counts for reporting. */

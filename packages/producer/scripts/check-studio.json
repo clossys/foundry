@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "//": "Sub-checks of `npm run check:studio` (packages/producer). Each runs in its cwd (repository-relative) under /bin/sh with STUDIO_ORIGIN (default http://127.0.0.1:4617) and STUDIO_CHECK_OUT (a fresh temp directory) set. kind: static = a rule over the checked-in tree; test = a test suite; live = a rendered check against the Studio at STUDIO_ORIGIN; browser = a browser proof on its own fixture server. scripts/check-orphan-checks.mjs reads this file to trace what check:studio reaches.",
+  "//": "Sub-checks of `npm run check:studio` (packages/producer). Each runs in its cwd (repository-relative) under /bin/sh with STUDIO_ORIGIN (default http://127.0.0.1:4503, the single preview port) and STUDIO_CHECK_OUT (a fresh temp directory) set. kind: static = a rule over the checked-in tree; test = a test suite; live = a rendered check against the Studio at STUDIO_ORIGIN; browser = a browser proof on its own fixture server. scripts/check-orphan-checks.mjs reads this file to trace what check:studio reaches.",
   "checks": [
     {
       "id": "producer check:studio-map",
@@ -108,6 +108,12 @@
       "id": "producer scripts/build-studio.test.mjs",
       "cwd": "packages/producer",
       "run": "node --test scripts/build-studio.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/check-studio-origin.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/check-studio-origin.test.mjs",
       "kind": "test"
     },
     {
@@ -282,7 +288,8 @@
       "id": "producer check-copy-rendered (live)",
       "cwd": "packages/producer",
       "run": "node studio/checks/check-copy-rendered.mjs \"$STUDIO_ORIGIN\" --json \"$STUDIO_CHECK_OUT/copy-rendered.json\"",
-      "kind": "live"
+      "kind": "live",
+      "timeout": "copy-routes"
     },
     {
       "id": "producer studio-dom-check (live)",
@@ -468,7 +475,7 @@
     {
       "id": "designer check-fill-source-imports",
       "cwd": "packages/designer",
-      "run": "node scripts/check-fill-source-imports.mjs",
+      "run": "R=$(git rev-parse --show-toplevel) && H=$(git rev-parse HEAD) && O=\".clossys/check-inputs/check-studio-$H-$$\" && node ../producer/scripts/emit-studio-check-inputs.mjs --root \"$R\" --source-head \"$H\" --out \"$O\" && NODE_OPTIONS=--max-old-space-size=4096 node scripts/check-fill-source-imports.mjs --site \"$R\" --library \"$R/$O/library\" --contract \"$R/$O/site/consumer-dogfood.json\" --source-head \"$H\"",
       "kind": "static"
     },
     {
@@ -550,6 +557,12 @@
       "kind": "test"
     },
     {
+      "id": "designer scripts/ref-verbatim/flavor.test.mjs",
+      "cwd": "packages/designer",
+      "run": "node --test scripts/ref-verbatim/flavor.test.mjs",
+      "kind": "test"
+    },
+    {
       "id": "designer scripts/sections-frames-source.test.mjs",
       "cwd": "packages/designer",
       "run": "node --test scripts/sections-frames-source.test.mjs",
@@ -596,6 +609,12 @@
       "cwd": "packages/designer",
       "run": "npx vitest run --config vitest.ui.config.ts",
       "kind": "test"
+    },
+    {
+      "id": "producer p0-propagate (own Studio)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/p0-propagate.mjs --own-studio --evidence-dir \"$STUDIO_CHECK_OUT/propagation\"",
+      "kind": "browser"
     }
   ]
 }

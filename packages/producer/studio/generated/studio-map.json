@@ -535,7 +535,7 @@
         "order": 0,
         "title": "Overview",
         "kind": "page",
-        "path": "/build",
+        "path": "/build-overview",
         "source": {
           "frameId": "frames.studio-shell",
           "sectionIds": [
@@ -6070,7 +6070,7 @@
     },
     {
       "id": "build-overview",
-      "path": "/build",
+      "path": "/build-overview",
       "title": "Overview",
       "frameId": "frames.studio-shell",
       "sectionIds": [
@@ -27821,8 +27821,8 @@
     "writer-narratives": "/writer/narratives/web",
     "publisher": "/publisher/studio/pages",
     "publisher-studio": "/publisher/studio/pages",
-    "build": "/build",
-    "build-overview": "/build",
+    "build": "/build-overview",
+    "build-overview": "/build-overview",
     "run": "/run",
     "run-overview": "/run",
     "director-context.market": "/director/context/market",
@@ -28247,12 +28247,12 @@
       {
         "id": "build",
         "label": "Build",
-        "href": "/build"
+        "href": "/build-overview"
       },
       {
         "id": "build-overview",
         "label": "Overview",
-        "href": "/build"
+        "href": "/build-overview"
       }
     ],
     "run-overview": [
@@ -46072,7 +46072,7 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 20
+      "version": 21
     },
     {
       "slot": "sections.studio.page-header",
@@ -46097,7 +46097,7 @@
     {
       "slot": "sections.producer.team-strip",
       "element": "producer-team-strip",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.producer.pipeline-legend",
@@ -46107,7 +46107,7 @@
     {
       "slot": "sections.producer.pipeline-flow",
       "element": "producer-pipeline-flow",
-      "version": 12
+      "version": 13
     },
     {
       "slot": "sections.studio.page-tabs",
@@ -46469,10 +46469,10 @@
     },
     {
       "instanceId": "build-overview",
-      "path": "/build",
+      "path": "/build-overview",
       "label": "Overview",
       "entry": {
-        "file": "studio/app/build/page.tsx",
+        "file": "studio/app/build-overview/page.tsx",
         "export": "default"
       }
     },
