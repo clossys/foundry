@@ -5,6 +5,7 @@ import { Button } from "../components/preview-runtime/components/button/button.j
 import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 import { containedDialog, containedToaster } from "./component-specimen-contained.js";
+import { isSpecimenLeafKey, mediaPlayerSample, specimenLeafSample, type ComponentSpecimenHost } from "./component-specimen-leaf-samples.js";
 
 type Renderable = ComponentType<Record<string, unknown>>;
 type Namespace = Readonly<Record<string, unknown>>;
@@ -390,8 +391,11 @@ export const componentSpecimenStockOverlays: Readonly<Record<string, string>> = 
   "./components#Menu": "components/menu/dropdown-menu.tsx#DropdownMenu",
 };
 
-export function componentSpecimenSample(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
+export function componentSpecimenSample(key: string, Component: unknown, exports: Namespace, host: ComponentSpecimenHost = {}): ComponentSpecimenSample | undefined {
   if (!key.startsWith("./")) return sourceSample(key, exports);
+  // A specimen leaf draws a whole specimen section; its dataset entry is the recipe for the section's items.
+  if (isSpecimenLeafKey(key)) return specimenLeafSample(key, host, componentSpecimenProps[key] as Parameters<typeof specimenLeafSample>[2]);
+  if (key === "./components#MediaPlayer") return mediaPlayerSample(host);
   if (Object.hasOwn(componentSpecimenStockOverlays, key)) return sourceSample(componentSpecimenStockOverlays[key]!, exports);
   // The package Select, Switch, RadioGroup, Calendar, ComboBox and Slider are the stock shadcn@aria modules, drawn with their own barrel-exported parts.
   if (Object.hasOwn(componentSpecimenStockAnatomy, key)) return sourceSample(componentSpecimenStockAnatomy[key]!, exports);

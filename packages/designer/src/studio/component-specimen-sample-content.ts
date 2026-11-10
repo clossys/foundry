@@ -11,6 +11,16 @@ import { specimenDataset as d } from "./specimen-dataset.js";
 /** Props objects for components whose whole input is data. */
 export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   "./components#Avatar": d.avatar,
+  // Recipes, not props: component-specimen-leaf-samples.tsx resolves each against the cell's selection (planner:R2F-48).
+  "./components#SpecimenSwatch": d.specimenLeaves.swatch,
+  "./components#SpecimenLadder": d.specimenLeaves.ladder,
+  "./components#SpecimenPlayer": d.specimenLeaves.player,
+  "./components#SpecimenGrid": d.specimenLeaves.grid,
+  "./components#SpecimenMatrix": d.specimenLeaves.matrix,
+  "./components#SpecimenViewport": d.specimenLeaves.viewport,
+  "./components#SpecimenPassage": d.specimenLeaves.passage,
+  "./components#SpecimenCopyInContext": d.specimenLeaves.copy,
+  "./components#MediaPlayer": d.mediaPlayer,
   "./components#Alert": d.banner,
   "./components#DateField": d.dates.field,
   "./components#Icon": d.icon,

@@ -251,6 +251,24 @@ const taskList: TaskListProps = {
   ],
 };
 
+/**
+ * Writer snapshot (planner:R2F-48): the exact draft records the specimens below draw, copied from
+ * packages/writer/src/catalog/records/site.en.json and keyed by record id. Writer owns this copy;
+ * specimen-writer-snapshot.test.ts fails when a record's text or context drifts from the catalogue.
+ */
+const writerSnapshot = {
+  "st.7mpayr0001": { context: "Inline media player title", text: "Example Co. overview" },
+  "st.7mpayr0002": { context: "Inline media player play", text: "Play video" },
+  "st.7mpayr0003": { context: "Inline media player pause", text: "Pause video" },
+  "st.7mpayr0004": { context: "Inline media player mute", text: "Mute sound" },
+  "st.7mpayr0005": { context: "Inline media player seek", text: "Playback position" },
+  "st.7mpayr0006": { context: "Inline media player captions", text: "Captions" },
+  "st.7mpayr0007": { context: "Inline media player load failure heading", text: "Video unavailable" },
+  "st.7mpayr0008": { context: "Inline media player load failure description", text: "This video could not load. Try again later." },
+} as const;
+const writerText = (id: keyof typeof writerSnapshot) => writerSnapshot[id].text;
+const releaseNotes = "### Release notes\n\nThe dashboard now shows order status at a glance.\n\n- Faster search\n- Clearer empty states";
+
 const commandGroups: readonly CommandMenuGroup[] = [
   { id: "go", label: "Go to", items: [{ id: "projects", label: "Open projects", href: "#projects" }, { id: "settings", label: "Open settings", href: "#settings" }] },
   { id: "create", label: "Create", items: [{ id: "new-project", label: "New project", shortcutHint: "N", href: "#new-project" }] },
@@ -678,7 +696,7 @@ export const specimenDataset = {
   separator: { orientation: "horizontal" as const },
   semantic: { as: "p" as const },
   /** A short read-only document: heading, paragraph and list, so the rich-text surface draws its own prose styles. */
-  richText: { value: "### Release notes\n\nThe dashboard now shows order status at a glance.\n\n- Faster search\n- Clearer empty states", readOnly: true },
+  richText: { value: releaseNotes, readOnly: true },
   semanticMedia: {
     image: { src: `data:image/svg+xml,${encodeURIComponent(brandMark)}`, alt: brandName, width: 32, height: 32 },
     source: { srcSet: `data:image/svg+xml,${encodeURIComponent(brandMark)} 32w`, type: "image/svg+xml" },
@@ -709,6 +727,31 @@ export const specimenDataset = {
       steps: [{ id: "in", label: "Added", value: int(10, 40) }, { id: "out", label: "Removed", value: -int(5, 25) }], end: { label: "Closing" },
       labels: { table: "Show values", category: "Stage", value: "Amount" },
     },
+  },
+  writer: writerSnapshot,
+  /** The inline player: resolved assets.video and assets.image members, and the Writer passage fields. */
+  mediaPlayer: {
+    video: { slot: "assets.video" },
+    poster: { slot: "assets.image" },
+    passage: {
+      title: writerText("st.7mpayr0001"), play: writerText("st.7mpayr0002"), pause: writerText("st.7mpayr0003"),
+      mute: writerText("st.7mpayr0004"), seek: writerText("st.7mpayr0005"), captions: writerText("st.7mpayr0006"),
+      error: { title: writerText("st.7mpayr0007"), description: writerText("st.7mpayr0008") },
+    },
+  },
+  /**
+   * What each components.specimen-* leaf shows, by variant: the selected member, component or surface it
+   * specimens. The leaf sample resolves these against the cell's selection (component-specimen-leaf-samples.tsx).
+   */
+  specimenLeaves: {
+    swatch: { swatch: { kind: "token", leaf: "themes.primary" }, "color-ramp": { kind: "ramp", leaf: "themes.primary" } },
+    ladder: { type: { kind: "token", leaf: "themes.tracking-tight" }, spacing: { kind: "token", leaf: "themes.spacing" }, radius: { kind: "token", leaf: "themes.radius" } },
+    player: { default: { kind: "token", leaf: "themes.animate-marquee" } },
+    grid: { asset: { kind: "token", leaf: "assets.mark" }, icon: { kind: "token", leaf: "assets.icon-close" } },
+    matrix: { default: { kind: "component", leaf: "components.badge" } },
+    viewport: { section: { kind: "surface", leaf: "sections.content" }, frame: { kind: "surface", leaf: "frames.auth-shell" } },
+    passage: { default: { kind: "items", items: [{ id: "release-notes", label: "Release notes", value: { passage: releaseNotes } }] } },
+    copy: { default: { kind: "items", items: [{ id: "st.7mpayr0002", label: writerSnapshot["st.7mpayr0002"].context, value: { role: "cta", text: writerText("st.7mpayr0002"), context: writerSnapshot["st.7mpayr0002"].context, locale: "en", dir: "ltr" } }] } },
   },
 } as const;
 
