@@ -1,0 +1,66 @@
+{
+  "schema": "clossys.action/1",
+  "id": "pipeline",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.check",
+  "summary": "Report pipeline status (read-only) and the step graph built from the action registry.",
+  "run": "clossys pipeline graph --out <file>",
+  "inputs": [
+    {
+      "glob": "clossys/agents/producer/*/candidates/*",
+      "schema": "seat"
+    },
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    },
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "pkg:pipeline/graph.json",
+      "schema": "pipeline-graph"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:pipeline -- npm run check:pipeline",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "pipeline",
+    "step-standard",
+    "pipeline-wiring"
+  ],
+  "uses": []
+}

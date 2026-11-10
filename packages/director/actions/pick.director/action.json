@@ -1,0 +1,63 @@
+{
+  "schema": "clossys.action/1",
+  "id": "pick.director",
+  "agent": "director",
+  "kind": "decide:judgment",
+  "stage": "direct.pin",
+  "summary": "A judge seat picks one of a Director slot's options (pin basis agent); Studio shows confirm until the owner pins.",
+  "run": "clossys pick director/<slot> <candidate-id> --by agent:<seat>",
+  "inputs": [
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    },
+    {
+      "glob": "clossys/agents/director/*/slot.json",
+      "schema": "slot"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/director/*/pin.json#basis",
+      "schema": "pin"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:slot-options -- node ../producer/scripts/check-slot-options.mjs",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "decisions",
+    "slot-options"
+  ],
+  "uses": [],
+  "decider": "agent",
+  "packet": {
+    "inputs": [
+      "clossys/agents/director/*/candidates/*",
+      "clossys/agents/director/*/slot.json"
+    ],
+    "write": [
+      {
+        "glob": "clossys/agents/director/*/pin.json#basis",
+        "schema": "pin"
+      }
+    ],
+    "checks": [
+      "slot-options",
+      "decisions"
+    ]
+  },
+  "skill": "skill.md"
+}

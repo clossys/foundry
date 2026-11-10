@@ -1,0 +1,64 @@
+{
+  "schema": "clossys.action/1",
+  "id": "studio.produce",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.publish",
+  "summary": "Serve the local Studio over the live slot model (no compile step).",
+  "run": "clossys produce",
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    },
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    },
+    {
+      "glob": "pkg:pipeline/graph.json",
+      "schema": "pipeline-graph"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys pipeline trace check:studio-p0 -- npm run studio:check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "studio-p0",
+    "one-brand"
+  ],
+  "uses": []
+}

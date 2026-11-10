@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.action/1",
+  "id": "designer.brief",
+  "agent": "designer",
+  "kind": "plumb",
+  "stage": "design.brief",
+  "summary": "Print the Designer derivation brief (read-only).",
+  "run": "clossys design --brief",
+  "inputs": [
+    {
+      "glob": "clossys/agents/director/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys design --brief",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": []
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.action/1",
+  "id": "director.check",
+  "agent": "director",
+  "kind": "plumb",
+  "stage": "publish.check",
+  "summary": "Read-only Director check over pinned Director slots.",
+  "run": "clossys direct",
+  "inputs": [
+    {
+      "glob": "clossys/agents/director/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys direct",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": []
+}

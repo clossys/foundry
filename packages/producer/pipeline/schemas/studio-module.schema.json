@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/studio-module.schema.json",
+  "title": "Generated Studio module (studio/generated/*.ts)",
+  "description": "A TypeScript module scripts/generate-studio-map.mjs writes; validated as text: it opens with the generated header.",
+  "x-format": "text",
+  "type": "string",
+  "pattern": "^// Generated"
+}

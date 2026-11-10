@@ -1,0 +1,60 @@
+{
+  "schema": "clossys.action/1",
+  "id": "writer.approve",
+  "agent": "owner",
+  "kind": "decide:judgment",
+  "stage": "design.pin",
+  "summary": "Owner approves Writer copy keys (status approved).",
+  "gap": {
+    "unit": "W6a",
+    "reason": "no clossys verb records a Writer key approval yet; the owner sets the key status"
+  },
+  "inputs": [
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/writer/*/candidates/*#status",
+      "schema": "candidate-strings"
+    }
+  ],
+  "pass": {
+    "command": "clossys check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": [],
+  "decider": "owner",
+  "packet": {
+    "inputs": [
+      "clossys/agents/writer/*/candidates/*"
+    ],
+    "write": [
+      {
+        "glob": "clossys/agents/writer/*/candidates/*#status",
+        "schema": "candidate-strings"
+      }
+    ],
+    "checks": [
+      "workspace"
+    ]
+  },
+  "skill": "skill.md",
+  "open": "writer-keys-unapproved"
+}

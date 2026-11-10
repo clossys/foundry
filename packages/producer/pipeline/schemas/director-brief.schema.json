@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/director-brief.schema.json",
+  "title": "Director brief (evidence/director/briefs/*.json)",
+  "description": "A compiled per-contract brief (contract, state, fingerprint, cells, missing, stale, compiledAt) or the briefs index (schemaVersion 1, briefs); written by packages/director/src/write/brief.ts through `clossys director check brief`.",
+  "type": "object",
+  "oneOf": [
+    {
+      "required": [
+        "schemaVersion",
+        "generatedAt",
+        "briefs"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "briefs": {
+          "type": "array"
+        }
+      }
+    },
+    {
+      "required": [
+        "contract",
+        "state",
+        "fingerprint",
+        "cells",
+        "missing",
+        "stale",
+        "compiledAt"
+      ],
+      "properties": {
+        "contract": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "enum": [
+            "ready",
+            "missing",
+            "stale"
+          ]
+        },
+        "cells": {
+          "type": "array"
+        }
+      }
+    }
+  ]
+}

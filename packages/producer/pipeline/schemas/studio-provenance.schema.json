@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/studio-provenance.schema.json",
+  "title": "Studio provenance (studio/generated/studio-provenance.json)",
+  "description": "Per slot, the pinned candidate and hash the rendered Studio carries as data attributes.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": [
+      "data-clossys-slot",
+      "data-clossys-candidate",
+      "data-clossys-hash"
+    ],
+    "properties": {
+      "data-clossys-slot": {
+        "type": "string",
+        "minLength": 1
+      },
+      "data-clossys-candidate": {
+        "type": "string",
+        "minLength": 1
+      },
+      "data-clossys-hash": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    }
+  }
+}

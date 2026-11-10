@@ -1,0 +1,40 @@
+{
+  "schema": "clossys.action/1",
+  "id": "capture",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.check",
+  "summary": "Capture every Studio route as screenshots and a contact sheet.",
+  "run": "clossys pipeline trace capture -- npm run capture:studio",
+  "inputs": [
+    {
+      "glob": "pkg:studio/generated/studio-map.json",
+      "schema": "studio-map"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "arg:--out",
+      "schema": "studio-screenshots"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:studio-capture -- npm run check:studio-capture",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "studio-capture"
+  ],
+  "uses": []
+}

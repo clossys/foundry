@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.action/1",
+  "id": "decisions",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.check",
+  "summary": "List every slot's decision state: pinned, not needed or open (read-only).",
+  "run": "clossys decisions",
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys pipeline trace check:decisions -- node ../../scripts/check-decisions.mjs",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "decisions"
+  ],
+  "uses": []
+}

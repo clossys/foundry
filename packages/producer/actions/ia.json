@@ -1,0 +1,75 @@
+{
+  "schema": "clossys.actions-ia/1",
+  "nodes": [
+    {
+      "id": "producer",
+      "children": [
+        {
+          "id": "publish.assemble",
+          "actions": [
+            "compile",
+            "options",
+            "specimen",
+            "migrate",
+            "derive.uses",
+            "studio.map",
+            "specimen.evidence",
+            "studio.compose"
+          ]
+        },
+        {
+          "id": "publish.check",
+          "actions": [
+            "workspace.check",
+            "decisions",
+            "pipeline",
+            "build.receipt",
+            "studio.checks",
+            "capture"
+          ]
+        },
+        {
+          "id": "publish.publish",
+          "actions": [
+            "studio.produce"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "owner",
+      "children": [
+        {
+          "id": "direct.brief",
+          "actions": [
+            "ia",
+            "evidence",
+            "workspace.config",
+            "seats",
+            "rules"
+          ]
+        },
+        {
+          "id": "direct.pin",
+          "actions": [
+            "pin.director"
+          ]
+        },
+        {
+          "id": "design.pin",
+          "actions": [
+            "writer.approve",
+            "pin.designer",
+            "pin.writer"
+          ]
+        },
+        {
+          "id": "publish.pin",
+          "actions": [
+            "pin.publisher"
+          ]
+        }
+      ]
+    }
+  ]
+}

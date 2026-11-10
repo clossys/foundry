@@ -2,7 +2,10 @@ import { defineCheck } from "../define.js";
 
 /** Every check script and npm check the producer runs; check:pipeline fails on one not declared here. */
 export const CHECKS = [
-  defineCheck({ id: "pipeline", files: ["scripts/check-pipeline.mjs"], npm: ["check:pipeline", "test:pipeline"], rootNpm: ["check:pipeline"] }),
+  defineCheck({ id: "pipeline", files: ["scripts/check-pipeline.mjs"], npm: ["check:pipeline", "test:pipeline", "generate:pipeline-graph"], rootNpm: ["check:pipeline"] }),
+  defineCheck({ id: "step-standard", files: ["scripts/check-step-standard.mjs"], npm: ["check:step-standard", "test:step-standard", "generate:pipeline-actions"], rootNpm: ["check:step-standard"] }),
+  // W1b's wiring check (`clossys pipeline check`): every node's run records and seats read through readSeats.
+  defineCheck({ id: "pipeline-wiring", command: "clossys pipeline check", pending: { branch: "claude/w1b-pipeline-wiring" } }),
   defineCheck({ id: "workspace", cli: "check" }),
   defineCheck({ id: "assemble-only", files: ["scripts/check-assemble-only.mjs"], npm: ["check:assemble-only", "test:assemble-only"] }),
   defineCheck({ id: "routes-published", files: ["scripts/check-routes-published.mjs"], npm: ["check:routes-published"] }),

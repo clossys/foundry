@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.action/1",
+  "id": "studio.compose",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.assemble",
+  "summary": "Compose the actual Studio runtime for the Studio checks.",
+  "run": "clossys pipeline trace studio.compose -- npm run studio:compose",
+  "inputs": [
+    {
+      "glob": "clossys/agents/designer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys pipeline trace check:studio-compose -- npm run studio:compose",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "studio-compose"
+  ],
+  "uses": []
+}

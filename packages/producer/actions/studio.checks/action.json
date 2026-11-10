@@ -1,0 +1,61 @@
+{
+  "schema": "clossys.action/1",
+  "id": "studio.checks",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.check",
+  "summary": "Studio render, routing, assembly and propagation checks.",
+  "run": "clossys pipeline trace studio.checks -- npm run studio:check",
+  "inputs": [
+    {
+      "glob": "pkg:studio/generated/studio-map.json",
+      "schema": "studio-map"
+    },
+    {
+      "glob": "pkg:studio/generated/assembly-bindings.ts",
+      "schema": "studio-module"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "arg:--screenshots",
+      "schema": "studio-screenshots"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:studio-p0 -- npm run studio:check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "studio-p0",
+    "studio-mutations",
+    "studio-propagate",
+    "studio-dom",
+    "studio-modules",
+    "publisher-preview",
+    "theme-parity",
+    "no-handrolling",
+    "no-page-jsx",
+    "studio-template",
+    "assemble-only",
+    "routes-published",
+    "route-parity",
+    "copy-source",
+    "copy-rendered",
+    "rendered-provenance",
+    "no-hidden-fallbacks",
+    "studio"
+  ],
+  "uses": []
+}

@@ -1,0 +1,415 @@
+{
+  "schema": "clossys.action-manifest/1",
+  "agents": {
+    "designer": {
+      "packages": [
+        "designer"
+      ],
+      "steps": [
+        "designer.brief",
+        "designer.candidates",
+        "pick.designer",
+        "designer.compile",
+        "designer.check"
+      ],
+      "verbs": [
+        "design",
+        "pick"
+      ],
+      "commands": [],
+      "skills": [
+        "packages/designer/actions/designer.candidates/skill.md",
+        "packages/designer/actions/pick.designer/skill.md",
+        "packages/designer/skill/SKILL.md",
+        "packages/designer/skill/check-codes.md",
+        "packages/designer/skill/components-guide.md",
+        "packages/designer/skill/director-brief.md",
+        "packages/designer/skill/library-commands.md",
+        "packages/designer/skill/library-needs.md"
+      ],
+      "code": [
+        "packages/producer/src/cli/design.ts#runDesign",
+        "packages/producer/src/cli/options.ts",
+        "packages/producer/src/cli/options.ts#runPickCli",
+        "packages/producer/src/records/slot-write.ts#writeCandidate",
+        "packages/producer/src/specimen/catalog-materialization.ts#materializeCatalogCandidate"
+      ],
+      "exceptions": [
+        {
+          "package": "designer",
+          "item": "bin:designer-library",
+          "unit": "W4",
+          "reason": "The Designer library CLI (adopt, choose, emit); its modes are not yet steps."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-section-check",
+          "unit": "W4",
+          "reason": "Section token check; not yet a step of the Designer round."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-provenance-check",
+          "unit": "W4",
+          "reason": "Provenance check; not yet a step of the Designer round."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-ref-verbatim",
+          "unit": "W4",
+          "reason": "Reference-verbatim check; not yet a step of the Designer round."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-overflow-check",
+          "unit": "W2",
+          "reason": "Published-page overflow probe; belongs to the Publisher check stage."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-token-check",
+          "unit": "W7",
+          "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-brand-check",
+          "unit": "W7",
+          "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-contrast-check",
+          "unit": "W7",
+          "reason": "Package self-check (root check:contrast runs its build); whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-environment-check",
+          "unit": "W7",
+          "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-fold-check",
+          "unit": "W7",
+          "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-type-check",
+          "unit": "W7",
+          "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "designer",
+          "item": "bin:designer-rate-check",
+          "unit": "W7",
+          "reason": "Conformance-rate tool over a caller-supplied assessment; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "designer",
+          "item": "skill/library-check.md",
+          "unit": "W4",
+          "reason": "Library check guide reached only through library-emit.md; not part of the candidates skill path."
+        },
+        {
+          "package": "designer",
+          "item": "skill/library-choose.md",
+          "unit": "W4",
+          "reason": "Library choose guide for the designer-library CLI; not part of the candidates skill path."
+        },
+        {
+          "package": "designer",
+          "item": "skill/library-studio.md",
+          "unit": "W4",
+          "reason": "Library Studio guide for the designer-library CLI; not part of the candidates skill path."
+        },
+        {
+          "package": "designer",
+          "item": "skill/library-emit.md",
+          "unit": "W4",
+          "reason": "Library emit guide for the designer-library CLI; not part of the candidates skill path."
+        }
+      ]
+    },
+    "director": {
+      "packages": [
+        "director"
+      ],
+      "steps": [
+        "director.candidates",
+        "pick.director",
+        "director.store",
+        "director.check"
+      ],
+      "verbs": [
+        "direct",
+        "director",
+        "pick"
+      ],
+      "commands": [
+        "director-rate-check"
+      ],
+      "skills": [
+        "packages/director/actions/director.candidates/skill.md",
+        "packages/director/actions/pick.director/skill.md",
+        "packages/director/skill/SKILL.md",
+        "packages/director/skill/templates/cell.md"
+      ],
+      "code": [
+        "packages/producer/src/cli/direct.ts#runDirect",
+        "packages/producer/src/cli/director.ts",
+        "packages/producer/src/cli/director.ts#runDirectorVerb",
+        "packages/producer/src/cli/options.ts",
+        "packages/producer/src/cli/options.ts#runPickCli",
+        "packages/producer/src/records/slot-write.ts#writeCandidate"
+      ],
+      "exceptions": [
+        {
+          "package": "director",
+          "item": "docs/v2/skill/SKILL.md",
+          "unit": "W5a",
+          "reason": "The v2 interview skill draft; it replaces skill/SKILL.md only when the interview ships."
+        }
+      ]
+    },
+    "owner": {
+      "packages": [
+        "producer"
+      ],
+      "steps": [
+        "ia",
+        "evidence",
+        "workspace.config",
+        "seats",
+        "rules",
+        "pin.director",
+        "writer.approve",
+        "pin.designer",
+        "pin.writer",
+        "pin.publisher"
+      ],
+      "verbs": [
+        "pin"
+      ],
+      "commands": [],
+      "skills": [
+        "packages/producer/actions/evidence/skill.md",
+        "packages/producer/actions/ia/skill.md",
+        "packages/producer/actions/pin.designer/skill.md",
+        "packages/producer/actions/pin.director/skill.md",
+        "packages/producer/actions/pin.publisher/skill.md",
+        "packages/producer/actions/pin.writer/skill.md",
+        "packages/producer/actions/rules/skill.md",
+        "packages/producer/actions/seats/skill.md",
+        "packages/producer/actions/workspace.config/skill.md",
+        "packages/producer/actions/writer.approve/skill.md"
+      ],
+      "code": [
+        "packages/producer/src/cli/pin.ts",
+        "packages/producer/src/cli/pin.ts#runPinCli"
+      ],
+      "exceptions": []
+    },
+    "producer": {
+      "packages": [
+        "producer"
+      ],
+      "steps": [
+        "compile",
+        "options",
+        "specimen",
+        "migrate",
+        "derive.uses",
+        "studio.map",
+        "specimen.evidence",
+        "studio.compose",
+        "workspace.check",
+        "decisions",
+        "pipeline",
+        "build.receipt",
+        "studio.checks",
+        "capture",
+        "studio.produce"
+      ],
+      "verbs": [
+        "check",
+        "compile",
+        "decisions",
+        "migrate",
+        "options",
+        "pipeline",
+        "produce",
+        "specimen"
+      ],
+      "commands": [
+        "node scripts/check-generated-derived.mjs --write",
+        "node scripts/generate-page-check-receipt.mjs",
+        "npm run capture:studio",
+        "npm run generate:specimen-evidence",
+        "npm run generate:studio-map",
+        "npm run studio:check",
+        "npm run studio:compose"
+      ],
+      "skills": [],
+      "code": [
+        "packages/designer/scripts/generate-specimen-surface-evidence.mjs",
+        "packages/producer/scripts/capture-studio.mjs",
+        "packages/producer/scripts/check-generated-derived.mjs",
+        "packages/producer/scripts/compose-studio.mjs",
+        "packages/producer/scripts/generate-page-check-receipt.mjs",
+        "packages/producer/scripts/generate-studio-map.mjs",
+        "packages/producer/src/cli/check.ts#runCheck",
+        "packages/producer/src/cli/compile.ts",
+        "packages/producer/src/cli/compile.ts#runCompileCli",
+        "packages/producer/src/cli/migrate.ts",
+        "packages/producer/src/cli/migrate.ts#runMigrateCli",
+        "packages/producer/src/cli/options.ts",
+        "packages/producer/src/cli/options.ts#runOptionsCli",
+        "packages/producer/src/cli/pin.ts",
+        "packages/producer/src/cli/pin.ts#runDecisionsCli",
+        "packages/producer/src/cli/pipeline.ts",
+        "packages/producer/src/cli/pipeline.ts#runPipelineCli",
+        "packages/producer/src/cli/produce.ts#runProduce",
+        "packages/producer/src/cli/specimen.ts",
+        "packages/producer/src/cli/specimen.ts#runSpecimenCli",
+        "packages/producer/studio/checks/p0-studio-check.cjs"
+      ],
+      "exceptions": [
+        {
+          "package": "producer",
+          "item": "skill/SKILL.md",
+          "unit": "W6a",
+          "reason": "A stale CLI scaffold note; the chain runner's skill replaces it."
+        }
+      ]
+    },
+    "publisher": {
+      "packages": [
+        "publisher"
+      ],
+      "steps": [
+        "publisher.candidates",
+        "pick.publisher",
+        "publish.page",
+        "publish.install"
+      ],
+      "verbs": [
+        "pick",
+        "publish"
+      ],
+      "commands": [],
+      "skills": [
+        "packages/publisher/actions/pick.publisher/skill.md",
+        "packages/publisher/actions/publisher.candidates/skill.md",
+        "packages/publisher/skill/SKILL.md"
+      ],
+      "code": [
+        "packages/producer/src/cli/options.ts",
+        "packages/producer/src/cli/options.ts#runPickCli",
+        "packages/producer/src/cli/publish.ts#runPublish",
+        "packages/producer/src/cli/publish.ts#runPublishCheck",
+        "packages/producer/src/records/slot-write.ts#writeCandidate"
+      ],
+      "exceptions": [
+        {
+          "package": "publisher",
+          "item": "bin:publisher-web-route-check",
+          "unit": "W2",
+          "reason": "Web route check; part of the Publisher contract work."
+        },
+        {
+          "package": "publisher",
+          "item": "bin:publisher-registered-route-check",
+          "unit": "W2",
+          "reason": "Registered route check; part of the Publisher contract work."
+        },
+        {
+          "package": "publisher",
+          "item": "bin:publisher-media-check",
+          "unit": "W7",
+          "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "publisher",
+          "item": "bin:publisher-record-check",
+          "unit": "W7",
+          "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "publisher",
+          "item": "bin:publisher-rate-check",
+          "unit": "W7",
+          "reason": "Verified-publication rate tool; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "publisher",
+          "item": "bin:publisher-preview",
+          "unit": "W7",
+          "reason": "Standalone preview tool; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "publisher",
+          "item": "bin:publisher-seal",
+          "unit": "W7",
+          "reason": "Pack seal tool; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "publisher",
+          "item": "bin:publisher-head-lint",
+          "unit": "W7",
+          "reason": "Pack head lint; whether it is a pipeline step is an owner decision."
+        },
+        {
+          "package": "publisher",
+          "item": "bin:publisher-site-instantiate",
+          "unit": "W7",
+          "reason": "Site template instantiation tool; whether it is a pipeline step is an owner decision."
+        }
+      ]
+    },
+    "writer": {
+      "packages": [
+        "writer"
+      ],
+      "steps": [
+        "writer.brief",
+        "writer.candidates",
+        "pick.writer",
+        "writer.compile",
+        "writer.check"
+      ],
+      "verbs": [
+        "pick",
+        "write"
+      ],
+      "commands": [],
+      "skills": [
+        "packages/writer/actions/pick.writer/skill.md",
+        "packages/writer/actions/writer.candidates/skill.md",
+        "packages/writer/skill/SKILL.md"
+      ],
+      "code": [
+        "packages/producer/src/cli/options.ts",
+        "packages/producer/src/cli/options.ts#runPickCli",
+        "packages/producer/src/cli/write.ts#runWrite",
+        "packages/producer/src/records/slot-write.ts#writeCandidate"
+      ],
+      "exceptions": [
+        {
+          "package": "writer",
+          "item": "bin:writer-check",
+          "unit": "W3",
+          "reason": "Writer's own copy check; Studio section copy binding through Writer slots makes it a step."
+        },
+        {
+          "package": "writer",
+          "item": "bin:writer-rate-check",
+          "unit": "W7",
+          "reason": "Approved-copy coverage rate tool; whether it is a pipeline step is an owner decision."
+        }
+      ]
+    }
+  }
+}

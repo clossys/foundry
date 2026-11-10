@@ -1,0 +1,93 @@
+{
+  "schema": "clossys.action/1",
+  "id": "studio.map",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.assemble",
+  "summary": "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
+  "run": "clossys pipeline trace studio.map -- npm run generate:studio-map",
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    },
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "pkg:studio/generated/studio-map.json",
+      "schema": "studio-map"
+    },
+    {
+      "glob": "pkg:studio/generated/studio-copy.json",
+      "schema": "studio-copy"
+    },
+    {
+      "glob": "pkg:studio/generated/studio-map.ts",
+      "schema": "studio-module"
+    },
+    {
+      "glob": "pkg:studio/generated/assembly-bindings.ts",
+      "schema": "studio-module"
+    },
+    {
+      "glob": "pkg:studio/generated/studio-icons.ts",
+      "schema": "studio-module"
+    },
+    {
+      "glob": "pkg:studio/generated/studio-provenance.json",
+      "schema": "studio-provenance"
+    },
+    {
+      "glob": "pkg:studio/generated/studio-brand.json",
+      "schema": "studio-brand"
+    },
+    {
+      "glob": "pkg:studio/generated/studio-flow-theme.css",
+      "schema": "studio-flow-theme"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:studio-map -- npm run check:studio-map",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "studio-map",
+    "studio-routes"
+  ],
+  "uses": []
+}

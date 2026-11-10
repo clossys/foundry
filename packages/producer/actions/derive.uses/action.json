@@ -1,0 +1,60 @@
+{
+  "schema": "clossys.action/1",
+  "id": "derive.uses",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.assemble",
+  "summary": "Derive each slot's uses list from pinned candidates, and the consumer's shadcn flavor from the Designer config.",
+  "run": "clossys pipeline trace derive.uses -- node scripts/check-generated-derived.mjs --write",
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    },
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/*/*/slot.json#uses",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/components.json",
+      "schema": "components-config"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:generated-derived -- npm run check:generated-derived",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "generated-derived"
+  ],
+  "uses": []
+}

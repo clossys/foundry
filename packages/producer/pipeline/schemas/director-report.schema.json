@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/director-report.schema.json",
+  "title": "Director report (evidence/director/reports/*.json)",
+  "description": "A capability report or citations.json, written by packages/director (cli/reports.ts, citations/cli.ts) through `clossys director check`.",
+  "type": "object"
+}

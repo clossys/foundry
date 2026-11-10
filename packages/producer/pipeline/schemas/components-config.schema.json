@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/components-config.schema.json",
+  "title": "shadcn components config (clossys/components.json)",
+  "description": "The consumer's shadcn flavor, derived from the Designer config by scripts/check-generated-derived.mjs.",
+  "type": "object",
+  "required": [
+    "$schema",
+    "style",
+    "tailwind",
+    "aliases"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://ui.shadcn.com/schema.json"
+    },
+    "style": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tailwind": {
+      "type": "object"
+    },
+    "aliases": {
+      "type": "object"
+    }
+  }
+}

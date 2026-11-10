@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/agent-projection.schema.json",
+  "title": "Agent projection (--out of clossys design / clossys write)",
+  "description": "The pinned Designer or Writer set, or its derivation brief, as one JSON document (emitProjection in src/cli/design.ts and write.ts).",
+  "type": "object"
+}

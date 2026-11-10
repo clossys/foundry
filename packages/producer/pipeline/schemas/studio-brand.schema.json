@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/studio-brand.schema.json",
+  "title": "Studio brand (studio/generated/studio-brand.json)",
+  "description": "The consumer brand (name, pinned asset sources and file hashes) the Studio shell reads.",
+  "type": "object",
+  "required": [
+    "name",
+    "sources",
+    "files"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sources": {
+      "type": "object"
+    },
+    "files": {
+      "type": "object"
+    }
+  }
+}

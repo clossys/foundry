@@ -1,0 +1,64 @@
+{
+  "schema": "clossys.action/1",
+  "id": "specimen",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.assemble",
+  "summary": "Serve or snapshot a library element specimen.",
+  "run": "clossys specimen <command>",
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/designer/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/designer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    },
+    {
+      "glob": "clossys/agents/writer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "node_modules/.cache/clossys/specimen-thumbs/**",
+      "schema": "specimen-thumbnail"
+    },
+    {
+      "glob": "arg:--out",
+      "schema": "specimen-thumbnail"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:studio-dom -- node studio/checks/studio-dom-check.mjs",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "studio-dom"
+  ],
+  "uses": []
+}

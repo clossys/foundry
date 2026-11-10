@@ -1,0 +1,52 @@
+{
+  "schema": "clossys.action/1",
+  "id": "workspace.config",
+  "agent": "owner",
+  "kind": "decide:judgment",
+  "stage": "direct.brief",
+  "summary": "The workspace marker and config the CLI discovers.",
+  "gap": {
+    "unit": "W6a",
+    "reason": "no clossys verb writes the workspace config yet"
+  },
+  "inputs": [],
+  "outputs": [
+    {
+      "glob": "clossys/clossys.config.ts",
+      "schema": "workspace-config"
+    }
+  ],
+  "pass": {
+    "command": "clossys check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": [],
+  "decider": "owner",
+  "packet": {
+    "inputs": [],
+    "write": [
+      {
+        "glob": "clossys/clossys.config.ts",
+        "schema": "workspace-config"
+      }
+    ],
+    "checks": [
+      "workspace"
+    ]
+  },
+  "skill": "skill.md"
+}

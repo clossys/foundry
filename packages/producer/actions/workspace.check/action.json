@@ -1,0 +1,70 @@
+{
+  "schema": "clossys.action/1",
+  "id": "workspace.check",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.check",
+  "summary": "Slot model, page and record-suite checks over the workspace.",
+  "run": "clossys check",
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    },
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    },
+    {
+      "glob": "pkg:dist/check/source-receipt.json",
+      "schema": "source-receipt"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "arg:--report",
+      "schema": "check-report"
+    }
+  ],
+  "pass": {
+    "command": "clossys check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace",
+    "slot-pins",
+    "cli-verbs"
+  ],
+  "uses": []
+}

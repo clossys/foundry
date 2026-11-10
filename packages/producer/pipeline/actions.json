@@ -1,0 +1,2724 @@
+{
+  "schema": "clossys.pipeline-actions/1",
+  "actions": [
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/ia/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "ia",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "direct.brief",
+        "summary": "Place every L3 slot: the agent IA tree and each slot's contract.",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb records an IA placement or a slot contract yet; the owner edits ia.json and slot.json"
+        },
+        "inputs": [],
+        "outputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [],
+          "write": [
+            {
+              "glob": "clossys/agents/*/ia.json",
+              "schema": "ia"
+            },
+            {
+              "glob": "clossys/agents/*/*/slot.json",
+              "schema": "slot"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "slots-without-slot-json"
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/evidence/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "evidence",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "direct.brief",
+        "summary": "Owner answers and director findings the Director cites.",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb records an owner answer as evidence yet; answers are written as evidence files"
+        },
+        "inputs": [],
+        "outputs": [
+          {
+            "glob": "clossys/evidence/director/*.md",
+            "schema": "director-evidence"
+          },
+          {
+            "glob": "clossys/evidence/director/findings/*.md",
+            "schema": "director-evidence"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:pipeline -- npm run check:pipeline",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "pipeline",
+          "workspace"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [],
+          "write": [
+            {
+              "glob": "clossys/evidence/director/*.md",
+              "schema": "director-evidence"
+            },
+            {
+              "glob": "clossys/evidence/director/findings/*.md",
+              "schema": "director-evidence"
+            }
+          ],
+          "checks": [
+            "pipeline"
+          ]
+        },
+        "skill": "skill.md"
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/workspace.config/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "workspace.config",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "direct.brief",
+        "summary": "The workspace marker and config the CLI discovers.",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb writes the workspace config yet"
+        },
+        "inputs": [],
+        "outputs": [
+          {
+            "glob": "clossys/clossys.config.ts",
+            "schema": "workspace-config"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [],
+          "write": [
+            {
+              "glob": "clossys/clossys.config.ts",
+              "schema": "workspace-config"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md"
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/seats/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "seats",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "direct.brief",
+        "summary": "Who decides each decide step: an llm seat, a human seat, or both.",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb assigns a seat yet; the owner writes a seat candidate and pins it"
+        },
+        "inputs": [],
+        "outputs": [
+          {
+            "glob": "clossys/agents/producer/*/candidates/*",
+            "schema": "seat"
+          },
+          {
+            "glob": "clossys/agents/producer/*/pin.json",
+            "schema": "pin"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:pipeline -- npm run check:pipeline",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "pipeline"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [],
+          "write": [
+            {
+              "glob": "clossys/agents/producer/*/candidates/*",
+              "schema": "seat"
+            },
+            {
+              "glob": "clossys/agents/producer/*/pin.json",
+              "schema": "pin"
+            }
+          ],
+          "checks": [
+            "pipeline"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "seats-open"
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/rules/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "rules",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "direct.brief",
+        "summary": "Rule registry rows and gate yes/no.",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb records a rule row or a gate decision yet"
+        },
+        "inputs": [],
+        "outputs": [
+          {
+            "glob": "scripts/rules/registry.json",
+            "schema": "rule-registry"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:rules -- node ../../scripts/check-rules.mjs",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "rules"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [],
+          "write": [
+            {
+              "glob": "scripts/rules/registry.json",
+              "schema": "rule-registry"
+            }
+          ],
+          "checks": [
+            "rules"
+          ]
+        },
+        "skill": "skill.md"
+      }
+    },
+    {
+      "package": "director",
+      "path": "packages/director/actions/director.candidates/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "director.candidates",
+        "agent": "director",
+        "kind": "decide:creative",
+        "stage": "direct.make",
+        "summary": "Create Director candidates: one immutable file per option, per L3 slot.",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
+        },
+        "inputs": [
+          {
+            "glob": "clossys/evidence/director/*.md",
+            "schema": "director-evidence"
+          },
+          {
+            "glob": "clossys/evidence/director/findings/*.md",
+            "schema": "director-evidence"
+          },
+          {
+            "glob": "clossys/agents/director/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [
+          "skill/SKILL.md",
+          "skill/templates/cell.md"
+        ],
+        "decider": "agent",
+        "packet": {
+          "inputs": [
+            "clossys/evidence/director/*.md",
+            "clossys/evidence/director/findings/*.md",
+            "clossys/agents/director/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/director/*/candidates/*",
+              "schema": "candidate-brief"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "slots-without-candidates:director"
+      }
+    },
+    {
+      "package": "director",
+      "path": "packages/director/actions/pick.director/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "pick.director",
+        "agent": "director",
+        "kind": "decide:judgment",
+        "stage": "direct.pin",
+        "summary": "A judge seat picks one of a Director slot's options (pin basis agent); Studio shows confirm until the owner pins.",
+        "run": "clossys pick director/<slot> <candidate-id> --by agent:<seat>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/director/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/director/*/pin.json#basis",
+            "schema": "pin"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:slot-options -- node ../producer/scripts/check-slot-options.mjs",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "decisions",
+          "slot-options"
+        ],
+        "uses": [],
+        "decider": "agent",
+        "packet": {
+          "inputs": [
+            "clossys/agents/director/*/candidates/*",
+            "clossys/agents/director/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/director/*/pin.json#basis",
+              "schema": "pin"
+            }
+          ],
+          "checks": [
+            "slot-options",
+            "decisions"
+          ]
+        },
+        "skill": "skill.md"
+      }
+    },
+    {
+      "package": "director",
+      "path": "packages/director/actions/director.store/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "director.store",
+        "agent": "director",
+        "kind": "plumb",
+        "stage": "direct.pin",
+        "summary": "Director's own store commands (clossys director check, rate-check) through the slot-model reader and writer.",
+        "run": "clossys director check <command>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/director/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/director/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/evidence/director/*.md",
+            "schema": "director-evidence"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/evidence/director/briefs/*.json",
+            "schema": "director-brief"
+          },
+          {
+            "glob": "clossys/evidence/director/reports/*.json",
+            "schema": "director-report"
+          }
+        ],
+        "pass": {
+          "command": "clossys direct",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [
+          "bin:director-rate-check"
+        ]
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/pin.director/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "pin.director",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "direct.pin",
+        "summary": "Pin one candidate per Director L3 slot, or mark the slot not needed.",
+        "run": "clossys pin director/<slot> <candidate-id>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/director/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/slot.json#notNeeded",
+            "schema": "slot"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:slot-pins -- npm run check:slot-pins",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "decisions",
+          "slot-state",
+          "slot-pins",
+          "pin-propagation",
+          "every-candidate-previewable"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [
+            "clossys/agents/director/*/candidates/*",
+            "clossys/agents/director/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/director/*/pin.json",
+              "schema": "pin"
+            },
+            {
+              "glob": "clossys/agents/director/*/slot.json#notNeeded",
+              "schema": "slot"
+            }
+          ],
+          "checks": [
+            "slot-pins",
+            "decisions"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "slots-undecided:director"
+      }
+    },
+    {
+      "package": "designer",
+      "path": "packages/designer/actions/designer.brief/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "designer.brief",
+        "agent": "designer",
+        "kind": "plumb",
+        "stage": "design.brief",
+        "summary": "Print the Designer derivation brief (read-only).",
+        "run": "clossys design --brief",
+        "inputs": [
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys design --brief",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "writer",
+      "path": "packages/writer/actions/writer.brief/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "writer.brief",
+        "agent": "writer",
+        "kind": "plumb",
+        "stage": "design.brief",
+        "summary": "Print the Writer derivation brief (read-only).",
+        "run": "clossys write --brief",
+        "inputs": [
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys write --brief",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "designer",
+      "path": "packages/designer/actions/designer.candidates/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "designer.candidates",
+        "agent": "designer",
+        "kind": "decide:creative",
+        "stage": "design.make",
+        "summary": "Create Designer candidates: one immutable file per option, per L3 slot.",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
+        },
+        "inputs": [
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [
+          "skill/SKILL.md",
+          "skill/director-brief.md",
+          "skill/components-guide.md",
+          "skill/library-commands.md",
+          "skill/library-needs.md",
+          "skill/check-codes.md"
+        ],
+        "decider": "agent",
+        "packet": {
+          "inputs": [
+            "clossys/agents/director/*/pin.json",
+            "clossys/agents/director/*/candidates/*",
+            "clossys/agents/designer/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/designer/*/candidates/*",
+              "schema": "candidate-element"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "slots-without-candidates:designer"
+      }
+    },
+    {
+      "package": "writer",
+      "path": "packages/writer/actions/writer.candidates/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "writer.candidates",
+        "agent": "writer",
+        "kind": "decide:creative",
+        "stage": "design.make",
+        "summary": "Create Writer candidates: one immutable file per option, per L3 slot.",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
+        },
+        "inputs": [
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [
+          "skill/SKILL.md"
+        ],
+        "decider": "agent",
+        "packet": {
+          "inputs": [
+            "clossys/agents/director/*/pin.json",
+            "clossys/agents/director/*/candidates/*",
+            "clossys/agents/designer/*/candidates/*",
+            "clossys/agents/writer/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/writer/*/candidates/*",
+              "schema": "candidate-strings"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "slots-without-candidates:writer"
+      }
+    },
+    {
+      "package": "designer",
+      "path": "packages/designer/actions/pick.designer/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "pick.designer",
+        "agent": "designer",
+        "kind": "decide:judgment",
+        "stage": "design.pin",
+        "summary": "A judge seat picks one of a Designer slot's options (pin basis agent); Studio shows confirm until the owner pins.",
+        "run": "clossys pick designer/<slot> <candidate-id> --by agent:<seat>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/designer/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/designer/*/pin.json#basis",
+            "schema": "pin"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:slot-options -- node ../producer/scripts/check-slot-options.mjs",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "decisions",
+          "slot-options"
+        ],
+        "uses": [],
+        "decider": "agent",
+        "packet": {
+          "inputs": [
+            "clossys/agents/designer/*/candidates/*",
+            "clossys/agents/designer/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/designer/*/pin.json#basis",
+              "schema": "pin"
+            }
+          ],
+          "checks": [
+            "slot-options",
+            "decisions"
+          ]
+        },
+        "skill": "skill.md"
+      }
+    },
+    {
+      "package": "writer",
+      "path": "packages/writer/actions/pick.writer/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "pick.writer",
+        "agent": "writer",
+        "kind": "decide:judgment",
+        "stage": "design.pin",
+        "summary": "A judge seat picks one of a Writer slot's options (pin basis agent); Studio shows confirm until the owner pins.",
+        "run": "clossys pick writer/<slot> <candidate-id> --by agent:<seat>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/writer/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/writer/*/pin.json#basis",
+            "schema": "pin"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:slot-options -- node ../producer/scripts/check-slot-options.mjs",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "decisions",
+          "slot-options"
+        ],
+        "uses": [],
+        "decider": "agent",
+        "packet": {
+          "inputs": [
+            "clossys/agents/writer/*/candidates/*",
+            "clossys/agents/writer/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/writer/*/pin.json#basis",
+              "schema": "pin"
+            }
+          ],
+          "checks": [
+            "slot-options",
+            "decisions"
+          ]
+        },
+        "skill": "skill.md"
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/writer.approve/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "writer.approve",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "design.pin",
+        "summary": "Owner approves Writer copy keys (status approved).",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb records a Writer key approval yet; the owner sets the key status"
+        },
+        "inputs": [
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/writer/*/candidates/*#status",
+            "schema": "candidate-strings"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [
+            "clossys/agents/writer/*/candidates/*"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/writer/*/candidates/*#status",
+              "schema": "candidate-strings"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "writer-keys-unapproved"
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/pin.designer/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "pin.designer",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "design.pin",
+        "summary": "Pin one candidate per Designer L3 slot, or mark the slot not needed.",
+        "run": "clossys pin designer/<slot> <candidate-id>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/designer/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/designer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/designer/*/slot.json#notNeeded",
+            "schema": "slot"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:slot-pins -- npm run check:slot-pins",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "decisions",
+          "slot-state",
+          "slot-pins",
+          "pin-propagation",
+          "every-candidate-previewable"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [
+            "clossys/agents/designer/*/candidates/*",
+            "clossys/agents/designer/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/designer/*/pin.json",
+              "schema": "pin"
+            },
+            {
+              "glob": "clossys/agents/designer/*/slot.json#notNeeded",
+              "schema": "slot"
+            }
+          ],
+          "checks": [
+            "slot-pins",
+            "decisions"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "slots-undecided:designer"
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/pin.writer/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "pin.writer",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "design.pin",
+        "summary": "Pin one candidate per Writer L3 slot, or mark the slot not needed.",
+        "run": "clossys pin writer/<slot> <candidate-id>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/writer/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/writer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/writer/*/slot.json#notNeeded",
+            "schema": "slot"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:slot-pins -- npm run check:slot-pins",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "decisions",
+          "slot-state",
+          "slot-pins",
+          "pin-propagation",
+          "every-candidate-previewable"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [
+            "clossys/agents/writer/*/candidates/*",
+            "clossys/agents/writer/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/writer/*/pin.json",
+              "schema": "pin"
+            },
+            {
+              "glob": "clossys/agents/writer/*/slot.json#notNeeded",
+              "schema": "slot"
+            }
+          ],
+          "checks": [
+            "slot-pins",
+            "decisions"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "slots-undecided:writer"
+      }
+    },
+    {
+      "package": "publisher",
+      "path": "packages/publisher/actions/publisher.candidates/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "publisher.candidates",
+        "agent": "publisher",
+        "kind": "decide:creative",
+        "stage": "publish.make",
+        "summary": "Create Publisher candidates: one immutable file per option, per L3 slot.",
+        "gap": {
+          "unit": "W6a",
+          "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
+        },
+        "inputs": [
+          {
+            "glob": "clossys/agents/designer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [
+          "skill/SKILL.md"
+        ],
+        "decider": "agent",
+        "packet": {
+          "inputs": [
+            "clossys/agents/designer/*/pin.json",
+            "clossys/agents/designer/*/candidates/*",
+            "clossys/agents/writer/*/pin.json",
+            "clossys/agents/writer/*/candidates/*",
+            "clossys/agents/publisher/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/publisher/*/candidates/*",
+              "schema": "candidate-publisher"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "slots-without-candidates:publisher"
+      }
+    },
+    {
+      "package": "publisher",
+      "path": "packages/publisher/actions/pick.publisher/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "pick.publisher",
+        "agent": "publisher",
+        "kind": "decide:judgment",
+        "stage": "publish.pin",
+        "summary": "A judge seat picks one of a Publisher slot's options (pin basis agent); Studio shows confirm until the owner pins.",
+        "run": "clossys pick publisher/<slot> <candidate-id> --by agent:<seat>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/publisher/*/pin.json#basis",
+            "schema": "pin"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:slot-options -- node ../producer/scripts/check-slot-options.mjs",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "decisions",
+          "slot-options"
+        ],
+        "uses": [],
+        "decider": "agent",
+        "packet": {
+          "inputs": [
+            "clossys/agents/publisher/*/candidates/*",
+            "clossys/agents/publisher/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/publisher/*/pin.json#basis",
+              "schema": "pin"
+            }
+          ],
+          "checks": [
+            "slot-options",
+            "decisions"
+          ]
+        },
+        "skill": "skill.md"
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/pin.publisher/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "pin.publisher",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "publish.pin",
+        "summary": "Pin one candidate per Publisher L3 slot, or mark the slot not needed.",
+        "run": "clossys pin publisher/<slot> <candidate-id>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/publisher/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/slot.json#notNeeded",
+            "schema": "slot"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:slot-pins -- npm run check:slot-pins",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "decisions",
+          "slot-state",
+          "slot-pins",
+          "pin-propagation",
+          "every-candidate-previewable"
+        ],
+        "uses": [],
+        "decider": "owner",
+        "packet": {
+          "inputs": [
+            "clossys/agents/publisher/*/candidates/*",
+            "clossys/agents/publisher/*/slot.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/publisher/*/pin.json",
+              "schema": "pin"
+            },
+            {
+              "glob": "clossys/agents/publisher/*/slot.json#notNeeded",
+              "schema": "slot"
+            }
+          ],
+          "checks": [
+            "slot-pins",
+            "decisions"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "slots-undecided:publisher"
+      }
+    },
+    {
+      "package": "designer",
+      "path": "packages/designer/actions/designer.compile/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "designer.compile",
+        "agent": "designer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Print the pinned Designer projection (read-only; written only to --out).",
+        "run": "clossys design --out <file>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/designer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "arg:--out",
+            "schema": "agent-projection"
+          }
+        ],
+        "pass": {
+          "command": "clossys design --check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "writer",
+      "path": "packages/writer/actions/writer.compile/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "writer.compile",
+        "agent": "writer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Print the pinned Writer projection (read-only; written only to --out).",
+        "run": "clossys write --out <file>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/writer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "arg:--out",
+            "schema": "agent-projection"
+          }
+        ],
+        "pass": {
+          "command": "clossys write --check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/compile/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "compile",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Compile the Studio from decision files only into the compile lock.",
+        "run": "clossys compile",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "pkg:studio/compile.lock.json",
+            "schema": "compile-lock"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:compile-pure -- node scripts/check-compile-pure.mjs",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "compile-pure"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/options/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "options",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Candidate options: write slot.json options/varyOn from the class mapping, list a slot's options, or print the brief for fresh ones.",
+        "run": "clossys options --classes",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/*/*/slot.json#options",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json#varyOn",
+            "schema": "slot"
+          }
+        ],
+        "pass": {
+          "command": "clossys options --classes --check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "slot-options"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/specimen/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "specimen",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Serve or snapshot a library element specimen.",
+        "run": "clossys specimen <command>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/designer/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/designer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "node_modules/.cache/clossys/specimen-thumbs/**",
+            "schema": "specimen-thumbnail"
+          },
+          {
+            "glob": "arg:--out",
+            "schema": "specimen-thumbnail"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:studio-dom -- node studio/checks/studio-dom-check.mjs",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "studio-dom"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/migrate/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "migrate",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "One-shot codemod: migrate copy keys to port ids (--check reports only).",
+        "run": "clossys migrate copy-keys",
+        "inputs": [
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys migrate copy-keys --check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/derive.uses/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "derive.uses",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Derive each slot's uses list from pinned candidates, and the consumer's shadcn flavor from the Designer config.",
+        "run": "clossys pipeline trace derive.uses -- node scripts/check-generated-derived.mjs --write",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/*/*/slot.json#uses",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/components.json",
+            "schema": "components-config"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:generated-derived -- npm run check:generated-derived",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "generated-derived"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/studio.map/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "studio.map",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
+        "run": "clossys pipeline trace studio.map -- npm run generate:studio-map",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "pkg:studio/generated/studio-map.json",
+            "schema": "studio-map"
+          },
+          {
+            "glob": "pkg:studio/generated/studio-copy.json",
+            "schema": "studio-copy"
+          },
+          {
+            "glob": "pkg:studio/generated/studio-map.ts",
+            "schema": "studio-module"
+          },
+          {
+            "glob": "pkg:studio/generated/assembly-bindings.ts",
+            "schema": "studio-module"
+          },
+          {
+            "glob": "pkg:studio/generated/studio-icons.ts",
+            "schema": "studio-module"
+          },
+          {
+            "glob": "pkg:studio/generated/studio-provenance.json",
+            "schema": "studio-provenance"
+          },
+          {
+            "glob": "pkg:studio/generated/studio-brand.json",
+            "schema": "studio-brand"
+          },
+          {
+            "glob": "pkg:studio/generated/studio-flow-theme.css",
+            "schema": "studio-flow-theme"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:studio-map -- npm run check:studio-map",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "studio-map",
+          "studio-routes"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/specimen.evidence/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "specimen.evidence",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Measure every native specimen section with the installed build and write its compiler evidence.",
+        "run": "clossys pipeline trace specimen.evidence -- npm run generate:specimen-evidence",
+        "inputs": [
+          {
+            "glob": "clossys/agents/designer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "packages/designer/dist/catalog/native-specimen-evidence.json",
+            "schema": "specimen-evidence"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:specimen-evidence -- npm run check:specimen-evidence",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "specimen-evidence"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/studio.compose/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "studio.compose",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Compose the actual Studio runtime for the Studio checks.",
+        "run": "clossys pipeline trace studio.compose -- npm run studio:compose",
+        "inputs": [
+          {
+            "glob": "clossys/agents/designer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys pipeline trace check:studio-compose -- npm run studio:compose",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "studio-compose"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "director",
+      "path": "packages/director/actions/director.check/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "director.check",
+        "agent": "director",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "Read-only Director check over pinned Director slots.",
+        "run": "clossys direct",
+        "inputs": [
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys direct",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "designer",
+      "path": "packages/designer/actions/designer.check/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "designer.check",
+        "agent": "designer",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "Check Designer traceability (read-only).",
+        "run": "clossys design --check",
+        "inputs": [
+          {
+            "glob": "clossys/agents/designer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys design --check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "writer",
+      "path": "packages/writer/actions/writer.check/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "writer.check",
+        "agent": "writer",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "Check Writer traceability (read-only).",
+        "run": "clossys write --check",
+        "inputs": [
+          {
+            "glob": "clossys/agents/writer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/director/*/pin.json",
+            "schema": "pin"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys write --check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "publisher",
+      "path": "packages/publisher/actions/publish.page/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "publish.page",
+        "agent": "publisher",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "Bare publish: dry-run check of every pinned page against pinned Designer slots and Writer copy (read-only).",
+        "run": "clossys publish",
+        "inputs": [
+          {
+            "glob": "clossys/agents/publisher/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          },
+          {
+            "glob": "clossys/agents/designer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/writer/*/pin.json",
+            "schema": "pin"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys publish",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/workspace.check/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "workspace.check",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "Slot model, page and record-suite checks over the workspace.",
+        "run": "clossys check",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          },
+          {
+            "glob": "pkg:dist/check/source-receipt.json",
+            "schema": "source-receipt"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "arg:--report",
+            "schema": "check-report"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace",
+          "slot-pins",
+          "cli-verbs"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/decisions/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "decisions",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "List every slot's decision state: pinned, not needed or open (read-only).",
+        "run": "clossys decisions",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys pipeline trace check:decisions -- node ../../scripts/check-decisions.mjs",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "decisions"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/pipeline/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "pipeline",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "Report pipeline status (read-only) and the step graph built from the action registry.",
+        "run": "clossys pipeline graph --out <file>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/producer/*/candidates/*",
+            "schema": "seat"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "pkg:pipeline/graph.json",
+            "schema": "pipeline-graph"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:pipeline -- npm run check:pipeline",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "pipeline",
+          "step-standard",
+          "pipeline-wiring"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/build.receipt/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "build.receipt",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "Record the page-check source receipt in the build output.",
+        "run": "clossys pipeline trace build.receipt -- node scripts/generate-page-check-receipt.mjs",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          },
+          {
+            "glob": "pkg:studio/compile.lock.json",
+            "schema": "compile-lock"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "pkg:dist/check/source-receipt.json",
+            "schema": "source-receipt"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/studio.checks/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "studio.checks",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "Studio render, routing, assembly and propagation checks.",
+        "run": "clossys pipeline trace studio.checks -- npm run studio:check",
+        "inputs": [
+          {
+            "glob": "pkg:studio/generated/studio-map.json",
+            "schema": "studio-map"
+          },
+          {
+            "glob": "pkg:studio/generated/assembly-bindings.ts",
+            "schema": "studio-module"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "arg:--screenshots",
+            "schema": "studio-screenshots"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:studio-p0 -- npm run studio:check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "studio-p0",
+          "studio-mutations",
+          "studio-propagate",
+          "studio-dom",
+          "studio-modules",
+          "publisher-preview",
+          "theme-parity",
+          "no-handrolling",
+          "no-page-jsx",
+          "studio-template",
+          "assemble-only",
+          "routes-published",
+          "route-parity",
+          "copy-source",
+          "copy-rendered",
+          "rendered-provenance",
+          "no-hidden-fallbacks",
+          "studio"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/capture/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "capture",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.check",
+        "summary": "Capture every Studio route as screenshots and a contact sheet.",
+        "run": "clossys pipeline trace capture -- npm run capture:studio",
+        "inputs": [
+          {
+            "glob": "pkg:studio/generated/studio-map.json",
+            "schema": "studio-map"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "arg:--out",
+            "schema": "studio-screenshots"
+          }
+        ],
+        "pass": {
+          "command": "clossys pipeline trace check:studio-capture -- npm run check:studio-capture",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "studio-capture"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "publisher",
+      "path": "packages/publisher/actions/publish.install/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "publish.install",
+        "agent": "publisher",
+        "kind": "plumb",
+        "stage": "publish.publish",
+        "summary": "Install pinned pages, a routed site or Next routes into a consumer app.",
+        "run": "clossys publish --install",
+        "inputs": [
+          {
+            "glob": "clossys/agents/publisher/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "arg:--out",
+            "schema": "site-install"
+          },
+          {
+            "glob": "arg:--next",
+            "schema": "site-install"
+          }
+        ],
+        "pass": {
+          "command": "clossys publish",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/studio.produce/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "studio.produce",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.publish",
+        "summary": "Serve the local Studio over the live slot model (no compile step).",
+        "run": "clossys produce",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          },
+          {
+            "glob": "pkg:pipeline/graph.json",
+            "schema": "pipeline-graph"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys pipeline trace check:studio-p0 -- npm run studio:check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "studio-p0",
+          "one-brand"
+        ],
+        "uses": []
+      }
+    }
+  ]
+}
