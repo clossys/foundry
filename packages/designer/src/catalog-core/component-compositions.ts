@@ -3,6 +3,9 @@ import candidate from "../catalog/fills/foundry/components.date-picker.json" wit
 import materialization from "../catalog/rules/components.date-picker.json" with { type: "json" };
 import fileTriggerCandidate from "../catalog/fills/shadcn@aria/components.file-trigger.json" with { type: "json" };
 import fileTriggerRule from "../catalog/rules/components.file-trigger.json" with { type: "json" };
+import fieldCandidate from "../catalog/fills/shadcn@aria/components.field.json" with { type: "json" };
+import fieldRule from "../catalog/rules/components.field.json" with { type: "json" };
+import fieldStock from "../catalog/rules/components.field.stock.json" with { type: "json" };
 import iconCandidate from "../catalog/rules/components.icon.template.json" with { type: "json" };
 import iconRule from "../catalog/rules/components.icon.json" with { type: "json" };
 import { componentOf } from "./resolve-components.js";
@@ -14,6 +17,8 @@ export function loadComponentCompositionRules(): ComponentRule[] {
   return structuredClone([
     { ...materialization, template: declared(componentOf(candidate as unknown as ComponentCandidateDocument)) },
     { ...fileTriggerRule, template: declared(componentOf(fileTriggerCandidate as unknown as ComponentCandidateDocument)) },
+    // Owned wiring plus the generated stock label/field bytes and notice it wraps; the template receipts both.
+    { ...fieldRule, files: [...fieldRule.files, ...fieldStock.files], template: declared(componentOf(fieldCandidate as unknown as ComponentCandidateDocument)) },
     // Opt-in (derive): a stock-shadcn Lucide icon so shadcn@aria sources close their icon import in one family.
     { ...iconRule, template: declared(componentOf(iconCandidate as unknown as ComponentCandidateDocument)) },
   ]) as ComponentRule[];

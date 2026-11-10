@@ -18,7 +18,7 @@
       "constituents": [
         "field"
       ],
-      "depth": 0,
+      "depth": 1,
       "items": [
         "input-group"
       ],
@@ -29,17 +29,19 @@
       "status": "gap"
     },
     {
-      "constituents": [],
+      "constituents": [
+        "separator"
+      ],
       "depth": 0,
       "items": [
         "label",
         "field"
       ],
       "leaf": "field",
-      "reason": "K1: state.required/invalid/disabled have no owner, since a Label+Text+FieldError root takes them only from a parent field context; and K2: pinned field.tsx renders description and error as p/div, so a RAC Text/FieldError wrap needs new structure",
+      "reason": "every constituent is shadcn@aria; no new styling",
       "slot": "components.field",
-      "source": "foundry",
-      "status": "gap"
+      "source": "shadcn@aria",
+      "status": "composed"
     },
     {
       "constituents": [],

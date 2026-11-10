@@ -14,27 +14,28 @@ import * as module11 from "./components/dialog/dialog.js";
 import * as module12 from "./components/disclosure/accordion.js";
 import * as module13 from "./components/dropdown-menu/dropdown-menu.js";
 import * as module14 from "./components/empty/empty.js";
-import * as module15 from "./components/file-trigger/file-trigger.js";
-import * as module16 from "./components/icon/icon.js";
-import * as module17 from "./components/item/item.js";
-import * as module18 from "./components/keyboard/kbd.js";
-import * as module19 from "./components/menu/dropdown-menu.js";
-import * as module20 from "./components/popover/popover.js";
-import * as module21 from "./components/progress-bar/progress.js";
-import * as module22 from "./components/radio-group/radio-group.js";
-import * as module23 from "./components/scroll-area/scroll-area.js";
-import * as module24 from "./components/select/select.js";
-import * as module25 from "./components/separator/separator.js";
-import * as module26 from "./components/sheet/sheet.js";
-import * as module27 from "./components/sidebar/sidebar.js";
-import * as module28 from "./components/skeleton/skeleton.js";
-import * as module29 from "./components/slider/slider.js";
-import * as module30 from "./components/switch/switch.js";
-import * as module31 from "./components/table/table.js";
-import * as module32 from "./components/tabs/tabs.js";
-import * as module33 from "./components/toggle-button/toggle.js";
-import * as module34 from "./components/toggle-group/toggle-group.js";
-import * as module35 from "./components/tooltip/tooltip.js";
+import * as module15 from "./components/field/field.js";
+import * as module16 from "./components/file-trigger/file-trigger.js";
+import * as module17 from "./components/icon/icon.js";
+import * as module18 from "./components/item/item.js";
+import * as module19 from "./components/keyboard/kbd.js";
+import * as module20 from "./components/menu/dropdown-menu.js";
+import * as module21 from "./components/popover/popover.js";
+import * as module22 from "./components/progress-bar/progress.js";
+import * as module23 from "./components/radio-group/radio-group.js";
+import * as module24 from "./components/scroll-area/scroll-area.js";
+import * as module25 from "./components/select/select.js";
+import * as module26 from "./components/separator/separator.js";
+import * as module27 from "./components/sheet/sheet.js";
+import * as module28 from "./components/sidebar/sidebar.js";
+import * as module29 from "./components/skeleton/skeleton.js";
+import * as module30 from "./components/slider/slider.js";
+import * as module31 from "./components/switch/switch.js";
+import * as module32 from "./components/table/table.js";
+import * as module33 from "./components/tabs/tabs.js";
+import * as module34 from "./components/toggle-button/toggle.js";
+import * as module35 from "./components/toggle-group/toggle-group.js";
+import * as module36 from "./components/tooltip/tooltip.js";
 export const defaultSourceModules = {
   "components/avatar/avatar.tsx": module0,
   "components/badge/badge.tsx": module1,
@@ -51,25 +52,26 @@ export const defaultSourceModules = {
   "components/disclosure/accordion.tsx": module12,
   "components/dropdown-menu/dropdown-menu.tsx": module13,
   "components/empty/empty.tsx": module14,
-  "components/file-trigger/file-trigger.tsx": module15,
-  "components/icon/icon.tsx": module16,
-  "components/item/item.tsx": module17,
-  "components/keyboard/kbd.tsx": module18,
-  "components/menu/dropdown-menu.tsx": module19,
-  "components/popover/popover.tsx": module20,
-  "components/progress-bar/progress.tsx": module21,
-  "components/radio-group/radio-group.tsx": module22,
-  "components/scroll-area/scroll-area.tsx": module23,
-  "components/select/select.tsx": module24,
-  "components/separator/separator.tsx": module25,
-  "components/sheet/sheet.tsx": module26,
-  "components/sidebar/sidebar.tsx": module27,
-  "components/skeleton/skeleton.tsx": module28,
-  "components/slider/slider.tsx": module29,
-  "components/switch/switch.tsx": module30,
-  "components/table/table.tsx": module31,
-  "components/tabs/tabs.tsx": module32,
-  "components/toggle-button/toggle.tsx": module33,
-  "components/toggle-group/toggle-group.tsx": module34,
-  "components/tooltip/tooltip.tsx": module35,
+  "components/field/field.tsx": module15,
+  "components/file-trigger/file-trigger.tsx": module16,
+  "components/icon/icon.tsx": module17,
+  "components/item/item.tsx": module18,
+  "components/keyboard/kbd.tsx": module19,
+  "components/menu/dropdown-menu.tsx": module20,
+  "components/popover/popover.tsx": module21,
+  "components/progress-bar/progress.tsx": module22,
+  "components/radio-group/radio-group.tsx": module23,
+  "components/scroll-area/scroll-area.tsx": module24,
+  "components/select/select.tsx": module25,
+  "components/separator/separator.tsx": module26,
+  "components/sheet/sheet.tsx": module27,
+  "components/sidebar/sidebar.tsx": module28,
+  "components/skeleton/skeleton.tsx": module29,
+  "components/slider/slider.tsx": module30,
+  "components/switch/switch.tsx": module31,
+  "components/table/table.tsx": module32,
+  "components/tabs/tabs.tsx": module33,
+  "components/toggle-button/toggle.tsx": module34,
+  "components/toggle-group/toggle-group.tsx": module35,
+  "components/tooltip/tooltip.tsx": module36,
 };

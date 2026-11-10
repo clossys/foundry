@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:2b9a7075836063baf9e5d07050aafe7ecf750d7b939c73c893d8b89e41d20452",
+  "selectionHash": "sha256:7bbe6f124aff6ed980e2d5806dd8817360892ea117aff383e2b7ce24ac72311f",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -5670,58 +5670,81 @@
     },
     "components.field": {
       "slot": "components.field",
-      "originKind": "adopted",
+      "originKind": "composed",
       "origin": {
-        "kind": "adopted",
-        "source": "foundry",
-        "fill": "foundry/components.field",
-        "pin": {
-          "package": "@clossys/designer",
-          "version": "0.12.0",
-          "export": "./components#Field"
-        },
-        "license": "MIT",
-        "sha256": "e938d7de9e70e5aa2ad75beabdd1ba8235cc7d85c66749e3d0f2ec143ea23b8f",
-        "adoptedAt": "2026-10-26"
+        "kind": "composed",
+        "rule": "compose:field@1",
+        "reads": [
+          "components.separator"
+        ],
+        "inputsHash": "949b358d7b7c6339f024550516303ec83a144908114f2f98d8eece5136947c68"
       },
       "impl": {
-        "kind": "package",
-        "module": "@clossys/designer/components",
-        "export": "Field"
+        "entry": "components/field/field.tsx",
+        "export": "Field",
+        "kind": "source"
       },
       "propMap": {
-        "part.description": "./components#Field.description",
-        "part.error": "./components#Field.errorMessage",
-        "part.label": "./components#Field.label",
-        "state.disabled": "./components#Field.isDisabled",
-        "state.invalid": "./components#Field.isInvalid",
-        "state.required": "./components#Field.isRequired"
+        "part.description": "FieldDescription",
+        "part.error": "FieldError",
+        "part.label": "FieldLabel",
+        "state.disabled": "Field.isDisabled",
+        "state.invalid": "Field.isInvalid",
+        "state.required": "Field.isRequired"
       },
       "reads": {
         "themes": {
-          "themes.accent-foreground.default": "--accent-foreground",
-          "themes.card-foreground.default": "--card-foreground",
+          "themes.background.default": "--background",
           "themes.destructive.default": "--destructive",
-          "themes.font-heading.default": "--font-heading",
-          "themes.font-mono.default": "--font-mono",
-          "themes.font-sans.default": "--font-sans",
-          "themes.foreground.default": "--foreground",
           "themes.muted-foreground.default": "--muted-foreground",
-          "themes.popover-foreground.default": "--popover-foreground",
-          "themes.primary-foreground.default": "--primary-foreground",
-          "themes.secondary-foreground.default": "--secondary-foreground",
-          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
-          "themes.sidebar-foreground.default": "--sidebar-foreground",
-          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
+          "themes.muted.default": "--muted",
+          "themes.primary.default": "--primary",
+          "themes.radius.default": "--radius",
+          "themes.ring.default": "--ring",
           "themes.spacing.default": "--spacing"
         },
         "assets": [],
-        "components": []
+        "components": [
+          "components.separator"
+        ]
       },
       "descriptor": {
-        "slot": "components.field",
-        "source": "defaults-consumer",
-        "root": "rac:Label+Text+FieldError",
+        "composes": [
+          "components.separator"
+        ],
+        "deps": [
+          {
+            "license": "MIT",
+            "name": "react",
+            "version": ">=18"
+          },
+          {
+            "license": "Apache-2.0",
+            "name": "react-aria-components",
+            "version": "^1.21.0"
+          },
+          {
+            "license": "Apache-2.0",
+            "name": "class-variance-authority",
+            "version": "0.7.1"
+          },
+          {
+            "license": "MIT",
+            "name": "clsx",
+            "version": "2.1.1"
+          },
+          {
+            "license": "MIT",
+            "name": "tailwind-merge",
+            "version": "3.3.1"
+          }
+        ],
+        "impl": {
+          "entry": "components/field/field.tsx",
+          "export": "Field",
+          "kind": "source"
+        },
+        "license": "MIT",
         "members": [
           "part.description",
           "part.error",
@@ -5730,91 +5753,114 @@
           "state.invalid",
           "state.required"
         ],
+        "notice": "notices/field.md",
+        "outputSha256": [
+          {
+            "path": "components/field/field.tsx",
+            "sha256": "eded72cb29344c82b7d92c4e914e331cd19dca8e6654d28a39bdcbf77110677b"
+          },
+          {
+            "path": "components/field/stock/field.tsx",
+            "sha256": "c29a3cfd05884cdb8ada1950d78c4619ee8dbb3f90c845d78f4428867391a05d"
+          },
+          {
+            "path": "components/field/stock/label.tsx",
+            "sha256": "043e20662797d607c5dce9b82b4fdb60c86a4c61b68861e9133266c50480b8d1"
+          },
+          {
+            "path": "components/field/stock/utils.ts",
+            "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+          },
+          {
+            "path": "notices/field.md",
+            "sha256": "51312ab005db37a08ff64b53764df2692410de8726e8774d9c31ab7b097860a5"
+          }
+        ],
+        "propMap": {
+          "part.description": "FieldDescription",
+          "part.error": "FieldError",
+          "part.label": "FieldLabel",
+          "state.disabled": "Field.isDisabled",
+          "state.invalid": "Field.isInvalid",
+          "state.required": "Field.isRequired"
+        },
         "props": [
           "children",
           "className",
-          "description",
-          "errorMessage",
-          "isDisabled",
+          "orientation",
           "isInvalid",
-          "isRequired",
-          "label"
-        ],
-        "propMap": {
-          "part.description": "./components#Field.description",
-          "part.error": "./components#Field.errorMessage",
-          "part.label": "./components#Field.label",
-          "state.disabled": "./components#Field.isDisabled",
-          "state.invalid": "./components#Field.isInvalid",
-          "state.required": "./components#Field.isRequired"
-        },
-        "reads": {
-          "themes": [
-            "themes.accent-foreground",
-            "themes.card-foreground",
-            "themes.destructive",
-            "themes.font-heading",
-            "themes.font-mono",
-            "themes.font-sans",
-            "themes.foreground",
-            "themes.muted-foreground",
-            "themes.popover-foreground",
-            "themes.primary-foreground",
-            "themes.secondary-foreground",
-            "themes.sidebar-accent-foreground",
-            "themes.sidebar-foreground",
-            "themes.sidebar-primary-foreground",
-            "themes.spacing"
-          ],
-          "assets": [],
-          "components": []
-        },
-        "composes": [],
-        "impl": {
-          "kind": "package",
-          "module": "@clossys/designer/components",
-          "export": "Field"
-        },
-        "license": "MIT",
-        "pin": {
-          "package": "@clossys/designer",
-          "version": "0.12.0",
-          "export": "./components#Field"
-        },
-        "deps": [
-          {
-            "name": "react",
-            "version": ">=18",
-            "license": "MIT"
-          },
-          {
-            "name": "tailwind-merge",
-            "version": "^3.7.0",
-            "license": "MIT"
-          },
-          {
-            "name": "react-aria-components",
-            "version": "^1.19.0",
-            "license": "Apache-2.0"
-          }
+          "isDisabled",
+          "isRequired"
         ],
         "rac": {
-          "range": "^1.19.0",
-          "peer": true,
-          "instance": "react-aria-components"
+          "instance": "react-aria-components",
+          "peer": false,
+          "range": "^1.21.0"
         },
-        "origin": {
-          "kind": "adopted",
-          "source": "foundry",
-          "fill": "foundry/components.field",
-          "pin": {
-            "package": "@clossys/designer",
-            "version": "0.12.0",
-            "export": "./components#Field"
+        "reads": {
+          "assets": [],
+          "components": [
+            "components.separator"
+          ],
+          "themes": [
+            "themes.background.default",
+            "themes.destructive.default",
+            "themes.muted-foreground.default",
+            "themes.muted.default",
+            "themes.primary.default",
+            "themes.radius.default",
+            "themes.ring.default",
+            "themes.spacing.default"
+          ]
+        },
+        "root": "rac:Label+Text+FieldError",
+        "secondaryExports": [
+          {
+            "export": "FieldContent",
+            "name": "FieldContent"
           },
-          "license": "MIT",
-          "sha256": "e938d7de9e70e5aa2ad75beabdd1ba8235cc7d85c66749e3d0f2ec143ea23b8f",
-          "adoptedAt": "2026-10-26"
+          {
+            "export": "FieldDescription",
+            "name": "FieldDescription"
+          },
+          {
+            "export": "FieldError",
+            "name": "FieldError"
+          },
+          {
+            "export": "FieldGroup",
+            "name": "FieldGroup"
+          },
+          {
+            "export": "FieldLabel",
+            "name": "FieldLabel"
+          },
+          {
+            "export": "FieldLegend",
+            "name": "FieldLegend"
+          },
+          {
+            "export": "FieldSeparator",
+            "name": "FieldSeparator"
+          },
+          {
+            "export": "FieldSet",
+            "name": "FieldSet"
+          },
+          {
+            "export": "FieldTitle",
+            "name": "FieldTitle"
+          }
+        ],
+        "slot": "components.field",
+        "source": "defaults-consumer",
+        "origin": {
+          "kind": "composed",
+          "rule": "compose:field@1",
+          "reads": [
+            "components.separator"
+          ],
+          "inputsHash": "949b358d7b7c6339f024550516303ec83a144908114f2f98d8eece5136947c68"
         }
       }
     },
@@ -11389,6 +11435,1008 @@
         }
       }
     },
+    "components.specimen-copy-in-context": {
+      "slot": "components.specimen-copy-in-context",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-copy-in-context",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenCopyInContext"
+        },
+        "license": "MIT",
+        "sha256": "674259f2065d2f7117fe6ef63992e1c309aff28cb2262b826f9f3f88b3de32b4",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenCopyInContext"
+      },
+      "propMap": {},
+      "reads": {
+        "themes": {
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.button",
+          "components.disclosure",
+          "components.grid-list",
+          "components.navigation-tree",
+          "components.rich-text",
+          "components.semantic-content",
+          "components.table"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-copy-in-context",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts"
+        ],
+        "propMap": {},
+        "reads": {
+          "themes": [
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.disclosure",
+            "components.grid-list",
+            "components.navigation-tree",
+            "components.rich-text",
+            "components.semantic-content",
+            "components.table"
+          ]
+        },
+        "composes": [
+          "components.button",
+          "components.disclosure",
+          "components.grid-list",
+          "components.navigation-tree",
+          "components.rich-text",
+          "components.semantic-content",
+          "components.table"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenCopyInContext"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenCopyInContext"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-copy-in-context",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenCopyInContext"
+          },
+          "license": "MIT",
+          "sha256": "674259f2065d2f7117fe6ef63992e1c309aff28cb2262b826f9f3f88b3de32b4",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-grid": {
+      "slot": "components.specimen-grid",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-grid",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenGrid"
+        },
+        "license": "MIT",
+        "sha256": "c315a1ab4c145f019b6b65073cc4bcbfb83113b6225e62dc01b3637d80567b4d",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenGrid"
+      },
+      "propMap": {
+        "variant.asset": "./components#SpecimenGrid.variant=asset",
+        "variant.icon": "./components#SpecimenGrid.variant=icon"
+      },
+      "reads": {
+        "themes": {
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-grid",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [
+          "variant.asset",
+          "variant.icon"
+        ],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts",
+          "variant"
+        ],
+        "propMap": {
+          "variant.asset": "./components#SpecimenGrid.variant=asset",
+          "variant.icon": "./components#SpecimenGrid.variant=icon"
+        },
+        "reads": {
+          "themes": [
+            "themes.accent",
+            "themes.border",
+            "themes.card",
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.disclosure",
+            "components.grid-list",
+            "components.icon",
+            "components.logo",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenGrid"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenGrid"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-grid",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenGrid"
+          },
+          "license": "MIT",
+          "sha256": "c315a1ab4c145f019b6b65073cc4bcbfb83113b6225e62dc01b3637d80567b4d",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-ladder": {
+      "slot": "components.specimen-ladder",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-ladder",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenLadder"
+        },
+        "license": "MIT",
+        "sha256": "19e64b72f33095d09ea10a0db005d6e1aa11d4f849061908062cb4f2428b7d63",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenLadder"
+      },
+      "propMap": {
+        "variant.radius": "./components#SpecimenLadder.variant=radius",
+        "variant.spacing": "./components#SpecimenLadder.variant=spacing",
+        "variant.type": "./components#SpecimenLadder.variant=type"
+      },
+      "reads": {
+        "themes": {
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-ladder",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [
+          "variant.radius",
+          "variant.spacing",
+          "variant.type"
+        ],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts",
+          "variant"
+        ],
+        "propMap": {
+          "variant.radius": "./components#SpecimenLadder.variant=radius",
+          "variant.spacing": "./components#SpecimenLadder.variant=spacing",
+          "variant.type": "./components#SpecimenLadder.variant=type"
+        },
+        "reads": {
+          "themes": [
+            "themes.accent",
+            "themes.border",
+            "themes.card",
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenLadder"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenLadder"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-ladder",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenLadder"
+          },
+          "license": "MIT",
+          "sha256": "19e64b72f33095d09ea10a0db005d6e1aa11d4f849061908062cb4f2428b7d63",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-matrix": {
+      "slot": "components.specimen-matrix",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-matrix",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenMatrix"
+        },
+        "license": "MIT",
+        "sha256": "9123cde06fcd9742854de5e44ffc694466d50acf025ae72205df3e4603d0c986",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenMatrix"
+      },
+      "propMap": {},
+      "reads": {
+        "themes": {
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.badge",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content",
+          "components.table"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-matrix",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts"
+        ],
+        "propMap": {},
+        "reads": {
+          "themes": [
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.badge",
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content",
+            "components.table"
+          ]
+        },
+        "composes": [
+          "components.badge",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content",
+          "components.table"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenMatrix"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenMatrix"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-matrix",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenMatrix"
+          },
+          "license": "MIT",
+          "sha256": "9123cde06fcd9742854de5e44ffc694466d50acf025ae72205df3e4603d0c986",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-passage": {
+      "slot": "components.specimen-passage",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-passage",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenPassage"
+        },
+        "license": "MIT",
+        "sha256": "8ad9825f99237ef767dbb963dc618c8dfa671b9bf58f69ea1c75b2c5758afa67",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenPassage"
+      },
+      "propMap": {},
+      "reads": {
+        "themes": {
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.rich-text",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-passage",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts"
+        ],
+        "propMap": {},
+        "reads": {
+          "themes": [
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.disclosure",
+            "components.grid-list",
+            "components.rich-text",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.rich-text",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenPassage"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenPassage"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-passage",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenPassage"
+          },
+          "license": "MIT",
+          "sha256": "8ad9825f99237ef767dbb963dc618c8dfa671b9bf58f69ea1c75b2c5758afa67",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-player": {
+      "slot": "components.specimen-player",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-player",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenPlayer"
+        },
+        "license": "MIT",
+        "sha256": "9c8fd76d210518dd491325de18351cc8d0600bf4ab2f24fac65830a80b5e8c10",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenPlayer"
+      },
+      "propMap": {},
+      "reads": {
+        "themes": {
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.button",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-player",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts"
+        ],
+        "propMap": {},
+        "reads": {
+          "themes": [
+            "themes.accent",
+            "themes.border",
+            "themes.card",
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.button",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenPlayer"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenPlayer"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-player",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenPlayer"
+          },
+          "license": "MIT",
+          "sha256": "9c8fd76d210518dd491325de18351cc8d0600bf4ab2f24fac65830a80b5e8c10",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-swatch": {
+      "slot": "components.specimen-swatch",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-swatch",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenSwatch"
+        },
+        "license": "MIT",
+        "sha256": "94319042aaf8c64785b70308c8e7574cdb551789dcc53dc8479d0e1e3959e0dd",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenSwatch"
+      },
+      "propMap": {
+        "variant.color-ramp": "./components#SpecimenSwatch.variant=color-ramp",
+        "variant.swatch": "./components#SpecimenSwatch.variant=swatch"
+      },
+      "reads": {
+        "themes": {
+          "themes.accent.default": "--accent",
+          "themes.border.default": "--border",
+          "themes.card.default": "--card",
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-swatch",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [
+          "variant.color-ramp",
+          "variant.swatch"
+        ],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts",
+          "variant"
+        ],
+        "propMap": {
+          "variant.color-ramp": "./components#SpecimenSwatch.variant=color-ramp",
+          "variant.swatch": "./components#SpecimenSwatch.variant=swatch"
+        },
+        "reads": {
+          "themes": [
+            "themes.accent",
+            "themes.border",
+            "themes.card",
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content"
+          ]
+        },
+        "composes": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenSwatch"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenSwatch"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-swatch",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenSwatch"
+          },
+          "license": "MIT",
+          "sha256": "94319042aaf8c64785b70308c8e7574cdb551789dcc53dc8479d0e1e3959e0dd",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
+    "components.specimen-viewport": {
+      "slot": "components.specimen-viewport",
+      "originKind": "adopted",
+      "origin": {
+        "kind": "adopted",
+        "source": "foundry",
+        "fill": "foundry/components.specimen-viewport",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenViewport"
+        },
+        "license": "MIT",
+        "sha256": "8dc323a90678ac7cfde19bbb4e03dd4847007bfd1e0ca82d3e3135a2b59a58b7",
+        "adoptedAt": "2026-10-26"
+      },
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "SpecimenViewport"
+      },
+      "propMap": {
+        "variant.frame": "./components#SpecimenViewport.variant=frame",
+        "variant.page": "./components#SpecimenViewport.variant=page",
+        "variant.section": "./components#SpecimenViewport.variant=section"
+      },
+      "reads": {
+        "themes": {
+          "themes.spacing.default": "--spacing"
+        },
+        "assets": [],
+        "components": [
+          "components.badge",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content",
+          "components.table"
+        ]
+      },
+      "descriptor": {
+        "slot": "components.specimen-viewport",
+        "source": "defaults-consumer",
+        "root": "presentational",
+        "members": [
+          "variant.frame",
+          "variant.page",
+          "variant.section"
+        ],
+        "props": [
+          "axes",
+          "context",
+          "expanded",
+          "items",
+          "labels",
+          "need",
+          "renderParts",
+          "variant"
+        ],
+        "propMap": {
+          "variant.frame": "./components#SpecimenViewport.variant=frame",
+          "variant.page": "./components#SpecimenViewport.variant=page",
+          "variant.section": "./components#SpecimenViewport.variant=section"
+        },
+        "reads": {
+          "themes": [
+            "themes.spacing"
+          ],
+          "assets": [],
+          "components": [
+            "components.badge",
+            "components.disclosure",
+            "components.grid-list",
+            "components.semantic-content",
+            "components.table"
+          ]
+        },
+        "composes": [
+          "components.badge",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content",
+          "components.table"
+        ],
+        "impl": {
+          "kind": "package",
+          "module": "@clossys/designer/components",
+          "export": "SpecimenViewport"
+        },
+        "license": "MIT",
+        "pin": {
+          "package": "@clossys/designer",
+          "version": "0.12.0",
+          "export": "./components#SpecimenViewport"
+        },
+        "deps": [
+          {
+            "name": "react",
+            "version": ">=18",
+            "license": "MIT"
+          },
+          {
+            "name": "tailwind-merge",
+            "version": "^3.7.0",
+            "license": "MIT"
+          },
+          {
+            "name": "react-aria-components",
+            "version": "^1.19.0",
+            "license": "Apache-2.0"
+          }
+        ],
+        "rac": {
+          "range": "^1.19.0",
+          "peer": true,
+          "instance": "react-aria-components"
+        },
+        "origin": {
+          "kind": "adopted",
+          "source": "foundry",
+          "fill": "foundry/components.specimen-viewport",
+          "pin": {
+            "package": "@clossys/designer",
+            "version": "0.12.0",
+            "export": "./components#SpecimenViewport"
+          },
+          "license": "MIT",
+          "sha256": "8dc323a90678ac7cfde19bbb4e03dd4847007bfd1e0ca82d3e3135a2b59a58b7",
+          "adoptedAt": "2026-10-26"
+        }
+      }
+    },
     "components.spinner": {
       "slot": "components.spinner",
       "originKind": "adopted",
@@ -13917,6 +14965,22 @@
       "content": "import type * as React from \"react\"\nimport { cn, classNames, type ClassValue, type VariantProps } from \"../_parts/rail-utils/index\"\n\nfunction Empty({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"empty\"\n      className={cn(\n        \"gap-(--spacing-lg) rounded-(--radius-control) border-dashed p-(--spacing-xl) flex w-full min-w-0 flex-1 flex-col items-center justify-center text-center text-balance\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"empty-header\"\n      className={cn(\n        \"gap-(--spacing-sm) flex max-w-(--ui-width-notice-max) flex-col items-center\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst emptyMediaVariants_DEFINITION = {\"base\":\"mb-(--spacing-sm) flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0\",\"variants\":{\"variant\":{\"default\":\"bg-transparent\",\"icon\":\"bg-(--color-surface-sunken) text-(--color-ink-primary) flex size-(--spacing-2xl) shrink-0 items-center justify-center rounded-(--radius-control) [&_svg:not([class*='size-'])]:size-(--spacing-lg)\"}},\"defaultVariants\":{\"variant\":\"default\"}}\nfunction emptyMediaVariants(props: { \"variant\"?: \"default\" | \"icon\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = emptyMediaVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction EmptyMedia({\n  className,\n  /** @default \"default\" */\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<\"div\"> & VariantProps<typeof emptyMediaVariants>) {\n  return (\n    <div\n      data-slot=\"empty-icon\"\n      data-variant={variant}\n      className={cn(emptyMediaVariants({ variant, className }))}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyTitle({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"empty-title\"\n      className={cn(\"text-(length:--text-sm) font-(weight:--font-weight-medium) tracking-(--tracking-meta)\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyDescription({ className, ...props }: React.ComponentProps<\"p\">) {\n  return (\n    <div\n      data-slot=\"empty-description\"\n      className={cn(\n        \"text-(length:--text-sm) leading-(--leading-heading) text-(--color-ink-muted) [&>a]:underline [&>a]:underline-offset-(--spacing-lg) [&>a:hover]:text-(--color-action)\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyContent({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"empty-content\"\n      className={cn(\n        \"gap-(--spacing-md) text-(length:--text-sm) flex w-full max-w-(--ui-width-notice-max) min-w-0 flex-col items-center text-balance\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Empty,\n  EmptyHeader,\n  EmptyTitle,\n  EmptyDescription,\n  EmptyContent,\n  EmptyMedia,\n}\n"
     },
     {
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport {\n  FieldError as AriaFieldError,\n  FieldErrorContext,\n  Provider,\n  Text,\n  type FieldErrorProps,\n  type TextProps,\n} from \"react-aria-components\"\n\nimport {\n  Field as StockField,\n  FieldContent as StockFieldContent,\n  FieldDescription as StockFieldDescription,\n  FieldError as StockFieldError,\n  FieldGroup as StockFieldGroup,\n  FieldLabel as StockFieldLabel,\n  FieldLegend as StockFieldLegend,\n  FieldSeparator as StockFieldSeparator,\n  FieldSet as StockFieldSet,\n  FieldTitle as StockFieldTitle,\n} from \"./stock/field\"\n\nfunction Field({\n  isInvalid,\n  isDisabled,\n  isRequired,\n  ...props\n}: React.ComponentProps<typeof StockField> & {\n  isInvalid?: boolean\n  isDisabled?: boolean\n  isRequired?: boolean\n}) {\n  const field = (\n    <StockField\n      data-invalid={isInvalid || undefined}\n      data-disabled={isDisabled || undefined}\n      data-required={isRequired || undefined}\n      {...props}\n    />\n  )\n  if (!isInvalid) return field\n  // A standalone invalid Field gives its FieldError the context a RAC field would.\n  const validation = {\n    isInvalid: true,\n    validationErrors: [],\n    validationDetails: { badInput: false, customError: true, patternMismatch: false, rangeOverflow: false, rangeUnderflow: false, stepMismatch: false, tooLong: false, tooShort: false, typeMismatch: false, valid: false, valueMissing: false },\n  }\n  return <Provider values={[[FieldErrorContext, validation]]}>{field}</Provider>\n}\n\nfunction FieldSet(props: React.ComponentProps<typeof StockFieldSet>) {\n  return <StockFieldSet {...props} />\n}\n\nfunction FieldLegend(props: React.ComponentProps<typeof StockFieldLegend>) {\n  return <StockFieldLegend {...props} />\n}\n\nfunction FieldGroup(props: React.ComponentProps<typeof StockFieldGroup>) {\n  return <StockFieldGroup {...props} />\n}\n\nfunction FieldContent(props: React.ComponentProps<typeof StockFieldContent>) {\n  return <StockFieldContent {...props} />\n}\n\nfunction FieldLabel(props: React.ComponentProps<typeof StockFieldLabel>) {\n  return <StockFieldLabel {...props} />\n}\n\nfunction FieldTitle(props: React.ComponentProps<typeof StockFieldTitle>) {\n  return <StockFieldTitle {...props} />\n}\n\nfunction FieldSeparator(props: React.ComponentProps<typeof StockFieldSeparator>) {\n  return <StockFieldSeparator {...props} />\n}\n\nfunction FieldDescription(props: Omit<TextProps, \"slot\" | \"elementType\" | \"render\">) {\n  return <Text {...props} slot=\"description\" elementType=\"p\" render={domProps => <StockFieldDescription {...domProps} />} />\n}\n\nfunction FieldError(props: Omit<FieldErrorProps, \"elementType\" | \"render\">) {\n  return <AriaFieldError {...props} elementType=\"div\" render={domProps => <StockFieldError {...domProps} />} />\n}\n\nexport {\n  Field,\n  FieldContent,\n  FieldDescription,\n  FieldError,\n  FieldGroup,\n  FieldLabel,\n  FieldLegend,\n  FieldSeparator,\n  FieldSet,\n  FieldTitle,\n}\n",
+      "path": "components/field/field.tsx"
+    },
+    {
+      "content": "\"use client\"\n\nimport { useMemo } from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"./utils\"\n\nimport { Label } from \"./label\"\nimport { Separator } from \"../../separator/index\"\n\nfunction FieldSet({ className, ...props }: React.ComponentProps<\"fieldset\">) {\n  return (\n    <fieldset\n      data-slot=\"field-set\"\n      className={cn(\"gap-(--spacing-lg) has-[>[data-slot=checkbox-group]]:gap-(--spacing-md) has-[>[data-slot=radio-group]]:gap-(--spacing-md) flex flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction FieldLegend({\n  className,\n  variant = \"legend\",\n  ...props\n}: React.ComponentProps<\"legend\"> & { variant?: \"legend\" | \"label\" }) {\n  return (\n    <legend\n      data-slot=\"field-legend\"\n      data-variant={variant}\n      className={cn(\"mb-(--spacing-sm) font-(weight:--font-weight-medium) data-[variant=label]:text-(length:--text-sm) data-[variant=legend]:text-(length:--text-base)\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction FieldGroup({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"field-group\"\n      className={cn(\n        \"gap-[var(--spacing-xl)] data-[slot=checkbox-group]:gap-(--spacing-md) *:data-[slot=field-group]:gap-(--spacing-lg) group/field-group @container/field-group flex w-full flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst fieldVariants = cva(\"data-[invalid=true]:text-(--color-status-danger) gap-(--spacing-sm) group/field flex w-full\", {\n  variants: {\n    orientation: {\n      vertical:\n        \"flex-col *:w-full [&>.sr-only]:w-auto\",\n      horizontal:\n        \"flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-[slot=field-label]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-(--ui-border-hairline)\",\n      responsive:\n        \"flex-col *:w-full @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto [&>.sr-only]:w-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-(--ui-border-hairline)\",\n    },\n  },\n  defaultVariants: {\n    orientation: \"vertical\",\n  },\n})\n\nfunction Field({\n  className,\n  orientation = \"vertical\",\n  ...props\n}: React.ComponentProps<\"div\"> & VariantProps<typeof fieldVariants>) {\n  return (\n    <div\n      role=\"group\"\n      data-slot=\"field\"\n      data-orientation={orientation}\n      className={cn(fieldVariants({ orientation }), className)}\n      {...props}\n    />\n  )\n}\n\nfunction FieldContent({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"field-content\"\n      className={cn(\n        \"gap-[var(--spacing-xs)] group/field-content flex flex-1 flex-col leading-(--leading-heading)\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction FieldLabel({\n  className,\n  ...props\n}: React.ComponentProps<typeof Label>) {\n  return (\n    <Label\n      data-slot=\"field-label\"\n      className={cn(\n        \"has-data-checked:bg-(--color-action)/5 has-data-checked:border-(--color-action)/30 dark:has-data-checked:border-(--color-action)/20 dark:has-data-checked:bg-(--color-action)/10 gap-(--spacing-sm) leading-(--leading-heading) group-data-[disabled=true]/field:opacity-(--ui-alpha-disabled,50%) has-[>[data-slot=field]]:rounded-(--radius-control) has-[>[data-slot=field]]:border-(length:--ui-border-hairline,1px) has-[>[data-slot=field]]:not-has-[:disabled,[data-disabled]]:hover:bg-(--color-surface-sunken)/50 has-[>[data-slot=field]]:has-[:focus-visible]:border-(--color-focus-ring) has-[>[data-slot=field]]:has-[:focus-visible]:outline-solid has-[>[data-slot=field]]:has-[:focus-visible]:outline-(length:--ui-border-focus,3px) has-[>[data-slot=field]]:has-[:focus-visible]:outline-offset-(--ui-focus-offset) has-[>[data-slot=field]]:has-[:focus-visible]:outline-(--color-focus-ring) has-[>[data-slot=field]]:has-[:focus-visible]:outline-solid has-[>[data-slot=field]]:has-[:focus-visible]:outline-(length:--ui-border-focus,3px) has-[>[data-slot=field]]:has-[:focus-visible]:outline-offset-(--ui-focus-offset) has-[>[data-slot=field]]:has-[:focus-visible]:outline-(--color-focus-ring) *:data-[slot=field]:p-(--spacing-md) has-data-selected:bg-(--color-action)/5 has-data-selected:border-(--color-action)/30 dark:has-data-selected:border-(--color-action)/20 dark:has-data-selected:bg-(--color-action)/10 group/field-label peer/field-label flex w-fit\",\n        \"has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction FieldTitle({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"field-label\"\n      className={cn(\"gap-(--spacing-sm) leading-(--leading-heading) text-(length:--text-sm) font-(weight:--font-weight-medium) group-data-[disabled=true]/field:opacity-(--ui-alpha-disabled,50%) flex w-fit items-center\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction FieldDescription({ className, ...props }: React.ComponentProps<\"p\">) {\n  return (\n    <p\n      data-slot=\"field-description\"\n      className={cn(\n        \"text-(--color-ink-muted) text-left text-(length:--text-sm) [[data-variant=legend]+&]:-mt-(--spacing-sm) font-(weight:--font-weight-normal) group-has-data-horizontal/field:text-balance\",\n        \"last:mt-0 nth-last-2:-mt-(--spacing-xs)\",\n        \"[&>a]:underline [&>a]:underline-offset-(--spacing-lg) [&>a:hover]:text-(--color-action)\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction FieldSeparator({\n  children,\n  className,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  children?: React.ReactNode\n}) {\n  return (\n    <div\n      data-slot=\"field-separator\"\n      data-content={!!children}\n      className={cn(\"-my-(--spacing-sm) h-[var(--spacing-xl)] text-(length:--text-sm) group-data-[variant=outline]/field-group:-mb-(--spacing-sm) relative\", className)}\n      {...props}\n    >\n      <Separator className=\"absolute inset-0 top-1/2\" />\n      {children && (\n        <span\n          className=\"text-(--color-ink-muted) px-(--spacing-sm) relative mx-auto block w-fit bg-(--color-surface-base)\"\n          data-slot=\"field-separator-content\"\n        >\n          {children}\n        </span>\n      )}\n    </div>\n  )\n}\n\nfunction FieldError({\n  className,\n  children,\n  errors,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  errors?: Array<{ message?: string } | undefined>\n}) {\n  const content = useMemo(() => {\n    if (children) {\n      return children\n    }\n\n    if (!errors?.length) {\n      return null\n    }\n\n    const uniqueErrors = [\n      ...new Map(errors.map((error) => [error?.message, error])).values(),\n    ]\n\n    if (uniqueErrors?.length == 1) {\n      return uniqueErrors[0]?.message\n    }\n\n    return (\n      <ul className=\"ml-(--spacing-lg) flex list-disc flex-col gap-(--spacing-xs)\">\n        {uniqueErrors.map(\n          (error, index) =>\n            error?.message && <li key={index}>{error.message}</li>\n        )}\n      </ul>\n    )\n  }, [children, errors])\n\n  if (!content) {\n    return null\n  }\n\n  return (\n    <div\n      role=\"alert\"\n      data-slot=\"field-error\"\n      className={cn(\"text-(--color-status-danger) text-(length:--text-sm) font-(weight:--font-weight-normal)\", className)}\n      {...props}\n    >\n      {content}\n    </div>\n  )\n}\n\nexport {\n  Field,\n  FieldLabel,\n  FieldDescription,\n  FieldError,\n  FieldGroup,\n  FieldLegend,\n  FieldSeparator,\n  FieldSet,\n  FieldContent,\n  FieldTitle,\n}\n",
+      "path": "components/field/stock/field.tsx"
+    },
+    {
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"./utils\"\nimport {\n  LabelContext,\n  Label as LabelPrimitive,\n  type LabelProps,\n} from \"react-aria-components\"\n\nfunction Label({ className, htmlFor, slot, ...props }: LabelProps) {\n  const label = (\n    <LabelPrimitive\n      data-slot=\"label\"\n      className={cn(\n        \"gap-(--spacing-sm) text-(length:--text-sm) leading-(--leading-heading) font-(weight:--font-weight-medium) group-data-[disabled=true]:opacity-(--ui-alpha-disabled,50%) peer-disabled:opacity-(--ui-alpha-disabled,50%) peer-data-disabled:opacity-(--ui-alpha-disabled,50%) flex items-center select-none group-data-[disabled=true]:pointer-events-none peer-disabled:cursor-not-allowed\",\n        className\n      )}\n      {...props}\n      htmlFor={htmlFor}\n      slot={slot}\n    />\n  )\n\n  if (htmlFor && slot === undefined) {\n    return <LabelContext.Provider value={null}>{label}</LabelContext.Provider>\n  }\n\n  return label\n}\n\nexport { Label }\n",
+      "path": "components/field/stock/label.tsx"
+    },
+    {
+      "content": "import { clsx, type ClassValue } from \"clsx\"\nimport { twMerge } from \"tailwind-merge\"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n",
+      "path": "components/field/stock/utils.ts"
+    },
+    {
       "content": "import { forwardRef, type ReactNode, type Ref } from \"react\";\nimport { FileTrigger as AriaFileTrigger, type FileTriggerProps as AriaFileTriggerProps } from \"react-aria-components\";\nimport { Button } from \"../button/index\";\n\nexport interface FileTriggerProps extends Omit<AriaFileTriggerProps, \"children\"> {\n  /** Visible name of the selected button that opens the file picker. */\n  label: ReactNode;\n}\n\nexport const FileTrigger = forwardRef(function FileTrigger(\n  { label, ...props }: FileTriggerProps,\n  ref: Ref<HTMLInputElement>,\n) {\n  return <AriaFileTrigger {...props} ref={ref}><Button>{label}</Button></AriaFileTrigger>;\n});\n",
       "path": "components/file-trigger/file-trigger.tsx"
     },
@@ -14003,6 +15067,10 @@
     {
       "content": "# Date picker composition\n\nCopyright contributors. Licensed under the MIT License.\n\nOwned wiring of the selected date field, popover and calendar. Their dependency notices remain separate.\n",
       "path": "notices/date-picker.md"
+    },
+    {
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@1\nItems: label, field (components/field/stock/), wired by the owned components/field/field.tsx\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+      "path": "notices/field.md"
     },
     {
       "content": "# File trigger composition\n\nCopyright contributors. Licensed under the MIT License.\n\nOwned wiring of the selected button onto the file trigger. The button's notice remains separate.\n",
@@ -14426,6 +15494,62 @@
       {
         "code": "K10",
         "rule": "K10",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K10",
+        "rule": "K10",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -15000,6 +16124,62 @@
       {
         "code": "K12",
         "rule": "K12",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K12",
+        "rule": "K12",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -15490,6 +16670,62 @@
       {
         "code": "K2",
         "rule": "K2",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K2",
+        "rule": "K2",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -15980,6 +17216,62 @@
       {
         "code": "K4",
         "rule": "K4",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K4",
+        "rule": "K4",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -16470,6 +17762,62 @@
       {
         "code": "K5",
         "rule": "K5",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K5",
+        "rule": "K5",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -16960,6 +18308,62 @@
       {
         "code": "K6",
         "rule": "K6",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
+        "subject": "components.specimen-viewport",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K6",
+        "rule": "K6",
         "subject": "components.spinner",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
@@ -17444,6 +18848,62 @@
         "code": "K7",
         "rule": "K7",
         "subject": "components.slider",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-copy-in-context",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-grid",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-ladder",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-matrix",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-passage",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-player",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-swatch",
+        "severity": "notice",
+        "message": "Source and runtime observations are unavailable"
+      },
+      {
+        "code": "K7",
+        "rule": "K7",
+        "subject": "components.specimen-viewport",
         "severity": "notice",
         "message": "Source and runtime observations are unavailable"
       },
@@ -17568,15 +19028,28 @@
       "WaterfallChart"
     ],
     "@clossys/designer/components": [
+      "ALERT_TONE",
       "Accordion",
       "AccordionContent",
       "AccordionItem",
       "AccordionTrigger",
+      "Alert",
+      "AlertAction",
+      "AlertDescription",
+      "AlertTitle",
       "Avatar",
+      "AvatarFallback",
+      "AvatarImage",
+      "BADGE_TONE",
       "Badge",
-      "Banner",
       "Breadcrumb",
+      "BreadcrumbEllipsis",
+      "BreadcrumbItem",
+      "BreadcrumbLink",
+      "BreadcrumbList",
+      "BreadcrumbPage",
       "Button",
+      "CARD_SURFACE",
       "COMPONENT_API_FACTS",
       "COMPONENT_COMPARISON",
       "COMPONENT_GUIDANCE",
@@ -17588,6 +19061,10 @@
       "Chip",
       "ColorPicker",
       "ComboBox",
+      "ComboboxContent",
+      "ComboboxInput",
+      "ComboboxItem",
+      "ComboboxList",
       "Command",
       "CommandDialog",
       "CommandEmpty",
@@ -17599,6 +19076,13 @@
       "CommandShortcut",
       "DateField",
       "Dialog",
+      "DialogClose",
+      "DialogContent",
+      "DialogDescription",
+      "DialogFooter",
+      "DialogHeader",
+      "DialogTitle",
+      "DialogTrigger",
       "DropdownMenu",
       "DropdownMenuGroup",
       "DropdownMenuItem",
@@ -17620,8 +19104,10 @@
       "Form",
       "GlyphProvider",
       "GridList",
+      "INVERSE_CONTROL_INK",
       "Icon",
       "IconButton",
+      "InlineMenu",
       "Item",
       "ItemActions",
       "ItemContent",
@@ -17645,13 +19131,24 @@
       "NavigationTreeSection",
       "NumberField",
       "Popover",
+      "PopoverDescription",
+      "PopoverHeader",
+      "PopoverTitle",
+      "PopoverTrigger",
       "ProgressBar",
       "RadioGroup",
+      "RadioGroupItem",
+      "RangeCalendar",
       "ResizeHandle",
       "RichText",
+      "SKELETON_SHAPE",
       "ScrollArea",
       "SearchField",
       "Select",
+      "SelectContent",
+      "SelectItem",
+      "SelectTrigger",
+      "SelectValue",
       "SemanticContent",
       "Separator",
       "Sheet",
@@ -17687,6 +19184,14 @@
       "SidebarTrigger",
       "Skeleton",
       "Slider",
+      "SpecimenCopyInContext",
+      "SpecimenGrid",
+      "SpecimenLadder",
+      "SpecimenMatrix",
+      "SpecimenPassage",
+      "SpecimenPlayer",
+      "SpecimenSwatch",
+      "SpecimenViewport",
       "Spinner",
       "StatusMark",
       "Switch",
@@ -17707,6 +19212,7 @@
       "ToggleGroupItem",
       "Toolbar",
       "Tooltip",
+      "TooltipTrigger",
       "Tree",
       "buttonLinkClassName",
       "iconButtonClassName",

@@ -445,6 +445,11 @@
         "required": true
       },
       {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      },
+      {
         "name": "assets.icon-layers",
         "kind": "asset",
         "required": false

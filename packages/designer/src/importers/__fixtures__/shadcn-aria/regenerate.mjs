@@ -34,7 +34,7 @@ registerHooks({
     return next(url, context);
   },
 });
-const { importShadcnAriaComponents, generatedShadcnComponentFiles, materializeShadcnComponent } = await import(pathToFileURL(resolve(src, "importers/shadcn-aria-components.ts")).href);
+const { importShadcnAriaComponents, generatedShadcnComponentFiles, generatedShadcnComposedStockFiles, materializeShadcnComponent } = await import(pathToFileURL(resolve(src, "importers/shadcn-aria-components.ts")).href);
 const read = name => readFileSync(resolve(here, name), "utf8");
 const items = readdirSync(here).filter(name => name.endsWith(".json")).map(name => JSON.parse(read(name))).filter(item => item.type === "registry:ui");
 const input = { items, styles: { path: "apps/v4/registry/styles/style-nova.css", content: read("style-nova.css") }, notice: { path: "LICENSE.md", content: read("LICENSE.md") } };
@@ -44,7 +44,10 @@ if (process.argv.includes("--probe")) {
   const slots = JSON.parse(readFileSync(resolve(src, "catalog/slots/components.json"), "utf8"));
   slots.find(slot => slot.id === "components.button").contract.root = "rac:MissingRoot";
   assert.equal(importShadcnAriaComponents({ ...input, slots }).receipt.find(row => row.item === "button").runtime, "X", "root: incompatible root has no fill");
-  assert.throws(() => materializeShadcnComponent(importShadcnAriaComponents(input), "button"), /unresolved/, "blockers: unsafe rewrite cannot materialize");
+  const blocked = importShadcnAriaComponents(input);
+  blocked.rewrites.button = { ...blocked.rewrites.button, issues: [{ code: "K7", file: "button.tsx", value: "glyph", message: "Unbound icon artwork remains" }] };
+  assert.throws(() => materializeShadcnComponent(blocked, "button"), /unresolved/, "blockers: unsafe rewrite cannot materialize");
+  assert.equal(importShadcnAriaComponents(input).compose.find(row => row.leaf === "field").status, "composed", "stock: clean stock items compose");
   const { rewriteShadcnAria } = await import(pathToFileURL(resolve(src, "importers/rewrite.ts")).href);
   assert(rewriteShadcnAria({ item: "button", leaf: "button", files: [{ path: "button.tsx", content: '<svg />' }], styles: "", leafByItem: {} }).issues.some(issue => issue.code === "K7"), "glyph: inline artwork is reported");
   console.log("probe pass");
@@ -55,6 +58,7 @@ const result = importShadcnAriaComponents(input);
 const destination = resolve(src, "catalog/fills/shadcn@aria");
 mkdirSync(destination, { recursive: true });
 for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(destination, name), bytes);
+for (const [name, bytes] of Object.entries(generatedShadcnComposedStockFiles(input))) writeFileSync(resolve(src, "catalog/rules", name), bytes);
 // Every committed adapter golden is written here, so none is ever edited by hand.
 for (const [item, golden] of [["button", "button"], ["select", "select"], ["calendar", "calendar"], ["checkbox", "checkbox"], ["combobox", "combo-box"], ["dialog", "dialog"], ["switch", "switch"], ["tabs", "tabs"]]) writeFileSync(resolve(here, `${golden}.golden.json`), JSON.stringify(result.rewrites[item], null, 2) + "\n");
 console.log(JSON.stringify({ fills: result.fills.length, receipt: result.receipt.length, rejected: result.receipt.filter(row => row.status === "rejected").map(row => row.item), blockers: Object.fromEntries(["button", "select", "calendar"].map(item => [item, result.rewrites[item].issues.length])) }));

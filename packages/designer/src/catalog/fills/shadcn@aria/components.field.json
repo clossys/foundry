@@ -1,0 +1,173 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.separator"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.field",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "composed"
+      ],
+      "relation": "same-contract",
+      "slot": "components.field",
+      "source": "shadcn@aria",
+      "sourceAddress": "rules/components.field.json#compose:field@1",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "field": {
+      "composes": [
+        "components.separator"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.21.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "class-variance-authority",
+          "version": "0.7.1"
+        },
+        {
+          "license": "MIT",
+          "name": "clsx",
+          "version": "2.1.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.3.1"
+        }
+      ],
+      "impl": {
+        "entry": "components/field/field.tsx",
+        "export": "Field",
+        "kind": "source"
+      },
+      "license": "MIT",
+      "members": [
+        "part.description",
+        "part.error",
+        "part.label",
+        "state.disabled",
+        "state.invalid",
+        "state.required"
+      ],
+      "notice": "notices/field.md",
+      "outputSha256": [
+        {
+          "path": "components/field/field.tsx",
+          "sha256": "eded72cb29344c82b7d92c4e914e331cd19dca8e6654d28a39bdcbf77110677b"
+        },
+        {
+          "path": "components/field/stock/field.tsx",
+          "sha256": "c29a3cfd05884cdb8ada1950d78c4619ee8dbb3f90c845d78f4428867391a05d"
+        },
+        {
+          "path": "components/field/stock/label.tsx",
+          "sha256": "043e20662797d607c5dce9b82b4fdb60c86a4c61b68861e9133266c50480b8d1"
+        },
+        {
+          "path": "components/field/stock/utils.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "notices/field.md",
+          "sha256": "51312ab005db37a08ff64b53764df2692410de8726e8774d9c31ab7b097860a5"
+        }
+      ],
+      "propMap": {
+        "part.description": "FieldDescription",
+        "part.error": "FieldError",
+        "part.label": "FieldLabel",
+        "state.disabled": "Field.isDisabled",
+        "state.invalid": "Field.isInvalid",
+        "state.required": "Field.isRequired"
+      },
+      "props": [
+        "children",
+        "className",
+        "orientation",
+        "isInvalid",
+        "isDisabled",
+        "isRequired"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.21.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [
+          "components.separator"
+        ],
+        "themes": [
+          "themes.background.default",
+          "themes.destructive.default",
+          "themes.muted-foreground.default",
+          "themes.muted.default",
+          "themes.primary.default",
+          "themes.radius.default",
+          "themes.ring.default",
+          "themes.spacing.default"
+        ]
+      },
+      "root": "rac:Label+Text+FieldError",
+      "secondaryExports": [
+        {
+          "export": "FieldContent",
+          "name": "FieldContent"
+        },
+        {
+          "export": "FieldDescription",
+          "name": "FieldDescription"
+        },
+        {
+          "export": "FieldError",
+          "name": "FieldError"
+        },
+        {
+          "export": "FieldGroup",
+          "name": "FieldGroup"
+        },
+        {
+          "export": "FieldLabel",
+          "name": "FieldLabel"
+        },
+        {
+          "export": "FieldLegend",
+          "name": "FieldLegend"
+        },
+        {
+          "export": "FieldSeparator",
+          "name": "FieldSeparator"
+        },
+        {
+          "export": "FieldSet",
+          "name": "FieldSet"
+        },
+        {
+          "export": "FieldTitle",
+          "name": "FieldTitle"
+        }
+      ],
+      "slot": "components.field",
+      "source": "shadcn@aria"
+    }
+  }
+}

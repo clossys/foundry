@@ -2499,12 +2499,37 @@
         "description": "member axis: required | invalid | disabled"
       },
       {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.destructive",
         "kind": "theme",
         "required": true
       },
       {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
         "kind": "theme",
         "required": true
       },

@@ -393,6 +393,59 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     }
   },
+  "field": {
+    "@md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px": {
+      "output": "@md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-(--ui-border-hairline)",
+      "themes": [
+      ],
+      "note": "Exact 1px optical offset for a checkbox or radio beside field content; the hairline is that 1px."
+    },
+    "gap-0.5": {
+      "output": "gap-[var(--spacing-xs)]",
+      "themes": [
+        "themes.spacing.default"
+      ],
+      "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
+    },
+    "gap-5": {
+      "output": "gap-[var(--spacing-xl)]",
+      "themes": [
+        "themes.spacing.default"
+      ],
+      "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
+    },
+    "h-5": {
+      "output": "h-[var(--spacing-xl)]",
+      "themes": [
+        "themes.spacing.default"
+      ],
+      "note": "Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact."
+    },
+    "has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px": {
+      "output": "has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-(--ui-border-hairline)",
+      "themes": [
+      ],
+      "note": "Exact 1px optical offset for a checkbox or radio beside field content; the hairline is that 1px."
+    },
+    "leading-none": {
+      "output": "leading-(--leading-heading)",
+      "themes": [
+      ],
+      "note": "Restyle unit line height to existing compact heading line height 1.15; do not alias a font-size-specific 5xl line-height member."
+    },
+    "leading-normal": {
+      "output": "",
+      "themes": [
+      ],
+      "note": "Drop the 1.5 body line height: no consumer body leading token exists, so the description inherits the consumer body line height."
+    },
+    "leading-snug": {
+      "output": "leading-(--leading-heading)",
+      "themes": [
+      ],
+      "note": "Bind compact field title typography to the existing consumer heading line-height token."
+    }
+  },
   "keyboard": {
     "h-5": {
       "output": "h-[var(--spacing-xl)]",
@@ -654,6 +707,14 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
         "themes.spacing.default"
       ],
       "note": "Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact."
+    }
+  },
+  "text-field": {
+    "file:border-0": {
+      "output": "file:border-0",
+      "themes": [
+      ],
+      "note": "Preserve the structural zero border on the native file-selector button; positive widths remain token bound."
     }
   },
   "toggle-button": {
