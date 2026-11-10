@@ -103,3 +103,58 @@ test("React's streaming reveal runtime is framework scaffolding; any other inlin
   for (const script of ['<script>$RC("B:0","S:0");alert(1)</script>', '<script id="x">$RC("B:0","S:0")</script>', '<script>requestAnimationFrame(function(){$RT=1});</script>', '<script>window.$RB=[];</script>'])
     assert.equal(inspectBody(frame() + script).violations.length, 1, script);
 });
+
+// Row 6/7 of the fake-gates audit: the frame root's marker covered everything placed in its content outlet, so a
+// hand-rolled page body under `#studio-main` passed. The outlet is a boundary: content placed there carries its own.
+const H3 = `sha256:${'3'.repeat(64)}`;
+const section = (inner = '') => `<section data-clossys-slot="sections.hero" data-clossys-candidate="hero-v1.json" data-clossys-hash="${H3}">${inner}</section>`;
+
+test('unmarked content placed in the frame content outlet fails although the frame root is its ancestor', () => {
+  const bad = inspectBody(frame('<div id="studio-main"><div id="notice" data-slot="card">Loading</div></div>'));
+  assert.deepEqual(bad.violations.map(row => [row.id, row.rule]), [['notice', 'outlet-content-without-provenance']]);
+  const popover = inspectBody(frame('<div data-popover-body><p id="hand">Hand-rolled</p></div>'));
+  assert.deepEqual(popover.violations.map(row => row.rule), ['outlet-content-without-provenance']);
+});
+
+test('marked sections placed in the outlet, and the frame own markup around it, stay covered', () => {
+  assert.deepEqual(inspectBody(frame(`<nav><span>Rail</span></nav><div id="studio-main">${section('<div><span>Copy</span></div>')}</div>`)).violations, []);
+  assert.deepEqual(inspectBody(frame('<div id="studio-main"></div>')).violations, []);
+});
+
+test('the audited routes are derived from the Studio map: every published route and each leaf assembly once', () => {
+  const { studioRoutes, mappedRoutes } = require('./check-no-handrolling.cjs');
+  const leaf = { sectionIds: ['sections.detail'], body: 'detail', data: { loader: 'slot', agent: 'designer' } };
+  const map = {
+    routes: [{ path: '/' }, { path: '/designer/components' }],
+    pages: [{ id: 'a', frameId: 'frames.studio-shell', leaf }, { id: 'b', frameId: 'frames.studio-shell', leaf }, { id: 'c', frameId: 'frames.studio-shell', leaf: { ...leaf, body: 'other' } }, { id: 'd', frameId: 'frames.studio-shell' }],
+    leaves: [{ page: 'a', path: '/designer/a/x' }, { page: 'b', path: '/designer/b/y' }, { page: 'c', path: '/designer/c/z' }, { page: 'd', path: '/designer/d/w' }],
+  };
+  assert.deepEqual(studioRoutes(map), ['/', '/designer/components', '/designer/a/x', '/designer/c/z']);
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const live = JSON.parse(fs.readFileSync(path.join(__dirname, '../generated/studio-map.json'), 'utf8'));
+  const routes = mappedRoutes();
+  for (const route of live.routes) assert.ok(routes.includes(route.path), route.path);
+  const os = require('node:os');
+  const empty = path.join(fs.mkdtempSync(path.join(process.env.TMPDIR || os.tmpdir(), 'nhr-')), 'map.json');
+  fs.writeFileSync(empty, JSON.stringify({ routes: [], pages: [], leaves: [] }));
+  try { assert.throws(() => mappedRoutes(empty), /no Studio routes/); } finally { fs.rmSync(empty); fs.rmdirSync(path.dirname(empty)); }
+});
+
+test('rendered provenance treats the content outlet as a boundary and refuses a run over zero routes', async () => {
+  const { JSDOM } = require('jsdom');
+  const { inspectProvenance, assertRoutesChecked } = await import('./check-rendered-provenance.mjs');
+  const run = markup => {
+    const dom = new JSDOM(`<html><body>${markup}</body></html>`, { url: 'http://127.0.0.1:4503/' });
+    const names = ['document', 'Node', 'ShadowRoot', 'location', 'Element', 'getComputedStyle'];
+    const prior = names.map(name => global[name]);
+    names.forEach(name => { global[name] = typeof dom.window[name] === 'function' && name === 'getComputedStyle' ? dom.window[name].bind(dom.window) : dom.window[name]; });
+    try { return inspectProvenance(); } finally { names.forEach((name, i) => { global[name] = prior[i]; }); dom.window.close(); }
+  };
+  const bad = run(frame('<div id="studio-main"><div id="notice">Loading</div></div>'));
+  assert.ok(bad.findings.some(row => row.rule === 'outlet-content-without-provenance'), JSON.stringify(bad.findings));
+  const clean = run(frame(`<div id="studio-main">${section('<p>Copy</p>')}</div>`));
+  assert.deepEqual(clean.findings.filter(row => row.rule === 'outlet-content-without-provenance'), []);
+  assert.throws(() => assertRoutesChecked([], { pages: [] }), /0 routes checked/);
+  assert.doesNotThrow(() => assertRoutesChecked(['/'], { pages: [] }));
+});

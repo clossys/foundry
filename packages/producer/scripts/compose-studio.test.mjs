@@ -2,21 +2,41 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { composeStudio } from './compose-studio.mjs';
 
-test('real render output decides readiness while legacy failed findings and statuses remain visible', async () => {
-  let args;
-  const processReport = { ok: false, exitStatus: 2, mode: 'studio-report-only', gates: [{ gate: 'PROC-2', exitStatus: 2, blocking: false, report: { violations: ['S2 absent'] } }] };
-  const report = await composeStudio([], { run: (_node, argv) => { args = argv; return { status: 0, stdout: JSON.stringify(processReport) }; }, selectionApi: { studioSelection: async () => ({ runtimeUrl: '/api/selection/runtime.js?hash=actual', gateReports: [{ gate: 'S8', blocking: false, message: 'unqualified' }] }) } });
+const passing = { gate: 'designer-process', ok: true, exitStatus: 0, gates: [{ gate: 'PROC-1', exitStatus: 0, report: { violations: [] } }] };
+
+// Fake-gates audit row 12: compose read the process report but always went on, so a red process gate never stopped it.
+test('a red process gate refuses composition and compiles no selection', async () => {
+  let args, compiled = false;
+  const processReport = { ok: false, exitStatus: 2, gates: [{ gate: 'PROC-1', exitStatus: 0 }, { gate: 'PROC-2', exitStatus: 2, report: { violations: ['S2 absent'] } }] };
+  const report = await composeStudio([], { run: (_node, argv) => { args = argv; return { status: 2, stdout: JSON.stringify(processReport) }; }, selectionApi: { studioSelection: async () => { compiled = true; return { runtimeUrl: '/api/selection/runtime.js?hash=actual' }; } } });
   assert.ok(args.includes('--studio'));
-  assert.equal(report.ready, true);
+  assert.equal(report.ready, false);
+  assert.equal(report.processExit, 2);
+  assert.match(report.refused, /PROC-2 exit 2/);
   assert.deepEqual(report.processReport, processReport);
-  assert.equal(report.selection.gateReports[0].blocking, false);
+  assert.equal(report.selection, undefined);
+  assert.equal(compiled, false);
 });
 
-test('an actual unavailable render stays red and a missing module is never replaced with fake output', async () => {
-  const run = () => ({ error: new Error('Legacy report launch unavailable'), stderr: 'spawn failure' });
-  const report = await composeStudio([], { run, selectionApi: { studioSelection: async () => ({ message: 'Actual renderer source missing', leaves: [] }) } });
-  assert.equal(report.ready, false);
-  assert.equal(report.processReport.blocking, false);
-  assert.match(report.processReport.message, /launch unavailable/);
+test('an exit 0 with a report that is not ok, or an unreadable report, still refuses', async () => {
+  const selectionApi = { studioSelection: async () => { throw new Error('must not compile'); } };
+  const notOk = await composeStudio([], { run: () => ({ status: 0, stdout: JSON.stringify({ ...passing, ok: false }) }), selectionApi });
+  assert.equal(notOk.ready, false);
+  const unreadable = await composeStudio([], { run: () => ({ status: 0, stdout: 'not json' }), selectionApi });
+  assert.equal(unreadable.ready, false);
+  assert.equal(unreadable.processReport.state, 'unavailable');
+  const launch = await composeStudio([], { run: () => ({ error: new Error('Process gate launch unavailable'), stderr: 'spawn failure' }), selectionApi });
+  assert.equal(launch.ready, false);
+  assert.equal(launch.processExit, 2);
+  assert.match(launch.processReport.message, /launch unavailable/);
+});
+
+test('verified process gates let the real render decide readiness; a missing module is never faked', async () => {
+  const run = () => ({ status: 0, stdout: JSON.stringify(passing) });
+  const ready = await composeStudio([], { run, selectionApi: { studioSelection: async () => ({ runtimeUrl: '/api/selection/runtime.js?hash=actual', gateReports: [] }) } });
+  assert.equal(ready.ready, true);
+  assert.equal(ready.processExit, 0);
+  const absent = await composeStudio([], { run, selectionApi: { studioSelection: async () => ({ message: 'Actual renderer source missing', leaves: [] }) } });
+  assert.equal(absent.ready, false);
   await assert.rejects(composeStudio([], { run, selectionApi: { studioSelection: async () => { throw new Error('Cannot find actual-renderer'); } } }), /Cannot find actual-renderer/);
 });

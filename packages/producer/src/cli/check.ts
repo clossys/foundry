@@ -1,4 +1,4 @@
-import { runSlotResolve, slotResolveSummary } from "../check/slot-resolve.js";
+import { runSlotResolve, slotResolveSummary, type SlotResolveReport } from "../check/slot-resolve.js";
 import { statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -76,6 +76,27 @@ export async function runPageCheck(args: CliArgs, cwd: string): Promise<CliResul
   };
 }
 
+/** A slot that is not ready, as a check finding: what blocks it, by slot and reason. */
+export interface ReadinessFinding { readonly rule: "readiness-blocked"; readonly agent: string; readonly slot: string; readonly blockedBy: readonly { slot: string; reason: string }[]; readonly message: string }
+
+/**
+ * Every blocked slot the slot resolve reported, one finding each. Under `check --readiness --strict` these
+ * fail the check (exit 1): a blocked slot is a red readiness row, never only a printed count.
+ */
+export function readinessFindings(slots: Pick<SlotResolveReport, "coverage">): ReadinessFinding[] {
+  return slots.coverage.flatMap(row => row.blocked.map(({ slot, readiness }) => ({
+    rule: "readiness-blocked" as const,
+    agent: row.agent,
+    slot,
+    blockedBy: readiness.blockedBy.map(by => ({ slot: by.slot, reason: by.reason })),
+    message: `${row.agent}:${slot} is not ready: blocked by ${readiness.blockedBy.map(by => `${by.slot} (${by.reason})`).join(", ") || "an unnamed input"}`,
+  })));
+}
+
+export function readinessSummary(findings: readonly ReadinessFinding[]): string {
+  return `Readiness (strict): ${findings.length} blocked slot(s)${findings.length ? "; each is a finding" : ""}`;
+}
+
 const consumerRoot = (dir: string) => statSync(join(dir, "clossys", "clossys.config.ts"), { throwIfNoEntry: false })?.isFile() === true;
 
 /** Slot integrity is enforced in every check invocation, alongside requested checks. */
@@ -99,12 +120,15 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
     totals: { error: 1, warning: 0, info: 0 }, findings: [], error: errorMessage(error), exitCode: 1 as const,
   }));
   const referenceReport = reference ? { schemaVersion: 1 as const, root, strict: true, exitCode: reference.exitCode ?? 0, suites: [reference] } : undefined;
-  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0, reference?.exitCode ?? 0) as 0 | 1 | 2;
+  // Strict readiness: every blocked slot is a finding and fails the check.
+  const readiness = args.readiness && args.strict ? readinessFindings(slots) : undefined;
+  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0, reference?.exitCode ?? 0, readiness?.length ? 1 : 0) as 0 | 1 | 2;
   return {
     ...(page ?? { verb: "check" as const, root, check: true }),
     exitCode,
-    message: [slotResolveSummary(slots, args.readiness), page?.message, suites && recordSuitesSummary(suites), referenceReport && recordSuitesSummary(referenceReport)].filter(Boolean).join("\n"),
+    message: [slotResolveSummary(slots, args.readiness), readiness && readinessSummary(readiness), page?.message, suites && recordSuitesSummary(suites), referenceReport && recordSuitesSummary(referenceReport)].filter(Boolean).join("\n"),
     slots,
+    ...(readiness ? { checks: { readiness: { strict: true, blocked: readiness.length, findings: readiness } } } : {}),
     ...(suites || referenceReport ? { suites: suites ?? referenceReport } : {}),
   };
 }

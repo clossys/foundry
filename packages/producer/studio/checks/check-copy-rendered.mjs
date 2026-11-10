@@ -18,8 +18,12 @@
  *          (a slot id, an IA id, a candidate file name), or
  *   none   no letter at all (numbers, punctuation, glyphs).
  * A string of such parts joined by ` · ` (a trail, a version line) passes when every part does.
- * Text of a Writer candidate that is not the pin (an option, a preview) is data only on that
- * slot's own route and the gallery routes above it.
+ * Only a pin whose bytes match its recorded sha256 feeds that pool. A slot's own record (its
+ * slot.json contract, its pin history) and every candidate that is not its intact pin (an option,
+ * a preview, a stale or altered pin, of any agent) are data only on that slot's own route and the
+ * gallery routes above it; nowhere else does an unpinned candidate's text pass.
+ * Every child frame (a specimen preview) is read like the page itself; a frame the check cannot
+ * read is a route failure, never skipped.
  * Publisher records are never a source of rendered text: a page title comes from a Writer key.
  * Anything else is a literal the Studio rendered without a registry entry, and fails.
  *
@@ -139,8 +143,9 @@ export function recordWords(record, add) {
 export async function registryUniverse(repo) {
   const { parseWriterSlotBody } = await import('@clossys/writer/slot-body');
   const copy = new Set(), templates = [], data = new Set(), ids = new Set();
-  // slot id -> the words of its Writer candidates that are not the pin (data on that slot's routes only).
+  // slot id -> the words of its record and of its candidates that are not the intact pin (data on that slot's routes only).
   const options = new Map();
+  const slotWords = slot => { if (!options.has(slot)) options.set(slot, new Set()); return options.get(slot); };
   const addCopy = text => {
     const value = normal(text);
     if (!value) return;
@@ -159,16 +164,16 @@ export async function registryUniverse(repo) {
   }
   // Record data: what a slot page shows of a record as the record itself (a contract fact, a
   // record key, a candidate field, a pin event), never as words about it.
-  const strings = (value, skip) => {
-    if (typeof value === 'string') { const text = normal(value); if (text) data.add(text); return; }
+  const strings = (value, skip, sink = data) => {
+    if (typeof value === 'string') { const text = normal(value); if (text) sink.add(text); return; }
     if (value === null || typeof value !== 'object') return;
-    data.add(normal(JSON.stringify(value)));
-    if (Array.isArray(value)) { value.forEach(item => strings(item, skip)); return; }
+    sink.add(normal(JSON.stringify(value)));
+    if (Array.isArray(value)) { value.forEach(item => strings(item, skip, sink)); return; }
     for (const [key, item] of Object.entries(value)) {
       if (skip.has(key)) continue;
-      data.add(key);
-      if (item !== null && typeof item !== 'object' && typeof item !== 'string') data.add(String(item));
-      strings(item, skip);
+      sink.add(key);
+      if (item !== null && typeof item !== 'object' && typeof item !== 'string') sink.add(String(item));
+      strings(item, skip, sink);
     }
   };
   const { pinHistory } = await import('../../dist/records/slots.js');
@@ -177,30 +182,37 @@ export async function registryUniverse(repo) {
     const root = join(consumer, 'agents', agent);
     // A Publisher record never supplies rendered words: its title and tree names are Writer keys.
     const skip = agent === 'publisher' ? new Set(['files', 'title', 'name']) : new Set(['files']);
+    // The intact pin of each slot (bytes matching the recorded sha256): the only candidate whose text is global.
+    const pins = new Map(pinnedCandidates(repo, agent).map(row => [row.slot, row.name]));
     for (const slot of readdirSync(root, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name)) {
       const slotFile = join(root, slot, 'slot.json');
       if (!existsSync(slotFile)) continue;
       ids.add(slot);
-      try { strings(JSON.parse(readFileSync(slotFile, 'utf8')), new Set()); } catch { /* an unreadable slot record shows nothing */ }
+      const own = slotWords(slot);
+      // The slot's contract is its own record: shown on its own routes, never a global source of words.
+      try { strings(JSON.parse(readFileSync(slotFile, 'utf8')), new Set(), own); } catch { /* an unreadable slot record shows nothing */ }
       const dir = join(root, slot, 'candidates');
       for (const name of existsSync(dir) ? readdirSync(dir) : []) {
         ids.add(name); ids.add(name.replace(/\.[a-z]+$/, ''));
         const bytes = readFileSync(join(dir, name), 'utf8');
+        // Text of the intact pin is global; any other candidate's text is an option, data on this slot's routes only.
+        const sink = pins.get(slot) === name ? data : own;
         // A candidate's content hash is its identity (the options and history rows show it, full or short).
         const hash = sha256(readFileSync(join(dir, name)));
         data.add(hash); data.add(shortHash(hash));
-        if (name.endsWith('.json')) { try { strings(JSON.parse(bytes), skip); } catch { /* not JSON data */ } continue; }
+        if (name.endsWith('.json')) { try { strings(JSON.parse(bytes), skip, sink); } catch { /* not JSON data */ } continue; }
         const front = /^---\n([\s\S]*?)\n---\n/.exec(bytes)?.[1];
         // Markdown: its frontmatter fields (a Writer source line) are data; its body is data only for Director and Designer.
-        for (const line of front?.split('\n') ?? []) { const value = line.replace(/^[\w-]+:\s*/, ''); try { strings(JSON.parse(value), skip); } catch { strings(value, skip); } }
+        for (const line of front?.split('\n') ?? []) { const value = line.replace(/^[\w-]+:\s*/, ''); try { strings(JSON.parse(value), skip, sink); } catch { strings(value, skip, sink); } }
         if (agent === 'director' || agent === 'designer') for (const line of bytes.split('\n')) {
           // A record line is data as written (a `- ` bullet included) and as its text.
-          for (const text of [normal(line.replace(/^[#>*\-\s]+/, '')), normal(line)]) if (text) data.add(text);
+          for (const text of [normal(line.replace(/^[#>*\-\s]+/, '')), normal(line)]) if (text) sink.add(text);
         }
         if (agent === 'writer' && name.endsWith('.md') && front !== undefined) {
           const locales = JSON.parse(/^locales: (.+)$/m.exec(front)?.[1] ?? '["en"]');
           const body = bytes.slice(bytes.indexOf('\n---\n') + 5);
-          const words = options.get(slot) ?? new Set();
+          // The pin's words are copy already (above); every other Writer candidate's words are options.
+          const words = own;
           let locale = '';
           for (const line of body.split('\n')) {
             if (line.startsWith('## ')) locale = line.slice(3).trim();
@@ -209,15 +221,15 @@ export async function registryUniverse(repo) {
           }
           try { for (const row of parseWriterSlotBody(body, locales)) recordWords(row.record, text => { const value = normal(text); if (value) words.add(value); }); }
           catch { /* a malformed candidate shows its issues, not its words */ }
-          options.set(slot, words);
         }
       }
-      // Pin history is the slot's record even after an unpin: every event a history row can show.
+      // Pin history is the slot's record even after an unpin: every event a history row can show, on its own routes.
       let history = [];
       try { history = pinHistory(consumer, agent, slot); } catch { /* no readable history */ }
       for (const event of history) {
-        for (const value of [event.candidate, event.commit, event.sha256, event.decidedBy, event.at, event.basis]) if (typeof value === 'string' && value) data.add(normal(value));
-        if (typeof event.sha256 === 'string') data.add(shortHash(event.sha256));
+        for (const value of [event.candidate, event.commit, event.sha256, event.decidedBy, event.at, event.basis]) if (typeof value === 'string' && value) own.add(normal(value));
+        // A content hash is an identity, never words: global like the candidates' own hashes.
+        if (typeof event.sha256 === 'string') { data.add(normal(event.sha256)); data.add(shortHash(event.sha256)); }
       }
     }
   }
@@ -286,6 +298,29 @@ function collectRendered(attributes) {
   return { lang: document.documentElement.getAttribute('lang'), strings: out };
 }
 
+/**
+ * The rendered strings of every child frame of `page` (a specimen preview, at any depth), `where` naming the
+ * frame. A frame that cannot be read (detached, script-less sandbox, never loaded) is a failure, never skipped.
+ */
+export async function renderedFrames(page, attributes, settle = 10_000) {
+  const strings = [], failures = [];
+  for (const frame of page.frames()) {
+    if (frame === page.mainFrame()) continue;
+    const label = `iframe ${frame.name() || frame.url() || '(unnamed)'}`;
+    try {
+      await frame.waitForLoadState('load', { timeout: settle });
+      const rendered = await Promise.race([
+        frame.evaluate(collectRendered, attributes),
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`not readable within ${settle} ms`)), settle)),
+      ]);
+      for (const row of rendered.strings) strings.push({ ...row, where: `${label} ${row.where}` });
+    } catch (error) {
+      failures.push(`${label}: ${String(error?.message ?? error).split('\n')[0]}`);
+    }
+  }
+  return { strings, failures };
+}
+
 /** Every route Publisher installed: each page path, then each leaf path a tab serves. */
 export function installedRoutes(repo) {
   const map = JSON.parse(readFileSync(join(repo, 'packages/producer/studio/generated/studio-map.json'), 'utf8'));
@@ -322,12 +357,7 @@ async function main() {
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
     await context.route(`${origin}/api/events`, route => route.fulfill({ contentType: 'text/event-stream', body: ': connected\n\n' }));
-    // The check reads the route's own document only (collectRendered never enters a frame, and a specimen frame is
-    // an opaque sandbox): a child frame's document is answered empty, so it loads without a server render per frame.
-    if (!pages) await context.route(() => true, route => {
-      const request = route.request();
-      return request.isNavigationRequest() && request.frame().parentFrame() ? route.fulfill({ contentType: 'text/html', body: '' }) : route.fallback();
-    });
+    // Every child frame (a specimen preview) renders for real and is read like the page: a person sees its text too.
     const queue = [...routes];
     const worker = async () => {
       const page = await context.newPage();
@@ -344,6 +374,9 @@ async function main() {
         await page.getByRole('heading', { level: 1 }).first().waitFor({ timeout: 30_000 }).catch(() => failures.push({ route, reason: 'no h1 rendered' }));
         await page.waitForLoadState('networkidle', { timeout: 3_000 }).catch(() => {});
         const rendered = await page.evaluate(collectRendered, ATTRIBUTES);
+        const frames = await renderedFrames(page, ATTRIBUTES);
+        for (const reason of frames.failures) failures.push({ route, reason });
+        rendered.strings.push(...frames.strings);
         if (rendered.lang !== universe.locale) {
           const key = `lang ${rendered.lang}`;
           if (!findings.has(key)) findings.set(key, { kind: 'lang', text: String(rendered.lang), where: 'html[lang]', routes: [] });

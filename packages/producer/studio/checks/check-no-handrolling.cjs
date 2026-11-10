@@ -7,8 +7,16 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { launchChrome, failureExitCode } = require('./chrome-launch.cjs');
 
-// This function is serialized into the browser by Playwright. Keep it standalone.
-function inspectStudioBody() {
+/**
+ * The pinned Studio frame's content outlets: where it places what the page hands it (the body column
+ * and each header popover body). A frame or section marker covers its own markup only; it never
+ * reaches past an outlet, so every element placed in one must be its own marked root.
+ */
+const CONTENT_OUTLETS = '#studio-main, [data-popover-body]';
+
+// This function is serialized into the browser by Playwright. Keep it standalone (its one argument
+// is the outlet selector; the default is CONTENT_OUTLETS, written out for the serialized copy).
+function inspectStudioBody(outlets = '#studio-main, [data-popover-body]') {
   const violations = [];
   const framework = {};
   let checked = 0;
@@ -78,9 +86,16 @@ function inspectStudioBody() {
     }
     return false;
   }
+  // The nearest boundary decides: walking up, a marked root covers the element; a content outlet
+  // reached first means the element is page content the frame was handed, and the outlet's child on
+  // this path carried no marker of its own, so the frame's marker above the outlet does not count.
+  const outlet = node => typeof node.matches === 'function' && node.matches(outlets);
+  let outletContent = false;
   function covered(element, portals = true) {
     let top = element;
+    outletContent = false;
     for (let node = element; node && node !== document.body; node = node.parentElement ?? node.getRootNode().host) {
+      if (node !== element && outlet(node)) { outletContent = true; return false; }
       if (node.hasAttribute('data-clossys-slot')) return true;
       top = node;
     }
@@ -92,7 +107,7 @@ function inspectStudioBody() {
       // Check scaffolding before coverage: a document leaf cannot hide framework drift.
       const reason = scaffolding(element);
       if (reason) framework[reason] = (framework[reason] ?? 0) + 1;
-      else if (!covered(element)) violations.push({ tag: element.localName, id: element.id, html: element.outerHTML.slice(0, 240) });
+      else if (!covered(element)) violations.push({ ...(outletContent ? { rule: 'outlet-content-without-provenance' } : {}), tag: element.localName, id: element.id, html: element.outerHTML.slice(0, 240) });
       visit(element);
       if (element.shadowRoot) visit(element.shadowRoot);
     }
@@ -230,7 +245,7 @@ async function proveDetector(page) {
     document.querySelector('body [data-clossys-slot]').append(covered);
     document.body.append(document.createTextNode('Studio text-only probe'));
   });
-  assertCovered(await page.evaluate(inspectStudioBody), 'covered descendants and bare text positive proof');
+  assertCovered(await page.evaluate(inspectStudioBody, CONTENT_OUTLETS), 'covered descendants and bare text positive proof');
   await page.evaluate(() => {
     document.getElementById('studio-covered-probe').remove();
     [...document.body.childNodes].find(node => node.nodeType === Node.TEXT_NODE && node.data === 'Studio text-only probe').remove();
@@ -242,12 +257,55 @@ async function proveDetector(page) {
       probe.hidden = hidden;
       document.body.append(probe);
     }, hidden);
-    const result = await page.evaluate(inspectStudioBody);
+    const result = await page.evaluate(inspectStudioBody, CONTENT_OUTLETS);
     assert.ok(result.violations.some(item => item.id === 'studio-outside-probe'), `uncovered ${hidden ? 'hidden' : 'visible'} element must fail`);
     assert.throws(() => assertCovered(result, 'negative proof'), /elements outside a Designer leaf/);
     await page.locator('#studio-outside-probe').evaluate(element => element.remove());
   }
-  assertCovered(await page.evaluate(inspectStudioBody), 'after negative-proof cleanup');
+  // Page content the frame was handed is never covered by the frame's own marker: an unmarked
+  // element placed in the frame's body column must fail although the frame root is its ancestor.
+  const placed = await page.evaluate(() => {
+    const outlet = document.querySelector('#studio-main');
+    if (!outlet) return false;
+    const probe = document.createElement('div');
+    probe.id = 'studio-outlet-probe';
+    probe.innerHTML = '<span>Hand-rolled content</span>';
+    outlet.append(probe);
+    return true;
+  });
+  if (placed) {
+    const result = await page.evaluate(inspectStudioBody, CONTENT_OUTLETS);
+    assert.ok(result.violations.some(item => item.id === 'studio-outlet-probe' && item.rule === 'outlet-content-without-provenance'), 'unmarked content in the frame content outlet must fail; the frame marker cannot cover it');
+    await page.locator('#studio-outlet-probe').evaluate(element => element.remove());
+  }
+  assertCovered(await page.evaluate(inspectStudioBody, CONTENT_OUTLETS), 'after negative-proof cleanup');
+}
+
+/**
+ * The routes the audit visits, derived from the generated Studio map Publisher compiles (never a
+ * hand list): every published route, then the first leaf of each distinct leaf assembly (frame,
+ * sections, body, loader and agent), so every page and leaf template is rendered at least once.
+ */
+function studioRoutes(map) {
+  const routes = [...new Set((map.routes ?? []).map(route => route.path))];
+  const pages = new Map((map.pages ?? []).map(page => [page.id, page]));
+  const assemblies = new Set();
+  for (const leaf of map.leaves ?? []) {
+    const page = pages.get(leaf.page);
+    if (!page?.leaf) continue;
+    const key = JSON.stringify([page.frameId, page.leaf.sectionIds, page.leaf.body, page.leaf.data?.loader, page.leaf.data?.agent]);
+    if (assemblies.has(key)) continue;
+    assemblies.add(key);
+    if (!routes.includes(leaf.path)) routes.push(leaf.path);
+  }
+  return routes;
+}
+
+/** The generated Studio map beside this check, and the routes it derives (none is an error). */
+function mappedRoutes(file = path.join(__dirname, '../generated/studio-map.json')) {
+  const routes = studioRoutes(JSON.parse(fs.readFileSync(file, 'utf8')));
+  assert.ok(routes.length > 0, `no Studio routes derived from ${file}: a run that visits no route proves nothing`);
+  return routes;
 }
 
 async function main() {
@@ -265,15 +323,15 @@ async function main() {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.route(`${origin}/api/events`, route => route.fulfill({ contentType: 'text/event-stream', body: ': connected\n\n' }));
-    // Studio's own pages over the live slot model: home plus one tab page per agent.
+    // Studio's own pages over the live slot model: every published route and each leaf template.
     const checks = [];
-    const routes = ['/', '/director/identity', '/designer/components', '/writer/strings', '/publisher/studio'];
+    const routes = mappedRoutes();
     for (const route of routes) {
       const requireNeeds = route.startsWith('/designer');
       const response = await page.goto(origin + route);
       assert.equal(response.status(), 200, route);
       await page.getByRole('heading', { level: 1 }).waitFor();
-      const result = await page.evaluate(inspectStudioBody);
+      const result = await page.evaluate(inspectStudioBody, CONTENT_OUTLETS);
       assertCovered(result, route);
       const selectionEvidence = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds });
       assertSelection(selectionEvidence, route);
@@ -291,7 +349,7 @@ async function main() {
       }
       // Opening the command menu must keep every rendered root on the selected fill (audited below).
       await dialog.waitFor({ timeout: 1000 }).catch(async () => assert.fail(`${route}: the command menu did not open (focus: ${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 160))})`));
-      const commandBody = await page.evaluate(inspectStudioBody);
+      const commandBody = await page.evaluate(inspectStudioBody, CONTENT_OUTLETS);
       assertCovered(commandBody, `${route} command menu`);
       const commandSelection = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds });
       assertSelection(commandSelection, `${route} command menu`);
@@ -302,11 +360,11 @@ async function main() {
       await dialog.waitFor({ state: 'hidden', timeout: 10000 }).catch(async () => assert.fail(`${route}: Escape did not close the command menu (focus: ${await page.evaluate(() => `${document.activeElement?.localName} value=${JSON.stringify(document.activeElement?.value)} dialogs=${document.querySelectorAll("[role=dialog]").length}`)})`));
     }
     assert.deepEqual(errors, [], 'browser page errors');
-    console.log(JSON.stringify({ check: 'Studio no handrolling', routes: routes.length, checks, positiveProof: 'unstamped descendants inside an existing leaf and bare text accepted', negativeProof: 'visible and hidden unmarked body siblings, altered fill hashes, non-pinned candidate versions, altered selected CSS (when compiled), and unowned RAC descendants rejected on every route', sourceProof: 'the generic renderer has no host-authored nav/ul/li' }, null, 2));
+    console.log(JSON.stringify({ check: 'Studio no handrolling', routes: routes.length, checks, positiveProof: 'unstamped descendants inside an existing leaf and bare text accepted', negativeProof: 'visible and hidden unmarked body siblings, unmarked content in the frame content outlet, altered fill hashes, non-pinned candidate versions, altered selected CSS (when compiled), and unowned RAC descendants rejected on every route', sourceProof: 'the generic renderer has no host-authored nav/ul/li' }, null, 2));
   } finally {
     await browser.close();
   }
 }
 
-module.exports = { inspectStudioBody, inspectStudioSelection, findHostCellTree, assertCovered, assertSelection, assertUsableSelection };
+module.exports = { CONTENT_OUTLETS, inspectStudioBody, inspectStudioSelection, findHostCellTree, assertCovered, assertSelection, assertUsableSelection, studioRoutes, mappedRoutes };
 if (require.main === module) main().catch(error => { console.error(error); process.exitCode = failureExitCode(error); });

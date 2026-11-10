@@ -109,25 +109,32 @@ test("default child with a stale source head fails closed", () => {
   assert.equal(JSON.parse(child.stdout).gates[3].exitStatus, 2);
 });
 
-test('Studio reports retain all strict PROC and DF failures without blocking render composition', () => {
+// Fake-gates audit row 12: `--studio` returned 0 on any red gate, so Studio composition never stopped on one.
+test('Studio mode keeps full child reports and exits with the strict status: a red gate blocks composition', () => {
   const { run } = fixture([1, 2, 1], 1), strict = run(), rendered = run(['--studio']);
   assert.equal(strict.status, 2);
-  assert.equal(rendered.status, 0, rendered.stderr);
+  assert.equal(rendered.status, 2, rendered.stderr);
   const report = JSON.parse(rendered.stdout);
-  assert.equal(report.mode, 'studio-report-only');
+  assert.equal(report.mode, undefined);
+  assert.equal(report.blocking, undefined);
   assert.equal(report.ok, false);
   assert.equal(report.exitStatus, 2);
   assert.deepEqual(report.gates.map(row => row.exitStatus), [1, 2, 1, 1]);
-  assert.ok(report.gates.every(row => row.blocking === false && row.report));
+  assert.ok(report.gates.every(row => row.blocking === undefined && row.report));
   assert.equal(report.gates[3].report.missing[0].slot, 'themes.spacing');
 });
 
-test('Studio preserves missing legacy check diagnostics without a fabricated pass', () => {
+test('Studio mode exits 1 on violations alone and 0 only when every gate is verified', () => {
+  assert.equal(fixture([1, 0, 0]).run(['--studio']).status, 1);
+  assert.equal(fixture([0, 0, 0]).run(['--studio']).status, 0);
+});
+
+test('Studio preserves missing legacy check diagnostics and fails closed', () => {
   const { run } = fixture([null, 0, 0]), child = run(['--studio']);
-  assert.equal(child.status, 0);
+  assert.equal(child.status, 2);
   const report = JSON.parse(child.stdout);
   assert.equal(report.ok, false);
   assert.equal(report.gates[0].exitStatus, 2);
-  assert.equal(report.gates[0].blocking, false);
+  assert.equal(report.gates[0].blocking, undefined);
   assert.deepEqual(report.gates[0].unverified, ['Missing process gate script']);
 });
