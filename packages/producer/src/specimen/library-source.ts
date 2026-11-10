@@ -27,10 +27,14 @@ export interface LibrarySourceOptions {
   readonly registryBase?: string;
   /**
    * The pinned Writer copy specimen inputs read (`pinnedWriterCopy` of the one root), taken once by
-   * a caller that loads many candidates in one pass. Without it each candidate load scans Writer.
+   * a caller that loads many candidates in one pass, or read through a getter a long-lived caller
+   * refreshes when Writer changes. Without it each candidate load scans Writer.
    */
-  readonly writerCopy?: Readonly<Record<string, string>>;
+  readonly writerCopy?: WriterCopy;
 }
+
+/** A Writer copy snapshot, or a getter of the current one. */
+export type WriterCopy = Readonly<Record<string, string>> | (() => Readonly<Record<string, string>>);
 
 function versions(entry: SlotEntry, element: string): { name: string; version: number }[] {
   return entry.candidates.flatMap(name => {
@@ -145,7 +149,7 @@ function pinFingerprint(roots: readonly string[]): string {
 }
 
 /** Every byte and the pin come from the common model reader. No store fallback. */
-export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string; readonly writerCopy?: Readonly<Record<string, string>> } = {}): SpecimenRecordStore {
+export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string; readonly writerCopy?: WriterCopy } = {}): SpecimenRecordStore {
   const roots = rootsIn.map(root => resolve(root));
   if (options.writerCopy && roots.length !== 1) throw new Error("a Writer copy snapshot belongs to exactly one consumer root");
   let cached: { at: number; fingerprint: string; index: InstallIndex } | undefined;
@@ -157,8 +161,9 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
     cached = { at: now, fingerprint, index: cached?.fingerprint === fingerprint ? cached.index : installIndex(roots) };
     return cached.index;
   };
-  // A caller's Writer snapshot (one scan per specimen pass) or a scan of the root per load.
-  const writer = (root: string) => options.writerCopy ? () => options.writerCopy! : () => pinnedWriterCopy(root);
+  // A caller's Writer snapshot or getter (one scan per specimen pass or Writer change), else a scan of the root per load.
+  const given = options.writerCopy;
+  const writer = (root: string) => typeof given === "function" ? given : given ? () => given : () => pinnedWriterCopy(root);
   const store: SpecimenRecordStore = {
     async alias(alias, context) {
       const id = aliasProvider(index(), alias);

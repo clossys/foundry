@@ -5,9 +5,10 @@
  * install-and-bind pipeline `clossys publish --install` uses (Publisher `installAndBind` into a
  * Vite + Tailwind shadcn substrate, Writer copy bound by the page records that already use the
  * item, else the item's own preview props). Theme and font leaves get generated swatch and type
- * ramp pages that read the installed CSS variables. One `vite build` serves them all from
- * `/__specimen-site/<key>/`; the key changes with the selection (every pinned item version and
- * hash), the Writer copy and the Publisher page cells, so each item version is built once.
+ * ramp pages that read the installed CSS variables. One `vite build` per layer (themes, assets,
+ * components, sections, frames) serves them from `/__specimen-site/<key>-<layer>/`, so one broken
+ * page module blanks only its own layer; the key changes with the selection (every pinned item
+ * version and hash), the Writer copy and the Publisher page cells, so each item version is built once.
  *
  * Only pins reach the pinned build. Every other recorded candidate of a slot is a preview: Studio
  * names it as (slot, candidate) and it builds on first request from its own bytes, every other
@@ -174,14 +175,31 @@ function run(command: string, args: string[], cwd: string): Promise<{ code: numb
   }));
 }
 
-interface PassResult { pages: Map<string, SpecimenPage>; findings: InstallFinding[]; built: boolean }
+export interface PassResult { pages: Map<string, SpecimenPage>; findings: InstallFinding[]; built: boolean }
 
 /**
  * Install and bind `slots` against `pins` into the shared substrate, then build them into `dist`.
  * Passes run one after another in one substrate: installPage re-installs whatever a previous pass
  * left at a different version, so a pass's bundle holds exactly its own pins.
  */
-async function buildPass(options: { library: string; substrate: string; pins: InstallPins; slots: readonly string[]; records: readonly InstallPageRecord[]; copy: Record<string, string>; build: SpecimenBuild }): Promise<PassResult> {
+export interface PassOptions {
+  readonly library: string; readonly substrate: string; readonly pins: InstallPins; readonly slots: readonly string[];
+  readonly records: readonly InstallPageRecord[]; readonly copy: Record<string, string>;
+  /** The pinned Writer copy (`pinnedWriterCopy` of the library), scanned once per site, never per pass or candidate. */
+  readonly pinnedCopy: Readonly<Record<string, string>>;
+  readonly build: SpecimenBuild;
+}
+
+/** Lines of a failed `vite build` a finding keeps from each end: vite names the error first and the stack last. */
+const FAILURE_HEAD = 20, FAILURE_TAIL = 5;
+/** A failed `vite build` as a finding: the head of its output (the error itself) and its tail, never only the last lines of a stack. */
+export function renderFailedFinding(key: string, code: number, output: string): InstallFinding {
+  const lines = output.trim().split("\n");
+  const shown = lines.length > FAILURE_HEAD + FAILURE_TAIL ? [...lines.slice(0, FAILURE_HEAD), `[${lines.length - FAILURE_HEAD - FAILURE_TAIL} lines omitted]`, ...lines.slice(-FAILURE_TAIL)] : lines;
+  return { code: "render-failed", detail: `specimen build ${key} exited ${code}:\n${shown.join("\n")}` };
+}
+
+async function buildPass(options: PassOptions): Promise<PassResult> {
   const { library, substrate, pins, records, copy, build } = options;
   const pagesDir = join(substrate, "clossys", "pages");
   // Only this pass's pages: a page from another pass or an earlier selection must not reach the bundle.
@@ -189,8 +207,8 @@ async function buildPass(options: { library: string; substrate: string; pins: In
   await mkdir(pagesDir, { recursive: true });
   await mkdir(join(substrate, "components"), { recursive: true });
   await writeFile(join(substrate, "components", SPECIMEN_DOCUMENT), await specimenDocument());
-  // One Writer snapshot for the pass: a Writer scan per candidate load held the server's event loop for minutes.
-  const source = libraryRecordSource({ roots: [library], writerCopy: pinnedWriterCopy(library) });
+  // One Writer snapshot: a Writer scan per candidate load held the server's event loop for minutes.
+  const source = libraryRecordSource({ roots: [library], writerCopy: options.pinnedCopy });
   const runner = shadcnRunner();
   const include = Object.keys(pins).filter(slot => slot.startsWith("themes.")).sort();
   const findings: InstallFinding[] = [];
@@ -260,48 +278,81 @@ async function buildPass(options: { library: string; substrate: string; pins: In
   if (failed) { findings.push(failed); return { pages: new Map(), findings, built: false }; }
   const vite = join(substrate, "node_modules", "vite", "bin", "vite.js");
   const built = await run(process.execPath, [vite, "build", "--base", `${SITE_PREFIX}${build.key}/`, "--outDir", build.dist, "--emptyOutDir", "--logLevel", "error"], substrate);
-  if (built.code !== 0) { findings.push({ code: "render-failed", detail: `specimen build ${build.key} exited ${built.code}: ${built.output.trim().split("\n").slice(-3).join(" ")}` }); return { pages: new Map(), findings, built: false }; }
+  if (built.code !== 0) { findings.push(renderFailedFinding(build.key, built.code, built.output)); return { pages: new Map(), findings, built: false }; }
   return { pages, findings, built: true };
 }
 
-interface SiteInputs {
+export interface SiteInputs {
   readonly root: string; readonly library: string; readonly key: string; readonly substrate: string; readonly base: string;
   readonly pins: InstallPins; readonly unpinned: InstallPins; readonly options: ReadonlyMap<string, readonly { element: string; version: number }[]>;
   readonly records: readonly InstallPageRecord[]; readonly recordFindings: readonly InstallFinding[]; readonly copy: Record<string, string>;
+  readonly pinnedCopy: Readonly<Record<string, string>>;
 }
 
 async function siteInputs(root: string, library: string): Promise<SiteInputs | undefined> {
   const inputs = slotInstallInputs(library);
   if (!inputs) return undefined;
+  const pinnedCopy = pinnedWriterCopy(library);
   // Compiled Writer copy wins; the pinned Writer slots fill a consumer that has not compiled yet.
-  const copy = { ...pinnedWriterCopy(library), ...await writerCopy(root).catch(() => ({} as Record<string, string>)) };
+  const copy = { ...pinnedCopy, ...await writerCopy(root).catch(() => ({} as Record<string, string>)) };
   const { records, findings: recordFindings } = await pageRecords(root, inputs.pins);
   const key = hash(SPECIMEN_FORMAT, await specimenDocument(), root, inputs.fingerprint, JSON.stringify(copy), JSON.stringify(records), JSON.stringify(recordFindings)).slice(0, 16);
   const substrate = specimenSubstrate(root);
-  return { root, library, key, substrate, base: dirname(substrate), pins: inputs.pins, unpinned: inputs.unpinned, options: inputs.options, records, recordFindings, copy };
+  return { root, library, key, substrate, base: dirname(substrate), pins: inputs.pins, unpinned: inputs.unpinned, options: inputs.options, records, recordFindings, copy, pinnedCopy };
 }
 
-/** A saved build is reused while every dist it names is still on disk. */
-async function savedSite(manifest: string): Promise<{ builds: SpecimenBuild[]; pages: Map<string, SpecimenPage>; findings: InstallFinding[] } | undefined> {
+/** A finding that says the pass itself did not build (vite, or the substrate's npm install), not one slot. */
+const passFailed = (finding: InstallFinding) => finding.code === "render-failed" || (finding.code === "install-failed" && !finding.slot);
+
+/**
+ * A saved build is reused while every dist it names is still on disk. A pass that did not build
+ * is never reused: its manifest names no dist (`[].every` holds), so a failed build would
+ * otherwise be served as a finished one until the selection changed.
+ */
+export async function savedSite(manifest: string): Promise<{ builds: SpecimenBuild[]; pages: Map<string, SpecimenPage>; findings: InstallFinding[] } | undefined> {
   if (!existsSync(manifest)) return undefined;
   const saved = await readJson(manifest);
-  if (!(saved.builds as SpecimenBuild[]).every(build => existsSync(join(build.dist, "index.html")))) return undefined;
-  return { builds: saved.builds, pages: new Map(Object.entries(saved.pages)), findings: saved.findings };
+  const builds = saved.builds as SpecimenBuild[], findings = (saved.findings ?? []) as InstallFinding[];
+  if (!builds.length && findings.some(passFailed)) return undefined;
+  if (!builds.every(build => existsSync(join(build.dist, "index.html")))) return undefined;
+  return { builds, pages: new Map(Object.entries(saved.pages)), findings };
 }
 
-/** The pinned selection: one pass, every pinned slot, exactly the pins pages install. */
-async function buildSite(inputs: SiteInputs): Promise<InstalledSpecimenSite> {
-  const { key, base, substrate, pins, library, records, recordFindings, copy } = inputs;
-  const manifest = join(base, `site-${key}.json`);
-  const saved = await savedSite(manifest);
-  if (saved) return { key, ...saved };
-  await ensureSubstrate(substrate);
-  const build = { key, dist: join(base, `dist-${key}`) };
-  const result = await buildPass({ library, substrate, pins, slots: Object.keys(pins), records, copy, build });
-  const builds = result.built ? [build] : [];
-  const pages = result.built ? result.pages : new Map<string, SpecimenPage>();
-  const findings = [...recordFindings, ...result.findings];
-  await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(pages), findings }, null, 2)}\n`);
+/** The layer a pinned slot builds in: its IA root (`components.button` -> `components`). */
+const layerOf = (slot: string) => slot.split(".")[0]!;
+
+/** What a site build runs; tests replace the substrate and the pass. */
+export interface SiteBuildSteps { readonly prepare: (substrate: string) => Promise<unknown>; readonly pass: (options: PassOptions) => Promise<PassResult> }
+const SITE_STEPS: SiteBuildSteps = { prepare: ensureSubstrate, pass: buildPass };
+
+/**
+ * The pinned selection, one build per layer (themes, assets, components, sections, frames), each
+ * with exactly the pins pages install. A page module that breaks its bundle blanks only its own
+ * layer, and its finding is surfaced with the site's. Themes build last: their pages read the
+ * CSS variables every other layer's pages install through `include`.
+ */
+export async function buildSite(inputs: SiteInputs, steps: SiteBuildSteps = SITE_STEPS): Promise<InstalledSpecimenSite> {
+  const { key, base, substrate, pins, library, records, recordFindings, copy, pinnedCopy } = inputs;
+  const layers = [...new Set(Object.keys(pins).map(layerOf))].sort((a, b) => Number(a === "themes") - Number(b === "themes") || a.localeCompare(b));
+  const builds: SpecimenBuild[] = [], pages = new Map<string, SpecimenPage>(), findings: InstallFinding[] = [...recordFindings];
+  let prepared = false;
+  for (const layer of layers) {
+    // `<site key>-<12 hex>`: the shape the site CSP accepts (an option build's key has it too).
+    const layerKey = `${key}-${hash("layer", layer).slice(0, 12)}`;
+    const layerBuild = { key: layerKey, dist: join(base, `dist-${layerKey}`) };
+    const manifest = join(base, `site-${layerBuild.key}.json`);
+    let result = await savedSite(manifest);
+    if (!result) {
+      if (!prepared) { await steps.prepare(substrate); prepared = true; }
+      const slots = Object.keys(pins).filter(slot => layerOf(slot) === layer);
+      const passed = await steps.pass({ library, substrate, pins, slots, records, copy, pinnedCopy, build: layerBuild });
+      result = { builds: passed.built ? [layerBuild] : [], pages: passed.built ? passed.pages : new Map(), findings: passed.findings };
+      await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key: layerBuild.key, layer, builds: result.builds, pages: Object.fromEntries(result.pages), findings: result.findings }, null, 2)}\n`);
+    }
+    builds.push(...result.builds);
+    for (const [name, page] of result.pages) pages.set(name, page);
+    findings.push(...result.findings);
+  }
   return { key, builds, pages, findings };
 }
 
@@ -310,14 +361,14 @@ async function buildSite(inputs: SiteInputs): Promise<InstalledSpecimenSite> {
  * (element, version) and every other slot keeps its pin. Built when Studio first asks for it.
  */
 async function buildOption(inputs: SiteInputs, slot: string, option: { element: string; version: number }): Promise<{ build?: SpecimenBuild; page?: SpecimenPage; findings: InstallFinding[] }> {
-  const { base, substrate, pins, unpinned, library, records, copy } = inputs;
+  const { base, substrate, pins, unpinned, library, records, copy, pinnedCopy } = inputs;
   const key = `${inputs.key}-${hash(slot, option.element, String(option.version)).slice(0, 12)}`;
   const manifest = join(base, `site-${key}.json`);
   const saved = await savedSite(manifest);
   if (saved) return { ...(saved.builds[0] ? { build: saved.builds[0] } : {}), ...(saved.pages.get(pageKey(slot, option.element, option.version)) ? { page: saved.pages.get(pageKey(slot, option.element, option.version))! } : {}), findings: saved.findings };
   await ensureSubstrate(substrate);
   const build = { key, dist: join(base, `dist-${key}`) };
-  const result = await buildPass({ library, substrate, pins: { ...unpinned, ...pins, [slot]: option }, slots: [slot], records, copy, build });
+  const result = await buildPass({ library, substrate, pins: { ...unpinned, ...pins, [slot]: option }, slots: [slot], records, copy, pinnedCopy, build });
   const builds = result.built ? [build] : [];
   await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(result.built ? result.pages : []), findings: result.findings }, null, 2)}\n`);
   const page = result.built ? result.pages.get(pageKey(slot, option.element, option.version)) : undefined;
