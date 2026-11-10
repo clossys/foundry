@@ -1,10 +1,13 @@
 import { clsx, type ClassValue } from "clsx"
+import { MERGE_THEME_SCALE } from "../../../tokens/merge-scale.js"
 
 // Resolve the optional peer once, before any caller receives this module.
-// Keep the default merge configuration: cn is distinct from token-aware cx.
+// Extend the default merge configuration with the theme's spacing and radius scale only:
+// cn stays distinct from token-aware cx, but a consumer's `gap-sm` must replace a default `gap-lg`.
 const twMerge = await (async () => {
   try {
-    return (await import("tailwind-merge")).twMerge
+    const { extendTailwindMerge } = await import("tailwind-merge")
+    return extendTailwindMerge({ extend: { theme: { spacing: [...MERGE_THEME_SCALE.spacing], radius: [...MERGE_THEME_SCALE.radius] } } })
   } catch {
     return undefined
   }
