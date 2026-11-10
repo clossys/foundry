@@ -19,6 +19,23 @@ const contentSections = contentCatalogDocument.sections.filter((section): sectio
 const resolved = resolveSectionedViewDocument(contentCatalogDocument, contentCatalogCopyResolver);
 const resolvedContent = resolved.sections.filter((section): section is ResolvedSectionedViewContentSection => section.kind === "content-section");
 
+// The stock shadcn@aria disclosure server-renders each row as a trigger that names and
+// controls a labelled panel. The panel stays hidden until the trigger toggles it, and its
+// answer copy is in the document from the first byte.
+function stockDisclosures(root: ParentNode) {
+  return [...root.querySelectorAll<HTMLButtonElement>('button[slot="trigger"][aria-controls]')].map((trigger) => {
+    const panel = root.querySelector<HTMLElement>(`[id="${trigger.getAttribute("aria-controls")}"]`)!;
+    expect(panel).not.toBeNull();
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(trigger.textContent?.trim()).not.toBe("");
+    expect(panel.getAttribute("role")).toBe("group");
+    expect(panel.getAttribute("aria-labelledby")).toBe(trigger.id);
+    expect(panel.hasAttribute("hidden")).toBe(true);
+    expect(panel.textContent?.trim()).not.toBe("");
+    return { trigger, panel };
+  });
+}
+
 const words = (text: string | undefined): number => (text === undefined ? 0 : text.trim().split(/\s+/).length);
 
 describe("content catalog fixture", () => {
@@ -242,21 +259,23 @@ describe("content catalog page", () => {
     expect(markup).toBe(renderToStaticMarkup(createElement(SectionedView, { document: native })));
     const dom = catalogDom(html).window.document;
     for (const caption of dom.querySelectorAll("[data-catalog-chrome=caption]")) caption.remove();
-    // Caption siblings change React's tree-position useId stems for Items groups.
-    // Canonicalize only those generated IDs and their labelledby references;
-    // every other byte, including authored IDs, stays in the exact comparison.
+    // Caption siblings change React's tree-position useId stems for Items groups and
+    // for the stock disclosure's trigger/panel pairs. Canonicalize only those generated
+    // IDs and their labelledby/controls references; every other byte, including
+    // authored IDs, stays in the exact comparison.
     const groupIds = (main: Element): string => {
       const clone = main.cloneNode(true) as Element;
       const ids = new Map<string, string>();
       for (const node of clone.querySelectorAll("[id]")) {
-        if (!/^_R_[0-9a-z]+_-items-group-\d+$/.test(node.id)) continue;
+        const generated = /^_R_[0-9a-z]+_-items-group-\d+$/.test(node.id) ? "react-items-group" : /^react-aria-_R_[0-9a-zA-Z]+_$/.test(node.id) ? "react-aria-disclosure" : undefined;
+        if (generated === undefined) continue;
         expect(ids.has(node.id)).toBe(false);
-        ids.set(node.id, `react-items-group-${ids.size}`);
+        ids.set(node.id, `${generated}-${ids.size}`);
       }
-      for (const node of clone.querySelectorAll("[aria-labelledby]")) {
-        const references = node.getAttribute("aria-labelledby")!.split(/\s+/);
+      for (const attribute of ["aria-labelledby", "aria-controls"]) for (const node of clone.querySelectorAll(`[${attribute}]`)) {
+        const references = node.getAttribute(attribute)!.split(/\s+/);
         for (const id of references) expect([...clone.querySelectorAll("[id]")].some(target => target.id === id), id).toBe(true);
-        node.setAttribute("aria-labelledby", references.map(id => ids.get(id) ?? id).join(" "));
+        node.setAttribute(attribute, references.map(id => ids.get(id) ?? id).join(" "));
       }
       for (const node of clone.querySelectorAll("[id]")) node.id = ids.get(node.id) ?? node.id;
       return clone.outerHTML;
@@ -265,7 +284,7 @@ describe("content catalog page", () => {
     for (const band of renderContentCatalog().bands) expect(band.markup).not.toContain("data-catalog-chrome");
   });
 
-  it("keeps standalone gallery disclosures native and usable without hydration", () => {
+  it("keeps standalone gallery disclosures on the stock disclosure with every answer in the markup", () => {
     const entry = renderPreviewGalleryEntries().find(entry => entry.view === "SectionedView");
     expect(entry).toBeDefined();
     const annotations = /<span id="published-kind-[^"]+" data-published-kind="[^"]+" data-published-section="[^"]+" class="sr-only" aria-hidden="true"><\/span>/g;
@@ -274,27 +293,17 @@ describe("content catalog page", () => {
       document: resolveSectionedViewDocument(previewSectionedDocument, previewCopyResolver),
     })));
     const dom = catalogDom(entry!.markup).window.document;
-    expect(dom.querySelectorAll("#faq [data-items] details summary")).toHaveLength(4);
-    expect(dom.querySelectorAll("[data-rac]")).toHaveLength(0);
-    const details = dom.querySelector("details");
-    expect(details?.open).toBe(false);
-    details?.querySelector("summary")?.click();
-    expect(details?.open).toBe(true);
+    expect(stockDisclosures(dom.querySelector("#faq [data-items]")!)).toHaveLength(4);
+    expect(dom.querySelectorAll("details, summary")).toHaveLength(0);
   });
 
-  it("keeps static catalog disclosures usable without hydration", () => {
+  it("keeps static catalog disclosures on the stock disclosure with every answer in the markup", () => {
     const dom = catalogDom(buildContentCatalogHtml()).window.document;
     const faq = dom.querySelector("#catalog-faq");
     expect(faq).not.toBeNull();
-    expect(faq?.querySelectorAll("details")).toHaveLength(6);
-    expect(faq?.querySelectorAll("button")).toHaveLength(0);
-    const details = faq?.querySelector("details");
-    const summary = details?.querySelector("summary");
-    expect(details?.open).toBe(false);
-    summary?.click();
-    expect(details?.open).toBe(true);
-    summary?.click();
-    expect(details?.open).toBe(false);
+    expect(stockDisclosures(faq!)).toHaveLength(6);
+    expect(faq?.querySelectorAll("button")).toHaveLength(6);
+    expect(faq?.querySelectorAll("details, summary")).toHaveLength(0);
   });
 
   it("captions every band in the chrome, outside the product markup", () => {

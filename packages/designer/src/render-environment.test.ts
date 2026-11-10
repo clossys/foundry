@@ -273,8 +273,10 @@ describe("compiled grouped Items SSR", () => {
       expect(target).toHaveAttribute("aria-labelledby", trigger.id);
     }
     expect([...host.querySelectorAll("[data-item-ordinal]")].map(node => node.textContent)).toEqual(["1", "2", "3", "4", "1", "2", "3", "4"]);
-    if (name === "Items.server") expect(host.querySelectorAll("details:not([open]) > summary:first-child")).toHaveLength(8);
-    else expect(host.querySelectorAll("button[aria-expanded=false]")).toHaveLength(8);
+    // Both entries render the stock disclosure: a collapsed trigger per answer, no native details.
+    expect(host.querySelectorAll("details, summary")).toHaveLength(0);
+    expect(host.querySelectorAll('button[slot="trigger"][aria-expanded=false]')).toHaveLength(8);
+    for (const panel of host.querySelectorAll('[role="group"][aria-labelledby]')) if (panel.closest("li")) expect(panel).toHaveAttribute("hidden");
   }, 15_000);
   it("gives duplicate instances unique heading IDs and resolves every reference", () => {
     const absolute = join(distDir, "blocks", "items", "Items.server.js");

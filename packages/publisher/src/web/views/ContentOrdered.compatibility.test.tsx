@@ -12,11 +12,12 @@ const registry = { id: "compatibility", revision: "1", locale: "en", source: { k
 const resolver = createCopyResolver(registry);
 const authored = (disclosed: boolean): SectionedViewDocument => ({ id: "compatibility", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, { id: "topics", kind: "content-section", heading: ref("heading"), block: { type: "items", recipe: disclosed ? "faq" : "topics", items: (["first","second","third","fourth"] as const).map(id=>({ id, heading: ref(id), description: ref("detail") })) } }] });
 describe("canonical content anatomy compatibility", () => {
-  it("renders current disclosed items with ordinary and server disclosure semantics", () => {
+  it("renders current disclosed items through the stock disclosure in ordinary and server entries", () => {
     const input=authored(true);expect(validateSectionedViewDocument(input)).toEqual([]);const resolved=resolveSectionedViewDocument(input,resolver);expect(()=>assertRenderableSectionedViewDocument(resolved)).not.toThrow();
-    for(const [View,server] of [[SectionedView,false],[ServerSectionedView,true]] as const) {
+    for(const View of [SectionedView,ServerSectionedView]) {
       const host=document.createElement("div");host.innerHTML=renderToStaticMarkup(<View document={resolved}/>);
-      expect(host.querySelectorAll(server ? "summary" : "button")).toHaveLength(4);expect(host.querySelector("[data-rac]")!==null).toBe(!server);expect(host.querySelector("summary")!==null).toBe(server);
+      const triggers=[...host.querySelectorAll('button[slot="trigger"][aria-controls]')];expect(triggers).toHaveLength(4);expect(host.querySelector("details, summary")).toBeNull();
+      for(const trigger of triggers){const panel=host.querySelector(`[id="${trigger.getAttribute("aria-controls")}"]`)!;expect(trigger.getAttribute("aria-expanded")).toBe("false");expect(panel.getAttribute("role")).toBe("group");expect(panel.getAttribute("aria-labelledby")).toBe(trigger.id);expect(panel.hasAttribute("hidden")).toBe(true);}
       for(const text of Object.values(copy).slice(1,6))expect(host.textContent).toContain(text);
     }
   });
