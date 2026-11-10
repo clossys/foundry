@@ -77,9 +77,12 @@ export function componentSecondaryExports(fill: ComponentCandidate, files: reado
   const entry = files.find(file => file.path === path);
   if (!entry) return refuse();
   const selected = selectedFunctionSources[path];
-  // Unmodified stock bytes carry a generated TypeScript AST proof keyed by their sha256; any other bytes use the bounded grammar.
-  const stock = componentSourceProof(path, entry.content);
-  const proof = selected && sha256(entry.content) === selected.sha256
+  // Unmodified stock bytes carry a generated TypeScript AST proof keyed by their sha256, applied only to the fill's own
+  // output receipt at this path (a relocated receipt has none); any other bytes use the bounded grammar.
+  const digest = sha256(entry.content);
+  const receipted = fill.outputSha256?.some(receipt => receipt.path === path && receipt.sha256 === digest) === true;
+  const stock = receipted ? componentSourceProof(path, entry.content) : undefined;
+  const proof = selected && digest === selected.sha256
     ? { functions: new Set(selected.functions), exports: new Set(selected.functions), types: new Set<string>() }
     : stock ? { functions: new Set(stock.functions), exports: new Set(stock.exports), types: new Set<string>() }
     : componentSourceValues(entry.content);
