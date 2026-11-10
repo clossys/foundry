@@ -109,6 +109,7 @@ describe("frames.site-shell Designer runtime renderer", () => {
       ...inputFor({}), fill: { leaf: "sections.hero", slots: ["header"], members: ["size.display"] },
       selection: { leaf: "sections.hero", members: ["size.display"] },
       content: contentOf({ header: { heading: "Welcome" } }),
+      sectionHost: { heroCopy: { "header.heading": "Welcome" } }, profile: {},
     } as unknown as RuntimeRenderInput<ReactNode>;
     const landing = [heroEntry.render(heroInput)];
     const flowHero = render(inputFor(overlayContent, { members: ["footer-placement.flow"], main: landing }));
