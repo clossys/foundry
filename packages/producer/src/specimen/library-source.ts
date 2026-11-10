@@ -298,6 +298,16 @@ function specimenInputs(root: string, where: string, item: CandidateItem, mounti
   return { preview: { ...rest, copy, ...(copySlots.length ? { copySlots } : {}) }, slots };
 }
 
+/**
+ * Why one element candidate's specimen preview cannot be built, or undefined when it can: the same
+ * preview-input rules the specimen build applies (`specimenInputs`), so a reader that lists a
+ * candidate's specimen frame asks only for one the specimen route can serve.
+ */
+export function specimenPreviewIssue(root: string, slot: string, name: string, bytes: string, writerSource: () => Readonly<Record<string, string>> = () => pinnedWriterCopy(root)): string | undefined {
+  try { specimenInputs(root, `${slot}/${name}`, JSON.parse(bytes) as CandidateItem, true, writerSource); return undefined; }
+  catch (error) { return error instanceof Error ? error.message : String(error); }
+}
+
 /** The pinned item a `$element` input mounts, or why it cannot be mounted. */
 function slotInput(root: string, slot: string, writerSource: () => Readonly<Record<string, string>>): SlotInput | string {
   const entry = readSlotEntry(root, "designer", slot);

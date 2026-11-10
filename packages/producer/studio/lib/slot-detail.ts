@@ -79,7 +79,7 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     copy: optionsCopy(),
     name, description: detail.pin ? studioCopy("studio.recorded-candidates-beside-the-pin") : studioCopy("studio.no-pin-candidates-await-approval"),
     rows: [...detail.candidates].sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.version - b.version).map(candidate => ({
-      version: candidate.version, pinned: candidate.pinned, copy: optionCopy(detail.id, candidate), label: candidate.name, reason: candidate.pinned ? studioCopy("studio.pinned") : studioCopy("studio.unpinned"),
+      version: candidate.version, pinned: candidate.pinned, copy: optionCopy(name, candidate), label: candidate.name, reason: candidate.pinned ? studioCopy("studio.pinned") : studioCopy("studio.unpinned"),
       preview: candidate.specimen ? { kind: 'frame' as const, viewport: 1280 as const, src: specimenHref({ specimen: candidate.specimen, version: candidate.version }, theme, 1280)! }
         : { kind: 'strings' as const, rows: candidateRows(candidate).map(row => ({ ...row, change: 'same' as const })) },
     })),
