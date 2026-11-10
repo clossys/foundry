@@ -1,6 +1,6 @@
 {
   "schema": "designer-foundation/v1",
-  "sourceTree": "fc620f0efaf4c33a6f9f6c158cc9845b0a310ba7",
+  "sourceTree": "68e21f359b3dc568374ec2107ac7bd2f7c5a6e02",
   "files": {
     "src/backdrop/consumer-art.ts": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e",
     "src/backdrop/contract.ts": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8",
@@ -284,7 +284,7 @@
     "src/catalog-core/component-registry.ts": "fc8d3e81c160c67b983355c225656661bd4a6e3500c016fd375d5670e9763251",
     "src/catalog-core/component-rule-validation.ts": "1ac059f5c22201a2adec6c044a9a4c36cfc66b325b70019bec5eae1a4d9bdb14",
     "src/catalog-core/component-secondary-exports.ts": "c1847ed728514332e017454afef3401bcb7aac58bce746dd92bc59d7684b52c0",
-    "src/catalog-core/component-source-proofs.json": "d23501ea604112bf5049b830b189436868860a5ff29d2f793b27ce9ab40167ba",
+    "src/catalog-core/component-source-proofs.json": "2946491459ef4ba37fdcc57906a9bf1b2ead3e7fd2ca2488c246790cb1b53ac6",
     "src/catalog-core/component-source-proofs.ts": "63129aab2905f1eba5502c4463298b5f0e0ee6e4f9096997cf4de43b210ce993",
     "src/catalog-core/component-source-values.ts": "84ab6c2fb9dd78d08a62ec3db9de1d885ba104573272fabf1236cd456dddebe5",
     "src/catalog-core/component-sources.ts": "441fec01ee54931708c3788209f8f0af5d26d621c20213a6c20ffc4f7521c811",
