@@ -5,7 +5,7 @@
  * every member eagerly from one module, so `LineChart` — which holds
  * its own hover state via `useState`, touching no third-party library —
  * drags the whole barrel down under React's
- * `react-server` condition even though `ChartFrame`, `BarChart`, `WaterfallChart`, `RangeChart`, `ScatterChart`, and `Sparkline`
+ * `react-server` condition even though `ChartFrame` and `BarChart`
  * resolve cleanly on their own.
  *
  * MEMBERSHIP IS EMPIRICAL — confirmed by resolving each member's own
@@ -36,23 +36,7 @@ export type { BarChartProps, BarChartSeries } from "./BarChart.js";
 export { LineChart } from "./LineChart.server.js";
 export type { LineChartProps, LineChartSeries } from "./LineChart.js";
 
-export { WaterfallChart } from "./WaterfallChart.js";
-export type { WaterfallChartProps } from "./WaterfallChart.js";
-
-export { Sparkline } from "./Sparkline.js";
-export type { SparklineProps } from "./Sparkline.js";
-
-export { RangeChart } from "./RangeChart.js";
-export type { RangeChartProps } from "./RangeChart.js";
-
-export { ScatterChart } from "./ScatterChart.js";
-export type { ScatterChartProps } from "./ScatterChart.js";
-
 export { AreaChart } from "./AreaChart.server.js";
 export type { AreaChartProps, AreaChartSeries } from "./AreaChart.js";
-export { Heatmap } from "./Heatmap.server.js";
-export type { HeatmapProps } from "./Heatmap.js";
-export { StatusStrip } from "./StatusStrip.server.js";
-export type { StatusStripProps, StatusStripSegment } from "./StatusStrip.js";
 
 export type { SignatureChartLabels } from "./internal/signature-types.js";

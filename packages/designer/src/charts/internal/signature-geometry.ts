@@ -1,10 +1,6 @@
 import { linearScale } from "./scale.js";
 import { MAX_CATEGORICAL_SERIES } from "./chart-vars.js";
-import type {
-  AreaChartProps,
-  StatusStripProps,
-  StatusStripSegment,
-} from "./signature-types.js";
+import type { AreaChartProps } from "./signature-types.js";
 import type { PlotArea } from "../ChartFrame.js";
 
 export function datumLabel(value: string | number | Date): string {
@@ -170,43 +166,4 @@ export function areaPaths(
       .map((point) => ({ x: px[point.index]!, y: y(point.bottom) }));
     return `${trace(top, smooth)} ${trace(bottom, smooth).replace(/^M/, "L")} Z`;
   });
-}
-
-export function statusIntervals({
-  segments,
-  domain,
-}: StatusStripProps): readonly StatusStripSegment[] {
-  if (!segments.length && !domain) return [];
-  const sorted = [...segments].sort(
-    (left, right) => coordinate(left.from) - coordinate(right.from),
-  );
-  for (const segment of sorted) {
-    if (coordinate(segment.to) <= coordinate(segment.from))
-      throw new RangeError("StatusStrip interval end must follow its start.");
-    if (!["ok", "warn", "error", "unknown"].includes(segment.status))
-      throw new TypeError("StatusStrip requires a known status.");
-  }
-  const from = domain?.[0] ?? sorted[0]!.from,
-    to = domain?.[1] ?? sorted.at(-1)!.to;
-  if (coordinate(to) <= coordinate(from))
-    throw new RangeError(
-      "StatusStrip domain interval must have positive duration.",
-    );
-  const output: StatusStripSegment[] = [];
-  let cursor = from;
-  for (const segment of sorted) {
-    if (coordinate(segment.from) < coordinate(cursor))
-      throw new RangeError(
-        "StatusStrip intervals overlap or fall outside the domain.",
-      );
-    if (coordinate(segment.to) > coordinate(to))
-      throw new RangeError("StatusStrip interval falls outside the domain.");
-    if (coordinate(segment.from) > coordinate(cursor))
-      output.push({ from: cursor, to: segment.from, status: "unknown" });
-    output.push(segment);
-    cursor = segment.to;
-  }
-  if (coordinate(cursor) < coordinate(to))
-    output.push({ from: cursor, to, status: "unknown" });
-  return output;
 }

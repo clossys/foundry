@@ -321,9 +321,9 @@ describe("server-safe LineChart", () => {
     expect(rows(container)).toHaveLength(3);
   });
 
-  it("exports the ten intended server components", () => {
+  it("exports the four intended server components", () => {
     expect(LineChart).toBe(BarrelLineChart);
-    expect(Object.keys(serverExports).sort()).toEqual(["AreaChart", "BarChart", "ChartFrame", "Heatmap", "LineChart", "RangeChart", "ScatterChart", "Sparkline", "StatusStrip", "WaterfallChart"]);
+    expect(Object.keys(serverExports).sort()).toEqual(["AreaChart", "BarChart", "ChartFrame", "LineChart"]);
   });
 
   it("imports compiled react-server modules and executes static geometry", () => {

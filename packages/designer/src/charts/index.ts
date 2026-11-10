@@ -17,13 +17,12 @@
  *
  * `ChartFrame` is the shared container (plot area, axes, grid, legend
  * slot, accessible title/description, table-view fallback) that
- * `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`, and `ScatterChart` compose; `Sparkline` is the one
- * exception (see its own doc comment for why it doesn't use `ChartFrame`; it reuses only `ChartFrame.Tooltip`).
+ * `BarChart` and `LineChart` compose.
  *
  * The scale helpers and color-slot assignment (`internal/scale.ts`,
  * `internal/chart-vars.ts`) are deliberately NOT exported here, the same
  * way `components/internal/cx.ts` and `components/internal/ui-vars.ts` never appear
- * in `components/index.ts` — this layer ships ten components, not a general
+ * in `components/index.ts` — this layer ships four components, not a general
  * numerical/color library.
  */
 
@@ -51,23 +50,7 @@ export type { BarChartProps, BarChartSeries } from "./BarChart.js";
 export { LineChart } from "./LineChart.js";
 export type { LineChartProps, LineChartSeries } from "./LineChart.js";
 
-export { WaterfallChart } from "./WaterfallChart.js";
-export type { WaterfallChartProps } from "./WaterfallChart.js";
-
-export { Sparkline } from "./Sparkline.js";
-export type { SparklineProps } from "./Sparkline.js";
-
-export { RangeChart } from "./RangeChart.js";
-export type { RangeChartProps } from "./RangeChart.js";
-
-export { ScatterChart } from "./ScatterChart.js";
-export type { ScatterChartProps } from "./ScatterChart.js";
-
 export { AreaChart } from "./AreaChart.js";
 export type { AreaChartProps, AreaChartSeries } from "./AreaChart.js";
-export { Heatmap } from "./Heatmap.js";
-export type { HeatmapProps } from "./Heatmap.js";
-export { StatusStrip } from "./StatusStrip.js";
-export type { StatusStripProps, StatusStripSegment } from "./StatusStrip.js";
 
 export type { SignatureChartLabels } from "./internal/signature-types.js";
