@@ -749,10 +749,10 @@
   "host": [
     {
       "file": "components/_parts/rail-utils/index.ts",
-      "consumerImport": "import { mergeUiClasses as cx } from \"@clossys/designer/components\"",
-      "packageImport": "import { cx } from \"../../internal/cx\"",
-      "source": "components/internal/cx.ts",
-      "sourceSha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0",
+      "consumerImport": "import { cn as cx } from \"@clossys/designer/components\"",
+      "packageImport": "import { cn as cx } from \"../utils/index\"",
+      "source": "components/_parts/utils/index.ts",
+      "sourceSha256": "051e24451f3a3f87523206ecc6bf524e09e59751a07fd66a244f1ca8956b519b",
       "dependency": {
         "name": "@clossys/designer",
         "version": "0.12.0",
@@ -760,7 +760,7 @@
       }
     }
   ],
-  "utility": "import { mergeUiClasses as cx } from \"@clossys/designer/components\"\nimport type { ClassValue, CopyResolver, CopyRef } from \"./types\"\nexport { type ClassValue, type VariantProps, type CopyResolver } from \"./types\"\nexport { RAIL_COPY_REFS } from \"./copy\"\nfunction flatten(value: ClassValue): string {\n  if (typeof value === \"string\" || typeof value === \"number\") return String(value)\n  if (Array.isArray(value)) return value.filter(Boolean).map(flatten).filter(Boolean).join(\" \")\n  if (value && typeof value === \"object\") {\n    const keys: string[] = []\n    for (const key in value) if ((value as { [key: string]: unknown })[key]) keys.push(key)\n    return keys.join(\" \")\n  }\n  return \"\"\n}\nexport function classNames(...values: ClassValue[]): string { return values.filter(Boolean).map(flatten).filter(Boolean).join(\" \") }\nexport function cn(...values: ClassValue[]): string { return cx(classNames(...values)) }\nexport function resolveRailCopy(resolver: CopyResolver | undefined, ref: CopyRef): string {\n  if (!resolver) throw new TypeError(\"Designer component copy requires a host resolver\")\n  const result = resolver(ref)\n  if (!result || result.ref.id !== ref.id || result.ref.locale !== ref.locale || typeof result.text !== \"string\" || !result.text.trim()) throw new TypeError(`Designer component copy unresolved: ${ref.id}`)\n  return result.text\n}\n",
+  "utility": "import { cn as cx } from \"@clossys/designer/components\"\nimport type { ClassValue, CopyResolver, CopyRef } from \"./types\"\nexport { type ClassValue, type VariantProps, type CopyResolver } from \"./types\"\nexport { RAIL_COPY_REFS } from \"./copy\"\nfunction flatten(value: ClassValue): string {\n  if (typeof value === \"string\" || typeof value === \"number\") return String(value)\n  if (Array.isArray(value)) return value.filter(Boolean).map(flatten).filter(Boolean).join(\" \")\n  if (value && typeof value === \"object\") {\n    const keys: string[] = []\n    for (const key in value) if ((value as { [key: string]: unknown })[key]) keys.push(key)\n    return keys.join(\" \")\n  }\n  return \"\"\n}\nexport function classNames(...values: ClassValue[]): string { return values.filter(Boolean).map(flatten).filter(Boolean).join(\" \") }\nexport function cn(...values: ClassValue[]): string { return cx(classNames(...values)) }\nexport function resolveRailCopy(resolver: CopyResolver | undefined, ref: CopyRef): string {\n  if (!resolver) throw new TypeError(\"Designer component copy requires a host resolver\")\n  const result = resolver(ref)\n  if (!result || result.ref.id !== ref.id || result.ref.locale !== ref.locale || typeof result.text !== \"string\" || !result.text.trim()) throw new TypeError(`Designer component copy unresolved: ${ref.id}`)\n  return result.text\n}\n",
   "copySource": "export const RAIL_COPY_REFS = {\n  \"command.title\": {\n    \"id\": \"st.vhdw8gz59s\"\n  },\n  \"command.description\": {\n    \"id\": \"st.tqaf5rvggj\"\n  },\n  \"command.search\": {\n    \"id\": \"st.3avwye9tm9\"\n  },\n  \"sheet.close\": {\n    \"id\": \"st.9ehasbmw8z\"\n  },\n  \"sidebar.title\": {\n    \"id\": \"st.50we5a15ty\"\n  },\n  \"sidebar.description\": {\n    \"id\": \"st.etz9tsny9q\"\n  },\n  \"sidebar.toggle\": {\n    \"id\": \"st.qbaewx3e0y\"\n  }\n} as const\n",
   "utilityTypes": "interface CopyRef { readonly id: string; readonly locale?: string; readonly values?: Readonly<Record<string, string | number | boolean>> }\ntype CopyResolver = (ref: CopyRef) => { readonly ref: CopyRef; readonly text: string } | undefined\ntype ClassValue = string | number | boolean | null | undefined | object | ClassValue[]\ntype VariantProps<T extends (...args: any[]) => unknown> = Omit<NonNullable<Parameters<T>[0]>, \"class\" | \"className\">\nexport { type CopyRef, type CopyResolver, type ClassValue, type VariantProps }\n"
 }
