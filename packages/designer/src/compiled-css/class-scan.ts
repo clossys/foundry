@@ -157,18 +157,24 @@ function balancedCandidate(token: string): boolean {
  * every bracket and parenthesis balanced and properly nested, and a comma or
  * apostrophe only inside a bracket or parenthesis. That keeps the prose cases
  * this file guards against out: `var(--ui-ring-focus,` and `2px)` are
- * unbalanced, `isn't` has a top-level apostrophe. Over-inclusion stays
- * harmless for the reason the header gives.
+ * unbalanced, `isn't` has a top-level apostrophe. A top-level parenthesis
+ * must open a CSS-variable shorthand (`(--x` or `(length:--x`), so a balanced
+ * prose call such as `call(value)` stays out too; parentheses nested inside a
+ * bracket or a shorthand (`calc(...)`, `:not(...)`) are unaffected.
+ * Over-inclusion stays harmless for the reason the header gives.
  */
 const V4_CANDIDATE_START_RE = /^[@a-zA-Z[*!-]/;
 const V4_TOP_LEVEL_FORBIDDEN = new Set(['"', "`", "\\", "{", "}", ";", ",", "'"]);
 const MAX_V4_CANDIDATE_LENGTH = 200;
+const V4_PAREN_VALUE_RE = /^(?:[a-z-]+:)?--[a-zA-Z0-9_-]/;
 
 function isV4CandidateShape(token: string): boolean {
   if (token.length > MAX_V4_CANDIDATE_LENGTH || !V4_CANDIDATE_START_RE.test(token)) return false;
   if (!/[a-zA-Z]/.test(token)) return false;
   const open: string[] = [];
-  for (const ch of token) {
+  for (let index = 0; index < token.length; index += 1) {
+    const ch = token.charAt(index);
+    if (ch === "(" && open.length === 0 && !V4_PAREN_VALUE_RE.test(token.slice(index + 1))) return false;
     if (ch === "[" || ch === "(") {
       open.push(ch === "[" ? "]" : ")");
     } else if (ch === "]" || ch === ")") {

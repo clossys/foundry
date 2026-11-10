@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { afterEach, expect, it, vi } from "vitest";
 import { SiteHeader } from "../../shell/SiteHeader.js";
-import { Link } from "../../components/Link.js";
+import { LinkButton as Link } from "../../components/preview-runtime/components/button/button.js";
 import { ConsentBanner } from "../../blocks/ConsentBanner.js";
 import { FrameNavDisclosure } from "./FrameNavDisclosure.client.js";
 import { NavLinks } from "./NavLinks.js";
