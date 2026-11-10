@@ -223,9 +223,16 @@ describe("canonical ordered and disclosed collections", () => {
       expect(heading.id).toBe("content:heading"); expect(collection).not.toBeNull(); expect(collection.getAttribute("aria-labelledby")).toBe(heading.id);
       expect([...root.querySelectorAll("[id]")].filter(node => node.id === heading.id)).toHaveLength(1);
       if (name === "disclose") {
-        expect(root.querySelectorAll(server ? "details" : "[data-rac][data-expanded]").length || root.querySelectorAll(server ? "summary" : "button").length).toBe(4);
-        expect(root.querySelector("summary") !== null).toBe(server);
-        expect(root.querySelector("[data-rac]") !== null).toBe(!server);
+        // Both entries render the stock shadcn@aria disclosure: a trigger controls a labelled, hidden panel.
+        const triggers = [...root.querySelectorAll('button[slot="trigger"][aria-controls]')];
+        expect(triggers).toHaveLength(4);
+        for (const trigger of triggers) {
+          const panel = root.querySelector(`[id="${trigger.getAttribute("aria-controls")}"]`)!;
+          expect(trigger.getAttribute("aria-expanded")).toBe("false");
+          expect(panel.getAttribute("role")).toBe("group"); expect(panel.getAttribute("aria-labelledby")).toBe(trigger.id); expect(panel.hasAttribute("hidden")).toBe(true);
+          expect(panel.textContent).toContain(copy.detail);
+        }
+        expect(root.querySelector("details, summary")).toBeNull();
       } else { expect(root.querySelector("ol[data-items]")).not.toBeNull(); expect(root.querySelectorAll("[data-item-ordinal]")).toHaveLength(name === "connected" ? 3 : 2); }
     }
     expect(JSON.stringify(doc)).toBe(before); expect(doc.resolutions).toBe(resolutions);
@@ -281,11 +288,16 @@ describe("published kind preservation", () => {
     expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
     expect(dom(html(doc)).querySelectorAll("p.font-medium.text-body")).toHaveLength(4); expect(html(doc, true)).toBe(html(doc));
   });
-  it("keeps published split FAQ native and React Aria factories separate", () => {
+  it("renders published split FAQ through the same stock disclosure in both entries", () => {
     const authoredDoc: SectionedViewDocument = { id: "faq", sections: [{ id: "faq", kind: "faq", ground: "base", layout: "split", heading: short, description: ref("detail"), items: ["one", "two", "three", "four"].map(id => ({ id, question: short, answer: ref("detail") })) }] };
     expect(validateSectionedViewDocument(authoredDoc)).toEqual([]); const doc = resolveSectionedViewDocument(authoredDoc, resolver);
-    const ordinary = dom(html(doc)); const server = dom(html(doc, true)); expect(server.querySelector("details summary")?.textContent).toContain(copy.short); expect(ordinary.querySelector("details")).toBeNull();
-    expect(ordinary.querySelector("button")?.textContent).toContain(copy.short); expect(server.textContent).toContain(copy.detail);
+    const ordinary = dom(html(doc)); const server = dom(html(doc, true));
+    for (const root of [ordinary, server]) {
+      const triggers = [...root.querySelectorAll('button[slot="trigger"][aria-controls]')]; expect(triggers).toHaveLength(4);
+      expect(triggers[0]!.textContent).toContain(copy.short); expect(root.querySelector(`[id="${triggers[0]!.getAttribute("aria-controls")}"][role="group"]`)?.textContent).toContain(copy.detail);
+      expect(root.querySelector("details, summary")).toBeNull();
+    }
+    expect(server.innerHTML).toBe(ordinary.innerHTML);
   });
   it.each(["retired-block", "private-bridge"])("refuses external canonical %s spoof before Designer", name => {
     const doc: any = structuredClone(resolve(band({ block: columns(2) }))); if (name === "retired-block") doc.sections[0].block = { type: "faq", items: [{ id: "one", question: copy.short, answer: copy.detail }] }; else doc.sections[0].publishedFaq = { kind: "faq", layout: "split", id: "content", items: [] };

@@ -32,17 +32,25 @@ describe("MR6b document FAQ and steps", () => {
     expect(view.getByText("Read the details.").tagName).toBe("P");
   });
 
-  it("retains native FAQ disclosure semantics and caller-authored answers", () => {
+  it("renders FAQ rows on the stock disclosure with caller-authored answers", () => {
     const view = render(<NativeFaq heading="Questions" items={[
       { id: "one", question: "What happens first?", answer: "Read the details." },
       { id: "two", question: "What follows?", answer: "Choose the next step." },
     ]} />);
-    const rows = view.container.querySelectorAll("details");
-    expect(rows).toHaveLength(2);
-    expect(rows[0]?.querySelector("summary")).toHaveTextContent("What happens first?");
-    expect(rows[1]?.querySelector("summary")).toHaveTextContent("What follows?");
-    for (const row of rows) expect(row).not.toHaveAttribute("open");
-    expect(rows[0]).toHaveTextContent("Read the details.");
-    expect(rows[1]).toHaveTextContent("Choose the next step.");
+    expect(view.container.querySelectorAll("details, summary")).toHaveLength(0);
+    const triggers = [...view.container.querySelectorAll<HTMLButtonElement>('button[slot="trigger"][aria-controls]')];
+    expect(triggers).toHaveLength(2);
+    expect(triggers[0]).toHaveTextContent("What happens first?");
+    expect(triggers[1]).toHaveTextContent("What follows?");
+    const panels = triggers.map(trigger => view.container.querySelector<HTMLElement>(`[id="${trigger.getAttribute("aria-controls")}"]`));
+    triggers.forEach((trigger, index) => {
+      const panel = panels[index];
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      expect(panel).toHaveAttribute("role", "group");
+      expect(panel).toHaveAttribute("aria-labelledby", trigger.id);
+      expect(panel).toHaveAttribute("hidden");
+    });
+    expect(panels[0]).toHaveTextContent("Read the details.");
+    expect(panels[1]).toHaveTextContent("Choose the next step.");
   });
 });

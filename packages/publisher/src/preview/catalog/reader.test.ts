@@ -155,7 +155,8 @@ describe('reader function catalog', () => {
         expect(unfeatured.querySelectorAll('[data-matrix-side]')).toHaveLength(2);
         expect(unfeatured.querySelectorAll('[data-featured="true"]')).toHaveLength(0);
         const index = byFile.get('catalog/index-function.html')!;
-        expect(index.querySelectorAll('#example-items-disclose details')).toHaveLength(4);
+        expect(index.querySelectorAll('#example-items-disclose button[slot="trigger"][aria-controls]')).toHaveLength(4);
+        expect(index.querySelectorAll('#example-items-disclose details, #example-items-disclose summary')).toHaveLength(0);
         expect(index.querySelectorAll('#example-items-icon-groups [role="group"]')).toHaveLength(4);
         const sequence = byFile.get('catalog/sequence.html')!;
         expect(sequence.querySelector('#example-items-numbered ol')).not.toBeNull();
@@ -362,10 +363,13 @@ describe('reader function catalog', () => {
                 return {};
             }
             const items = required('[data-items]');
-            const details = items.querySelectorAll('details');
-            const headings = [...items.querySelectorAll(details.length ? 'summary [data-item-heading]' : '[data-item-heading]')];
+            // Disclosed rows render the stock shadcn@aria disclosure: a trigger controls a labelled, hidden panel.
+            expect(items.querySelectorAll('details, summary')).toHaveLength(0);
+            const details = [...items.querySelectorAll('button[slot="trigger"][aria-controls]')];
+            const panels = details.map(trigger => required(`[id="${trigger.getAttribute('aria-controls')}"]`, items));
+            const headings = [...items.querySelectorAll(details.length ? 'button[slot="trigger"] [data-item-heading]' : '[data-item-heading]')];
             expect(headings.length).toBeGreaterThan(0);
-            if (details.length) for (const detail of details) { required('summary [data-item-heading]', detail); expect(detail.textContent!.trim().length).toBeGreaterThan(detail.querySelector('summary')!.textContent!.trim().length); }
+            details.forEach((trigger, index) => { required('[data-item-heading]', trigger); const panel = panels[index]!; expect(trigger.getAttribute('aria-expanded')).toBe('false'); expect(panel.getAttribute('role')).toBe('group'); expect(panel.getAttribute('aria-labelledby')).toBe(trigger.id); expect(panel.hasAttribute('hidden')).toBe(true); expect(panel.textContent!.trim().length).toBeGreaterThan(0); });
             const arrangement = items.getAttribute('data-arrangement');
             const columns = items.getAttribute('data-columns');
             if (label === 'Sequence') {
@@ -390,7 +394,7 @@ describe('reader function catalog', () => {
                         expect(heading.querySelectorAll('a[href]')).toHaveLength(1);
                     }
                 } else expect(['1', '2']).toContain(columns);
-                return { shape: tiles ? 'tiles' : `rows-${columns}`, reveal: details.length ? 'disclose' : 'all', groups: items.querySelector('[role="group"]') ? 'on' : 'off' };
+                return { shape: tiles ? 'tiles' : `rows-${columns}`, reveal: details.length ? 'disclose' : 'all', groups: [...items.querySelectorAll('[role="group"]')].some(node => !panels.includes(node)) ? 'on' : 'off' };
             }
             const treatment = items.getAttribute('data-treatment');
             expect(treatment).not.toBeNull();

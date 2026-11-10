@@ -33,7 +33,7 @@ function resolvedFocusOutlineStyle(className: string): string {
 }
 
 describe("compiled focus-outline cascade", () => {
-  it("resolves a paintable outline for NoticeList dismiss, server-native FAQ controls and SiteHeader.ActionLink", () => {
+  it("resolves a paintable outline for NoticeList dismiss, server FAQ disclosure triggers and SiteHeader.ActionLink", () => {
     const { container } = render(
       <>
         <NoticeList label="Notices" notices={[{ id: "n", message: "Notice" }]} onDismiss={() => {}} dismissLabel="Dismiss" />
@@ -44,7 +44,7 @@ describe("compiled focus-outline cascade", () => {
     );
     const controls = [
       screen.getByRole("button", { name: "Dismiss" }),
-      container.querySelector("details > summary"),
+      container.querySelector('button[slot="trigger"][aria-controls]'),
       screen.getByRole("link", { name: "Home" }),
     ];
 

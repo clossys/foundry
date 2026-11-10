@@ -327,7 +327,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
   });
 
-  it("covers actual ordered tracks and native/React Aria disclosure states", async () => {
+  it("covers actual ordered tracks and stock disclosure states in both entries", async () => {
     const classes = new Set<string>();
     const user = userEvent.setup();
     const collect = (tree: ReturnType<typeof render>) => { for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount(); };
@@ -336,8 +336,12 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       for (const count of [3, 5]) collect(render(<Items arrangement="stacked" order="connected" ground={ground} lanes={[{ id: "a", label: "First" }, { id: "b", label: "Second" }]} end="continues" endLabel="Next" items={Array.from({ length: count }, (_, i) => ({ id: String(i), heading: "Step", description: "Support", lane: i % 2 ? "b" : "a", visual: <span>Visual</span> }))} />));
       for (const Component of [Items, NativeItems]) for (const treatment of ["plain", "rule", "plate"] as const) {
         const tree = render(<Component arrangement="rows" columns={2} reveal="disclose" order="numbered" ground={ground} treatment={treatment} items={[0,1,2,3].map(i => ({ id: String(i), heading: "Question", description: "Answer", badge: { label: "Beta", tone: "info" }, meta: "Actor" }))} groups={[{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }]} />);
-        if (Component === Items) await user.click(tree.container.querySelector("button")!);
-        else tree.container.querySelector("details")!.open = true;
+        // Both entries render the stock disclosure; expand it the way a reader does.
+        expect(tree.container.querySelectorAll("details, summary")).toHaveLength(0);
+        const trigger = tree.container.querySelector<HTMLButtonElement>('button[slot="trigger"][aria-controls]')!;
+        await user.click(trigger);
+        expect(trigger).toHaveAttribute("aria-expanded", "true");
+        expect(tree.container.querySelector(`[id="${trigger.getAttribute("aria-controls")}"]`)).not.toHaveAttribute("hidden");
         collect(tree);
       }
     }
