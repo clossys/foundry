@@ -104,6 +104,19 @@ describe("uniform slot resolution", () => {
     expect(codes(store(), new Map())).toEqual(["copy-missing-key"]);
     for (const value of ["", "TODO: fill", "lorem ipsum", "site.synthetic.title", "title"]) expect(codes(store(), new Map([["site.synthetic.title", [value]]]))).toEqual(["copy-empty"]);
   });
+
+  it("resolves page copy <cell>#<key> through a Writer declarations alias and nothing else", () => {
+    const page = (): SlotStore => ({ ...store("publisher"), candidates: { "sections.synthetic": [{ ...candidate(), copyKeys: ["page.home#meta-title"] }] } });
+    const strings = new Map([["studio.title.home", ["Clossys Studio"]]]);
+    const resolve = (aliases: Map<string, string[]>) => resolveSlots([page()], strings, new Map(), aliases)[0]!;
+    expect(resolve(new Map([["page.home.meta-title", ["studio.title.home"]]]))).toMatchObject({ status: "satisfied", copy: { resolved: 1 } });
+    // No alias, an alias for another key, or an alias to an unpinned record: one finding each.
+    for (const aliases of [new Map(), new Map([["page.home.meta-description", ["studio.title.home"]]]), new Map([["page.home.meta-title", ["studio.title.gone"]]])]) {
+      expect(resolve(aliases).findings.map(row => row.code)).toEqual(["copy-missing-key"]);
+    }
+    // An aliased placeholder is still empty copy.
+    expect(resolveSlots([page()], new Map([["t", ["TODO"]]]), new Map(), new Map([["page.home.meta-title", ["t"]]]))[0]!.findings.map(row => row.code)).toEqual(["copy-empty"]);
+  });
 });
 
 describe("default native model enforcement", () => {
@@ -212,6 +225,31 @@ describe("default native model enforcement", () => {
       const result = native(f.root);
       expect(result.status).toBe(1);
       expect(JSON.parse(result.stdout).findings.some((row: any) => row.rule === "copy-missing-key")).toBe(true);
+    } finally { rmSync(f.root, { recursive: true, force: true }); }
+  });
+
+  it("reads the consumer's Writer declarations aliases for page copy; a broken alias is one finding", async () => {
+    const f = fixture();
+    try {
+      const dir = f.dirs.publisher!;
+      const path = join(dir, "candidates", "sample-v1.json");
+      const page = JSON.parse(readFileSync(path, "utf8"));
+      page.copy["meta-title"] = "page.synthetic#meta-title";
+      save(path, page);
+      const pin = JSON.parse(readFileSync(join(dir, "pin.json"), "utf8"));
+      save(join(dir, "pin.json"), { ...pin, sha256: sha256Hex(readFileSync(path)) });
+      const declare = (aliases: Record<string, string>) => save(join(f.consumer, "agents", "writer", "declarations.json"), { schema: "clossys.writer-declarations/1", locales: { en: { aliases, sections: [] } } });
+      const missing = async () => (await runSlotResolve(f.consumer)).findings.filter(row => row.rule === "copy-missing-key").map(row => row.path);
+      const unreadable = async () => (await runSlotResolve(f.consumer)).findings.filter(row => row.message === "Writer declarations could not be read or validated.").length;
+      expect(await missing()).toEqual(["publisher:page.synthetic"]);
+      declare({ "page.synthetic.meta-title": "synthetic-title" });
+      expect(await missing()).toEqual([]);
+      expect(await unreadable()).toBe(0);
+      declare({ "page.synthetic.meta-title": "synthetic-gone" });
+      expect(await missing()).toEqual(["publisher:page.synthetic"]);
+      writeFileSync(join(f.consumer, "agents", "writer", "declarations.json"), "{\"schema\":\"nope\"}\n");
+      expect(await unreadable()).toBe(1);
+      expect((await runSlotResolve(f.consumer)).verdict).toBe("indeterminate");
     } finally { rmSync(f.root, { recursive: true, force: true }); }
   });
 

@@ -7,7 +7,8 @@ import { resolveAgent } from "../agents.js";
 import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check-output-envelope.js";
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
-import { assertModelTree, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
+import { assertModelTree, listSlots, readAgentFile, readCandidate, readIa, readSlot } from "../records/slots.js";
+import { agentModule } from "../server/cells.js";
 import { checkSlotModel, formatCoverage, slotCoverage, writerRecords, type AgentCoverage } from "../records/slot-check.js";
 import {
   SLOT_AGENTS, parseFrontmatter, validateIa, validateSource,
@@ -34,8 +35,20 @@ export interface SlotRow {
   findings: SlotFinding[];
 }
 
+/**
+ * Page copy `<cell>#<key>` with no Writer slot of that name reads the Writer declarations alias
+ * `<cell>.<key>`, the same alias the Publisher page records bind (`page.<entry>.meta-title`).
+ */
+function aliased(key: string, writer: ReadonlyMap<string, readonly string[]>, aliases: ReadonlyMap<string, readonly string[]>): readonly string[] | undefined {
+  const hash = key.indexOf("#");
+  if (hash < 1) return undefined;
+  const ids = aliases.get(`${key.slice(0, hash)}.${key.slice(hash + 1)}`) ?? [];
+  const values = ids.flatMap(id => writer.get(id) ?? []);
+  return values.length ? values : undefined;
+}
+
 /** One rule for every agent. Source hashes are optional under the model contract. */
-export function resolveSlots(stores: readonly SlotStore[], writer: ReadonlyMap<string, readonly string[]>, references: ReadonlyMap<string, string>): SlotRow[] {
+export function resolveSlots(stores: readonly SlotStore[], writer: ReadonlyMap<string, readonly string[]>, references: ReadonlyMap<string, string>, aliases: ReadonlyMap<string, readonly string[]> = new Map()): SlotRow[] {
   return stores.flatMap(store => [...new Set([...store.ia, ...Object.keys(store.candidates), ...Object.keys(store.pins)])].map(slot => {
     const candidates = store.candidates[slot] ?? [], pins = store.pins[slot] ?? [];
     const findings: SlotFinding[] = [];
@@ -68,7 +81,7 @@ export function resolveSlots(stores: readonly SlotStore[], writer: ReadonlyMap<s
     }
     let resolved = 0;
     for (const key of keys) {
-      const values = writer.get(key);
+      const values = writer.get(key) ?? aliased(key, writer, aliases);
       if (!values?.length) add("copy-missing-key", `No pinned Writer string resolves ${key}.`);
       else if (values.some(value => !value.trim() || /\b(?:TODO|TBD|lorem(?: ipsum)?)\b/i.test(value) || value.trim() === key || value.trim() === key.slice(key.lastIndexOf(".") + 1))) add("copy-empty", `Writer string ${key} is empty, placeholder text or a raw key echo.`);
       else resolved++;
@@ -140,6 +153,18 @@ function modelStores(root: string, writer: Map<string, string[]>): SlotStore[] {
   return stores;
 }
 
+/** Writer declarations aliases (`<cell>.<key>` to record ids, every locale), read by the Writer's own parser. */
+async function writerAliases(root: string, inputErrors: string[]): Promise<Map<string, string[]>> {
+  const aliases = new Map<string, string[]>();
+  try {
+    const text = readAgentFile(root, "writer", "declarations.json");
+    if (text === undefined) return aliases;
+    const declarations = (await agentModule("writer", "declarations.js")).parseWriterDeclarations(text) as { locales: Record<string, { aliases: Record<string, string> }> };
+    for (const locale of Object.values(declarations.locales)) for (const [alias, id] of Object.entries(locale.aliases)) aliases.set(alias, [...new Set([...(aliases.get(alias) ?? []), id])]);
+  } catch { inputErrors.push("Writer declarations could not be read or validated."); }
+  return aliases;
+}
+
 const modelCode = (code: SlotModelCode): SlotFailureCode => {
   if (code === "ia-path" || code === "candidate-status") return code;
   if (code === "pin-hash") return "hash-drift";
@@ -170,7 +195,7 @@ export async function runSlotResolve(rootIn: string) {
         for (const item of manifest.items) references.set(item.dir, item.hash);
       } catch { referenceSource = "unavailable"; inputErrors.push("References manifest could not be read or validated."); }
     }
-    rows = resolveSlots(stores, writer, references);
+    rows = resolveSlots(stores, writer, references, await writerAliases(root, inputErrors));
     coverage = slotCoverage(root);
   } catch { inputErrors.push("Slot model inputs could not be read or validated."); }
   for (const issue of modelIssues) {

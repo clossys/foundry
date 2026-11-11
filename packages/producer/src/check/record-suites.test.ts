@@ -5,7 +5,9 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import { runCli } from "../cli/main.js";
 import { parseArgs } from "../cli/args.js";
 import { writeDesignerSlot } from "../../../designer/scripts/__fixtures__/slot-model.mjs";
-import { recordSuitesSummary, refVerbatimSuite, runRecordSuites, slotContractSuite } from "./record-suites.js";
+import { recordSuitesSummary, refVerbatimSuite, runRecordSuites, slotContractSuite, writerSuite } from "./record-suites.js";
+import { sha256Hex } from "../records/hash.js";
+import { serializeFrontmatter, slotPositions, type IaDoc } from "../records/slot-model/index.js";
 
 const temps: string[] = [];
 afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
@@ -25,6 +27,43 @@ describe("check record-suite arguments", () => {
     expect(() => parseArgs(["publish", "--install", "--page", "home", "--suites"])).toThrow(/require check/);
     expect(() => parseArgs(["check", "--suites", "--records", "lib"])).toThrow(/--records requires publish/);
     expect(parseArgs(["publish", "--install", "--page", "home", "--records", "a", "--records", "b"]).records).toEqual(["a", "b"]);
+  });
+});
+
+/** One pinned Writer slot (`strings.page-titles`, a real Writer contract) holding `body`. */
+function writerSlot(root: string, body: string, pinHash?: string): string {
+  const consumerDir = join(root, "clossys"), id = "strings.page-titles";
+  const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "strings", label: "Strings", children: [{ id: "titles", label: "Titles", slots: [id] }] }] };
+  const dir = join(consumerDir, "agents", "writer", id);
+  mkdirSync(join(dir, "candidates"), { recursive: true });
+  writeFileSync(join(consumerDir, "agents", "writer", "ia.json"), JSON.stringify(ia));
+  writeFileSync(join(dir, "slot.json"), JSON.stringify({ schema: "clossys.slot/1", id, agent: "writer", ia: slotPositions("writer", ia).get(id), kind: "strings", contract: {}, inputs: [], uses: [] }));
+  const bytes = serializeFrontmatter({ slot: id, locales: ["en"], source: { kind: "original", ref: [] } }, body);
+  writeFileSync(join(dir, "candidates", "titles-v1.md"), bytes);
+  writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: "titles-v1.md", sha256: pinHash ?? sha256Hex(bytes), decidedBy: "planner:W3", basis: "planner", at: "2026-11-10T00:00:00Z" }));
+  return dir;
+}
+const title = (id: string, text: string) => `### ${id}\n<!-- ${JSON.stringify({ id, bindings: [] })} -->\n${text}\n\n`;
+
+describe("writer-slots suite over pinned Writer candidates", () => {
+  it("runs the Writer's own slot suite and reports each contract finding", async () => {
+    const root = consumer();
+    writerSlot(root, `## en\n${title("home.title", "Home")}${title("writer.title", "Writer")}`);
+    const clean = await writerSuite(root);
+    expect(clean).toMatchObject({ suite: "writer-slots", status: "ran", checked: 1, totals: { error: 0 } });
+    // Mutation: the same title on two pages of a unique slot is one W-DUP error.
+    writerSlot(root, `## en\n${title("home.title", "Home")}${title("writer.title", "Home")}`);
+    const repeated = await writerSuite(root);
+    expect(repeated.findings.filter(row => row.severity === "error").map(row => `${row.code} ${row.where}`)).toEqual(["W-DUP strings.page-titles writer.title [en]"]);
+    expect((await runRecordSuites(root, { strict: true })).suites[1]).toMatchObject({ suite: "writer-slots", status: "ran", totals: { error: 1 } });
+  });
+
+  it("reports a pin it cannot read as an INPUT error instead of skipping it", async () => {
+    const root = consumer();
+    writerSlot(root, `## en\n${title("home.title", "Home")}`, "0".repeat(64));
+    const suite = await writerSuite(root);
+    expect(suite.findings.map(row => row.code)).toContain("INPUT");
+    expect(suite.findings.find(row => row.code === "INPUT")?.where).toBe("strings.page-titles agents/writer/strings.page-titles/candidates/titles-v1.md");
   });
 });
 
