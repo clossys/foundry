@@ -141,5 +141,10 @@
     "identity.visual.imagery",
     "identity.visual.style"
   ],
-  "uses": []
+  "uses": [],
+  "notNeeded": {
+    "reason": "retired: leaf in packages/designer/src/catalog/retired.json (owner D2/LAD-1 2026-11-11)",
+    "since": "2026-11-11",
+    "decidedBy": "owner:w5-owner-answers-2026-11-11 Round 3 L6"
+  }
 }
