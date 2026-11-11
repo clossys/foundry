@@ -42,7 +42,10 @@ const ORIGINAL_EXCEPTIONS: readonly string[] = ["blocks/CommandMenu.tsx", "block
  * ORIGINAL_EXCEPTIONS, so this list may only shrink.
  */
 const RUNTIME_RAC_EXCEPTIONS: readonly string[] = ["blocks/CommandMenu.tsx", "blocks/Toolbar.tsx", "blocks/internal/disclosure-row.tsx"];
-const KNOWN_PEERS = ["@internationalized/date", "react", "react-aria-components", "react-dom", "tailwind-merge", "tailwindcss"];
+// C5-DRT (owner D1, 2026-11-11): clsx and tailwind-merge are runtime dependencies, not peers. Every optional
+// peer below has a measured omission row in scripts/lib/packed-consumer-readiness.mjs (tiptap/recharts G20;
+// sonner, media-chrome, lucide-react WD-REG); validateOptionalPeerPolicy refuses a peer without one.
+const KNOWN_PEERS = ["@internationalized/date", "@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit", "lucide-react", "media-chrome", "react", "react-aria-components", "react-dom", "recharts", "sonner", "tailwindcss"];
 const UI_LIBRARY = /radix|base-ui|headlessui|tanstack|shadcn|\bmui\b|chakra|ariakit|mantine/;
 
 function collect(dir: string, out: string[] = []): string[] {
@@ -124,7 +127,7 @@ describe("stack import boundary", () => {
   it("declares the exact runtime dependencies, a fixed optional peer set and no UI library in package.json", () => {
     const pkg = JSON.parse(readFileSync(join(srcDir, "..", "package.json"), "utf8"));
     expect(Object.keys(pkg).filter(key => /^(?:d|optionalD|bundleD|bundledD)ependencies$/.test(key))).toEqual(["dependencies"]);
-    expect(pkg.dependencies).toEqual({ "class-variance-authority": "0.7.1", "css-tree": "3.2.1" });
+    expect(pkg.dependencies).toEqual({ "class-variance-authority": "0.7.1", "css-tree": "3.2.1", "@clossys/director": "0.6.0", clsx: "2.1.1", "tailwind-merge": "^3.7.0" });
     expect(Object.keys(pkg.peerDependencies).sort()).toEqual(KNOWN_PEERS);
     for (const name of KNOWN_PEERS) expect(pkg.peerDependenciesMeta[name], name).toEqual({ optional: true });
     const names = [...Object.keys(pkg.peerDependencies), ...Object.keys(pkg.devDependencies ?? {})];

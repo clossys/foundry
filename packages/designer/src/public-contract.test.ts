@@ -2,10 +2,15 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+// C5-DRT: file-level budget for this spawn-heavy contract file. Each test spawns node against the
+// real dist (or type-checks emitted barrels), ~1-5 s apiece under a loaded machine, so the 5 s default
+// timed out whichever tests landed on a busy moment. An explicit per-test budget still overrides it.
+vi.setConfig({ testTimeout: 30_000 });
 
 describe("source-owner closure public boundary", () => {
   it("compiles the additive record API only through the existing catalog-bundles leaf", () => {
@@ -378,6 +383,7 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
   dependencies?: Record<string, string>;
   peerDependencies: Record<string, string>;
   peerDependenciesMeta: Record<string, { optional?: boolean }>;
+  devDependencies: Record<string, string>;
 };
 
 const JS_SUBPATHS = [
@@ -466,25 +472,35 @@ describe("public UI contract", () => {
 
   it("keeps token-only use free of component runtime installation", () => {
     // G20 (planner decision): the rich-text editor (tiptap), charts (recharts), toasts (sonner), the media player
-    // (media-chrome), clsx and @internationalized/date are optional peers, so a token-only install pulls none of
-    // them; a consumer of RichText, the charts, Toaster, MediaPlayer or the date components installs them. class-variance-authority still depends on clsx, so clsx can arrive transitively.
+    // (media-chrome) and @internationalized/date are optional peers, so a token-only install pulls none of
+    // them; a consumer of RichText, the charts, Toaster, MediaPlayer or the date components installs them.
     // planner:r2f-52: lucide-react (ISC, the shadcn default icon set) joins as an optional peer for the stock Spinner and Icon.
+    // Owner D1 (2026-11-11): clsx (MIT) and tailwind-merge (MIT) back the stock shadcn@aria `cn`, which the
+    // stock components import statically, so they are real runtime dependencies and never optional peers.
     expect(packageJson.dependencies).toEqual({
       "class-variance-authority": "0.7.1",
       "css-tree": "3.2.1",
       "@clossys/director": "0.6.0",
+      "clsx": "2.1.1",
+      "tailwind-merge": "^3.7.0",
     });
+    for (const dependency of ["clsx", "tailwind-merge"]) {
+      expect(packageJson.peerDependencies[dependency], `${dependency} is a runtime dependency, not a peer`).toBeUndefined();
+      expect(packageJson.peerDependenciesMeta[dependency], `${dependency} is a runtime dependency, not a peer`).toBeUndefined();
+      expect(packageJson.devDependencies[dependency], `${dependency} is declared once, as a runtime dependency`).toBeUndefined();
+    }
 
     const optionalPeers = [
       "@internationalized/date", "@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit",
-      "clsx", "lucide-react", "media-chrome", "react", "react-dom", "react-aria-components", "recharts", "sonner", "tailwind-merge", "tailwindcss",
+      "lucide-react", "media-chrome", "react", "react-dom", "react-aria-components", "recharts", "sonner", "tailwindcss",
     ];
+    expect(Object.keys(packageJson.peerDependencies).sort()).toEqual([...optionalPeers].sort());
     for (const dependency of optionalPeers) {
       expect(packageJson.peerDependencies[dependency], dependency).toBeDefined();
       expect(packageJson.peerDependenciesMeta[dependency]?.optional, dependency).toBe(true);
       expect(packageJson.dependencies[dependency], `${dependency} must not be a runtime dependency`).toBeUndefined();
     }
-    for (const dependency of ["@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit", "clsx", "media-chrome", "recharts", "sonner"]) {
+    for (const dependency of ["@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit", "media-chrome", "recharts", "sonner"]) {
       expect(packageJson.devDependencies[dependency], `${dependency} stays installed for Designer's own build and tests`).toBe(packageJson.peerDependencies[dependency]);
     }
   });
