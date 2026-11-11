@@ -24,6 +24,10 @@
  * keys in a fixed order, the newest RUNS_KEPT records per invocation kept. Records are keyed by
  * content hashes and relative paths, so a store copied to another checkout means the same thing
  * there. Committing it would rewrite tracked files on every gate run and conflict across branches.
+ *
+ * So the store is written only into a workspace that ignores it by contract: its root `.gitignore`
+ * lists `/.clossys/runs/` (or `/.clossys/`). In any other workspace a run leaves no record (the
+ * step shows never run) and writes nothing: a check never dirties a consumer's tree.
  */
 import { createHash } from "node:crypto";
 import { createRequire, syncBuiltinESMExports } from "node:module";
@@ -332,8 +336,30 @@ export function buildRecord(input: RunInput): RunRecord {
 /** A step id as a store file name: `check:pipeline` -> `check.pipeline.jsonl`. */
 export const storeFile = (step: string): string => `${RUNS_DIR}/${step.replace(/[^a-z0-9.-]/gi, ".")}.jsonl`;
 
-/** Append one record to its step's store, keeping the newest RUNS_KEPT per invocation; returns its citation. */
-export function appendRecord(root: string, record: RunRecord): StoredRun {
+/** `.gitignore` lines that ignore the store: the store directory or the whole `.clossys/` directory, anchored or not. */
+export const STORE_IGNORE_LINES: readonly string[] = [".clossys/runs/", ".clossys/runs", ".clossys/", ".clossys"].flatMap(line => [line, `/${line}`]);
+
+/**
+ * Whether the workspace ignores the run store by contract: its root `.gitignore` has one of
+ * STORE_IGNORE_LINES and no later negation re-includes anything under `.clossys/`.
+ */
+export function storeIgnored(root: string): boolean {
+  let text: string;
+  try { text = raw.read(join(root, ".gitignore")).toString(); } catch { return false; }
+  let ignored = false;
+  for (const line of text.split(/\r?\n/).map(each => each.trim())) {
+    if (STORE_IGNORE_LINES.includes(line)) ignored = true;
+    else if (line.startsWith("!") && /(^|\/)\.clossys(\/|$)/.test(line.slice(1).replace(/^\//, ""))) ignored = false;
+  }
+  return ignored;
+}
+
+/**
+ * Append one record to its step's store, keeping the newest RUNS_KEPT per invocation; returns its
+ * citation, or null (nothing written) when the workspace does not ignore the store (storeIgnored).
+ */
+export function appendRecord(root: string, record: RunRecord): StoredRun | null {
+  if (!storeIgnored(root)) return null;
   const store = storeFile(record.step);
   const file = join(root, ...store.split("/"));
   fs.mkdirSync(dirname(file), { recursive: true });
