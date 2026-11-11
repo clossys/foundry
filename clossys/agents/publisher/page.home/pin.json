@@ -1,7 +1,7 @@
 {
-  "candidate": "page-v8.json",
-  "sha256": "5ac26d100306fc402023b6d3110dd92defe4c1bcfa0a3c6e9b3ba6d8605fd268",
+  "candidate": "page-v10.json",
+  "sha256": "6242241f64d1f572fb6b5ab3d7f979bfabf1d48e619b8f0ab3adcab740cb12b5",
   "decidedBy": "agent:publisher",
   "basis": "agent",
-  "at": "2026-11-11T16:37:11.907Z"
+  "at": "2026-11-11T17:08:46.962Z"
 }

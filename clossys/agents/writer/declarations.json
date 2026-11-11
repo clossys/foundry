@@ -752,6 +752,54 @@
           ]
         },
         {
+          "sectionId": "sections.module.checks",
+          "configId": "page.home",
+          "fields": [
+            {
+              "key": "studio.page-attention-count",
+              "ref": {
+                "id": "studio.page-attention-count"
+              }
+            },
+            {
+              "key": "studio.nothing-is-waiting-on-you",
+              "ref": {
+                "id": "studio.nothing-is-waiting-on-you"
+              }
+            },
+            {
+              "key": "studio.failing-checks",
+              "ref": {
+                "id": "studio.failing-checks"
+              }
+            },
+            {
+              "key": "studio.no-check-reports-a-finding",
+              "ref": {
+                "id": "studio.no-check-reports-a-finding"
+              }
+            },
+            {
+              "key": "studio.open-needs",
+              "ref": {
+                "id": "studio.open-needs"
+              }
+            },
+            {
+              "key": "studio.severity-error",
+              "ref": {
+                "id": "studio.severity-error"
+              }
+            },
+            {
+              "key": "studio.severity-warning",
+              "ref": {
+                "id": "studio.severity-warning"
+              }
+            }
+          ]
+        },
+        {
           "sectionId": "sections.studio.home",
           "configId": "page.home",
           "fields": [
@@ -765,6 +813,630 @@
               "key": "agent.open",
               "ref": {
                 "id": "studio.open"
+              }
+            }
+          ]
+        },
+        {
+          "sectionId": "sections.producer.team-strip",
+          "configId": "page.home",
+          "fields": [
+            {
+              "key": "studio.team.label",
+              "ref": {
+                "id": "studio.team.label"
+              }
+            },
+            {
+              "key": "studio.team.kind.you",
+              "ref": {
+                "id": "studio.team.kind.you"
+              }
+            },
+            {
+              "key": "studio.team.kind.ai",
+              "ref": {
+                "id": "studio.team.kind.ai"
+              }
+            },
+            {
+              "key": "studio.team.kind.code",
+              "ref": {
+                "id": "studio.team.kind.code"
+              }
+            },
+            {
+              "key": "studio.team.tier.low",
+              "ref": {
+                "id": "studio.team.tier.low"
+              }
+            },
+            {
+              "key": "studio.team.tier.mid",
+              "ref": {
+                "id": "studio.team.tier.mid"
+              }
+            },
+            {
+              "key": "studio.team.tier.high",
+              "ref": {
+                "id": "studio.team.tier.high"
+              }
+            },
+            {
+              "key": "studio.team.tier-open",
+              "ref": {
+                "id": "studio.team.tier-open"
+              }
+            },
+            {
+              "key": "studio.team.steps",
+              "ref": {
+                "id": "studio.team.steps"
+              }
+            },
+            {
+              "key": "studio.team.show",
+              "ref": {
+                "id": "studio.team.show"
+              }
+            },
+            {
+              "key": "studio.team.about.you",
+              "ref": {
+                "id": "studio.team.about.you"
+              }
+            },
+            {
+              "key": "studio.team.about.director",
+              "ref": {
+                "id": "studio.team.about.director"
+              }
+            },
+            {
+              "key": "studio.team.about.designer",
+              "ref": {
+                "id": "studio.team.about.designer"
+              }
+            },
+            {
+              "key": "studio.team.about.writer",
+              "ref": {
+                "id": "studio.team.about.writer"
+              }
+            },
+            {
+              "key": "studio.team.about.publisher",
+              "ref": {
+                "id": "studio.team.about.publisher"
+              }
+            },
+            {
+              "key": "studio.team.about.checks",
+              "ref": {
+                "id": "studio.team.about.checks"
+              }
+            },
+            {
+              "key": "studio.team.about.unassigned",
+              "ref": {
+                "id": "studio.team.about.unassigned"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.you",
+              "ref": {
+                "id": "studio.pipeline.lane.you"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.checks",
+              "ref": {
+                "id": "studio.pipeline.lane.checks"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.unassigned",
+              "ref": {
+                "id": "studio.pipeline.lane.unassigned"
+              }
+            }
+          ]
+        },
+        {
+          "sectionId": "sections.producer.pipeline-legend",
+          "configId": "page.home",
+          "fields": [
+            {
+              "key": "studio.pipeline.counts.title",
+              "ref": {
+                "id": "studio.pipeline.counts.title"
+              }
+            },
+            {
+              "key": "studio.pipeline.counts",
+              "ref": {
+                "id": "studio.pipeline.counts"
+              }
+            },
+            {
+              "key": "studio.pipeline.legend.title",
+              "ref": {
+                "id": "studio.pipeline.legend.title"
+              }
+            },
+            {
+              "key": "studio.pipeline.legend.untyped",
+              "ref": {
+                "id": "studio.pipeline.legend.untyped"
+              }
+            },
+            {
+              "key": "studio.pipeline.kind.plumb",
+              "ref": {
+                "id": "studio.pipeline.kind.plumb"
+              }
+            },
+            {
+              "key": "studio.pipeline.kind.decide-creative",
+              "ref": {
+                "id": "studio.pipeline.kind.decide-creative"
+              }
+            },
+            {
+              "key": "studio.pipeline.kind.decide-judgment",
+              "ref": {
+                "id": "studio.pipeline.kind.decide-judgment"
+              }
+            },
+            {
+              "key": "studio.pipeline.legend.plumb",
+              "ref": {
+                "id": "studio.pipeline.legend.plumb"
+              }
+            },
+            {
+              "key": "studio.pipeline.legend.decide-creative",
+              "ref": {
+                "id": "studio.pipeline.legend.decide-creative"
+              }
+            },
+            {
+              "key": "studio.pipeline.legend.decide-judgment",
+              "ref": {
+                "id": "studio.pipeline.legend.decide-judgment"
+              }
+            }
+          ]
+        },
+        {
+          "sectionId": "sections.producer.pipeline-flow",
+          "configId": "page.home",
+          "fields": [
+            {
+              "key": "studio.pipeline.flow-label",
+              "ref": {
+                "id": "studio.pipeline.flow-label"
+              }
+            },
+            {
+              "key": "studio.pipeline.kind.plumb",
+              "ref": {
+                "id": "studio.pipeline.kind.plumb"
+              }
+            },
+            {
+              "key": "studio.pipeline.kind.decide-creative",
+              "ref": {
+                "id": "studio.pipeline.kind.decide-creative"
+              }
+            },
+            {
+              "key": "studio.pipeline.kind.decide-judgment",
+              "ref": {
+                "id": "studio.pipeline.kind.decide-judgment"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.director",
+              "ref": {
+                "id": "studio.pipeline.lane.director"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.designer",
+              "ref": {
+                "id": "studio.pipeline.lane.designer"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.writer",
+              "ref": {
+                "id": "studio.pipeline.lane.writer"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.publisher",
+              "ref": {
+                "id": "studio.pipeline.lane.publisher"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.producer",
+              "ref": {
+                "id": "studio.pipeline.lane.producer"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.code",
+              "ref": {
+                "id": "studio.pipeline.lane.code"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.owner",
+              "ref": {
+                "id": "studio.pipeline.lane.owner"
+              }
+            },
+            {
+              "key": "studio.pipeline.empty.title",
+              "ref": {
+                "id": "studio.pipeline.empty.title"
+              }
+            },
+            {
+              "key": "studio.pipeline.empty.description",
+              "ref": {
+                "id": "studio.pipeline.empty.description"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.command",
+              "ref": {
+                "id": "studio.pipeline.step.command"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.inputs",
+              "ref": {
+                "id": "studio.pipeline.step.inputs"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.outputs",
+              "ref": {
+                "id": "studio.pipeline.step.outputs"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.seat",
+              "ref": {
+                "id": "studio.pipeline.step.seat"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.status",
+              "ref": {
+                "id": "studio.pipeline.step.status"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.none",
+              "ref": {
+                "id": "studio.pipeline.step.none"
+              }
+            },
+            {
+              "key": "studio.pipeline.seat.open",
+              "ref": {
+                "id": "studio.pipeline.seat.open"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.you",
+              "ref": {
+                "id": "studio.pipeline.lane.you"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.checks",
+              "ref": {
+                "id": "studio.pipeline.lane.checks"
+              }
+            },
+            {
+              "key": "studio.pipeline.lane.unassigned",
+              "ref": {
+                "id": "studio.pipeline.lane.unassigned"
+              }
+            },
+            {
+              "key": "studio.pipeline.stage.brief",
+              "ref": {
+                "id": "studio.pipeline.stage.brief"
+              }
+            },
+            {
+              "key": "studio.pipeline.stage.select",
+              "ref": {
+                "id": "studio.pipeline.stage.select"
+              }
+            },
+            {
+              "key": "studio.pipeline.stage.make",
+              "ref": {
+                "id": "studio.pipeline.stage.make"
+              }
+            },
+            {
+              "key": "studio.pipeline.stage.pin",
+              "ref": {
+                "id": "studio.pipeline.stage.pin"
+              }
+            },
+            {
+              "key": "studio.pipeline.stage.assemble",
+              "ref": {
+                "id": "studio.pipeline.stage.assemble"
+              }
+            },
+            {
+              "key": "studio.pipeline.stage.check",
+              "ref": {
+                "id": "studio.pipeline.stage.check"
+              }
+            },
+            {
+              "key": "studio.pipeline.stage.publish",
+              "ref": {
+                "id": "studio.pipeline.stage.publish"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.stage",
+              "ref": {
+                "id": "studio.pipeline.step.stage"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.holder",
+              "ref": {
+                "id": "studio.pipeline.step.holder"
+              }
+            },
+            {
+              "key": "studio.pipeline.seat.derived",
+              "ref": {
+                "id": "studio.pipeline.seat.derived"
+              }
+            },
+            {
+              "key": "studio.pipeline.seat.file",
+              "ref": {
+                "id": "studio.pipeline.seat.file"
+              }
+            },
+            {
+              "key": "studio.team.kind.you",
+              "ref": {
+                "id": "studio.team.kind.you"
+              }
+            },
+            {
+              "key": "studio.team.kind.ai",
+              "ref": {
+                "id": "studio.team.kind.ai"
+              }
+            },
+            {
+              "key": "studio.team.kind.code",
+              "ref": {
+                "id": "studio.team.kind.code"
+              }
+            },
+            {
+              "key": "studio.team.tier.low",
+              "ref": {
+                "id": "studio.team.tier.low"
+              }
+            },
+            {
+              "key": "studio.team.tier.mid",
+              "ref": {
+                "id": "studio.team.tier.mid"
+              }
+            },
+            {
+              "key": "studio.team.tier.high",
+              "ref": {
+                "id": "studio.team.tier.high"
+              }
+            },
+            {
+              "key": "studio.team.tier-open",
+              "ref": {
+                "id": "studio.team.tier-open"
+              }
+            },
+            {
+              "key": "studio.pipeline.round.direct",
+              "ref": {
+                "id": "studio.pipeline.round.direct"
+              }
+            },
+            {
+              "key": "studio.pipeline.round.design",
+              "ref": {
+                "id": "studio.pipeline.round.design"
+              }
+            },
+            {
+              "key": "studio.pipeline.round.publish",
+              "ref": {
+                "id": "studio.pipeline.round.publish"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.round",
+              "ref": {
+                "id": "studio.pipeline.step.round"
+              }
+            },
+            {
+              "key": "studio.flow.node-role",
+              "ref": {
+                "id": "studio.flow.node-role"
+              }
+            },
+            {
+              "key": "studio.flow.edge-role",
+              "ref": {
+                "id": "studio.flow.edge-role"
+              }
+            },
+            {
+              "key": "studio.flow.edge-label",
+              "ref": {
+                "id": "studio.flow.edge-label"
+              }
+            },
+            {
+              "key": "studio.flow.attribution",
+              "ref": {
+                "id": "studio.flow.attribution"
+              }
+            },
+            {
+              "key": "studio.flow.attribution-label",
+              "ref": {
+                "id": "studio.flow.attribution-label"
+              }
+            },
+            {
+              "key": "studio.flow.node-description",
+              "ref": {
+                "id": "studio.flow.node-description"
+              }
+            },
+            {
+              "key": "studio.flow.node-description-keyboard",
+              "ref": {
+                "id": "studio.flow.node-description-keyboard"
+              }
+            },
+            {
+              "key": "studio.flow.node-moved",
+              "ref": {
+                "id": "studio.flow.node-moved"
+              }
+            },
+            {
+              "key": "studio.flow.edge-description",
+              "ref": {
+                "id": "studio.flow.edge-description"
+              }
+            },
+            {
+              "key": "studio.flow.controls",
+              "ref": {
+                "id": "studio.flow.controls"
+              }
+            },
+            {
+              "key": "studio.flow.zoom-in",
+              "ref": {
+                "id": "studio.flow.zoom-in"
+              }
+            },
+            {
+              "key": "studio.flow.zoom-out",
+              "ref": {
+                "id": "studio.flow.zoom-out"
+              }
+            },
+            {
+              "key": "studio.flow.fit-view",
+              "ref": {
+                "id": "studio.flow.fit-view"
+              }
+            },
+            {
+              "key": "studio.flow.interactive",
+              "ref": {
+                "id": "studio.flow.interactive"
+              }
+            },
+            {
+              "key": "studio.flow.minimap",
+              "ref": {
+                "id": "studio.flow.minimap"
+              }
+            },
+            {
+              "key": "studio.flow.handle",
+              "ref": {
+                "id": "studio.flow.handle"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.inputs-count",
+              "ref": {
+                "id": "studio.pipeline.step.inputs-count"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.outputs-count",
+              "ref": {
+                "id": "studio.pipeline.step.outputs-count"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.changed",
+              "ref": {
+                "id": "studio.pipeline.step.changed"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.citation",
+              "ref": {
+                "id": "studio.pipeline.step.citation"
+              }
+            },
+            {
+              "key": "studio.pipeline.step.checks",
+              "ref": {
+                "id": "studio.pipeline.step.checks"
+              }
+            },
+            {
+              "key": "studio.pipeline.status.passed",
+              "ref": {
+                "id": "studio.pipeline.status.passed"
+              }
+            },
+            {
+              "key": "studio.pipeline.status.failed",
+              "ref": {
+                "id": "studio.pipeline.status.failed"
+              }
+            },
+            {
+              "key": "studio.pipeline.status.stale",
+              "ref": {
+                "id": "studio.pipeline.status.stale"
+              }
+            },
+            {
+              "key": "studio.pipeline.status.never-run",
+              "ref": {
+                "id": "studio.pipeline.status.never-run"
+              }
+            },
+            {
+              "key": "studio.pipeline.status.not-run",
+              "ref": {
+                "id": "studio.pipeline.status.not-run"
               }
             }
           ]

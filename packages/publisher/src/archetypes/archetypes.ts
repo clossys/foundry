@@ -10,7 +10,7 @@
 import type { ExtensionPackage } from "./extensions.js";
 import type { PageFormatId } from "./formats.js";
 
-export const ARCHETYPE_IDS = ["marketing-home", "pricing", "contact", "legal", "docs", "app-page", "deck", "workspace"] as const;
+export const ARCHETYPE_IDS = ["marketing-home", "pricing", "contact", "legal", "docs", "app-page", "deck", "workspace", "workspace-home"] as const;
 export type ArchetypeId = (typeof ARCHETYPE_IDS)[number];
 
 export type SectionSlotId = `sections.${string}`;
@@ -153,6 +153,19 @@ export const PAGE_ARCHETYPES: Readonly<Record<ArchetypeId, PageArchetype>> = fre
       ext(opt("team", "sections.producer.team-strip", undefined)),
       ext(opt("legend", "sections.producer.pipeline-legend", undefined)),
       ext(req("body", "sections.studio.slot-groups", { alternates: ["sections.studio.home", "sections.producer.pipeline-flow", "sections.producer.system-empty"] })),
+    ],
+  },
+  // The workspace's Home (owner P3/P4, 2026-11-11): the decisions waiting for the owner lead, then the
+  // agents' work, then the pipeline that left the menu (its team, legend and flow, in that order).
+  "workspace-home": {
+    id: "workspace-home", package: "producer", formats: ["vertical-page"], frames: ["frames.studio-shell"],
+    roles: [
+      ext(req("header", "sections.studio.page-header")),
+      ext(req("decisions", "sections.module.checks")),
+      ext(req("agents", "sections.studio.home")),
+      ext(req("team", "sections.producer.team-strip")),
+      ext(req("legend", "sections.producer.pipeline-legend")),
+      ext(req("flow", "sections.producer.pipeline-flow")),
     ],
   },
 });

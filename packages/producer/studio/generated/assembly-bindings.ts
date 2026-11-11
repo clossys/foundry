@@ -4,12 +4,12 @@ import type { StudioShellProps } from '../frames/studio-shell';
 import provenance from './studio-provenance.json';
 import Frame0 from "../frames/studio-shell";
 import Section0 from "../sections/studio-page-header";
-import Section1 from "../sections/studio-home";
-import Section2 from "../sections/module-outline";
-import Section3 from "../sections/module-checks";
-import Section4 from "../sections/producer-team-strip";
-import Section5 from "../sections/producer-pipeline-legend";
-import Section6 from "../sections/producer-pipeline-flow";
+import Section1 from "../sections/module-checks";
+import Section2 from "../sections/studio-home";
+import Section3 from "../sections/producer-team-strip";
+import Section4 from "../sections/producer-pipeline-legend";
+import Section5 from "../sections/producer-pipeline-flow";
+import Section6 from "../sections/module-outline";
 import Section7 from "../sections/studio-page-tabs";
 import Section8 from "../sections/studio-slot-groups";
 import Section9 from "../sections/producer-system-empty";
@@ -35,12 +35,12 @@ export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
 export const studioSections: Record<string, ComponentType<any>> = {
   "sections.studio.page-header": marked(Section0, (provenance as Record<string, StudioProvenance>)["sections.studio.page-header"]),
-  "sections.studio.home": marked(Section1, (provenance as Record<string, StudioProvenance>)["sections.studio.home"]),
-  "sections.module.outline": marked(Section2, (provenance as Record<string, StudioProvenance>)["sections.module.outline"]),
-  "sections.module.checks": marked(Section3, (provenance as Record<string, StudioProvenance>)["sections.module.checks"]),
-  "sections.producer.team-strip": marked(Section4, (provenance as Record<string, StudioProvenance>)["sections.producer.team-strip"]),
-  "sections.producer.pipeline-legend": marked(Section5, (provenance as Record<string, StudioProvenance>)["sections.producer.pipeline-legend"]),
-  "sections.producer.pipeline-flow": marked(Section6, (provenance as Record<string, StudioProvenance>)["sections.producer.pipeline-flow"]),
+  "sections.module.checks": marked(Section1, (provenance as Record<string, StudioProvenance>)["sections.module.checks"]),
+  "sections.studio.home": marked(Section2, (provenance as Record<string, StudioProvenance>)["sections.studio.home"]),
+  "sections.producer.team-strip": marked(Section3, (provenance as Record<string, StudioProvenance>)["sections.producer.team-strip"]),
+  "sections.producer.pipeline-legend": marked(Section4, (provenance as Record<string, StudioProvenance>)["sections.producer.pipeline-legend"]),
+  "sections.producer.pipeline-flow": marked(Section5, (provenance as Record<string, StudioProvenance>)["sections.producer.pipeline-flow"]),
+  "sections.module.outline": marked(Section6, (provenance as Record<string, StudioProvenance>)["sections.module.outline"]),
   "sections.studio.page-tabs": marked(Section7, (provenance as Record<string, StudioProvenance>)["sections.studio.page-tabs"]),
   "sections.studio.slot-groups": marked(Section8, (provenance as Record<string, StudioProvenance>)["sections.studio.slot-groups"]),
   "sections.producer.system-empty": marked(Section9, (provenance as Record<string, StudioProvenance>)["sections.producer.system-empty"]),

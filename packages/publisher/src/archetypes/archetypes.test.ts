@@ -22,7 +22,7 @@ const extensionSlots = (layer: "sections" | "frames"): Map<string, string> => ne
 
 describe("page archetype and format data", () => {
   it("declares eight archetypes and three formats", () => {
-    expect(ARCHETYPE_IDS).toEqual(["marketing-home", "pricing", "contact", "legal", "docs", "app-page", "deck", "workspace"]);
+    expect(ARCHETYPE_IDS).toEqual(["marketing-home", "pricing", "contact", "legal", "docs", "app-page", "deck", "workspace", "workspace-home"]);
     expect(Object.keys(PAGE_ARCHETYPES)).toEqual([...ARCHETYPE_IDS]);
     expect(PAGE_FORMAT_IDS).toEqual(["vertical-page", "slide", "canvas"]);
     expect(PAGE_FORMATS.slide.aspectRatio).toEqual({ width: 16, height: 9 });
@@ -46,7 +46,7 @@ describe("page archetype and format data", () => {
 
   it("composes a package archetype only from its own package's extension slots", () => {
     const packaged = Object.values(PAGE_ARCHETYPES).filter(archetype => archetype.package !== undefined);
-    expect(packaged.map(archetype => [archetype.id, archetype.package])).toEqual([["workspace", "producer"]]);
+    expect(packaged.map(archetype => [archetype.id, archetype.package])).toEqual([["workspace", "producer"], ["workspace-home", "producer"]]);
     for (const archetype of packaged) {
       expect(archetype.frames.length, archetype.id).toBeGreaterThan(0);
       for (const frame of archetype.frames) expect(EXTENSION_FRAMES[frame], `${archetype.id} ${frame}`).toBe(archetype.package);

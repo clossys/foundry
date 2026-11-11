@@ -20,7 +20,11 @@
           "frameId": "frames.studio-shell",
           "sectionIds": [
             "sections.studio.page-header",
-            "sections.studio.home"
+            "sections.module.checks",
+            "sections.studio.home",
+            "sections.producer.team-strip",
+            "sections.producer.pipeline-legend",
+            "sections.producer.pipeline-flow"
           ]
         },
         "pin": {
@@ -4477,7 +4481,11 @@
       "frameId": "frames.studio-shell",
       "sectionIds": [
         "sections.studio.page-header",
-        "sections.studio.home"
+        "sections.module.checks",
+        "sections.studio.home",
+        "sections.producer.team-strip",
+        "sections.producer.pipeline-legend",
+        "sections.producer.pipeline-flow"
       ],
       "body": "plain",
       "data": {
@@ -4486,7 +4494,11 @@
       },
       "inputs": {
         "sections.studio.page-header": "header",
-        "sections.studio.home": "home"
+        "sections.module.checks": "checks",
+        "sections.studio.home": "home",
+        "sections.producer.team-strip": "team",
+        "sections.producer.pipeline-legend": "legend",
+        "sections.producer.pipeline-flow": "flow"
       },
       "manifest": {
         "navigator": "outline",
@@ -42991,19 +43003,14 @@
       "version": 5
     },
     {
-      "slot": "sections.studio.home",
-      "element": "studio-home",
-      "version": 10
-    },
-    {
-      "slot": "sections.module.outline",
-      "element": "module-outline",
-      "version": 7
-    },
-    {
       "slot": "sections.module.checks",
       "element": "module-checks",
       "version": 6
+    },
+    {
+      "slot": "sections.studio.home",
+      "element": "studio-home",
+      "version": 10
     },
     {
       "slot": "sections.producer.team-strip",
@@ -43019,6 +43026,11 @@
       "slot": "sections.producer.pipeline-flow",
       "element": "producer-pipeline-flow",
       "version": 14
+    },
+    {
+      "slot": "sections.module.outline",
+      "element": "module-outline",
+      "version": 7
     },
     {
       "slot": "sections.studio.page-tabs",

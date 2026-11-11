@@ -9,20 +9,15 @@
     "data-clossys-candidate": "studio-page-header-v5.json",
     "data-clossys-hash": "sha256:f4aacf460c8a9c9a973c13a88b38df9e8b07ca050e7b9fe4bb6db599ed04b113"
   },
-  "sections.studio.home": {
-    "data-clossys-slot": "sections.studio.home",
-    "data-clossys-candidate": "studio-home-v10.json",
-    "data-clossys-hash": "sha256:9e4a3d3fb38db3fb98fc169f22b3b611142117f2e4c735c894d0b94afd881af7"
-  },
-  "sections.module.outline": {
-    "data-clossys-slot": "sections.module.outline",
-    "data-clossys-candidate": "module-outline-v7.json",
-    "data-clossys-hash": "sha256:169e00b973e8965a17604f63643e804284ce4db0b6ca366d1ff3a651f5be7233"
-  },
   "sections.module.checks": {
     "data-clossys-slot": "sections.module.checks",
     "data-clossys-candidate": "module-checks-v6.json",
     "data-clossys-hash": "sha256:2627c9d6800742919132939e8b34f7daf4da1f24ee15f9979976acda8c793c3d"
+  },
+  "sections.studio.home": {
+    "data-clossys-slot": "sections.studio.home",
+    "data-clossys-candidate": "studio-home-v10.json",
+    "data-clossys-hash": "sha256:9e4a3d3fb38db3fb98fc169f22b3b611142117f2e4c735c894d0b94afd881af7"
   },
   "sections.producer.team-strip": {
     "data-clossys-slot": "sections.producer.team-strip",
@@ -38,6 +33,11 @@
     "data-clossys-slot": "sections.producer.pipeline-flow",
     "data-clossys-candidate": "producer-pipeline-flow-v14.json",
     "data-clossys-hash": "sha256:8a910292e26fb910f3cff0636f293a2e691c00398651046e27ad2eb10170f58a"
+  },
+  "sections.module.outline": {
+    "data-clossys-slot": "sections.module.outline",
+    "data-clossys-candidate": "module-outline-v7.json",
+    "data-clossys-hash": "sha256:169e00b973e8965a17604f63643e804284ce4db0b6ca366d1ff3a651f5be7233"
   },
   "sections.studio.page-tabs": {
     "data-clossys-slot": "sections.studio.page-tabs",
