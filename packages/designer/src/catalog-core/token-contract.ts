@@ -42,7 +42,33 @@ export interface TokenContract {
   readonly aliases: Readonly<Record<string, string>>;
 }
 
-export interface RosterOffer { readonly source: string; readonly leaves: readonly string[]; readonly reason?: string }
+/** One measured part on the source ladder: recorded numbers only, never fetched at check time. */
+export interface LadderPart {
+  readonly id: string;
+  readonly url?: string;
+  readonly stars?: number;
+  readonly weeklyDownloads?: number;
+  /** SPDX; a chosen part must be MIT, Apache-2.0, BSD or ISC. */
+  readonly licence?: string;
+}
+export interface LadderRejection extends LadderPart { readonly reason: string }
+/**
+ * The source-ladder record every non-stock offer carries (`check:source-ladder`, owner 2026-11-10):
+ * L2 most popular partner part, L3 slot questioned (delete, merge or compose stock), L4 Foundry part.
+ * At most 3 candidates (chosen plus up to 2 rejected). Stock offers need no record.
+ */
+export interface RosterLadder {
+  readonly rung?: "L2" | "L3" | "L4";
+  readonly chosen?: LadderPart;
+  readonly rejected?: readonly LadderRejection[];
+  /** L4 only: why the slot is needed at all. */
+  readonly slotNeeded?: string;
+  /** studio-composition and brand-asset rows need only category and reason. */
+  readonly category?: "studio-composition" | "brand-asset" | "icon-standard" | "ecosystem-standard";
+  readonly reason: string;
+  readonly checkedAt?: string;
+}
+export interface RosterOffer { readonly source: string; readonly leaves: readonly string[]; readonly reason?: string; readonly ladder?: RosterLadder }
 /** `starter`: a Foundry scaffold run from the Custom cell; it writes an authored Custom fill and is never an offered seat. */
 export interface RosterRow { readonly l2: string; readonly leaves: readonly string[]; readonly offers: readonly RosterOffer[]; readonly starter?: string }
 export interface TokenPreset {

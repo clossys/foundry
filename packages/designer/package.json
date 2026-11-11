@@ -409,6 +409,8 @@
     "check:designer-receipt": "node ../../scripts/check-decisions.mjs --repo ../.. --agent designer",
     "check:process": "node scripts/check-process-gates.mjs",
     "check:default-candidates": "node scripts/check-default-candidates.mjs",
+    "check:source-ladder": "node scripts/check-source-ladder.mjs",
+    "test:source-ladder": "node --test scripts/check-source-ladder.test.mjs",
     "test:process": "node --test scripts/check-one-leaf-source.test.mjs scripts/check-fill-source-imports.test.mjs scripts/check-rendered-class-rules.test.mjs scripts/check-process-gates.test.mjs",
     "compose": "node scripts/compose-with-process-gates.mjs"
   },
