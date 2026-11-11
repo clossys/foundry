@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Generic filler phrases that make a Director cell unspecific. Matched case-insensitively on whole words in Direction bullets. The catalog lexicon's banned list is added at run time.",
+  "note": "Generic filler phrases that make a Director cell unspecific. Matched case-insensitively on whole words in Direction bullets. The catalog lexicon's banned list is added at run time. clauseEndFiller phrases are filler only where they close a clause (followed by the end of the value or punctuation); mid-clause they introduce something specific (and more agents (Designer, Writer)).",
   "filler": [
     "next-generation",
     "next-gen",
@@ -38,7 +38,7 @@
     "to be decided",
     "lorem ipsum",
     "various",
-    "and more",
+    "and more to come",
     "be excellent",
     "excellence",
     "good vibes",
@@ -53,6 +53,9 @@
     "bad behavior",
     "ugly things",
     "best practices"
+  ],
+  "clauseEndFiller": [
+    "and more"
   ],
   "placeholders": [
     "tbd",

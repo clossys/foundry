@@ -81,6 +81,17 @@ export function onlyAsProperName(text: string, phrase: string): boolean {
   return hits.length > 0 && hits.every(h => h.split(/\s+/).every(w => /^\p{Lu}/u.test(w)));
 }
 
+/**
+ * Whether `phrase` closes a clause somewhere in `text`: a whole-word match
+ * followed by the end of the value or by punctuation (. , ; : ! ? … a hyphen or dash,
+ * a closing bracket or quote). "tools and more." closes a clause; "and more
+ * agents (Designer, Writer)" goes on to name what the more is.
+ */
+export function endsClause(text: string, phrase: string): boolean {
+  const body = phrase.trim().split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+");
+  return new RegExp(`(?<![\\p{L}\\p{N}])${body}\\s*(?=$|[.,;:!?\u2026)\\]}"'\u201d\u2019\u2013\u2014-])`, "iu").test(text);
+}
+
 export function checkDirectorCell(cell: Pick<Cell, "id" | "direction" | "path">, contract: DirectorSlotContract, spec: Specificity = loadSpecificity()): DirectorFinding[] {
   const findings: DirectorFinding[] = [];
   const path = cell.path;
@@ -97,6 +108,9 @@ export function checkDirectorCell(cell: Pick<Cell, "id" | "direction" | "path">,
     if (bullet.key && spec.negativeKeys.includes(bullet.key)) continue;
     for (const phrase of spec.filler) {
       if (containsPhrase(bullet.text, phrase) && !onlyAsProperName(bullet.text, phrase)) findings.push({ check: "D-SPEC", slot: contract.id, path, line: bullet.line, ...(bullet.key ? { key: bullet.key } : {}), message: `Generic phrase "${phrase}"; say what is specific to this business` });
+    }
+    for (const phrase of spec.clauseEndFiller) {
+      if (endsClause(bullet.text, phrase)) findings.push({ check: "D-SPEC", slot: contract.id, path, line: bullet.line, ...(bullet.key ? { key: bullet.key } : {}), message: `Generic phrase "${phrase}"; say what is specific to this business` });
     }
   }
   return findings;
