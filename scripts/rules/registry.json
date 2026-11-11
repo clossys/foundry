@@ -487,7 +487,7 @@
         "date": "2026-10-29"
       },
       "status": "enforced",
-      "note": "check:cli-verbs runs every read-only clossys verb (direct, design and write --brief and --check, publish, decisions, options --classes --check) twice on the real store from root check through check:studio: each exits 0 with byte-identical output, and clossys check runs (0 or 1) and repeats byte for byte. The fixture is a consumer store holding only a Director IA.",
+      "note": "check:cli-verbs runs every read-only clossys verb (direct, design and write --brief and --check, publish, decisions, options --classes --check) twice on the real store from root check through check:studio: each exits 0 with byte-identical output, and clossys check exits 0 only (a finding, exit 1, is a red verb) and repeats byte for byte. The fixture is a consumer store holding only a Director IA.",
       "checks": [
         "packages/producer#check:cli-verbs"
       ],

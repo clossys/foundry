@@ -301,6 +301,19 @@ function studioRoutes(map) {
   return routes;
 }
 
+/**
+ * One route's share of this check's bound: it visits routes one after another in one page (load, body and
+ * selection audit, both detector proofs, the command menu open and closed). Measured 2026-11-10 at load 5:
+ * the first 9 routes (home, content, director) took about 3.2 s each; Designer routes wait on their
+ * specimen frames (check-copy-rendered measured about 17 s per route per worker there), so 12 s with headroom.
+ */
+const ROUTE_SECONDS = 12;
+
+/** The wall-clock bound a runner gives this check: Chrome start, then each route's share. */
+function timeoutSeconds(routes = mappedRoutes().length, startSeconds = 120) {
+  return startSeconds + routes * ROUTE_SECONDS;
+}
+
 /** The generated Studio map beside this check, and the routes it derives (none is an error). */
 function mappedRoutes(file = path.join(__dirname, '../generated/studio-map.json')) {
   const routes = studioRoutes(JSON.parse(fs.readFileSync(file, 'utf8')));
@@ -328,7 +341,10 @@ async function main() {
     const routes = mappedRoutes();
     for (const route of routes) {
       const requireNeeds = route.startsWith('/designer');
-      const response = await page.goto(origin + route);
+      // A route that does not load within a minute gets one more, longer try; a second miss is red (as check-copy-rendered).
+      const response = await page.goto(origin + route, { waitUntil: 'load', timeout: 60_000 })
+        .catch(() => page.goto(origin + route, { waitUntil: 'load', timeout: 120_000 }))
+        .catch(error => assert.fail(`${route}: did not load twice (60 s, then 120 s): ${String(error?.message ?? error).split('\n')[0]}`));
       assert.equal(response.status(), 200, route);
       await page.getByRole('heading', { level: 1 }).waitFor();
       const result = await page.evaluate(inspectStudioBody, CONTENT_OUTLETS);
@@ -366,5 +382,5 @@ async function main() {
   }
 }
 
-module.exports = { CONTENT_OUTLETS, inspectStudioBody, inspectStudioSelection, findHostCellTree, assertCovered, assertSelection, assertUsableSelection, studioRoutes, mappedRoutes };
+module.exports = { ROUTE_SECONDS, timeoutSeconds, CONTENT_OUTLETS, inspectStudioBody, inspectStudioSelection, findHostCellTree, assertCovered, assertSelection, assertUsableSelection, studioRoutes, mappedRoutes };
 if (require.main === module) main().catch(error => { console.error(error); process.exitCode = failureExitCode(error); });

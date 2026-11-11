@@ -331,10 +331,11 @@ export function installedRoutes(repo) {
 /** Chrome pages reading routes at once. The Studio renders each route's document in turn, so more add little. */
 export const WORKERS = 3;
 /**
- * One route's share of the bound per worker: measured at 990 s for 606 routes on three workers (about 4.9 s each,
- * load 12, 2026-11-07), with headroom. The check's work grows with the installed routes, so its bound does too.
+ * One route's share of the bound per worker. Reading every child frame made each route slower: measured
+ * 2026-11-10 at 190.7 s for the first 30 routes on three workers (about 17 s per route per worker, load 5;
+ * 4.9 s before frames were read, 2026-11-07), so 25 s with headroom. The bound grows with the installed routes.
  */
-export const ROUTE_SECONDS = 8;
+export const ROUTE_SECONDS = 25;
 
 /** The wall-clock bound a runner gives this check: Chrome start and the registry universe, then each route's share. */
 export function timeoutSeconds(routes = installedRoutes(join(here, '../../../..')).length, startSeconds = 120) {

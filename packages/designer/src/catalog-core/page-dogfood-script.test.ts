@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Fake-gates audit row 10: `page-dogfood --check` passed an `ok:false` report with 1273 findings because it
 // enforced report freshness only. `--check` now judges the findings; `--freshness` is the separate staleness check.
 import { readFileSync } from "node:fs";

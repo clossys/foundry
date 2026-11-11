@@ -2,6 +2,8 @@
 
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
+const fs = require('node:fs');
+const path = require('node:path');
 const { findHostCellTree } = require('./check-no-handrolling.cjs');
 
 test('Designer cell navigation composition passes the focused source rule', () => {
@@ -130,8 +132,6 @@ test('the audited routes are derived from the Studio map: every published route 
     leaves: [{ page: 'a', path: '/designer/a/x' }, { page: 'b', path: '/designer/b/y' }, { page: 'c', path: '/designer/c/z' }, { page: 'd', path: '/designer/d/w' }],
   };
   assert.deepEqual(studioRoutes(map), ['/', '/designer/components', '/designer/a/x', '/designer/c/z']);
-  const fs = require('node:fs');
-  const path = require('node:path');
   const live = JSON.parse(fs.readFileSync(path.join(__dirname, '../generated/studio-map.json'), 'utf8'));
   const routes = mappedRoutes();
   for (const route of live.routes) assert.ok(routes.includes(route.path), route.path);
@@ -155,6 +155,18 @@ test('rendered provenance treats the content outlet as a boundary and refuses a 
   assert.ok(bad.findings.some(row => row.rule === 'outlet-content-without-provenance'), JSON.stringify(bad.findings));
   const clean = run(frame(`<div id="studio-main">${section('<p>Copy</p>')}</div>`));
   assert.deepEqual(clean.findings.filter(row => row.rule === 'outlet-content-without-provenance'), []);
-  assert.throws(() => assertRoutesChecked([], { pages: [] }), /0 routes checked/);
-  assert.doesNotThrow(() => assertRoutesChecked(['/'], { pages: [] }));
+  assert.throws(() => assertRoutesChecked(0, 113), /0 routes checked \(113 map entries in scope\)/);
+  assert.doesNotThrow(() => assertRoutesChecked(1, 113));
+});
+
+test("the live check's bound grows with the mapped routes, and check:studio gives it that bound", async () => {
+  const { ROUTE_SECONDS, timeoutSeconds, mappedRoutes } = require('./check-no-handrolling.cjs');
+  assert.ok(ROUTE_SECONDS > 0, 'a per-route share of zero would leave the runner default as the only bound');
+  assert.equal(timeoutSeconds(0), 120);
+  assert.equal(timeoutSeconds(117), 120 + 117 * ROUTE_SECONDS);
+  assert.equal(timeoutSeconds(), timeoutSeconds(mappedRoutes().length));
+  const row = JSON.parse(fs.readFileSync(path.join(__dirname, '../../scripts/check-studio.json'), 'utf8')).checks.find(check => check.id === 'producer check-no-handrolling (live)');
+  assert.equal(row?.timeout, 'handrolling-routes');
+  const { checkTimeoutMs } = await import('../../scripts/check-studio.mjs');
+  assert.equal(await checkTimeoutMs(row, 600_000), Math.max(600, timeoutSeconds()) * 1000);
 });
