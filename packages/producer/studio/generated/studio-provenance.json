@@ -46,8 +46,8 @@
   },
   "sections.studio.slot-groups": {
     "data-clossys-slot": "sections.studio.slot-groups",
-    "data-clossys-candidate": "studio-slot-groups-v11.json",
-    "data-clossys-hash": "sha256:03a2e3827993bef896b1d58479991ba2e76e233cb3b462a514f9c2016bfc02ba"
+    "data-clossys-candidate": "studio-slot-groups-v12.json",
+    "data-clossys-hash": "sha256:1747f7d6a8e6aad4f3db93d99da6cca72f216367f7515f774899afcf13c88bb7"
   },
   "sections.producer.system-empty": {
     "data-clossys-slot": "sections.producer.system-empty",
@@ -56,13 +56,13 @@
   },
   "sections.studio.leaf-header": {
     "data-clossys-slot": "sections.studio.leaf-header",
-    "data-clossys-candidate": "studio-leaf-header-v7.json",
-    "data-clossys-hash": "sha256:c3099262a9a50dba860a3e110248f3f0c58e9942e7426b1dbbc43e81413ed0d6"
+    "data-clossys-candidate": "studio-leaf-header-v8.json",
+    "data-clossys-hash": "sha256:b7969ddcc06b6ef17e5aa1d9525075c0fd8e1da5d0fb7bb7de46295da64996cf"
   },
   "sections.studio.specimen": {
     "data-clossys-slot": "sections.studio.specimen",
-    "data-clossys-candidate": "studio-specimen-v12.json",
-    "data-clossys-hash": "sha256:aae9931442faf0724542761c1acea696c7774967338b06fc6c14b2747ab822ed"
+    "data-clossys-candidate": "studio-specimen-v13.json",
+    "data-clossys-hash": "sha256:0f866e66fdf3c6da39b420de89615fd8ab5c0852ee3803d94104b74c820ea076"
   },
   "sections.studio.options": {
     "data-clossys-slot": "sections.studio.options",

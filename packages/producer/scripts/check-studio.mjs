@@ -12,7 +12,7 @@
  * starts its own: it builds dist/studio from the current source (scripts/build-studio.mjs), starts
  * `produce --root <repository> --port 4503 --no-open` from dist/cli (built by the root `build`) on the
  * single preview port (studio/checks/studio-origin.mjs), waits for /api/health to report the Studio
- * ready, runs the live sub-checks against http://127.0.0.1:4503 and stops the server afterwards. A failed build or start is reported, and
+ * ready and for its specimen site to answer (`specimensReady`), runs the live sub-checks against http://127.0.0.1:4503 and stops the server afterwards. A failed build or start is reported, and
  * the live sub-checks still run (and fail). With STUDIO_ORIGIN set, that Studio is used as is.
  *
  * Each sub-check gets the --timeout bound (default 600 s). A sub-check whose manifest row names
@@ -31,7 +31,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { STUDIO_DEFAULT_ORIGIN, studioPort } from "../studio/checks/studio-origin.mjs";
+import { STUDIO_DEFAULT_ORIGIN, specimensReady, studioPort } from "../studio/checks/studio-origin.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repository = resolve(here, "../../..");
@@ -134,6 +134,11 @@ export async function checkStudio({ only = [], ids = [], timeoutMs = 600_000, lo
   let studio, studioError;
   if (!external && checks.some(check => check.kind === "live")) {
     try { studio = await startStudio({ log }); } catch (error) { studioError = error.message; log(`check:studio: could not start the Studio; the live sub-checks run and fail: ${studioError}`); }
+  }
+  // Health answers before the specimen site is built; the live sub-checks are timed only after it is.
+  if (!studioError && checks.some(check => check.kind === "live")) {
+    try { log(`check:studio: specimen site ready after ${Math.round(await specimensReady(env.STUDIO_ORIGIN) / 1000)}s`); }
+    catch (error) { studioError = error.message; log(`check:studio: the live sub-checks run and fail: ${studioError}`); }
   }
   const results = [];
   try {

@@ -2378,12 +2378,12 @@
       "sha256": "f6be409fa7075d386d1707557ec8344e4578eccc44f69622a1e31d5ec3410e9d"
     },
     {
-      "path": "clossys/agents/designer/sections.studio.leaf-header/candidates/studio-leaf-header-v7.json",
-      "sha256": "c3099262a9a50dba860a3e110248f3f0c58e9942e7426b1dbbc43e81413ed0d6"
+      "path": "clossys/agents/designer/sections.studio.leaf-header/candidates/studio-leaf-header-v8.json",
+      "sha256": "b7969ddcc06b6ef17e5aa1d9525075c0fd8e1da5d0fb7bb7de46295da64996cf"
     },
     {
       "path": "clossys/agents/designer/sections.studio.leaf-header/pin.json",
-      "sha256": "62b7ac39ed93e35c3e9c9afb35fa7a2c07317a9b82343e869abadbb9a850693c"
+      "sha256": "fc0b2d0c52936c31a63c1118bfec7df89270dc82eb7fcadac1c879bfcd9762dc"
     },
     {
       "path": "clossys/agents/designer/sections.studio.leaf-header/slot.json",
@@ -2450,24 +2450,24 @@
       "sha256": "c88eaad10013e987730dc4672fbb06be1db6f8234c1166094e2815ad07eb1f8a"
     },
     {
-      "path": "clossys/agents/designer/sections.studio.slot-groups/candidates/studio-slot-groups-v11.json",
-      "sha256": "03a2e3827993bef896b1d58479991ba2e76e233cb3b462a514f9c2016bfc02ba"
+      "path": "clossys/agents/designer/sections.studio.slot-groups/candidates/studio-slot-groups-v12.json",
+      "sha256": "1747f7d6a8e6aad4f3db93d99da6cca72f216367f7515f774899afcf13c88bb7"
     },
     {
       "path": "clossys/agents/designer/sections.studio.slot-groups/pin.json",
-      "sha256": "3997d699f3d73924c3341b28b3ad83078dc6e8e7cfba14aefd6786f169bf08a0"
+      "sha256": "b28a6ac283d3c5c8bafe3197c1e0a2545bc82d081df5dd39961b8b61b75222fe"
     },
     {
       "path": "clossys/agents/designer/sections.studio.slot-groups/slot.json",
       "sha256": "9a006a5e2980e96720212e942ac16a35da8e801b868d4b9c8f64873c676fa756"
     },
     {
-      "path": "clossys/agents/designer/sections.studio.specimen/candidates/studio-specimen-v12.json",
-      "sha256": "aae9931442faf0724542761c1acea696c7774967338b06fc6c14b2747ab822ed"
+      "path": "clossys/agents/designer/sections.studio.specimen/candidates/studio-specimen-v13.json",
+      "sha256": "0f866e66fdf3c6da39b420de89615fd8ab5c0852ee3803d94104b74c820ea076"
     },
     {
       "path": "clossys/agents/designer/sections.studio.specimen/pin.json",
-      "sha256": "f0d9edbf55584882758bd305547c3ec329f0c8dff5f4574defa0630954a8c33b"
+      "sha256": "1eecc3286c66ec40284d92451f6f5c90f901be6a212b95ed042e4d3964795898"
     },
     {
       "path": "clossys/agents/designer/sections.studio.specimen/slot.json",
@@ -6557,7 +6557,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "e5dbfc42c6b3d0f5a15178bae3dbeadbbddb44f3df6a921656879d9322d5b56e"
+      "sha256": "e20f6ed9d5a6301d7ba38e8ce72799e17377094fb7eda3b7fcd4fef21b2fe33f"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6565,7 +6565,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "a8fd3fd0a734904fbc3a759b7a7bc1919fe44c56da8a55c3b8096b08b129cf2e"
+      "sha256": "89e5aca7da4c008ca79a53b5720cd486e44156f93e63193aaf222e6514be288a"
     }
   ]
 }

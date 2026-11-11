@@ -2,13 +2,21 @@ import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field
 
 export type SlotTone = 'secondary' | 'outline' | 'destructive';
 
+/** Where a shown status comes from: a run record (`<step>#<id>`) or a check id, and its result (Writer copy). */
+export interface SlotCitation {
+  source: string;
+  result: string;
+}
+
 /**
  * What a slot card previews of its pin: a view-only frame of the rendered output, the record's
  * lead lines, its status, or a note when it has none. The detail page's specimen renders the full record.
  */
 export type SlotPreview = { name: string } & (
   | { kind: 'viewports'; specimens: readonly { viewport: 375 | 768 | 1280; light: string; title: string }[]; empty: string }
-  | { kind: 'record'; lead?: readonly string[]; status?: { label: string; tone: SlotTone; description: string }; empty: string }
+  | { kind: 'record'; lead?: readonly string[]; status?: { label: string; tone: SlotTone; description: string };
+    /** The run record or check result the status comes from; null when none ran (the status then reads as not run). */
+    citation: SlotCitation | null; empty: string }
 );
 
 /** One slot card: the slot, its shown state and the route of its detail page. */
@@ -18,6 +26,8 @@ export interface SlotCard {
   href: string;
   statusLabel: string;
   statusTone: SlotTone;
+  /** The run record or check result the status comes from; null when none ran, and the status then reads as not run. */
+  citation: SlotCitation | null;
   version?: number;
   /** The shown version as displayed (Writer copy), when there is one. */
   versionLabel?: string;
@@ -79,6 +89,7 @@ function CardPreview({ preview }: { preview: SlotPreview }) {
   if (preview.status) return <CardContent>
     <CardDescription data-preview-status="status">{preview.status.label}</CardDescription>
     <CardDescription>{preview.status.description}</CardDescription>
+    {preview.citation && <CardDescription data-citation={preview.citation.source}>{[preview.citation.source, preview.citation.result].join(' · ')}</CardDescription>}
   </CardContent>;
   return <CardContent><CardDescription data-preview-status="empty">{preview.empty}</CardDescription></CardContent>;
 }
@@ -99,6 +110,7 @@ export default function SlotGroupsSection({ groups, ...provenance }: { groups: S
                   <Badge variant={card.statusTone}>{card.statusLabel}</Badge>
                 </CardTitle>
                 <CardDescription>{card.id}</CardDescription>
+                {card.citation && <CardDescription data-citation={card.citation.source}>{[card.citation.source, card.citation.result].join(' · ')}</CardDescription>}
               </CardHeader>
               <CardPreview preview={card.specimen} />
             </Card>

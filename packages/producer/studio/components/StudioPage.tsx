@@ -32,6 +32,7 @@ import type { StudioReport } from '../lib/studio-report';
 import { resolveStudioRoute, studioGroupOf, studioGroups, studioLanding, studioLeafHref, studioLeafTitle, studioAgentRecords, studioRecordTabs, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
 import { useSlotCensus } from '../lib/slot-census';
 import { pipelineInputs, type PipelineWiringFile } from '../lib/pipeline-flow';
+import { checkCitation, SLOT_PINS_CHECK, slotStateCitation } from '../lib/status-citation';
 import { loadLeaf, loadPipeline, loadSlotGroups, type LeafRecord, type SlotGroupsRecord, type StudioPageSeed } from '../lib/studio-seed';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
 import { useStudioRoutes } from './StudioRouteMap';
@@ -172,6 +173,8 @@ function useSlotGroupsInputs({ entry, page, spec }: LoaderProps): Loaded {
           return {
             id: card.id, name, href: studioLeafHref(agent, card.slug) ?? '',
             statusLabel: studioCopy(`studio.${card.status}`), statusTone: STATUS_TONE[card.status] ?? 'outline',
+            // The card status is the gallery loader's pin check (failing: the pin's candidate or bytes do not hold), else the slot state.
+            citation: card.status === 'failing' ? checkCitation(SLOT_PINS_CHECK, false) : slotStateCitation(card.state, card.status === 'active'),
             ...(card.version ? { version: card.version, versionLabel: versionLabel(card.version) } : {}), specimen: slotCardSpecimen(card, name, resolved, record.value.publication),
           };
         }) }] : [];

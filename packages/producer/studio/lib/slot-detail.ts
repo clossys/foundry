@@ -11,6 +11,7 @@ import type { SpecimenInput } from '../sections/studio-specimen';
 import type { OptionsInput } from '../sections/studio-options';
 import type { HistoryInput, HistoryRow } from '../sections/studio-history';
 import { publisherFrameUrl, safePreviewUrl, type PublicationPage, type PublicationResponse } from './publisher-preview';
+import { notRunLabel, slotStateCitation, type StatusCitation } from './status-citation';
 
 /** Map-backed links a detail page needs: a slot's leaf route, and the tab the leaf sits in. */
 export interface StudioLinks {
@@ -63,6 +64,8 @@ function candidateRows(candidate: DetailCandidate): { key: string; label: string
 export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark', publication?: PublicationResponse): Record<string, unknown> {
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
+  // The header status is the shared slot loader's decision, cited as the check that reports it.
+  const citation = slotStateCitation(detail.state, pinned && !shown!.preview);
   const statusLabel = !shown ? studioCopy("studio.no-candidate") : pinned ? (detail.status === "confirm" ? studioCopy("studio.confirm") : studioCopy("studio.pinned")) : detail.pin ? studioCopy("studio.pin-unavailable") : studioCopy("studio.no-pin");
   // The page this slot's pin published, when the publication emitted one: the specimen is the page itself.
   const name = links.label(detail.agent, detail.id) ?? detail.name;
@@ -70,10 +73,10 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     ? publication.pages.find(row => row.cellId === detail.id && row.emitted && safePreviewUrl(row.previewUrl)) : undefined;
   const specimen = slotSpecimen({
     name, description: shown ? shown.name : studioCopy("studio.this-slot-has-no-candidate-yet"),
-    state: detail.state, kind: detail.kind, options: detail.candidates.length,
+    state: detail.state, kind: detail.kind, options: detail.candidates.length, ...(detail.state.state === 'pinned' && !(pinned && !shown!.preview) ? { pinFailed: true } : {}),
     // A preview (any candidate that is not the valid pin) never stands as the slot's specimen; it renders in its option row.
     ...(page ? { page } : {}), ...(shown?.specimen && !shown.preview ? { element: { specimen: shown.specimen, version: shown.version } } : {}),
-    ...(shown?.record && !shown.preview ? { record: resolveCopy(shown.record) as RecordDraft } : {}),
+    ...(shown?.record && !shown.preview ? { record: { ...resolveCopy(shown.record), citation: null } as RecordDraft } : {}),
   });
   const options: OptionsInput = {
     copy: optionsCopy(),
@@ -94,7 +97,7 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
   const checks = detail.checks.map((check, index) => ({ key: String(index), ok: check.ok, label: copyText(check.label), detail: copyText(check.detail) }));
   return {
     header: { name: links.label(detail.agent, detail.id) ?? detail.name, id: detail.id, ...(shown ? { version: shown.version, versionLabel: versionLabel(shown.version) } : {}), statusLabel,
-      statusTone: pinned ? 'secondary' : 'outline', statusDetail: [!detail.pin ? studioCopy("studio.no-pin-87eb19") : studioCopy("studio.pinned-candidate", { value0: String(detail.pin.candidate) })],
+      statusTone: pinned ? 'secondary' : 'outline', citation, statusDetail: [!detail.pin ? studioCopy("studio.no-pin-87eb19") : studioCopy("studio.pinned-candidate", { value0: String(detail.pin.candidate) })],
       trail: detail.trail, galleryHref: links.back.href, galleryLabel: links.back.label },
     specimen, options,
     references: { copy: referencesCopy(), uses: detail.uses.map(id => reference(id)), usedBy: detail.usedBy.map(ref => reference(ref.id, ref.agent)),
@@ -152,13 +155,16 @@ export interface SpecimenSource {
   kind: string;
   /** Candidate files on disk, for the No pin error's description. */
   options: number;
+  /** The loader holds a pin, but the shown candidate is not that valid pin (`check:slot-pins` fails). */
+  pinFailed?: boolean;
 }
 
 /**
  * The one specimen path for every agent and layer: the detail page draws every viewport in both
  * themes; a gallery card (`card`) draws the widest one, view-only, in the current theme.
- * Its only states are a rendered specimen, Not needed (with the owner's reason) and an error
- * (No pin, pin unavailable, page not emitted, no renderer). It never draws candidate file text.
+ * Its only states are a rendered specimen, Not needed (with the owner's reason), an error
+ * (No pin, pin unavailable), each citing the slot check that decided it, and Not run (page not
+ * emitted, no renderer: no run record to cite). It never draws candidate file text.
  */
 export function slotSpecimen(source: SpecimenSource, card?: { theme: 'light' | 'dark'; loading: string }): SpecimenInput {
   const name = source.name;
@@ -168,20 +174,24 @@ export function slotSpecimen(source: SpecimenSource, card?: { theme: 'light' | '
     : ([375, 768, 1280] as const).map(viewport => ({ viewport, light: src(viewport, 'light'), dark: src(viewport, 'dark'), heading: heading(viewport),
       title: studioCopy('studio.specimen-frame-title-light', { name, viewport }), darkTitle: studioCopy('studio.specimen-frame-title-dark', { name, viewport }) }));
   const head = { name: source.name, title: studioCopy("studio.specimen"), description: source.description, empty: studioCopy("studio.no-candidate"), ...(card ? { loading: card.loading } : {}) };
-  const status = (label: string, tone: 'secondary' | 'destructive', description: string): SpecimenInput =>
-    withRowsCopy({ name: source.name, title: head.title, description: source.description, kind: 'record', empty: label, status: { label, tone, description } });
+  // Every status cites the check that decided it; one with no run record or check behind it reads as not run.
+  const status = (label: string, tone: 'secondary' | 'outline' | 'destructive', description: string, citation: StatusCitation | null): SpecimenInput =>
+    withRowsCopy({ name: source.name, title: head.title, description: source.description, kind: 'record', empty: label, status: { label, tone, description }, citation });
+  const notRun = (description: string) => status(notRunLabel(), 'outline', description, null);
   const state = source.state;
   // The pinned Writer key carries the reason (`Not needed: {reason}`), so the badge states the decision and the description stays the slot's own.
-  if (state.state === 'not-needed') return status(studioCopy("studio.not-needed", { reason: state.notNeeded.reason }), 'secondary', source.description);
+  if (state.state === 'not-needed') return status(studioCopy("studio.not-needed", { reason: state.notNeeded.reason }), 'secondary', source.description, slotStateCitation(state, false));
   if (state.state === 'rejected') return state.reason === 'no-pin'
-    ? status(studioCopy("studio.no-pin"), 'destructive', source.options ? studioCopy("studio.no-pin-candidates-await-approval") : studioCopy("studio.this-slot-has-no-candidate-yet"))
-    : status(studioCopy("studio.pin-unavailable"), 'destructive', studioCopy("studio.no-pin-87eb19"));
+    ? status(studioCopy("studio.no-pin"), 'destructive', source.options ? studioCopy("studio.no-pin-candidates-await-approval") : studioCopy("studio.this-slot-has-no-candidate-yet"), slotStateCitation(state, false))
+    : status(studioCopy("studio.pin-unavailable"), 'destructive', studioCopy("studio.no-pin-87eb19"), slotStateCitation(state, false));
+  if (source.pinFailed) return status(studioCopy("studio.pin-unavailable"), 'destructive', studioCopy("studio.no-pin-87eb19"), slotStateCitation(state, false));
   if (source.page) { const page = source.page; return { ...head, kind: 'viewports', specimens: frames((viewport, theme) => publisherFrameUrl(page, viewport, theme)) }; }
   if (source.element) { const element = source.element; return { ...head, kind: 'viewports', specimens: frames((viewport, theme) => specimenHref(element, theme, viewport)!) }; }
   if (source.record) return withRowsCopy(source.record);
   // Pinned, but nothing renders it: an unemitted Publisher page or a kind with no renderer is an error.
-  if (source.kind === 'page') return status(studioCopy("studio.missing"), 'destructive', studioCopy("studio.publish-this-page-to-preview-it"));
-  return status(studioCopy("studio.unavailable"), 'destructive', studioCopy("studio.no-specimen-recorded-for-this-leaf-yet"));
+  // No publish run emitted the page, and no specimen run recorded the leaf: neither has a record to cite.
+  if (source.kind === 'page') return notRun(studioCopy("studio.publish-this-page-to-preview-it"));
+  return notRun(studioCopy("studio.no-specimen-recorded-for-this-leaf-yet"));
 }
 
 /** The rows table's words: its accessible label (the slot's name) and the column headings. */
@@ -203,6 +213,6 @@ export function slotCardSpecimen(card: Pick<SlotGalleryCard, 'id' | 'kind' | 'st
   return slotSpecimen({
     name: label, description: card.id, state, kind: card.kind, options: card.options, ...(page ? { page } : {}),
     ...(active && card.specimen ? { element: { specimen: card.specimen, version: card.version } } : {}),
-    ...(active && card.excerpt.length ? { record: { ...head, kind: 'record', lead: card.excerpt, empty: studioCopy("studio.no-candidate") } } : {}),
+    ...(active && card.excerpt.length ? { record: { ...head, kind: 'record', lead: card.excerpt, citation: null, empty: studioCopy("studio.no-candidate") } } : {}),
   }, { theme, loading: label });
 }

@@ -22,8 +22,8 @@ describe('native detail viewport data for stock iframe consumers', () => {
   it('never manufactures iframe data when the native candidate has no matching artifact', () => {
     const missing = { ...detail, candidates: detail.candidates.map(candidate => ({ ...candidate, specimen: undefined })) };
     const input = slotDetailInputs(missing, links, 'light');
-    // No renderer is an explicit error, never the candidate file text.
-    expect(input.specimen).toMatchObject({ kind: 'record', status: { tone: 'destructive' } });
+    // No renderer: no specimen run recorded the leaf, so it reads Not run (uncited), never the candidate file text.
+    expect(input.specimen).toMatchObject({ kind: 'record', status: { label: 'Not run', tone: 'outline' }, citation: null });
     expect(input.specimen).not.toHaveProperty('rows');
     expect(input.options).toMatchObject({ rows: [{ preview: { kind: 'strings', rows: [] } }] });
   });
@@ -41,5 +41,30 @@ describe('native detail viewport data for stock iframe consumers', () => {
     expect(slotDetailInputs(notNeeded, links, 'light').specimen).toMatchObject({ kind: 'record', status: { label: 'Not needed: Owner: the site has no toolbar.', tone: 'secondary' } });
     const noPin = slotDetailInputs({ ...detail, state: { state: 'rejected', reason: 'no-pin' } }, links, 'light');
     expect(noPin.specimen).toMatchObject({ kind: 'record', status: { label: 'No pin', tone: 'destructive' } });
+  });
+
+  it('cites the slot check behind every shown status, and never shows a status without one', () => {
+    // A valid pin: the header cites check:slot-pins passing.
+    expect(slotDetailInputs(detail, links, 'light').header).toMatchObject({ statusLabel: 'Pinned', citation: { source: 'check:slot-pins', result: 'Passed' } });
+    // A pin whose candidate does not hold (a preview): check:slot-pins failing.
+    const invalid = { ...detail, state: { state: 'rejected' as const, reason: 'invalid-pin' as const }, candidates: detail.candidates.map(candidate => ({ ...candidate, preview: true })) };
+    const broken = slotDetailInputs(invalid, links, 'light');
+    expect(broken.header).toMatchObject({ citation: { source: 'check:slot-pins', result: 'Failed' } });
+    expect(broken.specimen).toMatchObject({ status: { label: 'Pin unavailable' }, citation: { source: 'check:slot-pins', result: 'Failed' } });
+    // The loader holds a pin but the shown candidate fails its bytes: the same check:slot-pins failure, never Not run.
+    const drifted = slotDetailInputs({ ...detail, candidates: detail.candidates.map(candidate => ({ ...candidate, preview: true })) }, links, 'light');
+    expect(drifted.header).toMatchObject({ citation: { source: 'check:slot-pins', result: 'Failed' } });
+    expect(drifted.specimen).toMatchObject({ status: { label: 'Pin unavailable', tone: 'destructive' }, citation: { source: 'check:slot-pins', result: 'Failed' } });
+    // No pin and Not needed: check:slot-state.
+    const noPin = slotDetailInputs({ ...detail, candidates: [], shown: undefined, state: { state: 'rejected', reason: 'no-pin' } }, links, 'light');
+    expect(noPin.header).toMatchObject({ statusLabel: 'No candidate', citation: { source: 'check:slot-state', result: 'Failed' } });
+    expect(noPin.specimen).toMatchObject({ status: { label: 'No pin' }, citation: { source: 'check:slot-state', result: 'Failed' } });
+    const notNeeded = { ...detail, state: { state: 'not-needed' as const, notNeeded: { reason: 'Owner: none.', since: '2026-11-03', decidedBy: 'owner' } } };
+    expect(slotDetailInputs(notNeeded, links, 'light').specimen).toMatchObject({ citation: { source: 'check:slot-state', result: 'Passed' } });
+    // Every record specimen with a status carries a citation, or reads Not run.
+    for (const input of [broken, noPin, slotDetailInputs({ ...detail, candidates: detail.candidates.map(candidate => ({ ...candidate, specimen: undefined })) }, links, 'light')]) {
+      const specimen = input.specimen as { status?: { label: string }; citation: unknown };
+      expect(specimen.citation !== null || specimen.status?.label === 'Not run').toBe(true);
+    }
   });
 });

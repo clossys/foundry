@@ -4,7 +4,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { STUDIO_DEFAULT_ORIGIN, studioOrigin, studioPort } from '../studio/checks/studio-origin.mjs';
+import { STUDIO_DEFAULT_ORIGIN, specimensReady, studioOrigin, studioPort } from '../studio/checks/studio-origin.mjs';
 import { STUDIO_PORT } from './check-studio.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -38,4 +38,15 @@ test('no Studio check, runner or root script carries a retired port of its own',
   };
   for (const root of roots) walk(join(repository, root));
   assert.deepEqual(offenders, []);
+});
+
+test('the specimen wait holds until a bare /__specimen answers, and fails past its bound', async () => {
+  const asked = [];
+  let misses = 2;
+  const building = async (url, init) => { asked.push(url); assert.ok(init.signal); if (misses-- > 0) throw new TypeError('fetch failed'); return { status: 400 }; };
+  assert.ok(await specimensReady(STUDIO_DEFAULT_ORIGIN, { get: building, pause: 1 }) >= 0);
+  assert.deepEqual(asked, Array(3).fill(`${STUDIO_DEFAULT_ORIGIN}/__specimen`));
+  // A site still building when the bound passes is a failure, never a pass.
+  const never = (url, init) => new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason)));
+  await assert.rejects(specimensReady(STUDIO_DEFAULT_ORIGIN, { get: never, timeoutMs: 50, pause: 1 }), /did not answer \/__specimen within 0.05 s/);
 });
