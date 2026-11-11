@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-drivers-v5.md",
-  "sha256": "8a788e0598c3342ef8852637332d7207e67aef8a362164cbe9de3c71c1880eb6",
+  "candidate": "studio-drivers-v6.md",
+  "sha256": "639969c19d70f0536731166029286c02b6eb16af8f1eaf0252ea2cb01af82ccf",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T16:45:05.638Z"
+  "at": "2026-11-11T17:16:10.153Z"
 }
