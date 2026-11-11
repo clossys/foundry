@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-exclusions-v2.md",
-  "sha256": "8956dd09d2c95ec51967444180768574e84d7bcdfa71024b739be1c9d128aa2d",
-  "decidedBy": "owner",
+  "candidate": "studio-exclusions-v3.md",
+  "sha256": "612894fa54b631c5c2394356409c2d92c11a589de961d4161f9b51a7394bdd14",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
   "basis": "picked",
-  "at": "2026-11-11T08:34:01.169Z"
+  "at": "2026-11-11T22:38:15.777Z"
 }

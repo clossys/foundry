@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-north-star-v3.md",
-  "sha256": "9a345793e2fcca3aaf1a7637e36f3a55ca19272649b2ee5560e846dca29ddf6a",
-  "decidedBy": "owner",
+  "candidate": "studio-north-star-v4.md",
+  "sha256": "b5a43cb82b1e351bf3af10b8b4a813ba00d0f04ba28f21a2f870d01048e27189",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
   "basis": "picked",
-  "at": "2026-11-11T16:19:41.154Z"
+  "at": "2026-11-11T22:38:22.491Z"
 }

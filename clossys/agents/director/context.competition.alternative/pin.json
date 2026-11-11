@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-alternative-v4.md",
-  "sha256": "cf98cf0991ab9e269e163905d4dbc63486d0929aeb19d62d9ba0ecd774364b01",
-  "decidedBy": "owner",
+  "candidate": "studio-alternative-v5.md",
+  "sha256": "279118d37962cfbfe9d8572717e6ca1c9d5fa65b44e8726fde4a1fe88d921391",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
   "basis": "picked",
-  "at": "2026-11-11T17:12:49.030Z"
+  "at": "2026-11-11T22:38:13.250Z"
 }

@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-proof-v3.md",
-  "sha256": "b02ff049aad40393d0fae06656ed52651fd104e2c5dae6fd4a534282343ced30",
-  "decidedBy": "owner",
+  "candidate": "studio-proof-v4.md",
+  "sha256": "bc0479286deebed38e1604e657e543ea5fae8f161c202f5e8ed20c4fd08db93e",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
   "basis": "picked",
-  "at": "2026-11-11T16:19:34.049Z"
+  "at": "2026-11-11T22:38:17.449Z"
 }

@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-delivery-v3.md",
-  "sha256": "922262fdaa016b2ab7a7565cde173475e46741363edcfb8ec0fd06c0d1da928a",
-  "decidedBy": "owner",
+  "candidate": "studio-delivery-v4.md",
+  "sha256": "b989c5dccc76a8a20610fb54d0a3eee97bde8c80afe70d8acef4f193b888e918",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
   "basis": "picked",
-  "at": "2026-11-11T17:12:49.405Z"
+  "at": "2026-11-11T22:38:21.651Z"
 }

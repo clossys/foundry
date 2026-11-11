@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-differentiator-v2.md",
-  "sha256": "ec87b81abbefbacc39484ae8161d6b51fbd5aa94e08689617e8f56131feb32c5",
-  "decidedBy": "owner",
+  "candidate": "studio-differentiator-v4.md",
+  "sha256": "2778930b343d2dc582ffc3391cc7e249b445a2a6564b144dc68d4f7987c165de",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
   "basis": "picked",
-  "at": "2026-11-11T08:34:07.934Z"
+  "at": "2026-11-11T22:38:18.277Z"
 }

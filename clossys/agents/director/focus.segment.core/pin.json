@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-segment-core-v2.md",
-  "sha256": "58ab1c2bf5e4fc79dce57e5950c03de409981faa5f87963ef81933eca53615da",
-  "decidedBy": "owner",
+  "candidate": "studio-segment-core-v3.md",
+  "sha256": "eaa1e6d277e9cf1d20b4d4264989563dcccad027a98f13d3a91d4dee3f590b4f",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
   "basis": "picked",
-  "at": "2026-11-11T08:33:59.325Z"
+  "at": "2026-11-11T22:38:14.953Z"
 }

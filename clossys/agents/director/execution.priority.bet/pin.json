@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-bet-v4.md",
-  "sha256": "4c0809272214a5b343e67c884bfb4499a4e75b680883a86e336d6ce1058756ec",
-  "decidedBy": "owner",
+  "candidate": "studio-bet-v6.md",
+  "sha256": "d8083ac2b12d9185cfa3d7c823ccf8d0666ef4851ea07e12cb7abb11dd03a2f7",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
   "basis": "picked",
-  "at": "2026-11-11T16:45:00.817Z"
+  "at": "2026-11-11T22:38:22.077Z"
 }
