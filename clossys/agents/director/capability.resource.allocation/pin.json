@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-allocation-v6.md",
-  "sha256": "d037446117f1a58a96655c3afc6b24c24c954698bb91fedcf21534fbde3337eb",
+  "candidate": "studio-allocation-v8.md",
+  "sha256": "5a768f9783e872ad8d5b408b06ba6219600261ddb858543e5e38a9d2d30efdd6",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T17:15:24.689Z"
+  "at": "2026-11-11T18:50:06.619Z"
 }

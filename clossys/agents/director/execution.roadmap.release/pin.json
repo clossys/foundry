@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-release-v5.md",
-  "sha256": "97753dcda7df1841c6fe1aa0f9db8f50312388cec50e76eb5d3e2bd6e15cbf99",
+  "candidate": "studio-release-v6.md",
+  "sha256": "8979305c135c899d9997669c9ce4ed2911b2bfea61a4c0ae91af6ab8af3472aa",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T17:16:10.923Z"
+  "at": "2026-11-11T18:40:52.059Z"
 }

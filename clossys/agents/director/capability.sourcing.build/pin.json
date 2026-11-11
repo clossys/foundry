@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-build-v2.md",
-  "sha256": "64dc8234b8dd12b7251fc92d09c6cd097782a42ba7f7cbeddf3cd033d02cfc44",
+  "candidate": "studio-build-v4.md",
+  "sha256": "ede07fe5f46e43c651f542d474bafc4391ad066f519139ebeae39db89c9b22a3",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T09:14:55.092Z"
+  "at": "2026-11-11T18:50:09.959Z"
 }
