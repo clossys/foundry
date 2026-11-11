@@ -292,11 +292,12 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // read via `style.width`/`style.height`, never a Tailwind class name (the
   // same reason `CHART_*_FALLBACK` above is non-class, not a scan gap).
   "SIZE_VARS",
-  // components/StatusMark.tsx — tone -> shape name (rendered as `data-shape`)
-  // and shape name -> SVG element; the mark's colour class lives in
-  // `MARK_CLASSES`, which is scanned.
+  // components/StatusMark.tsx — tone -> Lucide glyph name (rendered as
+  // `data-shape`), shape name -> glyph data, and tone -> Kibo UI status
+  // vocabulary; the mark's colour class lives in `MARK_CLASSES`, which is scanned.
   "SHAPES",
-  "SHAPE_PATHS",
+  "SHAPE_GLYPHS",
+  "KIBO_STATUS",
   // token-gate.ts — StyleCandidateKind -> human-readable report label
   // ("hex color", "arbitrary-value class", ...), interpolated into a
   // TokenGateFinding's `message` string, never a Tailwind class name.

@@ -24,13 +24,15 @@ describe("StatusMark", () => {
     const { container } = render(<StatusMark tone={tone}>Label</StatusMark>);
     const root = container.firstElementChild as HTMLElement;
     const mark = root.querySelector("[data-part='mark']") as SVGElement;
+    // Retargeted (R2F-53): the tone text colour sits on Kibo's StatusLabel inside the Status badge, not on the badge root.
+    const label = root.querySelector("[data-part='label']") as HTMLElement;
     expect(root).toHaveAttribute("data-tone", tone);
     if (tone === "neutral") {
-      expect(root.className).toContain("text-ink-secondary");
-      expect(mark.getAttribute("class")).toContain("fill-ink-muted");
+      expect(label.className).toContain("text-ink-secondary");
+      expect(mark.getAttribute("class")).toContain("stroke-ink-muted");
     } else {
-      expect(root.className).toContain(`text-status-${tone}-text`);
-      expect(mark.getAttribute("class")).toContain(`fill-status-${tone}`);
+      expect(label.className).toContain(`text-status-${tone}-text`);
+      expect(mark.getAttribute("class")).toContain(`text-status-${tone}`);
     }
   });
 
@@ -39,7 +41,7 @@ describe("StatusMark", () => {
       const { container } = render(<StatusMark tone={tone}>Label</StatusMark>);
       return container.querySelector("[data-part='mark']")?.getAttribute("data-shape");
     });
-    expect(shapes).toEqual(["circle", "triangle", "diamond", "open-circle", "dash"]);
+    expect(shapes).toEqual(["circle-check", "triangle-alert", "circle-x", "info", "minus"]);
     expect(new Set(shapes).size).toBe(TONES.length);
   });
 

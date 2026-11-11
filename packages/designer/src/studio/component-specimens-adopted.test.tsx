@@ -21,8 +21,12 @@ import { specimenDataset as d } from "./specimen-dataset.js";
 
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
 
-/** The leaves a consumer reported throwing once it adopted Foundry's component library. */
-const reported = ["native-action", "toolbar", "field", "number-field", "table", "grid-list", "tree", "meter", "logo", "chart-bar", "chart-line", "chart-area", "chart-status-strip", "chart-heatmap", "chart-range", "chart-sparkline", "chart-scatter", "chart-waterfall", "semantic-content", "navigation-tree", "resize-handle"].map(name => `components.${name}`);
+/**
+ * The leaves a consumer reported throwing once it adopted Foundry's component library. planner:r2f-53: the six
+ * zero-caller Foundry charts (status-strip, heatmap, range, sparkline, scatter, waterfall) were deleted, so they are
+ * no longer adoptable Foundry leaves.
+ */
+const reported = ["native-action", "toolbar", "field", "number-field", "table", "grid-list", "tree", "meter", "logo", "chart-bar", "chart-line", "chart-area", "semantic-content", "navigation-tree", "resize-handle"].map(name => `components.${name}`);
 
 /**
  * Every Foundry package-implemented leaf as a consumer sees it after adopting: resolve() stamps the consumer's own

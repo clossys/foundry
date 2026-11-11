@@ -137,17 +137,21 @@ describe("Foundry frame sweep", () => {
     expect(screen.getByRole("link", { name: "Skip to content" })).toHaveFocus();
   });
 
-  it.each(["site", "app"] as const)("mounts an existing Toaster through the %s slot in both themes", shell => {
+  it.each(["site", "app"] as const)("mounts an existing Toaster through the %s slot in both themes", async shell => {
     for (const theme of ["light", "dark"] as const) {
       document.documentElement.dataset.theme = theme;
       const toasts = <Toaster aria-label="Host notifications" />;
       const view = render(shell === "app" ? <AppFrame {...appProps()} theme={{ defaultPreference: theme }} toasts={toasts} /> : <SiteFrame {...siteProps()} toasts={toasts} />);
       act(() => { toast.success("Saved", { timeout: null }); });
+      await screen.findByText("Saved");
       expect(screen.getAllByRole("region", { name: "Host notifications" })).toHaveLength(1);
-      const notifications = within(screen.getByRole("region", { name: "Host notifications" }));
-      expect(notifications.getByRole("status")).toHaveTextContent("Saved");
-      expect(notifications.getByRole("status")).toHaveAttribute("aria-live", "polite");
-      act(() => toast.dismissAll()); view.unmount();
+      // The labelled region is sonner's polite live region; it announces the toast.
+      const notifications = screen.getByRole("region", { name: "Host notifications" });
+      expect(notifications).toHaveTextContent("Saved");
+      expect(notifications).toHaveAttribute("aria-live", "polite");
+      act(() => toast.dismissAll());
+      await waitFor(() => expect(screen.queryByText("Saved")).toBeNull());
+      view.unmount();
     }
   });
 });

@@ -430,9 +430,10 @@ describe("component catalog coverage", () => {
     expect(leafExports.filter((name) => name === "Toaster")).toHaveLength(1);
   });
 
-  it("counts 49 leaves on the default branch (9 parked), 13 in flight and 17 gaps", () => {
+  // planner:r2f-53: six zero-caller parked charts were deleted and recorded as gaps (parked 9 -> 3, gaps 18 -> 24).
+  it("counts 42 leaves on the default branch (3 parked), 13 in flight and 24 gaps", () => {
     const count = (status: string) => COMPONENT_ENTRIES.filter((entry) => entry.status === status).length;
-    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([39, 9, 13, 18]);
+    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([39, 3, 13, 24]);
   });
 
   it("gives built leaves an export and real files, and unbuilt leaves neither", () => {
@@ -444,10 +445,12 @@ describe("component catalog coverage", () => {
     }
   });
 
+  // planner:r2f-53: the six deleted zero-caller charts are gaps, so "the charts" are the built (non-gap) chart leaves.
   it("parks exactly the charts", () => {
     for (const entry of COMPONENT_ENTRIES) {
-      expect(entry.status === "parked", entry.id).toBe(entry.l2?.startsWith("charts-") ?? false);
-      expect(entry.disposition === "park", entry.id).toBe(entry.l2?.startsWith("charts-") ?? false);
+      const builtChart = (entry.l2?.startsWith("charts-") ?? false) && entry.status !== "gap";
+      expect(entry.status === "parked", entry.id).toBe(builtChart);
+      expect(entry.disposition === "park", entry.id).toBe(builtChart);
     }
   });
 });

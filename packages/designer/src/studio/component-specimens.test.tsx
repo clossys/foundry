@@ -6,7 +6,7 @@ import { render, studioReady } from "./__fixtures__/frame.js";
 import * as components from "../components/index.js";
 import * as charts from "../charts/index.js";
 import * as shell from "../shell/index.js";
-import { toastQueue } from "../shell/internal/toast-queue.js";
+import { appToastIds } from "../shell/internal/toast-queue.js";
 import { loadBuildCatalog, resolve } from "../catalog-core/index.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { adoptedComponentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
@@ -247,6 +247,8 @@ it("draws every Foundry package component live from designer sample content when
 });
 
 it("draws the shell Toaster's own toast in its cell from a cell queue, dismisses it by its close button and shows it again", async () => {
+  // Sonner's swipe-to-dismiss captures the pointer on pointerdown; jsdom has no pointer capture.
+  if (!("setPointerCapture" in Element.prototype)) Object.assign(Element.prototype, { setPointerCapture() {}, releasePointerCapture() {}, hasPointerCapture: () => false });
   const user = userEvent.setup();
   const { title, description } = specimenDataset.toasts[specimenDataset.toaster.variant];
   const leaf = foundryLeaves().find(entry => entry.leaf === "components.toast")!;
@@ -256,14 +258,16 @@ it("draws the shell Toaster's own toast in its cell from a cell queue, dismisses
   const host = cell.querySelector<HTMLElement>(`[data-component-specimen="components.toast"] [data-specimen-contained-host="toast"]`)!;
   expect(host).not.toBeNull();
   // In place: the stack is the Toaster's container placement inside the cell, never the fixed, portalled viewport.
-  const shown = within(host).getByRole("status");
+  // Announced by the cell's own polite toast region.
+  await within(host).findByText(title);
+  const shown = host.querySelector<HTMLElement>('[aria-live="polite"]')!;
   expect(shown).toHaveTextContent(title);
   expect(shown).toHaveTextContent(description);
   expect(host.querySelector("ol")).not.toHaveClass("fixed");
   expect(document.querySelector("[data-toaster-placement]")).toBeNull();
   expect(screen.getAllByText(title).every(node => cell.contains(node))).toBe(true);
   // The cell's queue is its own: the app-wide queue stays empty, and a page toast never draws in the cell.
-  expect(toastQueue.visibleToasts).toEqual([]);
+  expect(appToastIds()).toEqual([]);
   const page = shell.toast("Page toast");
   await new Promise(resolve => setTimeout(resolve, 0));
   expect(within(cell).queryByText("Page toast")).toBeNull();
@@ -272,8 +276,8 @@ it("draws the shell Toaster's own toast in its cell from a cell queue, dismisses
   await user.click(within(host).getByRole("button", { name: "Close" }));
   await vi.waitFor(() => expect(within(host).queryByText(title)).toBeNull());
   await user.click(within(host).getByRole("button", { name: specimenDataset.toaster.trigger }));
-  await vi.waitFor(() => expect(within(host).getByRole("status")).toHaveTextContent(title));
-  expect(toastQueue.visibleToasts).toEqual([]);
+  await vi.waitFor(() => expect(host.querySelector('[aria-live="polite"]')).toHaveTextContent(title));
+  expect(appToastIds()).toEqual([]);
 });
 
 it("host specimens override designer sample content", () => {

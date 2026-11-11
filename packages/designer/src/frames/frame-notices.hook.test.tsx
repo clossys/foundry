@@ -76,8 +76,10 @@ it("routes a page toast to the frame's Toaster, anchored to the stage corner cle
   const region = message.closest<HTMLElement>('[data-toaster-placement]')!;
   expect(region.dataset.toasterPlacement).toBe("frame");
   expect(document.querySelector("main")).not.toContainElement(message);
-  expect(region.style.bottom).toBe("calc(144px + var(--spacing-md))");
-  expect(region.style.right).toBe("calc(240px + var(--spacing-md))");
+  // Sonner takes the offset as its list's `--offset-*` variables.
+  const list = region.querySelector<HTMLElement>("ol[data-sonner-toaster]")!;
+  expect(list.style.getPropertyValue("--offset-bottom")).toBe("calc(144px + var(--spacing-md))");
+  expect(list.style.getPropertyValue("--offset-right")).toBe("calc(240px + var(--spacing-md))");
 });
 
 it("keeps a Toaster outside a frame on the viewport corner", async () => {
@@ -85,7 +87,7 @@ it("keeps a Toaster outside a frame on the viewport corner", async () => {
   act(() => { globalToast.info("Standalone"); });
   const region = (await screen.findByText("Standalone")).closest<HTMLElement>('[data-toaster-placement]')!;
   expect(region.dataset.toasterPlacement).toBe("viewport");
-  expect(region.style.bottom).toBe("");
+  expect(region.querySelector<HTMLElement>("ol[data-sonner-toaster]")!.style.getPropertyValue("--offset-bottom")).not.toContain("--spacing-md");
 });
 
 it("refuses a notice hook outside a frame", () => {

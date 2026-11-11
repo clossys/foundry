@@ -1,6 +1,6 @@
 "use client";
-import { cloneElement, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
-import { createToastQueue } from "../shell/internal/toast-queue.js";
+import { cloneElement, useEffect, useId, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { createToastScope, type ToastVariant } from "../shell/internal/toast-queue.js";
 import { Button } from "../components/index.js";
 
 type Specimen = ReactElement<Record<string, unknown>>;
@@ -27,20 +27,27 @@ export const containedDialog = (Content: ComponentType<Record<string, unknown>>,
 interface ToastSample { readonly trigger: string; readonly toast: Readonly<Record<string, unknown>> }
 
 /**
- * The shell Toaster in its `container` placement, drawing a queue owned by this cell, so its toasts render in
- * place and never reach the app-wide queue the page's own Toaster draws. The queue comes from the shell's own
- * toast-queue module (state plumbing, not a render primitive). The sample toast is queued once on mount so the idle
- * cell shows it; a Foundry Button queues it again after it is dismissed through its own close button.
+ * The shell Toaster in its `container` placement, drawing the toasts of a sonner Toaster id owned by this cell, so
+ * they render in place and never reach the app-wide Toaster the page's own Toaster draws. The scoped toast function
+ * comes from the shell's own toast-queue module (state plumbing, not a render primitive). The sample toast is added
+ * once on mount so the idle cell shows it; a Foundry Button adds it again after it is dismissed through its own close
+ * button.
  */
 function ContainedToaster({ sample, specimen }: { readonly sample: ToastSample; readonly specimen: Specimen }) {
-  const [queue] = useState(() => {
-    const cellQueue = createToastQueue<Readonly<Record<string, unknown>>>(1);
-    cellQueue.add({ ...sample.toast });
-    return cellQueue;
-  });
-  return <div data-specimen-contained-host="toast">
-    <Button variant="secondary" onPress={() => queue.add({ ...sample.toast })}>{sample.trigger}</Button>
-    {cloneElement(specimen, { queue, placement: "container" })}
+  const toasterId = `specimen-${useId()}`;
+  const [scope] = useState(() => createToastScope(toasterId));
+  const show = () => {
+    const { title, description, variant } = sample.toast as { title: ReactNode; description?: ReactNode; variant: ToastVariant };
+    const add = variant === "danger" ? scope.error : scope[variant];
+    return add(title, { description, timeout: null });
+  };
+  useEffect(() => {
+    const shown = show();
+    return () => shown.dismiss();
+  }, [scope]); // eslint-disable-line react-hooks/exhaustive-deps -- the sample is fixed for the cell's lifetime
+  return <div data-specimen-contained-host="toast" className="relative">
+    <Button variant="secondary" onPress={show}>{sample.trigger}</Button>
+    {cloneElement(specimen, { toasterId, placement: "container" })}
   </div>;
 }
 

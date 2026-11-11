@@ -13,6 +13,9 @@ import { Switch } from "./preview-runtime/components/switch/switch.js";
 import { StockSelect as Select } from "../blocks/stock-select.js";
 import { SearchField } from "./SearchField.js";
 import { StatusMark } from "./StatusMark.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
+import { AlertTriangle, CheckCircle, Info, XCircle } from "../icons/index.js";
+import { Minus } from "../icons/Minus.js";
 import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
 const render = hostedRender(renderBare);
 
@@ -71,19 +74,26 @@ describe("control glyph bindings", () => {
     expect(screen.getByRole("checkbox")).toBeChecked();
   });
   it("preserves exact default status artwork and accepts server-safe asset bindings", () => {
-    const tones = ["success", "warning", "danger", "info", "neutral"] as const;
-    const expected = ['<circle cx="5" cy="5" r="4.5"></circle>', 'd="M5 0.5 9.75 9.25H0.25Z"', 'd="M5 0 10 5 5 10 0 5Z"', 'd="M5 0.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 1 0 0-9ZM5 2a3 3 0 1 1 0 6a3 3 0 1 1 0-6Z"', '<rect x="1" y="4" width="8" height="2" rx="1"></rect>'];
-    tones.forEach((tone, index) => {
+    // Retargeted (R2F-53, planner:r2f-53): the default artwork is now each tone's Lucide glyph on the 24-unit grid
+    // (Kibo status ships a colour-only dot), pinned exactly by rendering the same Lucide node on its own.
+    const tones = [["success", CheckCircle], ["warning", AlertTriangle], ["danger", XCircle], ["info", Info], ["neutral", Minus]] as const;
+    const artwork = (glyph: IconNode) => renderToStaticMarkup(<Icon glyph={glyph} decorative />).replace(/^<svg[^>]*>|<\/svg>$/g, "");
+    expect(new Set(tones.map(([, glyph]) => artwork(glyph))).size).toBe(tones.length);
+    for (const [tone, glyph] of tones) {
       const html = renderToStaticMarkup(<StatusMark tone={tone}>Label</StatusMark>);
-      expect(html).toContain(expected[index]);
-      expect(html).toContain('viewBox="0 0 10 10"');
-    });
+      expect(artwork(glyph).length).toBeGreaterThan(0);
+      expect(html).toContain(artwork(glyph));
+      expect(html).toContain('viewBox="0 0 24 24"');
+    }
     const html = renderToStaticMarkup(<StatusMark tone="warning" glyphs={{ "assets.icon-warning": replacement }}>Careful</StatusMark>);
     expect(html).toContain('data-test-glyph="consumer"');
     expect(html).toContain('viewBox="0 0 24 24"');
     expect(html).toContain('aria-hidden="true"');
+    // Retargeted (R2F-53, planner:r2f-53): every mark is a Lucide stroke glyph now, so the replacement stays unfilled
+    // through the icon's own fill="none" (no inline style), and no mark class paints a fill over it.
     expect(html).not.toContain('stroke:none');
-    expect(html).toContain('fill:none');
+    expect(html).toContain('fill="none"');
+    expect(html).not.toMatch(/class="[^"]*\bfill-/);
     const neutral = renderToStaticMarkup(<StatusMark tone="neutral" neutralGlyph={replacement}>Idle</StatusMark>);
     expect(neutral).toContain('data-test-glyph="consumer"');
     expect(neutral).toContain('viewBox="0 0 24 24"');

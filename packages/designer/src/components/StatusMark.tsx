@@ -1,13 +1,16 @@
 import { Icon } from "./preview-runtime/components/icon/icon.js";
+import { AlertTriangle, CheckCircle, Info, XCircle } from "../icons/index.js";
+import { Minus } from "../icons/Minus.js";
 import type { IconNode } from "../icons/types.js";
 import type { GlyphBindings } from "./glyph-context.js";
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "./internal/cx.js";
+import { Status, StatusLabel, type StatusProps } from "./partners/kibo-ui/status.js";
 
 export type StatusMarkTone = "success" | "warning" | "danger" | "info" | "neutral";
 
 export interface StatusMarkProps extends Omit<HTMLAttributes<HTMLSpanElement>, "children"> {
-  /** The state's tone. Colour only repeats what the text already says. */
+  /** The state's tone. Colour only repeats what the glyph and the text already say. */
   tone: StatusMarkTone;
   /** Server-safe asset bindings; each replacement uses the standard 24-unit grid. */
   glyphs?: GlyphBindings;
@@ -15,41 +18,51 @@ export interface StatusMarkProps extends Omit<HTMLAttributes<HTMLSpanElement>, "
   neutralGlyph?: IconNode;
   /**
    * Required. The state in words ("Received", "Outside limit"). The text
-   * always carries the meaning; the mark is decoration.
+   * always carries the meaning; the glyph is decoration.
    */
   children: ReactNode;
 }
 
-const MARK_CLASSES: Record<StatusMarkTone, string> = {
-  success: "fill-status-success",
-  warning: "fill-status-warning",
-  danger: "fill-status-danger",
-  info: "fill-status-info",
-  neutral: "fill-ink-muted",
+/** Kibo UI's status vocabulary per tone; neutral carries no indicator colour. */
+const KIBO_STATUS: Record<StatusMarkTone, StatusProps["status"]> = {
+  success: "online",
+  warning: "degraded",
+  danger: "offline",
+  info: "maintenance",
+  neutral: "neutral",
 };
 
-/** The mark's shape per tone, exposed as `data-shape` on the mark. */
-type StatusMarkShape = "circle" | "triangle" | "diamond" | "open-circle" | "dash";
+/** The Lucide glyph per tone, exposed as `data-shape` on the mark. */
+type StatusMarkShape = "circle-check" | "triangle-alert" | "circle-x" | "info" | "minus";
 
 const SHAPES: Record<StatusMarkTone, StatusMarkShape> = {
-  success: "circle",
-  warning: "triangle",
-  danger: "diamond",
-  info: "open-circle",
-  neutral: "dash",
+  success: "circle-check",
+  warning: "triangle-alert",
+  danger: "circle-x",
+  info: "info",
+  neutral: "minus",
 };
 
-// Drawn in a 10x10 box as fills only (the open circle is an even-odd ring),
-// so the tone's one `fill-*` class colours every shape. The geometry carries
-// the tone when colour cannot: a greyscale brand, a print, a colour-blind
-// reader.
-const SHAPE_PATHS: Record<StatusMarkShape, IconNode> = {
-  circle: [["circle", { cx: "5", cy: "5", r: "4.5" }]],
-  triangle: [["path", { d: "M5 0.5 9.75 9.25H0.25Z" }]],
-  diamond: [["path", { d: "M5 0 10 5 5 10 0 5Z" }]],
-  "open-circle": [["path", { fillRule: "evenodd", d: "M5 0.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 1 0 0-9ZM5 2a3 3 0 1 1 0 6a3 3 0 1 1 0-6Z" }]],
-  dash: [["rect", { x: "1", y: "4", width: "8", height: "2", rx: "1" }]],
+// Kibo UI's status indicator is a colour-only dot, so each tone carries its own
+// Lucide glyph instead: the outline carries the tone when colour cannot (a
+// greyscale brand, a print, a colour-blind reader).
+const SHAPE_GLYPHS: Record<StatusMarkShape, IconNode> = {
+  "circle-check": CheckCircle,
+  "triangle-alert": AlertTriangle,
+  "circle-x": XCircle,
+  info: Info,
+  minus: Minus,
 };
+
+const MARK_CLASSES: Record<StatusMarkTone, string> = {
+  success: "text-status-success",
+  warning: "text-status-warning",
+  danger: "text-status-danger",
+  info: "text-status-info",
+  // Glyph-only colour: the stroke takes muted ink (a non-text mark), never the text colour.
+  neutral: "stroke-ink-muted",
+};
+
 const ASSETS = {
   success: "assets.icon-success",
   warning: "assets.icon-warning",
@@ -66,37 +79,37 @@ const TEXT_CLASSES: Record<StatusMarkTone, string> = {
 };
 
 /**
- * A small tone mark followed by a label: one data state inside a row,
- * a table cell or a panel header. Lighter than `Badge` (no pill fill), for
- * places where several states sit close together.
+ * One data state inside a row, a table cell or a panel header: Kibo UI's
+ * `Status` badge (MIT) holding a tone glyph and a label.
  *
- * Each tone has its own shape as well as its own colour (success a filled
- * circle, warning a triangle, danger a diamond, info a ring, neutral a
- * dash), so the states stay distinct in a greyscale brand and for a reader
- * who cannot tell the colours apart. The mark is `aria-hidden`; the label is ordinary text in the tone's
- * `status-*-text` colour, which is contrast-checked against the raised
- * surface in both themes. Not interactive, renders glyph data through Icon and uses
- * no hooks, so it is server-safe (re-exported from `components/server.ts`).
+ * Each tone has its own Lucide glyph as well as its own colour (success a
+ * circle check, warning a triangle alert, danger a circle x, info an info
+ * circle, neutral a dash), so the states stay distinct in a greyscale brand
+ * and for a reader who cannot tell the colours apart. The glyph is
+ * `aria-hidden`; the label is ordinary text in the tone's `status-*-text`
+ * colour on the outline badge (no tint behind it), which is contrast-checked
+ * against the raised surface in both themes. Not interactive and uses no
+ * hooks, so it is server-safe (re-exported from `components/server.ts`).
  */
 export function StatusMark({ tone, glyphs, neutralGlyph, className, children, ...rest }: StatusMarkProps) {
   const glyph = tone === "neutral" ? neutralGlyph : glyphs?.[ASSETS[tone]];
   return (
-    <span
+    <Status
       {...rest}
+      status={KIBO_STATUS[tone]}
+      variant="outline"
       data-tone={tone}
-      className={cx("inline-flex items-center gap-xs text-body-s font-body", TEXT_CLASSES[tone], className)}
+      className={cx("inline-flex text-body-s font-body transition-none", className)}
     >
       <Icon
-        glyph={glyph ?? SHAPE_PATHS[SHAPES[tone]]}
+        glyph={glyph ?? SHAPE_GLYPHS[SHAPES[tone]]}
         decorative
         focusable="false"
-        viewBox={glyph ? "0 0 24 24" : "0 0 10 10"}
         data-part="mark"
         data-shape={SHAPES[tone]}
         className={cx("inline-block shrink-0", MARK_CLASSES[tone])}
-        style={{ width: "10px", height: "10px", ...(glyph ? { fill: "none" } : { stroke: "none" }) }}
       />
-      <span>{children}</span>
-    </span>
+      <StatusLabel data-part="label" className={TEXT_CLASSES[tone]}>{children}</StatusLabel>
+    </Status>
   );
 }

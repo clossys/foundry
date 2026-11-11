@@ -108,7 +108,8 @@ describe("source roster", () => {
   it("orders shadcn@aria first, Foundry only on gaps, Custom last", () => {
     expect(rosterOffers(sourceRoster, "components.button")).toEqual(["shadcn@aria", "custom"]);
     expect(rosterOffers(sourceRoster, "components.chart-bar")).toEqual(["shadcn-charts", "custom"]);
-    expect(rosterOffers(sourceRoster, "components.chart-sparkline")).toEqual(["foundry", "custom"]);
+    // planner:r2f-53: the Foundry sparkline was deleted, so its roster row offers only Custom.
+    expect(rosterOffers(sourceRoster, "components.chart-sparkline")).toEqual(["custom"]);
     expect(rosterOffers(sourceRoster, "assets.favicon")).toEqual(["custom"]);
     for (const row of sourceRoster.components) for (const offer of row.offers.filter(entry => entry.source === "foundry")) expect(offer.reason).toBe("no external covers");
     expect(["assets.lockup", "assets.mark", "assets.favicon", "assets.app-icon"].map(slot => rosterStarter(sourceRoster, slot))).toEqual(Array(4).fill("identity-kit"));

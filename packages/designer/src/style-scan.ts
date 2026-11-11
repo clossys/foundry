@@ -67,9 +67,8 @@
  *      OR regex-literal region is reported via `excluded` (reason
  *      `"comment"` or `"regex-literal"`), never silently dropped and never
  *      treated as a real candidate — `DataTable.tsx`'s own JSDoc
- *      (`` * Fixed column width (`"120px"`, `"10rem"`, ...) ``) and
- *      `Sparkline.tsx`'s inline `// keeps the 2px stroke ...` are the real
- *      COMMENT examples in this codebase this exclusion exists for; this
+ *      (`` * Fixed column width (`"120px"`, `"10rem"`, ...) ``) is the real
+ *      COMMENT example in this codebase this exclusion exists for; this
  *      file's own `ATTR_CONTEXT_RE`/`TW_ARBITRARY_OPENER_RE` are the real
  *      REGEX-LITERAL examples (found scanning this package's own source —
  *      see `computeSkipRegions`'s own header for the full story).

@@ -77,7 +77,9 @@ describe("shared component guidance", () => {
     expect(additions.COMPONENT_API_FACTS).toBeDefined();
     const components = [...exportedComponents("components"), ...exportedComponents("charts")].sort();
     // planner:r2f-52: 44 after the Foundry IconButton export was removed (icon-only is the stock Button at size="icon").
-    expect(components).toHaveLength(44);
+    // planner:r2f-53: 45 -> 39; the six zero-caller Foundry charts were deleted (ladder L3 DELETE).
+    // integration (r2f-52 + r2f-53): 45 - IconButton - six charts = 38.
+    expect(components).toHaveLength(38);
     expect(Object.values(facts()).map(fact => fact.exportName).sort()).toEqual(components);
     expect(Object.keys(guidance()).sort()).toEqual(Object.keys(facts()).sort());
     const legacy = { ResizeHandle: "enter", Button: "act", Link: "act", Breadcrumb: "act", Menu: "act", TextField: "enter", Textarea: "enter", SearchField: "enter", DateField: "enter", Select: "enter", ComboBox: "enter", Checkbox: "enter", Switch: "enter", RadioGroup: "enter", FileTrigger: "enter", Field: "enter", Badge: "inform", Banner: "inform", StatusMark: "inform", Meter: "inform", ProgressBar: "inform", Spinner: "inform", Skeleton: "inform", Card: "group", Table: "group", GridList: "group", Separator: "group", Avatar: "depict", Icon: "depict", Dialog: "reveal", Popover: "reveal", Tooltip: "reveal", Disclosure: "reveal", Tabs: "reveal" };
@@ -98,11 +100,12 @@ describe("shared component guidance", () => {
 
   it("gives each component meaningful stable semantics separate from web implementation", () => {
     // planner:r2f-52: IconButton guidance folded into act.button (stock size="icon*").
-    expect(Object.keys(guidance())).toHaveLength(44);
+    // integration (r2f-52 + r2f-53): 45 - IconButton - six charts = 38.
+    expect(Object.keys(guidance())).toHaveLength(38);
     for (const field of ["purpose", "useWhen", "avoidWhen", "alternatives", "content", "anatomy", "composition", "accessibility"]) {
       const values = Object.values(guidance()).map(entry => entry[field]);
       expect(values.every(value => typeof value === "string" && value.trim().length > 24), field).toBe(true);
-      expect(new Set(values).size, field).toBe(44);
+      expect(new Set(values).size, field).toBe(38);
     }
     for (const entry of Object.values(guidance())) {
       expect(entry).not.toHaveProperty("props");
@@ -114,7 +117,8 @@ describe("shared component guidance", () => {
 
   it("records implementation evidence or explicit assessment absence for each medium", () => {
     // planner:r2f-52: IconButton guidance folded into act.button (stock size="icon*").
-    expect(Object.keys(guidance())).toHaveLength(44);
+    // integration (r2f-52 + r2f-53): 45 - IconButton - six charts = 38.
+    expect(Object.keys(guidance())).toHaveLength(38);
     for (const [id, entry] of Object.entries(guidance())) {
       expect(Object.keys(entry.media)).toEqual(["web", "email", "print", "video"]);
       for (const [medium, mediumEntry] of Object.entries(entry.media) as [string, any][]) {
@@ -137,7 +141,8 @@ describe("shared component guidance", () => {
 
   it("checks represented option names and complete finite value sets against real TypeScript props", () => {
     // planner:r2f-52: IconButton facts folded into act.button (stock size="icon*").
-    expect(Object.keys(facts())).toHaveLength(44);
+    // integration (r2f-52 + r2f-53): 45 - IconButton - six charts = 38.
+    expect(Object.keys(facts())).toHaveLength(38);
     const paths = Object.values(facts()).map(fact => join(root, fact.source));
     const filename = join(root, "component-guidance-consumer.check.ts");
     const consumer = `
@@ -222,7 +227,8 @@ describe("shared component guidance", () => {
 
   it("links token dependencies to consumed source evidence with explicit coverage", () => {
     // planner:r2f-52: IconButton facts folded into act.button (stock size="icon*").
-    expect(Object.keys(facts())).toHaveLength(44);
+    // integration (r2f-52 + r2f-53): 45 - IconButton - six charts = 38.
+    expect(Object.keys(facts())).toHaveLength(38);
     for (const [id, fact] of Object.entries(facts())) {
       expect(["partial", "none-owned"]).toContain(fact.tokens.coverage);
       expect(fact.tokens.reason.length).toBeGreaterThan(20);
@@ -301,7 +307,7 @@ describe("shared component guidance", () => {
     expect(ids.length).toBeGreaterThan(0);
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.sort()).toEqual(Object.keys(guidance()).sort());
-    const categoricalEvidence = facts()["depict.sparkline"].tokens.dependencies[0].evidence;
+    const categoricalEvidence = facts()["depict.area-chart"].tokens.dependencies[0].evidence;
     expect(categoricalEvidence).toContain("--color-chart-categorical-1");
     expect(text).toContain("`" + categoricalEvidence + "`");
   });
@@ -499,31 +505,11 @@ const comparisonGolden: Record<string, {
     maxCells: 4,
     retainedCells: 4,
   },
-  "depict.waterfall-chart": {
-    columns: {"option": "fit", "values": ["fixed", "fluid"]},
-    maxCells: 2,
-    retainedCells: 2,
-  },
-  "depict.range-chart": {
-    columns: {"option": "fit", "values": ["fixed", "fluid"]},
-    maxCells: 2,
-    retainedCells: 2,
-  },
-  "depict.scatter-chart": {
-    columns: {"option": "fit", "values": ["fixed", "fluid"]},
-    maxCells: 2,
-    retainedCells: 2,
-  },
   "depict.area-chart": {
     columns: {"option": "normalized", "values": [false, true]},
     rows: {"option": "smooth", "values": [false, true]},
     maxCells: 4,
     retainedCells: 4,
-  },
-  "depict.heatmap": {
-    columns: {"option": "categorical", "values": [false, true]},
-    maxCells: 2,
-    retainedCells: 2,
   },
 };
 

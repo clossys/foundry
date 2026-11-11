@@ -92,8 +92,7 @@ export interface ChartFrameProps {
 /**
  * The shared container for full chart compositions: plot area, axes,
  * grid, an optional legend, an accessible SVG title/description, and a
- * table-view fallback. `BarChart`, `LineChart`, `WaterfallChart`, `RangeChart`,
- * and `ScatterChart` render their marks through this.
+ * table-view fallback. `BarChart` and `LineChart` render their marks through this.
  */
 export function ChartFrame({
   title,

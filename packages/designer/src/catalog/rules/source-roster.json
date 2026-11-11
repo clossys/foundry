@@ -333,16 +333,7 @@
         "components.chart-sparkline",
         "components.chart-status-strip"
       ],
-      "offers": [
-        {
-          "source": "foundry",
-          "leaves": [
-            "components.chart-sparkline",
-            "components.chart-status-strip"
-          ],
-          "reason": "no external covers"
-        }
-      ]
+      "offers": []
     },
     {
       "l2": "charts-analytic",
@@ -352,18 +343,7 @@
         "components.chart-range",
         "components.chart-waterfall"
       ],
-      "offers": [
-        {
-          "source": "foundry",
-          "leaves": [
-            "components.chart-scatter",
-            "components.chart-heatmap",
-            "components.chart-range",
-            "components.chart-waterfall"
-          ],
-          "reason": "no external covers"
-        }
-      ]
+      "offers": []
     },
     {
       "l2": "display-content",

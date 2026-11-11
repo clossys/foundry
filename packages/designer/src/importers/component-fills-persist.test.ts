@@ -312,7 +312,8 @@ describe("pack check: every selectable fill from every source persists, except a
     // 33 importer-written fills plus the Foundry-authored rich-text engine exception (6463e7e59).
     expect(bySource("shadcn@aria")).toHaveLength(34);
     expect(bySource("foundry").length).toBeGreaterThanOrEqual(57);
-    expect(bySource("foundry").filter(fill => fill.slot.startsWith("components.chart-")).length).toBeGreaterThanOrEqual(9);
+    // planner:r2f-53: six zero-caller chart fills deleted (9 -> 3).
+    expect(bySource("foundry").filter(fill => fill.slot.startsWith("components.chart-")).length).toBeGreaterThanOrEqual(3);
     expect(bySource("compose").map(fill => fill.slot)).toContain("components.date-picker");
     expect(bySource("compose")).toHaveLength(rules.length);
     expect(new Set(everyFill.map(fill => fill.id)).size).toBe(everyFill.length);

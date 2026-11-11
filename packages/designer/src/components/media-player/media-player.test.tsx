@@ -29,6 +29,8 @@ const disconnect = vi.fn();
 const enter = (ratio = 1) => act(() => intersection([{ target: observed, isIntersecting: ratio > 0, intersectionRatio: ratio } as IntersectionObserverEntry], {} as IntersectionObserver));
 const preference = (value: boolean) => act(() => { reduced = value; motion?.({ matches: value } as MediaQueryListEvent); });
 const element = (container: HTMLElement) => container.querySelector("video")!;
+/** media-chrome's own control (jsdom treats media-chrome as server-side, so its elements stay inert here). */
+const chrome = (container: HTMLElement, tag: string) => container.querySelector(`media-control-bar ${tag}`);
 
 beforeEach(() => {
   reduced = false;
@@ -61,7 +63,9 @@ describe("MediaPlayer", () => {
     expect(screen.getByRole("group", { name: passage.title })).toHaveAttribute("aria-keyshortcuts");
     await user.click(screen.getByRole("button", { name: passage.play }));
     expect(play).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: passage.pause })).toBeVisible();
+    // Started: the poster's start control gives way to media-chrome's play/pause control.
+    expect(screen.queryByRole("button", { name: passage.play })).toBeNull();
+    expect(chrome(container, "media-play-button")).not.toBeNull();
   });
   it("autoplays only after at least a quarter is visible and only muted", () => {
     const { container } = render(<MediaPlayer {...props} autoplay muted loop />);
@@ -89,76 +93,64 @@ describe("MediaPlayer", () => {
   it("allows explicit playback under reduced motion and pauses when the preference is enabled", async () => {
     reduced = true;
     const user = userEvent.setup();
-    render(<MediaPlayer {...props} autoplay muted />);
+    const { container } = render(<MediaPlayer {...props} autoplay muted />);
     enter();
     await user.click(screen.getByRole("button", { name: passage.play }));
     expect(play).toHaveBeenCalledTimes(1);
+    pause.mockClear();
     preference(true);
-    expect(screen.getByRole("button", { name: passage.play })).toBeVisible();
+    expect(pause).toHaveBeenCalled();
+    expect(chrome(container, "media-play-button")).not.toBeNull();
     enter(0); enter();
     expect(play).toHaveBeenCalledTimes(1);
   });
   it("pauses below 25 percent and resumes an eligible automatic clip", () => {
-    render(<MediaPlayer {...props} autoplay muted />);
+    const { container } = render(<MediaPlayer {...props} autoplay muted />);
     enter();
     expect(play).toHaveBeenCalledTimes(1);
     enter(0.249);
     expect(pause).toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: passage.play })).toBeVisible();
+    expect(chrome(container, "media-play-button")).not.toBeNull();
     enter(0.25);
     expect(play).toHaveBeenCalledTimes(2);
   });
   it("never auto-resumes after a user pause, even after motion or prop changes", async () => {
-    const user = userEvent.setup();
     const view = render(<MediaPlayer {...props} autoplay muted />);
     enter();
-    await user.click(screen.getByRole("button", { name: passage.pause }));
+    // A user pause: media-chrome's pause control pauses the media element directly.
+    act(() => { element(view.container).pause(); });
     const count = play.mock.calls.length;
     enter(0); enter(); preference(true); preference(false);
     view.rerender(<MediaPlayer {...props} autoplay muted controls="minimal" />);
     enter();
     expect(play).toHaveBeenCalledTimes(count);
-    await user.click(screen.getByRole("button", { name: passage.play }));
+    // The user resumes through media-chrome's play control, which plays the media element directly.
+    act(() => { void element(view.container).play(); });
     expect(play).toHaveBeenCalledTimes(count + 1);
   });
-  it("supports Space/K, five-second seeking, M and C without stealing control keys", async () => {
-    const user = userEvent.setup();
+  it("hands Space/K, five-second seeking, M and C to media-chrome's hotkeys on the focusable player", () => {
     const { container } = render(<MediaPlayer {...props} captions={captions} />);
-    const media = element(container);
-    const track = { mode: "disabled" };
-    Object.defineProperty(media, "textTracks", { value: [track] });
-    Object.defineProperty(media, "duration", { value: 20 });
-    fireEvent.loadedMetadata(media);
+    // media-chrome's media-controller owns the hotkeys (Space and K play or pause, ArrowLeft and ArrowRight seek,
+    // M mutes, C toggles captions) and skips keys a focused range or button uses itself.
     const group = screen.getByRole("group", { name: passage.title });
-    group.focus();
-    await user.keyboard(" ");
-    expect(play).toHaveBeenCalledTimes(1);
-    await user.keyboard("k");
-    expect(screen.getByRole("button", { name: passage.play })).toBeVisible();
-    await user.keyboard("{ArrowRight}{ArrowRight}{ArrowLeft}");
-    expect(media.currentTime).toBe(5);
-    await user.keyboard("{ArrowLeft}{ArrowLeft}");
-    expect(media.currentTime).toBe(0);
-    await user.keyboard("m");
-    expect(media.muted).toBe(true);
-    expect(screen.getByRole("button", { name: passage.mute })).toHaveAttribute("aria-pressed", "true");
-    await user.keyboard("c");
-    expect(track.mode).toBe("showing");
-    expect(screen.getByRole("button", { name: passage.captions })).toHaveAttribute("aria-pressed", "true");
-    const slider = screen.getByRole("slider", { name: passage.seek });
-    slider.focus();
-    await user.keyboard("{ArrowRight}");
-    expect(media.currentTime).toBe(5);
-    const count = play.mock.calls.length;
-    screen.getByRole("button", { name: passage.play }).focus();
-    await user.keyboard(" ");
-    expect(play).toHaveBeenCalledTimes(count + 1);
+    expect(group.tagName).toBe("MEDIA-CONTROLLER");
+    expect(group).toHaveAttribute("tabindex", "0");
+    expect(group).toHaveAttribute("aria-keyshortcuts", "Space K ArrowLeft ArrowRight M C");
+    expect(group).toHaveAttribute("keyboardbackwardseekoffset", "5");
+    expect(group).toHaveAttribute("keyboardforwardseekoffset", "5");
+    expect(group).not.toHaveAttribute("nohotkeys");
+    expect(group).not.toHaveAttribute("hotkeys");
+    expect(element(container).getAttribute("slot")).toBe("media");
+    expect(element(container).querySelector("track")).toHaveAttribute("kind", "captions");
+    for (const tag of ["media-play-button", "media-mute-button", "media-time-range", "media-captions-button"]) expect(chrome(container, tag), tag).not.toBeNull();
   });
   it("keeps the minimal variant operable and omits its seek slider", () => {
-    render(<MediaPlayer {...props} controls="minimal" />);
+    const { container } = render(<MediaPlayer {...props} captions={captions} controls="minimal" />);
     expect(screen.getByRole("button", { name: passage.play })).toBeVisible();
-    expect(screen.queryByRole("slider")).toBeNull();
-    expect(screen.queryByRole("button", { name: passage.captions })).toBeNull();
+    expect(chrome(container, "media-play-button")).not.toBeNull();
+    expect(chrome(container, "media-mute-button")).not.toBeNull();
+    expect(chrome(container, "media-time-range")).toBeNull();
+    expect(chrome(container, "media-captions-button")).toBeNull();
   });
   it("restores the poster and Writer error passage after a decoding failure", () => {
     const { container } = render(<MediaPlayer {...props} autoplay muted />);

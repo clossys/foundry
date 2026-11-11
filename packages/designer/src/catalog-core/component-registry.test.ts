@@ -58,8 +58,10 @@ const leafNodes = (nodes: readonly PlacementNode[]): PlacementNode[] => nodes.fl
 describe("component build IA registry", () => {
   it("records the consumed-only parked charts in IA data and rejects a parked id that is not placed (register H4c)", () => {
     const registry = loadComponentRegistry();
-    expect(registry.placement.parked?.map(entry => entry.leaf)).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line"]);
-    for (const entry of registry.placement.parked ?? []) expect(entry.basis).toMatch(/H4c/);
+    // planner:r2f-53 appends the six zero-caller charts whose Foundry implementations were deleted (leaf ids retained).
+    const deleted = ["sparkline", "status-strip", "scatter", "heatmap", "range", "waterfall"].map(leaf => `components.chart-${leaf}`);
+    expect(registry.placement.parked?.map(entry => entry.leaf)).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line", ...deleted]);
+    for (const entry of registry.placement.parked ?? []) expect(entry.basis).toMatch(deleted.includes(entry.leaf) ? /planner:r2f-53/ : /H4c/);
     const forged = { ...registry, placement: { ...registry.placement, parked: [...registry.placement.parked!, { leaf: "components.unplaced", basis: "x" }] } };
     expect(componentRegistryFindings(forged)).toEqual(["parked: components.unplaced is not a placed component leaf"]);
   });

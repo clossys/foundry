@@ -79,7 +79,8 @@ describe("Foundry component package descriptors", () => {
     expect(bySlot.get("components.text-field")!.propMap["line.multiline"]).toBe("./components#Textarea");
     expect(bySlot.get("components.logo")!.propMap["content.lockup"]).toBe("./shell#Brandmark.variant=lockup");
     expect(bySlot.get("components.toast")!.impl).toMatchObject({ module: "@clossys/designer/shell", export: "Toaster" });
-    expect(descriptors.filter(fill => fill.slot.startsWith("components.chart-"))).toHaveLength(9);
+    // planner:r2f-53: the six zero-caller Foundry charts were deleted; area, bar and line remain.
+    expect(descriptors.filter(fill => fill.slot.startsWith("components.chart-"))).toHaveLength(3);
   });
 
   it("accounts for every closed member as supported or missing, with no invented support", () => {
@@ -110,11 +111,11 @@ describe("Foundry component package descriptors", () => {
     expect(rows.get("components.breadcrumbs")!.missing).toContain("collapsed");
     expect(rows.get("components.dialog")!.supported).toEqual(["dismissable", "role.modal"]);
     expect(rows.get("components.popover")!.supported).toEqual(["placement"]);
-    for (const leaf of ["checkbox", "disclosure", "select", "tabs", "form", "navigation-tree", "field", "text-field", "date-field", "grid-list", "toast", "chart-area", "chart-heatmap", "chart-range", "chart-scatter", "chart-status-strip", "chart-waterfall"]) {
+    for (const leaf of ["checkbox", "disclosure", "select", "tabs", "form", "navigation-tree", "field", "text-field", "date-field", "grid-list", "toast", "chart-area"]) {
       expect(rows.get(`components.${leaf}`)!.missing).toEqual([]);
       expect(rows.get(`components.${leaf}`)!.status).toBe("candidate");
     }
-    expect(rows.get("components.chart-sparkline")!.supported).toEqual(["axes", "legend", "series", "tooltip"]);
+    expect(rows.get("components.chart-area")!.supported).toEqual(["axes", "legend", "series", "tooltip"]);
   });
 
   it("maps the package Menu popup, its inline presentation and root selection to real exports", () => {

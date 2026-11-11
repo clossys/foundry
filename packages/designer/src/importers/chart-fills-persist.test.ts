@@ -38,8 +38,9 @@ function persist(doc: ComponentCandidateDocument): ComponentFile[] {
 }
 
 describe("Foundry chart fills persist", () => {
-  it("selects all nine Foundry chart fills", () => {
-    expect(charts.map(fillId).sort()).toEqual(["area", "bar", "heatmap", "line", "range", "scatter", "sparkline", "status-strip", "waterfall"].map(leaf => `foundry/components.chart-${leaf}`));
+  // planner:r2f-53: the six zero-caller chart fills were deleted with their charts (nine -> three).
+  it("selects all three Foundry chart fills", () => {
+    expect(charts.map(fillId).sort()).toEqual(["area", "bar", "line"].map(leaf => `foundry/components.chart-${leaf}`));
   });
   it("emitComponents (persist path) refuses no Foundry chart fill", () => {
     const refusals = charts.flatMap(doc => { try { persist(doc); return []; } catch (error) { return [`${fillId(doc)}: ${(error as Error).message}`]; } });

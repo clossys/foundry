@@ -252,6 +252,12 @@ describe("FlowCanvas", () => {
     expect(source).not.toMatch(/\b(transition|animate)-/);
     expect(source).not.toMatch(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/);
     const { container } = render(<FlowCanvas nodes={nodes} edges={edges} selectedId="review" {...copy} />);
-    for (const element of container.querySelectorAll("[class]")) expect(element.getAttribute("class")).not.toMatch(/\b(transition|animate)/);
+    // Retargeted (R2F-53, planner:r2f-53): the stock badge under StatusMark carries `transition-all`, which StatusMark
+    // switches off with `transition-none`; the guarantee is unchanged: no rendered element animates or transitions.
+    for (const element of container.querySelectorAll("[class]")) {
+      expect(element.getAttribute("class")).not.toMatch(/\banimate/);
+      const transitions = (element.getAttribute("class") ?? "").split(/\s+/).filter((name) => /^transition/.test(name));
+      expect(transitions.every((name) => name === "transition-none"), transitions.join(" ")).toBe(true);
+    }
   });
 });

@@ -46,13 +46,7 @@ export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<str
   "./components#TextField": d.textField,
   "./charts#AreaChart": d.charts.area,
   "./charts#BarChart": d.charts.bar,
-  "./charts#Heatmap": d.charts.heatmap,
   "./charts#LineChart": d.charts.line,
-  "./charts#RangeChart": d.charts.range,
-  "./charts#ScatterChart": d.charts.scatter,
-  "./charts#Sparkline": d.charts.sparkline,
-  "./charts#StatusStrip": d.charts.statusStrip,
-  "./charts#WaterfallChart": d.charts.waterfall,
 };
 
 /** Text content for components that draw their children. */

@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ImageResource, VideoResource } from "../../catalog-assets/media.js";
 import { Button } from "../preview-runtime/components/button/button.js";
-import { Toggle as ToggleButton } from "../preview-runtime/components/toggle-button/toggle.js";
-import { Slider } from "../preview-runtime/components/slider/slider.js";
 import { Icon } from "../preview-runtime/components/icon/icon.js";
 import { ChevronRight } from "../../icons/ChevronRight.js";
 import { SemanticContent } from "../SemanticContent.js";
+import {
+  VideoPlayer, VideoPlayerCaptionsButton, VideoPlayerContent, VideoPlayerControlBar, VideoPlayerMuteButton,
+  VideoPlayerPlayButton, VideoPlayerTimeDisplay, VideoPlayerTimeRange,
+} from "../partners/kibo-ui/video-player.js";
 import { cx } from "../internal/cx.js";
 
 /** Resolved Writer passage fields; the host owns language and approval. */
@@ -36,19 +38,25 @@ export interface MediaPlayerProps {
   className?: string;
 }
 
-/** Poster-first inline playback. Automatic playback always respects motion, sound and user intent. */
+/** The keyboard seek step, in seconds; media-chrome's hotkeys use it for ArrowLeft and ArrowRight. */
+const SEEK_STEP = 5;
+/** media-controller attributes its React wrapper passes through but does not type. */
+const SEEK_ATTRIBUTES = { keyboardbackwardseekoffset: SEEK_STEP, keyboardforwardseekoffset: SEEK_STEP } as object;
+
+/**
+ * Poster-first inline playback on the Kibo UI Video Player (media-chrome). media-chrome owns the
+ * controls, their state, the Space/K, M, C and arrow-key hotkeys and the seek bar; this session
+ * keeps the poster-first start, the automatic-playback policy (muted, at least a quarter visible,
+ * never under reduced motion, never after a user pause) and the Writer error fallback.
+ */
 function MediaPlayerSession({ video, poster, passage, captions = video.captions, muted = false, autoplay = false, loop = false, controls = "full", className }: MediaPlayerProps) {
   const media = useRef<HTMLVideoElement>(null);
   const root = useRef<HTMLDivElement>(null);
   const userPaused = useRef(false);
+  const policyPause = useRef(false);
   const reducedMotion = useRef(true);
   const visible = useRef(false);
   const failed = useRef(false);
-  const [playing, setPlaying] = useState(false);
-  const [isMuted, setMuted] = useState(muted);
-  const [captionsOn, setCaptionsOn] = useState(false);
-  const [duration, setDuration] = useState(0);
-  const [position, setPosition] = useState(0);
   const [error, setError] = useState(false);
   const [started, setStarted] = useState(false);
 
@@ -56,38 +64,33 @@ function MediaPlayerSession({ video, poster, passage, captions = video.captions,
     const element = media.current;
     if (!element || failed.current) return;
     // A blocked play request is recoverable through the same visible play control.
-    void element.play()?.catch(() => setPlaying(false));
+    void element.play()?.catch(() => undefined);
   };
-  const pause = () => { media.current?.pause(); };
-  const togglePlayback = () => {
-    if (playing) { userPaused.current = true; pause(); }
-    else { userPaused.current = false; play(); }
+  /** A pause the policy makes (visibility, motion, unmount) is not the user's and never blocks resuming. */
+  const pauseForPolicy = (element: HTMLVideoElement) => {
+    policyPause.current = true;
+    element.pause();
+    policyPause.current = false;
   };
-  const seek = (value: number) => {
-    if (!media.current || !Number.isFinite(duration) || duration <= 0) return;
-    const next = Math.max(0, Math.min(duration, value));
-    media.current.currentTime = next;
-    setPosition(next);
-  };
+  const start = () => { userPaused.current = false; play(); };
 
-  useEffect(() => { setMuted(muted); }, [muted]);
-  useEffect(() => { if (media.current) media.current.muted = isMuted; }, [isMuted]);
+  useEffect(() => { if (media.current) media.current.muted = muted; }, [muted]);
   useEffect(() => {
     const element = media.current;
     if (!element) return;
-    element.muted = isMuted;
+    element.muted = muted;
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     reducedMotion.current = query.matches;
     const reconcile = () => {
-      if (!visible.current) { element.pause(); return; }
+      if (!visible.current) { pauseForPolicy(element); return; }
       if (autoplay && element.muted && !reducedMotion.current && !userPaused.current && !failed.current) {
-        void element.play()?.catch(() => setPlaying(false));
+        void element.play()?.catch(() => undefined);
       }
     };
     const motionChanged = () => {
       reducedMotion.current = query.matches;
       // A newly enabled preference also stops an already running automatic clip.
-      if (query.matches) element.pause();
+      if (query.matches) pauseForPolicy(element);
       else reconcile();
     };
     query.addEventListener("change", motionChanged);
@@ -101,57 +104,38 @@ function MediaPlayerSession({ video, poster, passage, captions = video.captions,
       }, { threshold: [0, 0.25] });
       observer.observe(root.current);
     } else { visible.current = true; reconcile(); }
-    return () => { query.removeEventListener("change", motionChanged); observer?.disconnect(); element.pause(); };
+    return () => { query.removeEventListener("change", motionChanged); observer?.disconnect(); pauseForPolicy(element); };
   }, [autoplay, video.src]);
 
-  useEffect(() => {
-    const tracks = media.current?.textTracks;
-    if (tracks) for (let index = 0; index < tracks.length; index++) tracks[index]!.mode = captionsOn ? "showing" : "disabled";
-  }, [captionsOn, captions?.src]);
-
-  const keyboard = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
-    const key = event.key.toLowerCase();
-    // The styled controls retain their own Space and arrow interactions.
-    if ((key === " " || key.startsWith("arrow")) && event.target !== event.currentTarget) return;
-    if (key === " " || key === "k") togglePlayback();
-    else if (key === "arrowleft") seek(position - 5);
-    else if (key === "arrowright") seek(position + 5);
-    else if (key === "m") setMuted(value => !value);
-    else if (key === "c" && captions) setCaptionsOn(value => !value);
-    else return;
-    event.preventDefault();
-  };
-
-  return <div ref={root} data-slot="media-player" role="group" aria-label={passage.title}
-    aria-keyshortcuts="Space K ArrowLeft ArrowRight M C" tabIndex={0} onKeyDown={keyboard}
-    className={cx("relative overflow-hidden rounded-surface bg-surface-sunken text-ink-primary focus-ring", className)}>
-    <div className="relative">
-      <video ref={media} src={video.src} poster={poster.src} width={video.width} height={video.height}
-        preload="metadata" playsInline muted={isMuted} loop={loop} aria-label={passage.title}
-        className="block h-auto w-full" hidden={error}
-        onPlay={() => { setPlaying(true); setStarted(true); }} onPause={() => setPlaying(false)}
-        onEnded={() => { userPaused.current = true; setPlaying(false); }} onTimeUpdate={event => setPosition(event.currentTarget.currentTime)}
-        onLoadedMetadata={event => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
-        onError={() => { failed.current = true; pause(); setError(true); setPlaying(false); }}>
-        {captions ? <track kind="captions" src={captions.src} srcLang={captions.srclang} label={captions.label}
-          onLoad={() => { const tracks = media.current?.textTracks; if (tracks) for (let index = 0; index < tracks.length; index++) tracks[index]!.mode = captionsOn ? "showing" : "disabled"; }} /> : null}
-      </video>
-      {error ? <img src={poster.src} alt={poster.decorative ? "" : poster.alt} width={poster.width} height={poster.height} className="block h-auto w-full" /> : null}
-      {!started && !error ? <div className="absolute inset-0 flex items-center justify-center">
-        <Button onPress={togglePlayback}><Icon glyph={ChevronRight} decorative size="sm" />{passage.play}</Button>
-      </div> : null}
-    </div>
+  return <div ref={root} data-slot="media-player" className={cx("relative overflow-hidden rounded-surface bg-surface-sunken text-ink-primary", className)}>
+    <VideoPlayer role="group" aria-label={passage.title} aria-keyshortcuts="Space K ArrowLeft ArrowRight M C" tabIndex={0}
+      {...SEEK_ATTRIBUTES}
+      hidden={error} className="block w-full focus-ring">
+      <VideoPlayerContent ref={media} slot="media" src={video.src} poster={poster.src} width={video.width} height={video.height}
+        preload="metadata" playsInline muted={muted} loop={loop} aria-label={passage.title}
+        className="block h-auto w-full"
+        onPlay={() => { userPaused.current = false; setStarted(true); }}
+        onPause={() => { if (!policyPause.current && !media.current?.ended) userPaused.current = true; }}
+        onEnded={() => { userPaused.current = true; }}
+        onError={() => { failed.current = true; pauseForPolicy(media.current!); setError(true); }}>
+        {captions ? <track kind="captions" src={captions.src} srcLang={captions.srclang} label={captions.label} /> : null}
+      </VideoPlayerContent>
+      <VideoPlayerControlBar>
+        <VideoPlayerPlayButton />
+        <VideoPlayerMuteButton />
+        {controls === "full" ? <VideoPlayerTimeRange /> : null}
+        {controls === "full" ? <VideoPlayerTimeDisplay showDuration /> : null}
+        {captions && controls === "full" ? <VideoPlayerCaptionsButton /> : null}
+      </VideoPlayerControlBar>
+    </VideoPlayer>
+    {error ? <img src={poster.src} alt={poster.decorative ? "" : poster.alt} width={poster.width} height={poster.height} className="block h-auto w-full" /> : null}
+    {!started && !error ? <div className="absolute inset-0 flex items-center justify-center">
+      <Button onPress={start}><Icon glyph={ChevronRight} decorative size="sm" />{passage.play}</Button>
+    </div> : null}
     {error ? <SemanticContent as="div" role="alert" className="flex flex-col gap-xs p-md">
       <SemanticContent as="strong">{passage.error.title}</SemanticContent>
       <SemanticContent as="p">{passage.error.description}</SemanticContent>
-    </SemanticContent> : <div className="flex flex-wrap items-center gap-sm p-sm">
-      {started ? <Button variant="secondary" onPress={togglePlayback}>{playing ? passage.pause : passage.play}</Button> : null}
-      <ToggleButton isSelected={isMuted} onChange={setMuted}>{passage.mute}</ToggleButton>
-      {captions ? <ToggleButton isSelected={captionsOn} onChange={setCaptionsOn}>{passage.captions}</ToggleButton> : null}
-      {controls === "full" ? <Slider aria-label={passage.seek} minValue={0} maxValue={duration || 1} step={5} value={position}
-        isDisabled={duration <= 0} onChange={seek} /> : null}
-    </div>}
+    </SemanticContent> : null}
   </div>;
 }
 
@@ -177,7 +161,7 @@ function PassiveMediaPlayer({ video, poster, className }: PassiveMediaPlayerProp
     return () => element.pause();
   }, [reduced, failed, video.src]);
   return <div data-slot="media-player" data-media-passive="" aria-hidden="true" className={cx("h-full w-full", className)} style={{ pointerEvents: "none" }}>
-    {reduced || failed ? <img data-media-poster="" src={poster.src} alt="" width={poster.width} height={poster.height} className="h-full w-full object-cover" /> : <video ref={media} src={video.src} poster={poster.src} width={video.width} height={video.height} muted autoPlay loop playsInline tabIndex={-1} aria-hidden="true" preload="metadata" className="h-full w-full object-cover" onError={() => setFailed(true)} />}
+    {reduced || failed ? <img data-media-poster="" src={poster.src} alt="" width={poster.width} height={poster.height} className="h-full w-full object-cover" /> : <VideoPlayerContent ref={media} src={video.src} poster={poster.src} width={video.width} height={video.height} muted autoPlay loop playsInline tabIndex={-1} aria-hidden="true" preload="metadata" className="h-full w-full object-cover" onError={() => setFailed(true)} />}
   </div>;
 }
 

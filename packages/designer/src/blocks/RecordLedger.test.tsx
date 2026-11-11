@@ -99,10 +99,11 @@ it("uses ledger-only inverse label ink while preserving the status glyph's tone 
   const { container } = render(<RecordLedger id="inverse" form="record" ground="inverse" head={{ title: "Record", status: { tone: "danger", label: "Overdue" } }} groups={[{ id: "rows", label: "Rows", rows: [{ id: "danger", label: "Check", status: { tone: "danger", label: "Needs review" } }] }]} caption="Sample data." />);
   for (const status of container.querySelectorAll('[data-tone="danger"]')) {
     expect(status).not.toHaveAttribute("style");
-    expect(status).toHaveClass("text-status-danger-text");
-    expect(status.querySelector(":scope > span > span")).toHaveClass("text-ink-on-inverse");
-    expect(status.querySelector('[data-part="mark"]')).toHaveClass("fill-status-danger");
-    expect(status.querySelector('[data-part="mark"]')).toHaveAttribute("data-shape", "diamond");
+    // Retargeted (R2F-53): the tone text colour sits on Kibo's StatusLabel; the ledger's inverse ink wraps the label text inside it.
+    expect(status.querySelector('[data-part="label"]')).toHaveClass("text-status-danger-text");
+    expect(status.querySelector('[data-part="label"] > span')).toHaveClass("text-ink-on-inverse");
+    expect(status.querySelector('[data-part="mark"]')).toHaveClass("text-status-danger");
+    expect(status.querySelector('[data-part="mark"]')).toHaveAttribute("data-shape", "circle-x");
   }
   const ordinary = render(<RecordLedger id="ordinary" form="record" head={{ title: "Record", status: { tone: "danger", label: "Overdue" } }} groups={groups} caption="Sample data." />);
   expect(ordinary.container.querySelector('[data-tone="danger"]')).not.toHaveAttribute("style");
