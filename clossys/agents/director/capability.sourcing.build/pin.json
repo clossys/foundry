@@ -1,12 +1,7 @@
 {
-  "candidate": "studio-build-v4.md",
-  "sha256": "ede07fe5f46e43c651f542d474bafc4391ad066f519139ebeae39db89c9b22a3",
+  "candidate": "studio-build-v7.md",
+  "sha256": "bb7454c941ff1da156113f73acd38620953798556a911e2a8b4a594ad94aa186",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:18:16.911Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:18:50.404Z"
-  }
+  "at": "2026-11-11T23:29:02.982Z"
 }

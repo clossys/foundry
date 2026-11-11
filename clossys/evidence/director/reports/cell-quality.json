@@ -1,7 +1,7 @@
 {
   "cells": [
     {
-      "cell": "capability.operation.delivery",
+      "cell": "capability.sourcing.build",
       "version": 7,
       "draft": true
     }
@@ -11,34 +11,34 @@
       "rule": "Q2",
       "severity": "judge",
       "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
-      "cell": "capability.operation.delivery",
-      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
-      "judgeId": "Q2:capability.operation.delivery@7"
+      "cell": "capability.sourcing.build",
+      "path": "capability.sourcing.build/candidates/studio-build-v7.md",
+      "judgeId": "Q2:capability.sourcing.build@7"
     },
     {
       "rule": "Q3",
       "severity": "judge",
       "message": "Judge whether the cited evidence supports each Because bullet",
-      "cell": "capability.operation.delivery",
-      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
-      "judgeId": "Q3:capability.operation.delivery@7"
+      "cell": "capability.sourcing.build",
+      "path": "capability.sourcing.build/candidates/studio-build-v7.md",
+      "judgeId": "Q3:capability.sourcing.build@7"
     },
     {
       "rule": "Q4",
       "severity": "judge",
       "message": "Judge whether each Watch threshold is meaningful for this Direction",
-      "cell": "capability.operation.delivery",
-      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
-      "judgeId": "Q4:capability.operation.delivery@7"
+      "cell": "capability.sourcing.build",
+      "path": "capability.sourcing.build/candidates/studio-build-v7.md",
+      "judgeId": "Q4:capability.sourcing.build@7"
     },
     {
       "rule": "Q6",
       "severity": "judge",
       "message": "Judge whether a real alternative was given up",
-      "cell": "capability.operation.delivery",
-      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
+      "cell": "capability.sourcing.build",
+      "path": "capability.sourcing.build/candidates/studio-build-v7.md",
       "code": "tradeoff",
-      "judgeId": "Q6:capability.operation.delivery@7"
+      "judgeId": "Q6:capability.sourcing.build@7"
     }
   ]
 }
