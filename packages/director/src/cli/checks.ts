@@ -30,10 +30,13 @@ function related(finding: CheckFinding, ids: Set<string>): boolean {
   return finding.cell !== undefined && ids.has(finding.cell) || finding.cells?.some(id => ids.has(id)) === true || finding.cell === undefined && finding.cells === undefined;
 }
 
-/** `--archetype` selects the archetype's core cells (default core plus its extras) for status and completion. */
-function withArchetype(model: StrategyModel, archetype: string | undefined): StrategyModel {
-  if (archetype === undefined || archetype === "default") return model;
-  if (!Object.hasOwn(model.catalog.archetypes.extras, archetype)) throw new Error(`Unknown strategy archetype: ${archetype}`);
+/**
+ * `--archetype` selects the archetype's core cells (default core plus its extras) for status and completion.
+ * An explicit `default` is set like any other, so it overrides an archetype the tree already records.
+ */
+export function withArchetype(model: StrategyModel, archetype: string | undefined): StrategyModel {
+  if (archetype === undefined) return model;
+  if (archetype !== "default" && !Object.hasOwn(model.catalog.archetypes.extras, archetype)) throw new Error(`Unknown strategy archetype: ${archetype}`);
   return model.tree ? { ...model, tree: { ...model.tree, archetype } } : model;
 }
 

@@ -8,7 +8,8 @@ import { loadCatalog } from "../catalog.js";
 import { formatRef } from "../format/ref.js";
 import type { Cell, Ref } from "../format/types.js";
 import { main } from "../cli.js";
-import { executeChecksCommand } from "./checks.js";
+import { executeChecksCommand, withArchetype } from "./checks.js";
+import { readStrategyRoot } from "../store.js";
 import { parseReadArgs, runReadCommand } from "./read.js";
 import { stageFinding, stageSlot, strategyRoot, type SlotFixture } from "../__fixtures__/slot-model.js";
 
@@ -180,6 +181,14 @@ describe("production check CLI adapters", () => {
     expect(saas.code).toBe(1); expect(saas.value.result.core.counts.total).toBe(27);
     expect(invoke(["status", "--archetype", "product-saas", "--root", root]).value.result.cells.map((cell: { id: string }) => cell.id)).toContain("focus.lifecycle.retention");
     expect(invoke(["complete", "--archetype", "unknown", "--root", root]).code).toBe(2);
+  });
+  it("--archetype default overrides an archetype the tree records", () => {
+    const model = readStrategyRoot(fixture(true), store.reader);
+    const recorded = { ...model, tree: { ...model.tree!, archetype: "product-saas" } };
+    expect(withArchetype(recorded, "default").tree!.archetype).toBe("default");
+    expect(withArchetype(recorded, undefined).tree!.archetype).toBe("product-saas");
+    expect(withArchetype(model, "product-saas").tree!.archetype).toBe("product-saas");
+    expect(() => withArchetype(model, "unknown")).toThrow(/Unknown strategy archetype/);
   });
   it("complete leaves git status clean; only an explicit write saves the completion report", () => {
     const root = fixture(true); const base = join(root, "../../..");
