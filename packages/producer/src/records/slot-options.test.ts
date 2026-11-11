@@ -116,6 +116,17 @@ describe("clossys options and pick", () => {
     expect(brief.write.length).toBeLessThanOrEqual(3);
   });
 
+  it("--redraft prints a one-candidate brief that may cite new evidence, and refuses --more beside it", async () => {
+    const result = await runOptionsCli([`director/${ID}`, "--redraft", "--root", root], root);
+    expect(result.exitCode).toBe(0);
+    const brief = result.output as { mode: string; write: { name: string }[]; keep: { source: string }; how: string };
+    expect(brief.mode).toBe("redraft");
+    expect(brief.write).toHaveLength(1);
+    expect(brief.keep.source).toContain("clossys evidence");
+    expect(brief.how).toContain("--rung");
+    await expect(runOptionsCli([`director/${ID}`, "--redraft", "--more", "--root", root], root)).rejects.toThrow(/two briefs/);
+  });
+
   it("pick refuses an owner pick (basis picked) and leaves it unchanged", async () => {
     add("essence-human-v1.md", brief({ angle: "human" }));
     const before = readFileSync(join(dir, "pin.json"), "utf8");

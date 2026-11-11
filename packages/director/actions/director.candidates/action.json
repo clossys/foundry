@@ -5,7 +5,7 @@
   "kind": "decide:creative",
   "stage": "direct.make",
   "summary": "Create Director candidates: one immutable file per option, per L3 slot.",
-  "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+  "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
   "inputs": [
     {
       "glob": "clossys/evidence/director/*.md",

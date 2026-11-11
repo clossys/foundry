@@ -28,6 +28,7 @@ import { isDecide, roundOf, ROUNDS, stageName, STAGES } from "../pipeline/define
 import type { Step } from "../pipeline/define.js";
 import { loadSchema, validateFile, validateValue } from "../pipeline/schema.js";
 import { readSeat } from "../pipeline/seats.js";
+import { SEAT_POLICY_FILE, SEAT_POLICY_SCHEMA, validateSeatPolicy } from "../pipeline/seat-policy.js";
 import { writerKeysUnapproved } from "../pipeline/status.js";
 import { STEPS } from "../pipeline/steps/index.js";
 import { resolveCandidate } from "./pin.js";
@@ -42,8 +43,12 @@ export const EVIDENCE_USAGE = "Usage: clossys evidence <id> --source <source> --
   + "  writes clossys/evidence/director/<id>.md (--finding: findings/<id>.md), the evidence the Director cites.";
 export const CONFIG_USAGE = "Usage: clossys config --init [--from <file>] [--root <dir>]\n"
   + "  writes clossys/clossys.config.ts (the default config, or --from a config file) when the workspace has none; with one, validates it.";
-export const SEAT_USAGE = "Usage: clossys seat <step> --by <who> (--model <id> --tier low|mid|high --prompt-file <path> | --no-llm) [--procedure <text> --command <verb>] [--decided-by owner|planner] [--root <dir>]\n"
-  + "  records who decides a decide step: a new seat candidate and its pin; places the seat in producer ia.json when it is not placed.";
+export const SEAT_USAGE = "Usage: clossys seat <step> --by <who> (--model <id> --tier low|mid|high | --llm-from <step>) --prompt-file <path> [--procedure <text> --command <verb>] [--decided-by owner|planner] [--root <dir>]\n"
+  + "       clossys seat <step> --by <who> --no-llm [--procedure <text> --command <verb>] [--decided-by owner|planner] [--root <dir>]\n"
+  + "       clossys seat --policy (--model <tier>=<id>... | --human-only) [--root <dir>]\n"
+  + "  records who decides a decide step: a new seat candidate and its pin; places the seat in producer ia.json when it is not placed.\n"
+  + "  --llm-from <step>: the llm (model and tier) of that step's assigned seat (a pick seat takes its candidates seat's llm).\n"
+  + "  --policy: writes clossys/seat-policy.json, the model id of each seat tier the seat answers fill (never guessed).";
 export const RULE_USAGE = "Usage: clossys rule --init [--root <dir>]\n"
   + "       clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]\n"
   + "  adds (or with --replace, replaces) one owner rule row in scripts/rules/registry.json.";
@@ -221,7 +226,29 @@ export async function runConfigCli(argv: readonly string[], cwd: string): Promis
 }
 
 // ---------------------------------------------------------------- clossys seat
-const parseSeat = parser(SEAT_USAGE, ["--by", "--model", "--tier", "--prompt-file", "--procedure", "--command", "--decided-by", "--at", "--root"], ["--no-llm"]);
+const parseSeat = parser(SEAT_USAGE, ["--by", "--model", "--tier", "--prompt-file", "--llm-from", "--procedure", "--command", "--decided-by", "--at", "--root"], ["--no-llm", "--policy", "--human-only"]);
+
+/** `clossys seat --policy`: the seat policy file, validated before it is written; an identical policy writes nothing. */
+function runSeatPolicy(flags: Flags, cwd: string): CliResult {
+  if (flags.positional.length) throw new CliUsageError(`seat --policy takes no <step>\n${SEAT_USAGE}`);
+  const extra = ["--by", "--tier", "--prompt-file", "--llm-from", "--procedure", "--command", "--decided-by", "--at"].filter(flag => flags.values.has(flag));
+  if (extra.length || flags.bare.has("--no-llm")) throw new CliUsageError(`seat --policy takes only --model <tier>=<id> or --human-only\n${SEAT_USAGE}`);
+  const models: Record<string, string> = {};
+  for (const given of flags.values.get("--model") ?? []) {
+    const tiered = /^(low|mid|high)=(.+)$/.exec(given);
+    if (!tiered) throw new CliUsageError(`seat --policy --model takes <tier>=<id>, got ${given}\n${SEAT_USAGE}`);
+    if (/^<.*>$/.test(tiered[2]!)) return refuse("seat", `--model ${given} is a placeholder: give the model id your account policy maps to the tier`);
+    models[tiered[1]!] = tiered[2]!;
+  }
+  const policy = { schema: SEAT_POLICY_SCHEMA, models, humanOnly: flags.bare.has("--human-only") };
+  const issues = validateSeatPolicy(policy);
+  if (issues.length) return refuse("seat", `seat policy: ${issues.map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
+  const root = rootOf(cwd, flags), file = join(root, SEAT_POLICY_FILE);
+  const bytes = jsonBytes(policy);
+  if (existsSync(file) && readFileSync(file, "utf8") === bytes) return { exitCode: 0, root, message: `seat: ${SEAT_POLICY_FILE} already records this policy; nothing written` };
+  replaceFile(file, bytes);
+  return { exitCode: 0, root, message: `seat: wrote ${SEAT_POLICY_FILE} (${policy.humanOnly ? "human only" : Object.entries(models).map(([tier, id]) => `${tier}=${id}`).join(", ")})` };
+}
 const titleOf = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
 /** Producer ia.json with `step` placed in its stage's group (`<round>.<stage>`), groups and rounds in pipeline order. */
@@ -248,20 +275,30 @@ export function placeSeat(ia: { schema: string; source: string; extensions: stri
 export async function runSeatCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
   const flags = parseSeat(argv);
   if (flags.help) return { exitCode: 0, message: SEAT_USAGE };
+  if (flags.bare.has("--policy")) return runSeatPolicy(flags, cwd);
+  if (flags.bare.has("--human-only")) throw new CliUsageError(`--human-only is for seat --policy\n${SEAT_USAGE}`);
   const [id, ...extra] = flags.positional;
   if (!id || extra.length) throw new CliUsageError(`seat takes one <step>\n${SEAT_USAGE}`);
   const step = steps.find(each => each.id === id);
   if (!step || !isDecide(step)) return refuse("seat", `${id} is not a decide step`);
   const noLlm = flags.bare.has("--no-llm");
-  const llmFlags = ["--model", "--tier", "--prompt-file"].filter(flag => flags.values.has(flag));
+  const llmFrom = one(flags, "--llm-from");
+  const llmFlags = ["--model", "--tier", "--prompt-file", "--llm-from"].filter(flag => flags.values.has(flag));
   if (noLlm && llmFlags.length) throw new CliUsageError(`--no-llm takes no ${llmFlags.join(", ")}\n${SEAT_USAGE}`);
-  if (!noLlm && llmFlags.length !== 3) throw new CliUsageError(`a seat's llm needs --model, --tier and --prompt-file (or --no-llm)\n${SEAT_USAGE}`);
+  if (llmFrom && (flags.values.has("--model") || flags.values.has("--tier"))) throw new CliUsageError(`--llm-from takes the model and tier from that seat; give no --model or --tier\n${SEAT_USAGE}`);
+  if (!noLlm && !(flags.values.has("--prompt-file") && (llmFrom || flags.values.has("--model") && flags.values.has("--tier")))) throw new CliUsageError(`a seat's llm needs --model, --tier (or --llm-from) and --prompt-file (or --no-llm)\n${SEAT_USAGE}`);
   if (flags.values.has("--procedure") !== flags.values.has("--command")) throw new CliUsageError(`a seat's human part needs both --procedure and --command\n${SEAT_USAGE}`);
-  const model = one(flags, "--model");
+  let model = one(flags, "--model"), tier = one(flags, "--tier");
   if (model && /^<.*>$/.test(model)) return refuse("seat", `--model ${model} is a placeholder: give the model id your account policy maps to the tier`);
+  if (llmFrom) {
+    const from = steps.find(each => each.id === llmFrom);
+    const fromSeat = from ? readSeat(rootOf(cwd, flags), from) : null;
+    if (!fromSeat || !fromSeat.llm || fromSeat.llm === "open") return refuse("seat", `--llm-from ${llmFrom}: that seat has no assigned llm yet; record it first`);
+    model = fromSeat.llm.model; tier = fromSeat.llm.tier;
+  }
   const seat = {
     by: need(flags, "--by", SEAT_USAGE),
-    llm: noLlm ? null : { model: model!, tier: one(flags, "--tier")!, promptFile: one(flags, "--prompt-file")! },
+    llm: noLlm ? null : { model: model!, tier: tier!, promptFile: one(flags, "--prompt-file")! },
     human: flags.values.has("--procedure") ? { procedure: one(flags, "--procedure")!, command: one(flags, "--command")! } : null,
   };
   const issues = validateValue(seat, loadSchema("seat"));

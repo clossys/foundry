@@ -438,7 +438,7 @@
       "open": "slots-without-candidates:director",
       "agent": "director",
       "package": "director",
-      "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+      "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -917,7 +917,10 @@
           "target": "designer"
         },
         "entry": "src/cli/next.ts#runNextSubmitCli",
-        "skill": "packages/designer/actions/designer.candidates/skill.md"
+        "skill": "packages/designer/actions/designer.candidates/skill.md",
+        "module": [
+          "src/specimen/catalog-materialization.ts#materializeCatalogCandidate"
+        ]
       },
       "checks": [
         "workspace"
@@ -925,7 +928,7 @@
       "open": "slots-without-candidates:designer",
       "agent": "designer",
       "package": "designer",
-      "run": "clossys next designer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+      "run": "clossys next designer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -1026,7 +1029,7 @@
       "open": "slots-without-candidates:writer",
       "agent": "writer",
       "package": "writer",
-      "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+      "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -1581,7 +1584,7 @@
       "open": "slots-without-candidates:publisher",
       "agent": "publisher",
       "package": "publisher",
-      "run": "clossys next publisher/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+      "run": "clossys next publisher/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -7596,6 +7599,10 @@
       ],
       "director.candidates": [
         {
+          "flag": "--agent",
+          "value": null
+        },
+        {
           "flag": "--basis",
           "value": null
         },
@@ -7620,7 +7627,19 @@
           "value": null
         },
         {
+          "flag": "--reason",
+          "value": null
+        },
+        {
           "flag": "--root",
+          "value": null
+        },
+        {
+          "flag": "--rung",
+          "value": null
+        },
+        {
+          "flag": "--seed",
           "value": null
         },
         {
@@ -7663,6 +7682,10 @@
         },
         {
           "flag": "--more",
+          "value": null
+        },
+        {
+          "flag": "--redraft",
           "value": null
         },
         {
@@ -7748,6 +7771,10 @@
       ],
       "designer.candidates": [
         {
+          "flag": "--agent",
+          "value": null
+        },
+        {
           "flag": "--basis",
           "value": null
         },
@@ -7772,7 +7799,19 @@
           "value": null
         },
         {
+          "flag": "--reason",
+          "value": null
+        },
+        {
           "flag": "--root",
+          "value": null
+        },
+        {
+          "flag": "--rung",
+          "value": null
+        },
+        {
+          "flag": "--seed",
           "value": null
         },
         {
@@ -7790,6 +7829,10 @@
       ],
       "writer.candidates": [
         {
+          "flag": "--agent",
+          "value": null
+        },
+        {
           "flag": "--basis",
           "value": null
         },
@@ -7814,7 +7857,19 @@
           "value": null
         },
         {
+          "flag": "--reason",
+          "value": null
+        },
+        {
           "flag": "--root",
+          "value": null
+        },
+        {
+          "flag": "--rung",
+          "value": null
+        },
+        {
+          "flag": "--seed",
           "value": null
         },
         {
@@ -7860,6 +7915,10 @@
           "value": null
         },
         {
+          "flag": "--redraft",
+          "value": null
+        },
+        {
           "flag": "--root",
           "value": null
         }
@@ -7891,6 +7950,10 @@
         },
         {
           "flag": "--more",
+          "value": null
+        },
+        {
+          "flag": "--redraft",
           "value": null
         },
         {
@@ -7978,6 +8041,10 @@
       ],
       "publisher.candidates": [
         {
+          "flag": "--agent",
+          "value": null
+        },
+        {
           "flag": "--basis",
           "value": null
         },
@@ -8002,7 +8069,19 @@
           "value": null
         },
         {
+          "flag": "--reason",
+          "value": null
+        },
+        {
           "flag": "--root",
+          "value": null
+        },
+        {
+          "flag": "--rung",
+          "value": null
+        },
+        {
+          "flag": "--seed",
           "value": null
         },
         {
@@ -8045,6 +8124,10 @@
         },
         {
           "flag": "--more",
+          "value": null
+        },
+        {
+          "flag": "--redraft",
           "value": null
         },
         {
@@ -8183,6 +8266,10 @@
         },
         {
           "flag": "--more",
+          "value": null
+        },
+        {
+          "flag": "--redraft",
           "value": null
         },
         {

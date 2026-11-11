@@ -313,7 +313,7 @@
         "kind": "decide:creative",
         "stage": "direct.make",
         "summary": "Create Director candidates: one immutable file per option, per L3 slot.",
-        "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+        "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
         "inputs": [
           {
             "glob": "clossys/evidence/director/*.md",
@@ -688,7 +688,7 @@
         "kind": "decide:creative",
         "stage": "design.make",
         "summary": "Create Designer candidates: one immutable file per option, per L3 slot.",
-        "run": "clossys next designer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+        "run": "clossys next designer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
         "inputs": [
           {
             "glob": "clossys/agents/director/*/pin.json",
@@ -766,7 +766,7 @@
         "kind": "decide:creative",
         "stage": "design.make",
         "summary": "Create Writer candidates: one immutable file per option, per L3 slot.",
-        "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+        "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
         "inputs": [
           {
             "glob": "clossys/agents/director/*/pin.json",
@@ -1203,7 +1203,7 @@
         "kind": "decide:creative",
         "stage": "publish.make",
         "summary": "Create Publisher candidates: one immutable file per option, per L3 slot.",
-        "run": "clossys next publisher/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+        "run": "clossys next publisher/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
         "inputs": [
           {
             "glob": "clossys/agents/designer/*/pin.json",

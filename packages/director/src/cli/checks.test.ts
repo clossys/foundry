@@ -100,16 +100,27 @@ describe("production check CLI adapters", () => {
     }
     expect(invoke(["check", formatRef({ kind: "cell", ref: { cell: id, version: 2 } }), "--root", root]).code).toBe(2);
   });
-  it("checks the pinned version only, and an unpinned candidate is not a checkable cell, without changing the pin", () => {
+  it("checks an unpinned draft by its version, a bare id checks the pin, and no check changes the pin", () => {
     const root = fixture();
     const cell = cellsByRoot.get(root)!.find(cell => cell.id === id)!;
     stage(root, { ...cell, version: 2 }, { watch: ["Review later."], unpinned: true });
     const pin = readFileSync(join(root, id, "pin.json"), "utf8");
     expect(invoke(["check", formatRef({ kind: "cell", ref: { cell: id, version: 1 } }), "--root", root]).code).toBe(0);
     expect(invoke(["check", id, "--root", root]).code).toBe(0);
-    expect(invoke(["check", formatRef({ kind: "cell", ref: { cell: id, version: 2 } }), "--root", root]).code).toBe(2);
+    expect(invoke(["check", formatRef({ kind: "cell", ref: { cell: id, version: 2 } }), "--root", root])).toMatchObject({
+      code: 1, value: { result: { cells: [{ cell: id, version: 2, draft: true }], findings: expect.arrayContaining([expect.objectContaining({ rule: "Q4", severity: "hard" })]) } },
+    });
+    expect(invoke(["check", formatRef({ kind: "cell", ref: { cell: id, version: 3 } }), "--root", root]).code).toBe(2);
     expect(invoke(["check", "--root", root]).value.result.cells).toEqual([{ cell: id, version: 1 }]);
     expect(readFileSync(join(root, id, "pin.json"), "utf8")).toBe(pin);
+  });
+  it("checks a slot's newest draft when the slot has no pin", () => {
+    const root = fixture();
+    const cell = cellsByRoot.get(root)!.find(cell => cell.id === id)!;
+    rmSync(join(root, id, "pin.json"));
+    stage(root, { ...cell, version: 2 }, { unpinned: true });
+    expect(invoke(["check", id, "--root", root])).toMatchObject({ code: 0, value: { result: { cells: [{ cell: id, version: 2, draft: true }] } } });
+    expect(existsSync(join(root, id, "pin.json"))).toBe(false);
   });
   it("cohere checks C1-C3 within the requested L2 group", () => {
     const root = fixture();

@@ -5,7 +5,7 @@
   "kind": "decide:creative",
   "stage": "design.make",
   "summary": "Create Writer candidates: one immutable file per option, per L3 slot.",
-  "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
+  "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
   "inputs": [
     {
       "glob": "clossys/agents/director/*/pin.json",

@@ -16,7 +16,9 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "pin.director": PIN, "pin.designer": PIN, "pin.writer": PIN, "pin.publisher": PIN,
   "pick.director": PICK, "pick.designer": PICK, "pick.writer": PICK, "pick.publisher": PICK,
   // Agent candidates: `clossys next <agent>/<slot> --submit` checks and records one (W6a).
-  "director.candidates": NEXT, "designer.candidates": NEXT, "writer.candidates": NEXT, "publisher.candidates": NEXT,
+  // designer.candidates also names the catalog materializer its element candidates are made with.
+  "director.candidates": NEXT, "writer.candidates": NEXT, "publisher.candidates": NEXT,
+  "designer.candidates": { ...NEXT, module: ["src/specimen/catalog-materialization.ts#materializeCatalogCandidate"] },
   // Owner decisions, each recorded by its own clossys verb (W6a).
   "ia": { entry: "src/cli/owner.ts#runIaCli", parser: "src/cli/owner.ts" },
   "evidence": { entry: "src/cli/owner.ts#runEvidenceCli", parser: "src/cli/owner.ts" },

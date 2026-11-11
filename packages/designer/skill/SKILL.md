@@ -84,16 +84,16 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    never invent an item. Stock shadcn first. Read every copy input from props, never hard-coded
    text; mark each copy element with `data-copy="<key>"`; use only the
    contract's theme variables.
-5. **Write each option as a candidate.** From the consumer repository, with the
-   installed Producer API (it numbers the candidate and refuses an invalid one):
+5. **Submit each option as a candidate** through the candidates verb (it numbers
+   the candidate and refuses an invalid, duplicate or unladdered one; the packet
+   from `npx clossys next --json` names the skill path):
    ```sh
-   node --input-type=module -e '
-   import { readFileSync } from "node:fs";
-   import { writeCandidate } from "@clossys/producer";
-   const [slot, file] = process.argv.slice(1);
-   const item = JSON.parse(readFileSync(file, "utf8"));
-   console.log(writeCandidate("clossys", "designer", slot, item.name, item).name);' <slot> option.json
+   npx clossys next designer/<slot> --submit option.json --name <element id> \
+     --model <id> --tier <tier> --basis agent --skill <packet skill path> \
+     --rung <L1|L2|L3|L4> --seed <shadcn@aria/<item> or the reference id> [--reason <why no seed fit>]
    ```
+   `--rung` is the step-1 ladder rung the option came from: L1 or L2 select a
+   seed, L3 adapts one, L4 creates and needs `--reason`.
    `option.json` is the registry item: `name` (the element id), `type`
    (`registry:block` for a frame or section), `files[]` (`path`, `type`,
    `content`: every code file in full) and `meta`: `source` (`kind`
@@ -214,6 +214,27 @@ Before choosing a leaf for a parent that composes other slots, read
 [Library needs](library-needs.md); a parent whose dependencies are unpinned
 stays draft. For the older consumer-library commands see
 [Agent library commands](library-commands.md).
+
+## Interview
+
+Run the Producer skill's Interview contract (`clossys-producer`, section Interview) for agent
+`designer`, in the same shape as every agent skill:
+
+- **When to run it**: at session start, after each pin, and whenever the Writer or Publisher reports a need.
+- **Gaps first**: `npx clossys gaps --agent designer --json`. Designer gaps are slots with no candidates or no pin, stale citations of Director cells, and
+  failing checks.
+  Requests addressed to the Designer (`to: designer`) come from a downstream agent; requests from the
+  Designer (`from: designer`) go to the upstream agent's round. Never hand-fill either.
+- **Then the rounds**: `npx clossys next --owner --agent designer --json`: rounds of at most 4
+  questions, each with 2 to 4 options (recommended first, each the exact clossys argv of every call
+  it runs) and a free-text answer.
+- **Ask each round**: on Claude one `AskUserQuestion` call per round; on Codex a numbered list per
+  question, recommended first.
+- **Record through the verbs**: run the chosen option's `calls` exactly (a free-text answer goes
+  through `freeText.verb`); candidates go through `npx clossys next designer/<slot> --submit`, agent
+  picks through `npx clossys pick designer/<slot> <element>-v<N> --by agent:designer`, owner pins through `npx clossys pin`. Never edit a record by hand.
+- **Cascade**: `npx clossys run` after each round.
+- **Stop at 0 gaps**: repeat until `npx clossys gaps --agent designer` reports 0 gaps.
 
 ## Done when
 

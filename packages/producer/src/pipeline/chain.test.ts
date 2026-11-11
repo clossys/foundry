@@ -48,7 +48,8 @@ function fixtureExec(root: string, broken: ReadonlySet<string> = new Set()): Exe
   return exec;
 }
 
-describe("clossys run", () => {
+// Each case copies the slot model; next --owner also reads every gap (a second or two), so cases get a minute.
+describe("clossys run", { timeout: 60_000 }, () => {
   it("runs each plumb step, skips it while fresh, re-runs it when an input goes stale", () => {
     const root = workspace();
     writeFileSync(join(root, INPUT), "one\n");
@@ -104,7 +105,7 @@ describe("clossys run", () => {
   });
 });
 
-describe("clossys next", () => {
+describe("clossys next", { timeout: 60_000 }, () => {
   it("lists the open owner packets as multiple choice, recommended first, each answer an exact verb", async () => {
     const root = workspace();
     const result = await runNextCli(["--owner", "--json", "--root", root], root);
@@ -130,7 +131,7 @@ describe("clossys next", () => {
     const before = readdirSync(dir);
     const bad = join(root, "bad.json");
     writeFileSync(bad, JSON.stringify({ not: "a candidate" }));
-    const result = await runPipeline(["next", `designer/${slot}`, "--submit", bad, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, "--root", root], root);
+    const result = await runPipeline(["next", `designer/${slot}`, "--submit", bad, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, "--rung", "L4", "--reason", "fixture: no stock or partner seed fits", "--root", root], root);
     expect(result.exitCode).toBe(1);
     expect(result.message).toContain("fails schema");
     expect(readdirSync(dir)).toEqual(before);
@@ -141,7 +142,7 @@ describe("clossys next", () => {
     const root = workspace();
     const slot = "assets.favicon";
     const good = join(root, "clossys", "agents", "designer", slot, "candidates", "favicon-v2.json");
-    const result = await runPipeline(["next", `designer/${slot}`, "--submit", good, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", "skill/SKILL.md", "--root", root], root);
+    const result = await runPipeline(["next", `designer/${slot}`, "--submit", good, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", "skill/SKILL.md", "--rung", "L4", "--reason", "fixture: no stock or partner seed fits", "--root", root], root);
     expect(result.exitCode).toBe(1);
     expect(result.message).toContain("is not designer.candidates's skill");
     expect(readStore(root, storeFile("designer.candidates"))).toEqual([]);
@@ -152,18 +153,45 @@ describe("clossys next", () => {
     const slot = "assets.favicon";
     const dir = join(root, "clossys", "agents", "designer", slot, "candidates");
     const source = join(root, "favicon.json");
-    const candidate = JSON.parse(readFileSync(join(dir, "favicon-v2.json"), "utf8")) as Record<string, unknown>;
-    writeFileSync(source, `${JSON.stringify(candidate, null, 2)}\n`);
-    const result = await runPipeline(["next", `designer/${slot}`, "--submit", source, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, "--root", root], root);
+    // An adapted seed: favicon-v2 with another corner radius (an unchanged copy is refused below).
+    const held = readFileSync(join(dir, "favicon-v2.json"), "utf8");
+    expect(held).toContain('rx=\\"21.875\\"');
+    writeFileSync(source, held.replace('rx=\\"21.875\\"', 'rx=\\"20\\"'));
+    const result = await runPipeline(["next", `designer/${slot}`, "--submit", source, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, "--rung", "L3", "--seed", `${slot}/favicon-v2`, "--root", root], root);
     expect(result.exitCode, result.message).toBe(0);
     expect(existsSync(join(dir, "favicon-v3.json"))).toBe(true);
     const [stored] = readStore(root, storeFile("designer.candidates"));
     const skill = readFileSync(join(PACKAGE_ROOT, "..", "designer", "actions", "designer.candidates", "skill.md"));
     expect(stored!.record.decision).toMatchObject({
-      model: "fixture-model", tier: "mid", basis: "agent",
+      model: "fixture-model", tier: "mid", basis: "agent", ladder: { rung: "L3", seed: `${slot}/favicon-v2` },
       skill: { path: DESIGNER_SKILL, sha256: createHash("sha256").update(skill).digest("hex") },
       output: { path: `clossys/agents/designer/${slot}/candidates/favicon-v3.json` },
     });
+  });
+
+  it("refuses a byte-identical candidate and a created candidate with no reason no seed fit", async () => {
+    const root = workspace();
+    const slot = "assets.favicon";
+    const dir = join(root, "clossys", "agents", "designer", slot, "candidates");
+    const before = readdirSync(dir);
+    const held = join(dir, "favicon-v2.json");
+    const submit = (file: string, ...ladder: string[]) => runPipeline(["next", `designer/${slot}`, "--submit", file, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, ...ladder, "--root", root], root);
+    const copy = await submit(held, "--rung", "L1", "--seed", "shadcn@aria/avatar");
+    expect(copy.exitCode).toBe(1);
+    expect(copy.message).toContain("is byte-identical to designer/assets.favicon candidate favicon-v2");
+    const varied = join(root, "favicon.json");
+    writeFileSync(varied, readFileSync(held, "utf8").replace('rx=\\"21.875\\"', 'rx=\\"18\\"'));
+    // Mutation proof (create-justification): the same submission without --reason is refused.
+    const created = await submit(varied, "--rung", "L4");
+    expect(created.exitCode).toBe(1);
+    expect(created.message).toContain("create-justification");
+    const unladdered = await submit(varied);
+    expect(unladdered.message).toContain("missing-ladder");
+    const generic = await submit(varied, "--rung", "create", "--reason", "x");
+    expect(generic.message).toContain("rung must be one of L1, L2, L3, L4");
+    expect(readdirSync(dir)).toEqual(before);
+    expect(readStore(root, storeFile("designer.candidates"))).toEqual([]);
+    expect((await submit(varied, "--rung", "L4", "--reason", "fixture: no stock or partner mark fits")).exitCode).toBe(0);
   });
 
   it("records owner answers through the owner verbs, refusing placeholders and unchecked rules", async () => {
@@ -174,7 +202,7 @@ describe("clossys next", () => {
     expect((await seat("--model", "fixture-model", "--tier", "mid")).exitCode).toBe(0);
     expect(existsSync(join(root, "clossys", "agents", "producer", "writer.candidates", "pin.json"))).toBe(true);
     // The seat now binds submissions: another model is refused.
-    const refused = await runPipeline(["next", "writer/strings.statuses", "--submit", join(root, "clossys", "clossys.config.ts"), "--model", "other-model", "--tier", "mid", "--basis", "agent", "--skill", "packages/writer/actions/writer.candidates/skill.md", ...at], root);
+    const refused = await runPipeline(["next", "writer/strings.statuses", "--submit", join(root, "clossys", "clossys.config.ts"), "--model", "other-model", "--tier", "mid", "--basis", "agent", "--skill", "packages/writer/actions/writer.candidates/skill.md", "--rung", "select", "--seed", "writer/strings.statuses", ...at], root);
     expect(refused.message).toContain("seat assigns fixture-model");
     expect((await runPipeline(["rule", "--init", ...at], root)).exitCode).toBe(0);
     expect((await runPipeline(["rule", "R-W6A-FIXTURE", "--quote", "records change only through verbs", "--date", "2026-11-11", "--status", "enforced", ...at], root)).exitCode).toBe(1);
