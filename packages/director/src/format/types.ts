@@ -40,6 +40,8 @@ export interface Session { id: string; path: string; lines: SessionLine[]; index
 export interface Finding {
   id: string; source: string; observed: string; by: string;
   value?: string | number | boolean; unit?: string; aliases?: string[];
+  /** A judgement finding: the verdict a judge gave on exactly these pinned cell versions. */
+  judge?: string; verdict?: "pass" | "fail"; judged?: string[];
   bullets: Bullet[]; path: string;
 }
 export interface StrategyRequest {

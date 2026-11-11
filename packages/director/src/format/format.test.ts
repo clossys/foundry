@@ -69,6 +69,17 @@ describe("cell format", () => {
     expect(cell.cites.map(formatRef).sort()).toEqual(["context.customer.need@1", "finding:owner-home-potters-2026-10-29", "finding:owner-kiln-queue-2026-10-29", "finding:studio-interviews-2026-10"]);
     expect(cell.watch).toHaveLength(2);
   });
+  it("ships owner-words and judgement finding examples the finding parser accepts", () => {
+    const template = readFileSync(new URL("../../skill/templates/cell.md", import.meta.url), "utf8");
+    const findings = [...template.matchAll(/```markdown\n(---\nid: [\s\S]*?)```/g)].map(match => parseFinding(match[1]!));
+    expect(findings).toHaveLength(3);
+    for (const parsed of findings) expect(parsed.ok, JSON.stringify(parsed)).toBe(true);
+    const values = findings.flatMap(parsed => parsed.ok ? [parsed.value] : []);
+    expect(values.find(value => value.id.startsWith("owner-"))?.bullets.some(bullet => bullet.key === "Informs")).toBe(true);
+    const critic = values.find(value => value.judge !== undefined);
+    expect(critic).toMatchObject({ judge: "C4", verdict: "pass", by: "critic" });
+    expect(critic!.judged!.map(ref => ref.slice(0, ref.indexOf("@"))).sort()).toEqual([...catalog.coherence.storyline].sort());
+  });
   it("keeps the v2 design draft's worked template byte-compatible", () => {
     for (const path of ["../../docs/v2/templates/cell.md"]) {
       const template = readFileSync(new URL(path, import.meta.url), "utf8");
@@ -159,6 +170,23 @@ describe("sessions, findings and requests", () => {
     }
     expect(parseFinding(finding.replace("- 14 studio", "14 studio")).ok).toBe(false);
     expect(parseFinding(finding.replace("source: user", "source: /outside/evidence.md")).ok).toBe(false);
+  });
+  const judgement = '---\nid: critic-storyline-2026-11-10\nsource: user\nobserved: 2026-11-10\nby: critic\njudge: C4\nverdict: pass\njudged: ["context.customer.need@1","focus.segment.core@2"]\n---\n- The storyline reads as one argument.\n';
+  it("parses a judgement finding with judge, verdict and judged together", () => {
+    expect(parseFinding(judgement)).toMatchObject({ ok: true, value: { judge: "C4", verdict: "pass", judged: ["context.customer.need@1", "focus.segment.core@2"] } });
+    expect(parseFinding(judgement.replace("judge: C4", "judge: C2:X3")).ok).toBe(true);
+    expect(parseFinding(judgement.replace("judge: C4", "judge: Q2:focus.segment.core@2")).ok).toBe(true);
+  });
+  it.each([
+    ["an unknown judge id", "judge: C4", "judge: C9"],
+    ["a verdict other than pass or fail", "verdict: pass", "verdict: maybe"],
+    ["an unversioned judged ref", '"focus.segment.core@2"', '"focus.segment.core"'],
+    ["a duplicate judged ref", '"focus.segment.core@2"', '"context.customer.need@1"'],
+    ["an empty judged list", /judged: .*\n/, "judged: []\n"],
+    ["a verdict without judged refs", /judged: .*\n/, ""],
+    ["a judge without a verdict", "verdict: pass\n", ""],
+  ] as const)("rejects a judgement finding with %s", (_label, from, to) => {
+    expect(parseFinding(judgement.replace(from, to)).ok).toBe(false);
   });
   const request = { id: "REQ-0007", raisedBy: "@clossys/writer", kind: "missing", cells: ["identity.verbal.voice"], detail: "Voice has no active version", status: "open", opened: "2026-10-29", resolvedBy: null };
   it("validates requests and converts their resolving ref", () => {

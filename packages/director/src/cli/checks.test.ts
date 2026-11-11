@@ -139,6 +139,45 @@ describe("production check CLI adapters", () => {
       expect(invoke([alias!, "--root", root]).value.command).toBe(command);
     }
   });
+  it("a current recorded critic verdict completes MVS; a newer storyline pin drops it to not judged", () => {
+    const root = fixture(true);
+    const storyline = catalog.coherence.storyline;
+    const judged = (version = 1) => storyline.map(cell => `${cell}@${cell === "focus.segment.core" ? version : 1}`);
+    const verdict = (name: string, value: "pass" | "fail", refs: string[]) => stageFinding(root, name,
+      `---\nid: ${name}\nsource: user\nobserved: 2026-11-10\nby: critic\njudge: C4\nverdict: ${value}\njudged: ${JSON.stringify(refs)}\n---\n- Pre-mortem: the storyline reads as one argument.\n`);
+    expect(invoke(["complete", "--level", "mvs", "--root", root]).code).toBe(1);
+    // A verdict that skips a storyline cell does not count.
+    verdict("critic-partial", "pass", judged().slice(1));
+    expect(invoke(["complete", "--level", "mvs", "--root", root]).value.result.storyline.critic).toBe("not judged");
+    verdict("critic-pass", "pass", judged());
+    const ready = invoke(["complete", "--level", "mvs", "--root", root]);
+    expect(ready.code).toBe(0); expect(ready.value.result).toMatchObject({ mvs: true, storyline: { critic: "pass" } });
+    // Full completion still needs the judge contradiction pairs.
+    expect(invoke(["complete", "--level", "full", "--root", root]).code).toBe(1);
+    // A current fail beats a current pass for the same judge.
+    verdict("critic-fail", "fail", judged());
+    expect(invoke(["complete", "--level", "mvs", "--root", root])).toMatchObject({ code: 1, value: { result: { storyline: { critic: "fail" } } } });
+    rmSync(join(root, "../../evidence/director/critic-fail.md"));
+    // Pinning a new version of a judged storyline cell makes every earlier verdict stale.
+    const segment = cellsByRoot.get(root)!.find(cell => cell.id === "focus.segment.core")!;
+    stage(root, { ...segment, version: 2 });
+    const stale = invoke(["complete", "--level", "mvs", "--root", root]);
+    expect(stale.value.result.storyline.critic).toBe("not judged"); expect(stale.code).toBe(1);
+    verdict("critic-pass-v2", "pass", judged(2));
+    expect(invoke(["complete", "--level", "mvs", "--root", root]).value.result.storyline.critic).toBe("pass");
+  });
+  it("--archetype adds that archetype's extra core cells to MVS", () => {
+    const root = fixture(true);
+    const critic = catalog.coherence.storyline.map(cell => `${cell}@1`);
+    stageFinding(root, "critic-pass", `---\nid: critic-pass\nsource: user\nobserved: 2026-11-10\nby: critic\njudge: C4\nverdict: pass\njudged: ${JSON.stringify(critic)}\n---\n- Pre-mortem read.\n`);
+    expect(invoke(["complete", "--level", "mvs", "--archetype", "product-saas", "--root", root]).code).toBe(0);
+    rmSync(join(root, "focus.lifecycle.retention", "pin.json"));
+    expect(invoke(["complete", "--level", "mvs", "--root", root]).code).toBe(0);
+    const saas = invoke(["complete", "--level", "mvs", "--archetype", "product-saas", "--root", root]);
+    expect(saas.code).toBe(1); expect(saas.value.result.core.counts.total).toBe(27);
+    expect(invoke(["status", "--archetype", "product-saas", "--root", root]).value.result.cells.map((cell: { id: string }) => cell.id)).toContain("focus.lifecycle.retention");
+    expect(invoke(["complete", "--archetype", "unknown", "--root", root]).code).toBe(2);
+  });
   it("writes a new report on each run without changing other reports", () => {
     const root = fixture(); invoke(["check", id, "--root", root]);
     const reports = "../../evidence/director/reports";
