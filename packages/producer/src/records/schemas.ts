@@ -625,6 +625,17 @@ export const REFERENCES_MANIFEST_SCHEMA: JsonSchema = {
           upstream: { type: "string" },
           style: { type: "string", pattern: ID, description: "shadcn style the registry serves (aria-nova, radix-nova, new-york, ...)." },
           fetchedAt: { type: "string", pattern: ISO },
+          index: {
+            type: "object",
+            description: "The style's registry.json the generator vendored every listed item from (fetch-references.mjs).",
+            required: ["url", "sha256", "items"],
+            additionalProperties: false,
+            properties: {
+              url: { type: "string", minLength: 1 },
+              sha256: { type: "string", pattern: "^[0-9a-f]{64}$" },
+              items: { type: "integer", minimum: 0 },
+            },
+          },
           license: { type: "string", minLength: 1 },
           licenseFiles: { type: "array", minItems: 1, items: { type: "string", pattern: REL_PATH } },
         },
@@ -660,6 +671,7 @@ export const REFERENCES_MANIFEST_SCHEMA: JsonSchema = {
           license: { type: "string", minLength: 1 },
           direct: { type: "boolean" },
           slots: { type: "array", uniqueItems: true, items: { type: "string", pattern: SLOT } },
+          indexed: { type: "boolean", description: "Vendored because the registry index lists it, not because a slot maps it." },
           requiredBy: { type: "array", uniqueItems: true, items: { type: "string", minLength: 1 } },
           registryDependencies: { type: "array", items: { type: "string", minLength: 1 } },
           adaptations: {
