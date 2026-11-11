@@ -1,7 +1,7 @@
 {
   "candidate": "page-v6.json",
   "sha256": "993b86a3e09dc01bc8d69cf94f0d5ede7a93394e058f275b11249e8ef939119e",
-  "decidedBy": "planner:W2",
-  "basis": "planner",
-  "at": "2026-11-11T02:11:55.248Z"
+  "decidedBy": "agent:publisher",
+  "basis": "agent",
+  "at": "2026-11-11T16:37:06.397Z"
 }

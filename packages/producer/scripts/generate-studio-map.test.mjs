@@ -326,8 +326,8 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
   assert.deepEqual(projection.pages.map(page => page.id), pageIds);
   assert.deepEqual(pageIds.slice(0, PAGE_NAMES.length), PAGE_NAMES);
   for (const page of projection.pages) assert.equal(page.frameId, 'frames.studio-shell', page.id);
-  // The agent groups sit beneath Content; Build and Run are top-level groups of their own.
-  assert.deepEqual(projection.map.entries.filter(row => row.kind === 'group' && !row.parentId).map(row => row.id), ['content', 'build', 'run']);
+  // Owner P3 (2026-11-11): the menu is Agents only, so the four agent groups are the top-level groups.
+  assert.deepEqual(projection.map.entries.filter(row => row.kind === 'group' && !row.parentId).map(row => row.id), ['director', 'designer', 'writer', 'publisher']);
   assert.deepEqual(projection.pages.find(page => page.id === 'home').sectionIds, ['sections.studio.page-header', 'sections.studio.home']);
   assert.deepEqual(projection.pages.find(page => page.id === 'publisher-studio').sectionIds, ['sections.studio.page-header', 'sections.studio.page-tabs', 'sections.studio.slot-groups']);
   const leafPages = projection.pages.filter(page => page.leaf);
@@ -541,5 +541,5 @@ test('Foundry pinned Publisher inventory exposes the Studio publication and its 
   assert.equal(map.publicationId, 'studio');
   assert.equal(routePack.packId, 'studio');
   assert.deepEqual(map.entries.filter(entry => entry.kind === 'page').map(entry => entry.id), PAGE_NAMES);
-  assert.deepEqual(map.entries.filter(entry => entry.kind === 'group').map(entry => entry.id), ['content', 'director', 'designer', 'writer', 'publisher', 'build', 'run']);
+  assert.deepEqual(map.entries.filter(entry => entry.kind === 'group').map(entry => entry.id), ['director', 'designer', 'writer', 'publisher']);
 });
