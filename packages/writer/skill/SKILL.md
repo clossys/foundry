@@ -89,12 +89,39 @@ in a candidate.
    with a candidate, pinned) and what each agent is blocked by. Fix every
    candidate finding with a new version. Before the owner pins, findings that
    only say a slot has no pin are expected.
-6. **Show it.** Give the owner the copy in place (slot, candidate, key, text,
+6. **Bind it.** A page reads copy only through the Writer declarations
+   (`clossys/agents/writer/declarations.json`, schema
+   `clossys.writer-declarations/1`). Per locale they hold `aliases`
+   (`page.<entry>.meta-title` and `page.<entry>.meta-description` to record ids,
+   for every page whose Publisher candidate's `copy` names those keys) and
+   `sections` rows (`sectionId`, `configId`: the page slot the route's
+   `slots[].config` names, `fields`: `{ key, ref: { id } }` for every copy key
+   that section renders). Every target id must be a pinned record. Write the
+   file with the Writer API, which validates against the pinned rows and
+   refuses a missing record:
+   ```sh
+   node --input-type=module -e '
+   import { readFileSync } from "node:fs";
+   import { writeWriterDeclarations } from "@clossys/writer/declarations";
+   const [file, rows] = process.argv.slice(1);
+   await writeWriterDeclarations("clossys", JSON.parse(readFileSync(file, "utf8")), { completeRecords: JSON.parse(readFileSync(rows, "utf8")) });' draft.json rows.json
+   ```
+   `npx clossys check --suites --strict` reports `copy-unbound` for a mounted
+   section with no bound field and `meta-title-missing` /
+   `meta-description-missing` for a page with no bound head copy; the
+   `writer-slots` suite checks every pinned candidate against its slot contract.
+7. **Trace the voice.** `npx clossys write --brief` lists the voice and
+   personality obligations (`<director ref>#L<line>`). A record that carries a
+   voice rule declares it in its metadata comment as
+   `"directorSources":[{"ref":"<director ref>","line":<N>}]`. Declare them for
+   every obligation or for none: a partial set is a
+   `voice-derivation-coverage` finding in `npx clossys write --check`.
+8. **Show it.** Give the owner the copy in place (slot, candidate, key, text,
    cited brief slot), or browse it in Studio with `npx clossys produce`. Do not
    write `pin.json`; the owner pins.
-7. **Commit** the candidates:
+9. **Commit** the candidates and declarations:
    ```sh
-   git add clossys/agents/writer/<slot>   # consumer files, not shipped
+   git add clossys/agents/writer/<slot> clossys/agents/writer/declarations.json   # consumer files, not shipped
    git commit -m "writer: <slot> <name> v<N>"
    ```
 
@@ -105,6 +132,9 @@ in a candidate.
   entry its `previewKey` and the key the page binds to its `slot`.
 - `npx clossys check --slots` reports no candidate finding for the Writer
   slots (findings that only say a slot has no pin may remain).
+- Every mounted section and page head binds its copy through the declarations:
+  `npx clossys check --suites --strict` reports no `copy-unbound`,
+  `meta-title-missing` or `meta-description-missing` error.
 - Every claim cites a Director brief slot in `source.ref`; open facts show as
   `TODO-OWNER`.
 - The candidates are committed; `pin.json` is untouched.
