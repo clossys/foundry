@@ -60,7 +60,8 @@ export function executeChecksCommand(args: ReadArgs, store: DirectorStore): Read
   }
   if (args.command === "complete") {
     const report = completion(model, options);
-    persistReport(args.root, store.writer, "completion", report);
+    // A check never changes records: the completion report is saved only behind an explicit --write.
+    if (args.write === true) persistReport(args.root, store.writer, "completion", report);
     const ready = args.level === "mvs" ? report.mvs : args.level === "l0" ? report.l0Clean : report.complete;
     return result(report, ready, [`${args.level}: ${ready ? "ready" : "not ready"}`, `Storyline critic: ${report.storyline.critic}`, ...findingText(report.findings)]);
   }

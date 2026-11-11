@@ -1,4 +1,5 @@
 import { store } from "../../test/store.js";
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -8,7 +9,7 @@ import { formatRef } from "../format/ref.js";
 import type { Cell, Ref } from "../format/types.js";
 import { main } from "../cli.js";
 import { executeChecksCommand } from "./checks.js";
-import { runReadCommand } from "./read.js";
+import { parseReadArgs, runReadCommand } from "./read.js";
 import { stageFinding, stageSlot, strategyRoot, type SlotFixture } from "../__fixtures__/slot-model.js";
 
 const roots: string[] = [];
@@ -68,11 +69,13 @@ describe("production check CLI adapters", () => {
       const root = fixture(); const before = snapshot(root); const result = invoke([command, ...targets, "--root", root]);
       expect(result.calls).toBe(1); expect(result.value).toMatchObject({ command, code: result.code, result: expect.anything() });
       const after = snapshot(root);
-      if (["check", "cohere", "complete"].includes(command)) {
-        const capability = command === "check" ? "cell-quality" : command === "cohere" ? "coherence" : "completion";
+      if (["check", "cohere"].includes(command)) {
+        const capability = command === "check" ? "cell-quality" : "coherence";
         // Reports live with Director evidence, outside the flat slot tree, which stays unchanged.
         expect(readFileSync(join(root, `../../evidence/director/reports/${capability}.json`), "utf8")).toBe(`${JSON.stringify(result.value.result, null, 2)}\n`);
       }
+      // planner:wcx: a check never changes records; complete saves its report only behind an explicit --write.
+      if (command === "complete") expect(existsSync(join(root, "../../evidence/director/reports/completion.json"))).toBe(false);
       expect(after).toEqual(before);
     });
     it(`${command} returns JSON exit 2 for an absent or malformed root`, () => {
@@ -177,6 +180,17 @@ describe("production check CLI adapters", () => {
     expect(saas.code).toBe(1); expect(saas.value.result.core.counts.total).toBe(27);
     expect(invoke(["status", "--archetype", "product-saas", "--root", root]).value.result.cells.map((cell: { id: string }) => cell.id)).toContain("focus.lifecycle.retention");
     expect(invoke(["complete", "--archetype", "unknown", "--root", root]).code).toBe(2);
+  });
+  it("complete leaves git status clean; only an explicit write saves the completion report", () => {
+    const root = fixture(true); const base = join(root, "../../..");
+    const git = (...args: string[]) => execFileSync("git", ["-c", "user.email=wcx@example.invalid", "-c", "user.name=wcx", ...args], { cwd: base, encoding: "utf8" });
+    git("init", "-q"); git("add", "-A"); git("commit", "-qm", "fixture");
+    expect(git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    for (const level of ["mvs", "l0", "full"]) invoke(["complete", "--level", level, "--root", root]);
+    expect(git("status", "--porcelain", "--untracked-files=all")).toBe("");
+    const args = parseReadArgs(["complete", "--root", root]);
+    const saved = executeChecksCommand({ ...args, write: true }, store);
+    expect(readFileSync(join(root, "../../evidence/director/reports/completion.json"), "utf8")).toBe(`${JSON.stringify(saved.data, null, 2)}\n`);
   });
   it("writes a new report on each run without changing other reports", () => {
     const root = fixture(); invoke(["check", id, "--root", root]);
