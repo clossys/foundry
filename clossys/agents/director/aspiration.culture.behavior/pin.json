@@ -1,12 +1,7 @@
 {
-  "candidate": "studio-behavior-v3.md",
-  "sha256": "3f3af21a6e3d58a4c021f35331d8902cf9935efcb7cfdac960402ecbbac46038",
+  "candidate": "studio-behavior-v4.md",
+  "sha256": "1527e1d7b2c63ef62f6cfd60f0e8c6e9375f2da8d98b51829a8cbfb7b3ba615f",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:18:14.290Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:18:46.345Z"
-  }
+  "at": "2026-11-11T23:57:21.524Z"
 }

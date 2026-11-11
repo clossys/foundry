@@ -1,12 +1,7 @@
 {
-  "candidate": "studio-competency-critical-v7.md",
-  "sha256": "04fd8330df31585c73dfea31f52f797880e15f6f666255fc2bd00e28b9b3d35d",
+  "candidate": "studio-competency-critical-v8.md",
+  "sha256": "c59e17b22ea36a28d5e89d31a48cab6c2adf4edcdf4c77e13a2420f7c19961b2",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:18:15.041Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:18:49.665Z"
-  }
+  "at": "2026-11-11T23:57:21.905Z"
 }

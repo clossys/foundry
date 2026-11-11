@@ -1,12 +1,7 @@
 {
-  "candidate": "studio-mitigation-v6.md",
-  "sha256": "130d8cbfc346f047e0f10c2d17cdac3e74972a4fa13f8393ddf927e7b3536cb5",
+  "candidate": "studio-mitigation-v7.md",
+  "sha256": "2243acc59da8ddfbbdccac7497d986d000f2d0a069691eca0731d862e3847e7a",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:18:21.029Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:18:54.834Z"
-  }
+  "at": "2026-11-11T23:57:23.819Z"
 }

@@ -1,12 +1,872 @@
 {
   "cells": [
     {
+      "cell": "advantage.defensibility.differentiator",
+      "version": 4
+    },
+    {
+      "cell": "advantage.defensibility.moat",
+      "version": 4
+    },
+    {
+      "cell": "advantage.model.margin",
+      "version": 9
+    },
+    {
+      "cell": "advantage.model.pricing",
+      "version": 5
+    },
+    {
+      "cell": "advantage.proposition.promise",
+      "version": 4
+    },
+    {
+      "cell": "advantage.proposition.proof",
+      "version": 4
+    },
+    {
+      "cell": "aspiration.culture.behavior",
+      "version": 4
+    },
+    {
+      "cell": "aspiration.culture.belief",
+      "version": 5
+    },
+    {
+      "cell": "aspiration.goal.annual",
+      "version": 7
+    },
+    {
+      "cell": "aspiration.goal.long-term",
+      "version": 3
+    },
+    {
+      "cell": "aspiration.purpose.mission",
+      "version": 3
+    },
+    {
+      "cell": "aspiration.purpose.vision",
+      "version": 3
+    },
+    {
+      "cell": "capability.competency.critical",
+      "version": 8
+    },
+    {
+      "cell": "capability.competency.gap",
+      "version": 8
+    },
+    {
+      "cell": "capability.operation.delivery",
+      "version": 7
+    },
+    {
+      "cell": "capability.operation.technology",
+      "version": 3
+    },
+    {
+      "cell": "capability.resource.allocation",
+      "version": 11
+    },
+    {
+      "cell": "capability.resource.funding",
+      "version": 5
+    },
+    {
+      "cell": "capability.sourcing.acquire",
+      "version": 4
+    },
+    {
       "cell": "capability.sourcing.build",
-      "version": 7,
-      "draft": true
+      "version": 7
+    },
+    {
+      "cell": "capability.sourcing.partner",
+      "version": 2
+    },
+    {
+      "cell": "capability.team.role",
+      "version": 6
+    },
+    {
+      "cell": "capability.team.structure",
+      "version": 5
+    },
+    {
+      "cell": "context.company.constraint",
+      "version": 4
+    },
+    {
+      "cell": "context.company.strength",
+      "version": 5
+    },
+    {
+      "cell": "context.competition.alternative",
+      "version": 5
+    },
+    {
+      "cell": "context.competition.gap",
+      "version": 6
+    },
+    {
+      "cell": "context.customer.buying",
+      "version": 6
+    },
+    {
+      "cell": "context.customer.need",
+      "version": 6
+    },
+    {
+      "cell": "context.market.size",
+      "version": 5
+    },
+    {
+      "cell": "context.market.trend",
+      "version": 4
+    },
+    {
+      "cell": "execution.measure.driver",
+      "version": 9
+    },
+    {
+      "cell": "execution.measure.north-star",
+      "version": 4
+    },
+    {
+      "cell": "execution.priority.bet",
+      "version": 6
+    },
+    {
+      "cell": "execution.priority.parked",
+      "version": 5
+    },
+    {
+      "cell": "execution.risk.mitigation",
+      "version": 7
+    },
+    {
+      "cell": "execution.risk.threat",
+      "version": 7
+    },
+    {
+      "cell": "execution.roadmap.milestone",
+      "version": 7
+    },
+    {
+      "cell": "execution.roadmap.release",
+      "version": 6
+    },
+    {
+      "cell": "focus.category.definition",
+      "version": 5
+    },
+    {
+      "cell": "focus.category.stance",
+      "version": 3
+    },
+    {
+      "cell": "focus.lifecycle.acquisition",
+      "version": 4
+    },
+    {
+      "cell": "focus.lifecycle.retention",
+      "version": 6
+    },
+    {
+      "cell": "focus.offer.excluded",
+      "version": 3
+    },
+    {
+      "cell": "focus.offer.included",
+      "version": 3
+    },
+    {
+      "cell": "focus.reach.channel",
+      "version": 3
+    },
+    {
+      "cell": "focus.reach.geography",
+      "version": 2
+    },
+    {
+      "cell": "focus.segment.core",
+      "version": 3
+    },
+    {
+      "cell": "focus.segment.next",
+      "version": 5
+    },
+    {
+      "cell": "identity.brand.essence",
+      "version": 4
+    },
+    {
+      "cell": "identity.brand.personality",
+      "version": 3
+    },
+    {
+      "cell": "identity.naming.architecture",
+      "version": 5
+    },
+    {
+      "cell": "identity.naming.name",
+      "version": 3
+    },
+    {
+      "cell": "identity.verbal.narrative",
+      "version": 4
+    },
+    {
+      "cell": "identity.verbal.voice",
+      "version": 4
+    },
+    {
+      "cell": "identity.visual.imagery",
+      "version": 4
+    },
+    {
+      "cell": "identity.visual.style",
+      "version": 7
     }
   ],
   "findings": [
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "advantage.defensibility.differentiator",
+      "path": "advantage.defensibility.differentiator/candidates/studio-differentiator-v4.md",
+      "judgeId": "Q2:advantage.defensibility.differentiator@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "advantage.defensibility.differentiator",
+      "path": "advantage.defensibility.differentiator/candidates/studio-differentiator-v4.md",
+      "judgeId": "Q3:advantage.defensibility.differentiator@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "advantage.defensibility.differentiator",
+      "path": "advantage.defensibility.differentiator/candidates/studio-differentiator-v4.md",
+      "judgeId": "Q4:advantage.defensibility.differentiator@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "advantage.defensibility.differentiator",
+      "path": "advantage.defensibility.differentiator/candidates/studio-differentiator-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:advantage.defensibility.differentiator@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "advantage.defensibility.moat",
+      "path": "advantage.defensibility.moat/candidates/studio-moat-v4.md",
+      "judgeId": "Q2:advantage.defensibility.moat@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "advantage.defensibility.moat",
+      "path": "advantage.defensibility.moat/candidates/studio-moat-v4.md",
+      "judgeId": "Q3:advantage.defensibility.moat@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "advantage.defensibility.moat",
+      "path": "advantage.defensibility.moat/candidates/studio-moat-v4.md",
+      "judgeId": "Q4:advantage.defensibility.moat@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "No trade-off marker or negative key; judge whether a real alternative was given up",
+      "cell": "advantage.defensibility.moat",
+      "path": "advantage.defensibility.moat/candidates/studio-moat-v4.md",
+      "code": "absent-tradeoff",
+      "judgeId": "Q6:advantage.defensibility.moat@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "advantage.model.margin",
+      "path": "advantage.model.margin/candidates/studio-margin-v9.md",
+      "judgeId": "Q2:advantage.model.margin@9"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "advantage.model.margin",
+      "path": "advantage.model.margin/candidates/studio-margin-v9.md",
+      "judgeId": "Q3:advantage.model.margin@9"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "advantage.model.margin",
+      "path": "advantage.model.margin/candidates/studio-margin-v9.md",
+      "judgeId": "Q4:advantage.model.margin@9"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "advantage.model.margin",
+      "path": "advantage.model.margin/candidates/studio-margin-v9.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:advantage.model.margin@9"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "advantage.model.pricing",
+      "path": "advantage.model.pricing/candidates/studio-pricing-v5.md",
+      "judgeId": "Q2:advantage.model.pricing@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "advantage.model.pricing",
+      "path": "advantage.model.pricing/candidates/studio-pricing-v5.md",
+      "judgeId": "Q3:advantage.model.pricing@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "advantage.model.pricing",
+      "path": "advantage.model.pricing/candidates/studio-pricing-v5.md",
+      "judgeId": "Q4:advantage.model.pricing@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "advantage.model.pricing",
+      "path": "advantage.model.pricing/candidates/studio-pricing-v5.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:advantage.model.pricing@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "advantage.proposition.promise",
+      "path": "advantage.proposition.promise/candidates/studio-promise-v4.md",
+      "judgeId": "Q2:advantage.proposition.promise@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "advantage.proposition.promise",
+      "path": "advantage.proposition.promise/candidates/studio-promise-v4.md",
+      "judgeId": "Q3:advantage.proposition.promise@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "advantage.proposition.promise",
+      "path": "advantage.proposition.promise/candidates/studio-promise-v4.md",
+      "judgeId": "Q4:advantage.proposition.promise@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "advantage.proposition.promise",
+      "path": "advantage.proposition.promise/candidates/studio-promise-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:advantage.proposition.promise@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "advantage.proposition.proof",
+      "path": "advantage.proposition.proof/candidates/studio-proof-v4.md",
+      "judgeId": "Q2:advantage.proposition.proof@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "advantage.proposition.proof",
+      "path": "advantage.proposition.proof/candidates/studio-proof-v4.md",
+      "judgeId": "Q3:advantage.proposition.proof@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "advantage.proposition.proof",
+      "path": "advantage.proposition.proof/candidates/studio-proof-v4.md",
+      "judgeId": "Q4:advantage.proposition.proof@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "advantage.proposition.proof",
+      "path": "advantage.proposition.proof/candidates/studio-proof-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:advantage.proposition.proof@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "aspiration.culture.behavior",
+      "path": "aspiration.culture.behavior/candidates/studio-behavior-v4.md",
+      "judgeId": "Q2:aspiration.culture.behavior@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "aspiration.culture.behavior",
+      "path": "aspiration.culture.behavior/candidates/studio-behavior-v4.md",
+      "judgeId": "Q3:aspiration.culture.behavior@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "aspiration.culture.behavior",
+      "path": "aspiration.culture.behavior/candidates/studio-behavior-v4.md",
+      "judgeId": "Q4:aspiration.culture.behavior@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "aspiration.culture.behavior",
+      "path": "aspiration.culture.behavior/candidates/studio-behavior-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:aspiration.culture.behavior@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "aspiration.culture.belief",
+      "path": "aspiration.culture.belief/candidates/studio-belief-v5.md",
+      "judgeId": "Q2:aspiration.culture.belief@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "aspiration.culture.belief",
+      "path": "aspiration.culture.belief/candidates/studio-belief-v5.md",
+      "judgeId": "Q3:aspiration.culture.belief@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "aspiration.culture.belief",
+      "path": "aspiration.culture.belief/candidates/studio-belief-v5.md",
+      "judgeId": "Q4:aspiration.culture.belief@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "No trade-off marker or negative key; judge whether a real alternative was given up",
+      "cell": "aspiration.culture.belief",
+      "path": "aspiration.culture.belief/candidates/studio-belief-v5.md",
+      "code": "absent-tradeoff",
+      "judgeId": "Q6:aspiration.culture.belief@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "aspiration.goal.annual",
+      "path": "aspiration.goal.annual/candidates/studio-goal-annual-v7.md",
+      "judgeId": "Q2:aspiration.goal.annual@7"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "aspiration.goal.annual",
+      "path": "aspiration.goal.annual/candidates/studio-goal-annual-v7.md",
+      "judgeId": "Q3:aspiration.goal.annual@7"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "aspiration.goal.annual",
+      "path": "aspiration.goal.annual/candidates/studio-goal-annual-v7.md",
+      "judgeId": "Q4:aspiration.goal.annual@7"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "aspiration.goal.annual",
+      "path": "aspiration.goal.annual/candidates/studio-goal-annual-v7.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:aspiration.goal.annual@7"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "aspiration.goal.long-term",
+      "path": "aspiration.goal.long-term/candidates/studio-goal-long-term-v3.md",
+      "judgeId": "Q2:aspiration.goal.long-term@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "aspiration.goal.long-term",
+      "path": "aspiration.goal.long-term/candidates/studio-goal-long-term-v3.md",
+      "judgeId": "Q3:aspiration.goal.long-term@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "aspiration.goal.long-term",
+      "path": "aspiration.goal.long-term/candidates/studio-goal-long-term-v3.md",
+      "judgeId": "Q4:aspiration.goal.long-term@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "aspiration.goal.long-term",
+      "path": "aspiration.goal.long-term/candidates/studio-goal-long-term-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:aspiration.goal.long-term@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "aspiration.purpose.mission",
+      "path": "aspiration.purpose.mission/candidates/studio-mission-v3.md",
+      "judgeId": "Q2:aspiration.purpose.mission@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "aspiration.purpose.mission",
+      "path": "aspiration.purpose.mission/candidates/studio-mission-v3.md",
+      "judgeId": "Q3:aspiration.purpose.mission@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "aspiration.purpose.mission",
+      "path": "aspiration.purpose.mission/candidates/studio-mission-v3.md",
+      "judgeId": "Q4:aspiration.purpose.mission@3"
+    },
+    {
+      "rule": "Q5",
+      "severity": "judge",
+      "message": "Short bullet has no number or apparent proper noun; judge specificity",
+      "cell": "aspiration.purpose.mission",
+      "path": "aspiration.purpose.mission/candidates/studio-mission-v3.md",
+      "line": 11,
+      "code": "sparse",
+      "judgeId": "Q5:aspiration.purpose.mission@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "aspiration.purpose.mission",
+      "path": "aspiration.purpose.mission/candidates/studio-mission-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:aspiration.purpose.mission@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "aspiration.purpose.vision",
+      "path": "aspiration.purpose.vision/candidates/studio-vision-v3.md",
+      "judgeId": "Q2:aspiration.purpose.vision@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "aspiration.purpose.vision",
+      "path": "aspiration.purpose.vision/candidates/studio-vision-v3.md",
+      "judgeId": "Q3:aspiration.purpose.vision@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "aspiration.purpose.vision",
+      "path": "aspiration.purpose.vision/candidates/studio-vision-v3.md",
+      "judgeId": "Q4:aspiration.purpose.vision@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "aspiration.purpose.vision",
+      "path": "aspiration.purpose.vision/candidates/studio-vision-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:aspiration.purpose.vision@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.competency.critical",
+      "path": "capability.competency.critical/candidates/studio-competency-critical-v8.md",
+      "judgeId": "Q2:capability.competency.critical@8"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.competency.critical",
+      "path": "capability.competency.critical/candidates/studio-competency-critical-v8.md",
+      "judgeId": "Q3:capability.competency.critical@8"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.competency.critical",
+      "path": "capability.competency.critical/candidates/studio-competency-critical-v8.md",
+      "judgeId": "Q4:capability.competency.critical@8"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "capability.competency.critical",
+      "path": "capability.competency.critical/candidates/studio-competency-critical-v8.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:capability.competency.critical@8"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.competency.gap",
+      "path": "capability.competency.gap/candidates/studio-competency-gap-v8.md",
+      "judgeId": "Q2:capability.competency.gap@8"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.competency.gap",
+      "path": "capability.competency.gap/candidates/studio-competency-gap-v8.md",
+      "judgeId": "Q3:capability.competency.gap@8"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.competency.gap",
+      "path": "capability.competency.gap/candidates/studio-competency-gap-v8.md",
+      "judgeId": "Q4:capability.competency.gap@8"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "capability.competency.gap",
+      "path": "capability.competency.gap/candidates/studio-competency-gap-v8.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:capability.competency.gap@8"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.operation.delivery",
+      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
+      "judgeId": "Q2:capability.operation.delivery@7"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.operation.delivery",
+      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
+      "judgeId": "Q3:capability.operation.delivery@7"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.operation.delivery",
+      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
+      "judgeId": "Q4:capability.operation.delivery@7"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "capability.operation.delivery",
+      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:capability.operation.delivery@7"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.operation.technology",
+      "path": "capability.operation.technology/candidates/studio-technology-v3.md",
+      "judgeId": "Q2:capability.operation.technology@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.operation.technology",
+      "path": "capability.operation.technology/candidates/studio-technology-v3.md",
+      "judgeId": "Q3:capability.operation.technology@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.operation.technology",
+      "path": "capability.operation.technology/candidates/studio-technology-v3.md",
+      "judgeId": "Q4:capability.operation.technology@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "capability.operation.technology",
+      "path": "capability.operation.technology/candidates/studio-technology-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:capability.operation.technology@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.resource.allocation",
+      "path": "capability.resource.allocation/candidates/studio-allocation-v11.md",
+      "judgeId": "Q2:capability.resource.allocation@11"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.resource.allocation",
+      "path": "capability.resource.allocation/candidates/studio-allocation-v11.md",
+      "judgeId": "Q3:capability.resource.allocation@11"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.resource.allocation",
+      "path": "capability.resource.allocation/candidates/studio-allocation-v11.md",
+      "judgeId": "Q4:capability.resource.allocation@11"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "capability.resource.allocation",
+      "path": "capability.resource.allocation/candidates/studio-allocation-v11.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:capability.resource.allocation@11"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.resource.funding",
+      "path": "capability.resource.funding/candidates/studio-funding-v5.md",
+      "judgeId": "Q2:capability.resource.funding@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.resource.funding",
+      "path": "capability.resource.funding/candidates/studio-funding-v5.md",
+      "judgeId": "Q3:capability.resource.funding@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.resource.funding",
+      "path": "capability.resource.funding/candidates/studio-funding-v5.md",
+      "judgeId": "Q4:capability.resource.funding@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "capability.resource.funding",
+      "path": "capability.resource.funding/candidates/studio-funding-v5.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:capability.resource.funding@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.sourcing.acquire",
+      "path": "capability.sourcing.acquire/candidates/studio-acquire-v4.md",
+      "judgeId": "Q2:capability.sourcing.acquire@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.sourcing.acquire",
+      "path": "capability.sourcing.acquire/candidates/studio-acquire-v4.md",
+      "judgeId": "Q3:capability.sourcing.acquire@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.sourcing.acquire",
+      "path": "capability.sourcing.acquire/candidates/studio-acquire-v4.md",
+      "judgeId": "Q4:capability.sourcing.acquire@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "capability.sourcing.acquire",
+      "path": "capability.sourcing.acquire/candidates/studio-acquire-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:capability.sourcing.acquire@4"
+    },
     {
       "rule": "Q2",
       "severity": "judge",
@@ -39,6 +899,1266 @@
       "path": "capability.sourcing.build/candidates/studio-build-v7.md",
       "code": "tradeoff",
       "judgeId": "Q6:capability.sourcing.build@7"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.sourcing.partner",
+      "path": "capability.sourcing.partner/candidates/studio-partner-v2.md",
+      "judgeId": "Q2:capability.sourcing.partner@2"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.sourcing.partner",
+      "path": "capability.sourcing.partner/candidates/studio-partner-v2.md",
+      "judgeId": "Q3:capability.sourcing.partner@2"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.sourcing.partner",
+      "path": "capability.sourcing.partner/candidates/studio-partner-v2.md",
+      "judgeId": "Q4:capability.sourcing.partner@2"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "No trade-off marker or negative key; judge whether a real alternative was given up",
+      "cell": "capability.sourcing.partner",
+      "path": "capability.sourcing.partner/candidates/studio-partner-v2.md",
+      "code": "absent-tradeoff",
+      "judgeId": "Q6:capability.sourcing.partner@2"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.team.role",
+      "path": "capability.team.role/candidates/studio-team-role-v6.md",
+      "judgeId": "Q2:capability.team.role@6"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.team.role",
+      "path": "capability.team.role/candidates/studio-team-role-v6.md",
+      "judgeId": "Q3:capability.team.role@6"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.team.role",
+      "path": "capability.team.role/candidates/studio-team-role-v6.md",
+      "judgeId": "Q4:capability.team.role@6"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "capability.team.role",
+      "path": "capability.team.role/candidates/studio-team-role-v6.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:capability.team.role@6"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "capability.team.structure",
+      "path": "capability.team.structure/candidates/studio-team-structure-v5.md",
+      "judgeId": "Q2:capability.team.structure@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "capability.team.structure",
+      "path": "capability.team.structure/candidates/studio-team-structure-v5.md",
+      "judgeId": "Q3:capability.team.structure@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "capability.team.structure",
+      "path": "capability.team.structure/candidates/studio-team-structure-v5.md",
+      "judgeId": "Q4:capability.team.structure@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "capability.team.structure",
+      "path": "capability.team.structure/candidates/studio-team-structure-v5.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:capability.team.structure@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "context.company.constraint",
+      "path": "context.company.constraint/candidates/studio-readonly-bound-v4.md",
+      "judgeId": "Q2:context.company.constraint@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "context.company.constraint",
+      "path": "context.company.constraint/candidates/studio-readonly-bound-v4.md",
+      "judgeId": "Q3:context.company.constraint@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "context.company.constraint",
+      "path": "context.company.constraint/candidates/studio-readonly-bound-v4.md",
+      "judgeId": "Q4:context.company.constraint@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "context.company.constraint",
+      "path": "context.company.constraint/candidates/studio-readonly-bound-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:context.company.constraint@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "context.company.strength",
+      "path": "context.company.strength/candidates/studio-strength-v5.md",
+      "judgeId": "Q2:context.company.strength@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "context.company.strength",
+      "path": "context.company.strength/candidates/studio-strength-v5.md",
+      "judgeId": "Q3:context.company.strength@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "context.company.strength",
+      "path": "context.company.strength/candidates/studio-strength-v5.md",
+      "judgeId": "Q4:context.company.strength@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "context.company.strength",
+      "path": "context.company.strength/candidates/studio-strength-v5.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:context.company.strength@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "context.competition.alternative",
+      "path": "context.competition.alternative/candidates/studio-alternative-v5.md",
+      "judgeId": "Q2:context.competition.alternative@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "context.competition.alternative",
+      "path": "context.competition.alternative/candidates/studio-alternative-v5.md",
+      "judgeId": "Q3:context.competition.alternative@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "context.competition.alternative",
+      "path": "context.competition.alternative/candidates/studio-alternative-v5.md",
+      "judgeId": "Q4:context.competition.alternative@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "No trade-off marker or negative key; judge whether a real alternative was given up",
+      "cell": "context.competition.alternative",
+      "path": "context.competition.alternative/candidates/studio-alternative-v5.md",
+      "code": "absent-tradeoff",
+      "judgeId": "Q6:context.competition.alternative@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "context.competition.gap",
+      "path": "context.competition.gap/candidates/studio-gap-v6.md",
+      "judgeId": "Q2:context.competition.gap@6"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "context.competition.gap",
+      "path": "context.competition.gap/candidates/studio-gap-v6.md",
+      "judgeId": "Q3:context.competition.gap@6"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "context.competition.gap",
+      "path": "context.competition.gap/candidates/studio-gap-v6.md",
+      "judgeId": "Q4:context.competition.gap@6"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "context.competition.gap",
+      "path": "context.competition.gap/candidates/studio-gap-v6.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:context.competition.gap@6"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "context.customer.buying",
+      "path": "context.customer.buying/candidates/studio-customer-buying-v6.md",
+      "judgeId": "Q2:context.customer.buying@6"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "context.customer.buying",
+      "path": "context.customer.buying/candidates/studio-customer-buying-v6.md",
+      "judgeId": "Q3:context.customer.buying@6"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "context.customer.buying",
+      "path": "context.customer.buying/candidates/studio-customer-buying-v6.md",
+      "judgeId": "Q4:context.customer.buying@6"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "context.customer.buying",
+      "path": "context.customer.buying/candidates/studio-customer-buying-v6.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:context.customer.buying@6"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "context.customer.need",
+      "path": "context.customer.need/candidates/studio-customer-need-v6.md",
+      "judgeId": "Q2:context.customer.need@6"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "context.customer.need",
+      "path": "context.customer.need/candidates/studio-customer-need-v6.md",
+      "judgeId": "Q3:context.customer.need@6"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "context.customer.need",
+      "path": "context.customer.need/candidates/studio-customer-need-v6.md",
+      "judgeId": "Q4:context.customer.need@6"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "context.customer.need",
+      "path": "context.customer.need/candidates/studio-customer-need-v6.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:context.customer.need@6"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "context.market.size",
+      "path": "context.market.size/candidates/studio-market-size-v5.md",
+      "judgeId": "Q2:context.market.size@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "context.market.size",
+      "path": "context.market.size/candidates/studio-market-size-v5.md",
+      "judgeId": "Q3:context.market.size@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "context.market.size",
+      "path": "context.market.size/candidates/studio-market-size-v5.md",
+      "judgeId": "Q4:context.market.size@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "context.market.size",
+      "path": "context.market.size/candidates/studio-market-size-v5.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:context.market.size@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "context.market.trend",
+      "path": "context.market.trend/candidates/studio-market-trend-v4.md",
+      "judgeId": "Q2:context.market.trend@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "context.market.trend",
+      "path": "context.market.trend/candidates/studio-market-trend-v4.md",
+      "judgeId": "Q3:context.market.trend@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "context.market.trend",
+      "path": "context.market.trend/candidates/studio-market-trend-v4.md",
+      "judgeId": "Q4:context.market.trend@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "context.market.trend",
+      "path": "context.market.trend/candidates/studio-market-trend-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:context.market.trend@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "execution.measure.driver",
+      "path": "execution.measure.driver/candidates/studio-drivers-v9.md",
+      "judgeId": "Q2:execution.measure.driver@9"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "execution.measure.driver",
+      "path": "execution.measure.driver/candidates/studio-drivers-v9.md",
+      "judgeId": "Q3:execution.measure.driver@9"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "execution.measure.driver",
+      "path": "execution.measure.driver/candidates/studio-drivers-v9.md",
+      "judgeId": "Q4:execution.measure.driver@9"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "execution.measure.driver",
+      "path": "execution.measure.driver/candidates/studio-drivers-v9.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:execution.measure.driver@9"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "execution.measure.north-star",
+      "path": "execution.measure.north-star/candidates/studio-north-star-v4.md",
+      "judgeId": "Q2:execution.measure.north-star@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "execution.measure.north-star",
+      "path": "execution.measure.north-star/candidates/studio-north-star-v4.md",
+      "judgeId": "Q3:execution.measure.north-star@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "execution.measure.north-star",
+      "path": "execution.measure.north-star/candidates/studio-north-star-v4.md",
+      "judgeId": "Q4:execution.measure.north-star@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "execution.measure.north-star",
+      "path": "execution.measure.north-star/candidates/studio-north-star-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:execution.measure.north-star@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "execution.priority.bet",
+      "path": "execution.priority.bet/candidates/studio-bet-v6.md",
+      "judgeId": "Q2:execution.priority.bet@6"
+    },
+    {
+      "rule": "Q3",
+      "severity": "hard",
+      "message": "Stale reference capability.operation.delivery@4: the pinned version is capability.operation.delivery@7; re-cite the pinned version (clossys migrate director-refs) or re-draft this cell",
+      "cell": "execution.priority.bet",
+      "path": "execution.priority.bet/candidates/studio-bet-v6.md",
+      "line": 18,
+      "code": "stale"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "execution.priority.bet",
+      "path": "execution.priority.bet/candidates/studio-bet-v6.md",
+      "judgeId": "Q3:execution.priority.bet@6"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "execution.priority.bet",
+      "path": "execution.priority.bet/candidates/studio-bet-v6.md",
+      "judgeId": "Q4:execution.priority.bet@6"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "execution.priority.bet",
+      "path": "execution.priority.bet/candidates/studio-bet-v6.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:execution.priority.bet@6"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "execution.priority.parked",
+      "path": "execution.priority.parked/candidates/studio-parked-v5.md",
+      "judgeId": "Q2:execution.priority.parked@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "execution.priority.parked",
+      "path": "execution.priority.parked/candidates/studio-parked-v5.md",
+      "judgeId": "Q3:execution.priority.parked@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "execution.priority.parked",
+      "path": "execution.priority.parked/candidates/studio-parked-v5.md",
+      "judgeId": "Q4:execution.priority.parked@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "execution.priority.parked",
+      "path": "execution.priority.parked/candidates/studio-parked-v5.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:execution.priority.parked@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "execution.risk.mitigation",
+      "path": "execution.risk.mitigation/candidates/studio-mitigation-v7.md",
+      "judgeId": "Q2:execution.risk.mitigation@7"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "execution.risk.mitigation",
+      "path": "execution.risk.mitigation/candidates/studio-mitigation-v7.md",
+      "judgeId": "Q3:execution.risk.mitigation@7"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "execution.risk.mitigation",
+      "path": "execution.risk.mitigation/candidates/studio-mitigation-v7.md",
+      "judgeId": "Q4:execution.risk.mitigation@7"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "execution.risk.mitigation",
+      "path": "execution.risk.mitigation/candidates/studio-mitigation-v7.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:execution.risk.mitigation@7"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "execution.risk.threat",
+      "path": "execution.risk.threat/candidates/studio-threat-v7.md",
+      "judgeId": "Q2:execution.risk.threat@7"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "execution.risk.threat",
+      "path": "execution.risk.threat/candidates/studio-threat-v7.md",
+      "judgeId": "Q3:execution.risk.threat@7"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "execution.risk.threat",
+      "path": "execution.risk.threat/candidates/studio-threat-v7.md",
+      "judgeId": "Q4:execution.risk.threat@7"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "execution.risk.threat",
+      "path": "execution.risk.threat/candidates/studio-threat-v7.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:execution.risk.threat@7"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "execution.roadmap.milestone",
+      "path": "execution.roadmap.milestone/candidates/studio-milestone-v7.md",
+      "judgeId": "Q2:execution.roadmap.milestone@7"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "execution.roadmap.milestone",
+      "path": "execution.roadmap.milestone/candidates/studio-milestone-v7.md",
+      "judgeId": "Q3:execution.roadmap.milestone@7"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "execution.roadmap.milestone",
+      "path": "execution.roadmap.milestone/candidates/studio-milestone-v7.md",
+      "judgeId": "Q4:execution.roadmap.milestone@7"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "execution.roadmap.milestone",
+      "path": "execution.roadmap.milestone/candidates/studio-milestone-v7.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:execution.roadmap.milestone@7"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "execution.roadmap.release",
+      "path": "execution.roadmap.release/candidates/studio-release-v6.md",
+      "judgeId": "Q2:execution.roadmap.release@6"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "execution.roadmap.release",
+      "path": "execution.roadmap.release/candidates/studio-release-v6.md",
+      "judgeId": "Q3:execution.roadmap.release@6"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "execution.roadmap.release",
+      "path": "execution.roadmap.release/candidates/studio-release-v6.md",
+      "judgeId": "Q4:execution.roadmap.release@6"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "execution.roadmap.release",
+      "path": "execution.roadmap.release/candidates/studio-release-v6.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:execution.roadmap.release@6"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.category.definition",
+      "path": "focus.category.definition/candidates/studio-category-v5.md",
+      "judgeId": "Q2:focus.category.definition@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.category.definition",
+      "path": "focus.category.definition/candidates/studio-category-v5.md",
+      "judgeId": "Q3:focus.category.definition@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.category.definition",
+      "path": "focus.category.definition/candidates/studio-category-v5.md",
+      "judgeId": "Q4:focus.category.definition@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.category.definition",
+      "path": "focus.category.definition/candidates/studio-category-v5.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.category.definition@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.category.stance",
+      "path": "focus.category.stance/candidates/studio-stance-v3.md",
+      "judgeId": "Q2:focus.category.stance@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.category.stance",
+      "path": "focus.category.stance/candidates/studio-stance-v3.md",
+      "judgeId": "Q3:focus.category.stance@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.category.stance",
+      "path": "focus.category.stance/candidates/studio-stance-v3.md",
+      "judgeId": "Q4:focus.category.stance@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.category.stance",
+      "path": "focus.category.stance/candidates/studio-stance-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.category.stance@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.lifecycle.acquisition",
+      "path": "focus.lifecycle.acquisition/candidates/studio-acquisition-v4.md",
+      "judgeId": "Q2:focus.lifecycle.acquisition@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.lifecycle.acquisition",
+      "path": "focus.lifecycle.acquisition/candidates/studio-acquisition-v4.md",
+      "judgeId": "Q3:focus.lifecycle.acquisition@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.lifecycle.acquisition",
+      "path": "focus.lifecycle.acquisition/candidates/studio-acquisition-v4.md",
+      "judgeId": "Q4:focus.lifecycle.acquisition@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.lifecycle.acquisition",
+      "path": "focus.lifecycle.acquisition/candidates/studio-acquisition-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.lifecycle.acquisition@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.lifecycle.retention",
+      "path": "focus.lifecycle.retention/candidates/studio-retention-v6.md",
+      "judgeId": "Q2:focus.lifecycle.retention@6"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.lifecycle.retention",
+      "path": "focus.lifecycle.retention/candidates/studio-retention-v6.md",
+      "judgeId": "Q3:focus.lifecycle.retention@6"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.lifecycle.retention",
+      "path": "focus.lifecycle.retention/candidates/studio-retention-v6.md",
+      "judgeId": "Q4:focus.lifecycle.retention@6"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.lifecycle.retention",
+      "path": "focus.lifecycle.retention/candidates/studio-retention-v6.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.lifecycle.retention@6"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.offer.excluded",
+      "path": "focus.offer.excluded/candidates/studio-exclusions-v3.md",
+      "judgeId": "Q2:focus.offer.excluded@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.offer.excluded",
+      "path": "focus.offer.excluded/candidates/studio-exclusions-v3.md",
+      "judgeId": "Q3:focus.offer.excluded@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.offer.excluded",
+      "path": "focus.offer.excluded/candidates/studio-exclusions-v3.md",
+      "judgeId": "Q4:focus.offer.excluded@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.offer.excluded",
+      "path": "focus.offer.excluded/candidates/studio-exclusions-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.offer.excluded@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.offer.included",
+      "path": "focus.offer.included/candidates/studio-offer-v3.md",
+      "judgeId": "Q2:focus.offer.included@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.offer.included",
+      "path": "focus.offer.included/candidates/studio-offer-v3.md",
+      "judgeId": "Q3:focus.offer.included@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.offer.included",
+      "path": "focus.offer.included/candidates/studio-offer-v3.md",
+      "judgeId": "Q4:focus.offer.included@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.offer.included",
+      "path": "focus.offer.included/candidates/studio-offer-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.offer.included@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.reach.channel",
+      "path": "focus.reach.channel/candidates/studio-channel-v3.md",
+      "judgeId": "Q2:focus.reach.channel@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.reach.channel",
+      "path": "focus.reach.channel/candidates/studio-channel-v3.md",
+      "judgeId": "Q3:focus.reach.channel@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.reach.channel",
+      "path": "focus.reach.channel/candidates/studio-channel-v3.md",
+      "judgeId": "Q4:focus.reach.channel@3"
+    },
+    {
+      "rule": "Q5",
+      "severity": "judge",
+      "message": "Short bullet has no number or apparent proper noun; judge specificity",
+      "cell": "focus.reach.channel",
+      "path": "focus.reach.channel/candidates/studio-channel-v3.md",
+      "line": 12,
+      "code": "sparse",
+      "judgeId": "Q5:focus.reach.channel@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.reach.channel",
+      "path": "focus.reach.channel/candidates/studio-channel-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.reach.channel@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.reach.geography",
+      "path": "focus.reach.geography/candidates/studio-geography-v2.md",
+      "judgeId": "Q2:focus.reach.geography@2"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.reach.geography",
+      "path": "focus.reach.geography/candidates/studio-geography-v2.md",
+      "judgeId": "Q3:focus.reach.geography@2"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.reach.geography",
+      "path": "focus.reach.geography/candidates/studio-geography-v2.md",
+      "judgeId": "Q4:focus.reach.geography@2"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.reach.geography",
+      "path": "focus.reach.geography/candidates/studio-geography-v2.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.reach.geography@2"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.segment.core",
+      "path": "focus.segment.core/candidates/studio-segment-core-v3.md",
+      "judgeId": "Q2:focus.segment.core@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.segment.core",
+      "path": "focus.segment.core/candidates/studio-segment-core-v3.md",
+      "judgeId": "Q3:focus.segment.core@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.segment.core",
+      "path": "focus.segment.core/candidates/studio-segment-core-v3.md",
+      "judgeId": "Q4:focus.segment.core@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.segment.core",
+      "path": "focus.segment.core/candidates/studio-segment-core-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.segment.core@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "focus.segment.next",
+      "path": "focus.segment.next/candidates/studio-segment-next-v5.md",
+      "judgeId": "Q2:focus.segment.next@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "focus.segment.next",
+      "path": "focus.segment.next/candidates/studio-segment-next-v5.md",
+      "judgeId": "Q3:focus.segment.next@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "focus.segment.next",
+      "path": "focus.segment.next/candidates/studio-segment-next-v5.md",
+      "judgeId": "Q4:focus.segment.next@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "focus.segment.next",
+      "path": "focus.segment.next/candidates/studio-segment-next-v5.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:focus.segment.next@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "identity.brand.essence",
+      "path": "identity.brand.essence/candidates/studio-essence-v4.md",
+      "judgeId": "Q2:identity.brand.essence@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "identity.brand.essence",
+      "path": "identity.brand.essence/candidates/studio-essence-v4.md",
+      "judgeId": "Q3:identity.brand.essence@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "identity.brand.essence",
+      "path": "identity.brand.essence/candidates/studio-essence-v4.md",
+      "judgeId": "Q4:identity.brand.essence@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "identity.brand.essence",
+      "path": "identity.brand.essence/candidates/studio-essence-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:identity.brand.essence@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "identity.brand.personality",
+      "path": "identity.brand.personality/candidates/studio-personality-v3.md",
+      "judgeId": "Q2:identity.brand.personality@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "identity.brand.personality",
+      "path": "identity.brand.personality/candidates/studio-personality-v3.md",
+      "judgeId": "Q3:identity.brand.personality@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "identity.brand.personality",
+      "path": "identity.brand.personality/candidates/studio-personality-v3.md",
+      "judgeId": "Q4:identity.brand.personality@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "identity.brand.personality",
+      "path": "identity.brand.personality/candidates/studio-personality-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:identity.brand.personality@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "identity.naming.architecture",
+      "path": "identity.naming.architecture/candidates/studio-agent-naming-v5.md",
+      "judgeId": "Q2:identity.naming.architecture@5"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "identity.naming.architecture",
+      "path": "identity.naming.architecture/candidates/studio-agent-naming-v5.md",
+      "judgeId": "Q3:identity.naming.architecture@5"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "identity.naming.architecture",
+      "path": "identity.naming.architecture/candidates/studio-agent-naming-v5.md",
+      "judgeId": "Q4:identity.naming.architecture@5"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "identity.naming.architecture",
+      "path": "identity.naming.architecture/candidates/studio-agent-naming-v5.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:identity.naming.architecture@5"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "identity.naming.name",
+      "path": "identity.naming.name/candidates/studio-naming-v3.md",
+      "judgeId": "Q2:identity.naming.name@3"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "identity.naming.name",
+      "path": "identity.naming.name/candidates/studio-naming-v3.md",
+      "judgeId": "Q3:identity.naming.name@3"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "identity.naming.name",
+      "path": "identity.naming.name/candidates/studio-naming-v3.md",
+      "judgeId": "Q4:identity.naming.name@3"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "identity.naming.name",
+      "path": "identity.naming.name/candidates/studio-naming-v3.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:identity.naming.name@3"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "identity.verbal.narrative",
+      "path": "identity.verbal.narrative/candidates/studio-narrative-v4.md",
+      "judgeId": "Q2:identity.verbal.narrative@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "identity.verbal.narrative",
+      "path": "identity.verbal.narrative/candidates/studio-narrative-v4.md",
+      "judgeId": "Q3:identity.verbal.narrative@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "identity.verbal.narrative",
+      "path": "identity.verbal.narrative/candidates/studio-narrative-v4.md",
+      "judgeId": "Q4:identity.verbal.narrative@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "No trade-off marker or negative key; judge whether a real alternative was given up",
+      "cell": "identity.verbal.narrative",
+      "path": "identity.verbal.narrative/candidates/studio-narrative-v4.md",
+      "code": "absent-tradeoff",
+      "judgeId": "Q6:identity.verbal.narrative@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "identity.verbal.voice",
+      "path": "identity.verbal.voice/candidates/studio-voice-v4.md",
+      "judgeId": "Q2:identity.verbal.voice@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "identity.verbal.voice",
+      "path": "identity.verbal.voice/candidates/studio-voice-v4.md",
+      "judgeId": "Q3:identity.verbal.voice@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "identity.verbal.voice",
+      "path": "identity.verbal.voice/candidates/studio-voice-v4.md",
+      "judgeId": "Q4:identity.verbal.voice@4"
+    },
+    {
+      "rule": "Q5",
+      "severity": "judge",
+      "message": "Short bullet has no number or apparent proper noun; judge specificity",
+      "cell": "identity.verbal.voice",
+      "path": "identity.verbal.voice/candidates/studio-voice-v4.md",
+      "line": 10,
+      "code": "sparse",
+      "judgeId": "Q5:identity.verbal.voice@4"
+    },
+    {
+      "rule": "Q5",
+      "severity": "judge",
+      "message": "Short bullet has no number or apparent proper noun; judge specificity",
+      "cell": "identity.verbal.voice",
+      "path": "identity.verbal.voice/candidates/studio-voice-v4.md",
+      "line": 12,
+      "code": "sparse",
+      "judgeId": "Q5:identity.verbal.voice@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "identity.verbal.voice",
+      "path": "identity.verbal.voice/candidates/studio-voice-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:identity.verbal.voice@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "identity.visual.imagery",
+      "path": "identity.visual.imagery/candidates/studio-imagery-v4.md",
+      "judgeId": "Q2:identity.visual.imagery@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "identity.visual.imagery",
+      "path": "identity.visual.imagery/candidates/studio-imagery-v4.md",
+      "judgeId": "Q3:identity.visual.imagery@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "identity.visual.imagery",
+      "path": "identity.visual.imagery/candidates/studio-imagery-v4.md",
+      "judgeId": "Q4:identity.visual.imagery@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "identity.visual.imagery",
+      "path": "identity.visual.imagery/candidates/studio-imagery-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:identity.visual.imagery@4"
+    },
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "identity.visual.style",
+      "path": "identity.visual.style/candidates/studio-visual-style-v7.md",
+      "judgeId": "Q2:identity.visual.style@7"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "identity.visual.style",
+      "path": "identity.visual.style/candidates/studio-visual-style-v7.md",
+      "judgeId": "Q3:identity.visual.style@7"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "identity.visual.style",
+      "path": "identity.visual.style/candidates/studio-visual-style-v7.md",
+      "judgeId": "Q4:identity.visual.style@7"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "identity.visual.style",
+      "path": "identity.visual.style/candidates/studio-visual-style-v7.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:identity.visual.style@7"
     }
   ]
 }

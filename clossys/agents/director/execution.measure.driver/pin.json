@@ -1,12 +1,7 @@
 {
-  "candidate": "studio-drivers-v8.md",
-  "sha256": "5072b774db997cf836b7bdcc075f7700d5ff142a0c9a6a5effeb7dcec33cee19",
+  "candidate": "studio-drivers-v9.md",
+  "sha256": "6252c75b8ff5298a136ac2ff633c59f80a8a6b2aeb4872bce614589374e7017a",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:18:20.279Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:18:54.094Z"
-  }
+  "at": "2026-11-11T23:57:23.436Z"
 }
