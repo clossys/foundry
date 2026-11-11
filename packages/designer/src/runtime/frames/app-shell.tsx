@@ -20,7 +20,7 @@ import { frameContent, guardedNavigate, type FrameHost as Host, type FrameJson a
 import { componentLeaf } from "../../runtime/component-leaf.js";
 import { SKELETON_SHAPE } from "../../components/surface-tones.js";
 
-const ProgressBar = componentLeaf<typeof import("../../components/ProgressBar.js").ProgressBar>("components.progress-bar");
+const ProgressBar = componentLeaf<typeof import("../../components/preview-runtime/components/progress-bar/progress.js").Progress>("components.progress-bar");
 const Skeleton = componentLeaf<typeof import("../../components/preview-runtime/components/skeleton/skeleton.js").Skeleton>("components.skeleton");
 
 export { guardedNavigate } from "./frame-content.js";
@@ -78,7 +78,7 @@ export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conten
       ...(account.avatar === "mark" || account.avatar === "initials" ? { avatar: account.avatar } : {}),
     },
     ...(state ? { state, stateViews } : {}),
-    ...(progressCopy ? { progress: <ProgressBar label={null} aria-label={required(progressCopy.label, "progress.label")} isIndeterminate style={{ gap: 0 }} /> } : {}),
+    ...(progressCopy ? { progress: <ProgressBar aria-label={required(progressCopy.label, "progress.label")} isIndeterminate style={{ gap: 0 }} /> } : {}),
     ...(pageModule !== undefined ? { pageModule, pageModuleLabel: required(moduleContent?.label, "page-module.label") } : {}),
     ...(header ? { page: { title: required(header.title, "header.title") }, headerTrail: records(header.trail).map(row => ({ id: required(row.id, "header.trail.id"), label: required(row.label, "header.trail.label"), ...(text(row.href) ? { href: text(row.href)! } : {}) })), ...(header.actions !== undefined ? { headerActions: appHeaderActions(records(header.actions), host) } : {}) } : {}),
     commands: {

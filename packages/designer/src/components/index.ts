@@ -4,7 +4,7 @@
  * component is single-purpose: it either composes no other component (`TextField`, `Badge`, `Card`, `Checkbox`, `Switch`, `Select`, `Textarea`,
  * `Avatar`, `Spinner`, `Dialog`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
  * `Popover`, `DateField`, `ComboBox`, `SearchField`, `FileTrigger`,
- * `Disclosure`, `ProgressBar`, `Separator`, `Chip`, `StatusMark`,
+ * `Disclosure`, `ProgressBar`, `Separator`, `StatusMark`,
  * `Meter`), or its parts are
  * homogeneous repeats rather than named regions (`Breadcrumb`, `Menu`,
  * `Tabs`, `RadioGroup` — a trail of interchangeable crumbs, a list of
@@ -17,8 +17,7 @@
  * not here.
  *
  * A component may compose a sibling component (never a `blocks/` import):
- * `Button` (the trailing icon of its `quiet` variant) and `IconButton` (its
- * one glyph) compose `Icon` this way.
+ * an icon-only stock `Button` (`size="icon"`) composes `Icon` this way.
  *
  * Thirty-six ship as of this file. See the README's "What's deliberately
  * not here" for what was left out on purpose (`Toolbar`, `Accordion`, ...).
@@ -60,10 +59,8 @@ assertPeerVersion({
 
 export { Button } from "./preview-runtime/components/button/button.js";
 export type ButtonProps = import("react").ComponentProps<typeof import("./preview-runtime/components/button/button.js").Button>;
-export type { ButtonSize, ButtonVariant } from "./button-classes.js";
-
-export { IconButton } from "./IconButton.js";
-export type { IconButtonProps } from "./IconButton.js";
+export type ButtonVariant = NonNullable<ButtonProps["variant"]>;
+export type ButtonSize = NonNullable<ButtonProps["size"]>;
 
 export { Icon } from "./preview-runtime/components/icon/icon.js";
 export type { IconProps, IconNode } from "./preview-runtime/components/icon/icon.js";
@@ -85,9 +82,8 @@ export { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbP
 export type BreadcrumbProps = import("react").ComponentProps<typeof import("./preview-runtime/components/breadcrumbs/breadcrumb.js").Breadcrumb>;
 export type BreadcrumbItemProps = import("react").ComponentProps<typeof import("./preview-runtime/components/breadcrumbs/breadcrumb.js").BreadcrumbItem>;
 
-export { LinkButton } from "./preview-runtime/components/button/button.js";
-export { buttonLinkClassName, iconButtonClassName, iconButtonLinkClassName, INVERSE_CONTROL_INK } from "./button-classes.js";
-export type { ControlGround, IconButtonClassOptions, IconButtonLinkGround, IconButtonShape, IconButtonSize } from "./button-classes.js";
+export { LinkButton, buttonVariants } from "./preview-runtime/components/button/button.js";
+export { INVERSE_CONTROL_INK } from "./button-classes.js";
 
 export { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 export type CheckboxProps = import("react").ComponentProps<typeof import("./preview-runtime/components/checkbox/checkbox.js").Checkbox>;
@@ -104,8 +100,8 @@ export type SelectProps = import("react").ComponentProps<typeof import("./previe
 export { Avatar, AvatarImage, AvatarFallback } from "./preview-runtime/components/avatar/avatar.js";
 export type AvatarProps = import("react").ComponentProps<typeof import("./preview-runtime/components/avatar/avatar.js").Avatar>;
 
-export { Spinner } from "./Spinner.js";
-export type { SpinnerProps, SpinnerSize } from "./Spinner.js";
+export { Spinner } from "./spinner/spinner.js";
+export type SpinnerProps = import("react").ComponentProps<typeof import("./spinner/spinner.js").Spinner>;
 
 export { DropdownMenu as Menu, InlineMenu } from "./preview-runtime/components/menu/dropdown-menu.js";
 export type MenuProps = import("react").ComponentProps<typeof import("./preview-runtime/components/menu/dropdown-menu.js").DropdownMenu>;
@@ -113,8 +109,8 @@ export type MenuProps = import("react").ComponentProps<typeof import("./preview-
 export { Dialog, DialogTrigger, DialogClose, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "./preview-runtime/components/dialog/dialog.js";
 export type DialogProps = import("react").ComponentProps<typeof import("./preview-runtime/components/dialog/dialog.js").Dialog>;
 
-export { Tabs } from "./Tabs.js";
-export type { TabsProps, TabsListProps, TabsTabProps, TabsPanelProps } from "./Tabs.js";
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./preview-runtime/components/tabs/tabs.js";
+export type TabsProps = import("react").ComponentProps<typeof import("./preview-runtime/components/tabs/tabs.js").Tabs>;
 
 export { Table, TableHeader, TableHead, TableBody, TableRow, TableCell, TableFooter, TableCaption } from "./preview-runtime/components/table/table.js";
 export type TableProps = import("react").ComponentProps<typeof import("./preview-runtime/components/table/table.js").Table>;
@@ -156,14 +152,11 @@ export type { FileTriggerProps } from "./preview-runtime/components/file-trigger
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./preview-runtime/components/disclosure/accordion.js";
 export type AccordionProps = import("react").ComponentProps<typeof import("./preview-runtime/components/disclosure/accordion.js").Accordion>;
 
-export { ProgressBar } from "./ProgressBar.js";
-export type { ProgressBarProps } from "./ProgressBar.js";
+export { Progress as ProgressBar } from "./preview-runtime/components/progress-bar/progress.js";
+export type ProgressBarProps = import("react").ComponentProps<typeof import("./preview-runtime/components/progress-bar/progress.js").Progress>;
 
 export { Separator } from "./preview-runtime/components/separator/separator.js";
 export type SeparatorProps = import("react").ComponentProps<typeof import("./preview-runtime/components/separator/separator.js").Separator>;
-
-export { Chip } from "./Chip.js";
-export type { ChipProps } from "./Chip.js";
 
 export { StatusMark } from "./StatusMark.js";
 export type { StatusMarkProps, StatusMarkTone } from "./StatusMark.js";
@@ -171,8 +164,8 @@ export type { StatusMarkProps, StatusMarkTone } from "./StatusMark.js";
 export { Meter } from "./Meter.js";
 export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Meter.js";
 
-/** Merge token-aware Tailwind class names with last-argument precedence. */
-export { cx as mergeUiClasses } from "./internal/cx.js";
+/** The shadcn `cn`: clsx, then tailwind-merge extended with the theme spacing and radius scale when that optional peer is present. */
+export { cn } from "./_parts/utils/index.js";
 
 export { COMPONENT_GUIDANCE, COMPONENT_API_FACTS, COMPONENT_COMPARISON } from "./guidance/internal/data.js";
 export { ResizeHandle } from "./ResizeHandle.js";

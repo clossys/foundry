@@ -147,11 +147,12 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     contract: BUTTON_CONTRACT,
     notes: ["The stock shadcn@aria button; an icon-end glyph is an Icon child with data-icon=inline-end."],
   }),
-  onMain("IconButton", ["src/components/IconButton.tsx", "src/components/button-classes.ts"], {
+  onMain("Button", ["src/components/preview-runtime/components/button/button.tsx"], {
     id: "act.icon-button",
     label: "Icon button",
     racBase: rac("Button"),
     disposition: "keep",
+    notes: ["The stock shadcn@aria Button at size=\"icon\" (icon-xs/icon-sm/icon-lg) with an aria-label; the Foundry IconButton was removed (R2F-52)."],
   }),
   onMain("Menu", ["src/components/preview-runtime/components/menu/dropdown-menu.tsx"], {
     id: "act.menu",
@@ -187,7 +188,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("Breadcrumbs", "Breadcrumb", "Link"),
     disposition: "keep",
   }),
-  onMain("Tabs", ["src/components/Tabs.tsx"], {
+  onMain("Tabs", ["src/components/preview-runtime/components/tabs/tabs.tsx"], {
     id: "reveal.tabs",
     label: "Tabs",
     racBase: rac("Tabs", "TabList", "Tab", "TabPanel"),
@@ -434,12 +435,12 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "presentational-exception",
     notes: [PRESENTATIONAL, "Parks if the exception is declined. Used by 7 block files."],
   }),
-  onMain("Chip", ["src/components/Chip.tsx"], {
+  gap({
     id: "inform.chip",
     label: "Chip",
     racBase: rac("Button"),
-    disposition: "keep",
-    notes: ["Tag groups cover multi-select tags."],
+    disposition: "not-now",
+    notes: ["Uncalled Foundry Chip removed; removable labels use the tag-group leaf.", DEMAND],
   }),
   onMain("Meter", ["src/components/Meter.tsx"], {
     id: "inform.meter",
@@ -592,18 +593,18 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Feedback / Progress and loading
-  onMain("ProgressBar", ["src/components/ProgressBar.tsx"], {
+  onMain("ProgressBar", ["src/components/preview-runtime/components/progress-bar/progress.tsx"], {
     id: "inform.progress-bar",
     label: "Progress bar",
     racBase: rac("ProgressBar", "Label"),
     disposition: "keep",
   }),
-  onMain("Spinner", ["src/components/Spinner.tsx"], {
+  onMain("Spinner", ["src/components/spinner/spinner.tsx"], {
     id: "inform.spinner",
     label: "Spinner",
-    racBase: none("hand-built", ["ProgressBar"]),
-    disposition: "map-to-rac",
-    notes: ["Maps to an indeterminate react-aria-components ProgressBar."],
+    racBase: none("presentational"),
+    disposition: "keep",
+    notes: ["The stock shadcn@aria spinner: lucide Loader2Icon with role=\"status\" and a default \"Loading\" name, sized by className; the Foundry RAC ProgressBar spinner was removed (R2F-52)."],
   }),
   onMain("Skeleton", ["src/components/preview-runtime/components/skeleton/skeleton.tsx"], {
     id: "inform.skeleton",
@@ -698,10 +699,8 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
  * with the reason. Every other export of those entries is exactly one leaf.
  */
 export const COMPONENT_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
-  buttonLinkClassName: "Class helper shared by act.button and act.icon-button; not a component.",
-  iconButtonClassName: "Class helper shared by act.button and act.icon-button; not a component.",
-  iconButtonLinkClassName: "Class helper shared by act.button and act.icon-button; not a component.",
-  mergeUiClasses: "Class-merging utility; not a component.",
+  buttonVariants: "Class helper (stock shadcn@aria buttonVariants) for a button look on another element; not a component.",
+  cn: "Class-merging utility (shadcn cn); not a component.",
   COMPONENT_GUIDANCE: "Guidance data for the admin; not a component.",
   COMPONENT_API_FACTS: "Guidance data for the admin; not a component.",
   COMPONENT_COMPARISON: "Guidance data for the admin; not a component.",

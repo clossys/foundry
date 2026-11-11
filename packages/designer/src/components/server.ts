@@ -8,9 +8,9 @@
  * fails to import under React's `react-server` condition — a packaging
  * problem, not an architectural one, because several individual components
  * (the stock `Alert`, `Badge`, `Card` and `Skeleton`, and
- * `Icon`, `Meter`, `Spinner`, `StatusMark`, with the hook-free
- * `Meter.server.tsx` and `Spinner.server.tsx` variants of `Meter` and
- * `Spinner`, whose client versions are built on react-aria-components) plus
+ * `Icon`, `Meter`, `StatusMark`, with the hook-free `Meter.server.tsx`
+ * variant of `Meter`, whose client version is built on react-aria-components,
+ * and the stock `Spinner` behind its deferred `runtime/stock-spinner` boundary) plus
  * this package's own `cx` class-merge helper import cleanly under that
  * same condition. This file is that verified-safe subset, published as
  * its own compiled entry (`./dist/components/server.js`) so a React Server
@@ -79,8 +79,8 @@ export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Met
 export { Skeleton } from "./preview-runtime/components/skeleton/skeleton.js";
 export type SkeletonProps = import("react").ComponentProps<typeof import("./preview-runtime/components/skeleton/skeleton.js").Skeleton>;
 
-export { Spinner } from "./Spinner.server.js";
-export type { SpinnerProps, SpinnerSize } from "./Spinner.js";
+export { Spinner } from "../runtime/stock-spinner.js";
+export type SpinnerProps = import("react").ComponentProps<typeof import("./spinner/spinner.js").Spinner>;
 
 export { StatusMark } from "./StatusMark.js";
 export type { StatusMarkProps, StatusMarkTone } from "./StatusMark.js";
@@ -91,12 +91,8 @@ export { cn } from "./_parts/utils/index.js";
 /** The stock shadcn@aria LinkButton behind its deferred boundary: loaded directly where React has createContext, lazily under react-server. */
 export { LinkButton } from "../runtime/stock-link-button.js";
 
-/** Merge token-aware Tailwind class names with last-argument precedence. Pure string logic — no React import at all. */
-export { cx as mergeUiClasses } from "./internal/cx.js";
-
-/** The `Button` and icon-only control looks for a plain `<a>`, with the focus outline put back. Pure string logic — no React import at all. */
-export { buttonLinkClassName, iconButtonClassName, iconButtonLinkClassName, INVERSE_CONTROL_INK } from "./button-classes.js";
-export type { ControlGround, IconButtonClassOptions, IconButtonLinkGround, IconButtonShape, IconButtonSize } from "./button-classes.js";
+/** The inverse-plate ink for a native control drawn with a base look. Pure string logic — no React import at all. */
+export { INVERSE_CONTROL_INK } from "./button-classes.js";
 
 export { Logomark } from "./Logomark.js";
 export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./Logomark.js";

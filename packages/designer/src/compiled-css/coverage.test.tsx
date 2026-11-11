@@ -39,7 +39,6 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Card } from "../components/preview-runtime/components/card/card.js";
 import { Checkbox } from "../components/preview-runtime/components/checkbox/checkbox.js";
-import { Chip } from "../components/Chip.js";
 import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { Meter } from "../components/Meter.js";
 import { Separator } from "../components/preview-runtime/components/separator/separator.js";
@@ -53,7 +52,7 @@ import { AppNavigation } from "../blocks/AppNavigation.js";
 import { RelationGraph } from "../blocks/RelationGraph.js";
 import { FlowCanvas } from "../blocks/FlowCanvas.js";
 import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
-import { Spinner } from "../components/Spinner.js";
+import { Spinner } from "../components/spinner/spinner.js";
 import { StatusMark } from "../components/StatusMark.js";
 import { Switch } from "../components/preview-runtime/components/switch/switch.js";
 import { TextField } from "../components/preview-runtime/components/text-field/text-field.js";
@@ -456,8 +455,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     trees.push(["Avatar sm", render(<Avatar alt="A" size="sm" />)]);
     trees.push(["Avatar md", render(<Avatar alt="A" size="md" />)]);
     trees.push(["Avatar lg", render(<Avatar alt="A" size="lg" />)]);
-    trees.push(["Spinner labeled", render(<Spinner label="Loading" size="md" />)]);
-    trees.push(["Spinner decorative", render(<Spinner size="sm" />)]);
+    trees.push(["Spinner", render(<Spinner />)]);
+    trees.push(["Spinner named", render(<Spinner aria-label="Saving" className="size-6" />)]);
     trees.push(["Checkbox", render(<Checkbox>Select all</Checkbox>)]);
     trees.push(["Checkbox indeterminate", render(<Checkbox isIndeterminate>Select all</Checkbox>)]);
     trees.push(["Switch", render(<Switch>Notifications</Switch>)]);
@@ -478,7 +477,6 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       ),
     ]);
     trees.push(["LinkButton link", render(<Link href="/x" variant="link">Go</Link>)]);
-    trees.push(["Chip", render(<Chip onRemove={() => {}} removeLabel="Remove">Tag</Chip>)]);
     trees.push(["Separator", render(<Separator />)]);
     trees.push(["Skeleton", render(<Skeleton style={{ width: 100, height: 20 }} />)]);
     trees.push(["Alert info", render(<Alert {...ALERT_TONE.info}>Heads up</Alert>)]);

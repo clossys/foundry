@@ -4,7 +4,7 @@
 
 Import the shared records from `@clossys/designer/components`. Import navigation and selection from `@clossys/designer/catalog`. The components barrel remains client-only; charts render through the existing `@clossys/designer/charts` entry point. No new package subpath is introduced.
 
-46 legacy guidance records appear once below. Navigation follows 6 authoritative IA groups and 28 families with canonical leaf IDs. Unregistered legacy guidance appears separately, outside navigation.
+44 legacy guidance records appear once below. Navigation follows 6 authoritative IA groups and 28 families with canonical leaf IDs. Unregistered legacy guidance appears separately, outside navigation.
 
 Stable purpose, content and anatomy are separate from medium-specific implementation. Web cites current source; email, print and video are unassessed. Import safety, server rendering and visual resemblance establish no other medium’s support.
 
@@ -36,7 +36,7 @@ Consumer-owned demonstration coverage is unassessed here. A fixed controlled val
 - Purpose: Carry out one named action.
 - Use when: The reader is ready to submit, confirm or change something.
 - Avoid when: The intent is to travel to a destination rather than perform an action.
-- Alternatives and boundary: Use Link for navigation; IconButton for a compact, clearly named secondary control.
+- Alternatives and boundary: Use Link for navigation; an icon-size Button for a compact, clearly named secondary control.
 - Content: Write a short verb phrase that describes the resulting action.
 - Anatomy: One action label, with an optional subordinate visual cue.
 - Block composition example: In a consumer-owned form block, place a submit Button after the fields.
@@ -60,37 +60,6 @@ Web implementation: `@clossys/designer/components` → `Button`. Source: `src/co
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
 - `--color-action` (transitive): `styles/tokens.css`: `--color-action:`; consumed via `src/components/preview-runtime/components/button/button.tsx`: `bg-(--color-action)`.
-
-##### `act.icon-button` — IconButton
-
-- Purpose: Carry out a compact action represented by a familiar glyph.
-- Use when: Space is constrained and the action can still be named clearly.
-- Avoid when: The control is the primary action of a page or the glyph needs explanation.
-- Alternatives and boundary: Use Button for a visible verb label; use Link for a destination.
-- Content: Supply a concise action name and one glyph with the same meaning.
-- Anatomy: One action glyph and its equivalent accessible name.
-- Block composition example: In a consumer-owned carousel block, use named previous and next IconButtons.
-- Accessibility: The required label names the control; its inner glyph remains decorative.
-- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
-
-| Medium | State | Reason and evidence |
-| --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/IconButton.tsx` |
-| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-
-Web implementation: `@clossys/designer/components` → `IconButton`. Source: `src/components/IconButton.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
-
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `size` — Size | `sm`: sm size within the existing component scale.<br>`md`: md size within the existing component scale. | `md` (`src/components/button-classes.ts`: `size = "md"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/button-classes.ts`: `ICON_SIZE_CLASSES[size]` |
-| `ground` — Surrounding ground | `base`: Page ground.<br>`sunken`: Sunken section ground.<br>`inverse`: Inverse section ground. | `base` (`src/components/button-classes.ts`: `ground = "base"`) | Select the ground the icon control actually occupies. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/button-classes.ts`: `ICON_GROUND_CLASSES[ground]` |
-| `shape` — Control shape | `circle`: Pill-radius control outline.<br>`square`: Control-radius square outline. | `circle` (`src/components/button-classes.ts`: `shape = "circle"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/button-classes.ts`: `ICON_SHAPE_CLASSES[shape]` |
-
-
-Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-alpha-disabled` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-alpha-disabled,`; consumed via `src/components/IconButton.tsx`: `opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined`.
 
 #### Menus
 
@@ -544,7 +513,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Purpose: Attach a compact static category or status label to content.
 - Use when: A short label helps scanning without becoming another interaction.
 - Avoid when: The reader needs to remove the label or perform an action.
-- Alternatives and boundary: Use Chip for a removable label; StatusMark for a lighter labelled state.
+- Alternatives and boundary: Use TagGroup for a removable label; StatusMark for a lighter labelled state.
 - Content: Write the category or state explicitly instead of communicating it through color alone.
 - Anatomy: One compact label enclosed in a small visual treatment.
 - Block composition example: In a consumer-owned result-card block, place Badge beside a release-state title.
@@ -606,7 +575,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Purpose: Render one symbolic glyph with a consistent visual and naming contract.
 - Use when: A compact symbol supports a labelled control or conveys a named concept.
 - Avoid when: The image needs photographic detail or a string-based glyph lookup.
-- Alternatives and boundary: Use Avatar for entity pictures; IconButton for a named glyph action.
+- Alternatives and boundary: Use Avatar for entity pictures; an icon-size Button for a named glyph action.
 - Content: Supply glyph data or inner SVG markup, and decide whether the symbol adds information.
 - Anatomy: One symbolic image and, when informative, an equivalent name.
 - Block composition example: In a consumer-owned benefit block, pair a decorative Icon with a visible benefit heading.
@@ -1011,26 +980,26 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Alternatives and boundary: Use Meter for a measurement; Spinner for compact indeterminate activity.
 - Content: Name the operation and provide truthful completion values or an indeterminate state.
 - Anatomy: An operation label and a progress track with an optional value readout.
-- Block composition example: In a consumer-owned upload-status block, connect ProgressBar to actual transferred work.
+- Block composition example: In a consumer-owned upload-status block, connect the stock Progress to actual transferred work and name it with ProgressLabel.
 - Accessibility: Indeterminate progress must not announce a fabricated numeric completion value.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/ProgressBar.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/progress-bar/progress.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `ProgressBar`. Source: `src/components/ProgressBar.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `ProgressBar`. Source: `src/components/preview-runtime/components/progress-bar/progress.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry exports the stock shadcn@aria Progress under the ProgressBar name.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `isIndeterminate` — Completion knowledge | `false`: Known numeric completion.<br>`true`: Unknown completion; omit the numeric value announcement. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/ProgressBar.tsx`: `<AriaProgressBar {...rest}` |
+| `isIndeterminate` — Completion knowledge | `false`: Known numeric completion.<br>`true`: Unknown completion; omit the numeric value announcement. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/progress-bar/progress.tsx`: `data-slot="progress"` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-surface-sunken` (transitive): `styles/theme-keys.css`: `--color-surface-sunken:`; consumed via `src/components/ProgressBar.tsx`: `bg-surface-sunken`.
+- `--color-surface-sunken` (transitive): `styles/theme-keys.css`: `--color-surface-sunken:`; consumed via `src/components/preview-runtime/components/progress-bar/progress.tsx`: `bg-(--color-surface-sunken)`.
 
 ##### `inform.skeleton` — Skeleton
 
@@ -1066,27 +1035,25 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Avoid when: The reader needs a stable measurement or a detailed loading layout.
 - Alternatives and boundary: Use ProgressBar for known progress; Skeleton for a placeholder matching incoming content.
 - Content: Supply an activity name only when the spinner is the sole loading signal.
-- Anatomy: One small activity mark with an optional textual equivalent.
+- Anatomy: One small spinning lucide Loader2 mark with role status and a default Loading name.
 - Block composition example: In a consumer-owned save-status block, pair Spinner with visible saving text or its own label.
-- Accessibility: An unlabelled Spinner is decorative; label it when no other content announces loading.
+- Accessibility: The stock Spinner announces Loading by default; pass aria-label for a specific activity, or aria-hidden when nearby text already announces it.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Spinner.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/spinner/spinner.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Spinner`. Source: `src/components/Spinner.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Spinner`. Source: `src/components/spinner/spinner.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock Spinner has no options; it is one size-4 mark sized by className.
 
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `size` — Size | `sm`: sm size within the existing component scale.<br>`md`: md size within the existing component scale.<br>`lg`: lg size within the existing component scale. | `md` (`src/components/Spinner.tsx`: `size = "md"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Spinner.server.tsx`: `SIZE_CLASSES[size]` |
+No finite scalar options are represented here; read the real prop type for authored content and data.
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-ink-secondary` (transitive): `styles/theme-keys.css`: `--color-ink-secondary:`; consumed via `src/components/Spinner.tsx`: `text-ink-secondary`.
+- `--animate-spin` (transitive): `styles/compiled.css`: `var(--animate-spin, spin 1s linear infinite)`; consumed via `src/components/spinner/spinner.tsx`: `animate-spin`.
 
 ### Navigation
 
@@ -1158,27 +1125,27 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Alternatives and boundary: Use Link for route navigation; Disclosure for inline supplementary sections.
 - Content: Give each tab a distinct label and match it to the corresponding panel identity.
 - Anatomy: A repeated set of tab labels and one associated panel per label.
-- Block composition example: In a consumer-owned account-details block, compose Tabs.List, multiple Tabs.Tab items and matched Tabs.Panel content.
-- Accessibility: Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout, indicator edge and keyboard navigation.
+- Block composition example: In a consumer-owned account-details block, compose TabsList, multiple TabsTrigger items and matched TabsContent panels.
+- Accessibility: Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout and keyboard navigation.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Tabs.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/tabs/tabs.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Tabs`. Source: `src/components/Tabs.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the list to a row with bottom indicators or a column with start-edge indicators and forwards matching semantics to AriaTabs. A single-option specimen cannot prove panel switching.
+Web implementation: `@clossys/designer/components` → `Tabs`. Source: `src/components/preview-runtime/components/tabs/tabs.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry exports the stock shadcn@aria Tabs, TabsList, TabsTrigger and TabsContent. Orientation stacks the list as a row or a column and forwards matching semantics to the react-aria-components Tabs. A single-option specimen cannot prove panel switching.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Tabs.tsx`: `AriaTabs` |
-| `orientation` — ARIA orientation | `horizontal`: Horizontal list with bottom indicators and keyboard semantics.<br>`vertical`: Vertical list with start-edge indicators and keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | Layout and keyboard semantics follow the supplied orientation. implemented: The component uses orientation for layout and forwards it to the ARIA primitive. Evidence: `src/components/Tabs.tsx`: `<AriaTabs {...rest}` |
+| `isDisabled` — Availability | `false`: Enabled interaction.<br>`true`: Disabled interaction. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/tabs/tabs.tsx`: `<TabsPrimitive` |
+| `orientation` — ARIA orientation | `horizontal`: Horizontal list with matching keyboard semantics.<br>`vertical`: Vertical list with matching keyboard semantics. | peer: No local initializer; any inherited default belongs to the installed peer. | Layout and keyboard semantics follow the supplied orientation. implemented: The component uses orientation for layout and forwards it to the ARIA primitive. Evidence: `src/components/preview-runtime/components/tabs/tabs.tsx`: `data-slot="tabs"` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/Tabs.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
+- `--color-focus-ring` (transitive): `styles/theme-keys.css`: `--color-focus-ring:`; consumed via `src/components/preview-runtime/components/tabs/tabs.tsx`: `focus-visible:outline-(--color-focus-ring)`.
 
 #### Trees
 
@@ -1370,7 +1337,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Alternatives and boundary: Use visible helper text for essential guidance; Popover for interactive or rich content.
 - Content: Write a short description that adds to the trigger name rather than repeating it.
 - Anatomy: A described trigger and its transient explanatory text.
-- Block composition example: In a consumer-owned icon-toolbar block, use Tooltip to supplement an already labelled IconButton.
+- Block composition example: In a consumer-owned icon-toolbar block, use Tooltip to supplement an already labelled icon-size Button.
 - Accessibility: Keep keyboard-focus access and the description association; hover alone cannot provide the information.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
@@ -1422,36 +1389,6 @@ Web implementation: `@clossys/designer/components` → `Textarea`. Source: `src/
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
 - `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/Textarea.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
-
-##### `inform.chip` — Chip
-
-- Purpose: Represent a compact label with an optional removal action.
-- Use when: A selected filter or entity may be removed as a single unit.
-- Avoid when: The label needs only passive status or opens a separate destination.
-- Alternatives and boundary: Use Badge for static status; Link for a navigable label.
-- Content: Name the represented item and, when removable, name exactly which item removal affects.
-- Anatomy: A compact item label plus a conditional remove affordance.
-- Block composition example: In a consumer-owned selected-filters block, remove the corresponding filter when Chip requests removal.
-- Accessibility: Supplying onRemove requires a specific removeLabel in the type contract; disabled removal stays inert.
-- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
-
-| Medium | State | Reason and evidence |
-| --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Chip.tsx` |
-| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-
-Web implementation: `@clossys/designer/components` → `Chip`. Source: `src/components/Chip.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
-
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `isDisabled` — Removal availability | `false`: Removal may be activated when present.<br>`true`: Removal is disabled and the label is dimmed. | `false` (`src/components/Chip.tsx`: `isDisabled = false`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Chip.tsx`: `isDisabled={isDisabled}` |
-
-- requires (type; `onRemove`, `removeLabel`): onRemove requires an accessible removeLabel in the type contract; this is not a runtime validation guard. Evidence: `src/components/Chip.tsx`: `onRemove: () => void;`.
-
-Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/Chip.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
 
 ## Maintain the shared contract
 

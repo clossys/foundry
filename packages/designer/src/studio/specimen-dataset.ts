@@ -1,12 +1,12 @@
+import type { ComponentProps } from "react";
 import { CalendarDate } from "@internationalized/date";
-import type { AlertProps, AvatarProps, SkeletonProps } from "../components/index.js";
+import type { AlertProps, AvatarProps, SkeletonProps, SpinnerProps } from "../components/index.js";
 import { ALERT_TONE, SKELETON_SHAPE } from "../components/surface-tones.js";
 import type { StockComboboxOption } from "../blocks/stock-combobox.js";
 import type { LogomarkProps } from "../components/Logomark.js";
 import type { MeterProps } from "../components/Meter.js";
-import type { ProgressBarProps } from "../components/ProgressBar.js";
+import type { Progress as StockProgress } from "../components/preview-runtime/components/progress-bar/progress.js";
 import type { StockSelectOption } from "../blocks/stock-select.js";
-import type { SpinnerProps } from "../components/Spinner.js";
 import type { StatusMarkTone } from "../components/StatusMark.js";
 import type { IconNode } from "../icons/types.js";
 import type { StillBackdropArt } from "../backdrop/consumer-art.js";
@@ -688,10 +688,10 @@ export const specimenDataset = {
   field: { label: "Project name", description: "Shown on the dashboard." },
   numberField: { label: "Quantity", defaultValue: int(2, 8), minValue: 0, maxValue: 10, incrementLabel: "Increase quantity", decrementLabel: "Decrease quantity" },
   slider: { label: "Volume", defaultValue: int(20, 80) },
-  progress: { label: "Upload progress", value: int(30, 90) } satisfies ProgressBarProps,
+  progress: { label: "Upload progress", value: int(30, 90) } satisfies { label: string } & Pick<ComponentProps<typeof StockProgress>, "value">,
   meter: { label: "Storage used", value: 3, scaleMax: 5, valueText: "3 of 5 GB", tone: "info" } satisfies Partial<MeterProps>,
   resize: { label: "Resize panel", min: 160, max: 480, value: 280, resetValue: 280 },
-  spinner: { label: "Loading orders" } satisfies SpinnerProps,
+  spinner: { "aria-label": "Loading orders" } satisfies SpinnerProps,
   skeleton: { className: SKELETON_SHAPE.text, role: "status", "aria-busy": true, "aria-label": "Loading order" } satisfies SkeletonProps,
   separator: { orientation: "horizontal" as const },
   semantic: { as: "p" as const },

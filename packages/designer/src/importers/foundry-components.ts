@@ -62,7 +62,7 @@ export function importFoundryComponents(input: FoundryComponentImportInput = {})
     }
     const supported = sorted(Object.keys(propMap));
     const missing = sorted(members.filter(member => !supported.includes(member)));
-    // Inventory includes alternate member-dispatched exports (IconButton, Textarea, Brandmark, toast).
+    // Inventory includes alternate member-dispatched exports (Textarea, Brandmark, toast).
     if (input.exports) {
       const pointers = [`./${mapping.subpath}#${mapping.export}`, ...Object.values(propMap)];
       for (const pointer of pointers) {

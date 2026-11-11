@@ -48,7 +48,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ContentSection.tsx",
-            "sha256": "cb3260f31ea59d024f7ac98d6fddcd8af510bd1e26c0e0d24a24c257a22a12d3"
+            "sha256": "496f9ba933865b95b8fa60cbc64c5d78966439db9b1d65989c73cbe5696cf282"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -60,7 +60,7 @@
           },
           {
             "path": "packages/designer/src/blocks/SectionIntro.tsx",
-            "sha256": "5abb7ce8e5f7e13607b2065acbcb8048d7879e24a0d1f6b33fc4e5aafd6c2664"
+            "sha256": "980ed8a20b0fc3ceb248169e2509bfd56e7a112f5cf2dbfc67c8d13dfcad170f"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

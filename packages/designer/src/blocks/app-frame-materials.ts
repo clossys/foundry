@@ -49,7 +49,7 @@ export const APP_FRAME_MATERIALS = [
     dependencies: [
       { exportName: "Dialog", source: "src/components/preview-runtime/components/dialog/dialog.tsx" },
       { exportName: "SearchField", source: "src/components/SearchField.tsx" },
-      { exportName: "IconButton", source: "src/components/IconButton.tsx" },
+      { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" },
     ],
     configs: [],
     authoredInputs: ["heading", "searchLabel", "closeLabel", "emptyMessage", "groups", "isOpen", "onOpenChange", "query", "onQueryChange", "filter", "dir", "resultCountMessage"],

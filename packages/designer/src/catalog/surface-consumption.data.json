@@ -1117,7 +1117,7 @@
         },
         {
           "path": "packages/designer/src/components/button-classes.ts",
-          "sha256": "c3665729b5bcd613fcfb36ff68eaa2f8607e8efe1fc74e5f8a0bc9f47c1825ab"
+          "sha256": "cb78cb551dbe87b71eaaa8e8766026f13580da668fd4cc87b597fea2e951d887"
         },
         {
           "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
@@ -2258,7 +2258,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ContentSection.tsx",
-          "sha256": "cb3260f31ea59d024f7ac98d6fddcd8af510bd1e26c0e0d24a24c257a22a12d3"
+          "sha256": "496f9ba933865b95b8fa60cbc64c5d78966439db9b1d65989c73cbe5696cf282"
         },
         {
           "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -2270,7 +2270,7 @@
         },
         {
           "path": "packages/designer/src/blocks/SectionIntro.tsx",
-          "sha256": "5abb7ce8e5f7e13607b2065acbcb8048d7879e24a0d1f6b33fc4e5aafd6c2664"
+          "sha256": "980ed8a20b0fc3ceb248169e2509bfd56e7a112f5cf2dbfc67c8d13dfcad170f"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3274,7 +3274,7 @@
         },
         {
           "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
-          "sha256": "6af51438fa42b3520400f7a24aee540f7a0145c2e36a73025c28868e732ae73f"
+          "sha256": "003f4e26d28dd54cda9ed1098614f840a3219a7a0a79384ab88e0fb6c5b01bd7"
         },
         {
           "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
@@ -4695,7 +4695,7 @@
         },
         {
           "path": "packages/designer/src/blocks/Testimonial.tsx",
-          "sha256": "4df4f8c75a8ae09244140e63597345efd7e6be2b187e0daf6a3a328d9fe837cd"
+          "sha256": "26fdf7117bf1f3b4f9a614a63f6f137eed1dd93259e896bc290d827ddb62bc83"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

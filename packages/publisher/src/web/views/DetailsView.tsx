@@ -1,7 +1,7 @@
 "use client";
 
 import type { HTMLAttributes, ReactNode } from "react";
-import { ALERT_TONE, Alert, SKELETON_SHAPE, Skeleton, Tabs } from "@clossys/designer/components";
+import { ALERT_TONE, Alert, SKELETON_SHAPE, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from "@clossys/designer/components";
 import type { AlertProps } from "@clossys/designer/components";
 import { cn } from "@clossys/designer/components/server";
 import { DetailView, EmptyState, Panel, RecordLedger, SectionHeader, Stat, StatusList } from "@clossys/designer/blocks";
@@ -143,8 +143,8 @@ export function DetailsView({ empty, layout = "main-aside", banner, sections, ta
       {banner}
       {tabs === undefined ? sectionLayout(sections!, empty, layout) : (
         <Tabs selectedKey={tab} onSelectionChange={key => onTabChange!(String(key))}>
-          <Tabs.List aria-label={tabsLabel}>{tabs.map(entry => <Tabs.Tab key={entry.id} id={entry.id}>{entry.label}</Tabs.Tab>)}</Tabs.List>
-          {tabs.map(entry => <Tabs.Panel key={entry.id} id={entry.id}>{sectionLayout(entry.sections, empty, layout)}</Tabs.Panel>)}
+          <TabsList aria-label={tabsLabel}>{tabs.map(entry => <TabsTrigger key={entry.id} id={entry.id}>{entry.label}</TabsTrigger>)}</TabsList>
+          {tabs.map(entry => <TabsContent key={entry.id} id={entry.id}>{sectionLayout(entry.sections, empty, layout)}</TabsContent>)}
         </Tabs>
       )}
     </div>

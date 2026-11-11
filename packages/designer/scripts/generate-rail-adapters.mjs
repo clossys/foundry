@@ -53,7 +53,7 @@ function ${name}(props: { ${type}; class?: ClassValue; className?: ClassValue } 
 }`;
 }
 
-export const utilitySource = `import { mergeUiClasses as cx } from "${packageIdentity.name}/components"
+export const utilitySource = `import { cn as cx } from "${packageIdentity.name}/components"
 import type { ClassValue, CopyResolver, CopyRef } from "./types"
 export { type ClassValue, type VariantProps, type CopyResolver } from "./types"
 export { RAIL_COPY_REFS } from "./copy"
@@ -172,7 +172,7 @@ export function generateRailAdapters() {
     row.slots = [...new Set(owners.get(file.item))].sort();
     if (!row.slots.length || row.slots.some(slot => !slots.has(slot))) throw new Error(`Unregistered default owner: ${file.item}.${row.function}.${row.prop}`);
   }
-  const host = [{ file: "components/_parts/rail-utils/index.ts", consumerImport: `import { mergeUiClasses as cx } from "${packageIdentity.name}/components"`, packageImport: 'import { cx } from "../../internal/cx"', source: "components/internal/cx.ts", sourceSha256: hash(read("src/components/internal/cx.ts")), dependency: { name: packageIdentity.name, version: packageIdentity.version, license: packageIdentity.license } }];
+  const host = [{ file: "components/_parts/rail-utils/index.ts", consumerImport: `import { cn as cx } from "${packageIdentity.name}/components"`, packageImport: 'import { cn as cx } from "../utils/index"', source: "components/_parts/utils/index.ts", sourceSha256: hash(read("src/components/_parts/utils/index.ts")), dependency: { name: packageIdentity.name, version: packageIdentity.version, license: packageIdentity.license } }];
   const refs = `export const RAIL_COPY_REFS = ${JSON.stringify(Object.fromEntries(copy.map(row => [row.key, row.ref])), null, 2)} as const\n`;
   return { version: 1, upstreamCommit: input.commit, upstreamDataSha256: hash(read("src/importers/vendor/shadcn-aria-rail.data.json")), registeredSlots: leaves.map(leaf => `components.${leaf}`), copy, files, host, utility: utilitySource, copySource: refs, utilityTypes: 'interface CopyRef { readonly id: string; readonly locale?: string; readonly values?: Readonly<Record<string, string | number | boolean>> }\ntype CopyResolver = (ref: CopyRef) => { readonly ref: CopyRef; readonly text: string } | undefined\ntype ClassValue = string | number | boolean | null | undefined | object | ClassValue[]\ntype VariantProps<T extends (...args: any[]) => unknown> = Omit<NonNullable<Parameters<T>[0]>, "class" | "className">\nexport { type CopyRef, type CopyResolver, type ClassValue, type VariantProps }\n' };
 }

@@ -70,7 +70,7 @@
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
-            "sha256": "6af51438fa42b3520400f7a24aee540f7a0145c2e36a73025c28868e732ae73f"
+            "sha256": "003f4e26d28dd54cda9ed1098614f840a3219a7a0a79384ab88e0fb6c5b01bd7"
           },
           {
             "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",

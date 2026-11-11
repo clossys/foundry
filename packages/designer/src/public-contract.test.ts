@@ -467,6 +467,7 @@ describe("public UI contract", () => {
     // G20 (planner decision): the rich-text editor (tiptap), charts (recharts), clsx and @internationalized/date
     // are optional peers, so a token-only install pulls none of them; a consumer of RichText, the charts or the
     // date components installs them. class-variance-authority still depends on clsx, so clsx can arrive transitively.
+    // planner:r2f-52: lucide-react (ISC, the shadcn default icon set) joins as an optional peer for the stock Spinner and Icon.
     expect(packageJson.dependencies).toEqual({
       "class-variance-authority": "0.7.1",
       "css-tree": "3.2.1",
@@ -475,7 +476,7 @@ describe("public UI contract", () => {
 
     const optionalPeers = [
       "@internationalized/date", "@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit",
-      "clsx", "react", "react-dom", "react-aria-components", "recharts", "tailwind-merge", "tailwindcss",
+      "clsx", "lucide-react", "react", "react-dom", "react-aria-components", "recharts", "tailwind-merge", "tailwindcss",
     ];
     for (const dependency of optionalPeers) {
       expect(packageJson.peerDependencies[dependency], dependency).toBeDefined();

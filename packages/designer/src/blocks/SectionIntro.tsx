@@ -36,7 +36,7 @@ export interface SectionIntroProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   description?: ReactNode;
   /**
    * Calls to action under the description, typically button-styled links
-   * (`buttonLinkClassName`). The row carries the ground's primary ink, so an
+   * (the stock `LinkButton`). The row carries the ground's primary ink, so an
    * `outline` button (which takes the surrounding ink) reads on every ground.
    */
   actions?: ReactNode;

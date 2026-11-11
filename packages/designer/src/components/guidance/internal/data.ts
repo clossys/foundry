@@ -73,7 +73,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "purpose": "Carry out one named action.",
   "useWhen": "The reader is ready to submit, confirm or change something.",
   "avoidWhen": "The intent is to travel to a destination rather than perform an action.",
-  "alternatives": "Use Link for navigation; IconButton for a compact, clearly named secondary control.",
+  "alternatives": "Use Link for navigation; an icon-size Button for a compact, clearly named secondary control.",
   "content": "Write a short verb phrase that describes the resulting action.",
   "anatomy": "One action label, with an optional subordinate visual cue.",
   "composition": "In a consumer-owned form block, place a submit Button after the fields.",
@@ -167,89 +167,6 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   ],
   "constraints": []
 }, "src/components/preview-runtime/components/button/button.tsx"),
-  "act.icon-button": entry(
-{
-  "purpose": "Carry out a compact action represented by a familiar glyph.",
-  "useWhen": "Space is constrained and the action can still be named clearly.",
-  "avoidWhen": "The control is the primary action of a page or the glyph needs explanation.",
-  "alternatives": "Use Button for a visible verb label; use Link for a destination.",
-  "content": "Supply a concise action name and one glyph with the same meaning.",
-  "anatomy": "One action glyph and its equivalent accessible name.",
-  "composition": "In a consumer-owned carousel block, use named previous and next IconButtons.",
-  "accessibility": "The required label names the control; its inner glyph remains decorative."
-},
-{
-  "exportName": "IconButton",
-  "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
-  "options": [
-    {
-      "prop": "size",
-      "label": "Size",
-      "purpose": "Size selects the existing IconButton size behavior.",
-      "values": [
-        {
-          "value": "sm",
-          "purpose": "sm size within the existing component scale."
-        },
-        {
-          "value": "md",
-          "purpose": "md size within the existing component scale."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    },
-    {
-      "prop": "ground",
-      "label": "Surrounding ground",
-      "purpose": "Surrounding ground selects the existing IconButton ground behavior.",
-      "values": [
-        {
-          "value": "base",
-          "purpose": "Page ground."
-        },
-        {
-          "value": "sunken",
-          "purpose": "Sunken section ground."
-        },
-        {
-          "value": "inverse",
-          "purpose": "Inverse section ground."
-        }
-      ],
-      "applicability": "Select the ground the icon control actually occupies.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    },
-    {
-      "prop": "shape",
-      "label": "Control shape",
-      "purpose": "Control shape selects the existing IconButton shape behavior.",
-      "values": [
-        {
-          "value": "circle",
-          "purpose": "Pill-radius control outline."
-        },
-        {
-          "value": "square",
-          "purpose": "Control-radius square outline."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
-  "constraints": []
-}, "src/components/IconButton.tsx"),
   "act.link": entry(
 {
   "purpose": "Take the reader to a related destination.",
@@ -1035,7 +952,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "purpose": "Attach a compact static category or status label to content.",
   "useWhen": "A short label helps scanning without becoming another interaction.",
   "avoidWhen": "The reader needs to remove the label or perform an action.",
-  "alternatives": "Use Chip for a removable label; StatusMark for a lighter labelled state.",
+  "alternatives": "Use TagGroup for a removable label; StatusMark for a lighter labelled state.",
   "content": "Write the category or state explicitly instead of communicating it through color alone.",
   "anatomy": "One compact label enclosed in a small visual treatment.",
   "composition": "In a consumer-owned result-card block, place Badge beside a release-state title.",
@@ -1137,66 +1054,6 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ]
 }, "src/components/preview-runtime/components/banner/alert.tsx"),
-  "inform.chip": entry(
-{
-  "purpose": "Represent a compact label with an optional removal action.",
-  "useWhen": "A selected filter or entity may be removed as a single unit.",
-  "avoidWhen": "The label needs only passive status or opens a separate destination.",
-  "alternatives": "Use Badge for static status; Link for a navigable label.",
-  "content": "Name the represented item and, when removable, name exactly which item removal affects.",
-  "anatomy": "A compact item label plus a conditional remove affordance.",
-  "composition": "In a consumer-owned selected-filters block, remove the corresponding filter when Chip requests removal.",
-  "accessibility": "Supplying onRemove requires a specific removeLabel in the type contract; disabled removal stays inert."
-},
-{
-  "exportName": "Chip",
-  "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
-  "options": [
-    {
-      "prop": "isDisabled",
-      "label": "Removal availability",
-      "purpose": "Removal availability selects the existing Chip isDisabled behavior.",
-      "values": [
-        {
-          "value": false,
-          "purpose": "Removal may be activated when present."
-        },
-        {
-          "value": true,
-          "purpose": "Removal is disabled and the label is dimmed."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
-  "constraints": [
-    {
-      "kind": "requires",
-      "props": [
-        "onRemove",
-        "removeLabel"
-      ],
-      "reason": "onRemove requires an accessible removeLabel in the type contract; this is not a runtime validation guard.",
-      "enforcement": "type",
-      "evidence": {
-        "source": "src/components/Chip.tsx",
-        "evidence": "onRemove: () => void;"
-      },
-      "when": {
-        "prop": "onRemove",
-        "present": true
-      },
-      "requires": [
-        "removeLabel"
-      ]
-    }
-  ]
-}, "src/components/Chip.tsx"),
   "inform.status-mark": entry(
 {
   "purpose": "Name one data state with a small distinctive mark.",
@@ -1395,18 +1252,18 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use Meter for a measurement; Spinner for compact indeterminate activity.",
   "content": "Name the operation and provide truthful completion values or an indeterminate state.",
   "anatomy": "An operation label and a progress track with an optional value readout.",
-  "composition": "In a consumer-owned upload-status block, connect ProgressBar to actual transferred work.",
+  "composition": "In a consumer-owned upload-status block, connect the stock Progress to actual transferred work and name it with ProgressLabel.",
   "accessibility": "Indeterminate progress must not announce a fabricated numeric completion value."
 },
 {
   "exportName": "ProgressBar",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry exports the stock shadcn@aria Progress under the ProgressBar name.",
   "options": [
     {
       "prop": "isIndeterminate",
       "label": "Completion knowledge",
-      "purpose": "Completion knowledge selects the existing ProgressBar isIndeterminate behavior.",
+      "purpose": "Completion knowledge selects the stock Progress isIndeterminate behavior.",
       "values": [
         {
           "value": false,
@@ -1425,7 +1282,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/ProgressBar.tsx"),
+}, "src/components/preview-runtime/components/progress-bar/progress.tsx"),
   "inform.spinner": entry(
 {
   "purpose": "Signal compact indeterminate activity.",
@@ -1433,42 +1290,17 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "avoidWhen": "The reader needs a stable measurement or a detailed loading layout.",
   "alternatives": "Use ProgressBar for known progress; Skeleton for a placeholder matching incoming content.",
   "content": "Supply an activity name only when the spinner is the sole loading signal.",
-  "anatomy": "One small activity mark with an optional textual equivalent.",
+  "anatomy": "One small spinning lucide Loader2 mark with role status and a default Loading name.",
   "composition": "In a consumer-owned save-status block, pair Spinner with visible saving text or its own label.",
-  "accessibility": "An unlabelled Spinner is decorative; label it when no other content announces loading."
+  "accessibility": "The stock Spinner announces Loading by default; pass aria-label for a specific activity, or aria-hidden when nearby text already announces it."
 },
 {
   "exportName": "Spinner",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
-  "options": [
-    {
-      "prop": "size",
-      "label": "Size",
-      "purpose": "Size selects the existing Spinner size behavior.",
-      "values": [
-        {
-          "value": "sm",
-          "purpose": "sm size within the existing component scale."
-        },
-        {
-          "value": "md",
-          "purpose": "md size within the existing component scale."
-        },
-        {
-          "value": "lg",
-          "purpose": "lg size within the existing component scale."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock Spinner has no options; it is one size-4 mark sized by className.",
+  "options": [],
   "constraints": []
-}, "src/components/Spinner.tsx"),
+}, "src/components/spinner/spinner.tsx"),
   "inform.skeleton": entry(
 {
   "purpose": "Reserve the shape of content that is still loading.",
@@ -1698,7 +1530,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "purpose": "Render one symbolic glyph with a consistent visual and naming contract.",
   "useWhen": "A compact symbol supports a labelled control or conveys a named concept.",
   "avoidWhen": "The image needs photographic detail or a string-based glyph lookup.",
-  "alternatives": "Use Avatar for entity pictures; IconButton for a named glyph action.",
+  "alternatives": "Use Avatar for entity pictures; an icon-size Button for a named glyph action.",
   "content": "Supply glyph data or inner SVG markup, and decide whether the symbol adds information.",
   "anatomy": "One symbolic image and, when informative, an equivalent name.",
   "composition": "In a consumer-owned benefit block, pair a decorative Icon with a visible benefit heading.",
@@ -1867,7 +1699,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use visible helper text for essential guidance; Popover for interactive or rich content.",
   "content": "Write a short description that adds to the trigger name rather than repeating it.",
   "anatomy": "A described trigger and its transient explanatory text.",
-  "composition": "In a consumer-owned icon-toolbar block, use Tooltip to supplement an already labelled IconButton.",
+  "composition": "In a consumer-owned icon-toolbar block, use Tooltip to supplement an already labelled icon-size Button.",
   "accessibility": "Keep keyboard-focus access and the description association; hover alone cannot provide the information."
 },
 {
@@ -1903,18 +1735,18 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use Link for route navigation; Disclosure for inline supplementary sections.",
   "content": "Give each tab a distinct label and match it to the corresponding panel identity.",
   "anatomy": "A repeated set of tab labels and one associated panel per label.",
-  "composition": "In a consumer-owned account-details block, compose Tabs.List, multiple Tabs.Tab items and matched Tabs.Panel content.",
-  "accessibility": "Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout, indicator edge and keyboard navigation."
+  "composition": "In a consumer-owned account-details block, compose TabsList, multiple TabsTrigger items and matched TabsContent panels.",
+  "accessibility": "Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout and keyboard navigation."
 },
 {
   "exportName": "Tabs",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the list to a row with bottom indicators or a column with start-edge indicators and forwards matching semantics to AriaTabs. A single-option specimen cannot prove panel switching.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry exports the stock shadcn@aria Tabs, TabsList, TabsTrigger and TabsContent. Orientation stacks the list as a row or a column and forwards matching semantics to the react-aria-components Tabs. A single-option specimen cannot prove panel switching.",
   "options": [
     {
       "prop": "isDisabled",
       "label": "Availability",
-      "purpose": "Availability selects the existing Tabs isDisabled behavior.",
+      "purpose": "Availability selects the stock Tabs isDisabled behavior.",
       "values": [
         {
           "value": false,
@@ -1934,15 +1766,15 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     {
       "prop": "orientation",
       "label": "ARIA orientation",
-      "purpose": "Orientation aligns the list layout and indicator edge with keyboard semantics.",
+      "purpose": "Orientation aligns the list layout with keyboard semantics.",
       "values": [
         {
           "value": "horizontal",
-          "purpose": "Horizontal list with bottom indicators and keyboard semantics."
+          "purpose": "Horizontal list with matching keyboard semantics."
         },
         {
           "value": "vertical",
-          "purpose": "Vertical list with start-edge indicators and keyboard semantics."
+          "purpose": "Vertical list with matching keyboard semantics."
         }
       ],
       "applicability": "Layout and keyboard semantics follow the supplied orientation.",
@@ -1953,7 +1785,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Tabs.tsx"),
+}, "src/components/preview-runtime/components/tabs/tabs.tsx"),
   "depict.bar-chart": entry(
 {
   "purpose": "Compare magnitudes across discrete categories.",
@@ -2451,82 +2283,6 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
             {
               "source": "src/components/preview-runtime/components/button/button.tsx",
               "evidence": "bg-(--color-action)"
-            }
-          ]
-        }
-      ]
-    }
-  },
-  "act.icon-button": {
-    "exportName": "IconButton",
-    "source": "src/components/IconButton.tsx",
-    "options": [
-      {
-        "prop": "size",
-        "values": [
-          "sm",
-          "md"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "md",
-          "source": "src/components/button-classes.ts",
-          "evidence": "size = \"md\""
-        },
-        "forwarding": {
-          "source": "src/components/button-classes.ts",
-          "evidence": "ICON_SIZE_CLASSES[size]"
-        }
-      },
-      {
-        "prop": "ground",
-        "values": [
-          "base",
-          "sunken",
-          "inverse"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "base",
-          "source": "src/components/button-classes.ts",
-          "evidence": "ground = \"base\""
-        },
-        "forwarding": {
-          "source": "src/components/button-classes.ts",
-          "evidence": "ICON_GROUND_CLASSES[ground]"
-        }
-      },
-      {
-        "prop": "shape",
-        "values": [
-          "circle",
-          "square"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "circle",
-          "source": "src/components/button-classes.ts",
-          "evidence": "shape = \"circle\""
-        },
-        "forwarding": {
-          "source": "src/components/button-classes.ts",
-          "evidence": "ICON_SHAPE_CLASSES[shape]"
-        }
-      }
-    ],
-    "tokens": {
-      "coverage": "partial",
-      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
-      "dependencies": [
-        {
-          "property": "--ui-alpha-disabled",
-          "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-alpha-disabled,",
-          "via": [
-            {
-              "source": "src/components/IconButton.tsx",
-              "evidence": "opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined"
             }
           ]
         }
@@ -3323,47 +3079,6 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       ]
     }
   },
-  "inform.chip": {
-    "exportName": "Chip",
-    "source": "src/components/Chip.tsx",
-    "options": [
-      {
-        "prop": "isDisabled",
-        "values": [
-          false,
-          true
-        ],
-        "default": {
-          "kind": "value",
-          "value": false,
-          "source": "src/components/Chip.tsx",
-          "evidence": "isDisabled = false"
-        },
-        "forwarding": {
-          "source": "src/components/Chip.tsx",
-          "evidence": "isDisabled={isDisabled}"
-        }
-      }
-    ],
-    "tokens": {
-      "coverage": "partial",
-      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
-      "dependencies": [
-        {
-          "property": "--ui-ring-focus",
-          "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
-          "via": [
-            {
-              "source": "src/components/Chip.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
-            }
-          ]
-        }
-      ]
-    }
-  },
   "inform.status-mark": {
     "exportName": "StatusMark",
     "source": "src/components/StatusMark.tsx",
@@ -3485,7 +3200,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "inform.progress-bar": {
     "exportName": "ProgressBar",
-    "source": "src/components/ProgressBar.tsx",
+    "source": "src/components/preview-runtime/components/progress-bar/progress.tsx",
     "options": [
       {
         "prop": "isIndeterminate",
@@ -3498,8 +3213,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/ProgressBar.tsx",
-          "evidence": "<AriaProgressBar {...rest}"
+          "source": "src/components/preview-runtime/components/progress-bar/progress.tsx",
+          "evidence": "data-slot=\"progress\""
         }
       }
     ],
@@ -3514,8 +3229,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "evidence": "--color-surface-sunken:",
           "via": [
             {
-              "source": "src/components/ProgressBar.tsx",
-              "evidence": "bg-surface-sunken"
+              "source": "src/components/preview-runtime/components/progress-bar/progress.tsx",
+              "evidence": "bg-(--color-surface-sunken)"
             }
           ]
         }
@@ -3524,40 +3239,21 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "inform.spinner": {
     "exportName": "Spinner",
-    "source": "src/components/Spinner.tsx",
-    "options": [
-      {
-        "prop": "size",
-        "values": [
-          "sm",
-          "md",
-          "lg"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "md",
-          "source": "src/components/Spinner.tsx",
-          "evidence": "size = \"md\""
-        },
-        "forwarding": {
-          "source": "src/components/Spinner.server.tsx",
-          "evidence": "SIZE_CLASSES[size]"
-        }
-      }
-    ],
+    "source": "src/components/spinner/spinner.tsx",
+    "options": [],
     "tokens": {
       "coverage": "partial",
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-ink-secondary",
+          "property": "--animate-spin",
           "kind": "transitive",
-          "source": "styles/theme-keys.css",
-          "evidence": "--color-ink-secondary:",
+          "source": "styles/compiled.css",
+          "evidence": "var(--animate-spin, spin 1s linear infinite)",
           "via": [
             {
-              "source": "src/components/Spinner.tsx",
-              "evidence": "text-ink-secondary"
+              "source": "src/components/spinner/spinner.tsx",
+              "evidence": "animate-spin"
             }
           ]
         }
@@ -3913,7 +3609,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "reveal.tabs": {
     "exportName": "Tabs",
-    "source": "src/components/Tabs.tsx",
+    "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
     "options": [
       {
         "prop": "isDisabled",
@@ -3926,8 +3622,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Tabs.tsx",
-          "evidence": "AriaTabs"
+          "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+          "evidence": "<TabsPrimitive"
         }
       },
       {
@@ -3941,8 +3637,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Tabs.tsx",
-          "evidence": "<AriaTabs {...rest}"
+          "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+          "evidence": "data-slot=\"tabs\""
         }
       }
     ],
@@ -3951,14 +3647,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-focus-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
           "via": [
             {
-              "source": "src/components/Tabs.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
             }
           ]
         }
@@ -4365,7 +4061,6 @@ function comparison(id: string, column: string, row?: string): ComponentComparis
 /** Data only: absence means no represented finite comparison; this renders nothing. */
 export const COMPONENT_COMPARISON = Object.freeze({
   "act.button": comparison("act.button", "variant"),
-  "act.icon-button": comparison("act.icon-button", "shape", "size"),
   "act.link": comparison("act.link", "variant"),
   "enter.text-field": comparison("enter.text-field", "isInvalid", "isDisabled"),
   "enter.textarea": comparison("enter.textarea", "isInvalid", "isDisabled"),
@@ -4381,11 +4076,9 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "enter.resize-handle": comparison("enter.resize-handle", "orientation", "dir"),
   "inform.badge": comparison("inform.badge", "variant"),
   "inform.banner": comparison("inform.banner", "variant"),
-  "inform.chip": comparison("inform.chip", "isDisabled"),
   "inform.status-mark": comparison("inform.status-mark", "tone"),
   "inform.meter": comparison("inform.meter", "tone", "emphasis"),
   "inform.progress-bar": comparison("inform.progress-bar", "isIndeterminate"),
-  "inform.spinner": comparison("inform.spinner", "size"),
   "group.card": comparison("group.card", "size"),
   "group.table": comparison("group.table", "selectionMode"),
   "group.separator": comparison("group.separator", "orientation"),

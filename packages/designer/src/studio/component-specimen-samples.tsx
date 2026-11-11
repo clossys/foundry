@@ -106,7 +106,7 @@ function collection(key: string, Component: unknown, exports: Namespace): Compon
       return Item && Content && Link && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label} href={item.href}><Content><Link variant="link">{item.label}</Link></Content></Item>) };
     }
     case "./components#Tabs": {
-      const List = part(Component, "List"), Tab = part(Component, "Tab"), Panel = part(Component, "Panel");
+      const List = part(exports, "TabsList"), Tab = part(exports, "TabsTrigger"), Panel = part(exports, "TabsContent");
       return List && Tab && Panel && { props: {}, children: [
         <List key="list" aria-label={c[key].label}>{c[key].items.map(item => <Tab key={item.id} id={item.id}>{item.label}</Tab>)}</List>,
         ...c[key].items.map(item => <Panel key={item.id} id={item.id}>{item.content}</Panel>),

@@ -11,13 +11,12 @@ import { Button } from "./preview-runtime/components/button/button.js";
 import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { Switch } from "./preview-runtime/components/switch/switch.js";
 import { StockSelect as Select } from "../blocks/stock-select.js";
-import { Chip } from "./Chip.js";
 import { SearchField } from "./SearchField.js";
 import { StatusMark } from "./StatusMark.js";
 import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
 const render = hostedRender(renderBare);
 
-const consumers = ["Select", "ComboBox", "Chip", "SearchField", "Checkbox", "StatusMark", "Switch", "Button"];
+const consumers = ["Select", "ComboBox", "SearchField", "Checkbox", "StatusMark", "Switch", "Button"];
 const stock: Record<string, string> = { Checkbox: "preview-runtime/components/checkbox/checkbox", Select: "../blocks/stock-select", ComboBox: "../blocks/stock-combobox", Switch: "preview-runtime/components/switch/switch" };
 const source = (name: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), `${stock[name] ?? name}.tsx`), "utf8");
 // Consumer files may render Icon, but glyph artwork belongs in data bindings.
@@ -39,10 +38,9 @@ describe("control glyph bindings", () => {
   it("replaces each interactive affordance through asset bindings", () => {
     const { container } = render(<GlyphProvider glyphs={bindings} indeterminateGlyph={replacement}>
       <Button variant="quiet">Continue</Button>
-      <Chip onRemove={() => {}} removeLabel="Remove tag">Tag</Chip>
       <SearchField label="Query" defaultValue="Find" />
     </GlyphProvider>);
-    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(2);
+    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(1);
     for (const svg of document.querySelectorAll("svg")) expect(svg).toHaveAttribute("aria-hidden", "true");
   });
   it("inherits nested bindings, preserves explicit quiet-button overrides and null", () => {

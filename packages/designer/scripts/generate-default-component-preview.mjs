@@ -47,7 +47,7 @@ const plan = planComponentDefaults({ catalog, slots: registry.slots.map(slot => 
 const unchosen = plan.rows.filter(row => row.status === "not-chosen");
 if (plan.findings.length) throw new Error(`Default profile cannot resolve: ${JSON.stringify(plan.findings)}`);
 const adopted = applyDecisions({ values, components: catalog }, { source, adoptedAt, values: { fills: [] }, components: { fills: [], files: [] } }, plan.decisions, { bundles: bundles.sourceBundles });
-const packageNames = new Set(["@clossys/designer/components", "@clossys/designer/charts", "@clossys/designer/shell", "react-aria-components", "react", "class-variance-authority", "clsx", "tailwind-merge"]);
+const packageNames = new Set(["@clossys/designer/components", "@clossys/designer/charts", "@clossys/designer/shell", "react-aria-components", "react", "class-variance-authority", "clsx", "tailwind-merge", "lucide-react"]);
 const packageExports = {};
 for (const name of [...packageNames].sort()) {
   const module = name.startsWith("@clossys/designer/") ? await import(`../dist/${name.slice("@clossys/designer/".length)}/index.js`) : await import(name);

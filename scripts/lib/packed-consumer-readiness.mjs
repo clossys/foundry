@@ -260,6 +260,22 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/designer/studio/state": "rejects",
       ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
     },
+    // R2F-52: lucide-react is the stock shadcn icon set behind Icon, Spinner and
+    // the stock button slots; optional peer imported by the same client entries
+    // as clsx, so the row mirrors clsx. Not yet runtime-measured (2026-11-10 runs
+    // hit load timeouts / a full build budget); the integration wave re-measures
+    // with `npm run check:packed-consumer -- --package @clossys/designer`.
+    "lucide-react": {
+      ...omissionRow(designerExports, designerClientExports),
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("rejects", "imports"),
+      "@clossys/designer/studio": "rejects",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "rejects",
+      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
+    },
     "recharts": {
       ...omissionRow(designerExports),
       "@clossys/designer/catalog": "imports",

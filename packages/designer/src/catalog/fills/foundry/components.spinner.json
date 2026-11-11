@@ -58,14 +58,13 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "size.lg": "./components#Spinner.size=lg",
-        "size.md": "./components#Spinner.size=md",
-        "size.sm": "./components#Spinner.size=sm"
+        "size.lg": "./components#Spinner.className=size-6",
+        "size.md": "./components#Spinner.className=size-5",
+        "size.sm": "./components#Spinner.className=size-4"
       },
       "props": [
-        "className",
-        "label",
-        "size"
+        "aria-label",
+        "className"
       ],
       "rac": {
         "instance": "react-aria-components",
@@ -76,16 +75,16 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.foreground",
+          "themes.accent-foreground",
           "themes.card-foreground",
+          "themes.foreground",
+          "themes.muted-foreground",
           "themes.popover-foreground",
           "themes.primary-foreground",
           "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
+          "themes.sidebar-accent-foreground",
           "themes.sidebar-foreground",
-          "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
+          "themes.sidebar-primary-foreground"
         ]
       },
       "root": "rac:ProgressBar",

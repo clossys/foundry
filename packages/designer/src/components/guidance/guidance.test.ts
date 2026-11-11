@@ -76,10 +76,11 @@ describe("shared component guidance", () => {
     expect(additions.COMPONENT_GUIDANCE).toBeDefined();
     expect(additions.COMPONENT_API_FACTS).toBeDefined();
     const components = [...exportedComponents("components"), ...exportedComponents("charts")].sort();
-    expect(components).toHaveLength(46);
+    // planner:r2f-52: 44 after the Foundry IconButton export was removed (icon-only is the stock Button at size="icon").
+    expect(components).toHaveLength(44);
     expect(Object.values(facts()).map(fact => fact.exportName).sort()).toEqual(components);
     expect(Object.keys(guidance()).sort()).toEqual(Object.keys(facts()).sort());
-    const legacy = { ResizeHandle: "enter", Button: "act", IconButton: "act", Link: "act", Breadcrumb: "act", Menu: "act", TextField: "enter", Textarea: "enter", SearchField: "enter", DateField: "enter", Select: "enter", ComboBox: "enter", Checkbox: "enter", Switch: "enter", RadioGroup: "enter", FileTrigger: "enter", Field: "enter", Badge: "inform", Banner: "inform", Chip: "inform", StatusMark: "inform", Meter: "inform", ProgressBar: "inform", Spinner: "inform", Skeleton: "inform", Card: "group", Table: "group", GridList: "group", Separator: "group", Avatar: "depict", Icon: "depict", Dialog: "reveal", Popover: "reveal", Tooltip: "reveal", Disclosure: "reveal", Tabs: "reveal" };
+    const legacy = { ResizeHandle: "enter", Button: "act", Link: "act", Breadcrumb: "act", Menu: "act", TextField: "enter", Textarea: "enter", SearchField: "enter", DateField: "enter", Select: "enter", ComboBox: "enter", Checkbox: "enter", Switch: "enter", RadioGroup: "enter", FileTrigger: "enter", Field: "enter", Badge: "inform", Banner: "inform", StatusMark: "inform", Meter: "inform", ProgressBar: "inform", Spinner: "inform", Skeleton: "inform", Card: "group", Table: "group", GridList: "group", Separator: "group", Avatar: "depict", Icon: "depict", Dialog: "reveal", Popover: "reveal", Tooltip: "reveal", Disclosure: "reveal", Tabs: "reveal" };
     for (const [id, fact] of Object.entries(facts())) {
       const prefix = legacy[fact.exportName as keyof typeof legacy] ?? "depict";
       expect(id).toBe(`${prefix}.${fact.exportName.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()}`);
@@ -91,15 +92,17 @@ describe("shared component guidance", () => {
     const leaves = groups().flatMap(group => group.children.flatMap((family: any) => family.leaves));
     expect(new Set(leaves).size).toBe(leaves.length);
     expect(catalog.componentSelection("components.button")?.facts).toBe(facts()["act.button"]);
-    expect(catalog.componentSelection("act.icon-button")?.facts).toBe(facts()["act.icon-button"]);
+    // R2F-52: the pinned act.icon-button alias now selects the stock Button's record (no separate IconButton export).
+    expect(catalog.componentSelection("act.icon-button")?.facts).toBe(facts()["act.button"]);
   });
 
   it("gives each component meaningful stable semantics separate from web implementation", () => {
-    expect(Object.keys(guidance())).toHaveLength(46);
+    // planner:r2f-52: IconButton guidance folded into act.button (stock size="icon*").
+    expect(Object.keys(guidance())).toHaveLength(44);
     for (const field of ["purpose", "useWhen", "avoidWhen", "alternatives", "content", "anatomy", "composition", "accessibility"]) {
       const values = Object.values(guidance()).map(entry => entry[field]);
       expect(values.every(value => typeof value === "string" && value.trim().length > 24), field).toBe(true);
-      expect(new Set(values).size, field).toBe(46);
+      expect(new Set(values).size, field).toBe(44);
     }
     for (const entry of Object.values(guidance())) {
       expect(entry).not.toHaveProperty("props");
@@ -110,7 +113,8 @@ describe("shared component guidance", () => {
   });
 
   it("records implementation evidence or explicit assessment absence for each medium", () => {
-    expect(Object.keys(guidance())).toHaveLength(46);
+    // planner:r2f-52: IconButton guidance folded into act.button (stock size="icon*").
+    expect(Object.keys(guidance())).toHaveLength(44);
     for (const [id, entry] of Object.entries(guidance())) {
       expect(Object.keys(entry.media)).toEqual(["web", "email", "print", "video"]);
       for (const [medium, mediumEntry] of Object.entries(entry.media) as [string, any][]) {
@@ -132,22 +136,20 @@ describe("shared component guidance", () => {
   });
 
   it("checks represented option names and complete finite value sets against real TypeScript props", () => {
-    expect(Object.keys(facts())).toHaveLength(46);
+    // planner:r2f-52: IconButton facts folded into act.button (stock size="icon*").
+    expect(Object.keys(facts())).toHaveLength(44);
     const paths = Object.values(facts()).map(fact => join(root, fact.source));
     const filename = join(root, "component-guidance-consumer.check.ts");
     const consumer = `
-      import type {IconProps, IconNode, ChipProps} from ${JSON.stringify(join(root, "src/components/index.js"))};
+      import type {IconProps, IconNode} from ${JSON.stringify(join(root, "src/components/index.js"))};
       declare const glyph: IconNode;
       const decorative: IconProps = {glyph, decorative: true};
       const labelled: IconProps = {glyph, label: "Search"};
       const innerMarkup: IconProps = {children: "Markup", label: "Symbol"};
-      const removable: ChipProps = {children: "Filter", onRemove: () => {}, removeLabel: "Remove Filter"};
-      const staticChip: ChipProps = {children: "Filter"};
       const unnamed: IconProps = {glyph};
       const conflictingName: IconProps = {glyph, decorative: true, label: "Search"};
       const conflictingContent: IconProps = {glyph, children: "Markup", decorative: true};
       const missingContent: IconProps = {label: "Search"};
-      const unnamedRemoval: ChipProps = {children: "Filter", onRemove: () => {}};
     `;
     const compilerOptions = { strict: true, noEmit: true, skipLibCheck: true, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
     const host = ts.createCompilerHost(compilerOptions);
@@ -157,8 +159,8 @@ describe("shared component guidance", () => {
     const checker = program.getTypeChecker();
     const consumerSource = program.getSourceFile(filename)!;
     const diagnostics = program.getSemanticDiagnostics(consumerSource);
-    expect(diagnostics.map(diagnostic => diagnostic.code)).toEqual([2322, 2322, 2322, 2322, 2322]);
-    expect(diagnostics.map(diagnostic => consumerSource.text.slice(diagnostic.start!, diagnostic.start! + diagnostic.length!))).toEqual(["unnamed", "conflictingName", "conflictingContent", "missingContent", "unnamedRemoval"]);
+    expect(diagnostics.map(diagnostic => diagnostic.code)).toEqual([2322, 2322, 2322, 2322]);
+    expect(diagnostics.map(diagnostic => consumerSource.text.slice(diagnostic.start!, diagnostic.start! + diagnostic.length!))).toEqual(["unnamed", "conflictingName", "conflictingContent", "missingContent"]);
     for (const [id, fact] of Object.entries(facts())) {
       const source = program.getSourceFile(join(root, fact.source))!;
       const symbol = checker.getSymbolAtLocation(source)!;
@@ -219,7 +221,8 @@ describe("shared component guidance", () => {
   });
 
   it("links token dependencies to consumed source evidence with explicit coverage", () => {
-    expect(Object.keys(facts())).toHaveLength(46);
+    // planner:r2f-52: IconButton facts folded into act.button (stock size="icon*").
+    expect(Object.keys(facts())).toHaveLength(44);
     for (const [id, fact] of Object.entries(facts())) {
       expect(["partial", "none-owned"]).toContain(fact.tokens.coverage);
       expect(fact.tokens.reason.length).toBeGreaterThan(20);
@@ -256,7 +259,6 @@ describe("shared component guidance", () => {
     expect(effective(find("inform.meter", "direction"), { limit: 0 })).toBe(true);
     expect(rules("act.link")).toEqual([]);
     expect(find("inform.meter", "previous")).toMatchObject({ kind: "paired", props: ["previous", "previousText"], enforcement: "runtime" });
-    expect(find("inform.chip", "onRemove")).toMatchObject({ kind: "requires", props: ["onRemove", "removeLabel"], enforcement: "type" });
     expect(find("depict.icon", "decorative")).toMatchObject({ kind: "exclusive", props: ["decorative", "label"], enforcement: "type" });
     expect(find("depict.icon", "glyph")).toMatchObject({ kind: "exclusive", props: ["glyph", "children"], enforcement: "type" });
     expect(find("depict.icon", "glyph").presence).toBe("exactly-one");
@@ -346,12 +348,6 @@ const comparisonGolden: Record<string, {
     maxCells: 6,
     retainedCells: 6,
   },
-  "act.icon-button": {
-    columns: {"option": "shape", "values": ["circle", "square"]},
-    rows: {"option": "size", "values": ["sm", "md"]},
-    maxCells: 4,
-    retainedCells: 4,
-  },
   "act.link": {
     columns: {"option": "variant", "values": ["default", "outline", "secondary", "ghost", "destructive", "link"]},
     maxCells: 6,
@@ -439,11 +435,6 @@ const comparisonGolden: Record<string, {
     maxCells: 2,
     retainedCells: 2,
   },
-  "inform.chip": {
-    columns: {"option": "isDisabled", "values": [false, true]},
-    maxCells: 2,
-    retainedCells: 2,
-  },
   "inform.status-mark": {
     columns: {"option": "tone", "values": ["success", "warning", "danger", "info", "neutral"]},
     maxCells: 5,
@@ -459,11 +450,6 @@ const comparisonGolden: Record<string, {
     columns: {"option": "isIndeterminate", "values": [false, true]},
     maxCells: 2,
     retainedCells: 2,
-  },
-  "inform.spinner": {
-    columns: {"option": "size", "values": ["sm", "md", "lg"]},
-    maxCells: 3,
-    retainedCells: 3,
   },
   "group.card": {
     columns: {"option": "size", "values": ["default", "sm"]},
@@ -654,7 +640,7 @@ describe("finite component comparisons", () => {
     }
   });
 
-  it("flags concrete non-axis Icon, Chip and Meter violations from retained rules", () => {
+  it("flags concrete non-axis Icon and Meter violations from retained rules", () => {
     expect(comparisons()).toBeDefined();
     const fixtures: { id: string; valid: Record<string, unknown>[]; invalid: { values: Record<string, unknown>; kinds: string[] }[] }[] = [
       {
@@ -667,11 +653,6 @@ describe("finite component comparisons", () => {
           { values: { glyph: [], decorative: false }, kinds: ["requires"] },
           { values: { glyph: [] }, kinds: ["requires"] },
         ],
-      },
-      {
-        id: "inform.chip",
-        valid: [{ children: "Filter" }, { children: "Filter", onRemove: () => {}, removeLabel: "Remove Filter" }],
-        invalid: [{ values: { children: "Filter", onRemove: () => {} }, kinds: ["requires"] }],
       },
       {
         id: "inform.meter",
