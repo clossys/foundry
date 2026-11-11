@@ -176,7 +176,7 @@ export function runStoreFile(step: string): string { return `.clossys/runs/${ste
  * (`<repo>/.clossys/runs/<step>.jsonl`, gitignored, one clossys.pipeline-run/1 record per line).
  * Only records of the cited step with the cited run id resolve; an absent store resolves nothing.
  */
-function citedRuns(repo: string, store: DirectorStoreReader, findings: readonly { run?: string }[]): Record<string, { step: string; run: string; exit: number }> {
+export function citedRuns(repo: string, store: DirectorStoreReader, findings: readonly { run?: string }[]): Record<string, { step: string; run: string; exit: number }> {
   const runs: Record<string, { step: string; run: string; exit: number }> = Object.create(null);
   const cited = [...new Set(findings.map(finding => finding.run).filter((run): run is string => run !== undefined))];
   const byStep = new Map<string, string[]>();

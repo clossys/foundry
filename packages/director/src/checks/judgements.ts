@@ -9,7 +9,7 @@ function citedRun(model: StrategyModel, finding: Finding): boolean {
 }
 
 /** The cell ids a verdict must have judged to count: every storyline cell, both sides of a judge pair, or the one cell. */
-function judgedCells(model: StrategyModel, judge: string): string[] | undefined {
+export function judgedCells(model: StrategyModel, judge: string): string[] | undefined {
   if (judge === 'C4') return [...model.catalog.coherence.storyline];
   const pair = /^C2:(X[1-9][0-9]*)$/.exec(judge)?.[1];
   if (pair !== undefined) {

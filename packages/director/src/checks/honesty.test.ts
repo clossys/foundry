@@ -200,3 +200,81 @@ describe("W5b item 5: a banned phrase quoted under a negative key is the ban, no
     expect(voice(["Sound: plain and direct for 20 teams", "Do: name the Studio step", 'Never: "magic"'], 'If "seamless" count > 3 each month, then review this choice.')).toEqual(["Banned generic phrase: seamless"]);
   });
 });
+
+describe("C4-JUDGE: a judge verdict is recorded only by `director check judge`", () => {
+  const STORY = catalog.coherence.storyline;
+  const RUN = "fedcba9876543210";
+  /** fullRoot without its hand-staged critic verdict, plus the owner's words routed to `informs`. */
+  function unjudgedRoot(informs: readonly string[] = STORY) {
+    const fixture = fullRoot();
+    rmSync(join(evidenceDir(fixture.root), "critic-pass.md"));
+    stageFinding(fixture.root, "owner-heard", `---\nid: owner-heard\nsource: user\nobserved: 2026-11-11\nby: director\n---\n- The owner heard the critic's reading and said: "Record it."\n- Informs: ${informs.join(", ")}\n`);
+    return fixture;
+  }
+  const judge = (root: string, ...argv: string[]) => invoke(["judge", ...argv, "--root", root]);
+  it("C4 pass: the verb lists every storyline cell at its pinned version, and MVS then passes", () => {
+    const { root } = unjudgedRoot();
+    expect(completion(readStrategyRoot(root, reader)).storyline.critic).toBe("not judged");
+    expect(completion(readStrategyRoot(root, reader)).mvs).toBe(false);
+    const done = judge(root, "C4", "--verdict", "pass", "--heard", "owner-heard", "--reason", "Pre-mortem: the likeliest failure is reach.", "--reason", "Storyline: one argument.");
+    expect(done).toMatchObject({ code: 0, value: { result: { judge: "C4", verdict: "pass", judged: STORY.map(id => `${id}@1`), heard: "owner-heard" } } });
+    const id = done.value.result.recorded.id as string;
+    expect(id).toMatch(/^critic-storyline-\d{4}-\d{2}-\d{2}$/);
+    const text = readFileSync(join(evidenceDir(root), `${id}.md`), "utf8");
+    expect(text).toContain("judge: C4\nverdict: pass\n");
+    expect(text).toContain("- Storyline: one argument.\n- The owner heard the reading (finding:owner-heard)\n");
+    const model = readStrategyRoot(root, reader);
+    expect(model.issues).toEqual([]);
+    expect(completion(model).storyline.critic).toBe("pass");
+    expect(completion(model).mvs).toBe(true);
+    // A second verdict never edits the first; fail wins while both are current.
+    const again = judge(root, "C4", "--verdict", "fail", "--heard", "owner-heard", "--reason", "Bet breaks it.");
+    expect(again.value.result.recorded.id).toBe(`${id}-2`);
+    expect(readFileSync(join(evidenceDir(root), `${id}.md`), "utf8")).toBe(text);
+    expect(completion(readStrategyRoot(root, reader)).storyline.critic).toBe("fail");
+    expect(completion(readStrategyRoot(root, reader)).mvs).toBe(false);
+  });
+  it("a newer pin of a judged cell voids the recorded verdict", () => {
+    const { root, cells } = unjudgedRoot();
+    expect(judge(root, "C4", "--verdict", "pass", "--heard", "owner-heard", "--reason", "One argument.").code).toBe(0);
+    const bet = cells.find(cell => cell.id === STORY[STORY.length - 1])!;
+    stage(root, { ...bet, version: 2, path: `${bet.id}/candidates/fixture-v2.md` });
+    expect(completion(readStrategyRoot(root, reader)).storyline.critic).toBe("not judged");
+  });
+  it("C2 pair: judged is both cells at their pinned versions; a script pair is refused", () => {
+    const pair = catalog.coherence.contradictions.find(row => row.kind === "judge")!;
+    const both = [pair.a, ...[pair.b].flat()];
+    const { root } = unjudgedRoot([both[1]!]);
+    const done = judge(root, `C2:${pair.id}`, "--verdict", "pass", "--heard", "owner-heard", "--reason", "Not restated.");
+    expect(done).toMatchObject({ code: 0, value: { result: { judged: both.map(id => `${id}@1`) } } });
+    expect(done.value.result.recorded.id).toMatch(new RegExp(`^critic-${pair.id.toLowerCase()}-`));
+    const script = catalog.coherence.contradictions.find(row => row.kind === "script")!;
+    expect(judge(root, `C2:${script.id}`, "--verdict", "pass", "--heard", "owner-heard", "--reason", "x").code).toBe(2);
+  });
+  it("refuses without the owner's words routed to a judged cell, without a reason, or with a bad verdict", () => {
+    const { root } = unjudgedRoot([NON_CORE]);
+    const before = readStrategyRoot(root, reader).findings.length;
+    expect(judge(root, "C4", "--verdict", "pass", "--reason", "x").value.error).toContain("--heard");
+    expect(judge(root, "C4", "--verdict", "pass", "--heard", "owner-heard", "--reason", "x").value.error).toContain("names none of the judged cells");
+    expect(judge(root, "C4", "--verdict", "pass", "--heard", "sample", "--reason", "x").code).toBe(2);
+    expect(judge(root, "C4", "--verdict", "pass", "--heard", "critic-missing", "--reason", "x").value.error).toContain("no such finding");
+    stageFinding(root, "owner-story", `---\nid: owner-story\nsource: user\nobserved: 2026-11-11\nby: director\n---\n- Informs: ${STORY[0]}\n`);
+    expect(judge(root, "C4", "--verdict", "pass", "--heard", "owner-story").value.error).toContain("--reason");
+    expect(judge(root, "C4", "--verdict", "maybe", "--heard", "owner-story", "--reason", "x").code).toBe(2);
+    expect(judge(root, "C4", "--verdict", "pass", "--heard", "owner-story", "--reason", "two\nlines").code).toBe(2);
+    expect(readStrategyRoot(root, reader).findings.length).toBe(before + 1);
+  });
+  it("a cell judgement must name the pinned version and cite a finished run", () => {
+    const { root, base } = unjudgedRoot([CORE]);
+    expect(judge(root, `Q3:${CORE}@1`, "--verdict", "pass", "--heard", "owner-heard", "--reason", "x").value.error).toContain("--run");
+    expect(judge(root, `Q3:${CORE}@2`, "--verdict", "pass", "--heard", "owner-heard", "--run", `critic.cell#${RUN}`, "--reason", "x").value.error).toContain("pinned version");
+    expect(judge(root, `Q3:${CORE}@1`, "--verdict", "pass", "--heard", "owner-heard", "--run", `critic.cell#${RUN}`, "--reason", "x").value.error).toContain("not a finished run");
+    const path = join(base, ".clossys", "runs", "critic.cell.jsonl");
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, `${JSON.stringify({ schema: "clossys.pipeline-run/1", run: RUN, step: "critic.cell", invocation: "x", argv: [], exit: 0, reads: [], writes: [] })}\n`);
+    const done = judge(root, `Q3:${CORE}@1`, "--verdict", "pass", "--heard", "owner-heard", "--run", `critic.cell#${RUN}`, "--reason", "Evidence supports each bullet.");
+    expect(done.code).toBe(0);
+    expect(done.value.result.recorded.id).toBe(`judge-q3-${CORE.replace(/\./g, "-")}-v1-${done.value.result.recorded.id.slice(-10)}`);
+    expect(recordedJudgeVerdicts(readStrategyRoot(root, reader))[`Q3:${CORE}@1`]).toBe("pass");
+  });
+});
