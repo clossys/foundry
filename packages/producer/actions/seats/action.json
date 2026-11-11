@@ -5,10 +5,7 @@
   "kind": "decide:judgment",
   "stage": "direct.brief",
   "summary": "Who decides each decide step: an llm seat, a human seat, or both.",
-  "gap": {
-    "unit": "W6a",
-    "reason": "no clossys verb assigns a seat yet; the owner writes a seat candidate and pins it"
-  },
+  "run": "clossys seat <step> --by <who> --procedure <text> --command <verb>",
   "inputs": [],
   "outputs": [
     {
@@ -38,7 +35,9 @@
   "checks": [
     "pipeline"
   ],
-  "uses": [],
+  "uses": [
+    "skill/SKILL.md"
+  ],
   "decider": "owner",
   "packet": {
     "inputs": [],

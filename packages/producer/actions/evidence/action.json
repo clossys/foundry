@@ -5,10 +5,7 @@
   "kind": "decide:judgment",
   "stage": "direct.brief",
   "summary": "Owner answers and director findings the Director cites.",
-  "gap": {
-    "unit": "W6a",
-    "reason": "no clossys verb records an owner answer as evidence yet; answers are written as evidence files"
-  },
+  "run": "clossys evidence <id> --source <source> --observed <date> --by <who> --body <file>",
   "inputs": [],
   "outputs": [
     {
@@ -39,7 +36,9 @@
     "pipeline",
     "workspace"
   ],
-  "uses": [],
+  "uses": [
+    "skill/SKILL.md"
+  ],
   "decider": "owner",
   "packet": {
     "inputs": [],

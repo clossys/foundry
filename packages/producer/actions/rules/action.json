@@ -5,10 +5,7 @@
   "kind": "decide:judgment",
   "stage": "direct.brief",
   "summary": "Rule registry rows and gate yes/no.",
-  "gap": {
-    "unit": "W6a",
-    "reason": "no clossys verb records a rule row or a gate decision yet"
-  },
+  "run": "clossys rule <rule-id> --quote <text> --date <date> --status <status>",
   "inputs": [],
   "outputs": [
     {
@@ -34,7 +31,9 @@
   "checks": [
     "rules"
   ],
-  "uses": [],
+  "uses": [
+    "skill/SKILL.md"
+  ],
   "decider": "owner",
   "packet": {
     "inputs": [],

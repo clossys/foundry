@@ -72,20 +72,23 @@ function runRoot(argv: readonly string[], cwd: string): string | null {
  */
 export async function runPipeline(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
   const resolved: Resolved = {};
+  // A bare `clossys next --submit <file>` submits to the first open candidates slot (cli/next.ts).
+  if (argv[0] === "next" && argv.includes("--submit")) argv = (await import("../cli/next.js")).submitTarget(argv, cwd, steps);
   if (!tracingEnabled()) return run(argv, cwd, steps, resolved);
   const start = new Date();
   const watch = observe();
   let recorded = false;
-  const record = (exit: number) => {
+  const record = (exit: number, result?: CliResult) => {
     const seen = watch.stop();
-    if (recorded || !resolved.step || untraced(resolved.step, argv) || argv.includes("--help")) return;
+    // A refused submission (`clossys next --submit`) decided nothing and leaves no record.
+    if (recorded || !resolved.step || untraced(resolved.step, argv) || argv.includes("--help") || result?.unrecorded) { recorded = true; return; }
     recorded = true;
     const root = runRoot(argv, cwd);
     if (!root) return;
     const step = resolved.step;
     appendRecord(root, buildRecord({
       root, step: step.id, invocation: invocationOf(argv, step.command.cli?.target), argv: sanitizeArgv(root, argv, cwd),
-      start, end: new Date(), exit, observation: seen,
+      start, end: new Date(), exit, observation: seen, ...(result?.runDecision ? { decision: result.runDecision } : {}),
     }));
   };
   // A handler that exits the process still leaves its record.
@@ -93,7 +96,7 @@ export async function runPipeline(argv: readonly string[], cwd: string, steps: r
   process.once("exit", onExit);
   try {
     const result = await run(argv, cwd, steps, resolved);
-    record(result.exitCode);
+    record(result.exitCode, result);
     return result;
   } catch (error) {
     record(2);
@@ -107,6 +110,9 @@ export async function runPipeline(argv: readonly string[], cwd: string, steps: r
 async function run(argv: readonly string[], cwd: string, steps: readonly Step[], resolved: Resolved): Promise<CliResult> {
   try {
     const head = argv[0];
+    // The chain orchestrators are not steps: they run (and record through) the steps they walk.
+    if (head === "run") return await (await import("../cli/run.js")).runRunCli(argv.slice(1), cwd, steps);
+    if (head === "next" && !argv.includes("--submit")) return await (await import("../cli/next.js")).runNextCli(argv.slice(1), cwd, steps);
     // A verb with its own parser (specimen, migrate, pipeline) gets its argv untouched.
     // A verb with a target per step (`clossys pin <agent>/<slot>`) runs the step whose agent the argument names.
     const owners = steps.filter(step => step.command.cli?.parser !== undefined && step.command.cli.verb === head);

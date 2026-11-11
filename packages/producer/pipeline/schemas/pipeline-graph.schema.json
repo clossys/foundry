@@ -214,7 +214,8 @@
             "type": "object",
             "required": [
               "unit",
-              "reason"
+              "reason",
+              "awaits"
             ],
             "additionalProperties": false,
             "properties": {
@@ -225,8 +226,33 @@
               "reason": {
                 "type": "string",
                 "minLength": 1
+              },
+              "awaits": {
+                "type": "string",
+                "pattern": "^clossys [a-z][a-z-]*( .*)?$"
               }
             }
+          },
+          "chain": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^clossys [a-z][a-z-]*( [^<>]*)?$"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "skip"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "skip": {
+                    "type": "string",
+                    "minLength": 20
+                  }
+                }
+              }
+            ]
           },
           "pass": {
             "type": "object",

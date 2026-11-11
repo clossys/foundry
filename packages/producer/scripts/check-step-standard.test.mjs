@@ -80,6 +80,11 @@ proves("run.verb-unknown", f => f.action("producer", "workspace.check", c => { c
 proves("run.trace-id", f => f.action("producer", "derive.uses", c => { c.run = c.run.replace("trace derive.uses", "trace studio.map"); }));
 proves("run.untraced", f => f.action("producer", "studio.map", c => { c.run = "clossys pipeline trace studio.map -- bash generate.sh"; }));
 proves("run.target-missing", f => f.action("producer", "studio.map", c => { c.run = "clossys pipeline trace studio.map -- npm run no-such-script"; }));
+// writer.approve reverts to a gap awaiting `clossys pin`, which the pin.* actions already serve.
+proves("gap.stale", f => f.action("producer", "writer.approve", c => { delete c.run; c.gap = { unit: "W6a", reason: "awaits a verb that has landed", awaits: "clossys pin writer/<slot>" }; }));
+proves("chain.missing", f => f.action("designer", "designer.compile", c => { delete c.chain; }));
+proves("chain.mismatch", f => f.action("designer", "designer.compile", c => { c.chain = "clossys design --check"; }));
+proves("chain.invalid", f => f.action("producer", "ia", c => { c.chain = "clossys ia designer/hero --under a/b --contract x.json"; }));
 proves("pass.invalid", f => f.action("producer", "compile", c => { c.pass.exit = { pass: [0, 1], fail: [], error: [2] }; }));
 proves("pass.uncited", f => f.action("producer", "compile", c => { c.checks = ["workspace"]; }));
 proves("check.unknown", f => f.action("producer", "compile", c => { c.checks.push("no-such-check"); }));

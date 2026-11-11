@@ -7,7 +7,7 @@
       "kind": "decide:judgment",
       "actor": "owner",
       "stage": "direct.brief",
-      "summary": "Place every L3 slot: the agent IA tree and each slot's contract.",
+      "summary": "Place every L3 slot: the agent IA tree and each slot's contract (clossys ia).",
       "inputs": [],
       "outputs": [
         {
@@ -20,6 +20,11 @@
         }
       ],
       "command": {
+        "cli": {
+          "verb": "ia",
+          "parser": "src/cli/owner.ts"
+        },
+        "entry": "src/cli/owner.ts#runIaCli",
         "skill": "packages/producer/actions/ia/skill.md"
       },
       "checks": [
@@ -28,10 +33,7 @@
       "open": "slots-without-slot-json",
       "agent": "owner",
       "package": "producer",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb records an IA placement or a slot contract yet; the owner edits ia.json and slot.json"
-      },
+      "run": "clossys ia <agent>/<slot> --under <l1>/<l2> --contract <file>",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -64,7 +66,9 @@
           "workspace"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/ia/pin.json",
       "holder": {
         "id": "you",
@@ -98,6 +102,11 @@
         }
       ],
       "command": {
+        "cli": {
+          "verb": "evidence",
+          "parser": "src/cli/owner.ts"
+        },
+        "entry": "src/cli/owner.ts#runEvidenceCli",
         "skill": "packages/producer/actions/evidence/skill.md"
       },
       "checks": [
@@ -106,10 +115,7 @@
       ],
       "agent": "owner",
       "package": "producer",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb records an owner answer as evidence yet; answers are written as evidence files"
-      },
+      "run": "clossys evidence <id> --source <source> --observed <date> --by <who> --body <file>",
       "pass": {
         "command": "clossys pipeline trace check:pipeline -- npm run check:pipeline",
         "exit": {
@@ -142,7 +148,9 @@
           "pipeline"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/evidence/pin.json",
       "holder": {
         "id": "you",
@@ -172,6 +180,14 @@
         }
       ],
       "command": {
+        "cli": {
+          "verb": "config",
+          "flags": [
+            "--init"
+          ],
+          "parser": "src/cli/owner.ts"
+        },
+        "entry": "src/cli/owner.ts#runConfigCli",
         "skill": "packages/producer/actions/workspace.config/skill.md"
       },
       "checks": [
@@ -179,10 +195,7 @@
       ],
       "agent": "owner",
       "package": "producer",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb writes the workspace config yet"
-      },
+      "run": "clossys config --init",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -211,7 +224,9 @@
           "workspace"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/workspace.config/pin.json",
       "holder": {
         "id": "you",
@@ -245,6 +260,11 @@
         }
       ],
       "command": {
+        "cli": {
+          "verb": "seat",
+          "parser": "src/cli/owner.ts"
+        },
+        "entry": "src/cli/owner.ts#runSeatCli",
         "skill": "packages/producer/actions/seats/skill.md"
       },
       "checks": [
@@ -253,10 +273,7 @@
       "open": "seats-open",
       "agent": "owner",
       "package": "producer",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb assigns a seat yet; the owner writes a seat candidate and pins it"
-      },
+      "run": "clossys seat <step> --by <who> --procedure <text> --command <verb>",
       "pass": {
         "command": "clossys pipeline trace check:pipeline -- npm run check:pipeline",
         "exit": {
@@ -289,7 +306,9 @@
           "pipeline"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/seats/pin.json",
       "holder": {
         "id": "you",
@@ -319,6 +338,11 @@
         }
       ],
       "command": {
+        "cli": {
+          "verb": "rule",
+          "parser": "src/cli/owner.ts"
+        },
+        "entry": "src/cli/owner.ts#runRuleCli",
         "skill": "packages/producer/actions/rules/skill.md"
       },
       "checks": [
@@ -326,10 +350,7 @@
       ],
       "agent": "owner",
       "package": "producer",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb records a rule row or a gate decision yet"
-      },
+      "run": "clossys rule <rule-id> --quote <text> --date <date> --status <status>",
       "pass": {
         "command": "clossys pipeline trace check:rules -- node ../../scripts/check-rules.mjs",
         "exit": {
@@ -358,7 +379,9 @@
           "rules"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/rules/pin.json",
       "holder": {
         "id": "you",
@@ -401,10 +424,13 @@
         }
       ],
       "command": {
-        "skill": "packages/director/actions/director.candidates/skill.md",
-        "module": [
-          "src/records/slot-write.ts#writeCandidate"
-        ]
+        "cli": {
+          "verb": "next",
+          "parser": "src/cli/next.ts",
+          "target": "director"
+        },
+        "entry": "src/cli/next.ts#runNextSubmitCli",
+        "skill": "packages/director/actions/director.candidates/skill.md"
       },
       "checks": [
         "workspace"
@@ -412,10 +438,7 @@
       "open": "slots-without-candidates:director",
       "agent": "director",
       "package": "director",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
-      },
+      "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -604,6 +627,7 @@
       "agent": "director",
       "package": "director",
       "run": "clossys director check <command>",
+      "chain": "clossys director check brand",
       "pass": {
         "command": "clossys direct",
         "exit": {
@@ -718,7 +742,9 @@
           "decisions"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/pin.director/pin.json",
       "holder": {
         "id": "you",
@@ -885,11 +911,13 @@
         }
       ],
       "command": {
-        "skill": "packages/designer/actions/designer.candidates/skill.md",
-        "module": [
-          "src/records/slot-write.ts#writeCandidate",
-          "src/specimen/catalog-materialization.ts#materializeCatalogCandidate"
-        ]
+        "cli": {
+          "verb": "next",
+          "parser": "src/cli/next.ts",
+          "target": "designer"
+        },
+        "entry": "src/cli/next.ts#runNextSubmitCli",
+        "skill": "packages/designer/actions/designer.candidates/skill.md"
       },
       "checks": [
         "workspace"
@@ -897,10 +925,7 @@
       "open": "slots-without-candidates:designer",
       "agent": "designer",
       "package": "designer",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
-      },
+      "run": "clossys next designer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -987,10 +1012,13 @@
         }
       ],
       "command": {
-        "skill": "packages/writer/actions/writer.candidates/skill.md",
-        "module": [
-          "src/records/slot-write.ts#writeCandidate"
-        ]
+        "cli": {
+          "verb": "next",
+          "parser": "src/cli/next.ts",
+          "target": "writer"
+        },
+        "entry": "src/cli/next.ts#runNextSubmitCli",
+        "skill": "packages/writer/actions/writer.candidates/skill.md"
       },
       "checks": [
         "workspace"
@@ -998,10 +1026,7 @@
       "open": "slots-without-candidates:writer",
       "agent": "writer",
       "package": "writer",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
-      },
+      "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -1220,8 +1245,8 @@
       "layout": {
         "lane": "you",
         "stage": "design.pin",
-        "rank": 10,
-        "x": 3840,
+        "rank": 9,
+        "x": 3560,
         "y": 0
       }
     },
@@ -1230,7 +1255,7 @@
       "kind": "decide:judgment",
       "actor": "owner",
       "stage": "design.pin",
-      "summary": "Owner approves Writer copy keys (status approved).",
+      "summary": "Owner approves a Writer slot's copy keys: the approved candidate is pinned (clossys approve).",
       "inputs": [
         {
           "glob": "clossys/agents/writer/*/candidates/*",
@@ -1239,11 +1264,17 @@
       ],
       "outputs": [
         {
-          "glob": "clossys/agents/writer/*/candidates/*#status",
-          "schema": "candidate-strings"
+          "glob": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
         }
       ],
       "command": {
+        "cli": {
+          "verb": "approve",
+          "parser": "src/cli/owner.ts",
+          "target": "writer"
+        },
+        "entry": "src/cli/owner.ts#runApproveCli",
         "skill": "packages/producer/actions/writer.approve/skill.md"
       },
       "checks": [
@@ -1252,10 +1283,7 @@
       "open": "writer-keys-unapproved",
       "agent": "owner",
       "package": "producer",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb records a Writer key approval yet; the owner sets the key status"
-      },
+      "run": "clossys approve writer/<slot> <candidate-id>",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -1278,15 +1306,17 @@
         ],
         "write": [
           {
-            "glob": "clossys/agents/writer/*/candidates/*#status",
-            "schema": "candidate-strings"
+            "glob": "clossys/agents/writer/*/pin.json",
+            "schema": "pin"
           }
         ],
         "checks": [
           "workspace"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/writer.approve/pin.json",
       "holder": {
         "id": "you",
@@ -1299,7 +1329,7 @@
         "stage": "design.pin",
         "rank": 8,
         "x": 3280,
-        "y": 0
+        "y": 172
       }
     },
     {
@@ -1384,7 +1414,9 @@
           "decisions"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/pin.designer/pin.json",
       "holder": {
         "id": "you",
@@ -1482,7 +1514,9 @@
           "decisions"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/pin.writer/pin.json",
       "holder": {
         "id": "you",
@@ -1493,8 +1527,8 @@
       "layout": {
         "lane": "you",
         "stage": "design.pin",
-        "rank": 9,
-        "x": 3560,
+        "rank": 8,
+        "x": 3280,
         "y": 0
       }
     },
@@ -1533,10 +1567,13 @@
         }
       ],
       "command": {
-        "skill": "packages/publisher/actions/publisher.candidates/skill.md",
-        "module": [
-          "src/records/slot-write.ts#writeCandidate"
-        ]
+        "cli": {
+          "verb": "next",
+          "parser": "src/cli/next.ts",
+          "target": "publisher"
+        },
+        "entry": "src/cli/next.ts#runNextSubmitCli",
+        "skill": "packages/publisher/actions/publisher.candidates/skill.md"
       },
       "checks": [
         "workspace"
@@ -1544,10 +1581,7 @@
       "open": "slots-without-candidates:publisher",
       "agent": "publisher",
       "package": "publisher",
-      "gap": {
-        "unit": "W6a",
-        "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
-      },
+      "run": "clossys next publisher/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
       "pass": {
         "command": "clossys check",
         "exit": {
@@ -1595,8 +1629,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.make",
-        "rank": 11,
-        "x": 4480,
+        "rank": 10,
+        "x": 4200,
         "y": 1128
       }
     },
@@ -1681,8 +1715,8 @@
       "layout": {
         "lane": "you",
         "stage": "publish.pin",
-        "rank": 13,
-        "x": 5080,
+        "rank": 12,
+        "x": 4800,
         "y": 0
       }
     },
@@ -1768,7 +1802,9 @@
           "decisions"
         ]
       },
-      "uses": [],
+      "uses": [
+        "skill/SKILL.md"
+      ],
       "seat": "clossys/agents/producer/pin.publisher/pin.json",
       "holder": {
         "id": "you",
@@ -1779,8 +1815,8 @@
       "layout": {
         "lane": "you",
         "stage": "publish.pin",
-        "rank": 12,
-        "x": 4800,
+        "rank": 11,
+        "x": 4520,
         "y": 0
       }
     },
@@ -1822,6 +1858,7 @@
       "agent": "designer",
       "package": "designer",
       "run": "clossys design --out <file>",
+      "chain": "clossys design --out node_modules/.cache/clossys/chain/designer.json",
       "pass": {
         "command": "clossys design --check",
         "exit": {
@@ -1848,7 +1885,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 5960,
+        "x": 5680,
         "y": 1128
       }
     },
@@ -1890,6 +1927,7 @@
       "agent": "writer",
       "package": "writer",
       "run": "clossys write --out <file>",
+      "chain": "clossys write --out node_modules/.cache/clossys/chain/writer.json",
       "pass": {
         "command": "clossys write --check",
         "exit": {
@@ -1915,8 +1953,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 11,
-        "x": 6240,
+        "rank": 10,
+        "x": 5960,
         "y": 1128
       }
     },
@@ -1996,8 +2034,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 14,
-        "x": 6800,
+        "rank": 13,
+        "x": 6520,
         "y": 1128
       }
     },
@@ -2089,7 +2127,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 4,
-        "x": 5680,
+        "x": 5400,
         "y": 1128
       }
     },
@@ -2148,6 +2186,9 @@
       "agent": "producer",
       "package": "producer",
       "run": "clossys specimen <command>",
+      "chain": {
+        "skip": "specimen serves or snapshots a caller-chosen specimen; Studio and capture run it"
+      },
       "pass": {
         "command": "clossys pipeline trace check:studio-dom -- node studio/checks/studio-dom-check.mjs",
         "exit": {
@@ -2173,8 +2214,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 11,
-        "x": 6240,
+        "rank": 10,
+        "x": 5960,
         "y": 1300
       }
     },
@@ -2241,8 +2282,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 12,
-        "x": 6520,
+        "rank": 11,
+        "x": 6240,
         "y": 1128
       }
     },
@@ -2319,7 +2360,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 2,
-        "x": 5400,
+        "x": 5120,
         "y": 1128
       }
     },
@@ -2429,8 +2470,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 14,
-        "x": 6800,
+        "rank": 13,
+        "x": 6520,
         "y": 1300
       }
     },
@@ -2492,7 +2533,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 5960,
+        "x": 5680,
         "y": 1300
       }
     },
@@ -2549,7 +2590,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 5960,
+        "x": 5680,
         "y": 1472
       }
     },
@@ -2608,7 +2649,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7120,
+        "x": 6840,
         "y": 1840
       }
     },
@@ -2674,7 +2715,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7120,
+        "x": 6840,
         "y": 1668
       }
     },
@@ -2739,8 +2780,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 11,
-        "x": 7400,
+        "rank": 10,
+        "x": 7120,
         "y": 1668
       }
     },
@@ -2806,8 +2847,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 14,
-        "x": 7680,
+        "rank": 13,
+        "x": 7400,
         "y": 1668
       }
     },
@@ -2896,8 +2937,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 16,
-        "x": 8240,
+        "rank": 15,
+        "x": 7960,
         "y": 1668
       }
     },
@@ -2956,8 +2997,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 14,
-        "x": 7680,
+        "rank": 13,
+        "x": 7400,
         "y": 1840
       }
     },
@@ -3018,6 +3059,7 @@
       "agent": "producer",
       "package": "producer",
       "run": "clossys pipeline graph --out <file>",
+      "chain": "clossys pipeline graph --out node_modules/.cache/clossys/chain/pipeline-graph.json",
       "pass": {
         "command": "clossys pipeline trace check:pipeline -- npm run check:pipeline",
         "exit": {
@@ -3043,8 +3085,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 14,
-        "x": 7680,
+        "rank": 13,
+        "x": 7400,
         "y": 2012
       }
     },
@@ -3128,8 +3170,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 15,
-        "x": 7960,
+        "rank": 14,
+        "x": 7680,
         "y": 1668
       }
     },
@@ -3207,8 +3249,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 15,
-        "x": 7960,
+        "rank": 14,
+        "x": 7680,
         "y": 2012
       }
     },
@@ -3265,8 +3307,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 15,
-        "x": 7960,
+        "rank": 14,
+        "x": 7680,
         "y": 1840
       }
     },
@@ -3311,6 +3353,9 @@
       "agent": "publisher",
       "package": "publisher",
       "run": "clossys publish --install",
+      "chain": {
+        "skip": "installs into a caller-chosen page or site (--page or --site); run it with its target once the chain passes"
+      },
       "pass": {
         "command": "clossys publish",
         "exit": {
@@ -3336,8 +3381,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.publish",
-        "rank": 14,
-        "x": 8560,
+        "rank": 13,
+        "x": 8280,
         "y": 1128
       }
     },
@@ -3395,6 +3440,9 @@
       "agent": "producer",
       "package": "producer",
       "run": "clossys produce",
+      "chain": {
+        "skip": "serves Studio until it is stopped; it has no end or exit to record"
+      },
       "pass": {
         "command": "clossys pipeline trace check:studio-p0 -- npm run studio:check",
         "exit": {
@@ -3420,8 +3468,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.publish",
-        "rank": 15,
-        "x": 8840,
+        "rank": 14,
+        "x": 8560,
         "y": 1128
       }
     }
@@ -5213,34 +5261,12 @@
     },
     {
       "from": "writer.approve",
-      "to": "pick.writer",
-      "via": [
-        {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "pin.writer",
-      "via": [
-        {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
       "to": "publisher.candidates",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5249,9 +5275,9 @@
       "to": "writer.compile",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5260,9 +5286,9 @@
       "to": "compile",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5271,9 +5297,9 @@
       "to": "options",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5282,20 +5308,9 @@
       "to": "specimen",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
-        }
-      ]
-    },
-    {
-      "from": "writer.approve",
-      "to": "migrate",
-      "via": [
-        {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5304,9 +5319,9 @@
       "to": "derive.uses",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5315,9 +5330,9 @@
       "to": "studio.map",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5326,9 +5341,20 @@
       "to": "writer.check",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "writer.approve",
+      "to": "publish.page",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5337,9 +5363,20 @@
       "to": "workspace.check",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "writer.approve",
+      "to": "decisions",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5348,9 +5385,9 @@
       "to": "pipeline",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5359,9 +5396,9 @@
       "to": "build.receipt",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -5370,9 +5407,9 @@
       "to": "studio.produce",
       "via": [
         {
-          "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/*/candidates/*",
-          "schema": "candidate-strings"
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -6936,8 +6973,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 10900,
-      "after": 10610
+      "before": 11018,
+      "after": 10662
     },
     "lanes": [
       {
@@ -7034,14 +7071,14 @@
         "index": 5,
         "x": 2720,
         "y": -72,
-        "width": 1360,
+        "width": 1080,
         "round": "design",
         "name": "pin"
       },
       {
         "id": "design.select",
         "index": 6,
-        "x": 4160,
+        "x": 3880,
         "y": -72,
         "width": 240,
         "round": "design",
@@ -7050,7 +7087,7 @@
       {
         "id": "publish.make",
         "index": 7,
-        "x": 4480,
+        "x": 4200,
         "y": -72,
         "width": 240,
         "round": "publish",
@@ -7059,7 +7096,7 @@
       {
         "id": "publish.pin",
         "index": 8,
-        "x": 4800,
+        "x": 4520,
         "y": -72,
         "width": 520,
         "round": "publish",
@@ -7068,7 +7105,7 @@
       {
         "id": "publish.assemble",
         "index": 9,
-        "x": 5400,
+        "x": 5120,
         "y": -72,
         "width": 1640,
         "round": "publish",
@@ -7077,7 +7114,7 @@
       {
         "id": "publish.check",
         "index": 10,
-        "x": 7120,
+        "x": 6840,
         "y": -72,
         "width": 1360,
         "round": "publish",
@@ -7086,7 +7123,7 @@
       {
         "id": "publish.publish",
         "index": 11,
-        "x": 8560,
+        "x": 8280,
         "y": -72,
         "width": 520,
         "round": "publish",
@@ -7111,7 +7148,7 @@
         "index": 1,
         "x": 1800,
         "y": -128,
-        "width": 2600,
+        "width": 2320,
         "stages": [
           "design.brief",
           "design.make",
@@ -7122,7 +7159,7 @@
       {
         "id": "publish",
         "index": 2,
-        "x": 4480,
+        "x": 4200,
         "y": -128,
         "width": 4600,
         "stages": [
@@ -7507,6 +7544,98 @@
   ],
   "options": {
     "cli": {
+      "ia": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        }
+      ],
+      "evidence": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        }
+      ],
+      "workspace.config": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        }
+      ],
+      "seats": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        }
+      ],
+      "rules": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        }
+      ],
+      "director.candidates": [
+        {
+          "flag": "--basis",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--model",
+          "value": null
+        },
+        {
+          "flag": "--name",
+          "value": null
+        },
+        {
+          "flag": "--owner",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        },
+        {
+          "flag": "--skill",
+          "value": null
+        },
+        {
+          "flag": "--submit",
+          "value": null
+        },
+        {
+          "flag": "--tier",
+          "value": null
+        }
+      ],
       "pick.director": [
         {
           "flag": "--at",
@@ -7617,6 +7746,90 @@
           "value": true
         }
       ],
+      "designer.candidates": [
+        {
+          "flag": "--basis",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--model",
+          "value": null
+        },
+        {
+          "flag": "--name",
+          "value": null
+        },
+        {
+          "flag": "--owner",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        },
+        {
+          "flag": "--skill",
+          "value": null
+        },
+        {
+          "flag": "--submit",
+          "value": null
+        },
+        {
+          "flag": "--tier",
+          "value": null
+        }
+      ],
+      "writer.candidates": [
+        {
+          "flag": "--basis",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--model",
+          "value": null
+        },
+        {
+          "flag": "--name",
+          "value": null
+        },
+        {
+          "flag": "--owner",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        },
+        {
+          "flag": "--skill",
+          "value": null
+        },
+        {
+          "flag": "--submit",
+          "value": null
+        },
+        {
+          "flag": "--tier",
+          "value": null
+        }
+      ],
       "pick.designer": [
         {
           "flag": "--at",
@@ -7685,6 +7898,16 @@
           "value": null
         }
       ],
+      "writer.approve": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        }
+      ],
       "pin.designer": [
         {
           "flag": "--at",
@@ -7750,6 +7973,48 @@
         },
         {
           "flag": "--root",
+          "value": null
+        }
+      ],
+      "publisher.candidates": [
+        {
+          "flag": "--basis",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--model",
+          "value": null
+        },
+        {
+          "flag": "--name",
+          "value": null
+        },
+        {
+          "flag": "--owner",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        },
+        {
+          "flag": "--skill",
+          "value": null
+        },
+        {
+          "flag": "--submit",
+          "value": null
+        },
+        {
+          "flag": "--tier",
           "value": null
         }
       ],

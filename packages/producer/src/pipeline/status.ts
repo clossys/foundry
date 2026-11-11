@@ -54,7 +54,7 @@ export interface PipelineStatus {
 }
 
 /** A model JSON record, or undefined when the file is absent; an unreadable or malformed one surfaces. */
-const readJson = (file: string): unknown => {
+export const readJson = (file: string): unknown => {
   let text: string;
   try { text = readModelText(file); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
   try { return JSON.parse(text); } catch (error) { throw new Error(`${file}: not JSON (${errorMessage(error)})`); }
@@ -92,13 +92,15 @@ function iaSlots(root: string, agent: string): string[] {
 }
 
 /**
- * Writer keys awaiting a decision: keys a Writer slot's candidates propose that its pinned candidate
- * does not hold (every key of an unpinned slot's newest candidate). A pinned key is decided: the
- * pin is the approval (no `status: approved` field exists in the Writer record format).
+ * Writer keys awaiting a decision, per Writer slot: keys a slot's candidates propose that its pinned
+ * candidate does not hold (every key of an unpinned slot's newest candidate). A pinned key is decided:
+ * the pin is the approval (`clossys approve writer/<slot>`; no `status: approved` field exists in the
+ * Writer record format).
  */
-function writerKeysUnapproved(root: string): number {
+export function writerKeysUnapproved(root: string): ReadonlyMap<string, readonly string[]> {
+  const unapproved = new Map<string, string[]>();
   const dir = join(root, "clossys", "agents", "writer");
-  if (!modelExists(dir)) return 0;
+  if (!modelExists(dir)) return unapproved;
   const keysOf = (file: string): Set<string> => {
     const keys = new Set<string>();
     for (const match of readModelText(file).matchAll(/^<!-- (\{.*\}) -->$/gm)) {
@@ -110,8 +112,7 @@ function writerKeysUnapproved(root: string): number {
     return keys;
   };
   const version = (name: string) => Number(/-v(\d+)\.md$/.exec(name)?.[1] ?? 0);
-  let count = 0;
-  for (const slot of listModelDir(dir)) {
+  for (const slot of listModelDir(dir).sort()) {
     const candidates = join(dir, slot, "candidates");
     const names = listModelDir(candidates).filter(name => name.endsWith(".md")).sort((a, b) => version(a) - version(b));
     if (!names.length) continue;
@@ -120,14 +121,14 @@ function writerKeysUnapproved(root: string): number {
     const proposed = new Set<string>();
     const after = typeof pin?.candidate === "string" ? names.filter(name => version(name) > version(pin.candidate as string)) : names.slice(-1);
     for (const name of after) for (const key of keysOf(join(candidates, name))) if (!pinned.has(key)) proposed.add(key);
-    count += proposed.size;
+    if (proposed.size) unapproved.set(slot, [...proposed].sort());
   }
-  return count;
+  return unapproved;
 }
 
 function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["agents"], seats: Record<string, SeatReport>): number {
   if (counter.startsWith("slots-undecided:")) return agents[counter.slice("slots-undecided:".length)]?.open ?? 0;
-  if (counter === "writer-keys-unapproved") return writerKeysUnapproved(root);
+  if (counter === "writer-keys-unapproved") return [...writerKeysUnapproved(root).values()].reduce((sum, keys) => sum + keys.length, 0);
   if (counter === "seats-open") return Object.values(seats).filter(seat => seat.state !== "assigned").length;
   if (counter === "slots-without-slot-json") {
     const dir = join(root, "clossys", "agents");

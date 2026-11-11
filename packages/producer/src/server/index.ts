@@ -148,6 +148,11 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         const { buildWiring } = await import("../pipeline/wiring.js");
         json(response, 200, { state: "ready", wiring: buildWiring(options.root) }); return;
       }
+      // The chain as `clossys run --explain` prints it: step, agent, kind, decider, last run state, open work.
+      if (pathname === "/api/pipeline/explain") {
+        const { explainChain } = await import("../pipeline/chain.js");
+        json(response, 200, { state: "ready", explain: explainChain(options.root) }); return;
+      }
       if (pathname === "/api/health") { json(response, 200, { ok: !!child, studio: child ? "ready" : "starting" }); return; }
       // One agent's slots in IA order, grouped as the Studio tabs place them (`<l1>/<l2>` sections).
       const galleryMatch = /^\/api\/slots\/([a-z]+)$/.exec(pathname);

@@ -4,11 +4,8 @@
   "agent": "owner",
   "kind": "decide:judgment",
   "stage": "direct.brief",
-  "summary": "Place every L3 slot: the agent IA tree and each slot's contract.",
-  "gap": {
-    "unit": "W6a",
-    "reason": "no clossys verb records an IA placement or a slot contract yet; the owner edits ia.json and slot.json"
-  },
+  "summary": "Place every L3 slot: the agent IA tree and each slot's contract (clossys ia).",
+  "run": "clossys ia <agent>/<slot> --under <l1>/<l2> --contract <file>",
   "inputs": [],
   "outputs": [
     {
@@ -38,7 +35,9 @@
   "checks": [
     "workspace"
   ],
-  "uses": [],
+  "uses": [
+    "skill/SKILL.md"
+  ],
   "decider": "owner",
   "packet": {
     "inputs": [],

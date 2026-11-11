@@ -105,6 +105,7 @@ export interface StepInput {
   readonly package?: string;
   readonly run?: string;
   readonly gap?: ActionGap;
+  readonly chain?: ActionChain;
   readonly pass?: ActionPass;
   readonly record?: typeof RUN_RECORD;
   readonly decider?: Decider;
@@ -157,8 +158,17 @@ export interface ActionPort { readonly glob: string; readonly schema: string }
 export interface ActionPass { readonly command: string; readonly exit: { readonly pass: readonly number[]; readonly fail: readonly number[]; readonly error: readonly number[] } }
 /** What a decide step's decider is handed (input globs), the files it writes (typed ports) and the checks they must pass. */
 export interface ActionPacket { readonly inputs: readonly string[]; readonly write: readonly ActionPort[]; readonly checks: readonly string[] }
-/** A decision with no clossys verb yet: the backlog unit that adds one. */
-export interface ActionGap { readonly unit: string; readonly reason: string }
+/**
+ * A decision with no clossys verb yet: the backlog unit that adds one and the command it awaits.
+ * check:step-standard fails a gap whose awaited verb the CLI now has (gap.stale).
+ */
+export interface ActionGap { readonly unit: string; readonly reason: string; readonly awaits: string }
+/**
+ * How `clossys run` executes a plumb step: the concrete command when the run names placeholders
+ * (`<file>`), or `skip` with why the chain never runs it (a server, a caller-chosen target).
+ * Absent, the chain runs `run` itself.
+ */
+export type ActionChain = string | { readonly skip: string };
 /** packages/<package>/actions/<id>/action.json (pipeline/schemas/action.schema.json). */
 export interface ActionContract {
   readonly schema: typeof ACTION_SCHEMA;
@@ -169,6 +179,7 @@ export interface ActionContract {
   readonly summary: string;
   readonly run?: string;
   readonly gap?: ActionGap;
+  readonly chain?: ActionChain;
   readonly inputs: readonly ActionPort[];
   readonly outputs: readonly ActionPort[];
   readonly pass: ActionPass;
@@ -268,6 +279,7 @@ export function defineAction(contract: ActionContract, binding: Binding | undefi
     inputs: contract.inputs, outputs: contract.outputs, command, checks: contract.checks,
     ...(contract.pending ? { pending: contract.pending } : {}), ...(contract.open ? { open: contract.open } : {}),
     agent: contract.agent, package: pkg, ...(contract.run !== undefined ? { run: contract.run } : { gap: contract.gap! }),
+    ...(contract.chain !== undefined ? { chain: contract.chain } : {}),
     pass: contract.pass, record: contract.record,
     ...(contract.decider ? { decider: contract.decider } : {}), ...(contract.packet ? { packet: contract.packet } : {}),
     uses: contract.uses,

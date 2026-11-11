@@ -6,6 +6,9 @@
   "stage": "publish.publish",
   "summary": "Serve the local Studio over the live slot model (no compile step).",
   "run": "clossys produce",
+  "chain": {
+    "skip": "serves Studio until it is stopped; it has no end or exit to record"
+  },
   "inputs": [
     {
       "glob": "clossys/agents/*/ia.json",

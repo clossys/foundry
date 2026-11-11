@@ -6,6 +6,7 @@
   "stage": "direct.pin",
   "summary": "Director's own store commands (clossys director check, rate-check) through the slot-model reader and writer.",
   "run": "clossys director check <command>",
+  "chain": "clossys director check brand",
   "inputs": [
     {
       "glob": "clossys/agents/director/*/pin.json",

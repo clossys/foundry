@@ -5,10 +5,7 @@
   "kind": "decide:creative",
   "stage": "design.make",
   "summary": "Create Writer candidates: one immutable file per option, per L3 slot.",
-  "gap": {
-    "unit": "W6a",
-    "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
-  },
+  "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
   "inputs": [
     {
       "glob": "clossys/agents/director/*/pin.json",

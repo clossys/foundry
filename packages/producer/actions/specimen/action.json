@@ -6,6 +6,9 @@
   "stage": "publish.assemble",
   "summary": "Serve or snapshot a library element specimen.",
   "run": "clossys specimen <command>",
+  "chain": {
+    "skip": "specimen serves or snapshots a caller-chosen specimen; Studio and capture run it"
+  },
   "inputs": [
     {
       "glob": "clossys/agents/*/ia.json",

@@ -27,6 +27,10 @@
 //   run.trace-id       a traced run (`clossys pipeline trace <id> -- <command>`) traces another id
 //   run.untraced       a traced command is not `npm run <script>` or `node <file>`
 //   run.target-missing a traced command's npm script or file does not exist in the action's package
+//   gap.stale          a gap awaits a clossys verb the CLI now has: name the run and drop the gap
+//   chain.missing      a plumb run holds a placeholder (`<file>`) and names no chain command or skip
+//   chain.mismatch     a chain command is not its run with each placeholder filled (same verb, flags, order)
+//   chain.invalid      a decide action names a chain: decide steps stop the chain (clossys next), never run in it
 //   pass.invalid       a pass is not a clossys command with the 0/1/2 exit contract, or a traced pass
 //                      does not trace `check:<id>`, or its command or verb does not resolve
 //   pass.uncited       a traced pass's check is not one of the contract's checks
@@ -201,6 +205,21 @@ for (const action of loaded) {
   // Run or gap.
   if ((contract.run === undefined) === (contract.gap === undefined)) fail("run.invalid", `${id} names ${contract.run === undefined ? "neither" : "both"} run and gap; exactly one`);
   if (contract.gap !== undefined && !decide) fail("run.invalid", `${id} is plumb but is a gap; a plumb action names its run`);
+  const awaited = typeof contract.gap?.awaits === "string" ? words(contract.gap.awaits)[1] : undefined;
+  if (awaited && VERBS.has(awaited)) fail("gap.stale", `${id} is a gap awaiting clossys ${awaited}, which the CLI now has; name its run and drop the gap`);
+  // Chain: what clossys run executes for a plumb step.
+  const chain = contract.chain;
+  if (chain !== undefined && decide) fail("chain.invalid", `${id} is ${contract.kind} but names a chain; a decide step stops the chain (clossys next) and never runs in it`);
+  else if (!decide && typeof contract.run === "string") {
+    const runWords = words(contract.run);
+    const placeholder = word => /<[^>]*>/.test(word);
+    if (chain === undefined && runWords.some(placeholder)) fail("chain.missing", `${id} runs \`${contract.run}\`, which holds a placeholder; name the chain command clossys run executes, or a chain skip with its reason`);
+    if (typeof chain === "string") {
+      const chainWords = words(chain);
+      const differs = chainWords.length !== runWords.length || runWords.some((word, index) => !placeholder(word) && word !== chainWords[index]) || chainWords.some(placeholder);
+      if (differs) fail("chain.mismatch", `${id} chains \`${chain}\`, which is not its run \`${contract.run}\` with each placeholder filled`);
+    }
+  }
   if (typeof contract.run === "string") {
     let run = null;
     try { run = define.parseRun(contract.run); } catch (error) { fail("run.invalid", `${id}: ${error.message}`); }

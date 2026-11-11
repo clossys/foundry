@@ -48,7 +48,9 @@
     "pin-propagation",
     "every-candidate-previewable"
   ],
-  "uses": [],
+  "uses": [
+    "skill/SKILL.md"
+  ],
   "decider": "owner",
   "packet": {
     "inputs": [
