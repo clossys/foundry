@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-goal-annual-v1.md",
-  "sha256": "d2bbe49d1f184e3ab51a52e0a39687f5366992f7ef4799da40d31415ad7f3081",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-goal-annual-v2.md",
+  "sha256": "73c25918b5c5a8e0ed3d5ce9a9eee2891eae7a22307fcca3e61b5462a78a5c81",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:36.846Z"
+  "at": "2026-11-11T06:48:09.747Z"
 }

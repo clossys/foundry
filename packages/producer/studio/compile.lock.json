@@ -3110,12 +3110,12 @@
       "sha256": "12ace57e07cd4638c82bb8dc8421656c90d0ee731c91fa273b3a468ee3dc0f2e"
     },
     {
-      "path": "clossys/agents/director/aspiration.goal.annual/candidates/studio-goal-annual-v1.md",
-      "sha256": "d2bbe49d1f184e3ab51a52e0a39687f5366992f7ef4799da40d31415ad7f3081"
+      "path": "clossys/agents/director/aspiration.goal.annual/candidates/studio-goal-annual-v2.md",
+      "sha256": "73c25918b5c5a8e0ed3d5ce9a9eee2891eae7a22307fcca3e61b5462a78a5c81"
     },
     {
       "path": "clossys/agents/director/aspiration.goal.annual/pin.json",
-      "sha256": "100916b580e58ec624900f72fbdb8ccb6bb139a33000ef9e6d41ffb7b34ce605"
+      "sha256": "57122ef86d87aaa918fe9aea532fa7c0c566de6e7a17f3834035494232807e86"
     },
     {
       "path": "clossys/agents/director/aspiration.goal.annual/slot.json",
@@ -3158,24 +3158,24 @@
       "sha256": "24a02535344c17e6b3012c0a57458ce5a40039a4ee7a6224f3b66f408138561a"
     },
     {
-      "path": "clossys/agents/director/capability.competency.critical/candidates/studio-competency-critical-v1.md",
-      "sha256": "e372739110e10b532a91662f0f502569723cd95d596d6fb9590f55f966702932"
+      "path": "clossys/agents/director/capability.competency.critical/candidates/studio-competency-critical-v2.md",
+      "sha256": "62ed844188dab5448cb64b72baf299fad1122ecb354d05ec8c298d4123c899a9"
     },
     {
       "path": "clossys/agents/director/capability.competency.critical/pin.json",
-      "sha256": "78eb0c5a4f2acf48c78dae4f227c770d7705e0ef80d5d9f970b868cc0b16a1fb"
+      "sha256": "972cdc4cb1b0ec8b3acecd8189351dcf7129dc55cb1828e3507501ea38fa911a"
     },
     {
       "path": "clossys/agents/director/capability.competency.critical/slot.json",
       "sha256": "f578b9244868aa1d59679f24ce439661f89f54f07fa951f35c56fc49c9cae969"
     },
     {
-      "path": "clossys/agents/director/capability.competency.gap/candidates/studio-competency-gap-v1.md",
-      "sha256": "fec0a106587b0190affc720deddeba85fcf6fd88786e68020ca6c5f7b3434940"
+      "path": "clossys/agents/director/capability.competency.gap/candidates/studio-competency-gap-v2.md",
+      "sha256": "85c35d530419effe48fe06c3a7832d77f87647db092d2b8f4c1ab1cffecb1c41"
     },
     {
       "path": "clossys/agents/director/capability.competency.gap/pin.json",
-      "sha256": "ccba46f0a721d1fc8b21f9e8f5dc8835a343d81ab211bdee4ea463ba0113c07d"
+      "sha256": "5605e98167732dcc843d14057474525dfc7c0b72c2ec0c8340bb9a152995ecd5"
     },
     {
       "path": "clossys/agents/director/capability.competency.gap/slot.json",
@@ -3206,12 +3206,12 @@
       "sha256": "2bec9f14e2a0dcda7d03f57cfac0dfae73ce5cab75a532d22546f8172011cd40"
     },
     {
-      "path": "clossys/agents/director/capability.resource.allocation/candidates/studio-allocation-v1.md",
-      "sha256": "7dc4bed90e5bb41f5b4acd120c46130347d82774156625f6c8b7b0740ff2322d"
+      "path": "clossys/agents/director/capability.resource.allocation/candidates/studio-allocation-v2.md",
+      "sha256": "37d7e61ee2095c809db0f0f973e0afb8fd85444d6f36b74d829f863e9028aa96"
     },
     {
       "path": "clossys/agents/director/capability.resource.allocation/pin.json",
-      "sha256": "2d50d524cd216b916e0590530c782e7240d1461037c07eb68e69f8dcdd25aac1"
+      "sha256": "af09dd7f28f4671165f096bd861eb94a3f8c9be274434c6148004f629876f111"
     },
     {
       "path": "clossys/agents/director/capability.resource.allocation/slot.json",
@@ -3302,12 +3302,12 @@
       "sha256": "743cdf35984684016e6ef6c834b4b8df43d6a94b70fa6affe4251d55c1f8a663"
     },
     {
-      "path": "clossys/agents/director/context.company.strength/candidates/studio-strength-v1.md",
-      "sha256": "5326295addd30810f5fc4318abd9ef2f5dfb48ee4b257c2115192ff0815dce6c"
+      "path": "clossys/agents/director/context.company.strength/candidates/studio-strength-v2.md",
+      "sha256": "0d219f4b75073b2de80df41d675dd47599b25ef4b23287f4a553499c0ac62c05"
     },
     {
       "path": "clossys/agents/director/context.company.strength/pin.json",
-      "sha256": "2a46076c0281399aaa5bd0683be14f120b7874cb960f5fea5e31524636197b5a"
+      "sha256": "cb3606219a3b3c472388315c8fcb50edf8cdeab236a88417e9578380608a5c37"
     },
     {
       "path": "clossys/agents/director/context.company.strength/slot.json",

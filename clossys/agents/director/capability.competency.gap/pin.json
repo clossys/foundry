@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-competency-gap-v1.md",
-  "sha256": "fec0a106587b0190affc720deddeba85fcf6fd88786e68020ca6c5f7b3434940",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-competency-gap-v2.md",
+  "sha256": "85c35d530419effe48fe06c3a7832d77f87647db092d2b8f4c1ab1cffecb1c41",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:38.635Z"
+  "at": "2026-11-11T06:48:11.208Z"
 }
