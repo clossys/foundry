@@ -1,7 +1,7 @@
 {
   "candidate": "studio-team-role-v5.md",
   "sha256": "60ec01142b20e5f11767aa108f75314d1b75133a1cd2b9476d3b613548151a1d",
-  "decidedBy": "agent:director",
-  "basis": "agent",
-  "at": "2026-11-11T18:40:42.882Z"
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+  "basis": "bulk",
+  "at": "2026-11-11T22:47:54.087Z"
 }

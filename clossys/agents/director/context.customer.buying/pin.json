@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-customer-buying-v5.md",
-  "sha256": "5b77e8293b6d8a13dd18f65084d71a24015868a3cfbf92d663792301964c88ce",
-  "decidedBy": "agent:director",
-  "basis": "agent",
-  "at": "2026-11-11T18:40:46.221Z"
+  "candidate": "studio-customer-buying-v6.md",
+  "sha256": "a83b998781bc33b7ec012290a2d221771890dd6544259791186d217d76d30753",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+  "basis": "bulk",
+  "at": "2026-11-11T22:47:46.238Z"
 }

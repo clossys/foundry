@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-milestone-v6.md",
-  "sha256": "1e71690cf0fa4155e07e37acc0bad318bc1d6698962632269d89607ddd7cb76d",
-  "decidedBy": "agent:director",
-  "basis": "agent",
-  "at": "2026-11-11T18:40:51.313Z"
+  "candidate": "studio-milestone-v7.md",
+  "sha256": "a80d3f5558ec885268eb8331ebd54af2f91c88ab7312fd2a447ddb184730715e",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+  "basis": "bulk",
+  "at": "2026-11-11T22:47:55.743Z"
 }

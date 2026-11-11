@@ -1,7 +1,7 @@
 {
   "candidate": "studio-partner-v2.md",
   "sha256": "89ba512d64186b272fa64f80a99024150fb51ce5919e8104a6ddcda196e95e85",
-  "decidedBy": "agent:director",
-  "basis": "agent",
-  "at": "2026-11-11T18:40:42.200Z"
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+  "basis": "bulk",
+  "at": "2026-11-11T22:47:52.842Z"
 }

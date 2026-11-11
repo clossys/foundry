@@ -1,7 +1,7 @@
 {
   "candidate": "studio-mitigation-v6.md",
   "sha256": "130d8cbfc346f047e0f10c2d17cdac3e74972a4fa13f8393ddf927e7b3536cb5",
-  "decidedBy": "agent:director",
-  "basis": "agent",
-  "at": "2026-11-11T18:40:49.687Z"
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+  "basis": "bulk",
+  "at": "2026-11-11T22:47:57.402Z"
 }

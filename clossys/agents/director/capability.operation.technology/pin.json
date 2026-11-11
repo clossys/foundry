@@ -1,7 +1,7 @@
 {
   "candidate": "studio-technology-v3.md",
   "sha256": "3256672f8025804dd014a29b7c10fd44b97505e17212ae9388d34661f1609c61",
-  "decidedBy": "agent:director",
-  "basis": "agent",
-  "at": "2026-11-11T18:40:38.730Z"
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+  "basis": "bulk",
+  "at": "2026-11-11T22:47:53.673Z"
 }

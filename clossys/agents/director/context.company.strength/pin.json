@@ -1,7 +1,7 @@
 {
   "candidate": "studio-strength-v5.md",
   "sha256": "5883ba094e392b27e5ebc01535e29173466ebeeb37a5600065846dafe77df12e",
-  "decidedBy": "agent:director",
-  "basis": "agent",
-  "at": "2026-11-11T18:50:01.918Z"
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+  "basis": "bulk",
+  "at": "2026-11-11T22:47:46.644Z"
 }

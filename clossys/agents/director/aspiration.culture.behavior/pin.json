@@ -1,7 +1,7 @@
 {
   "candidate": "studio-behavior-v3.md",
   "sha256": "3f3af21a6e3d58a4c021f35331d8902cf9935efcb7cfdac960402ecbbac46038",
-  "decidedBy": "agent:director",
-  "basis": "agent",
-  "at": "2026-11-11T18:40:35.223Z"
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+  "basis": "bulk",
+  "at": "2026-11-11T22:47:47.868Z"
 }

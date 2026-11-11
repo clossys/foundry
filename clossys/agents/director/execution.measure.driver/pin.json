@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-drivers-v7.md",
-  "sha256": "e919b4fdb2f4f33f7b38d888a63b3130fe44b596c25ec9623e24d855e85b19e5",
-  "decidedBy": "agent:director",
-  "basis": "agent",
-  "at": "2026-11-11T18:40:48.171Z"
+  "candidate": "studio-drivers-v8.md",
+  "sha256": "5072b774db997cf836b7bdcc075f7700d5ff142a0c9a6a5effeb7dcec33cee19",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+  "basis": "bulk",
+  "at": "2026-11-11T22:47:56.575Z"
 }
