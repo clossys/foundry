@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-gap-v1.md",
-  "sha256": "055cb8002b41d793350dec428d5869311729c449ebec7d22ec7eefbfd5d48b35",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-gap-v2.md",
+  "sha256": "359404a22244f8c7bec07044c2adc4c809b27721c15e49c62a1f2dadda7d8074",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:48.097Z"
+  "at": "2026-11-11T09:14:50.071Z"
 }

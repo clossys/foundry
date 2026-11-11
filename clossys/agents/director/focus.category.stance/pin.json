@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-stance-v1.md",
-  "sha256": "aac63cc01cc8e33463c7b9f2b17a9d5f43efefc2b27d9acdf2f0461fd9ce03a9",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-stance-v2.md",
+  "sha256": "cf35a205be1dfcac3dce123342e05148efdd201b26b42f38a566706a8f44319e",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:56.283Z"
+  "at": "2026-11-11T09:14:52.586Z"
 }

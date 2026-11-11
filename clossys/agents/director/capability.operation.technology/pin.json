@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-technology-v1.md",
-  "sha256": "fae19da092cb1619b9bc5b658349f9ab5654502529751b6cc1203d7a3d15c4d6",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-technology-v2.md",
+  "sha256": "4c498289892e99dc3dab6e560a04e2522a2be2613889d115203e28efdc0c5660",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:39.409Z"
+  "at": "2026-11-11T09:14:56.346Z"
 }

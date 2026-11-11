@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-margin-v1.md",
-  "sha256": "99a7c5f16f30427afe7d7c40c6e7fa2d606b6245fca0692bf6533ae78dc83836",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-margin-v2.md",
+  "sha256": "debcf9e815d8304923481a9fc37a1fc2fef4eb610e363581fd54e424dfe93025",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:33.894Z"
+  "at": "2026-11-11T09:14:53.217Z"
 }
