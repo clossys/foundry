@@ -1,25 +1,38 @@
 import type { StrategyModel } from '../format/types.js';
-import type { CheckOptions, CompletionReport, Scope, StatusReport, StorylineReport } from './types.js';
+import type { CellCompletion, CheckOptions, CompletionReport, Scope, StatusReport, StorylineReport } from './types.js';
 import { blocks } from './types.js';
 import { activeCell, fresh, scopeIds } from './shared.js';
 import { checkCell } from './quality.js';
 import { checkCoherence } from './coherence.js';
 import { recordedJudgeVerdicts, uncitedJudgements } from './judgements.js';
+/** Without caller-supplied verdicts, the recorded judgement findings that are still current count. */
+function withRecordedVerdicts(model: StrategyModel, given: CheckOptions): CheckOptions {
+  return { ...given, judgeVerdicts: given.judgeVerdicts ?? recordedJudgeVerdicts(model) };
+}
+/**
+ * The per-cell completion rule, shared by completion and brief handoffs: a cell is active only when its
+ * pointed version is active and none of its own findings block (Q1–Q7, including the Q7 pin decider, and
+ * uncited judgements); it is fresh when every cited cell is the active version.
+ */
+export function cellCompletions(model: StrategyModel, ids: readonly string[], given: CheckOptions = {}): CellCompletion[] {
+  const options = withRecordedVerdicts(model, given);
+  const uncited = uncitedJudgements(model);
+  return ids.map(id => {
+    const cell = activeCell(model, id);
+    const findings = cell ? [...checkCell(cell, { model, ...options }), ...uncited.filter(finding => finding.cell === id)] : [];
+    return { id, version: cell?.version, active: Boolean(cell) && !findings.some(blocks), fresh: Boolean(cell && fresh(cell, model)), findings };
+  });
+}
 /** Canonical quality, coherence and completion status for the selected scope. */
 export function strategyStatus(model: StrategyModel, selection?: { scope?: Scope }, options?: CheckOptions): StatusReport;
 /** @deprecated Pass { scope } instead of a positional scope. */
 export function strategyStatus(model: StrategyModel, scope: Scope, options?: CheckOptions): StatusReport;
 export function strategyStatus(model: StrategyModel, selection: { scope?: Scope } | Scope = {}, given: CheckOptions = {}): StatusReport {
-  // One evaluator: without caller-supplied verdicts, the recorded judgement findings that are still current count.
-  const options: CheckOptions = { ...given, judgeVerdicts: given.judgeVerdicts ?? recordedJudgeVerdicts(model) };
+  // One evaluator: the same verdicts feed the per-cell rule and coherence.
+  const options = withRecordedVerdicts(model, given);
   const scope = typeof selection === 'string' ? selection : selection.scope ?? 'full';
   const ids = scopeIds(model, scope), selected = new Set(ids), core = new Set(scopeIds(model, 'core'));
-  const uncited = uncitedJudgements(model);
-  const cells = ids.map(id => {
-    const cell = activeCell(model, id);
-    const findings = cell ? [...checkCell(cell, { model, ...options }), ...uncited.filter(finding => finding.cell === id)] : [];
-    return { id, version: cell?.version, active: Boolean(cell) && !findings.some(blocks), fresh: Boolean(cell && fresh(cell, model)), findings };
-  });
+  const cells = cellCompletions(model, ids, options);
   const valid = (id: string) => cells.some(cell => cell.id === id && cell.active && cell.fresh);
   const findings = checkCoherence(model, scope, options);
   const pairsPass = (members: Set<string>, among?: Set<string>) => !findings.some(finding => (finding.rule === 'C1' || finding.rule === 'C2') && finding.cells?.some(id => members.has(id)) && (!among || finding.cells.every(id => among.has(id))) && (blocks(finding) || (finding.severity === 'judge' && finding.verdict !== 'pass')));

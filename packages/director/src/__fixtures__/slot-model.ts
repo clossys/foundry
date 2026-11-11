@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { loadCatalog } from "../catalog.js";
 
 /**
@@ -88,6 +88,36 @@ export function stageSlot(root: string, id: string, version: number, direction: 
   writeFileSync(join(dir, "candidates", name), bytes);
   if (!options.unpinned) writeFileSync(join(dir, "pin.json"), pinFixture(name, bytes, options.pin));
   return { path: `${id}/candidates/${name}`, bytes };
+}
+
+/** The cell a bare (non-consumer) root's passing fixtures cite: such a root reads no consumer evidence. */
+export const PASSING_SUPPORT_CELL = "context.customer.buying";
+
+/**
+ * Stages a slot whose candidate passes the per-cell completion rule (Q1–Q7): one Direction bullet per
+ * catalog key, a Because citing resolvable evidence (plus any extra `refs`), a testable Watch and, unless
+ * `pin` says otherwise, an owner pick. Use it wherever a test needs a cell `complete` and handoffs accept.
+ * Under a consumer root (`<consumer>/agents/director`) the evidence is a staged finding; a bare root reads
+ * no consumer evidence, so there it is a pinned `PASSING_SUPPORT_CELL`, and nothing is written outside the root.
+ */
+export function stagePassingSlot(root: string, id: string, version = 1, options: SlotFixture & { text?: string } = {}): { path: string; bytes: string } {
+  const def = loadCatalog().cells.find(cell => cell.id === id);
+  const text = options.text ?? "Only Fictional studios with 20 bookings each week";
+  const direction = (def?.mustContain ?? []).map(({ key }) => `${key}: ${key === "Date" ? "2027-01-01" : text}`);
+  if (direction.length < 2) direction.push(`Not: Large factories with 900 sites`);
+  let evidence: string;
+  if (basename(root) === "director" && basename(dirname(root)) === "agents") {
+    stageFinding(root, "fixture-passing", "---\nid: fixture-passing\nsource: user\nobserved: 2026-10-29\nby: researcher\n---\n- Five fictional studio interviews.\n");
+    evidence = "finding:fixture-passing";
+  } else {
+    if (id === PASSING_SUPPORT_CELL) throw new Error(`${PASSING_SUPPORT_CELL} is the bare-root support cell; stage it under a consumer root`);
+    if (!existsSync(join(root, PASSING_SUPPORT_CELL, "pin.json"))) stageSlot(root, PASSING_SUPPORT_CELL, 1, ["Decider: Studio owners.", "Process: One call."]);
+    evidence = `${PASSING_SUPPORT_CELL}@1`;
+  }
+  const refs = [evidence, ...(options.refs ?? [])];
+  return stageSlot(root, id, version, direction, {
+    ...options, refs, because: [`Five interviews (${refs.join(", ")})`], watch: options.watch ?? ["If trial count > 10 each month, then review this choice."],
+  });
 }
 
 export function stageWontClaimCells(root: string): void {

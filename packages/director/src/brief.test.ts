@@ -6,18 +6,17 @@ import { compileBrief } from "./brief.js";
 import { discoverBriefContracts, validateBriefContract } from "./brief-contracts.js";
 import { openStrategy } from "./api.js";
 import { readStrategyRoot } from "./store.js";
-import { stageFinding, stageSlot, strategyRoot } from "./__fixtures__/slot-model.js";
+import { stageFinding, stagePassingSlot, strategyRoot } from "./__fixtures__/slot-model.js";
+import { completion } from "./checks/index.js";
 import { reader } from "../test/store.js";
 
 const roots: string[] = [];
 const need = "context.customer.need", promise = "advantage.proposition.promise", differentiator = "advantage.defensibility.differentiator";
 const contract = { id: "fixture.brief", schemaVersion: 1 as const, owner: "fixture", requires: [need], optional: ["context.customer.buying"] };
 function put(root: string, path: string, bytes: string) { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), bytes); }
-/** Stages one candidate of a slot; an "active" one is pinned, any other status is left unpinned. */
+/** Stages one candidate of a slot that passes completion; an "active" one is owner-pinned, any other status is left unpinned. */
 function stage(root: string, id: string, version = 1, refs: string[] = [], status = "active") {
-  stageSlot(root, id, version, ["Need: A fictional studio needs scheduling.", "Not: Large factories."], {
-    refs, because: [`Measured interviews${refs.length ? ` (${refs.join(", ")})` : "."}`], watch: ["If requests > 5 each month, then review."], unpinned: status !== "active",
-  });
+  stagePassingSlot(root, id, version, { refs, unpinned: status !== "active" });
 }
 function fixture(active: Record<string, number | null> = { [need]: 1 }) {
   const project = mkdtempSync(join(tmpdir(), "strategy-brief-")); roots.push(project);
@@ -32,10 +31,10 @@ describe("brief compilation", () => {
   it("returns ready and copies Direction plus Watch with CellRef provenance", () => {
     const { root } = fixture(); const result = brief(root);
     expect(result.state).toBe("ready"); expect(result.missing).toEqual([]); expect(result.stale).toEqual([]);
-    expect(result.cells[0]).toMatchObject({ cell: need, version: 1, direction: [{ key: "Need" }, { key: "Not" }], watch: [{ text: "If requests > 5 each month, then review." }] });
+    expect(result.cells[0]).toMatchObject({ cell: need, version: 1, direction: [{ key: "Job" }, { key: "Pain" }, { key: "Trigger" }], watch: [{ text: "If trial count > 10 each month, then review this choice." }] });
     expect(result.fingerprint).toMatch(/^[a-f0-9]{64}$/); expect(Number.isNaN(Date.parse(result.compiledAt))).toBe(false);
-    const filtered = brief(root, { ...contract, keys: { [need]: ["Not"] } });
-    expect(filtered.cells[0]?.direction.map(b => b.key)).toEqual(["Not"]);
+    const filtered = brief(root, { ...contract, keys: { [need]: ["Pain"] } });
+    expect(filtered.cells[0]?.direction.map(b => b.key)).toEqual(["Pain"]);
     expect(filtered.cells[0]?.watch).toEqual(result.cells[0]?.watch);
   });
   it("lists missing required cells, ignores absent optional cells, and requires a pinned candidate", () => {
@@ -54,7 +53,8 @@ describe("brief compilation", () => {
     stage(root, need, 2, [], "draft");
     expect(brief(root, selected).state).toBe("ready");
     stage(root, need, 2);
-    expect(brief(root, selected)).toMatchObject({ state: "stale", stale: [{ cell: need, version: 1 }] });
+    // Completion rejects a citation of a superseded version (Q3 unresolved), so the stale ref also makes the cell missing.
+    expect(brief(root, selected)).toMatchObject({ state: "missing", missing: [promise], stale: [{ cell: need, version: 1 }] });
   });
   it("checks transitive C1 dependencies even beyond the contract cell list", () => {
     const { root } = fixture({ [need]: 2, [promise]: 1, [differentiator]: 1 });
@@ -98,6 +98,53 @@ describe("brief compilation", () => {
     stage(root, need, 2, [], "draft");
     expect(brief(root).fingerprint).toBe(first.fingerprint);
     expect(brief(root, { ...contract, requires: ["context.customer.buying", need], optional: [] }).fingerprint).toBe(first.fingerprint);
+  });
+});
+
+describe("C4-HANDOFF: a required cell is present only when completion accepts it", () => {
+  const BULK = { decidedBy: "owner:2026-11-03 pin-if-agree", basis: "bulk" };
+  const buying = "context.customer.buying";
+  /** The handoff's present set and complete's per-cell verdict must agree for every required cell. */
+  function agrees(root: string, selected = contract) {
+    const result = brief(root, selected);
+    const cells = completion(readStrategyRoot(root, reader)).cells;
+    for (const id of selected.requires) expect(result.missing.includes(id)).toBe(!cells.find(cell => cell.id === id)!.active);
+    return result;
+  }
+  it("a passing owner-picked core cell is present and the handoff is ready", () => {
+    const { root } = fixture();
+    expect(agrees(root)).toMatchObject({ state: "ready", missing: [] });
+  });
+  it("a core cell with a bulk, planner or agent pin is handoff-missing, as completion's Q7 says", () => {
+    const { root } = fixture();
+    for (const pin of [BULK, { decidedBy: "planner:c4", basis: "planner" }, { decidedBy: "agent:writer", basis: "agent" }]) {
+      stagePassingSlot(root, need, 1, { pin });
+      expect(agrees(root)).toMatchObject({ state: "missing", missing: [need] });
+    }
+    stagePassingSlot(root, need, 1, { pin: { decidedBy: "owner:2026-11-10 interview", basis: "picked" } });
+    expect(agrees(root).state).toBe("ready");
+  });
+  it("a non-core cell counts when agent-picked but never when bulk-pinned", () => {
+    const { root } = fixture();
+    const selected = { ...contract, requires: [buying], optional: [] };
+    stagePassingSlot(root, buying, 1, { pin: { decidedBy: "agent:planner:c4", basis: "agent" } });
+    expect(agrees(root, selected).state).toBe("ready");
+    stagePassingSlot(root, buying, 1, { pin: BULK });
+    expect(agrees(root, selected)).toMatchObject({ state: "missing", missing: [buying] });
+  });
+  it("an owner-picked cell that fails its own checks is handoff-missing", () => {
+    const { root } = fixture();
+    stagePassingSlot(root, need, 1, { watch: ["Review."] });
+    const failing = agrees(root);
+    expect(failing).toMatchObject({ state: "missing", missing: [need] });
+    // The cell is still pinned and carried; only its presence for the handoff is refused.
+    expect(failing.cells.map(cell => cell.cell)).toEqual([need]);
+    expect(completion(readStrategyRoot(root, reader)).cells.find(cell => cell.id === need)!.findings.some(finding => finding.rule === "Q4" && finding.severity === "hard")).toBe(true);
+  });
+  it("an optional cell that fails completion does not make the handoff missing", () => {
+    const { root } = fixture();
+    stagePassingSlot(root, buying, 1, { pin: BULK });
+    expect(agrees(root)).toMatchObject({ state: "ready", missing: [] });
   });
 });
 

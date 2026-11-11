@@ -29,7 +29,8 @@ describe("synchronous strategy read API", () => {
     expect(strategy.getCell(id, 3)).toBeUndefined();
     expect(strategy.getCell("unknown.cell.id")).toBeUndefined();
     expect(strategy.getActive(id)?.version).toBe(1);
-    expect(strategy.getBrief(contract.id).state).toBe("ready");
+    // Pinned is not enough: the fixture fails Q2 and Q3 (see the completion test below), so the handoff counts it missing.
+    expect(strategy.getBrief(contract.id)).toMatchObject({ state: "missing", missing: [id] });
   });
   it("unpinned candidates never stale a current ref, but pinning a newer version does", () => {
     const root = fixture();
