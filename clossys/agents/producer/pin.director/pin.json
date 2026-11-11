@@ -1,7 +1,7 @@
 {
-  "candidate": "pin.director-v1.json",
-  "sha256": "3437d5878154159d9e1e1963948cd326db5ac718ed27db128ddb5293760613bc",
-  "decidedBy": "migrated",
-  "basis": "planner",
-  "at": "2026-11-05T06:42:38.000Z"
+  "candidate": "pin.director-v2.json",
+  "sha256": "a5176d77be2ae507316d95cc154ab7ec2866c04038b0667677d4bd2232dcad77",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6806341230 (OWNER WORDS 2026-11-11 Producer r1, option a)",
+  "basis": "picked",
+  "at": "2026-11-11T21:24:53.821Z"
 }

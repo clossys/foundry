@@ -1,0 +1,12 @@
+{
+  "by": "owner",
+  "llm": {
+    "model": "claude-opus-5-5",
+    "tier": "mid",
+    "promptFile": "packages/producer/actions/evidence/skill.md"
+  },
+  "human": {
+    "procedure": "Decide which owner answers and findings the Director may cite.",
+    "command": "clossys evidence"
+  }
+}

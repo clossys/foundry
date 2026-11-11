@@ -1,0 +1,12 @@
+{
+  "by": "agent:director",
+  "llm": {
+    "model": "claude-opus-5-5",
+    "tier": "mid",
+    "promptFile": "packages/director/actions/director.candidates/skill.md"
+  },
+  "human": {
+    "procedure": "Create Director candidates for the open L3 slots on the selection ladder: select a seed first (when seeds are available), then adapt the closest seed, then create, with the reason no seed fit; one immutable file per option.",
+    "command": "clossys next"
+  }
+}

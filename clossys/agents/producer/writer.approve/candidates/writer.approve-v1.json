@@ -1,0 +1,12 @@
+{
+  "by": "owner",
+  "llm": {
+    "model": "claude-opus-5-5",
+    "tier": "mid",
+    "promptFile": "packages/producer/actions/writer.approve/skill.md"
+  },
+  "human": {
+    "procedure": "Decide whether a Writer copy key is approved to ship.",
+    "command": "clossys approve"
+  }
+}

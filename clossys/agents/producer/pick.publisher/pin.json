@@ -1,7 +1,7 @@
 {
-  "candidate": "pick.publisher-v1.json",
-  "sha256": "daf874d42f8286e24902822252113e1b9db9f725ffbf1bd1b1d80d7a9b80c604",
-  "decidedBy": "migrated",
-  "basis": "planner",
-  "at": "2026-11-05T06:42:38.000Z"
+  "candidate": "pick.publisher-v2.json",
+  "sha256": "1657bf5eeef787356d2785c47faed9fc32e54e049f6ea5bba6df543c673d622c",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6806341230 (OWNER WORDS 2026-11-11 Producer r1, option a)",
+  "basis": "picked",
+  "at": "2026-11-11T21:24:57.682Z"
 }

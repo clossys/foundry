@@ -1,0 +1,12 @@
+{
+  "by": "owner",
+  "llm": {
+    "model": "claude-opus-5-5",
+    "tier": "mid",
+    "promptFile": "packages/producer/actions/ia/skill.md"
+  },
+  "human": {
+    "procedure": "Decide where each L3 slot sits in its agent's IA tree (L1, L2) and what the slot is for: its contract in slot.json.",
+    "command": "clossys ia"
+  }
+}

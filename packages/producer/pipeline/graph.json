@@ -73,15 +73,15 @@
       "holder": {
         "id": "you",
         "kind": "you",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
         "x": 0,
-        "y": 344
+        "y": 0
       }
     },
     {
@@ -155,15 +155,15 @@
       "holder": {
         "id": "you",
         "kind": "you",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 0,
-        "y": 0
+        "x": 280,
+        "y": 172
       }
     },
     {
@@ -231,15 +231,15 @@
       "holder": {
         "id": "you",
         "kind": "you",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 280,
-        "y": 0
+        "x": 0,
+        "y": 172
       }
     },
     {
@@ -313,15 +313,15 @@
       "holder": {
         "id": "you",
         "kind": "you",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 0,
-        "y": 172
+        "x": 280,
+        "y": 0
       }
     },
     {
@@ -386,15 +386,15 @@
       "holder": {
         "id": "you",
         "kind": "you",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 280,
-        "y": 172
+        "x": 0,
+        "y": 344
       }
     },
     {
@@ -479,8 +479,8 @@
       "holder": {
         "id": "director",
         "kind": "ai",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "director",
@@ -563,17 +563,17 @@
       "uses": [],
       "seat": "clossys/agents/producer/pick.director/pin.json",
       "holder": {
-        "id": "you",
-        "kind": "you",
+        "id": "director",
+        "kind": "ai",
         "source": "file",
-        "tier": null
+        "tier": "mid"
       },
       "layout": {
-        "lane": "you",
+        "lane": "director",
         "stage": "direct.pin",
         "rank": 6,
         "x": 1200,
-        "y": 0
+        "y": 540
       }
     },
     {
@@ -750,7 +750,7 @@
         "id": "you",
         "kind": "you",
         "source": "file",
-        "tier": null
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
@@ -973,8 +973,8 @@
       "holder": {
         "id": "designer",
         "kind": "ai",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "designer",
@@ -1070,8 +1070,8 @@
       "holder": {
         "id": "writer",
         "kind": "ai",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "writer",
@@ -1154,17 +1154,17 @@
       "uses": [],
       "seat": "clossys/agents/producer/pick.designer/pin.json",
       "holder": {
-        "id": "you",
-        "kind": "you",
+        "id": "designer",
+        "kind": "ai",
         "source": "file",
-        "tier": null
+        "tier": "mid"
       },
       "layout": {
-        "lane": "you",
+        "lane": "designer",
         "stage": "design.pin",
         "rank": 6,
         "x": 3000,
-        "y": 0
+        "y": 736
       }
     },
     {
@@ -1240,17 +1240,17 @@
       "uses": [],
       "seat": "clossys/agents/producer/pick.writer/pin.json",
       "holder": {
-        "id": "you",
-        "kind": "you",
+        "id": "writer",
+        "kind": "ai",
         "source": "file",
-        "tier": null
+        "tier": "mid"
       },
       "layout": {
-        "lane": "you",
+        "lane": "writer",
         "stage": "design.pin",
         "rank": 9,
         "x": 3560,
-        "y": 0
+        "y": 932
       }
     },
     {
@@ -1324,8 +1324,8 @@
       "holder": {
         "id": "you",
         "kind": "you",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
@@ -1425,7 +1425,7 @@
         "id": "you",
         "kind": "you",
         "source": "file",
-        "tier": null
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
@@ -1525,7 +1525,7 @@
         "id": "you",
         "kind": "you",
         "source": "file",
-        "tier": null
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
@@ -1626,8 +1626,8 @@
       "holder": {
         "id": "publisher",
         "kind": "ai",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "publisher",
@@ -1710,17 +1710,17 @@
       "uses": [],
       "seat": "clossys/agents/producer/pick.publisher/pin.json",
       "holder": {
-        "id": "you",
-        "kind": "you",
+        "id": "publisher",
+        "kind": "ai",
         "source": "file",
-        "tier": null
+        "tier": "mid"
       },
       "layout": {
-        "lane": "you",
+        "lane": "publisher",
         "stage": "publish.pin",
         "rank": 12,
         "x": 4800,
-        "y": 0
+        "y": 1128
       }
     },
     {
@@ -1813,7 +1813,7 @@
         "id": "you",
         "kind": "you",
         "source": "file",
-        "tier": null
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
@@ -2653,7 +2653,7 @@
         "stage": "publish.check",
         "rank": 7,
         "x": 6840,
-        "y": 1840
+        "y": 1668
       }
     },
     {
@@ -2719,7 +2719,7 @@
         "stage": "publish.check",
         "rank": 7,
         "x": 6840,
-        "y": 1668
+        "y": 1840
       }
     },
     {
@@ -2852,7 +2852,7 @@
         "stage": "publish.check",
         "rank": 13,
         "x": 7400,
-        "y": 1668
+        "y": 1840
       }
     },
     {
@@ -3002,7 +3002,7 @@
         "stage": "publish.check",
         "rank": 13,
         "x": 7400,
-        "y": 1840
+        "y": 1668
       }
     },
     {
@@ -6976,8 +6976,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 11018,
-      "after": 10662
+      "before": 9697,
+      "after": 9429
     },
     "lanes": [
       {
@@ -7308,57 +7308,103 @@
   "seats": {
     "ia": {
       "path": "clossys/agents/producer/ia/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "owner",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/ia/skill.md"
+      },
+      "human": {
+        "procedure": "Decide where each L3 slot sits in its agent's IA tree (L1, L2) and what the slot is for: its contract in slot.json.",
+        "command": "clossys ia"
+      },
       "issues": []
     },
     "evidence": {
       "path": "clossys/agents/producer/evidence/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "owner",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/evidence/skill.md"
+      },
+      "human": {
+        "procedure": "Decide which owner answers and findings the Director may cite.",
+        "command": "clossys evidence"
+      },
       "issues": []
     },
     "workspace.config": {
       "path": "clossys/agents/producer/workspace.config/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "owner",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/workspace.config/skill.md"
+      },
+      "human": {
+        "procedure": "Decide the workspace config: which folder is the consumer workspace and the settings the CLI reads.",
+        "command": "clossys config"
+      },
       "issues": []
     },
     "seats": {
       "path": "clossys/agents/producer/seats/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "owner",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/seats/skill.md"
+      },
+      "human": {
+        "procedure": "Decide who holds each decide step: an llm seat (model and prompt file), a human seat (procedure and the clossys command that records it), or both.",
+        "command": "clossys seat"
+      },
       "issues": []
     },
     "rules": {
       "path": "clossys/agents/producer/rules/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "owner",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/rules/skill.md"
+      },
+      "human": {
+        "procedure": "Decide which owner rules are rows in the registry and whether each one gates.",
+        "command": "clossys rule"
+      },
       "issues": []
     },
     "director.candidates": {
       "path": "clossys/agents/producer/director.candidates/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "agent:director",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/director/actions/director.candidates/skill.md"
+      },
+      "human": {
+        "procedure": "Create Director candidates for the open L3 slots on the selection ladder: select a seed first (when seeds are available), then adapt the closest seed, then create, with the reason no seed fit; one immutable file per option.",
+        "command": "clossys next"
+      },
       "issues": []
     },
     "pick.director": {
       "path": "clossys/agents/producer/pick.director/pin.json",
-      "state": "partial",
-      "by": "owner",
-      "llm": "open",
+      "state": "assigned",
+      "by": "agent:director",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/director/actions/pick.director/skill.md"
+      },
       "human": {
         "procedure": "Record a judge seat's choice among the slot's options with clossys pick director/<slot> <candidate-id> --by agent:<seat>; it replaces a bulk, planner or agent pin, never an owner pick, and shows as confirm until you pin.",
         "command": "clossys pick"
@@ -7367,9 +7413,13 @@
     },
     "pin.director": {
       "path": "clossys/agents/producer/pin.director/pin.json",
-      "state": "partial",
+      "state": "assigned",
       "by": "owner",
-      "llm": "open",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/pin.director/skill.md"
+      },
       "human": {
         "procedure": "Compare a slot's candidates against its contract; pin one with clossys pin, or mark the slot not needed with clossys pin --not-needed.",
         "command": "clossys pin"
@@ -7378,25 +7428,43 @@
     },
     "designer.candidates": {
       "path": "clossys/agents/producer/designer.candidates/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "agent:designer",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/designer/actions/designer.candidates/skill.md"
+      },
+      "human": {
+        "procedure": "Create Designer candidates for the open L3 slots on the selection ladder: select a seed first (when seeds are available), then adapt the closest seed, then create, with the reason no seed fit; one immutable file per option.",
+        "command": "clossys next"
+      },
       "issues": []
     },
     "writer.candidates": {
       "path": "clossys/agents/producer/writer.candidates/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "agent:writer",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/writer/actions/writer.candidates/skill.md"
+      },
+      "human": {
+        "procedure": "Create Writer candidates for the open L3 slots on the selection ladder: select a seed first (when seeds are available), then adapt the closest seed, then create, with the reason no seed fit; one immutable file per option.",
+        "command": "clossys next"
+      },
       "issues": []
     },
     "pick.designer": {
       "path": "clossys/agents/producer/pick.designer/pin.json",
-      "state": "partial",
-      "by": "owner",
-      "llm": "open",
+      "state": "assigned",
+      "by": "agent:designer",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/designer/actions/pick.designer/skill.md"
+      },
       "human": {
         "procedure": "Record a judge seat's choice among the slot's options with clossys pick designer/<slot> <candidate-id> --by agent:<seat>; it replaces a bulk, planner or agent pin, never an owner pick, and shows as confirm until you pin.",
         "command": "clossys pick"
@@ -7405,9 +7473,13 @@
     },
     "pick.writer": {
       "path": "clossys/agents/producer/pick.writer/pin.json",
-      "state": "partial",
-      "by": "owner",
-      "llm": "open",
+      "state": "assigned",
+      "by": "agent:writer",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/writer/actions/pick.writer/skill.md"
+      },
       "human": {
         "procedure": "Record a judge seat's choice among the slot's options with clossys pick writer/<slot> <candidate-id> --by agent:<seat>; it replaces a bulk, planner or agent pin, never an owner pick, and shows as confirm until you pin.",
         "command": "clossys pick"
@@ -7416,17 +7488,28 @@
     },
     "writer.approve": {
       "path": "clossys/agents/producer/writer.approve/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "owner",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/writer.approve/skill.md"
+      },
+      "human": {
+        "procedure": "Decide whether a Writer copy key is approved to ship.",
+        "command": "clossys approve"
+      },
       "issues": []
     },
     "pin.designer": {
       "path": "clossys/agents/producer/pin.designer/pin.json",
-      "state": "partial",
+      "state": "assigned",
       "by": "owner",
-      "llm": "open",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/pin.designer/skill.md"
+      },
       "human": {
         "procedure": "Compare a slot's candidates against its contract; pin one with clossys pin, or mark the slot not needed with clossys pin --not-needed.",
         "command": "clossys pin"
@@ -7435,9 +7518,13 @@
     },
     "pin.writer": {
       "path": "clossys/agents/producer/pin.writer/pin.json",
-      "state": "partial",
+      "state": "assigned",
       "by": "owner",
-      "llm": "open",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/pin.writer/skill.md"
+      },
       "human": {
         "procedure": "Compare a slot's candidates against its contract; pin one with clossys pin, or mark the slot not needed with clossys pin --not-needed.",
         "command": "clossys pin"
@@ -7446,17 +7533,28 @@
     },
     "publisher.candidates": {
       "path": "clossys/agents/producer/publisher.candidates/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "agent:publisher",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/publisher/actions/publisher.candidates/skill.md"
+      },
+      "human": {
+        "procedure": "Create Publisher candidates for the open L3 slots on the selection ladder: select a seed first (when seeds are available), then adapt the closest seed, then create, with the reason no seed fit; one immutable file per option.",
+        "command": "clossys next"
+      },
       "issues": []
     },
     "pick.publisher": {
       "path": "clossys/agents/producer/pick.publisher/pin.json",
-      "state": "partial",
-      "by": "owner",
-      "llm": "open",
+      "state": "assigned",
+      "by": "agent:publisher",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/publisher/actions/pick.publisher/skill.md"
+      },
       "human": {
         "procedure": "Record a judge seat's choice among the slot's options with clossys pick publisher/<slot> <candidate-id> --by agent:<seat>; it replaces a bulk, planner or agent pin, never an owner pick, and shows as confirm until you pin.",
         "command": "clossys pick"
@@ -7465,9 +7563,13 @@
     },
     "pin.publisher": {
       "path": "clossys/agents/producer/pin.publisher/pin.json",
-      "state": "partial",
+      "state": "assigned",
       "by": "owner",
-      "llm": "open",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/pin.publisher/skill.md"
+      },
       "human": {
         "procedure": "Compare a slot's candidates against its contract; pin one with clossys pin, or mark the slot not needed with clossys pin --not-needed.",
         "command": "clossys pin"
@@ -7481,45 +7583,52 @@
       "kinds": [
         "you"
       ],
-      "steps": 14,
+      "steps": 10,
       "sources": [
-        "file",
-        "derived"
+        "file"
       ],
-      "tiers": []
+      "tiers": [
+        "mid"
+      ]
     },
     {
       "id": "director",
       "kinds": [
         "ai"
       ],
-      "steps": 1,
+      "steps": 2,
       "sources": [
-        "derived"
+        "file"
       ],
-      "tiers": []
+      "tiers": [
+        "mid"
+      ]
     },
     {
       "id": "designer",
       "kinds": [
         "ai"
       ],
-      "steps": 1,
+      "steps": 2,
       "sources": [
-        "derived"
+        "file"
       ],
-      "tiers": []
+      "tiers": [
+        "mid"
+      ]
     },
     {
       "id": "writer",
       "kinds": [
         "ai"
       ],
-      "steps": 1,
+      "steps": 2,
       "sources": [
-        "derived"
+        "file"
       ],
-      "tiers": []
+      "tiers": [
+        "mid"
+      ]
     },
     {
       "id": "publisher",
@@ -7527,11 +7636,14 @@
         "ai",
         "code"
       ],
-      "steps": 16,
+      "steps": 17,
       "sources": [
+        "file",
         "derived"
       ],
-      "tiers": []
+      "tiers": [
+        "mid"
+      ]
     },
     {
       "id": "checks",

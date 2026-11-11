@@ -1,0 +1,12 @@
+{
+  "by": "owner",
+  "llm": {
+    "model": "claude-opus-5-5",
+    "tier": "mid",
+    "promptFile": "packages/producer/actions/workspace.config/skill.md"
+  },
+  "human": {
+    "procedure": "Decide the workspace config: which folder is the consumer workspace and the settings the CLI reads.",
+    "command": "clossys config"
+  }
+}

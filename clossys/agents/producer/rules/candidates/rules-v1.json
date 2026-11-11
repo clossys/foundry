@@ -1,0 +1,12 @@
+{
+  "by": "owner",
+  "llm": {
+    "model": "claude-opus-5-5",
+    "tier": "mid",
+    "promptFile": "packages/producer/actions/rules/skill.md"
+  },
+  "human": {
+    "procedure": "Decide which owner rules are rows in the registry and whether each one gates.",
+    "command": "clossys rule"
+  }
+}
