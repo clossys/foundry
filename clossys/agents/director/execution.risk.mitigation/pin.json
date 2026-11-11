@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-mitigation-v2.md",
-  "sha256": "536dfddcd3425be5e909afc1d2193ec568ea61abf73400fb654925eda05c7c6a",
+  "candidate": "studio-mitigation-v3.md",
+  "sha256": "934fd07a2f4dd7f56fa54708fef56ce5010108bb4e75888ba4a7a7cd7964fca8",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T08:34:21.439Z"
+  "at": "2026-11-11T16:20:43.420Z"
 }
