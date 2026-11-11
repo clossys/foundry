@@ -8,6 +8,7 @@ import { hasSlotModel, readIa } from "../records/slots.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
 import { emitProjection } from "./projection.js";
+import { strictShare, strictShareLine } from "./strict-share.js";
 
 /** The Director slots a Writer derives from (the Writer's own brief inputs). */
 const INPUTS = ["identity.brand.essence", "identity.brand.personality", "identity.visual.style", "identity.verbal.voice", "focus.segment.core", "focus.category.stance", "advantage.proposition.proof"] as const;
@@ -148,11 +149,16 @@ export async function runWrite(args: CliArgs, root: string): Promise<CliResult> 
     for (const reason of wontClaim.indeterminateReasons) limits.push(`wont-claim: ${reason}`);
     for (const id of wontClaim.unchecked) limits.push(`wont-claim:unchecked: unquoted prohibition requires owner interpretation: ${id}`);
     for (const ignored of wontClaim.ignored) limits.push(`wont-claim:ignored: ${ignored.file} line ${ignored.line} carries a prohibition ignore marker`);
-    const cannotRun = !localeCoverage?.complete || wontClaim.state === "indeterminate" || limits.some(limit => limit.startsWith("voice-derivation-coverage:"));
+    // The Writer's share of the strict checks: its `check --slots` rows and the page conformance errors about its copy.
+    const strict = await strictShare(root, "writer");
+    for (const finding of strict.findings) findings.push({ rule: finding.code, slot: finding.where, message: finding.message });
+    limits.push(...strict.limits.map(limit => `strict: ${limit}`));
+    const cannotRun = strict.limits.length > 0 || !localeCoverage?.complete || wontClaim.state === "indeterminate" || limits.some(limit => limit.startsWith("voice-derivation-coverage:"));
     const exitCode = cannotRun ? 2 : findings.length ? 1 : 0;
     const records = copy.length;
-    return { ...base, exitCode, checks: { findings, limits, writerCount: rows.length, directorCount: director.cells.length, records, localeCoverage, wontClaim }, message: [
+    return { ...base, exitCode, checks: { findings, limits, writerCount: rows.length, directorCount: director.cells.length, records, localeCoverage, wontClaim, strict }, message: [
       `write: ${rows.length} pinned Writer slot(s) checked (${records} copy records, ${locales.length} locale(s)); ${findings.length} finding(s)`,
+      strictShareLine(strict),
       ...findings.map(finding => `${finding.rule}${finding.slot ? ` (${finding.slot})` : ""}: ${finding.message}`),
       ...limits.map(limit => `Limit: ${limit}`),
     ].join("\n") };

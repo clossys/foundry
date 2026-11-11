@@ -8,6 +8,7 @@ import { hasSlotModel, readIa } from "../records/slots.js";
 import type { CliArgs } from "./args.js";
 import { emitProjection } from "./projection.js";
 import { DESIGN_BRIEF_INPUTS } from "../records/slot-model/design-brief-inputs.js";
+import { strictShare, strictShareLine } from "./strict-share.js";
 
 const INPUTS = DESIGN_BRIEF_INPUTS;
 type Finding = { code: string; subject: string; message: string };
@@ -134,8 +135,14 @@ export async function runDesign(args: CliArgs, root: string): Promise<DesignResu
         return { ...base, exitCode: missing.length ? 1 : 0, brief, message: emitted ? `design: brief written to ${emitted}` : JSON.stringify(brief, null, 2) };
       }
       const result = checkDesign(consumer, director, readPinned(consumer, "designer"), brief);
-      return { ...base, exitCode: result.findings.length ? 1 : 0, checks: result, message: [
-        `design: ${result.findings.length} finding(s); ${result.pinned} pinned, ${result.unpinned} unpinned Designer slot(s); theme ${result.theme ? "compiled" : "missing"}`,
+      // The Designer's share of the strict checks: its `check --slots` rows, the references manifest and ref-verbatim.
+      const strict = await strictShare(root, "designer");
+      for (const finding of strict.findings) result.findings.push({ code: finding.code, subject: finding.where, message: finding.message });
+      const exitCode = strict.limits.length ? 2 : result.findings.length ? 1 : 0;
+      return { ...base, exitCode, checks: { ...result, strict }, message: [
+        `design: ${exitCode === 2 ? "could not run in full; " : ""}${result.findings.length} finding(s); ${result.pinned} pinned, ${result.unpinned} unpinned Designer slot(s); theme ${result.theme ? "compiled" : "missing"}`,
+        strictShareLine(strict),
+        ...strict.limits.map(limit => `Limit strict: ${limit}`),
         ...result.findings.map(finding => `${finding.code}: ${finding.subject}: ${finding.message}`),
         ...result.limits.map(limit => `Limit ${limit.code}: ${limit.subject}: ${limit.message}`),
       ].join("\n") };

@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
 import { studioChecks } from './studio-checks';
+import { strictShare } from '../cli/strict-share';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 
@@ -27,5 +28,8 @@ it('maps exit 0 to pass on the real consumer, never to error', async () => {
     expect(row.state).toBe(({ 0: 'pass', 1: 'findings', 2: 'unavailable' } as const)[row.exitCode as 0 | 1 | 2]);
     expect(row.state).not.toBe('error');
   }
-  expect(result.results.find(row => row.agent === 'publisher')).toMatchObject({ state: 'pass', exitCode: 0 });
-}, 120_000);
+  // The publish dry run carries the Publisher's share of the strict findings: pass only when that share is empty.
+  const share = await strictShare(repo, 'publisher');
+  expect(share.limits).toEqual([]);
+  expect(result.results.find(row => row.agent === 'publisher')).toMatchObject(share.findings.length ? { state: 'findings', exitCode: 1 } : { state: 'pass', exitCode: 0 });
+}, 300_000);

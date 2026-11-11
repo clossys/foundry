@@ -26,6 +26,23 @@ export function flatConsumer(agents: readonly SlotAgent[]): string {
   return root;
 }
 
+/**
+ * Make the repository's installed brief contracts (`@clossys/<pkg>/strategy-brief.json`) visible to a temp consumer,
+ * as they are to the repository's own `clossys/`: a real `node_modules/@clossys/<pkg>/` holding a copy of each
+ * workspace package's contract (copies, not links, so `snapshot` stays inside the temp root).
+ */
+export function withBriefContracts(root: string): string {
+  const scope = join(root, "node_modules", "@clossys");
+  mkdirSync(scope, { recursive: true });
+  const packages = resolve(here, "../../../..");
+  for (const name of readdirSync(packages).sort()) {
+    try { statSync(join(packages, name, "strategy-brief.json")); } catch { continue; }
+    mkdirSync(join(scope, name));
+    cpSync(join(packages, name, "strategy-brief.json"), join(scope, name, "strategy-brief.json"));
+  }
+  return root;
+}
+
 /** The first pinned slot of an agent, with its pinned candidate's path. */
 export function firstPinned(root: string, agent: SlotAgent, accept: (id: string) => boolean = () => true): { id: string; dir: string; candidate: string } {
   const base = join(root, "clossys", "agents", agent);

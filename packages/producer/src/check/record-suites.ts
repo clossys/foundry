@@ -84,7 +84,7 @@ export async function consumerPageRecords(root: string): Promise<{ records: unkn
   return { records, routes, directorCells };
 }
 
-async function archetypeSuite(root: string, strict: boolean): Promise<SuiteReport> {
+export async function archetypeSuite(root: string, strict: boolean): Promise<SuiteReport> {
   const set = await consumerPageRecords(root);
   const archetypes = await agentModule("publisher", "archetypes/index.js");
   const result = archetypes.checkPageRecords(set, { strict });
@@ -105,7 +105,7 @@ async function writerSuite(): Promise<SuiteReport> {
 }
 
 /** The Director's own contract checks over each pinned Director candidate. */
-async function directorSuite(root: string): Promise<SuiteReport> {
+export async function directorSuite(root: string): Promise<SuiteReport> {
   const checks = await agentModule("director", "slot-contracts/checks.js");
   const format = await agentModule("director", "slot-contracts/format.js");
   const director = await readPinnedDirector(join(root, "clossys"));
