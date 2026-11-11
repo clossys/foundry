@@ -1,8 +1,8 @@
 {
   "cells": [
     {
-      "cell": "capability.resource.allocation",
-      "version": 10,
+      "cell": "capability.operation.delivery",
+      "version": 7,
       "draft": true
     }
   ],
@@ -11,34 +11,34 @@
       "rule": "Q2",
       "severity": "judge",
       "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
-      "cell": "capability.resource.allocation",
-      "path": "capability.resource.allocation/candidates/studio-allocation-v10.md",
-      "judgeId": "Q2:capability.resource.allocation@10"
+      "cell": "capability.operation.delivery",
+      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
+      "judgeId": "Q2:capability.operation.delivery@7"
     },
     {
       "rule": "Q3",
       "severity": "judge",
       "message": "Judge whether the cited evidence supports each Because bullet",
-      "cell": "capability.resource.allocation",
-      "path": "capability.resource.allocation/candidates/studio-allocation-v10.md",
-      "judgeId": "Q3:capability.resource.allocation@10"
+      "cell": "capability.operation.delivery",
+      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
+      "judgeId": "Q3:capability.operation.delivery@7"
     },
     {
       "rule": "Q4",
       "severity": "judge",
       "message": "Judge whether each Watch threshold is meaningful for this Direction",
-      "cell": "capability.resource.allocation",
-      "path": "capability.resource.allocation/candidates/studio-allocation-v10.md",
-      "judgeId": "Q4:capability.resource.allocation@10"
+      "cell": "capability.operation.delivery",
+      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
+      "judgeId": "Q4:capability.operation.delivery@7"
     },
     {
       "rule": "Q6",
       "severity": "judge",
       "message": "Judge whether a real alternative was given up",
-      "cell": "capability.resource.allocation",
-      "path": "capability.resource.allocation/candidates/studio-allocation-v10.md",
+      "cell": "capability.operation.delivery",
+      "path": "capability.operation.delivery/candidates/studio-delivery-v7.md",
       "code": "tradeoff",
-      "judgeId": "Q6:capability.resource.allocation@10"
+      "judgeId": "Q6:capability.operation.delivery@7"
     }
   ]
 }
