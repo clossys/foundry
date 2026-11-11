@@ -6,14 +6,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { main } from "../cli.js";
 import { executeBriefCommand } from "./brief.js";
 import { runReadCommand } from "./read.js";
-import { stageSlot } from "../__fixtures__/slot-model.js";
+import { stagePassingSlot } from "../__fixtures__/slot-model.js";
 
 const roots: string[] = [];
 const id = "context.customer.need";
 function put(root: string, path: string, bytes: string) { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), bytes); }
-/** Pins one candidate of the contract's slot. */
-function stage(root: string, version = 1, need = "Need: A fictional studio needs scheduling.", refs: string[] = []) {
-  stageSlot(root, id, version, [need, "Not: Large factories."], { refs, because: ["Measured interviews."], watch: ["If requests > 5 each month, then review."] });
+/** Owner-pins one candidate of the contract's slot that passes completion. */
+function stage(root: string, version = 1, text?: string, refs: string[] = []) {
+  stagePassingSlot(root, id, version, { refs, text });
 }
 function fixture(active: number | null = 1) {
   const root = mkdtempSync(join(tmpdir(), "strategy-cli-")); roots.push(root);
@@ -79,7 +79,7 @@ describe("production brief CLI adapter", () => {
     put(root, "contracts/second.json", JSON.stringify({ schemaVersion: 1, id: "second.brief", owner: "other", requires: [id], optional: [] }));
     expect(run(root, ["--write"]).code).toBe(0);
     expect(run(root, ["--write"], "second.brief").code).toBe(0);
-    stage(root, 1, "Need: A fictional workshop needs scheduling.");
+    stage(root, 1, "Only Fictional workshops with 20 bookings each week");
     expect(run(root, ["--write"]).code).toBe(1);
     expect(read(root, "briefs/fixture.brief.json").state).toBe("stale");
     expect(read(root, "briefs/index.json").briefs.map((brief: { contract: string }) => brief.contract)).toEqual(["fixture.brief", "second.brief"]);
@@ -88,10 +88,11 @@ describe("production brief CLI adapter", () => {
   });
   it("keeps unresolved cell dependencies visibly stale when persisting", () => {
     const root = fixture();
+    // The dangling citation fails the cell's own Q3, so completion and the handoff both refuse it; the stale ref stays listed.
     stage(root, 1, undefined, ["context.market.size@1"]);
     expect(run(root, ["--write"]).code).toBe(1);
-    expect(read(root, "briefs/fixture.brief.json")).toMatchObject({ state: "stale", stale: [{ cell: "context.market.size", version: 1 }] });
-    expect(run(root).output.result.state).toBe("stale");
+    expect(read(root, "briefs/fixture.brief.json")).toMatchObject({ state: "missing", missing: [id], stale: [{ cell: "context.market.size", version: 1 }] });
+    expect(run(root).output.result.state).toBe("missing");
     expect(existsSync(join(root, "requests"))).toBe(false);
   });
   it.each(["brief-directory", "brief-file", "inventory", "hardlink", "non-file"])("refuses unsafe %s targets before any content mutation", target => {

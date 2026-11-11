@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { isAbsolute, relative } from "node:path";
 import { validateBriefContract, type BriefContract } from "./brief-contracts.js";
+import { cellCompletions } from "./checks/completion.js";
 import { formatRef } from "./format/ref.js";
 import type { Bullet, Cell, CellId, CellRef, Ref, StrategyModel } from "./format/types.js";
 import type { DirectorStoreReader } from "./store-io.js";
@@ -23,7 +24,9 @@ function active(model: StrategyModel, id: CellId): Cell | undefined {
 }
 
 /**
- * Compiles synchronously without writing. Fingerprints cover the sorted version
+ * A required cell is present only when it passes the per-cell rule `complete` applies (its own Q1–Q7
+ * findings, the pin decider included, and uncited judgements), so a handoff is never ready on a cell
+ * completion rejects. Compiles synchronously without writing. Fingerprints cover the sorted version
  * refs and exact UTF-8 source bytes of selected cells and recursively cited files.
  * Missing C1 citations mark the downstream ref stale; superseded citations list
  * the cited ref. Required dependency cycles terminate without dropping evidence.
@@ -35,7 +38,8 @@ export function compileBrief(model: StrategyModel, contract: BriefContract, stor
   if (!validated.ok) throw new Error("Invalid brief contract");
   const required = new Set(contract.requires);
   const selected = [...new Set([...contract.requires, ...contract.optional])].sort();
-  const missing = contract.requires.filter(id => !active(model, id)).sort();
+  const present = new Set(cellCompletions(model, contract.requires).filter(cell => cell.active).map(cell => cell.id));
+  const missing = contract.requires.filter(id => !present.has(id)).sort();
   const refs = new Map<string, CellRef>(); const paths = new Set<string>(); const stale = new Map<string, CellRef>();
   const visited = new Set<string>(); const checked = new Set<string>();
   const addStale = (ref: CellRef) => stale.set(`${ref.cell}@${ref.version}`, ref);
