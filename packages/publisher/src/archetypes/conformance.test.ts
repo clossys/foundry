@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -8,6 +9,7 @@ import { measureCopyFit, unmeasuredCopyFitProbe } from "./copy-fit.js";
 import { pageRecordsFromPublication } from "./record.js";
 import type { PageRecord, PageRecordSection } from "./record.js";
 import { runPageCheckCli } from "./cli.js";
+import { projectPinnedPublication } from "../content-map/pinned-publication.js";
 
 const fixturePath = resolve(import.meta.dirname, "__fixtures__/site-publication.json");
 const fixture = () => JSON.parse(readFileSync(fixturePath, "utf8"));
@@ -95,6 +97,48 @@ describe("page conformance", () => {
     expect(checkPageRecords({ records: [withStats], directorCells: [] }).findings).toContainEqual(expect.objectContaining({ code: "archetype-gate-off", severity: "warning", role: "metrics" }));
     expect(checkPageRecords({ records: [home()], directorCells: ["advantage.model.pricing"] }).findings).toContainEqual(expect.objectContaining({ code: "archetype-gate-on", severity: "info", role: "pricing" }));
     expect(checkPageRecords({ records: [withStats] }).findings.some(row => row.code.startsWith("archetype-gate"))).toBe(false);
+  });
+
+  it("passes the package workspace shapes on the package frame and catalog-free sections", () => {
+    const workspace = (sections: string[], extra: Partial<PageRecord> = {}) => page({ archetype: "workspace", frame: { id: "frames.studio-shell" }, sections: sections.map(section => bound(section)), ...extra });
+    const shapes = [
+      ["sections.studio.page-header", "sections.studio.home"],
+      ["sections.studio.page-header", "sections.producer.system-empty"],
+      ["sections.studio.page-header", "sections.studio.page-tabs", "sections.studio.slot-groups"],
+      ["sections.studio.page-header", "sections.producer.team-strip", "sections.producer.pipeline-legend", "sections.producer.pipeline-flow"],
+    ];
+    for (const sections of shapes) {
+      const report = checkPageRecords({ records: [workspace(sections)] });
+      expect(report.findings.filter(row => row.check === "archetype" || row.check === "format"), sections.join(" ")).toEqual([]);
+      expect(report.pages[0]).toMatchObject({ archetype: "workspace", format: "vertical-page" });
+    }
+    // Package frames and sections fill no catalog archetype, and a package archetype takes no catalog frame or section.
+    expect(codes(checkPageRecords({ records: [page({ archetype: "app-page", frame: { id: "frames.studio-shell" }, sections: [bound("sections.page-header"), bound("sections.data-table")] })] }).findings)).toEqual(["format-frame"]);
+    expect(codes(checkPageRecords({ records: [workspace(shapes[0]!, { frame: { id: "frames.app-shell" } })] }).findings)).toEqual(["format-frame"]);
+    expect(codes(checkPageRecords({ records: [workspace(["sections.studio.page-header", "sections.hero", "sections.studio.home"])] }).findings)).toEqual(["archetype-extra-section"]);
+    expect(codes(checkPageRecords({ records: [workspace(["sections.studio.home"])] }).findings)).toEqual(["archetype-role-missing"]);
+    expect(codes(checkPageRecords({ records: [workspace(["sections.studio.page-tabs", "sections.studio.page-header", "sections.studio.slot-groups"])] }).findings)).toEqual(["archetype-order"]);
+    expect(codes(checkPageRecords({ records: [workspace(shapes[0]!, { format: "canvas" })] }).findings)).toContain("format-archetype");
+    // An unregistered package section is still unknown to the format sidecar.
+    expect(checkPageRecords({ records: [workspace(["sections.studio.page-header", "sections.studio.unregistered", "sections.studio.home"])] }).findings)
+      .toContainEqual(expect.objectContaining({ code: "format-section-unknown", severity: "warning", section: 1 }));
+  });
+
+  it("passes the repository's pinned Studio pages through their declared archetype and format", () => {
+    const root = resolve(import.meta.dirname, "../../../../clossys/agents/publisher");
+    const text = (path: string) => { try { return readFileSync(join(root, path), "utf8"); } catch (cause) { if ((cause as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw cause; } };
+    const { map, routePack } = projectPinnedPublication({
+      ia: () => text("ia.json"), record: (id, file) => text(join(id, file)),
+      candidate: (id, name) => { const bytes = text(join(id, "candidates", name)); return bytes === undefined ? undefined : { bytes, sha256: createHash("sha256").update(bytes).digest("hex") }; },
+    }, "studio");
+    // As the Producer suite reads them: archetype and format come only from the page's own Route declaration.
+    const routes = (routePack?.routes ?? []) as { instanceId: string; archetype?: string; pageFormat?: string }[];
+    const pages = Object.fromEntries(routes.map(route => [route.instanceId, { ...(route.archetype ? { archetype: route.archetype } : {}), ...(route.pageFormat ? { format: route.pageFormat } : {}) }]));
+    const records = pageRecordsFromPublication({ contentMap: map, routePack, pages });
+    expect(records.length).toBeGreaterThan(0);
+    const report = checkPageRecords({ records, routes: routes.map(route => (route as { path?: string }).path ?? "") });
+    expect(report.findings.filter(row => row.check === "archetype" || row.check === "format")).toEqual([]);
+    expect(new Set(report.pages.map(row => `${row.archetype} ${row.format}`))).toEqual(new Set(["workspace vertical-page"]));
   });
 
   it("consumes copy-fit measurements and stubs the probe", async () => {

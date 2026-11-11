@@ -3,11 +3,14 @@
  * archetype is an ordered list of section roles. Each role names the Designer
  * section slot that fills it, the Writer passage slot (key group) that binds
  * its copy and, for optional roles, the Director cell whose presence turns the
- * role on. Data only: no markup, styling or copy lives here.
+ * role on. Data only: no markup, styling or copy lives here. A package
+ * archetype (`package` set) composes only that package's registered extension
+ * slots (`extensions.ts`); every other archetype composes only catalog slots.
  */
+import type { ExtensionPackage } from "./extensions.js";
 import type { PageFormatId } from "./formats.js";
 
-export const ARCHETYPE_IDS = ["marketing-home", "pricing", "contact", "legal", "docs", "app-page", "deck"] as const;
+export const ARCHETYPE_IDS = ["marketing-home", "pricing", "contact", "legal", "docs", "app-page", "deck", "workspace"] as const;
 export type ArchetypeId = (typeof ARCHETYPE_IDS)[number];
 
 export type SectionSlotId = `sections.${string}`;
@@ -20,8 +23,8 @@ export interface ArchetypeRole {
   readonly section: SectionSlotId;
   /** Other Designer section slots that may fill the same role. */
   readonly alternates?: readonly SectionSlotId[];
-  /** Writer passage slot that binds the primary section's copy. */
-  readonly writer: WriterGroupId;
+  /** Writer passage slot that binds the primary section's copy; `null` for a package extension section, which has no catalog passage slot. */
+  readonly writer: WriterGroupId | null;
   readonly required: boolean;
   readonly min: number;
   readonly max: number;
@@ -31,6 +34,8 @@ export interface ArchetypeRole {
 
 export interface PageArchetype {
   readonly id: ArchetypeId;
+  /** The Foundry package whose extension slots this archetype composes; absent for a catalog archetype. */
+  readonly package?: ExtensionPackage;
   /** Formats the archetype may be published as; the first is its default. */
   readonly formats: readonly PageFormatId[];
   /** Frames the archetype expects, narrower than the format's own list. Empty: any frame the format allows. */
@@ -53,6 +58,9 @@ function freeze<T>(value: T): T {
   if (value && typeof value === "object") { Object.values(value).forEach(freeze); Object.freeze(value); }
   return value;
 }
+
+/** A package extension role: its section has no catalog Writer passage slot. */
+const ext = (role: ArchetypeRole): ArchetypeRole => ({ ...role, writer: null });
 
 const APP_BODY: readonly SectionSlotId[] = [
   "sections.resource-list", "sections.record-detail", "sections.data-grid", "sections.settings", "sections.form",
@@ -135,6 +143,16 @@ export const PAGE_ARCHETYPES: Readonly<Record<ArchetypeId, PageArchetype>> = fre
       opt("roadmap", "sections.timeline", "execution.roadmap.milestone"),
       opt("team", "sections.people", "capability.team.role"),
       req("close", "sections.call-to-action"),
+    ],
+  },
+  workspace: {
+    id: "workspace", package: "producer", formats: ["vertical-page"], frames: ["frames.studio-shell"],
+    roles: [
+      ext(req("header", "sections.studio.page-header")),
+      ext(opt("tabs", "sections.studio.page-tabs", undefined)),
+      ext(opt("team", "sections.producer.team-strip", undefined)),
+      ext(opt("legend", "sections.producer.pipeline-legend", undefined)),
+      ext(req("body", "sections.studio.slot-groups", { alternates: ["sections.studio.home", "sections.producer.pipeline-flow", "sections.producer.system-empty"] })),
     ],
   },
 });

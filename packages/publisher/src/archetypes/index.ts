@@ -2,7 +2,9 @@ export { ARCHETYPE_IDS, PAGE_ARCHETYPES, isArchetypeId, roleSections, writerGrou
 export type { ArchetypeId, ArchetypeRole, PageArchetype, SectionSlotId, WriterGroupId } from "./archetypes.js";
 export { PAGE_FORMAT_IDS, PAGE_FORMATS, CANVAS_ACTION_INTENTS, isPageFormatId } from "./formats.js";
 export type { PageFormat, PageFormatId, PageFormatCopyBudget, PageActionIntent } from "./formats.js";
-export { SECTION_CLASSES, SECTION_CLASS_FORMATS, sectionFormats, isLongFormSection } from "./section-formats.js";
+export { SECTION_CLASSES, SECTION_CLASS_FORMATS, sectionClass, sectionFormats, isLongFormSection } from "./section-formats.js";
+export { EXTENSION_PACKAGES, EXTENSION_FRAMES, EXTENSION_SECTION_CLASSES, isExtensionPackage } from "./extensions.js";
+export type { ExtensionPackage, ExtensionSection } from "./extensions.js";
 export type { SectionClass } from "./section-formats.js";
 export { pageRecordsFromPublication } from "./record.js";
 export type { PageRecord, PageRecordSection, PageRecordCopy, PageRecordAction, PageRecordSet, PublicationInput } from "./record.js";

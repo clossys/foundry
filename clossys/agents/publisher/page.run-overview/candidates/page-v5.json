@@ -1,0 +1,120 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/run",
+  "title": "studio.page.run-overview",
+  "frame": "frames.studio-shell",
+  "sections": [
+    "sections.studio.page-header",
+    "sections.producer.system-empty"
+  ],
+  "copy": {
+    "meta-title": "page.run-overview#meta-title",
+    "meta-description": "page.run-overview#meta-description"
+  },
+  "nav": {
+    "nav": true,
+    "group": "run"
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "icon": "assets.icon-settings",
+        "note": "SYSTEMS-IA 2026-11-04 (D5): the Run system's overview stub, the frame, the page header and one empty state (the pinned stock Empty) saying the system is not set up yet. Copy is studio.run.empty.* Writer keys (draft)."
+      },
+      "blocks": {
+        "Actions": [],
+        "Route": {
+          "archetype": "workspace",
+          "body": "plain",
+          "data": {
+            "loader": "empty",
+            "description": "studio.run.empty.description",
+            "empty": {
+              "title": "studio.run.empty.title",
+              "description": "studio.run.empty.description"
+            }
+          },
+          "inputs": {
+            "sections.studio.page-header": "header",
+            "sections.producer.system-empty": "empty"
+          },
+          "manifest": {
+            "navigator": "outline",
+            "modules": [
+              {
+                "id": "outline",
+                "icon": "assets.icon-outline",
+                "label": "studio.outline-label",
+                "section": "sections.module.outline",
+                "source": "page.outline",
+                "shortcut": "o"
+              },
+              {
+                "id": "checks",
+                "icon": "assets.icon-checks",
+                "label": "studio.checks",
+                "section": "sections.module.checks",
+                "source": "page.checks",
+                "shortcut": "c"
+              }
+            ],
+            "actions": [],
+            "wiring": [
+              {
+                "do": "open outline",
+                "expect": "outline open"
+              },
+              {
+                "do": "open checks",
+                "expect": "checks open"
+              },
+              {
+                "do": "select outline",
+                "expect": "target in view and highlighted"
+              },
+              {
+                "do": "cmdk",
+                "expect": "every popover listed with its shortcut"
+              },
+              {
+                "do": "key o",
+                "expect": "outline open"
+              },
+              {
+                "do": "key escape",
+                "expect": "popover closed"
+              },
+              {
+                "do": "click outside",
+                "expect": "popover closed"
+              }
+            ]
+          },
+          "slots": [
+            {
+              "section": "sections.studio.page-header",
+              "config": "page.run-overview"
+            },
+            {
+              "section": "sections.producer.system-empty",
+              "config": "page.run-overview"
+            }
+          ]
+        }
+      },
+      "publication": "studio",
+      "entryId": "run-overview",
+      "entryMeta": {
+        "pin": {
+          "nav": true,
+          "group": "run"
+        }
+      }
+    }
+  }
+}

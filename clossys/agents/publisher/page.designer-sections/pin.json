@@ -1,7 +1,7 @@
 {
-  "candidate": "page-v4.json",
-  "sha256": "fa65fab9c242cb6e3f52cd39ab54ddc652406255b4b7eebccd8b9b893270dcb3",
-  "decidedBy": "planner:SEEN-COPY",
+  "candidate": "page-v6.json",
+  "sha256": "a99649be431b3c57573d4b7eddca183babe2aa6cade22d8ebc88e3b31f2596e8",
+  "decidedBy": "planner:W2",
   "basis": "planner",
-  "at": "2026-11-05T05:31:24.928Z"
+  "at": "2026-11-11T02:11:56.823Z"
 }
