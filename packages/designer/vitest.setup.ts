@@ -15,6 +15,26 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 // sweep) and any two tests querying the same accessible name both do.
 afterEach(cleanup);
 
+// jsdom ships no PointerEvent, which every browser React Aria supports has. React Aria's
+// Autocomplete (the stock shadcn@aria Command) runs Enter on the virtually focused row as
+// `dispatchEvent(new PointerEvent("click", ...))`; without the constructor that throws and
+// the command never runs (WD-REG). Same shape as the DOM's: a MouseEvent with pointer fields.
+// Node-environment test files have no DOM events at all, so they get nothing.
+if (typeof globalThis.PointerEvent === "undefined" && typeof globalThis.MouseEvent === "function") {
+  class PointerEvent extends MouseEvent {
+    readonly pointerId: number;
+    readonly pointerType: string;
+    readonly isPrimary: boolean;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init);
+      this.pointerId = init.pointerId ?? 0;
+      this.pointerType = init.pointerType ?? "";
+      this.isPrimary = init.isPrimary ?? false;
+    }
+  }
+  globalThis.PointerEvent = PointerEvent as unknown as typeof globalThis.PointerEvent;
+}
+
 // Lazy client boundaries and the ambient Studio component selection: see vitest.harness.ts.
 vi.mock("react", async importOriginal => (await import("./vitest.harness.js")).preloadingReact(await importOriginal()));
 // Source modules, and the built copies the package's own `#designer-*` subpath imports resolve to.

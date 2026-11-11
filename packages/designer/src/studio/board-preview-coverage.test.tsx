@@ -33,7 +33,8 @@ it("accounts for real specimen coverage across every board layer, with zero unav
   needs.push(...surfaces.unrenderable.map(row => ({ leaf: row.slot, reason: row.reason })));
   // 59 -> 67: ab36457b2 adopts the eight composed defaults (command, dropdown-menu, empty, item, rich-text, scroll-area, sheet, sidebar).
   // 67 -> 75 (planner:R2F-15b): the generated default profile selects the eight owner-signed components.specimen-* leaves (25a8fc7b2).
-  expect(counts.components).toBe(75);
+  // 75 -> 69 (planner:wd-reg): R2F-53 (2e12f31e5) deleted the six zero-caller chart fills, so the regenerated profile (82b9f070e) drops them.
+  expect(counts.components).toBe(69);
 });
 
 const catalog = loadCatalog();

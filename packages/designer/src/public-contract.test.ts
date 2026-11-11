@@ -134,7 +134,7 @@ describe("compiled record-list public contract", () => {
     }
     const server = await import(pathToFileURL(join(packageRoot, "dist/blocks/server.js")).href);
     expect(server).not.toHaveProperty("ResourceList");
-  });
+  }, 30_000); // planner:wd-reg: imports dist/index.js twice; cold-imports or type-checks the whole barrel (~5 s under load), like this file's sibling 30 s spawns.
 
   it("resolves record-list prop types through emitted barrel declarations", () => {
     const filename = join(packageRoot, "record-list-consumer.check.tsx");
@@ -232,7 +232,7 @@ describe("compiled AccessMatrix and ColumnMapper public contract", () => {
       const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify(["AccessMatrix","ColumnMapper"].filter(name=>typeof api[name]==="function")));`;
       expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual(entry === "blocks/server.js" ? [] : ["AccessMatrix", "ColumnMapper"]);
     }
-  });
+  }, 30_000); // planner:wd-reg: type-checks both barrels; cold-imports or type-checks the whole barrel (~5 s under load), like this file's sibling 30 s spawns.
 });
 
 describe("compiled signature chart public contract", () => {
@@ -411,7 +411,8 @@ const JS_SUBPATHS = [
   "./frames/error",
 ] as const;
 /** Gate scripts shipped as plain ESM with hand-written types (the pinned-candidate ref-verbatim gate). */
-const GATE_SCRIPT_SUBPATHS = ["./ref-verbatim"] as const;
+// planner:wd-reg: 2825c2e66 shipped ./shadcn-flavor (scripts/ref-verbatim/flavor.mjs, the one components.json writer; producer imports it) as a scripts/ ESM subpath.
+const GATE_SCRIPT_SUBPATHS = ["./shadcn-flavor", "./ref-verbatim"] as const;
 const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css", "./specimen-frame.css"] as const;
 const COMPONENT_DIRS = ["components", "blocks", "charts", "shell", "theme"] as const;
 
@@ -939,7 +940,7 @@ describe("compiled DataTable saved-view public contract", () => {
       const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
       expect(result.keys).toEqual(values); expect(result.internal).toEqual([]); expect(result.model.density).toBe("compact"); expect(result.model.table.columns).toEqual([{ id: "value", kind: "number" }]);
     }
-  });
+  }, 30_000); // planner:wd-reg: spawns node on both barrels; cold-imports or type-checks the whole barrel (~5 s under load), like this file's sibling 30 s spawns.
   it("resolves the model, mode, density, sort and controlled props from emitted declarations", () => {
     const filename = join(packageRoot, "emitted-datatable-consumer.check.ts");
     const consumer = ["blocks/index.js", "index.js"].map((entry, index) => `

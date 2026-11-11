@@ -1,4 +1,7 @@
 import { act, useState } from "react";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +10,8 @@ import { Button } from "../components/preview-runtime/components/button/button.j
 import { X } from "../icons/X.js";
 import * as blocks from "./index.js";
 import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
+
+const stylesDir = resolve(dirname(fileURLToPath(import.meta.url)), "../../styles");
 
 
 
@@ -97,7 +102,8 @@ describe("CommandMenu", () => {
     expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
     await userEvent.type(input, "BRAV");
     expect(screen.getByRole("status")).toHaveTextContent(/^1 results$/);
-    expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Bravo");
+    // RAC 1.21 publishes aria-activedescendant after its 500 ms screen-reader delay on forward typing.
+    await waitFor(() => expect(document.getElementById(input.getAttribute("aria-activedescendant") ?? "")).toHaveAccessibleName("Bravo"), { timeout: 2000 });
   });
 
   it("uses the host result-count message for localized filtered and empty announcements", async () => {
@@ -171,18 +177,27 @@ describe("CommandMenu", () => {
 
   it("reveals the active row without moving search focus, including filtering with a stable active ID", async () => {
     const { input } = await open();
-    const revealAlpha = vi.fn();
-    const revealBravo = vi.fn();
-    Object.defineProperty(screen.getByRole("menuitem", { name: "Alpha" }), "scrollIntoView", { value: revealAlpha, configurable: true });
-    Object.defineProperty(screen.getByRole("menuitem", { name: "Bravo" }), "scrollIntoView", { value: revealBravo, configurable: true });
+    // Stock RAC Menu reveals the virtually focused row by scrolling its own list (the
+    // dialog prevents page scroll), one frame after the key. jsdom has no layout, so the
+    // list is 40px tall, each row 40px, and the reveal is read off the list's scrollTop.
+    const menu = screen.getByRole("menu");
+    let scrolled = 0;
+    const box = (y: number, h: number) => ({ top: y, bottom: y + h, left: 0, right: 200, width: 200, height: h, x: 0, y, toJSON: () => ({}) }) as DOMRect;
+    Object.defineProperty(menu, "scrollTop", { configurable: true, get: () => scrolled, set: (value: number) => { scrolled = value; } });
+    Object.defineProperty(menu, "getBoundingClientRect", { configurable: true, value: () => box(0, 40) });
+    screen.getAllByRole("menuitem").forEach((row, index) => Object.defineProperty(row, "getBoundingClientRect", { configurable: true, value: () => box(index * 40 - scrolled, 40) }));
+    const alphaRow = screen.getByRole("menuitem", { name: "Alpha" });
     await userEvent.keyboard("{ArrowDown}{ArrowDown}");
-    expect(revealBravo).toHaveBeenCalled();
+    expect(screen.getByRole("menuitem", { name: "Bravo" })).toHaveAttribute("data-focused", "true");
+    await waitFor(() => expect(scrolled).toBe(80));
     expect(input).toHaveFocus();
     await userEvent.keyboard("{ArrowUp}");
-    expect(revealAlpha).toHaveBeenCalled();
-    revealAlpha.mockClear();
+    expect(alphaRow).toHaveAttribute("data-focused", "true");
+    await waitFor(() => expect(scrolled).toBe(0));
     await userEvent.type(input, "al");
-    expect(revealAlpha).toHaveBeenCalledWith(expect.objectContaining({ block: "nearest", behavior: "instant" }));
+    expect(screen.getAllByRole("menuitem")).toEqual([alphaRow]);
+    expect(alphaRow).toHaveAttribute("data-focused", "true");
+    await waitFor(() => expect(input).toHaveAttribute("aria-activedescendant", alphaRow.id), { timeout: 2000 });
     expect(input).toHaveFocus();
   });
 
@@ -240,9 +255,13 @@ describe("CommandMenu", () => {
     expect(content).toBeInTheDocument();
     expect(content.className).not.toMatch(/animate-|transition-/);
     expect(content.outerHTML).not.toMatch(/forced-color-adjust-none|\b(?:left|right)-/);
-    for (const node of content.querySelectorAll("[class]")) {
-      const classes = node.getAttribute("class") ?? "";
-      if (classes.includes("transition-")) expect(classes).toContain("motion-reduce:transition-none");
+    // Stock shadcn@aria parts (the close Button) stay unmodified and carry no motion-reduce
+    // variant; the shipped stylesheets' global reduced-motion floor covers them instead
+    // (theme-keys.css, rendered proof in reduced-motion.browser.test.ts).
+    const uncovered = [...content.querySelectorAll("[class]")].map(node => node.getAttribute("class") ?? "")
+      .filter(classes => classes.includes("transition-") && !classes.includes("motion-reduce:transition-none"));
+    if (uncovered.length) for (const sheet of ["theme-keys.css", "compiled.css"]) {
+      expect(readFileSync(resolve(stylesDir, sheet), "utf8")).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\*,\s*::before,\s*::after,\s*::backdrop \{[^}]*transition-duration: 0\.01ms !important;/);
     }
   });
 

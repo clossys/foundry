@@ -47,6 +47,10 @@ describe("exported AppFrame specimen", () => {
     await user.click(screen.getByRole("button", { name: "Host launcher" }));
     expect(await screen.findByRole("dialog", { name: "Host commands" })).toBeInTheDocument();
     await user.type(screen.getByRole("searchbox", { name: "Host query" }), "Run host");
+    // RAC 1.21 Autocomplete virtually focuses the first row only when typing changes the
+    // filtered rows; this query keeps the one row, so the keyboard selects it before Enter.
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByRole("menuitem", { name: "Run host task" })).toHaveAttribute("data-focused", "true");
     await user.keyboard("{Enter}");
     expect(run).toHaveBeenCalledOnce();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -156,7 +160,8 @@ describe("exported AppFrame specimen", () => {
     await user.click(opener);
     const search = await screen.findByRole("searchbox", { name: "Find a command" });
     await user.type(search, "task");
-    expect(screen.queryByRole("option", { name: "Open overview" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("menuitem").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("menuitem", { name: "Open overview" })).not.toBeInTheDocument();
     await user.keyboard("{Enter}");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(within(screen.getByRole("banner")).getByRole("heading", { name: "Tasks" })).toBeInTheDocument();

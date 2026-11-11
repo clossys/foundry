@@ -32,8 +32,13 @@ describe("nav disclosure header contract", () => {
     for (const region of [".site-header-brand", ".site-header-nav-links", ".site-header-desktop-actions", ".site-header-actions"]) {
       expect(contract).toContain(`&[data-measuring] ${region}`);
     }
-    const rules = [...contract.matchAll(/&\[data-measuring\][^{]*\{([^}]*)\}/g)].map(match => match[1]!);
+    // planner:wd-reg: only the region rules size to max-content; 84acf3ed2 added the separate
+    // `&[data-measuring] .site-header-nav-inline { display: contents !important; }` flattening rule, pinned below.
+    const regionRule = /&\[data-measuring\][^{]*\.site-header-(?:brand|nav-links|desktop-actions|actions)\b[^{]*\{([^}]*)\}/g;
+    const rules = [...contract.matchAll(regionRule)].map(match => match[1]!);
     expect(rules).toHaveLength(2);
+    expect([...contract.matchAll(/&\[data-measuring\][^{]*\{([^}]*)\}/g)]).toHaveLength(3);
+    expect(contract).toContain("&[data-measuring] .site-header-nav-inline { display: contents !important; }");
     for (const rule of rules) {
       expect(rule).toContain("inline-size: max-content;");
       expect(rule).toContain("max-inline-size: none;");

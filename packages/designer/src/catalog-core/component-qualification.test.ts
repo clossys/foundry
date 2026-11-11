@@ -155,8 +155,9 @@ const histogram = (rows: readonly { code: string; subject: string }[]) => rows.r
 
 const errorsFor = (errors: readonly { code: string; subject: string; message: string; compatibility?: string }[], slot: string) => errors.filter(error => error.subject === slot).map(error => error.compatibility ?? error.code);
 
-/** Registered component slots: 66 plus components.rich-text (6463e7e59) and components.media-player (78237484a). */
-const REGISTERED_SLOTS = 68;
+/** Registered component slots: 66 plus components.rich-text (6463e7e59) and components.media-player (78237484a);
+ * 68 -> 76 (planner:wd-reg) with the eight owner-signed components.specimen-* leaves (25a8fc7b2). */
+const REGISTERED_SLOTS = 76;
 
 describe("component qualification join (SYNTHETIC fixture library)", () => {
   it("qualifies every registered slot from per-slot browser artifacts bound to the adopted descriptors", () => {
