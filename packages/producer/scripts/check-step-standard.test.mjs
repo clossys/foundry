@@ -110,8 +110,9 @@ proves("step.hand-written", f => {
 });
 // A check still marked pending although its command (`clossys pipeline check`) exists in src/cli.
 proves("pending.stale", f => {
-  const dir = join(f.root, "dist-pipeline");
-  cpSync(DIST, dir, { recursive: true });
+  // Copy the whole dist: dist/pipeline imports ../records, ../cli and friends.
+  cpSync(dirname(DIST), join(f.root, "dist"), { recursive: true });
+  const dir = join(f.root, "dist", "pipeline");
   const checks = join(dir, "steps", "checks.js");
   copyFileSync(checks, join(dir, "steps", "checks.real.js"));
   writeFileSync(checks, `export * from "./checks.real.js";\nimport { CHECKS as REAL } from "./checks.real.js";\nexport const CHECKS = [...REAL, { ...REAL[0], command: "clossys pipeline check", pending: { branch: "claude/landed" } }];\n`);
