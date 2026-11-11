@@ -19,6 +19,14 @@ export function resolves(ref: Ref, model: StrategyModel): boolean {
     return model.findings.some(finding => finding.id === ref.id);
   return model.sessions.some(session => session.id === ref.session && session.lines.some(line => line.id === ref.line));
 }
+/**
+ * A cell ref to a version the slot records as a candidate but that is not a cell of this model
+ * (superseded, or never pinned). It is stale, not dangling: the read API's `isStale` holds for it.
+ * Refs that resolve, and refs of models that list every version as a cell, are never stale here.
+ */
+export function staleCandidate(ref: Ref, model: StrategyModel): boolean {
+  return ref.kind === 'cell' && !resolves(ref, model) && (model.candidateVersions?.[ref.ref.cell]?.includes(ref.ref.version) ?? false);
+}
 export function fresh(cell: Cell, model: StrategyModel): boolean {
   return cell.status === 'active' && model.tree?.active[cell.id] === cell.version && cell.cites.every(ref => ref.kind !== 'cell' || (resolves(ref, model) && model.tree?.active[ref.ref.cell] === ref.ref.version));
 }

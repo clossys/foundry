@@ -2,7 +2,7 @@ import { isSlotCandidatePath } from '../format/slot.js';
 import type { Cell } from '../format/types.js';
 import type { CellFinding, CheckContext } from './types.js';
 import { cellJudgeId } from './types.js';
-import { containsPhrase, escapeRegex, refText, resolves, scopeIds, words } from './shared.js';
+import { containsPhrase, escapeRegex, refText, resolves, scopeIds, staleCandidate, words } from './shared.js';
 /** A Watch is a complete conditional with a measurable threshold and a review window. */
 /**
  * Whether a pin satisfies the cell's decider. A core cell's decider is the owner: it counts only
@@ -52,7 +52,14 @@ export function checkCell(cell: Cell, ctx: CheckContext): CellFinding[] {
     if (!bullet.refs.length)
       add('Q3', 'Because bullet requires a trailing reference', bullet.line);
     for (const ref of bullet.refs)
-      if (!resolves(ref, ctx.model))
+      // A recorded but unpinned version is stale (still hard: the cell cannot be active until it is re-cited).
+      if (ref.kind === 'cell' && staleCandidate(ref, ctx.model)) {
+        const pinned = ctx.model.tree?.active[ref.ref.cell];
+        add('Q3', `Stale reference ${refText(ref)}: ${pinned == null
+          ? `${ref.ref.cell} has no pinned version; pin one and re-cite it`
+          : `the pinned version is ${ref.ref.cell}@${pinned}; re-cite the pinned version`} (clossys migrate director-refs) or re-draft this cell`, bullet.line, 'stale');
+      }
+      else if (!resolves(ref, ctx.model))
         add('Q3', `Unresolved reference ${refText(ref)}`, bullet.line, 'dangling');
   }
   const expected = new Set(cell.because.flatMap(bullet => bullet.refs.map(refText)));
