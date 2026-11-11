@@ -139,7 +139,8 @@ const interview = (f, body) => ["--interview", f.module("interview.mjs", `import
 proves("owner.argv", f => interview(f, `export function gapsOf(root, options) { return REAL.gapsOf(root, options); }
 export function interviewOf(root, options) {
   const view = REAL.interviewOf(root, options);
-  if (options.agent !== "producer") return view;
+  // Any agent with an owner question: the live producer interview is empty once its seats are recorded.
+  if (!view.rounds.length) return view;
   const [first, ...rest] = view.rounds[0];
   return { ...view, rounds: [[{ ...first, options: first.options.map((option, index) => index ? option : { ...option, calls: [] }) }, ...rest], ...view.rounds.slice(1)] };
 }`));
