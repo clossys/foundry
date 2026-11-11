@@ -194,6 +194,8 @@ export const OPTIONAL_PEER_POLICY = {
   "@clossys/designer": {
     "@internationalized/date": {
       ...omissionRow(designerExports, designerClientExports),
+      // WCx: measured 2026-11-10; components/server now reaches the stock Spinner (R2F-53) under the default condition.
+      "@clossys/designer/components/server": "rejects",
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -207,6 +209,8 @@ export const OPTIONAL_PEER_POLICY = {
     // Rows measured 2026-11-04; recharts is not reached by any bare import.
     "@tiptap/extension-table": {
       ...omissionRow(designerExports, ["@clossys/designer/components", "@clossys/designer/blocks"]),
+      // WCx: measured 2026-11-10; the shell entry now reaches the tiptap editor.
+      "@clossys/designer/shell": "rejects",
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -218,6 +222,8 @@ export const OPTIONAL_PEER_POLICY = {
     },
     "@tiptap/markdown": {
       ...omissionRow(designerExports, ["@clossys/designer/components", "@clossys/designer/blocks"]),
+      // WCx: measured 2026-11-10; the shell entry now reaches the tiptap editor.
+      "@clossys/designer/shell": "rejects",
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -229,6 +235,8 @@ export const OPTIONAL_PEER_POLICY = {
     },
     "@tiptap/react": {
       ...omissionRow(designerExports, ["@clossys/designer/components", "@clossys/designer/blocks"]),
+      // WCx: measured 2026-11-10; the shell entry now reaches the tiptap editor.
+      "@clossys/designer/shell": "rejects",
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -240,6 +248,8 @@ export const OPTIONAL_PEER_POLICY = {
     },
     "@tiptap/starter-kit": {
       ...omissionRow(designerExports, ["@clossys/designer/components", "@clossys/designer/blocks"]),
+      // WCx: measured 2026-11-10; the shell entry now reaches the tiptap editor.
+      "@clossys/designer/shell": "rejects",
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -251,6 +261,26 @@ export const OPTIONAL_PEER_POLICY = {
     },
     "clsx": {
       ...omissionRow(designerExports, designerClientExports),
+      // WCx: measured 2026-11-10; the server entries now reach the stock cn() helper.
+      "@clossys/designer/components/server": "rejects",
+      "@clossys/designer/blocks/server": "rejects",
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("rejects", "rejects"),
+      "@clossys/designer/studio": "rejects",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "rejects",
+      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
+    },
+    // R2F-52: lucide-react is the stock shadcn icon set behind Icon, Spinner and
+    // the stock button slots. WCx: measured 2026-11-10 with
+    // `npm run check:packed-consumer -- --package @clossys/designer`; the stock
+    // Spinner puts it on components/server, and the theme entry does not reach it.
+    "lucide-react": {
+      ...omissionRow(designerExports, designerClientExports),
+      "@clossys/designer/components/server": "rejects",
+      "@clossys/designer/theme": "imports",
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -260,13 +290,11 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/designer/studio/state": "rejects",
       ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
     },
-    // R2F-52: lucide-react is the stock shadcn icon set behind Icon, Spinner and
-    // the stock button slots; optional peer imported by the same client entries
-    // as clsx, so the row mirrors clsx. Not yet runtime-measured (2026-11-10 runs
-    // hit load timeouts / a full build budget); the integration wave re-measures
-    // with `npm run check:packed-consumer -- --package @clossys/designer`.
-    "lucide-react": {
+    // R2F-53: media-chrome (Kibo video-player) is an optional peer. WCx: measured 2026-11-10;
+    // the theme entry does not reach it.
+    "media-chrome": {
       ...omissionRow(designerExports, designerClientExports),
+      "@clossys/designer/theme": "imports",
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -300,6 +328,8 @@ export const OPTIONAL_PEER_POLICY = {
     },
     "react-aria-components": {
       ...omissionRow(designerExports, designerClientExports),
+      // WCx: measured 2026-11-10; components/server now reaches the stock Spinner (R2F-53).
+      "@clossys/designer/components/server": "rejects",
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "rejects",
       "@clossys/designer/catalog/server": "imports",
@@ -310,6 +340,19 @@ export const OPTIONAL_PEER_POLICY = {
       ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
     },
     "react-dom": {
+      ...omissionRow(designerExports, designerClientExports),
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("rejects", "imports"),
+      "@clossys/designer/studio": "rejects",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "rejects",
+      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
+    },
+    // R2F-53: sonner (Toast) is an optional peer. Mirrors clsx; NOT yet runtime-measured: the 2026-11-10
+    // WCx run stops first at the react-dom row (components/server now rejects without react-dom).
+    sonner: {
       ...omissionRow(designerExports, designerClientExports),
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
