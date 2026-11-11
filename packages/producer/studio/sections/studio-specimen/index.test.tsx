@@ -16,7 +16,7 @@ describe('detail and gallery specimen binding', () => {
   it.each(['tables', 'rows'] as const)('keeps complete Writer %s content wrappable in a narrow candidate pane', kind => {
     const values = ['Publications', 'Overview', '  significant spaces\nsecond line  ', 'UnbrokenRecordValue'.repeat(24)];
     const specimen: SpecimenInput = {
-      kind: 'record', name: 'strings.common', title: 'Candidate', description: '', empty: 'No records', rowsCopy,
+      kind: 'record', name: 'strings.common', title: 'Candidate', description: '', empty: 'No records', rowsCopy, citation: null,
       ...(kind === 'tables' ? {
         tables: [{ id: 'strings', label: 'Strings', columns: ['Key', 'Text'], prose: 1,
           rows: values.map((text, index) => ({ key: `record-${index}`, cells: [{ text: `record-${index}` }, { text, ...(index === 3 ? { href: '/records/long' } : {}) }] })),
@@ -58,7 +58,8 @@ describe('detail and gallery specimen binding', () => {
     const empty = render(<SpecimenContent specimen={{ kind: 'viewports', name: 'Example', title: 'Specimen', description: '', specimens: [], empty: 'No candidate' }} />);
     expect(empty.querySelector('iframe')).toBeNull();
     expect(empty.body.textContent).toContain('No candidate');
-    const error = render(<SpecimenSection specimen={{ kind: 'record', name: 'Example', title: 'Candidate', description: 'Native detail', rowsCopy, status: { label: 'Unavailable', tone: 'destructive', description: 'Artifact bytes did not match' }, empty: 'No candidate' }} />);
+    const error = render(<SpecimenSection specimen={{ kind: 'record', name: 'Example', title: 'Candidate', description: 'Native detail', rowsCopy, status: { label: 'Unavailable', tone: 'destructive', description: 'Artifact bytes did not match' }, citation: { source: 'check:slot-pins', result: 'Failed' }, empty: 'No candidate' }} />);
+    expect(error.querySelector('[data-citation="check:slot-pins"]')!.textContent).toBe('check:slot-pins · Failed');
     expect(error.body.textContent).toContain('Artifact bytes did not match');
     expect(error.querySelector('iframe')).toBeNull();
   });

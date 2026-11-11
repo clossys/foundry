@@ -238,12 +238,12 @@ describe('slot details', () => {
     })) });
     const withoutPublication = slotDetailInputs(detail, links, 'light');
     for (const name of ['header', 'options', 'contract', 'checks', 'history', 'references']) expect(inputs[name]).toEqual(withoutPublication[name]);
-    // Without an emitted page the detail shows an explicit error, never the candidate file text.
-    expect(withoutPublication.specimen).toMatchObject({ kind: 'record', status: { label: 'Missing', tone: 'destructive' } });
+    // Without an emitted page no publish run is behind the specimen: it reads Not run, uncited, never the candidate file text.
+    expect(withoutPublication.specimen).toMatchObject({ kind: 'record', status: { label: 'Not run', tone: 'outline' }, citation: null });
     expect(JSON.stringify(withoutPublication.specimen)).not.toContain(bytes);
     if (publication.state !== 'ready') throw new Error('Expected fixture publication');
     for (const page of [{ ...publication.pages[0]!, emitted: false }, { ...publication.pages[0]!, cellId: 'page.other' }, { ...publication.pages[0]!, cellId: undefined }]) {
-      expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [page] }).specimen).toMatchObject({ kind: 'record', status: { tone: 'destructive' } });
+      expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [page] }).specimen).toMatchObject({ kind: 'record', status: { label: 'Not run' }, citation: null });
     }
     // The native endpoint's explicit emitted identity takes precedence over route matching.
     expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [{ ...publication.pages[0]!, route: '/different', cellId: id }] }).specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport })) });

@@ -6,7 +6,7 @@ import SlotGroupsSection, { type SlotCard, type SlotGroupsInput } from './index'
 const EMPTY = 'No rendered specimen at this size yet; the slot has no pinned candidate to preview.';
 
 function card(id: string, specimen: SlotCard['specimen']): SlotCard {
-  return { id, name: id, href: `/designer/${id}`, statusLabel: 'Pinned', statusTone: 'secondary', version: 1, versionLabel: 'v1', specimen };
+  return { id, name: id, href: `/designer/${id}`, statusLabel: 'Pinned', statusTone: 'secondary', citation: null, version: 1, versionLabel: 'v1', specimen };
 }
 const framed = (id: string) => card(id, { name: id, kind: 'viewports', empty: EMPTY, specimens: [{ viewport: 1280, light: `/__specimen?element=${encodeURIComponent(id)}&width=1280`, title: id }] });
 
@@ -37,9 +37,17 @@ describe('slot-groups gallery (R2F-03b)', () => {
     expect(frame.getAttribute('loading')).toBe('lazy');
   });
 
+  it('shows the check behind a card status, and no citation line when none is cited', () => {
+    const cited = { ...card('cited', { name: 'cited', kind: 'record', empty: EMPTY, citation: null }), citation: { source: 'check:slot-pins', result: 'Passed' } };
+    const document = render({ empty: 'none', groups: [{ id: 'g', label: 'Group', cards: [cited, card('plain', { name: 'plain', kind: 'record', empty: EMPTY, citation: null })] }] });
+    const lines = [...document.querySelectorAll('[data-citation]')];
+    expect(lines.map(node => [node.getAttribute('data-citation'), node.textContent])).toEqual([['check:slot-pins', 'check:slot-pins · Passed']]);
+    expect(lines[0]!.closest('[data-slot-card]')!.getAttribute('data-slot-card')).toBe('cited');
+  });
+
   it('never sets a long decision line (Not needed: <reason>) in a single-line badge, so it cannot widen the card', () => {
     const reason = 'Not needed: planner:DS-COMPLETE; no pinned candidate, slot uses list or publication composes it; candidate v1 has no trusted registry lineage.';
-    const decided = card('decided', { name: 'decided', kind: 'record', empty: reason, status: { label: reason, tone: 'secondary', description: 'components.decided' } });
+    const decided = card('decided', { name: 'decided', kind: 'record', empty: reason, status: { label: reason, tone: 'secondary', description: 'components.decided' }, citation: null });
     const document = render({ empty: 'none', groups: [{ id: 'g', label: 'Group', cards: [decided] }] });
     const shown = document.querySelector('[data-preview-status="status"]')!;
     expect(shown.textContent).toBe(reason);
@@ -51,7 +59,7 @@ describe('slot-groups gallery (R2F-03b)', () => {
   it('never sets the long empty-state text in a single-line badge, so it cannot run out of the card', () => {
     const empties = [
       card('none', { name: 'none', kind: 'viewports', empty: EMPTY, specimens: [] }),
-      card('record', { name: 'record', kind: 'record', empty: EMPTY }),
+      card('record', { name: 'record', kind: 'record', empty: EMPTY, citation: null }),
     ];
     const document = render({ empty: 'none', groups: [{ id: 'g', label: 'Group', cards: empties }] });
     const shown = [...document.querySelectorAll('[data-preview-status="empty"]')];

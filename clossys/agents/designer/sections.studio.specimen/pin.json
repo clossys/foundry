@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-specimen-v12.json",
-  "sha256": "aae9931442faf0724542761c1acea696c7774967338b06fc6c14b2747ab822ed",
-  "decidedBy": "planner:R2F-03",
+  "candidate": "studio-specimen-v13.json",
+  "sha256": "0f866e66fdf3c6da39b420de89615fd8ab5c0852ee3803d94104b74c820ea076",
+  "decidedBy": "planner:WS-HON",
   "basis": "planner",
-  "at": "2026-11-06T17:41:56.067Z"
+  "at": "2026-11-11T05:12:24.129Z"
 }

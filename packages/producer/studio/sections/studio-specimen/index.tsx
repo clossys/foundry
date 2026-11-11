@@ -3,6 +3,12 @@ import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field
 export type SpecimenTone = 'secondary' | 'outline' | 'destructive';
 export type SpecimenViewport = 375 | 768 | 1280;
 
+/** Where a shown status comes from: a run record (`<step>#<id>`) or a check id, and its result (Writer copy). */
+export interface SpecimenCitation {
+  source: string;
+  result: string;
+}
+
 /** One viewport's specimen URLs; the frame renders the page at `viewport` CSS px. */
 export interface ViewportSpecimen {
   viewport: SpecimenViewport; light: string; dark?: string;
@@ -19,7 +25,8 @@ export interface SpecimenTable {
   columns: readonly string[];
   /** The column containing prose. */
   prose?: number;
-  rows: readonly { key: string; cells: readonly { text: string; href?: string; statusLabel?: string; statusTone?: SpecimenTone }[] }[];
+  /** A cell's status renders only with the run record or check result it comes from (`citation`). */
+  rows: readonly { key: string; cells: readonly { text: string; href?: string; statusLabel?: string; statusTone?: SpecimenTone; citation?: SpecimenCitation }[] }[];
 }
 
 /**
@@ -35,7 +42,9 @@ export type SpecimenInput = { name: string; title: string; description: string }
     /** The rows table's accessible label and column headings (Writer copy). */
     rowsCopy: { label: string; key: string; content: string };
     /** A gallery card's lead: the record's first lines as text that reads at card size. */
-    lead?: readonly string[]; status?: { label: string; tone: SpecimenTone; description: string }; empty: string }
+    lead?: readonly string[]; status?: { label: string; tone: SpecimenTone; description: string };
+    /** The run record or check result the status comes from; null when none ran (the status then reads as not run). */
+    citation: SpecimenCitation | null; empty: string }
 );
 
 /** A viewport's frame height in CSS px: a phone, a tablet and a laptop screen. */
@@ -97,7 +106,7 @@ function RecordTable({ name, table, titled }: { name: string; table: SpecimenTab
         {table.rows.map(row => <TableRow key={row.key} id={row.key}>
           {row.cells.map((cell, index) => <TableCell key={index}>
             {cell.href ? <LinkButton href={cell.href} variant="link" size="sm">{cell.text}</LinkButton> : cell.text}
-            {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'}>{cell.statusLabel}</Badge>}
+            {cell.statusLabel && cell.citation && <Badge variant={cell.statusTone ?? 'outline'} data-citation={cell.citation.source}>{cell.statusLabel}</Badge>}
           </TableCell>)}
         </TableRow>)}
       </TableBody>
@@ -131,6 +140,7 @@ export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
   if (specimen.status) return <CardContent>
     <Badge variant={specimen.status.tone} data-preview-status="status">{specimen.status.label}</Badge>
     <CardDescription>{specimen.status.description}</CardDescription>
+    {specimen.citation && <CardDescription data-citation={specimen.citation.source}>{[specimen.citation.source, specimen.citation.result].join(' · ')}</CardDescription>}
   </CardContent>;
   return <CardContent><Badge variant="outline" data-preview-status="empty">{specimen.empty}</Badge></CardContent>;
 }

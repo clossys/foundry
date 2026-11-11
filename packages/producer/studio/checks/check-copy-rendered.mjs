@@ -240,6 +240,13 @@ export async function registryUniverse(repo) {
     for (const node of ia.nodes ?? []) { ids.add(node.id); for (const child of node.children ?? []) { ids.add(child.id); for (const slot of child.slots ?? []) ids.add(slot); } }
     for (const layer of ia.layers ?? []) ids.add(layer.id);
   }
+  // The declared pipeline graph is a registry too: a status citation names one of its steps or checks
+  // (`check:<id>`, as `clossys pipeline trace` records it), never free text.
+  const graphFile = join(repo, 'packages/producer/pipeline/graph.json');
+  if (existsSync(graphFile)) for (const node of JSON.parse(readFileSync(graphFile, 'utf8')).nodes ?? []) {
+    if (typeof node.id === 'string') ids.add(node.id);
+    for (const check of node.checks ?? []) if (typeof check === 'string') { ids.add(check); ids.add(`check:${check}`); }
+  }
   const locale = JSON.parse(/^locales: (.+)$/m.exec(pinnedCandidates(repo, 'writer').find(row => row.name.endsWith('.md'))?.bytes ?? '')?.[1] ?? '["en"]')[0];
   // Each slot's leaf route and the gallery routes above it: where its options may show.
   const scope = new Map();

@@ -2,6 +2,12 @@ import { Badge, CardDescription, CardHeader, CardTitle, LinkButton } from '@clos
 
 export type LeafTone = 'secondary' | 'outline' | 'destructive';
 
+/** Where a shown status comes from: a run record (`<step>#<id>`) or a check id, and its result (Writer copy). */
+export interface LeafCitation {
+  source: string;
+  result: string;
+}
+
 /** The `header` input of `sections.studio.leaf-header`: display-ready. */
 export interface LeafHeaderInput {
   name: string;
@@ -12,6 +18,8 @@ export interface LeafHeaderInput {
   statusLabel: string;
   statusTone: LeafTone;
   statusDetail: readonly string[];
+  /** The run record or check result the status comes from; null when none ran, and the status then reads as not run. */
+  citation: LeafCitation | null;
   trail: readonly string[];
   galleryHref: string;
   galleryLabel: string;
@@ -28,5 +36,6 @@ export default function LeafHeaderSection({ header, ...provenance }: { header: L
     </CardTitle>
     <CardDescription>{[header.id, ...header.trail].join(' · ')}</CardDescription>
     {header.statusDetail.map(line => <CardDescription key={line}>{line}</CardDescription>)}
+    {header.citation && <CardDescription data-citation={header.citation.source}>{[header.citation.source, header.citation.result].join(' · ')}</CardDescription>}
   </CardHeader>;
 }
