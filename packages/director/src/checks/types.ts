@@ -44,12 +44,16 @@ export interface CellFinding extends CheckFinding {
 export interface CoherenceFinding extends CheckFinding {
   rule: 'C1' | 'C2' | 'C3' | 'C4';
 }
+/** A recorded cell judgement whose verdict cites no resolvable run record. */
+export interface JudgmentFinding extends CheckFinding {
+  rule: 'judgment-uncited';
+}
 export interface CellCompletion {
   id: string;
   version?: number;
   active: boolean;
   fresh: boolean;
-  findings: CellFinding[];
+  findings: (CellFinding | JudgmentFinding)[];
 }
 export interface StorylineReport {
   headlines: {
