@@ -74,6 +74,8 @@ export interface RunDecision {
   readonly model: string;
   readonly tier: string;
   readonly basis: string;
+  /** The selection-ladder rung the candidate came from (pipeline/candidate-ladder.ts). */
+  readonly ladder?: { readonly rung: string; readonly seed?: string; readonly reason?: string };
   readonly skill: FileVersion;
   /** The recorded output: the candidate file written. */
   readonly output: FileVersion;

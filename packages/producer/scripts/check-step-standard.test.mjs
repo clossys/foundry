@@ -125,3 +125,27 @@ proves("pending.stale", f => {
 });
 proves("dist.missing", f => { const dir = join(f.root, "no-dist"); mkdirSync(dir); return ["--dist", dir]; });
 
+// SKILL-INT: every agent skill carries the Interview section and every candidates skill the ladder.
+proves("skill.interview", f => {
+  const file = f.at("writer", "skill", "SKILL.md");
+  writeFileSync(file, readFileSync(file, "utf8").replace(/^## Interview\b/m, "## Talking to the owner"));
+});
+proves("skill.ladder", f => {
+  const file = f.at("designer", "actions", "designer.candidates", "skill.md");
+  writeFileSync(file, readFileSync(file, "utf8").replace("**L4**", "**Foundry**"));
+});
+// The interview module, wrapped: one owner option loses its argv, or one request loses its addressee.
+const interview = (f, body) => ["--interview", f.module("interview.mjs", `import * as REAL from ${JSON.stringify(pathToFileURL(join(DIST, "interview.js")).href)};\nexport const interviewIssues = REAL.interviewIssues;\n${body}\n`)];
+proves("owner.argv", f => interview(f, `export function gapsOf(root, options) { return REAL.gapsOf(root, options); }
+export function interviewOf(root, options) {
+  const view = REAL.interviewOf(root, options);
+  if (options.agent !== "producer") return view;
+  const [first, ...rest] = view.rounds[0];
+  return { ...view, rounds: [[{ ...first, options: first.options.map((option, index) => index ? option : { ...option, calls: [] }) }, ...rest], ...view.rounds.slice(1)] };
+}`));
+proves("request.addressee", f => interview(f, `export function interviewOf(root, options) { return REAL.interviewOf(root, options); }
+export function gapsOf(root, options) {
+  const view = REAL.gapsOf(root, options);
+  if (options.agent !== "designer") return view;
+  return { ...view, gaps: [...view.gaps, { kind: "request", code: "request.input-unpinned", agent: "director", item: "director/x", step: "pin.director", decider: "owner", message: "no addressee", from: "designer" }] };
+}`));

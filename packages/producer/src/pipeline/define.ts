@@ -264,7 +264,8 @@ export function defineAction(contract: ActionContract, binding: Binding | undefi
     if (run.form === "cli") {
       if (!binding?.entry) fail(`clossys ${run.verb} needs a bound handler entry`);
       const cli: StepCli = { verb: run.verb, ...(run.flags.length ? { flags: run.flags } : {}), ...(binding!.parser ? { parser: binding!.parser } : {}), ...(run.target ? { target: run.target } : {}) };
-      command = { cli, entry: binding!.entry, ...skill };
+      // A verb may also name the library modules its handler serves (designer.candidates: the catalog materializer).
+      command = { cli, entry: binding!.entry, ...skill, ...(binding!.module ? { module: binding!.module } : {}) };
     } else {
       if (run.step !== contract.id) fail(`a traced run traces its own id, not ${run.step}`);
       if (!binding?.script) fail("a traced run needs its bound script");

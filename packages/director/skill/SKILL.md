@@ -30,8 +30,9 @@ clossys/evidence/director/<finding-id>.md            evidence with a source (top
 clossys/evidence/director/briefs/, reports/          written by the CLI; never hand-edit
 ```
 
-You write candidate files and finding files only. `pin.json` is written by
-`clossys pin`, never by hand. The CLI writes briefs and reports.
+You write finding files, and candidates only through `clossys next --submit`.
+`pin.json` is written by `clossys pin` (or an agent pick by
+`clossys pick --by agent:director`, which the owner confirms), never by hand. The CLI writes briefs and reports.
 
 Cell ids are `l1.l2.l3` from the installed contract list,
 `node_modules/@clossys/director/src/slot-contracts/contracts.json` (for
@@ -145,9 +146,12 @@ There is no session log. What the owner says is recorded as findings:
 5. **Route** the answer: name every cell it informs (routing table below) in
    the finding's `Informs:` bullet, and say in one clause what you noted for
    later ("Noted for pricing; back to who we serve.").
-6. **Draft** `<id>/candidates/<name>-v<N>.md` from the template. Options the
-   owner wants to compare in writing are parallel candidates with
-   `note: "option A"`, `"option B"`.
+6. **Draft** the candidate from the template in a scratch file, then submit it:
+   `npx clossys next director/<id> --submit <name>.md --name <name> --model <id> --tier <tier> --basis owner --skill <packet skill path> --rung <select|adapt|create> [--seed <id>@<N>] [--reason <why no seed fit>]`.
+   The verb writes `<id>/candidates/<name>-v<N>.md` and refuses an invalid or
+   byte-identical draft. Select or adapt a pinned version or template first;
+   create only when none fits, saying why. Options the owner wants to compare in
+   writing are parallel candidates with `note: "option A"`, `"option B"`.
 7. **Self-check** the draft: `npx clossys director check check <id>`. Fix
    every finding in the draft before showing it. Never weaken a cell to pass.
 8. **Play back.** Give the Direction bullets in plain words, the strongest
@@ -310,6 +314,29 @@ Brief contracts: `designer.identity` (essence, personality, style),
 `publisher.launch` (channel, included), `customer.persona` (core segment,
 need). Do not let a downstream agent start while its brief is missing.
 
+## Interview
+
+Run the Producer skill's Interview contract (`clossys-producer`, section Interview) for agent
+`director`, in the same shape as every agent skill:
+
+- **When to run it**: at session start, after each pin, and whenever a downstream agent reports a need (a request).
+- **Gaps first**: `npx clossys gaps --agent director --json`. Director gaps are open cells, unpinned or unclear pinned cells (TODO-OWNER lines, blocking checks)
+  and open request records.
+  Requests addressed to the Director (`to: director`) come from a downstream agent; requests from the
+  Director (`from: director`) go to the upstream agent's round. Never hand-fill either.
+- **Then the rounds**: `npx clossys next --owner --agent director --json`: rounds of at most 4
+  questions, each with 2 to 4 options (recommended first, each the exact clossys argv of every call
+  it runs) and a free-text answer.
+- **Ask each round**: on Claude one `AskUserQuestion` call per round; on Codex a numbered list per
+  question, recommended first.
+  The rounds hold the owner decisions (pins, requests); the cell interview above stays one
+  question per turn.
+- **Record through the verbs**: run the chosen option's `calls` exactly (a free-text answer goes
+  through `freeText.verb`); candidates go through `npx clossys next director/<slot> --submit`, agent
+  picks through `npx clossys pick director/<id> <name>-v<N> --by agent:director`, owner pins through `npx clossys pin`. Never edit a record by hand.
+- **Cascade**: `npx clossys run` after each round.
+- **Stop at 0 gaps**: repeat until `npx clossys gaps --agent director` reports 0 gaps.
+
 ## Done when
 
 - `npx clossys director check complete --level mvs --archetype <name>` exits 0
@@ -328,8 +355,8 @@ ready, and the one question that unlocks the next level.
 
 ## Boundaries
 
-- Write only candidate and finding files inside the Director root and
-  `clossys/evidence/director/`. Never write tokens, colours, fonts, copy,
+- Write only finding files in `clossys/evidence/director/`, and candidates only
+  through `clossys next director/<id> --submit`. Never write tokens, colours, fonts, copy,
   pages or code.
 - Never pin without the owner's explicit yes, and never with a basis other
   than `picked` for an owner decision.

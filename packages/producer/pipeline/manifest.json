@@ -33,7 +33,8 @@
         "packages/producer/src/cli/next.ts",
         "packages/producer/src/cli/next.ts#runNextSubmitCli",
         "packages/producer/src/cli/options.ts",
-        "packages/producer/src/cli/options.ts#runPickCli"
+        "packages/producer/src/cli/options.ts#runPickCli",
+        "packages/producer/src/specimen/catalog-materialization.ts#materializeCatalogCandidate"
       ],
       "exceptions": [
         {

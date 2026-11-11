@@ -29,6 +29,7 @@ import { appendRecord, buildRecord, invocationOf, readStore, storeFile } from ".
 import type { StoredRun } from "./trace.js";
 import { runState } from "./wiring.js";
 import type { RunState } from "./wiring.js";
+import { rungsOf } from "./candidate-ladder.js";
 
 export const PACKET_SCHEMA = "clossys.next-packet/1";
 export const CHAIN_SCHEMA = "clossys.chain-run/1";
@@ -71,13 +72,13 @@ export function latestRun(root: string, step: Step, invocation: string): StoredR
 }
 
 // ---------------------------------------------------------------- open decisions
-interface Context {
+export interface Context {
   readonly root: string;
   readonly steps: readonly Step[];
   readonly agents: PipelineStatus["agents"];
   readonly seats: Record<string, SeatReport>;
 }
-const contextOf = (root: string, steps: readonly Step[]): Context => ({ root, steps, agents: slotCounts(root), seats: readSeats(root, steps) });
+export const contextOf = (root: string, steps: readonly Step[]): Context => ({ root, steps, agents: slotCounts(root), seats: readSeats(root, steps) });
 
 /** Files under root matching a workspace glob (`*` within one segment; `**` is not expanded). */
 function matches(root: string, glob: string): string[] {
@@ -186,7 +187,7 @@ export function skillOf(step: Step, packageRoot = PACKAGE_ROOT): { path: string;
   return { path: step.command.skill ?? "", sha256: digest };
 }
 /** The skill's first prose line: the question the step answers. */
-function skillLine(step: Step, packageRoot: string): string {
+export function skillLine(step: Step, packageRoot: string): string {
   const file = skillFile(step, packageRoot);
   try { return (file ? readFileSync(file, "utf8") : "").split("\n").map(line => line.trim()).find(line => line && !line.startsWith("#") && !line.startsWith("-")) ?? step.summary; }
   catch { return step.summary; }
@@ -202,7 +203,7 @@ function slotDoc(root: string, item: string): { contract?: unknown; options?: nu
   try { return readJson(join(root, "clossys", "agents", agent, slot, "slot.json")) as { contract?: unknown; options?: number; varyOn?: string } | undefined; }
   catch { return undefined; }
 }
-const candidatesOf = (root: string, item: string): string[] => {
+export const candidatesOf = (root: string, item: string): string[] => {
   const dir = join(root, "clossys", "agents", ...item.split("/"), CANDIDATES_DIR);
   try { return readdirSync(dir).filter(name => !name.startsWith(".")).sort((a, b) => version(a) - version(b) || (a < b ? -1 : 1)); } catch { return []; }
 };
@@ -223,7 +224,7 @@ function filled(argv: string[], models: Readonly<Record<string, string>>): { arg
 }
 
 /** The verb that records a step's decision (its run's verb and target, never placeholders). */
-const verbOf = (step: Step): string => step.run ? words(step.run).slice(0, 2).join(" ") : "clossys next";
+export const verbOf = (step: Step): string => step.run ? words(step.run).slice(0, 2).join(" ") : "clossys next";
 
 function ownerOptions(step: Step, item: string, context: Context, packageRoot: string, models: Readonly<Record<string, string>>): PacketOption[] {
   const options: PacketOption[] = [];
@@ -264,7 +265,9 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
   } else if (step.id === "writer.approve") {
     const names = candidatesOf(root, item).filter(name => name.endsWith(".md"));
     const keys = writerKeysUnapproved(root).get(item.slice("writer/".length)) ?? [];
-    for (const name of names.slice(-3).reverse()) add(`Approve ${name}${name === names.at(-1) ? ` (its ${keys.length} new key${keys.length === 1 ? "" : "s"}: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? ", ..." : ""})` : ""}.`, ["clossys", "approve", item, name]);
+    for (const name of names.slice(-2).reverse()) add(`Approve ${name}${name === names.at(-1) ? ` (its ${keys.length} new key${keys.length === 1 ? "" : "s"}: ${keys.slice(0, 4).join(", ")}${keys.length > 4 ? ", ..." : ""})` : ""}.`, ["clossys", "approve", item, name]);
+    // Never a lone approve: the owner can always ask the Writer for another draft first.
+    add("Ask the Writer for another draft before approving.", ["clossys", "options", item, "--more"]);
   } else if (step.id.startsWith("pin.")) {
     const names = candidatesOf(root, item);
     for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", item, name, "--basis", "picked"]);
@@ -305,7 +308,7 @@ export function packetOf(step: Step, item: string, open: number, context: Contex
   const briefStep = context.steps.find(each => each.agent === agent && each.kind === "plumb" && (each.command.cli?.flags ?? []).includes("--brief"));
   const slot = item.includes("/") ? item.slice(item.indexOf("/") + 1) : "<slot>";
   const record = step.kind === "decide:creative"
-    ? `clossys next ${item} --submit <file> --model <model> --tier <tier> --basis <basis> --skill ${skillOf(step, packageRoot).path}`
+    ? `clossys next ${item} --submit <file> --model <model> --tier <tier> --basis <basis> --skill ${skillOf(step, packageRoot).path} --rung <${rungsOf(agent).join("|")}> [--seed <id>] [--reason <text>]`
     : step.run?.replace("<agent>/<slot>", item).replace(/(director|designer|writer|publisher)\/<slot>/, item.includes("/") ? item : `$1/${slot}`).replace("<step>", item) ?? verbOf(step);
   const packet: Packet = {
     schema: PACKET_SCHEMA, step: step.id, agent: step.agent ?? "", kind: step.kind, decider: deciderOf(step, seat),

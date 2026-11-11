@@ -6,12 +6,15 @@
 //
 //   node scripts/check-step-standard.mjs [--json] [--packages <dir>] [--bindings <module>] [--steps <module>]
 //                                        [--dist <dir>] [--steps-src <dir>] [--cli-src <dir>]
+//                                        [--interview <module>] [--workspace <dir>]
 //
 // The options exist for mutation proofs (scripts/check-step-standard.test.mjs): --packages reads the
 // registries, package.json files, skill files and generated files from another packages directory;
 // --bindings and --steps load BINDINGS and STEPS from another module; --dist, --steps-src and
-// --cli-src read the built pipeline, src/pipeline/steps/ and src/cli/ from another directory. Other
-// code facts (handlers, scripts, schemas, checks) are always this repository's.
+// --cli-src read the built pipeline, src/pipeline/steps/ and src/cli/ from another directory;
+// --interview loads interviewOf, gapsOf and interviewIssues from another module (default the built
+// dist/pipeline/interview.js) and --workspace is the consumer workspace it reads (default this
+// repository). Other code facts (handlers, scripts, schemas, checks) are always this repository's.
 //
 // Failure rules (each finding names one):
 //   action.invalid     an action.json is not JSON or fails pipeline/schemas/action.schema.json
@@ -60,6 +63,15 @@
 //   step.hand-written  a src/pipeline/steps/ module defines a step by hand (defineStep) instead of a contract
 //   pending.stale      a pending marker whose change has landed (a pending check's command exists)
 //   dist.missing       dist/pipeline is absent or older than src/pipeline; build first
+//   skill.interview    an agent skill (packages/<agent>/skill/SKILL.md) lacks the Interview section, or
+//                      the section misses a part of the shared shape (when, gaps, next --owner, the
+//                      verbs, clossys run, 0 gaps) or, outside the Producer, the contract it cites
+//   skill.ladder       a <agent>.candidates step skill lacks the selection ladder: its rungs, bold, in order
+//                      (select, adapt, create; the Designer's L1 stock, L2 partner, L3 question, L4
+//                      Foundry) and the --rung record next --submit keeps
+//   owner.argv         an owner question of `clossys next --owner` has an option with no exact clossys
+//                      argv, an unfilled placeholder, a round over 4, or not 2-4 answers recommended first
+//   request.addressee  a `clossys gaps` request names no upstream addressee distinct from its requester
 //
 // A check with `pending` waits on its branch: it is listed as PENDING, never as passing. Exit 0 pass, 1 findings, 2 could not run.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -79,6 +91,9 @@ const STEPS_SRC = argOf("--steps-src") ?? join(PKG, "src", "pipeline", "steps");
 const CLI_SRC = argOf("--cli-src") ?? join(PKG, "src", "cli");
 const STEPS_MODULE = argOf("--steps") ?? join(DIST, "steps", "index.js");
 const BINDINGS_MODULE = argOf("--bindings") ?? join(DIST, "steps", "bindings.js");
+// The package's own build, not --dist: a copied dist cannot resolve the workspace packages it imports.
+const INTERVIEW_MODULE = argOf("--interview") ?? join(PKG, "dist", "pipeline", "interview.js");
+const WORKSPACE = argOf("--workspace") ?? REPO;
 
 const failures = [];
 const pending = [];
@@ -94,7 +109,7 @@ function report() {
 }
 
 // ---------------------------------------------------------------- dist
-const LOADED = ["define.js", "actions.js", "schema.js", "steps/index.js", "steps/bindings.js", "steps/checks.js"];
+const LOADED = ["define.js", "actions.js", "schema.js", "steps/index.js", "steps/bindings.js", "steps/checks.js", "interview.js", "candidate-ladder.js"];
 const distStale = LOADED.filter(file => {
   const built = join(DIST, file);
   const source = join(PKG, "src", "pipeline", file.replace(/\.js$/, ".ts"));
@@ -358,6 +373,47 @@ if (ordered) {
 const stepsDir = STEPS_SRC;
 for (const file of existsSync(stepsDir) ? readdirSync(stepsDir).filter(name => /\.(ts|mts)$/.test(name) && !name.includes(".test.")) : []) {
   if (/\bdefineStep\s*\(/.test(text(join(stepsDir, file)))) fail("step.hand-written", `src/pipeline/steps/${file} defines a step with defineStep; every step is a packages/<package>/actions/<id>/action.json contract`);
+}
+
+// ---------------------------------------------------------------- interview and ladder (SKILL-INT)
+// Every agent skill drives its own multiple-choice interview in one shape; the Producer skill states
+// the contract the others cite.
+const INTERVIEW_AGENTS = ["producer", "director", "designer", "writer", "publisher"];
+/** The body of a `## Interview` section (up to the next `## ` heading), or null. */
+const interviewSection = body => { const match = /^## Interview\b.*$/m.exec(body); if (!match) return null; const rest = body.slice(match.index + match[0].length); const end = rest.search(/^## /m); return end < 0 ? rest : rest.slice(0, end); };
+for (const agent of INTERVIEW_AGENTS) {
+  const file = `packages/${agent}/skill/SKILL.md`;
+  const body = interviewSection(text(join(PACKAGES_DIR, agent, "skill", "SKILL.md")));
+  if (body === null) { fail("skill.interview", `${file} has no "## Interview" section`); continue; }
+  const parts = [
+    ["When to run", "when to run it"], [`clossys gaps --agent ${agent}`, "the gaps call"], [`clossys next --owner --agent ${agent}`, "the rounds"],
+    ["AskUserQuestion", "asking each round"], ["through the verbs", "recording answers"], ["clossys run", "re-running the cascade"], ["0 gaps", "the stop rule"],
+    ...(agent === "producer" ? [["Interview contract", "the shared contract"]] : [["Producer skill's Interview contract", "the cited contract"]]),
+  ];
+  for (const [needle, what] of parts) if (!body.includes(needle)) fail("skill.interview", `${file}'s Interview section misses ${what} ("${needle}")`);
+}
+const LADDERS = { designer: ["L1", "L2", "L3", "L4"], other: ["select", "adapt", "create"] };
+for (const action of loaded.filter(each => /^(director|designer|writer|publisher)\.candidates$/.test(each.contract.id))) {
+  const file = `packages/${action.package}/${ACTIONS_DIR}/${action.contract.id}/${SKILL_FILE}`;
+  const body = text(join(PACKAGES_DIR, action.package, ACTIONS_DIR, action.contract.id, SKILL_FILE));
+  const match = /^## Selection ladder\b.*$/m.exec(body);
+  if (!match) { fail("skill.ladder", `${file} has no "## Selection ladder" section`); continue; }
+  const section = body.slice(match.index);
+  const rungs = LADDERS[action.contract.agent] ?? LADDERS.other;
+  // Each rung is a bold list item (`**select**`, `**L1**`), in ladder order.
+  const at = rungs.map(rung => section.indexOf(`**${rung}**`));
+  if (at.some(index => index < 0) || at.some((index, i) => i && index < at[i - 1])) fail("skill.ladder", `${file}'s selection ladder does not list ${rungs.join(", ")} in order`);
+  if (!section.includes("--rung")) fail("skill.ladder", `${file}'s selection ladder does not say how the rung is recorded (next --submit --rung)`);
+}
+// The owner questions and request gaps of the workspace, through the built interview module.
+try {
+  const lib = await import(pathToFileURL(INTERVIEW_MODULE).href);
+  for (const agent of INTERVIEW_AGENTS) {
+    for (const issue of lib.interviewIssues(lib.interviewOf(WORKSPACE, { agent }), lib.gapsOf(WORKSPACE, { agent }))) fail(issue.rule, `${agent}: ${issue.message}`);
+  }
+} catch (error) {
+  console.error(`check:step-standard: could not evaluate the interview: ${error?.stack ?? error}`);
+  process.exit(2);
 }
 
 // ---------------------------------------------------------------- pending

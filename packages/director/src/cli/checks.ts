@@ -1,6 +1,7 @@
 import { discoverBriefContracts } from "../brief-contracts.js";
 import { blocks, checkCell, checkCoherence, completion, strategyStatus, type CheckFinding, type StatusReport } from "../checks/index.js";
-import type { StrategyModel } from "../format/types.js";
+import type { Cell, StrategyModel } from "../format/types.js";
+import { slotCandidateCell, slotCandidateVersion } from "../format/slot.js";
 import { recordedJudgeVerdicts } from "../checks/judgements.js";
 import { readStrategyRoot } from "../store.js";
 import type { ReadArgs, ReadResult } from "./read.js";
@@ -11,14 +12,37 @@ function result(data: unknown, ready: boolean, text: string[]): ReadResult { ret
 function findingText(findings: readonly CheckFinding[]): string[] {
   return findings.map(finding => `[${finding.rule} ${finding.severity}${finding.severity === "judge" ? `: ${finding.verdict ?? "not judged"}` : ""}] ${finding.cell ? `${finding.cell}: ` : ""}${finding.message}`);
 }
-function quality(model: StrategyModel, targets: string[]) {
+/**
+ * A draft is an unpinned candidate, read through the same store reader and candidate parser as a pin.
+ * `<id>@<v>` names one candidate version; a bare `<id>` with no pin names that slot's newest candidate.
+ * A draft is checked as if it were the slot's active cell; the check never writes a pin.
+ */
+function draft(model: StrategyModel, reader: DirectorStore["reader"], id: string, version: number | undefined): Cell | undefined {
+  const versions = model.candidateVersions?.[id] ?? [];
+  const wanted = version ?? versions[versions.length - 1];
+  if (wanted === undefined || !versions.includes(wanted)) return undefined;
+  const name = (reader.list(model.root, `${id}/candidates`) ?? []).find(name => slotCandidateVersion(name) === wanted);
+  if (name === undefined) return undefined;
+  const path = `${id}/candidates/${name}`;
+  const bytes = reader.read(model.root, path);
+  if (bytes === undefined) return undefined;
+  // A draft has no pin, so it carries status "draft": the pin rule (Q7) applies to active cells only.
+  return { ...slotCandidateCell({ id, version: wanted, updated: new Date().toISOString().slice(0, 10), path, bytes }), status: "draft" };
+}
+function quality(model: StrategyModel, targets: string[], reader: DirectorStore["reader"]) {
+  const drafts: Cell[] = [];
   const cells = targets.length ? targets.map(target => {
     const [id, version] = target.split("@");
-    const cell = model.cells.filter(cell => cell.id === id && (version === undefined || cell.version === Number(version))).sort((a, b) => b.version - a.version)[0];
+    const wanted = version === undefined ? undefined : Number(version);
+    const pinned = model.cells.filter(cell => cell.id === id && (wanted === undefined || cell.version === wanted)).sort((a, b) => b.version - a.version)[0];
+    const cell = pinned ?? draft(model, reader, id!, wanted);
     if (!cell) throw new Error(`Cell not found: ${target}`);
+    if (!pinned) drafts.push(cell);
     return cell;
   }) : [...model.cells].sort((a, b) => a.id.localeCompare(b.id) || a.version - b.version);
-  return { cells: cells.map(cell => ({ cell: cell.id, version: cell.version })), findings: cells.flatMap(cell => checkCell(cell, { model })) };
+  // Each draft stands in for its slot's pinned cell, so cross-cell rules see the model the pin would make.
+  const context: StrategyModel = drafts.length ? { ...model, cells: [...model.cells.filter(cell => !drafts.some(d => d.id === cell.id)), ...drafts] } : model;
+  return { cells: cells.map(cell => ({ cell: cell.id, version: cell.version, ...(drafts.includes(cell) ? { draft: true } : {}) })), findings: cells.flatMap(cell => checkCell(cell, { model: context })) };
 }
 function progress(model: StrategyModel, full: StatusReport, core: StatusReport): string {
   const name = (id: string) => model.catalog.ia.nodes.find(node => node.id === id)?.name ?? id;
@@ -49,7 +73,7 @@ export function executeChecksCommand(args: ReadArgs, store: DirectorStore): Read
   // Judge verdicts are caller-supplied data: the recorded judgement findings that are still current.
   const options = { contracts: discovered.contracts, judgeVerdicts: recordedJudgeVerdicts(model) };
   if (args.command === "check" || args.command === "cell" && args.verb === "create") {
-    const report = quality(model, args.targets);
+    const report = quality(model, args.targets, store.reader);
     if (args.command === "check") persistReport(args.root, store.writer, "cell-quality", report);
     return result(report, !report.findings.some(blocks), [`Quality: ${report.cells.length} cell version(s).`, ...findingText(report.findings)]);
   }

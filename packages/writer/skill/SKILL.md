@@ -72,14 +72,12 @@ in a candidate.
    Every factual claim traces to a brief slot named in `source.ref`. Carry
    wont-claim into the words: never claim what the brief rules out. Offer
    options as separate candidates (`<name>-v1`, `<name>-v2`), never as edits.
-4. **Write the candidate.** From the consumer repository, with the installed
-   Producer API (it numbers the candidate and refuses an invalid one):
+4. **Submit the candidate** through the candidates verb (it numbers the
+   candidate and refuses an invalid, duplicate or unladdered one):
    ```sh
-   node --input-type=module -e '
-   import { readFileSync } from "node:fs";
-   import { writeCandidate } from "@clossys/producer";
-   const [slot, name, file] = process.argv.slice(1);
-   console.log(writeCandidate("clossys", "writer", slot, name, readFileSync(file, "utf8")).name);' <slot> <name> draft.md
+   npx clossys next writer/<slot> --submit draft.md --name <name> \
+     --model <id> --tier <tier> --basis agent --skill <packet skill path> \
+     --rung <select|adapt|create> [--seed <slot>/<candidate>] [--reason <why no seed fit>]
    ```
 5. **Check the slots.**
    ```sh
@@ -124,6 +122,27 @@ in a candidate.
    git add clossys/agents/writer/<slot> clossys/agents/writer/declarations.json   # consumer files, not shipped
    git commit -m "writer: <slot> <name> v<N>"
    ```
+
+## Interview
+
+Run the Producer skill's Interview contract (`clossys-producer`, section Interview) for agent
+`writer`, in the same shape as every agent skill:
+
+- **When to run it**: at session start, after each approve or pin, and whenever the Publisher reports missing keys.
+- **Gaps first**: `npx clossys gaps --agent writer --json`. Writer gaps are slots with no candidates, unapproved keys and Publisher requests for keys the
+  pinned copy lacks.
+  Requests addressed to the Writer (`to: writer`) come from a downstream agent; requests from the
+  Writer (`from: writer`) go to the upstream agent's round. Never hand-fill either.
+- **Then the rounds**: `npx clossys next --owner --agent writer --json`: rounds of at most 4
+  questions, each with 2 to 4 options (recommended first, each the exact clossys argv of every call
+  it runs) and a free-text answer.
+- **Ask each round**: on Claude one `AskUserQuestion` call per round; on Codex a numbered list per
+  question, recommended first.
+- **Record through the verbs**: run the chosen option's `calls` exactly (a free-text answer goes
+  through `freeText.verb`); candidates go through `npx clossys next writer/<slot> --submit`, agent
+  picks through `npx clossys pick writer/<slot> <name>-v<N> --by agent:writer`, owner pins through `npx clossys pin`. Never edit a record by hand.
+- **Cascade**: `npx clossys run` after each round.
+- **Stop at 0 gaps**: repeat until `npx clossys gaps --agent writer` reports 0 gaps.
 
 ## Done when
 

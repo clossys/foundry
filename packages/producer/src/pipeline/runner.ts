@@ -113,6 +113,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     // The chain orchestrators are not steps: they run (and record through) the steps they walk.
     if (head === "run") return await (await import("../cli/run.js")).runRunCli(argv.slice(1), cwd, steps);
     if (head === "next" && !argv.includes("--submit")) return await (await import("../cli/next.js")).runNextCli(argv.slice(1), cwd, steps);
+    // The gap finder reads only; the interview (next --owner) asks what it finds.
+    if (head === "gaps") return await (await import("../cli/gaps.js")).runGapsCli(argv.slice(1), cwd, steps);
     // A verb with its own parser (specimen, migrate, pipeline) gets its argv untouched.
     // A verb with a target per step (`clossys pin <agent>/<slot>`) runs the step whose agent the argument names.
     const owners = steps.filter(step => step.command.cli?.parser !== undefined && step.command.cli.verb === head);

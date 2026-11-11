@@ -3,10 +3,12 @@
  *
  *   clossys options [--root <dir>] [--json]                     every choice slot: options held vs required
  *   clossys options --classes [--check] [--root <dir>] [--json] write (or check) slot.json options/varyOn from the class mapping
- *   clossys options <agent>/<slot> [--more] [--root <dir>] [--json]
+ *   clossys options <agent>/<slot> [--more | --redraft] [--root <dir>] [--json]
  *       lists the slot's candidates with their variation and pin status; --more prints the
- *       generation brief for 2-3 fresh candidates. The CLI never writes candidates: the
- *       owning agent (Director or Writer skill) writes them from the brief.
+ *       generation brief for 2-3 fresh candidates that keep the reference's sources (variety);
+ *       --redraft prints the brief for one re-drafted candidate that may cite new evidence
+ *       (a project re-draft, the answer to a request gap). The CLI never writes candidates:
+ *       the owning agent submits each through `clossys next <agent>/<slot> --submit`.
  *   clossys pick <agent>/<slot> <candidate-id> --by agent:<seat> [--at <iso>] [--root <dir>] [--json]
  *       a judge seat picks one candidate: pin.json with basis "agent", shown as "confirm"
  *       in Studio until the owner pins with `clossys pin`.
@@ -22,17 +24,18 @@ import type { CliResult } from "./main.js";
 import { resolveCandidate } from "./pin.js";
 import { discoverRoot } from "./root.js";
 
-export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more]] [--root <dir>] [--json]\n"
+export const OPTIONS_USAGE = "Usage: clossys options [<agent>/<slot> [--more | --redraft]] [--root <dir>] [--json]\n"
   + "       clossys options --classes [--check] [--root <dir>] [--json]\n"
-  + "  lists a slot's candidates by variation; --more prints the brief for 2-3 fresh candidates (the owning agent writes them).\n"
+  + "  lists a slot's candidates by variation; --more prints the brief for 2-3 fresh candidates on the reference's sources,\n"
+  + "  --redraft the brief for one re-drafted candidate that may cite new evidence (the owning agent submits each with clossys next --submit).\n"
   + "  --classes writes slot.json options/varyOn from the committed option-class mapping; --check only reports drift.";
 export const PICK_USAGE = "Usage: clossys pick <agent>/<slot> <candidate-id> --by agent:<seat> [--at <iso timestamp>] [--root <dir>] [--json]\n"
   + "  a judge seat picks one candidate (pin basis agent); Studio shows it as confirm until the owner pins.";
 
-interface Flags { positional: string[]; more: boolean; classes: boolean; check: boolean; by?: string; at?: string; root?: string; help: boolean }
+interface Flags { positional: string[]; more: boolean; redraft: boolean; classes: boolean; check: boolean; by?: string; at?: string; root?: string; help: boolean }
 
 function parse(argv: readonly string[], usage: string, allowed: readonly string[]): Flags {
-  const flags: Flags = { positional: [], more: false, classes: false, check: false, help: false };
+  const flags: Flags = { positional: [], more: false, redraft: false, classes: false, check: false, help: false };
   const value = (index: number, name: string): string => {
     const next = argv[index];
     if (next === undefined || next.startsWith("--")) throw new CliUsageError(`${name} requires a value\n${usage}`);
@@ -44,6 +47,7 @@ function parse(argv: readonly string[], usage: string, allowed: readonly string[
     if (arg === "--json") continue;
     else if (arg === "--help") flags.help = true;
     else if (arg === "--more") flags.more = true;
+    else if (arg === "--redraft") flags.redraft = true;
     else if (arg === "--classes") flags.classes = true;
     else if (arg === "--check") flags.check = true;
     else if (arg === "--by") flags.by = value(++index, "--by");
@@ -72,11 +76,11 @@ function nextName(view: SlotOptions, value: string): string {
 }
 
 /** The generation brief `--more` prints: what the owning agent writes next. Deterministic; no model call. */
-export function optionsBrief(consumer: string, view: SlotOptions): Record<string, unknown> {
+export function optionsBrief(consumer: string, view: SlotOptions, mode: "more" | "redraft" = "more"): Record<string, unknown> {
   const doc = inspectSlot(consumer, view.agent, view.slot).doc;
   const fill = view.missing.length ? view.missing : view.values;
-  const count = Math.min(3, Math.max(2, view.options - view.distinct, view.missing.length));
-  const values = fill.slice(0, count);
+  const count = mode === "redraft" ? 1 : Math.min(3, Math.max(2, view.options - view.distinct, view.missing.length));
+  const values = mode === "redraft" && !fill.length ? [undefined] : fill.slice(0, count);
   const reference = view.candidates.find(c => c.pinned) ?? view.candidates[0];
   const referenceBytes = reference ? readCandidate(consumer, view.agent, view.slot, reference.name).bytes : "";
   const recordIds = [...referenceBytes.matchAll(/^<!-- (\{.*\}) -->$/gm)].map(match => {
@@ -85,16 +89,19 @@ export function optionsBrief(consumer: string, view: SlotOptions): Record<string
   }).filter(Boolean);
   return {
     slot: `${view.agent}/${view.slot}`, group: view.group, class: view.classId, varyOn: view.varyOn,
-    write: values.map(value => ({ name: nextName(view, value), vary: view.varyOn ? { [view.varyOn]: value } : undefined })),
+    mode,
+    write: values.map(value => ({ name: value === undefined ? nextName(view, "redraft") : nextName(view, value), vary: view.varyOn && value !== undefined ? { [view.varyOn]: value } : undefined })),
     keep: {
       contract: doc.contract, inputs: doc.inputs,
-      source: "the reference candidate's source refs; cite no new fact",
+      source: mode === "redraft"
+        ? "the reference candidate's source refs plus any new evidence recorded first with clossys evidence; every new fact cites one"
+        : "the reference candidate's source refs; cite no new fact (a re-draft on new evidence is clossys options --redraft)",
       recordIds, status: "draft (no status key; pins are unchanged)",
     },
     reference: reference?.name ?? null,
     held: view.candidates.map(c => ({ name: c.name, vary: c.vary ? c.vary.value : "baseline", pinned: c.pinned })),
     writer: view.agent === "director" ? "Director skill (packages/director/skill)" : view.agent === "writer" ? "Writer skill (packages/writer/skill)" : `${view.agent} skill`,
-    how: "one pass per L2 group with shared context; write each through writeCandidate (records/slot-write.ts)",
+    how: `one pass per L2 group with shared context; submit each file with clossys next ${view.agent}/${view.slot} --submit <file> --model <id> --tier <tier> --basis agent --skill <the step's skill path> --rung <rung> [--seed <id>] [--reason <text>] (select a seed first, adapt one only when none fits, create only when none can be adapted, with the reason); a byte-identical candidate is refused`,
   };
 }
 
@@ -103,11 +110,12 @@ function line(view: SlotOptions): string {
 }
 
 export async function runOptionsCli(argv: readonly string[], cwd: string): Promise<CliResult> {
-  const flags = parse(argv, OPTIONS_USAGE, ["--more", "--classes", "--check"]);
+  const flags = parse(argv, OPTIONS_USAGE, ["--more", "--redraft", "--classes", "--check"]);
+  if (flags.more && flags.redraft) throw new CliUsageError(`--more and --redraft are two briefs; pass one\n${OPTIONS_USAGE}`);
   if (flags.help) return { exitCode: 0, message: OPTIONS_USAGE };
   const consumer = consumerOf(cwd, flags.root);
   if (flags.classes) {
-    if (flags.positional.length || flags.more) throw new CliUsageError(`--classes takes no slot\n${OPTIONS_USAGE}`);
+    if (flags.positional.length || flags.more || flags.redraft) throw new CliUsageError(`--classes takes no slot\n${OPTIONS_USAGE}`);
     const changed: string[] = [];
     for (const agent of SLOT_AGENTS) {
       if (!OPTION_TABLE.groups[agent]) continue;
@@ -128,7 +136,7 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
   }
   if (flags.check) throw new CliUsageError(`--check is only for --classes\n${OPTIONS_USAGE}`);
   if (!flags.positional.length) {
-    if (flags.more) throw new CliUsageError(`--more needs <agent>/<slot>\n${OPTIONS_USAGE}`);
+    if (flags.more || flags.redraft) throw new CliUsageError(`${flags.more ? "--more" : "--redraft"} needs <agent>/<slot>\n${OPTIONS_USAGE}`);
     const { findings, slots } = checkSlotOptions(consumer);
     const choice = slots.filter(slot => slot.options > 1);
     const lines = choice.map(line);
@@ -140,8 +148,8 @@ export async function runOptionsCli(argv: readonly string[], cwd: string): Promi
   const entry = readSlotEntry(consumer, agent, id);
   if (!entry) return { exitCode: 1, message: `options refused: unknown slot ${agent}/${id} (not in ${agent} ia.json)` };
   const view = slotOptions(consumer, entry);
-  if (flags.more) {
-    const brief = optionsBrief(consumer, view);
+  if (flags.more || flags.redraft) {
+    const brief = optionsBrief(consumer, view, flags.redraft ? "redraft" : "more");
     return { exitCode: 0, message: JSON.stringify(brief, null, 2), output: brief };
   }
   const lines = [line(view), ...view.candidates.map(c => `  ${c.pinned ? "*" : " "} ${c.name.padEnd(40)} ${c.vary ? `${c.vary.axis}=${c.vary.value}` : "baseline"}`)];
