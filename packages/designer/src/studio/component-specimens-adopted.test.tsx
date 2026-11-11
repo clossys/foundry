@@ -118,18 +118,21 @@ function adoptedShadcnLeaves() {
     const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "shadcn@aria" }, impl: fill.impl, propMap: fill.propMap, reads: { themes: {}, assets: [], components: [] }, descriptor: { ...fill, source: "consumer-app" } } as unknown as ResolvedComponent;
     return { leaf: fill.slot, profile: { selectionHash: `selection-${fill.slot}`, components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved };
   });
-  // Every shadcn@aria fill ships vendored source except the Foundry-authored rich-text engine exception (6463e7e59),
-  // a package impl with no source to vendor; it is named here so another package fill cannot drop out silently.
+  // Every shadcn@aria fill ships vendored source. The one package impl (the Tiptap rich-text engine exception, 6463e7e59)
+  // moved to a foundry fill (owner D6, minimal-tiptap, the source ladder result), so the
+  // list is empty and any package fill re-entering under shadcn@aria, which would drop out of this render silently, fails here.
   const shadcnFills = bundles.componentFills.flatMap(doc => Object.values(doc.components)).filter(fill => fill.source === "shadcn@aria" && slots.has(fill.slot));
   const packageFills = shadcnFills.filter(fill => fill.impl.kind !== "source").map(fill => `${fill.slot}:${fill.impl.kind}`);
-  return { leaves, modules, packageFills, slotCount: new Set(shadcnFills.filter(fill => fill.impl.kind === "source").map(fill => fill.slot)).size };
+  const richTextSources = bundles.componentFills.flatMap(doc => Object.values(doc.components)).filter(fill => fill.slot === "components.rich-text").map(fill => fill.source);
+  return { leaves, modules, packageFills, richTextSources, slotCount: new Set(shadcnFills.filter(fill => fill.impl.kind === "source").map(fill => fill.slot)).size };
 }
 
 it("binds and server-renders every adopted shadcn@aria leaf from its vendored source, or names why it cannot", () => {
   const errors = vi.spyOn(console, "error").mockImplementation(() => {});
-  const { leaves, modules, packageFills, slotCount } = adoptedShadcnLeaves();
+  const { leaves, modules, packageFills, richTextSources, slotCount } = adoptedShadcnLeaves();
   expect(leaves.length).toBe(slotCount);
-  expect(packageFills).toEqual(["components.rich-text:package"]);
+  expect(packageFills).toEqual([]);
+  expect(richTextSources).toEqual(["foundry"]);
   const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
   const outcome: Record<string, string> = {};
   for (const { leaf, profile } of leaves) {

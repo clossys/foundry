@@ -160,13 +160,22 @@ test("qualification covers every publishable package while release order covers 
   assert.ok(designerAdapter.fixtures.includes("clean/View.tsx"));
   assert.match(await readFile(new URL(`../${designer.fixturePath}/clean/View.tsx`, import.meta.url), "utf8"), /text-\[var\(--color-ink-primary\)\]/);
 
+  // C5-DRT (owner D1, 2026-11-11): clsx and tailwind-merge are real
+  // dependencies of @clossys/designer, so its adapter installs neither as a
+  // peer; publisher keeps its own optional tailwind-merge peer row.
+  const designerManifest = await repositoryJson(`packages/${workspaceDirectory(designer.packageDir.replace(/^packages\//, ""))}/package.json`);
+  for (const name of ["clsx", "tailwind-merge"]) {
+    assert.equal(typeof designerManifest.dependencies?.[name], "string", `${name} is a designer dependency`);
+    assert.equal(designerManifest.peerDependencies?.[name], undefined, `${name} is not a designer peer`);
+    assert.equal(designerAdapter.peerInstall[name], undefined, `${name} is not a designer peer install`);
+  }
   const publisherAdapter = await repositoryJson(policy.packages["@clossys/publisher"].adapterPath);
   assert.deepEqual(publisherAdapter.peerInstall, {
     "@internationalized/date": designerAdapter.peerInstall["@internationalized/date"],
     react: "19.2.8",
     "react-aria-components": designerAdapter.peerInstall["react-aria-components"],
     "react-dom": "19.2.8",
-    "tailwind-merge": designerAdapter.peerInstall["tailwind-merge"],
+    "tailwind-merge": "3.7.0",
     tailwindcss: designerAdapter.peerInstall.tailwindcss,
   });
 });
