@@ -8,7 +8,7 @@ export { holderIdOf, holderOf, isRostered, laneIds, laneOf, ROSTER, rosterOf, UN
 export type { Holder, RosterEntry, RosterId, SeatKind, SeatTier } from "./roster.js";
 export { pipelineStatus, slotCounts, STATUS_SCHEMA } from "./status.js";
 export type { DecisionCounter, PipelineStatus, StepStatus } from "./status.js";
-export { appendRecord, buildRecord, currentSha, invocationOf, observe, readRuns, readStore, RUN_SCHEMA, RUNS_DIR, RUNS_KEPT, sanitizeArgv, storeFile } from "./trace.js";
+export { appendRecord, buildRecord, currentSha, invocationOf, observe, readRuns, readStore, RUN_SCHEMA, RUNS_DIR, RUNS_KEPT, sanitizeArgv, storeFile, storeIgnored, STORE_IGNORE_LINES } from "./trace.js";
 export type { FileVersion, Observation, RunRecord, StoredRun } from "./trace.js";
 export { buildWiring, RUN_STATES, runState, whyNotRunnable, wiringCitationIssues, WIRING_SCHEMA } from "./wiring.js";
 export type { Citation, CheckState, PipelineWiring, RunState, Undrawn, WiringCheck, WiringEdge, WiringNode } from "./wiring.js";

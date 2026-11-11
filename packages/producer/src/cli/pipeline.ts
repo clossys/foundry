@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { buildGraph, graphJson } from "../pipeline/graph.js";
 import { PACKAGE_ROOT } from "../pipeline/options.js";
 import { pipelineStatus } from "../pipeline/status.js";
-import { appendRecord, buildRecord, invocationOf, readRuns, readSink, sanitizeArgv, SINK_ENV, storeFile } from "../pipeline/trace.js";
+import { appendRecord, buildRecord, invocationOf, readRuns, readSink, RUNS_DIR, sanitizeArgv, SINK_ENV, storeFile } from "../pipeline/trace.js";
 import { buildWiring, wiringCitationIssues } from "../pipeline/wiring.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -142,6 +142,8 @@ function runTrace(argv: readonly string[], cwd: string): CliResult {
   try { unlinkSync(sink); } catch { /* the child wrote no observation */ }
   const exit = child.status ?? (child.error ? 127 : 1);
   const record = appendRecord(root, buildRecord({ root, step: id, invocation: invocationOf(sanitizeArgv(root, command, cwd)), argv: sanitizeArgv(root, command, cwd), start, end, exit, observation }));
+  // Asked to record, but the workspace does not ignore the store: say so, never write into its tree.
+  if (!record) return { exitCode: 2, root, message: `pipeline trace: ${id} exited ${exit}; not recorded: ${root}/.gitignore does not ignore /${RUNS_DIR}/ (add that line to keep local run records)` };
   return {
     exitCode: exit === 0 ? 0 : exit === 1 ? 1 : 2, root,
     message: `pipeline trace: ${id} exited ${exit}${child.error ? ` (${child.error.message})` : ""}; recorded ${record.store}:${record.line} (${record.record.reads.length} reads, ${record.record.writes.length} writes)`,

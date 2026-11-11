@@ -33,6 +33,16 @@ describe("clossys direct over the flat slot model", () => {
     expect(snapshot(root)).toEqual(before);
   }, 60_000);
 
+  it("records a check run only into a consumer that ignores the run store, and writes nothing else", () => {
+    writeFileSync(join(root, ".gitignore"), "/.clossys/runs/\n");
+    const before = snapshot(root);
+    runVerb(["direct", "--check"], root);
+    const after = snapshot(root) as { path: string }[];
+    const added = after.filter(item => !(before as { path: string }[]).some(entry => entry.path === item.path)).map(item => item.path);
+    expect(added).toEqual([".clossys", ".clossys/runs", ".clossys/runs/director.check.jsonl"]);
+    expect(after.filter(item => !item.path.startsWith(".clossys"))).toEqual(before);
+  }, 60_000);
+
   it("reports a pinned candidate whose bytes drifted from its pin as a finding", () => {
     const pinned = firstPinned(root, "director");
     writeFileSync(pinned.candidate, readFileSync(pinned.candidate, "utf8") + "\n");
