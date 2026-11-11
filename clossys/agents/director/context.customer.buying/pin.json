@@ -1,7 +1,7 @@
 {
   "candidate": "studio-customer-buying-v1.md",
   "sha256": "578a166b40240fe5c6a160a44a4f736cb8cf0dc639fe1cdf52ec77259b4d42af",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "decidedBy": "agent:planner:WDIR",
+  "basis": "agent",
+  "at": "2026-11-11T05:27:49.329Z"
 }

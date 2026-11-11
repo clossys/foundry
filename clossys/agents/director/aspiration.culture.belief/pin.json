@@ -1,7 +1,7 @@
 {
   "candidate": "studio-belief-v1.md",
   "sha256": "b02756abca4b852c5a3f68b8aec10f78e4a0f6b6e52a657b847b569ee55321c1",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "decidedBy": "agent:planner:WDIR",
+  "basis": "agent",
+  "at": "2026-11-11T05:27:35.983Z"
 }

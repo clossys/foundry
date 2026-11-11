@@ -1,7 +1,7 @@
 {
   "candidate": "studio-stance-v1.md",
   "sha256": "aac63cc01cc8e33463c7b9f2b17a9d5f43efefc2b27d9acdf2f0461fd9ce03a9",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "decidedBy": "agent:planner:WDIR",
+  "basis": "agent",
+  "at": "2026-11-11T05:27:56.283Z"
 }

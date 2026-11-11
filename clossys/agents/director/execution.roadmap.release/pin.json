@@ -1,7 +1,7 @@
 {
   "candidate": "studio-release-v1.md",
   "sha256": "a2d2499d86fca7603ac7ccb18cc60b44424e194d37a0e77daae05c025a2bac06",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "decidedBy": "agent:planner:WDIR",
+  "basis": "agent",
+  "at": "2026-11-11T05:27:55.571Z"
 }
