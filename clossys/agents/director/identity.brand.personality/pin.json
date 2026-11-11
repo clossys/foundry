@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-personality-v1.md",
-  "sha256": "af84b99d6c155729e5ed3ad8a1063a126b636de63227f7f4ff6309dea6c3006f",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-personality-v2.md",
+  "sha256": "2234d1c15ad2ea120c9192957d2daea2c1ea5d6f7d1e33bf6e993ce26ca40075",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:03.627Z"
 }

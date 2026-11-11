@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-vision-v1.md",
-  "sha256": "68b299dd59bdc2dbe066eeb577079a71198387d03c151804de4bfb64248bd811",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-vision-v2.md",
+  "sha256": "d4c8c795dd7ba0ee21b34123a21d9cfee0dbfeb2b4385ead63b95b1a64a1eb76",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:33:57.485Z"
 }

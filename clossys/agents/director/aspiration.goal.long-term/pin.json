@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-goal-long-term-v1.md",
-  "sha256": "ca0ddedd48af4cc3bcc63109d38e0403d5e1c608d919092ac39004ef61c0f2dc",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-goal-long-term-v2.md",
+  "sha256": "a4fb0698e8d22c9566c4b4525d46396d1f8f0e6012a72de86ccc1b58ac7f9bed",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:33:56.249Z"
 }

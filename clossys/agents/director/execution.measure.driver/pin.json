@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-drivers-v1.md",
-  "sha256": "fbe7389fa57dc7bb4c625e01eef0114ce6802e8b91d09af06e0aaeea6bd0b994",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-drivers-v3.md",
+  "sha256": "c00b557a7341ebf93e2fee07a3453008d3f57928fd2f92772b5377d494268b88",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:52.052Z"
+  "at": "2026-11-11T08:34:15.919Z"
 }

@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-pricing-v1.md",
-  "sha256": "d4f9059ed416a457a3af3c5dbc0edbc70f9634e9a87e1ad3f12b24f92dcb66f5",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-pricing-v2.md",
+  "sha256": "482326b1d4d7298def599539d1d343d09eb4f1e21bbc9415d8fc2adc120c80a2",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:08.552Z"
 }

@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-team-structure-v1.md",
-  "sha256": "e8598262e1f7fbddfdbdb94a56e0114e87b7bc97658f7d99ba37932f49e46354",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-team-structure-v2.md",
+  "sha256": "54c777337e6bc33a43f064c00c9837e673e6cbe9fb4b9c04c085fbbc518402d8",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:45.337Z"
+  "at": "2026-11-11T08:34:14.074Z"
 }

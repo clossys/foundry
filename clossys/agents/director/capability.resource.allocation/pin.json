@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-allocation-v1.md",
-  "sha256": "7dc4bed90e5bb41f5b4acd120c46130347d82774156625f6c8b7b0740ff2322d",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-allocation-v3.md",
+  "sha256": "67277b82a48fb61833ee7af4c053e533df49bd7ee5de514cc15513e7197b6ce0",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:40.370Z"
+  "at": "2026-11-11T08:34:11.617Z"
 }

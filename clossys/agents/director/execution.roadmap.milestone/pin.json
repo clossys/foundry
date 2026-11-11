@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-milestone-v1.md",
-  "sha256": "cb51cfcc9c7b5f1acd8aa0a554e8419dee9e45cc484b5f7a296c816c34d8d946",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-milestone-v3.md",
+  "sha256": "b0e1b3ba47072abc31cfb0d143fefc5c8cb8f17e402fd34b41d3e3624ceac5f8",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:54.855Z"
+  "at": "2026-11-11T08:34:17.137Z"
 }

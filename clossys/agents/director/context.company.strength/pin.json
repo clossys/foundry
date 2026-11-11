@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-strength-v1.md",
-  "sha256": "5326295addd30810f5fc4318abd9ef2f5dfb48ee4b257c2115192ff0815dce6c",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-strength-v2.md",
+  "sha256": "0d219f4b75073b2de80df41d675dd47599b25ef4b23287f4a553499c0ac62c05",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:46.825Z"
+  "at": "2026-11-11T06:48:13.739Z"
 }

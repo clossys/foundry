@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-competency-critical-v1.md",
-  "sha256": "e372739110e10b532a91662f0f502569723cd95d596d6fb9590f55f966702932",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-competency-critical-v3.md",
+  "sha256": "669354421ba86c1b149545571e28455416ce695f701585c432dad0cbedd3dd34",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:37.709Z"
+  "at": "2026-11-11T08:34:12.229Z"
 }
