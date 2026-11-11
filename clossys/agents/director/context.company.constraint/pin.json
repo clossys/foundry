@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-readonly-bound-v1.md",
-  "sha256": "9e8c7203f72374b38d37a7f508ec043102ffcde9bfb13e24fd41212d2813f4d8",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-readonly-bound-v2.md",
+  "sha256": "a55725f2d6979598b02ed7f12b5ecc77436ac386e9369e8f4ef2f2798ba871ff",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:46.045Z"
+  "at": "2026-11-11T07:10:32.159Z"
 }

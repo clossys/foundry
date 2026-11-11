@@ -3266,12 +3266,12 @@
       "sha256": "2cc2f6c456a4b7876c9b0cbe26ed1e0641706062e0ea3705ca713d8f1e0d606b"
     },
     {
-      "path": "clossys/agents/director/capability.team.role/candidates/studio-team-role-v1.md",
-      "sha256": "fc3589b54f24fb95966f549ea8a20d999f0fa46f1bfb677f0ec140a548bc18df"
+      "path": "clossys/agents/director/capability.team.role/candidates/studio-team-role-v2.md",
+      "sha256": "3eb6f6496d0236e45ff9c3eeb586532764c3f8388932afe8be474f68cfdf07bf"
     },
     {
       "path": "clossys/agents/director/capability.team.role/pin.json",
-      "sha256": "6522f817cbdd9a01db81bd301cc3a1e50aa497767464f22c3c0c801b6778494c"
+      "sha256": "f423d7fccd5e8419386aa31e637a2a73d5c698100f1bdfb900ca662642b558f9"
     },
     {
       "path": "clossys/agents/director/capability.team.role/slot.json",
@@ -3290,12 +3290,12 @@
       "sha256": "9cbeee496d474864212b64aaeca168ef45177771ac06f644f0a79c25d96b49ec"
     },
     {
-      "path": "clossys/agents/director/context.company.constraint/candidates/studio-readonly-bound-v1.md",
-      "sha256": "9e8c7203f72374b38d37a7f508ec043102ffcde9bfb13e24fd41212d2813f4d8"
+      "path": "clossys/agents/director/context.company.constraint/candidates/studio-readonly-bound-v2.md",
+      "sha256": "a55725f2d6979598b02ed7f12b5ecc77436ac386e9369e8f4ef2f2798ba871ff"
     },
     {
       "path": "clossys/agents/director/context.company.constraint/pin.json",
-      "sha256": "a308f26fcfbf3042622a62e16b867d9460315e59b1fb4f61ba5773f5198bf584"
+      "sha256": "f6a3cda855433395667b82b2ad89dc44f457b2416f06d9472991a125bb3d4f43"
     },
     {
       "path": "clossys/agents/director/context.company.constraint/slot.json",
@@ -3338,12 +3338,12 @@
       "sha256": "4e8c2da676e4a6e13c6cf1a64911fe026540af301d39f240c9f288d9324b5cce"
     },
     {
-      "path": "clossys/agents/director/context.customer.buying/candidates/studio-customer-buying-v1.md",
-      "sha256": "578a166b40240fe5c6a160a44a4f736cb8cf0dc639fe1cdf52ec77259b4d42af"
+      "path": "clossys/agents/director/context.customer.buying/candidates/studio-customer-buying-v2.md",
+      "sha256": "06d85e08db981e4dd20228baef9ec0b890eeb47691f3ad3369ba707e20085da2"
     },
     {
       "path": "clossys/agents/director/context.customer.buying/pin.json",
-      "sha256": "6d8e246810b951b0bd9a5e57a32186b6d77889ff8a45e9bd2a28f9133d46ea6f"
+      "sha256": "38e5be6fb571c5473d9c2848fd1928228135a7b50abb6e57a269be0cc28e2a9a"
     },
     {
       "path": "clossys/agents/director/context.customer.buying/slot.json",
@@ -3386,12 +3386,12 @@
       "sha256": "7a75fb41af23feb9dd59eda0ef53a4c68e8667d32226b9c30f119480589a7ec6"
     },
     {
-      "path": "clossys/agents/director/execution.measure.driver/candidates/studio-drivers-v1.md",
-      "sha256": "fbe7389fa57dc7bb4c625e01eef0114ce6802e8b91d09af06e0aaeea6bd0b994"
+      "path": "clossys/agents/director/execution.measure.driver/candidates/studio-drivers-v2.md",
+      "sha256": "5a1f9fbfecd45a2d743c8a5644558ef33a30c0262693feaaadd8748c53b64407"
     },
     {
       "path": "clossys/agents/director/execution.measure.driver/pin.json",
-      "sha256": "4679f72ee48bef27958486ab0ae4b7934f9caabdd09c398976510e2a6d2cb555"
+      "sha256": "ef3ddc5eacbcc4a45a3f65a862ebd9f5eca0d41974fbacdbc96acffcdd1c5faf"
     },
     {
       "path": "clossys/agents/director/execution.measure.driver/slot.json",
@@ -3458,24 +3458,24 @@
       "sha256": "634924388c958e9acb08a904b9d16bb1efd19168bd927e24f7191c2f72cf3382"
     },
     {
-      "path": "clossys/agents/director/execution.roadmap.milestone/candidates/studio-milestone-v1.md",
-      "sha256": "cb51cfcc9c7b5f1acd8aa0a554e8419dee9e45cc484b5f7a296c816c34d8d946"
+      "path": "clossys/agents/director/execution.roadmap.milestone/candidates/studio-milestone-v2.md",
+      "sha256": "1ec96df0c2c309ad951e25cbb782246501f558e5892d0df891dcf9bf7dcd8634"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.milestone/pin.json",
-      "sha256": "7ecbe04e74fc5b52d9a64f50c921cf7cd5efa8fb9c03cb9e7e1ee725601ace2a"
+      "sha256": "5bc6cdc7aaf248fed1423d8800ec5bce22d159655fb1c2b592acc19c16e68a6a"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.milestone/slot.json",
       "sha256": "4453f107b1167b61043ba24ddbb9f49886837101c8947e914ea6964085625979"
     },
     {
-      "path": "clossys/agents/director/execution.roadmap.release/candidates/studio-release-v1.md",
-      "sha256": "a2d2499d86fca7603ac7ccb18cc60b44424e194d37a0e77daae05c025a2bac06"
+      "path": "clossys/agents/director/execution.roadmap.release/candidates/studio-release-v2.md",
+      "sha256": "6dfebca7ed79a59daeba4887914ccb1f85f1d7cb09a0a8b079e774e146c2aad9"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.release/pin.json",
-      "sha256": "52f6cb96693089d9cd939ac8f2121499a3f1a15b004e3293f1fc7a2cfe43cf6f"
+      "sha256": "fa3689074d5fd96c627122bacf7385663312cbba98b5aae1e5ba7aa15f4079c7"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.release/slot.json",
@@ -3630,12 +3630,12 @@
       "sha256": "b105782f26faf1263d23012544b291687ca6c9ade2d22b3c8067977e4bd2270c"
     },
     {
-      "path": "clossys/agents/director/identity.naming.architecture/candidates/studio-agent-naming-v1.md",
-      "sha256": "6f9790ab4232cd26854a702cf69247c3005ca9589295116f3ed7fa1b9d52fb64"
+      "path": "clossys/agents/director/identity.naming.architecture/candidates/studio-agent-naming-v2.md",
+      "sha256": "a72912f0511a7007f7b0779cec0b3488f6f2716fd66a1e6f93afef731f6ba6cb"
     },
     {
       "path": "clossys/agents/director/identity.naming.architecture/pin.json",
-      "sha256": "88ea961cb299d0ba9491b4993006fbb893dd59b1d99c54bde7946c10d0952ad4"
+      "sha256": "ef1389c6193fda570477e75f8f50937dfc8d71736ec1f353ae02a243525522fe"
     },
     {
       "path": "clossys/agents/director/identity.naming.architecture/slot.json",
@@ -4078,12 +4078,12 @@
       "sha256": "ad8fb8cca74916db932db19d6d812646de8050509e435a496537b9caaf9b9330"
     },
     {
-      "path": "clossys/agents/writer/lexicon.brand-names/candidates/studio-v1.md",
-      "sha256": "23c6c60dfd2a6f83aac3e22143864e7726725c4defa56c1857b90a916ef4a0ab"
+      "path": "clossys/agents/writer/lexicon.brand-names/candidates/studio-v2.md",
+      "sha256": "ab4cbf9bb9d6f1b10425e35d37c8c268efaa42f17728ccc00219700f7d82c69c"
     },
     {
       "path": "clossys/agents/writer/lexicon.brand-names/pin.json",
-      "sha256": "e72e4dce83a294e70f7e7201d77a047c5aedcdee63524f5444c5614f8ef3fc55"
+      "sha256": "59febd9668ccee0f84e3922c7fb510bfc1a3572309d716e59ac74d5b156ae56f"
     },
     {
       "path": "clossys/agents/writer/lexicon.brand-names/slot.json",
@@ -4198,12 +4198,12 @@
       "sha256": "b0559bcce16dc77fd9045a4c6aaa80df6908e6af262cf0433d0f1490fd129cea"
     },
     {
-      "path": "clossys/agents/writer/lexicon.metric-claims/candidates/studio-v1.md",
-      "sha256": "aad104b29cdd95b03079887129f0da78f506d81e01ebeeb3b44e28711f5a4f58"
+      "path": "clossys/agents/writer/lexicon.metric-claims/candidates/studio-v2.md",
+      "sha256": "8c8ea7380d36475b8b150f4df542669e7fb593e7053043dd4877ba348444ef54"
     },
     {
       "path": "clossys/agents/writer/lexicon.metric-claims/pin.json",
-      "sha256": "55e3761a6a74f33bb41fb0266ca4f2cf774894ac770a9263fbe9e84513fd5dc9"
+      "sha256": "9a2ad8b9ae95132f67cce08e0e3cc054a911ca3860e2a3fb405a3c1bc6a6e932"
     },
     {
       "path": "clossys/agents/writer/lexicon.metric-claims/slot.json",
@@ -4378,12 +4378,12 @@
       "sha256": "b1e964215a056a2043162be3b8f453d4463ae2ca161465cbbef06d5c7635d51a"
     },
     {
-      "path": "clossys/agents/writer/narratives.app-chrome/candidates/studio-v1.md",
-      "sha256": "b7816473edd4300b4b45b0f36f5a07e629b5d62cbbc583204da1741328e09c0c"
+      "path": "clossys/agents/writer/narratives.app-chrome/candidates/studio-v2.md",
+      "sha256": "8fb41a5c12d122eab0234215e994d59030622f1690a8f9b5bf8fd355735fce10"
     },
     {
       "path": "clossys/agents/writer/narratives.app-chrome/pin.json",
-      "sha256": "a74c7f76fe66b7a1f0dc87ecd3d79d145b522a23026ec9d611a63c658d2cb750"
+      "sha256": "fe9912c0c39fe642b6ec7deda54c7b002b06515c3a52f0618461233d0c9c44c1"
     },
     {
       "path": "clossys/agents/writer/narratives.app-chrome/slot.json",
@@ -4474,12 +4474,12 @@
       "sha256": "03ef2e1ba564201c4c689c53102bfed56e88236a447d948dd3108dfd1e38f0c3"
     },
     {
-      "path": "clossys/agents/writer/narratives.release-notes/candidates/studio-v1.md",
-      "sha256": "d7bb071c4fbfb426bea294b1f2dd8d3b7acc0f655998c86010308705726b1aad"
+      "path": "clossys/agents/writer/narratives.release-notes/candidates/studio-v3.md",
+      "sha256": "2ab7bb9313694be0a00cf232d1a7e63c5ded512cde7e5c059b29e0993b585093"
     },
     {
       "path": "clossys/agents/writer/narratives.release-notes/pin.json",
-      "sha256": "023ab1df1ca6228c9136fdd84ca9ddbadb604b74eb3e9e368a2d3e46b757a0ac"
+      "sha256": "d723656c3cb903df8ee02d87f7ea1248106c25e71049fbae6485c948da8e29c0"
     },
     {
       "path": "clossys/agents/writer/narratives.release-notes/slot.json",
@@ -4498,12 +4498,12 @@
       "sha256": "0b1607520c95008586e143899e9c0e2985cd4882b93c71aa91aaf11ba6588934"
     },
     {
-      "path": "clossys/agents/writer/narratives.site-chrome/candidates/studio-v1.md",
-      "sha256": "36b034a375e8e24e1005873501b4477c1d6e989a8068252991773216c0f7bf46"
+      "path": "clossys/agents/writer/narratives.site-chrome/candidates/studio-v2.md",
+      "sha256": "217df4bb99b9f9abea6254534e9a4aac4a1d87a1b4f5fde8e40e036b087ea6c1"
     },
     {
       "path": "clossys/agents/writer/narratives.site-chrome/pin.json",
-      "sha256": "5b8c2886cb79796240eb2c8af3995e28f2b9b0efabc56d664608ca4b0eacbc9d"
+      "sha256": "582e79ad2276987826c6fbbb965f40e822b1fbc7a47ec40f6c5642ea17af9199"
     },
     {
       "path": "clossys/agents/writer/narratives.site-chrome/slot.json",
@@ -4594,12 +4594,12 @@
       "sha256": "25c7eafb60f6b7a9482576dc692a41c246505d2d23657fecba8268472248c8f3"
     },
     {
-      "path": "clossys/agents/writer/passages.boundary-message/candidates/studio-v1.md",
-      "sha256": "90f58f86bff2296664d3e3796268c60a3a824f9c7eadd776ea2f9664126c1a02"
+      "path": "clossys/agents/writer/passages.boundary-message/candidates/studio-v2.md",
+      "sha256": "ebe305fd2c10f924bdb95b74ffcb400c12ce1846fe3e983f33a9355d2aa50fc5"
     },
     {
       "path": "clossys/agents/writer/passages.boundary-message/pin.json",
-      "sha256": "6fa286f357ab0fea2577356f3124a18eec94b4a5ff8d467eac0f8dd6b3d764d6"
+      "sha256": "56856fbccaac93d7cc80ebc0f229a4c6261b4ac0f1cec6938d016ff0621a55cc"
     },
     {
       "path": "clossys/agents/writer/passages.boundary-message/slot.json",
@@ -4630,12 +4630,12 @@
       "sha256": "32577bca9cb4a29cd5b034f38c05ead7f354b92994a23631941ac90e1243dd2e"
     },
     {
-      "path": "clossys/agents/writer/passages.chat/candidates/studio-v1.md",
-      "sha256": "68b0b6bd28e8c14c50ec3bc4f412aa59ce7365338e655f1fe31ca7706ce81968"
+      "path": "clossys/agents/writer/passages.chat/candidates/studio-v2.md",
+      "sha256": "cd7e7bc286cf73dd2a7a35f42f89ee4613d178e7a04a4a9a8bc01afbdf353b17"
     },
     {
       "path": "clossys/agents/writer/passages.chat/pin.json",
-      "sha256": "494599e187afe01f6063f1c2512f1b8a074db00ad1b00c4edb139ff1ef0186e9"
+      "sha256": "0afe5953d804096efe262549b9a8af47ad515ab01b1a627195164900f422c8c5"
     },
     {
       "path": "clossys/agents/writer/passages.chat/slot.json",
@@ -4678,12 +4678,12 @@
       "sha256": "70ece5b004201eff54002a36f6663ac15c06f198b6a827695f75266965d6f41e"
     },
     {
-      "path": "clossys/agents/writer/passages.content/candidates/studio-v1.md",
-      "sha256": "674ac7f7b977c5fa1cb78ce40f419a64b087e7e2715012bc4d8bcce6392be79e"
+      "path": "clossys/agents/writer/passages.content/candidates/studio-v2.md",
+      "sha256": "1546a6f1512d83ec0e3488ce6f6781a666975ac365977a2bae7ce367f2babecc"
     },
     {
       "path": "clossys/agents/writer/passages.content/pin.json",
-      "sha256": "be208d732e227af0afddff4bc3fba061df015f46dcbf7b110946a6b033b9198f"
+      "sha256": "a42adfc3e403dc1e1ff3cae70c53687647ad4e30a89bf84f14189a0b0be6f4df"
     },
     {
       "path": "clossys/agents/writer/passages.content/slot.json",
@@ -4750,12 +4750,12 @@
       "sha256": "83a0270f6b3613288bdd960b79ae6cfd3963a9b1edb9cff67965c51944fe8ba2"
     },
     {
-      "path": "clossys/agents/writer/passages.faq/candidates/studio-v1.md",
-      "sha256": "8ee9b31764dfc143361ad8efae211b9cab8450c31683d5dd0f8ef18d2243ee2d"
+      "path": "clossys/agents/writer/passages.faq/candidates/studio-v2.md",
+      "sha256": "b8ef32beefdf32b0e1379dc660a8beb2cfc855a8767ac7ee0d00d12b94f60d26"
     },
     {
       "path": "clossys/agents/writer/passages.faq/pin.json",
-      "sha256": "759ba60be35b4dc381520460706526cbd9f73d5215b8a547ac8c55f3f5e13d82"
+      "sha256": "1757cbeb15b441e341b0ff0515ba7fa086e33655d67dbfc8eefeda41e51296b7"
     },
     {
       "path": "clossys/agents/writer/passages.faq/slot.json",
@@ -4786,12 +4786,12 @@
       "sha256": "a6751907e3f02b50268109418561df3e7d32f31f2bb5f5bab07547a206e1ee72"
     },
     {
-      "path": "clossys/agents/writer/passages.form/candidates/studio-v1.md",
-      "sha256": "d49b7f8b0dc36b16c57e05b188491fe5305eba20b4e1dd5ce124239e2758d97a"
+      "path": "clossys/agents/writer/passages.form/candidates/studio-v2.md",
+      "sha256": "15a251e4cb9a2ec41bd3c115388484bb92d673ff18b548c5574cece71c2c930a"
     },
     {
       "path": "clossys/agents/writer/passages.form/pin.json",
-      "sha256": "05813a27d431600ec3d7588dd8bc72c4f5bcc669a0c2952318e2a043b855ce65"
+      "sha256": "2f9832b9614d13ebee673ce5dc68314296aaf5bf4b76592078991fa63898a0da"
     },
     {
       "path": "clossys/agents/writer/passages.form/slot.json",
@@ -4810,12 +4810,12 @@
       "sha256": "5673337184380c9d33cff76a0abc69b84746efba1ddcf4e077f4abc03e6d3ca1"
     },
     {
-      "path": "clossys/agents/writer/passages.hero/candidates/studio-v1.md",
-      "sha256": "cd8a322d36f64854a7b2eeb13667be740f2e1a5049110f48385d3beb53f11854"
+      "path": "clossys/agents/writer/passages.hero/candidates/studio-v2.md",
+      "sha256": "0bac3e7d94028436f6680e9cbb461fe2c2420ccdee921b20486bd581ed72140e"
     },
     {
       "path": "clossys/agents/writer/passages.hero/pin.json",
-      "sha256": "aaf8e96650710d78f57c66e081643cea9b3fe26c994b92715e82c2f3bc84bb2a"
+      "sha256": "d3372a5375bdf27b187af35a530c9e742d4163b2d661d7cac034a9f1a72f40b7"
     },
     {
       "path": "clossys/agents/writer/passages.hero/slot.json",
@@ -4942,12 +4942,12 @@
       "sha256": "fa7cc12f788bc03b2f008cb0a40d75026d1fcf18af6b568770ca48f2f0f237e9"
     },
     {
-      "path": "clossys/agents/writer/passages.people/candidates/studio-v1.md",
-      "sha256": "ff496681921cc6217d377b593a0ed6d9ddd12a8f13e120670450401957c2d465"
+      "path": "clossys/agents/writer/passages.people/candidates/studio-v2.md",
+      "sha256": "88fa7f5861743036cbed81f7c47838a3d6607b29ff128205b797420fe21634d0"
     },
     {
       "path": "clossys/agents/writer/passages.people/pin.json",
-      "sha256": "1d1d95c4261135ce2a956edcbca69371274a435d1a8eccce05bd13ef85447292"
+      "sha256": "f92a0d0b41857c1448345427a8be2afeeda0de3392d2473d852c198bab8a3c3c"
     },
     {
       "path": "clossys/agents/writer/passages.people/slot.json",
@@ -5110,12 +5110,12 @@
       "sha256": "32ff8cf91a53fbd6e72660430a456167940de8dc3d23fbae4cb016f681b8fdf0"
     },
     {
-      "path": "clossys/agents/writer/passages.timeline/candidates/studio-v1.md",
-      "sha256": "1e1f7d0ba17daf153a489ea6881153f4fb66c29431e7b16c0555e0305593fb73"
+      "path": "clossys/agents/writer/passages.timeline/candidates/studio-v2.md",
+      "sha256": "0eb7652cea81804d71082f9fcb681d4fc0a6434944f00784e4040b42aa3ca2a9"
     },
     {
       "path": "clossys/agents/writer/passages.timeline/pin.json",
-      "sha256": "7f2a854df6a29540a7e49aab147e53f78c22456662a6ca00bce9776462b36acc"
+      "sha256": "d1cc7bd9fbd141de60cee71b34a69a3195fb609e2dec14f01618eeee758853ec"
     },
     {
       "path": "clossys/agents/writer/passages.timeline/slot.json",
@@ -5290,12 +5290,12 @@
       "sha256": "1a0e82f1fddb561ffe07c6f468ce7c6c439b08831eab8b588ddcce7a81667a6b"
     },
     {
-      "path": "clossys/agents/writer/patterns.messaging-kit/candidates/studio-v1.md",
-      "sha256": "f48ae4cc3d63712c9515a9098c98225febe0666f0a3ecae2359df511e7492d09"
+      "path": "clossys/agents/writer/patterns.messaging-kit/candidates/studio-v2.md",
+      "sha256": "d16a4cccd74799c2fb7422f732eda29bfe2e0280db53866e687ba191c7fab7e7"
     },
     {
       "path": "clossys/agents/writer/patterns.messaging-kit/pin.json",
-      "sha256": "efca9a0d85a9629a1a074db4fb9fc3d3dc8b9372598c97497d866ed818baed73"
+      "sha256": "3c9dfc4b626a010e8397de58d49b280b13f6777d7e3da9f0a6dd80fa842e596a"
     },
     {
       "path": "clossys/agents/writer/patterns.messaging-kit/slot.json",
@@ -5614,12 +5614,12 @@
       "sha256": "4ac028d203cc47974638ece1c510e1fa2069c921108263b3e393e069482a4e2a"
     },
     {
-      "path": "clossys/agents/writer/strings.navigation/candidates/studio-v1.md",
-      "sha256": "92dad2ad8442c247c78e90d6b1dd45c77e34c6646e91af42ee14169f6a8640ec"
+      "path": "clossys/agents/writer/strings.navigation/candidates/studio-v2.md",
+      "sha256": "2e84c664adae1b27238b2c1683f597d32b05e2c0cd6af66f63a270317651eaf8"
     },
     {
       "path": "clossys/agents/writer/strings.navigation/pin.json",
-      "sha256": "31c94ac6ccf0b65362d56d872322ce74dc6442dabdeb73b7f94f0ecf39038fd4"
+      "sha256": "8a1de5d54ed1a84f8d54c97c6731f193511a45ddfa66603d59455271c172fb86"
     },
     {
       "path": "clossys/agents/writer/strings.navigation/slot.json",
@@ -6545,7 +6545,7 @@
     },
     {
       "path": "generated/studio-copy.json",
-      "sha256": "27acaa8998d11f8600f3c75e672c9d6245a260372519ea88c04cd1928c620c96"
+      "sha256": "d8e29dfe757b494826006fc0fb6e4a1b9afdb549bf0e29955c31b456fa68fe59"
     },
     {
       "path": "generated/studio-flow-theme.css",

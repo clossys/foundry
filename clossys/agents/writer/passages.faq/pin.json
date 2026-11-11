@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v1.md",
-  "sha256": "8ee9b31764dfc143361ad8efae211b9cab8450c31683d5dd0f8ef18d2243ee2d",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-v2.md",
+  "sha256": "b8ef32beefdf32b0e1379dc660a8beb2cfc855a8767ac7ee0d00d12b94f60d26",
+  "decidedBy": "agent:writer",
+  "basis": "agent",
+  "at": "2026-11-11T07:10:51.621Z"
 }

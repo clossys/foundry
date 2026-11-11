@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "3e652a17f69588c9bb7ad98af15b0bf651eaf029601044ca03ccf3ba81d932db",
+  "revision": "23c15f7bc17e7377e8ba1777527c85c3561e0b360960e74e58cf8b96c3a0cb14",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
