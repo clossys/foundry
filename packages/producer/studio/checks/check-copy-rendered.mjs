@@ -39,7 +39,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { studioOrigin } from './studio-origin.mjs';
+import { specimensReady, studioOrigin } from './studio-origin.mjs';
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -362,6 +362,8 @@ async function main() {
   try { browser = await launchChrome({ headless: true, args: ['--no-sandbox'] }); }
   catch (error) { console.error(String(error?.message ?? error)); process.exit(failureExitCode(error)); }
   const findings = new Map(), counts = { copy: 0, data: 0, none: 0 }, failures = [];
+  // The specimen site builds before any framed route can load; that build is not a route's render time.
+  if (!pages) await specimensReady(origin).catch(error => failures.push({ route: '/__specimen', reason: error.message }));
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
     await context.route(`${origin}/api/events`, route => route.fulfill({ contentType: 'text/event-stream', body: ': connected\n\n' }));

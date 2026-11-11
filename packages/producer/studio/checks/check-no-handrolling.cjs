@@ -336,6 +336,8 @@ async function main() {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.route(`${origin}/api/events`, route => route.fulfill({ contentType: 'text/event-stream', body: ': connected\n\n' }));
+    // The specimen site builds before any framed route can load; that build is not a route's render time.
+    await (await import('./studio-origin.mjs')).specimensReady(origin);
     // Studio's own pages over the live slot model: every published route and each leaf template.
     const checks = [];
     const routes = mappedRoutes();
