@@ -5,7 +5,9 @@ import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createMutations, discoverAdapter, repin, runCommand, runPropagation, validateAdapter, parseArgs } from './p0-propagate.mjs';
+import { createMutations, discoverAdapter, runCommand, runPropagation, validateAdapter, parseArgs } from './p0-propagate.mjs';
+// The theme-probe pin helpers live in the slot writer (the pin step's own module); the probe never writes a pin itself.
+const { repointedThemePin: repin } = await import(new URL('../../dist/records/slot-write.js', import.meta.url).href);
 import { studioOrigin } from './studio-origin.mjs';
 
 // Fixtures live in the OS temp directory (TMPDIR), never under the checkout (a write there dirties the tree), and are removed after the run.
@@ -193,7 +195,9 @@ test('the checked-in adapter resolves the real tree without discovery (F3)', asy
   // --primary is mutated at its compiled source (the pinned themes.primary candidate), not a hand copy.
   assert.equal(adapter.primarySource, 'clossys/agents/designer/themes.primary/candidates/primary-v1.json');
   assert.equal(adapter.primaryFormat, 'theme-json');
-  assert.equal(adapter.pinPath, resolve(repository, 'clossys/agents/designer/themes.primary/pin.json'));
+  assert.equal(adapter.theme.id, 'themes.primary');
+  assert.equal(adapter.theme.consumer, resolve(repository, 'clossys'));
+  assert.equal(adapter.theme.original, await readFile(resolve(repository, 'clossys/agents/designer/themes.primary/pin.json'), 'utf8'));
   assert.match(adapter.buttonSelector, /\[data-size="default"\]/);
   assert.equal(adapter.buttonSource, 'packages/designer/ui/src/components/ui/button.tsx');
   assert.deepEqual(adapter.buildCommands, [['node', 'packages/producer/scripts/build-studio.mjs']]);
@@ -268,4 +272,20 @@ test('compiled-theme propagation builds with the candidate and its pin mutated t
   assert.notEqual(mutated.button, originals[1]);
   assert.deepEqual([restored.item, restored.button, restored.pin], originals);
   assert.deepEqual(await f.contents(), originals);
+});
+
+test('the probe reaches no pin but a Designer themes.* slot pin (no Publisher, Writer or Director pin)', async () => {
+  const { repointThemeProbePin, restoreThemeProbePin, readThemeProbePin } = await import(new URL('../../dist/records/slot-write.js', import.meta.url).href);
+  const f = await themeFixture();
+  const consumer = join(f.root, 'clossys');
+  for (const id of ['page.home', 'publication.studio', 'strings.errors', 'context.market.size', '../publisher/page.home', 'themes']) {
+    assert.throws(() => readThemeProbePin(consumer, id, 'primary-v1.json', themeItem), /not a Designer themes\.\* slot/);
+    assert.throws(() => repointThemeProbePin(consumer, id, f.pinText, themeItem), /not a Designer themes\.\* slot/);
+    assert.throws(() => restoreThemeProbePin(consumer, id, f.pinText), /not a Designer themes\.\* slot/);
+  }
+  // A Publisher page candidate as the primary source is refused before anything is written.
+  const page = join(f.root, 'clossys/agents/publisher/page.home/candidates');
+  await mkdir(page, { recursive: true });
+  await writeFile(join(page, 'page-v1.json'), themeItem);
+  await assert.rejects(validateAdapter(f.root, { ...f.adapter, primarySource: 'clossys/agents/publisher/page.home/candidates/page-v1.json' }), /Designer themes\.\* slot candidate/);
 });

@@ -22,9 +22,13 @@ const sha256 = text => createHash('sha256').update(text).digest('hex');
 const canonical = value => `${JSON.stringify(value, null, 2)}\n`;
 
 /**
- * A compiled-theme source is a pinned Designer `registry:theme` candidate (`<slot>/candidates/<file>.json`):
- * Studio serves its cssVars as the consumer's tokens. Its slot pin must select exactly these bytes, so a
- * mutation re-points the pin's sha256 at the mutated bytes for the run and restores both byte-exactly.
+ * A compiled-theme source is a pinned Designer `registry:theme` candidate
+ * (`clossys/agents/designer/themes.<id>/candidates/<file>.json`): Studio serves its cssVars as the
+ * consumer's tokens. Its slot pin must select exactly these bytes, so for the run the pin's sha256 is
+ * re-pointed at the mutated bytes and then restored byte-exactly. This file never writes a pin itself:
+ * the read, the re-point and the restore are the slot writer's theme-probe helpers
+ * (src/records/slot-write.ts), which accept a Designer themes.* slot only, so no other agent's pin
+ * (a Publisher page pin included) is reachable from the probe.
  */
 function parseCanonical(text, what) {
   let value;
@@ -33,18 +37,15 @@ function parseCanonical(text, what) {
   return value;
 }
 
-async function themePin(root, primaryPath, primaryText) {
-  if (basename(dirname(primaryPath)) !== 'candidates') throw new Error('A theme-candidate primarySource must live in its slot\'s candidates/ folder.');
-  const pinPath = await sourcePath(root, relative(root, join(dirname(dirname(primaryPath)), 'pin.json')));
-  const pin = parseCanonical(await readFile(pinPath, 'utf8'), 'The theme slot pin');
-  if (pin.candidate !== basename(primaryPath)) throw new Error(`The theme slot pin selects ${pin.candidate}, not ${basename(primaryPath)}.`);
-  if (pin.sha256 !== sha256(primaryText)) throw new Error(`The theme slot pin's sha256 does not match ${basename(primaryPath)}; the candidate is not what Studio serves.`);
-  return pinPath;
-}
+const slotWriter = () => import(new URL('../../dist/records/slot-write.js', import.meta.url).href);
+const THEME_CANDIDATE = /^clossys\/agents\/designer\/(themes\.[a-z0-9][a-z0-9.-]*)\/candidates\/([^/]+\.json)$/;
 
-/** Repoints a canonical pin at new candidate bytes (the only field the mutation changes). */
-export function repin(pinText, candidateText) {
-  return canonical({ ...parseCanonical(pinText, 'The theme slot pin'), sha256: sha256(candidateText) });
+async function themeSlot(root, primaryPath, primaryText) {
+  const match = relative(root, primaryPath).split(sep).join('/').match(THEME_CANDIDATE);
+  if (!match) throw new Error('A theme-candidate primarySource must be a Designer themes.* slot candidate (clossys/agents/designer/themes.<id>/candidates/<file>.json).');
+  const consumer = join(root, 'clossys');
+  const original = (await slotWriter()).readThemeProbePin(consumer, match[1], match[2], primaryText);
+  return { consumer, id: match[1], original };
 }
 
 function mutatePrimary(primary, occurrence, cssVariable, format) {
@@ -133,8 +134,8 @@ export async function validateAdapter(root, adapter) {
   const occurrence = adapter.primaryOccurrence ?? 0;
   if (!Number.isInteger(occurrence) || occurrence < 0) throw new Error('primaryOccurrence must be a nonnegative integer.');
   const primaryFormat = primaryPath.endsWith('.json') ? 'theme-json' : 'css';
-  const pinPath = primaryFormat === 'theme-json' ? await themePin(root, primaryPath, await readFile(primaryPath, 'utf8')) : undefined;
-  return { ...adapter, cssVariable, buttonSelector, primaryPath, buttonPath, primaryOccurrence: occurrence, primaryFormat, pinPath };
+  const theme = primaryFormat === 'theme-json' ? await themeSlot(root, primaryPath, await readFile(primaryPath, 'utf8')) : undefined;
+  return { ...adapter, cssVariable, buttonSelector, primaryPath, buttonPath, primaryOccurrence: occurrence, primaryFormat, theme };
 }
 
 export function createMutations(primary, button, radius, occurrence = 0, cssVariable = '--primary', format = 'css') {
@@ -222,9 +223,12 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = studi
   adapter = await validateAdapter(root, adapter ?? await discoverAdapter(root));
   const url = new URL(adapter.route, baseURL);
   if (url.origin !== new URL(baseURL).origin) throw new Error('Propagation route escaped the Studio origin.');
-  // The mutated files: the primary source, the button source and (for a theme candidate) its slot pin.
-  const paths = [adapter.primaryPath, adapter.buttonPath, ...(adapter.pinPath ? [adapter.pinPath] : [])];
+  // The mutated files: the primary source and the button source; a theme candidate's slot pin is
+  // re-pointed (and restored) through the slot writer's theme-probe helpers, never written here.
+  const paths = [adapter.primaryPath, adapter.buttonPath];
   const originals = await Promise.all(paths.map(path => readFile(path, 'utf8')));
+  const theme = adapter.theme;
+  const writer = theme ? await slotWriter() : undefined;
   const ownedDriver = !driver;
   driver ??= await browserDriver();
   let touched = false, outcome, failure;
@@ -235,15 +239,16 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = studi
     if (signal?.aborted) throw new Error('Propagation was cancelled before source mutation.');
     const before = await driver.sample(url.href, adapter.buttonSelector, adapter.cssVariable);
     const mutation = createMutations(originals[0], originals[1], before.radius, adapter.primaryOccurrence, adapter.cssVariable, adapter.primaryFormat);
-    const mutated = [mutation.primary, mutation.button, ...(adapter.pinPath ? [repin(originals[2], mutation.primary)] : [])];
+    const mutated = [mutation.primary, mutation.button];
     // Source backups default to the OS temp directory: a write under the checkout dirties the tree.
     const evidenceDir = artifactDir ?? join(tmpdir(), 'p0-propagate', `${Date.now()}-${process.pid}`);
     await mkdir(evidenceDir, { recursive: true });
     await writeFile(join(evidenceDir, 'primary.original.txt'), originals[0]);
     await writeFile(join(evidenceDir, 'button.original.txt'), originals[1]);
-    if (adapter.pinPath) await writeFile(join(evidenceDir, 'pin.original.txt'), originals[2]);
+    if (theme) await writeFile(join(evidenceDir, 'pin.original.txt'), theme.original);
     touched = true;
     for (const [index, path] of paths.entries()) await writeFile(path, mutated[index]);
+    if (theme) writer.repointThemeProbePin(theme.consumer, theme.id, theme.original, mutation.primary);
     await build(false);
     if (signal?.aborted) throw new Error('Propagation was cancelled during source build.');
     const after = await driver.sample(url.href, adapter.buttonSelector, adapter.cssVariable);
@@ -254,7 +259,10 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = studi
   finally {
     try {
       if (touched) {
-        const restoration = await Promise.allSettled(paths.map((path, index) => writeFile(path, originals[index])));
+        const restoration = await Promise.allSettled([
+          ...paths.map((path, index) => writeFile(path, originals[index])),
+          ...(theme ? [(async () => { if (!writer.restoreThemeProbePin(theme.consumer, theme.id, theme.original)) throw new Error('The theme slot pin was not restored byte-exactly.'); })()] : []),
+        ]);
         const restoreFailures = restoration.filter(item => item.status === 'rejected').map(item => item.reason);
         if (restoreFailures.length) throw new AggregateError(restoreFailures, 'Source restoration failed; original source backups are retained.');
         await build(true);
