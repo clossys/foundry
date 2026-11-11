@@ -14,6 +14,9 @@
  *     boundary is a content outlet (CONTENT_OUTLETS, the frame's body column and popover bodies),
  *     and every element placed in an outlet must carry its own marker (a pinned section root).
  *     A frame's marker on its provider therefore cannot cover hand-rolled page content;
+ *   - React's streaming instruction scripts directly under <body> are scaffolding only when
+ *     Publisher's own registration (`nextStreamingScriptShape`, `@clossys/publisher/install`)
+ *     names their exact attributes and text; any other inline script stays a finding;
  *   - every marker names a registered Designer slot whose current pin is exactly that candidate
  *     file with exactly that content hash (a stale or hand-typed marker fails).
  * Exit 0 only when no route has a finding and at least one route rendered (zero checked routes is
@@ -34,6 +37,7 @@ import { fileURLToPath } from 'node:url';
 import { chrome, loadStudioMap } from './studio-dom-check.mjs';
 import { pinned } from '../../scripts/check-generated-derived.mjs';
 import { studioOrigin } from './studio-origin.mjs';
+import { nextStreamingScriptShape } from '@clossys/publisher/install';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const CLOSSYS = resolve(here, '../../../../clossys');
@@ -67,13 +71,28 @@ export function timeoutSeconds(routes = studioRouteCount(), workers = MAX_WORKER
  */
 export const CONTENT_OUTLETS = '#studio-main, [data-popover-body]';
 
-// Serialized into the page; keep it standalone (the outlet selector is its one argument).
-export function inspectProvenance(outlets = '#studio-main, [data-popover-body]') {
+/** Every inline script directly under <body>, as rendered: its attribute names and exact text (serialized into the page). */
+export function collectInlineScripts() {
+  return [...document.body.children].filter(element => element.localName === 'script' && !element.hasAttribute('src') && !element.childElementCount).map(element => ({ attributes: element.getAttributeNames(), text: element.textContent }));
+}
+
+/**
+ * The exact texts of the collected inline scripts that Publisher registers as its shell's streaming
+ * scripts (`nextStreamingScriptShape`). Only these texts, with only a `nonce` attribute, are
+ * scaffolding in the page; the classification is Publisher's, never re-implemented here.
+ */
+export function registeredStreamingTexts(scripts = []) {
+  return [...new Set(scripts.filter(script => nextStreamingScriptShape(script)).map(script => script.text))];
+}
+
+// Serialized into the page; keep it standalone (the outlet selector and the registered streaming texts are its arguments).
+export function inspectProvenance(outlets = '#studio-main, [data-popover-body]', streaming = []) {
   const only = (element, names) => element.getAttributeNames().every(name => names.includes(name));
   const scaffolding = element => {
     if (element.parentElement !== document.body) return false;
     if (element.localName === 'script' && !element.childElementCount) {
       if (element.hasAttribute('src')) return only(element, ['src', 'async', 'nonce']) && new URL(element.src, location.href).origin === location.origin && /^\/_next\/static\/.+\.js$/.test(new URL(element.src, location.href).pathname);
+      if (only(element, ['nonce']) && streaming.includes(element.textContent)) return true;
       const text = element.textContent.trim();
       return only(element, ['id', 'nonce']) && (/^(?:\(self\.__next_f=self\.__next_f\|\|\[\]\)|self\.__next_f)\.push\(/.test(text) || (element.id === '_R_' && /^\(globalThis\["TURBOPACK"\]/.test(text)));
     }
@@ -137,14 +156,26 @@ const SETTLED = `new Promise(resolve => {
   })();
 })`;
 
-/** The inspector as one page expression over the frame's content outlets. */
-const INSPECT = `(${inspectProvenance.toString()})(${JSON.stringify(CONTENT_OUTLETS)})`;
+/** The inline-script collector as one page expression. */
+const COLLECT = `(${collectInlineScripts.toString()})()`;
+
+/** The inspector as one page expression over the frame's content outlets and the registered streaming texts. */
+export function inspectExpression(streaming = []) {
+  return `(${inspectProvenance.toString()})(${JSON.stringify(CONTENT_OUTLETS)}, ${JSON.stringify(streaming)})`;
+}
+
+/** Inspect the live page: classify its body-level inline scripts with Publisher's registration, then inspect. */
+async function inspectPage(browser) {
+  const streaming = registeredStreamingTexts(await browser.evaluate(COLLECT));
+  return { streaming, INSPECT: inspectExpression(streaming) };
+}
 
 /**
  * Mutation proof on the live page: an unmarked body element, an unmarked element placed in the
  * frame's content outlet (under the frame's marker) and an altered marker hash must each fail.
  */
 async function proveDetector(browser) {
+  const { INSPECT } = await inspectPage(browser);
   await browser.evaluate(`(() => { const probe = document.createElement('div'); probe.id = 'rendered-provenance-probe'; document.body.append(probe); })()`);
   const unmarked = await browser.evaluate(INSPECT);
   await browser.evaluate(`document.getElementById('rendered-provenance-probe')?.remove()`);
@@ -192,7 +223,7 @@ export async function runRenderedProvenance(origin, { only, workers } = {}) {
           await browser.send('Page.navigate', { url: new URL(entry.path, origin).href });
           await sleep(300);
           settled = await browser.evaluate(SETTLED);
-          result = await browser.evaluate(INSPECT);
+          result = await browser.evaluate((await inspectPage(browser)).INSPECT);
         } catch (error) {
           rows[index] = { route: { path: entry.path, id: entry.id, checked: 0, markers: 0, findings: [{ rule: 'route-error', error: String(error?.message ?? error).slice(0, 200) }] } };
           continue;

@@ -159,6 +159,31 @@ test('rendered provenance treats the content outlet as a boundary and refuses a 
   assert.doesNotThrow(() => assertRoutesChecked(1, 113));
 });
 
+test("rendered provenance takes the shell's streaming scripts from Publisher's registration, and nothing else", async () => {
+  const { JSDOM } = require('jsdom');
+  const { inspectProvenance, collectInlineScripts, registeredStreamingTexts } = await import('./check-rendered-provenance.mjs');
+  const { NEXT_SHELL_TIME_SCRIPT, NEXT_BOUNDARY_RUNTIME } = await import('@clossys/publisher/install');
+  const run = (markup, register = true) => {
+    const dom = new JSDOM(`<html><body>${markup}</body></html>`, { url: 'http://127.0.0.1:4503/' });
+    const names = ['document', 'Node', 'ShadowRoot', 'location', 'Element', 'getComputedStyle'];
+    const prior = names.map(name => global[name]);
+    names.forEach(name => { global[name] = typeof dom.window[name] === 'function' && name === 'getComputedStyle' ? dom.window[name].bind(dom.window) : dom.window[name]; });
+    try { return inspectProvenance(undefined, register ? registeredStreamingTexts(collectInlineScripts()) : []); } finally { names.forEach((name, i) => { global[name] = prior[i]; }); dom.window.close(); }
+  };
+  const script = (text, attributes = '') => `<script${attributes}>${text}</script>`;
+  const unmarked = result => result.findings.filter(row => row.rule === 'element-without-provenance');
+  const completion = `${NEXT_BOUNDARY_RUNTIME}$RC("B:0","S:0")`;
+  const shell = frame(`<div id="studio-main">${section('<p>Copy</p>')}</div>`);
+  // The registered shapes, with or without a CSP nonce, are scaffolding.
+  assert.deepEqual(unmarked(run(shell + script(NEXT_SHELL_TIME_SCRIPT) + script(completion, ' nonce="n"') + script('$RC("B:1","S:1")'))), []);
+  // Mutation proof: without Publisher's registration the same scripts are findings.
+  assert.equal(unmarked(run(shell + script(NEXT_SHELL_TIME_SCRIPT) + script(completion), false)).length, 2);
+  // Unregistered instructions, an extra attribute or an extra statement stay findings.
+  for (const bad of [script('$RX("B:0","E")'), script('$RS("S:0","P:0")'), script(NEXT_SHELL_TIME_SCRIPT, ' data-x="1"'), script(`${NEXT_SHELL_TIME_SCRIPT}alert(1)`), script('$RC("B:0","S:0");alert(1)')]) {
+    assert.equal(unmarked(run(shell + bad)).length, 1, bad);
+  }
+});
+
 test("the live check's bound grows with the mapped routes, and check:studio gives it that bound", async () => {
   const { ROUTE_SECONDS, timeoutSeconds, mappedRoutes } = require('./check-no-handrolling.cjs');
   assert.ok(ROUTE_SECONDS > 0, 'a per-route share of zero would leave the runner default as the only bound');
