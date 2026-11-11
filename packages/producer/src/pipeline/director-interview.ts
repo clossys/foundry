@@ -141,7 +141,7 @@ export function directorContent(consumer: string, model: StrategyModel, seat: Se
     ...(byCell.get(cell)?.round[0]?.cites ?? []),
   ];
   const ordered = dependencyOrder(owner.map(row => row.cell), upstream, core).map(cell => byCell.get(cell)!);
-  const agentPicks = entries.filter(entry => !coreSet.has(entry.id) && entry.pin?.basis === "agent" && entry.pin.decidedBy.startsWith("agent:director"))
+  const agentPicks = entries.filter(entry => !coreSet.has(entry.id) && entry.pin?.basis === "agent" && entry.pin.decidedBy.startsWith("agent:director") && !entry.pin.confirmed)
     .map(entry => ({ cell: entry.id, item: `director/${entry.id}`, candidate: entry.pin!.candidate, group: entry.id.slice(0, entry.id.indexOf(".")) }));
   return { archetypes, archetypeRecorded, core, owner: ordered, agentPicks };
 }

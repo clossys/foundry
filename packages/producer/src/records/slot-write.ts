@@ -136,6 +136,31 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
 }
 
 /**
+ * The owner confirms an agent pick (owner Foundry Director round 8, "Agent pick + your confirm"): the
+ * pin stays the agent's (`decidedBy: agent:<seat>`, basis `agent`, its candidate, hash and time) and
+ * gains `confirmed: {by, ref, at}`. Refused unless the slot's current pin is an agent pick of exactly
+ * this candidate with matching bytes: a confirmation never changes what is pinned.
+ */
+export function writeConfirm(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { by: string; ref: string; at: string }): PinDoc {
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+    const path = pinFile(entry.dir);
+    if (!existsSync(path)) throw new Error(`confirm refused: ${agent}/${id} has no pin to confirm (an agent picks first with clossys pick)`);
+    const current = JSON.parse(readFileSync(path, "utf8")) as PinDoc;
+    const currentIssues = validatePin(current);
+    if (currentIssues.length) throw new Error(`confirm refused: the current pin is invalid: ${currentIssues.map(issue => issue.message).join("; ")}`);
+    if (current.basis !== "agent") throw new Error(`confirm refused: ${agent}/${id} is pinned by ${current.decidedBy} (basis ${current.basis}), not an agent pick; the owner pins it with --basis picked`);
+    if (current.candidate !== candidate) throw new Error(`confirm refused: ${agent}/${id} is agent-picked at ${current.candidate}, not ${candidate}`);
+    if (readCandidate(consumer, agent, id, candidate).sha256 !== current.sha256) throw new Error(`confirm refused: ${candidate} no longer matches the agent pick's sha256`);
+    const pin: PinDoc = { candidate: current.candidate, sha256: current.sha256, decidedBy: current.decidedBy, basis: current.basis, at: current.at, confirmed: { by: input.by, ref: input.ref, at: input.at } };
+    const issues = validatePin(pin);
+    if (issues.length) throw new Error(`confirm refused: ${issues.map(issue => issue.message).join("; ")}`);
+    replaceFile(path, jsonBytes(pin));
+    return pin;
+  });
+}
+
+/**
  * The P0 propagation probe's only pin write (`studio/checks/p0-propagate.mjs`). The probe mutates a
  * pinned Designer theme candidate for one build and must keep its pin selecting those bytes, so this
  * re-points the pin's `sha256` at `candidateText` and keeps every other field; `restoreThemeProbePin`

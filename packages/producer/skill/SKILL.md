@@ -34,7 +34,9 @@ verbs; never edit a Director cell, pin, brief, candidate, seat or rules registry
   source-ladder rungs `L1` to `L4`), `--seed` names the seed, and a created candidate needs
   `--reason`: why no seed fit.
 - An agent pick (a `pick.<agent>` seat with an llm) is recorded with
-  `clossys pick <agent>/<slot> <candidate> --by agent:<agent>`; the owner confirms or re-pins it.
+  `clossys pick <agent>/<slot> <candidate> --by agent:<agent>`; the owner confirms it with
+  `clossys pin <agent>/<slot> <candidate> --confirm --ref <where their words are>` (the pick keeps
+  basis `agent` and gains `confirmed`), or re-pins it with `--basis picked`.
 
 ## Interview
 

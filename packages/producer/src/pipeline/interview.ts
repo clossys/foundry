@@ -530,6 +530,8 @@ function requestQuestion(gap: Gap, root: string, agentHeld: ReadonlySet<string> 
 // ---------------------------------------------------------------- Director content
 const ARCHETYPE_QUESTION = "director.archetype";
 const AGENT_PICKS_QUESTION = "director.agent-picks";
+/** The placeholder the confirm argv carries for the ledger reference of the owner's words. */
+export const CONFIRM_REF = "<ref>";
 const today = () => new Date().toISOString().slice(0, 10);
 /** The owner's own words for a Director cell: recorded as owner evidence, then the cell is re-drafted on it. */
 const ownWords = (item: string) => ({
@@ -568,12 +570,15 @@ function agentPicksQuestion(content: DirectorContent, unclear: ReadonlyMap<strin
   for (const pick of picks) groups.set(pick.group, [...(groups.get(pick.group) ?? []), pick.cell]);
   const failing = picks.filter(pick => unclear.has(pick.cell)).length;
   const rows = [
-    { label: `Confirm all ${plural(picks.length, "agent pick")}${failing ? ` (${failing} still have blocking findings)` : ""}.`, calls: picks.map(pick => ["clossys", "pin", pick.item, pick.candidate, "--basis", "bulk"]) },
+    // The owner's confirm keeps the agent pick (basis agent) and records the confirmation (owner Foundry
+    // Director round 8): basis bulk would replace it with a blanket owner pin that Q7 never counts.
+    { label: `Confirm all ${plural(picks.length, "agent pick")}${failing ? ` (${failing} still have blocking findings)` : ""}.`, calls: picks.map(pick => ["clossys", "pin", pick.item, pick.candidate, "--confirm", "--ref", CONFIRM_REF]) },
     { label: `Review them by group (${[...groups].map(([group, cells]) => `${group} ${cells.length}`).join(", ")}): the Director plays each group back.`, calls: picks.map(pick => ["clossys", "options", pick.item]) },
   ];
+  const options = optionsFrom(rows, {}).map(option => CONFIRM_REF in option.fill ? { ...option, fill: { ...option.fill, [CONFIRM_REF]: "where your words are recorded (the ledger comment with your answer)" } } : option);
   return {
     id: AGENT_PICKS_QUESTION, agent: "director", step: "pin.director", header: "Agent picks", items: picks.map(pick => pick.item),
-    question: `Confirm ${plural(picks.length, "agent pick")} (the non-core cells the Director picked)?`, options: optionsFrom(rows, {}),
+    question: `Confirm ${plural(picks.length, "agent pick")} (the non-core cells the Director picked)?`, options,
     freeText: { id: "other", label: FREE_LABEL, verb: "clossys evidence", calls: [ownWords("").calls[0]!], fill: ownWords("").fill }, after: [...after], requestedBy: [],
   };
 }

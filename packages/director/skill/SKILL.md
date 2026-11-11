@@ -338,7 +338,8 @@ Run the Producer skill's Interview contract (`clossys-producer`, section Intervi
   `clossys pin director/<cell> <name> --basis picked`. A downstream request for an asked cell is
   folded into that question ("also unblocks N designer/writer slots"); a request stays its own
   question only when its cell has no owner question. Non-core agent picks are one "Confirm N agent
-  picks" question: confirm all, review by group, or free text.
+  picks" question: confirm all (each `clossys pin director/<cell> <name> --confirm --ref <ref>`,
+  which keeps the pick basis `agent` and records the owner's confirmation), review by group, or free text.
 - **Record through the verbs**: run the chosen option's `calls` exactly (a free-text answer goes
   through `freeText.verb`, running each of `freeText.calls` in order: record the owner's words as
   evidence, then `clossys options <item> --redraft` for a new round); candidates go through `npx clossys next director/<slot> --submit`, agent

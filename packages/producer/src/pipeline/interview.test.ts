@@ -3,9 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runGapsCli } from "../cli/gaps.js";
+import { runCli } from "../cli/main.js";
 import { runNextCli } from "../cli/next.js";
 import { ladderIssues } from "./candidate-ladder.js";
-import { gapsOf, interviewIssues, interviewOf, ROUND_SIZE } from "./interview.js";
+import { CONFIRM_REF, gapsOf, interviewIssues, interviewOf, ROUND_SIZE } from "./interview.js";
 import type { Gap, Question } from "./interview.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { runPipeline } from "./runner.js";
@@ -190,8 +191,33 @@ describe("Director content questions (next --owner --agent director)", { timeout
     const picks = all.filter(question => question.id === "director.agent-picks");
     expect(picks).toHaveLength(1);
     expect(picks[0]!.options.map(option => option.calls[0]?.slice(0, 2))).toEqual([["clossys", "pin"], ["clossys", "options"]]);
-    expect(picks[0]!.options[0]!.calls.every(call => call.at(-1) === "bulk")).toBe(true);
+    expect(picks[0]!.options[0]!.calls.every(call => call.includes("--confirm") && !call.includes("--basis"))).toBe(true);
     for (const item of picks[0]!.items) expect(content.has(item)).toBe(false);
+  });
+
+  // Owner Foundry Director round 8: "Agent pick + your confirm". Running the confirm option keeps each pick
+  // basis agent (what Q7 counts on a non-core cell) and records the owner's confirmation; basis bulk never counts.
+  it("the confirm option's argv keeps each agent pick basis agent and records the owner's confirmation", async () => {
+    const root = workspace();
+    const director = join(root, "clossys", "agents", "director");
+    const core = new Set(interviewOf(root, { agent: "director" }).rounds.flat().filter(question => question.id.startsWith("director:")).flatMap(question => question.items));
+    const pinOf = (cell: string) => JSON.parse(readFileSync(join(director, cell, "pin.json"), "utf8")) as { candidate: string; decidedBy: string; basis: string; confirmed?: { by: string; ref: string } };
+    const cells = readdirSync(director).filter(cell => existsSync(join(director, cell, "pin.json")) && !core.has(`director/${cell}`) && pinOf(cell).basis !== "picked").slice(0, 2);
+    expect(cells).toHaveLength(2);
+    for (const cell of cells) expect((await runCli(["pick", `director/${cell}`, pinOf(cell).candidate, "--by", "agent:director", "--root", root], root)).exitCode).toBe(0);
+    const question = interviewOf(root, { agent: "director" }).rounds.flat().find(each => each.id === "director.agent-picks")!;
+    const confirm = question.options[0]!;
+    expect(confirm.fill).toHaveProperty(CONFIRM_REF);
+    for (const cell of cells) expect(confirm.calls).toContainEqual(["clossys", "pin", `director/${cell}`, pinOf(cell).candidate, "--confirm", "--ref", CONFIRM_REF]);
+    const REF = "clossys/workspace#46 issuecomment-1";
+    for (const call of confirm.calls) {
+      const result = await runCli([...call.slice(1).map(word => word === CONFIRM_REF ? REF : word), "--root", root], root);
+      expect(result.exitCode, result.message).toBe(0);
+    }
+    for (const cell of cells) expect(pinOf(cell)).toMatchObject({ decidedBy: "agent:director", basis: "agent", confirmed: { by: "owner", ref: REF } });
+    // A confirmed pick is no longer asked.
+    const after = interviewOf(root, { agent: "director" }).rounds.flat().find(each => each.id === "director.agent-picks");
+    for (const cell of cells) expect(after?.items ?? []).not.toContain(`director/${cell}`);
   });
 
   it("an unclear request on an agent-held cell recommends the Director's re-draft, not owner evidence", () => {

@@ -202,3 +202,44 @@ describe("backfill-pin-basis", () => {
     expect(await backfill({ repo: workspace, runPin })).toMatchObject({ written: 0, skipped: 1, failures: [] });
   });
 });
+
+// Owner Foundry Director round 8: the owner's confirm keeps an agent pick (basis agent) and records the confirmation.
+describe("clossys pin --confirm (the owner confirms an agent pick)", () => {
+  const pick = (...args: string[]) => runCli(["pick", ...args], workspace);
+  const REF = "clossys/workspace#46 issuecomment-1";
+  it("keeps decidedBy agent:<seat> and basis agent, and adds confirmed {by, ref, at}", async () => {
+    expect((await pick(`designer/${ID}`, "example-v1", "--by", "agent:director", "--at", "2026-11-11T10:00:00.000Z")).exitCode).toBe(0);
+    const result = await pin(`designer/${ID}`, "example-v1", "--confirm", "--ref", REF, "--at", "2026-11-11T23:30:00.000Z");
+    expect(result.exitCode).toBe(0);
+    expect(load(join(slotDir, "pin.json"))).toEqual({
+      candidate: "example-v1.json", sha256: sha256Hex(good), decidedBy: "agent:director", basis: "agent", at: "2026-11-11T10:00:00.000Z",
+      confirmed: { by: "owner", ref: REF, at: "2026-11-11T23:30:00.000Z" },
+    });
+    const decisions = await runCli(["decisions", "--json"], workspace);
+    expect((decisions.decisions as { slots: { slot: string; confirmed?: unknown }[] }).slots.find(row => row.slot === `designer/${ID}`)?.confirmed).toMatchObject({ by: "owner", ref: REF });
+  });
+
+  it("refuses without --ref, with --basis, with a non-owner --by, on a non-agent pin, and on another candidate", async () => {
+    expect((await pick(`designer/${ID}`, "example-v1", "--by", "agent:director")).exitCode).toBe(0);
+    const before = readFileSync(join(slotDir, "pin.json"), "utf8");
+    expect((await pin(`designer/${ID}`, "example-v1", "--confirm")).exitCode).toBe(2);
+    expect((await pin(`designer/${ID}`, "example-v1", "--confirm", "--ref", REF, "--basis", "bulk")).exitCode).toBe(2);
+    expect((await pin(`designer/${ID}`, "example-v1", "--confirm", "--ref", REF, "--by", "planner:X")).exitCode).toBe(2);
+    expect((await pin(`designer/${ID}`, "example-v1", "--ref", REF, "--basis", "picked")).exitCode).toBe(2);
+    expect((await pin(`designer/${ID}`, "example-v2", "--confirm", "--ref", REF)).exitCode).toBe(1);
+    expect(readFileSync(join(slotDir, "pin.json"), "utf8")).toBe(before);
+    expect((await pin(`designer/${OTHER}`, "example-v1", "--confirm", "--ref", REF)).exitCode).toBe(1);
+    expect((await pin(`designer/${ID}`, "example-v1", "--basis", "picked")).exitCode).toBe(0);
+    const result = await pin(`designer/${ID}`, "example-v1", "--confirm", "--ref", REF);
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toMatch(/^confirm refused: .*not an agent pick/);
+  });
+
+  it("a later agent re-pick drops the confirmation: it confirms only the pick it was given", async () => {
+    writeFileSync(join(slotDir, "candidates", "example-v2.json"), second);
+    expect((await pick(`designer/${ID}`, "example-v1", "--by", "agent:director")).exitCode).toBe(0);
+    expect((await pin(`designer/${ID}`, "example-v1", "--confirm", "--ref", REF)).exitCode).toBe(0);
+    expect((await pick(`designer/${ID}`, "example-v2", "--by", "agent:director")).exitCode).toBe(0);
+    expect(load(join(slotDir, "pin.json")).confirmed).toBeUndefined();
+  });
+});

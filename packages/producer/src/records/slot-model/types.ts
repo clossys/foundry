@@ -152,7 +152,23 @@ export interface PinDoc {
   /** How it was decided (PIN_BASES). */
   readonly basis: PinBasis;
   readonly at: string;
+  /**
+   * The owner's confirmation of an agent pick (`clossys pin <agent>/<slot> <candidate> --confirm --ref <ref>`,
+   * owner Foundry Director round 8): the pick keeps basis `agent` and `decidedBy: agent:<seat>`; this records
+   * who confirmed it, when, and the ledger reference holding their words. Only on a basis `agent` pin.
+   */
+  readonly confirmed?: PinConfirmation;
 }
+export interface PinConfirmation {
+  /** owner or owner:<ref> (CONFIRMED_BY). */
+  readonly by: string;
+  /** Where the owner's words are recorded (a ledger comment). */
+  readonly ref: string;
+  /** ISO timestamp of the confirmation. */
+  readonly at: string;
+}
+/** Who may confirm an agent pick: the owner only. */
+export const CONFIRMED_BY = /^owner(?::\S.*)?$/;
 
 export const SOURCE_KINDS = ["registry", "derived", "original", "composition", "npm"] as const;
 /** The one ref of an `npm` source: `npm/<package>@<exact version>` (ref-verbatim proves it against package-lock.json). */

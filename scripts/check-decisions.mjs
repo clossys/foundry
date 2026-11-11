@@ -2,7 +2,8 @@
 /**
  * Decision records check (rule R-DECISIONS-BY-CLI).
  *
- * A slot's decision is written by `clossys pin` (or an agent seat's `clossys pick`) only: pin.json {candidate, sha256, decidedBy, basis, at}
+ * A slot's decision is written by `clossys pin` (or an agent seat's `clossys pick`) only: pin.json {candidate, sha256, decidedBy, basis, at,
+ * and, on an agent pick the owner confirmed with `clossys pin --confirm`, confirmed {by, ref, at}}
  * or slot.json `notNeeded: {reason, since, decidedBy}`. This check reads the files directly (no
  * build needed) and fails on any decision record a hand edit could leave behind:
  *
@@ -24,7 +25,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PIN_BASES } from './check-git-cms.mjs';
 
-const PIN_KEYS = ['candidate', 'sha256', 'decidedBy', 'basis', 'at'];
+const PIN_KEYS = ['candidate', 'sha256', 'decidedBy', 'basis', 'at', 'confirmed'];
+const CONFIRMED_KEYS = ['by', 'ref', 'at'];
 const NOT_NEEDED_KEYS = ['reason', 'since', 'decidedBy'];
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
@@ -75,6 +77,17 @@ export function checkDecisions(consumer, { agent: only } = {}) {
       if (!nonEmpty(pin.decidedBy)) add('pin-shape', `${where}/pin.json`, 'missing decidedBy');
       if (pin.basis !== undefined && !PIN_BASES.includes(pin.basis)) add('pin-shape', `${where}/pin.json`, `basis ${JSON.stringify(pin.basis)} is not ${PIN_BASES.join(' | ')}`);
       if (typeof pin.at !== 'string' || !ISO_TIME.test(pin.at) || Number.isNaN(Date.parse(pin.at))) add('pin-shape', `${where}/pin.json`, 'missing at (ISO timestamp)');
+      if (pin.confirmed !== undefined) {
+        const confirmed = pin.confirmed;
+        if (pin.basis !== 'agent') add('pin-shape', `${where}/pin.json`, 'confirmed is only on an agent pick (basis agent)');
+        if (!object(confirmed)) add('pin-shape', `${where}/pin.json`, 'confirmed must be {by, ref, at}');
+        else {
+          for (const key of Object.keys(confirmed)) if (!CONFIRMED_KEYS.includes(key)) add('pin-shape', `${where}/pin.json`, `confirmed has unknown key ${key}`);
+          if (typeof confirmed.by !== 'string' || !/^owner(?::\S.*)?$/.test(confirmed.by)) add('pin-shape', `${where}/pin.json`, 'confirmed.by must be owner[:<ref>]');
+          if (!nonEmpty(confirmed.ref)) add('pin-shape', `${where}/pin.json`, 'confirmed.ref is missing');
+          if (typeof confirmed.at !== 'string' || !ISO_TIME.test(confirmed.at) || Number.isNaN(Date.parse(confirmed.at))) add('pin-shape', `${where}/pin.json`, 'confirmed.at must be an ISO timestamp');
+        }
+      }
       if (!nonEmpty(pin.candidate) || pin.candidate.includes('/') || pin.candidate.includes('\\')) { add('pin-candidate', `${where}/pin.json`, 'pin names no candidate file'); continue; }
       const candidatePath = join(dir, 'candidates', pin.candidate);
       if (!isFile(candidatePath)) { add('pin-candidate', `${where}/pin.json`, `pinned candidate ${pin.candidate} does not exist`); continue; }
