@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-mission-v1.md",
-  "sha256": "94c9eae62426bc1b179b8b6f00efe85b2c8ed50ad5c06dfe1cf47c852ed3b83b",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-mission-v2.md",
+  "sha256": "96253a2efd9cd7ed18a33f1358ad199c1ea9c33765d8537afb6f0c03b05bb001",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:33:56.865Z"
 }

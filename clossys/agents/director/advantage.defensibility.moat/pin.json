@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-moat-v1.md",
-  "sha256": "24dcafe4949dd89048cf5784405c5ad0f4c2a9d2c818eb696929dacb8857d1b5",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-moat-v2.md",
+  "sha256": "a3164eea9bfaece80cacc4c79e06a7a4fba9a612cca0cf5a5cec8290ac7fbf6c",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:33.160Z"
+  "at": "2026-11-11T08:34:19.592Z"
 }

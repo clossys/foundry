@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-market-size-v1.md",
-  "sha256": "3177d61bc90e4c0b2e264a19d8c93482faa6ae902e6a71292495d8c1a9d23249",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-market-size-v2.md",
+  "sha256": "fe29047337fe4a66e3110f23cedebf2c36de16800de5605da3da873d4aa0f31e",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:50.482Z"
+  "at": "2026-11-11T08:34:15.303Z"
 }

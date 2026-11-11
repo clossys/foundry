@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-voice-v1.md",
-  "sha256": "896485222bb24915069edcd162fe8f8e8142bfb76dd09c6621129b3685bd75f1",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-voice-v2.md",
+  "sha256": "4b9b510773ec0aa2208d8dc8c1963f7a38ee92fb09c5f834e193884566511f87",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:09.164Z"
 }

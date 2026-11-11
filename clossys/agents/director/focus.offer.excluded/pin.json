@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-exclusions-v1.md",
-  "sha256": "0a4a533d0fa861f41776242f43dbf68f558e6a781323a5709558fbc448ff642e",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-exclusions-v2.md",
+  "sha256": "8956dd09d2c95ec51967444180768574e84d7bcdfa71024b739be1c9d128aa2d",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:01.169Z"
 }

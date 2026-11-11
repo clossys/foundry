@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-naming-v1.md",
-  "sha256": "16187b626ae217debfbd4e2e9f23aaacc171d0cc07ef52ca4efd54f1aeb6ff29",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-naming-v2.md",
+  "sha256": "17f213dd7c6613868671c628cb07eb0c16dc8c86148960ab94d78418b222f6b7",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:04.242Z"
 }

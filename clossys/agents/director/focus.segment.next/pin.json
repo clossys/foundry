@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-segment-next-v1.md",
-  "sha256": "208b531bcb1a78739e5ea757f9a84740a8536d8e0ef12e84c96fc743a2a77f5e",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-segment-next-v2.md",
+  "sha256": "68d80bd0978f48ecb7b51bb0296c483b5a2804199a93b8e897d4acb7b5efe3d9",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:58.292Z"
+  "at": "2026-11-11T08:34:18.362Z"
 }

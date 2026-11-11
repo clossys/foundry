@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-differentiator-v1.md",
-  "sha256": "b25365d9d9e8cc38d9a01349cf7f826750f8624ec17f0d592858dbe7240059aa",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-differentiator-v2.md",
+  "sha256": "ec87b81abbefbacc39484ae8161d6b51fbd5aa94e08689617e8f56131feb32c5",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:07.934Z"
 }

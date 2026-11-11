@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-channel-v1.md",
-  "sha256": "723544b42e82f555679f4ce0ae885fab1de3de644744c884b63d096468d1ee1b",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-channel-v2.md",
+  "sha256": "0af14bfa89dedf45f66a5b9bc618a32154da1fb96ddac1d434ea964e5ac938e8",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:06.096Z"
 }

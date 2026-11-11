@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-retention-v1.md",
-  "sha256": "1bfc5c69b8f5b529c3b5c54775f99dcea9fe1f8b6d90d9929a847047e836068b",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-retention-v2.md",
+  "sha256": "7072a581ede5b89b8eeccb8beb2fd41c8caef0a808558a8214a1884fbc3482ae",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:56.954Z"
+  "at": "2026-11-11T08:34:18.975Z"
 }

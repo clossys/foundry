@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-narrative-v1.md",
-  "sha256": "ea136b2328c91508c06cee6909fdfa172979d9f73a01365ccb059bf6f58c02e2",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-narrative-v2.md",
+  "sha256": "87c6bc8c19d94a3ed9731398e834c7ce3e59e297ab2f770ef677915fe241d617",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:10.389Z"
 }

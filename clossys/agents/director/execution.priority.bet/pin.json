@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-bet-v1.md",
-  "sha256": "073bfe4d208c0f11d25e76d955711363d67591dafc0cbb3f7ec4378fdf88cc67",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-bet-v2.md",
+  "sha256": "46bcacad4f596c52a206a62c09219858d632df904783cfe2fa01dec4592c1b53",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:05.475Z"
 }

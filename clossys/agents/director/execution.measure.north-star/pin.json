@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-north-star-v1.md",
-  "sha256": "8009314ce0afc43377660d8f757b94b103817c0a7fec28c11a0accf89731e1e8",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-north-star-v2.md",
+  "sha256": "6cce6e19894df92559dcfc1c51742c48786c7797f75aa17d07b3fc963f182eab",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:04.856Z"
 }

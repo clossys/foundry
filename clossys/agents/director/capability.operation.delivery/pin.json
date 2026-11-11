@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-delivery-v1.md",
-  "sha256": "925b6b5612fb4ffbabb5425fcda2b1bdaa9ec032751ebdd19035777721f9a8cf",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-delivery-v2.md",
+  "sha256": "c1c8b733024ebd06709c122381c37a05851523e45771d05c142a7ea76223ac13",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:01.787Z"
 }

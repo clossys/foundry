@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-proof-v1.md",
-  "sha256": "8537f5e9020afc800ab9a14dda252d308521f69fdcbbf96d6f1b11425bdefe1e",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-proof-v2.md",
+  "sha256": "b92f6809e02458ff20556b73ce2e108307f388cf5371f0e7d5f46077db9363e3",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:34:02.402Z"
 }

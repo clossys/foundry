@@ -3014,24 +3014,24 @@
       "sha256": "2c15a037258cc0055aabf21903fdb71901ae6c7f39fdb76cc045d6beac9bc5da"
     },
     {
-      "path": "clossys/agents/director/advantage.defensibility.differentiator/candidates/studio-differentiator-v1.md",
-      "sha256": "b25365d9d9e8cc38d9a01349cf7f826750f8624ec17f0d592858dbe7240059aa"
+      "path": "clossys/agents/director/advantage.defensibility.differentiator/candidates/studio-differentiator-v2.md",
+      "sha256": "ec87b81abbefbacc39484ae8161d6b51fbd5aa94e08689617e8f56131feb32c5"
     },
     {
       "path": "clossys/agents/director/advantage.defensibility.differentiator/pin.json",
-      "sha256": "322ccb3bade1f028d1d03c3a6545c913f18d2e868523cf19341c22b8ae952a9a"
+      "sha256": "f194521143992145d94267bd697972a21885d2d7cab6f7d1a051d5c3e74f9e67"
     },
     {
       "path": "clossys/agents/director/advantage.defensibility.differentiator/slot.json",
       "sha256": "b87a7d4a88f6eeafb6d14175a6ed40c897ecc1787185553f9c21e35ac3f2afce"
     },
     {
-      "path": "clossys/agents/director/advantage.defensibility.moat/candidates/studio-moat-v1.md",
-      "sha256": "24dcafe4949dd89048cf5784405c5ad0f4c2a9d2c818eb696929dacb8857d1b5"
+      "path": "clossys/agents/director/advantage.defensibility.moat/candidates/studio-moat-v2.md",
+      "sha256": "a3164eea9bfaece80cacc4c79e06a7a4fba9a612cca0cf5a5cec8290ac7fbf6c"
     },
     {
       "path": "clossys/agents/director/advantage.defensibility.moat/pin.json",
-      "sha256": "33d9123814dec2fc49c09272bd0ac213bc3f52ff56c6c3951bc5c1f3f621c761"
+      "sha256": "68cdc829c67dfcaf37586264bb74946607738b2240c2ef572f2e19a16b792305"
     },
     {
       "path": "clossys/agents/director/advantage.defensibility.moat/slot.json",
@@ -3050,36 +3050,36 @@
       "sha256": "b7f4be8aa942f5161340a38c7e66610d4715759d3d55d7e76b3018261a20b3fb"
     },
     {
-      "path": "clossys/agents/director/advantage.model.pricing/candidates/studio-pricing-v1.md",
-      "sha256": "d4f9059ed416a457a3af3c5dbc0edbc70f9634e9a87e1ad3f12b24f92dcb66f5"
+      "path": "clossys/agents/director/advantage.model.pricing/candidates/studio-pricing-v2.md",
+      "sha256": "482326b1d4d7298def599539d1d343d09eb4f1e21bbc9415d8fc2adc120c80a2"
     },
     {
       "path": "clossys/agents/director/advantage.model.pricing/pin.json",
-      "sha256": "d7c05260d0b42e2c6d732a90a558d7c8047ba9cd591b5ac0539ffcc0a0b57232"
+      "sha256": "ffb4a19eaef4333e59867c1fb7d34fcbe326f23725883fe3a6823ad041a66864"
     },
     {
       "path": "clossys/agents/director/advantage.model.pricing/slot.json",
       "sha256": "3a51473ca06239e431f76bb8adaeea85315b921635ddf7d9620271f0c99bed1f"
     },
     {
-      "path": "clossys/agents/director/advantage.proposition.promise/candidates/studio-promise-v1.md",
-      "sha256": "dc97a85bd87fef76b5b50bc1e6625fd55bf318c9a532bc385e1b44c490c4936d"
+      "path": "clossys/agents/director/advantage.proposition.promise/candidates/studio-promise-v2.md",
+      "sha256": "f23e87283175eb9f66afe8fe042bcdde5d7610dfcf901277f07fd7c685adbd45"
     },
     {
       "path": "clossys/agents/director/advantage.proposition.promise/pin.json",
-      "sha256": "1075f983882f9451d08f11eb4f5e05f32d0d08239e4edcc0b127f2fadae9f3af"
+      "sha256": "9352911f594bf84ff19c8e9dae85d48caf339827d94951833c2e96d077d7bf91"
     },
     {
       "path": "clossys/agents/director/advantage.proposition.promise/slot.json",
       "sha256": "1a2d9556dce41ed088d9629d6a3bee70de701e12edfaab17b2c9a5913d76b194"
     },
     {
-      "path": "clossys/agents/director/advantage.proposition.proof/candidates/studio-proof-v1.md",
-      "sha256": "8537f5e9020afc800ab9a14dda252d308521f69fdcbbf96d6f1b11425bdefe1e"
+      "path": "clossys/agents/director/advantage.proposition.proof/candidates/studio-proof-v2.md",
+      "sha256": "b92f6809e02458ff20556b73ce2e108307f388cf5371f0e7d5f46077db9363e3"
     },
     {
       "path": "clossys/agents/director/advantage.proposition.proof/pin.json",
-      "sha256": "8a1e5298a6855155ec52f2a5d1d685736db8f10d7f974e5ef0cfe76e58437d10"
+      "sha256": "110a4b40a3afa00020df42708552c1057ff006a14a44882e9ec2e2e396488fdf"
     },
     {
       "path": "clossys/agents/director/advantage.proposition.proof/slot.json",
@@ -3098,96 +3098,96 @@
       "sha256": "ab21a586757bf27ff3f6ba577524c19459e06b96bd53023b26d2b88278c1dd81"
     },
     {
-      "path": "clossys/agents/director/aspiration.culture.belief/candidates/studio-belief-v1.md",
-      "sha256": "b02756abca4b852c5a3f68b8aec10f78e4a0f6b6e52a657b847b569ee55321c1"
+      "path": "clossys/agents/director/aspiration.culture.belief/candidates/studio-belief-v2.md",
+      "sha256": "9adde4a454db8fd720324954f197bed843e3df689747a8b239ffb33d48f864ed"
     },
     {
       "path": "clossys/agents/director/aspiration.culture.belief/pin.json",
-      "sha256": "699b80ec5ed2e6cb5046362bbb53f09b5e2ca06b4f7ec33674de5a761e6486a1"
+      "sha256": "00b6ed0aefa2ce1f6abd4d60f1421ff00b4d68fb612a319a495bfd3fe184eaa1"
     },
     {
       "path": "clossys/agents/director/aspiration.culture.belief/slot.json",
       "sha256": "12ace57e07cd4638c82bb8dc8421656c90d0ee731c91fa273b3a468ee3dc0f2e"
     },
     {
-      "path": "clossys/agents/director/aspiration.goal.annual/candidates/studio-goal-annual-v2.md",
-      "sha256": "73c25918b5c5a8e0ed3d5ce9a9eee2891eae7a22307fcca3e61b5462a78a5c81"
+      "path": "clossys/agents/director/aspiration.goal.annual/candidates/studio-goal-annual-v3.md",
+      "sha256": "923a6930810a48401ed879b876609ba37e67386597f04f77526e8d076bf6b6c4"
     },
     {
       "path": "clossys/agents/director/aspiration.goal.annual/pin.json",
-      "sha256": "57122ef86d87aaa918fe9aea532fa7c0c566de6e7a17f3834035494232807e86"
+      "sha256": "e41e9506155f0f2fc7847f00d7aa8730d27b57b2c3a0e70311933955ee30af93"
     },
     {
       "path": "clossys/agents/director/aspiration.goal.annual/slot.json",
       "sha256": "bd87843a58c4f91d1f0af85b7d85664166fcf5c081688f30ab22f652c679da1a"
     },
     {
-      "path": "clossys/agents/director/aspiration.goal.long-term/candidates/studio-goal-long-term-v1.md",
-      "sha256": "ca0ddedd48af4cc3bcc63109d38e0403d5e1c608d919092ac39004ef61c0f2dc"
+      "path": "clossys/agents/director/aspiration.goal.long-term/candidates/studio-goal-long-term-v2.md",
+      "sha256": "a4fb0698e8d22c9566c4b4525d46396d1f8f0e6012a72de86ccc1b58ac7f9bed"
     },
     {
       "path": "clossys/agents/director/aspiration.goal.long-term/pin.json",
-      "sha256": "a8f7d662bd8583466de4b50bea055e2c21b7b29995da0de1d58bc225ff22f313"
+      "sha256": "634eee414a0eed405e6bfa403985dd5d33e34e879b324bca667f7b9ccde70755"
     },
     {
       "path": "clossys/agents/director/aspiration.goal.long-term/slot.json",
       "sha256": "5716530deafd158f22ff24ae7e08144cefd76444bb904009ad53073281b6befc"
     },
     {
-      "path": "clossys/agents/director/aspiration.purpose.mission/candidates/studio-mission-v1.md",
-      "sha256": "94c9eae62426bc1b179b8b6f00efe85b2c8ed50ad5c06dfe1cf47c852ed3b83b"
+      "path": "clossys/agents/director/aspiration.purpose.mission/candidates/studio-mission-v2.md",
+      "sha256": "96253a2efd9cd7ed18a33f1358ad199c1ea9c33765d8537afb6f0c03b05bb001"
     },
     {
       "path": "clossys/agents/director/aspiration.purpose.mission/pin.json",
-      "sha256": "6a9d881d07252595f577f86c5bb966c5a453217fb4b98a53c79aeda4470860be"
+      "sha256": "042c5b42d402092281fc990b643a77ae360a1d15d040d80c773247739680d0da"
     },
     {
       "path": "clossys/agents/director/aspiration.purpose.mission/slot.json",
       "sha256": "484d3b3fab803754aabda0deb820565e13eb7fef82175ba411d41fe681eb0277"
     },
     {
-      "path": "clossys/agents/director/aspiration.purpose.vision/candidates/studio-vision-v1.md",
-      "sha256": "68b299dd59bdc2dbe066eeb577079a71198387d03c151804de4bfb64248bd811"
+      "path": "clossys/agents/director/aspiration.purpose.vision/candidates/studio-vision-v2.md",
+      "sha256": "d4c8c795dd7ba0ee21b34123a21d9cfee0dbfeb2b4385ead63b95b1a64a1eb76"
     },
     {
       "path": "clossys/agents/director/aspiration.purpose.vision/pin.json",
-      "sha256": "0bf9e505590bbf63d9639de20fe573772471c98950a09b3517537a216ac82004"
+      "sha256": "c9be69cae8d7f05e63e38aa98a0c2c2dae6453dbacc30f25de4e779968f17842"
     },
     {
       "path": "clossys/agents/director/aspiration.purpose.vision/slot.json",
       "sha256": "24a02535344c17e6b3012c0a57458ce5a40039a4ee7a6224f3b66f408138561a"
     },
     {
-      "path": "clossys/agents/director/capability.competency.critical/candidates/studio-competency-critical-v2.md",
-      "sha256": "62ed844188dab5448cb64b72baf299fad1122ecb354d05ec8c298d4123c899a9"
+      "path": "clossys/agents/director/capability.competency.critical/candidates/studio-competency-critical-v3.md",
+      "sha256": "669354421ba86c1b149545571e28455416ce695f701585c432dad0cbedd3dd34"
     },
     {
       "path": "clossys/agents/director/capability.competency.critical/pin.json",
-      "sha256": "972cdc4cb1b0ec8b3acecd8189351dcf7129dc55cb1828e3507501ea38fa911a"
+      "sha256": "d3e73a84d1249e98d493c74930b1da0d133d28918b93e8db9a40c01972325a84"
     },
     {
       "path": "clossys/agents/director/capability.competency.critical/slot.json",
       "sha256": "f578b9244868aa1d59679f24ce439661f89f54f07fa951f35c56fc49c9cae969"
     },
     {
-      "path": "clossys/agents/director/capability.competency.gap/candidates/studio-competency-gap-v2.md",
-      "sha256": "85c35d530419effe48fe06c3a7832d77f87647db092d2b8f4c1ab1cffecb1c41"
+      "path": "clossys/agents/director/capability.competency.gap/candidates/studio-competency-gap-v3.md",
+      "sha256": "8374b09c735a1ff5561c2a376a79d2e3c8f260eb59f13f6c11de47abe12e9994"
     },
     {
       "path": "clossys/agents/director/capability.competency.gap/pin.json",
-      "sha256": "5605e98167732dcc843d14057474525dfc7c0b72c2ec0c8340bb9a152995ecd5"
+      "sha256": "29bf215c56e6b70106634fbc572bb9d4c7cfaa36c77055963917aa0b98fb9ca9"
     },
     {
       "path": "clossys/agents/director/capability.competency.gap/slot.json",
       "sha256": "8819d724326057c45690fe261c2ce862e5cda76fc81b8ae7f96048a05328f541"
     },
     {
-      "path": "clossys/agents/director/capability.operation.delivery/candidates/studio-delivery-v1.md",
-      "sha256": "925b6b5612fb4ffbabb5425fcda2b1bdaa9ec032751ebdd19035777721f9a8cf"
+      "path": "clossys/agents/director/capability.operation.delivery/candidates/studio-delivery-v2.md",
+      "sha256": "c1c8b733024ebd06709c122381c37a05851523e45771d05c142a7ea76223ac13"
     },
     {
       "path": "clossys/agents/director/capability.operation.delivery/pin.json",
-      "sha256": "5637b0a039c8b169f7864ca7aacd06ff8817d199205d070587d0a7e29195ee22"
+      "sha256": "2153694584d30ec611121e0a45b7020ecbbcbc71011187bd343a096558c1cc30"
     },
     {
       "path": "clossys/agents/director/capability.operation.delivery/slot.json",
@@ -3206,12 +3206,12 @@
       "sha256": "2bec9f14e2a0dcda7d03f57cfac0dfae73ce5cab75a532d22546f8172011cd40"
     },
     {
-      "path": "clossys/agents/director/capability.resource.allocation/candidates/studio-allocation-v2.md",
-      "sha256": "37d7e61ee2095c809db0f0f973e0afb8fd85444d6f36b74d829f863e9028aa96"
+      "path": "clossys/agents/director/capability.resource.allocation/candidates/studio-allocation-v3.md",
+      "sha256": "67277b82a48fb61833ee7af4c053e533df49bd7ee5de514cc15513e7197b6ce0"
     },
     {
       "path": "clossys/agents/director/capability.resource.allocation/pin.json",
-      "sha256": "af09dd7f28f4671165f096bd861eb94a3f8c9be274434c6148004f629876f111"
+      "sha256": "586a850a827b436d87df32871d6bf4307e1704629b98f22d32fd244313c17968"
     },
     {
       "path": "clossys/agents/director/capability.resource.allocation/slot.json",
@@ -3266,24 +3266,24 @@
       "sha256": "2cc2f6c456a4b7876c9b0cbe26ed1e0641706062e0ea3705ca713d8f1e0d606b"
     },
     {
-      "path": "clossys/agents/director/capability.team.role/candidates/studio-team-role-v2.md",
-      "sha256": "3eb6f6496d0236e45ff9c3eeb586532764c3f8388932afe8be474f68cfdf07bf"
+      "path": "clossys/agents/director/capability.team.role/candidates/studio-team-role-v3.md",
+      "sha256": "30cd51278ba3d55b7cd35e14afb64367a63d057736e9970618002e469629f471"
     },
     {
       "path": "clossys/agents/director/capability.team.role/pin.json",
-      "sha256": "f423d7fccd5e8419386aa31e637a2a73d5c698100f1bdfb900ca662642b558f9"
+      "sha256": "6fcefaa9aadfb1a1a2ad512dfce8cc8f1a3a7af23691ba8b7e953b0398534597"
     },
     {
       "path": "clossys/agents/director/capability.team.role/slot.json",
       "sha256": "43c0bd730787b8ec89eaf5b2a94f36a87fe8558c4ad0ff47ca6acf2da207f762"
     },
     {
-      "path": "clossys/agents/director/capability.team.structure/candidates/studio-team-structure-v1.md",
-      "sha256": "e8598262e1f7fbddfdbdb94a56e0114e87b7bc97658f7d99ba37932f49e46354"
+      "path": "clossys/agents/director/capability.team.structure/candidates/studio-team-structure-v2.md",
+      "sha256": "54c777337e6bc33a43f064c00c9837e673e6cbe9fb4b9c04c085fbbc518402d8"
     },
     {
       "path": "clossys/agents/director/capability.team.structure/pin.json",
-      "sha256": "ee0224a6bd2a4f20387b1a901e9a66f36813a2c2f4d82bc5c43385d2ecf466ad"
+      "sha256": "215ff60acc29eda8b26a7cf823bde05120cdac4e63f198c846d5a68c2513b3ca"
     },
     {
       "path": "clossys/agents/director/capability.team.structure/slot.json",
@@ -3314,12 +3314,12 @@
       "sha256": "13ffd789220bdf6042f8a44c4c9785cb49d9f857d5911e808b2131c11a7ff831"
     },
     {
-      "path": "clossys/agents/director/context.competition.alternative/candidates/studio-alternative-v1.md",
-      "sha256": "9e34459127fe7880a5edfe07bae6110fde5c8f5a4b6978bc83ebb563ecd68341"
+      "path": "clossys/agents/director/context.competition.alternative/candidates/studio-alternative-v2.md",
+      "sha256": "1bf58f30c4ed7b47d1a1f73246b19afd15d2c5feb83ae3a0e337e77cb36af3ab"
     },
     {
       "path": "clossys/agents/director/context.competition.alternative/pin.json",
-      "sha256": "03c27ce2d70d3e875c88e7a10666fb305a74090f00f548bb949a74dee928f0a9"
+      "sha256": "31af8fcd50f7e5a814e46fe61b03cefaa286a6a3a8e36fcde068f01567f45cc3"
     },
     {
       "path": "clossys/agents/director/context.competition.alternative/slot.json",
@@ -3338,36 +3338,36 @@
       "sha256": "4e8c2da676e4a6e13c6cf1a64911fe026540af301d39f240c9f288d9324b5cce"
     },
     {
-      "path": "clossys/agents/director/context.customer.buying/candidates/studio-customer-buying-v2.md",
-      "sha256": "06d85e08db981e4dd20228baef9ec0b890eeb47691f3ad3369ba707e20085da2"
+      "path": "clossys/agents/director/context.customer.buying/candidates/studio-customer-buying-v3.md",
+      "sha256": "071b363433e31d4da486cdb82b9839c08fcc120206f8815e648e5097a3214e08"
     },
     {
       "path": "clossys/agents/director/context.customer.buying/pin.json",
-      "sha256": "38e5be6fb571c5473d9c2848fd1928228135a7b50abb6e57a269be0cc28e2a9a"
+      "sha256": "52351a69e64a2952da55c3b687f2c5c29d8a94fcbd1b4f90bc71c50f92baabac"
     },
     {
       "path": "clossys/agents/director/context.customer.buying/slot.json",
       "sha256": "e8769358382318aa4f278f82df7ba073db755e1b47e084fe465eff22ecbedee5"
     },
     {
-      "path": "clossys/agents/director/context.customer.need/candidates/studio-customer-need-v1.md",
-      "sha256": "747c1fb645e2066c132241d26ce57412ee7f951bb97a9bcecd0ce8b4a7652fdd"
+      "path": "clossys/agents/director/context.customer.need/candidates/studio-customer-need-v2.md",
+      "sha256": "9d0426a7ddd5f0329f7f86bb8c6b7ad0377b71f9b021a76bfc9facb45655ee0f"
     },
     {
       "path": "clossys/agents/director/context.customer.need/pin.json",
-      "sha256": "f536afa3972f7af12b271d911a8ef55558723f9135787d7380469a77383d5f43"
+      "sha256": "9e376649cc80443f1aa1001261b7a44bbe335ae81c91ce3bf7f2b90b10f8b6cd"
     },
     {
       "path": "clossys/agents/director/context.customer.need/slot.json",
       "sha256": "1badeda192602fcefc2e503b54750cedd0f7ca7bc5c6554cbce94e075c75545a"
     },
     {
-      "path": "clossys/agents/director/context.market.size/candidates/studio-market-size-v1.md",
-      "sha256": "3177d61bc90e4c0b2e264a19d8c93482faa6ae902e6a71292495d8c1a9d23249"
+      "path": "clossys/agents/director/context.market.size/candidates/studio-market-size-v2.md",
+      "sha256": "fe29047337fe4a66e3110f23cedebf2c36de16800de5605da3da873d4aa0f31e"
     },
     {
       "path": "clossys/agents/director/context.market.size/pin.json",
-      "sha256": "f9ed984f71edc51869ce9f64d93747c22ca6452a2b91ec44039052e09096a613"
+      "sha256": "8d02e331d05089b9a6071550d6e612a5d2316f7730fddf0ac1f8ff1fab306865"
     },
     {
       "path": "clossys/agents/director/context.market.size/slot.json",
@@ -3386,108 +3386,108 @@
       "sha256": "7a75fb41af23feb9dd59eda0ef53a4c68e8667d32226b9c30f119480589a7ec6"
     },
     {
-      "path": "clossys/agents/director/execution.measure.driver/candidates/studio-drivers-v2.md",
-      "sha256": "5a1f9fbfecd45a2d743c8a5644558ef33a30c0262693feaaadd8748c53b64407"
+      "path": "clossys/agents/director/execution.measure.driver/candidates/studio-drivers-v3.md",
+      "sha256": "c00b557a7341ebf93e2fee07a3453008d3f57928fd2f92772b5377d494268b88"
     },
     {
       "path": "clossys/agents/director/execution.measure.driver/pin.json",
-      "sha256": "ef3ddc5eacbcc4a45a3f65a862ebd9f5eca0d41974fbacdbc96acffcdd1c5faf"
+      "sha256": "770ef3ea52a3b185499bd24de96ab1ca1b6daf16e8c47be9761be8a36a7ef4c4"
     },
     {
       "path": "clossys/agents/director/execution.measure.driver/slot.json",
       "sha256": "eb053650c30e27068afe9891ca1546371ab54c188234df1b50975a4e47639314"
     },
     {
-      "path": "clossys/agents/director/execution.measure.north-star/candidates/studio-north-star-v1.md",
-      "sha256": "8009314ce0afc43377660d8f757b94b103817c0a7fec28c11a0accf89731e1e8"
+      "path": "clossys/agents/director/execution.measure.north-star/candidates/studio-north-star-v2.md",
+      "sha256": "6cce6e19894df92559dcfc1c51742c48786c7797f75aa17d07b3fc963f182eab"
     },
     {
       "path": "clossys/agents/director/execution.measure.north-star/pin.json",
-      "sha256": "5a8a61b7098127d6dbde8b92de27b8c168f10c8246d1711fc288fc0bec528818"
+      "sha256": "852a139648eeea1e5dfdfe4b6504d192e72c720bba7edec30f2437cb014c3fc7"
     },
     {
       "path": "clossys/agents/director/execution.measure.north-star/slot.json",
       "sha256": "38696f543fa25aaa6e620810148da95f484bec75459d6ff9a76275d4ee55410e"
     },
     {
-      "path": "clossys/agents/director/execution.priority.bet/candidates/studio-bet-v1.md",
-      "sha256": "073bfe4d208c0f11d25e76d955711363d67591dafc0cbb3f7ec4378fdf88cc67"
+      "path": "clossys/agents/director/execution.priority.bet/candidates/studio-bet-v2.md",
+      "sha256": "46bcacad4f596c52a206a62c09219858d632df904783cfe2fa01dec4592c1b53"
     },
     {
       "path": "clossys/agents/director/execution.priority.bet/pin.json",
-      "sha256": "a0bee34e754e3eb7da515b73207e17e3daaec3ad742530a3ab1cc8688d39f08e"
+      "sha256": "4b19871bf76138bf5b1e53911ea92e515e2b5b38d61a34450b8dc895795b1c87"
     },
     {
       "path": "clossys/agents/director/execution.priority.bet/slot.json",
       "sha256": "574e649dcbc39d142877155d96bcec4c87ca43a625591f7d96c078d652c1118c"
     },
     {
-      "path": "clossys/agents/director/execution.priority.parked/candidates/studio-parked-v1.md",
-      "sha256": "70bcde79c9de7800167d2a9e1e28c8c8ff5380db0a21e696d9ca57fae37af642"
+      "path": "clossys/agents/director/execution.priority.parked/candidates/studio-parked-v2.md",
+      "sha256": "5c182f8dfe8fc0c909be6cc9cad5a899e85e259e1fd54ad8db48831052477b55"
     },
     {
       "path": "clossys/agents/director/execution.priority.parked/pin.json",
-      "sha256": "62ff2be5af103d6758fb1a18f4bea4f1c8320ba009d28480c6077f34541145fc"
+      "sha256": "71a4c150ba6c493e4ae8f936aa1f64d5349d323f9511ca784713bbc9e4efe0d8"
     },
     {
       "path": "clossys/agents/director/execution.priority.parked/slot.json",
       "sha256": "9c0a8da7a70fef948d687cf4ceee3abbc912766412f9f0836527c55c6d88b8c8"
     },
     {
-      "path": "clossys/agents/director/execution.risk.mitigation/candidates/studio-mitigation-v1.md",
-      "sha256": "2ab62d79c0948e1ec2b2ba242783df6389004db8dc4ea8b9677e8076b2d59117"
+      "path": "clossys/agents/director/execution.risk.mitigation/candidates/studio-mitigation-v2.md",
+      "sha256": "536dfddcd3425be5e909afc1d2193ec568ea61abf73400fb654925eda05c7c6a"
     },
     {
       "path": "clossys/agents/director/execution.risk.mitigation/pin.json",
-      "sha256": "4a83493371889ed5ac8f027bf8cba3d27c2d3cd0c0b7b1f010e168ebca6e829a"
+      "sha256": "514be6541cea13fb2cb72e73acfed329b5f7f115af2e23f8b52af542126d04e6"
     },
     {
       "path": "clossys/agents/director/execution.risk.mitigation/slot.json",
       "sha256": "771da6204d4659e9d161e07b3112078ca9db01b5fca27bac9d5d3adcbdad30d2"
     },
     {
-      "path": "clossys/agents/director/execution.risk.threat/candidates/studio-threat-v1.md",
-      "sha256": "23c325c887baad4e330ef31d4fb793c0538849dd6fff461b6ca23330edc33604"
+      "path": "clossys/agents/director/execution.risk.threat/candidates/studio-threat-v2.md",
+      "sha256": "b2f8390ddb243d20c8c4eb975428da65f30e0c1240fd31798e79a2cf0536ef96"
     },
     {
       "path": "clossys/agents/director/execution.risk.threat/pin.json",
-      "sha256": "07c72b8e82e1bb5c0d587d552d95d8bafd235a402adc9ff5a9fb6656f531fa8e"
+      "sha256": "013fb0702385cee7be7fff3c7eca26a4c3ecadb63a4539e1b7a1c6820b4c782b"
     },
     {
       "path": "clossys/agents/director/execution.risk.threat/slot.json",
       "sha256": "634924388c958e9acb08a904b9d16bb1efd19168bd927e24f7191c2f72cf3382"
     },
     {
-      "path": "clossys/agents/director/execution.roadmap.milestone/candidates/studio-milestone-v2.md",
-      "sha256": "1ec96df0c2c309ad951e25cbb782246501f558e5892d0df891dcf9bf7dcd8634"
+      "path": "clossys/agents/director/execution.roadmap.milestone/candidates/studio-milestone-v3.md",
+      "sha256": "b0e1b3ba47072abc31cfb0d143fefc5c8cb8f17e402fd34b41d3e3624ceac5f8"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.milestone/pin.json",
-      "sha256": "5bc6cdc7aaf248fed1423d8800ec5bce22d159655fb1c2b592acc19c16e68a6a"
+      "sha256": "5163aa5bfc7f3407aa92e22929de1646e9b106cf9843788afbd6d7972e5ecbdb"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.milestone/slot.json",
       "sha256": "4453f107b1167b61043ba24ddbb9f49886837101c8947e914ea6964085625979"
     },
     {
-      "path": "clossys/agents/director/execution.roadmap.release/candidates/studio-release-v2.md",
-      "sha256": "6dfebca7ed79a59daeba4887914ccb1f85f1d7cb09a0a8b079e774e146c2aad9"
+      "path": "clossys/agents/director/execution.roadmap.release/candidates/studio-release-v4.md",
+      "sha256": "dc4a95fe072ca28f7a8ba4113dc55ddeff68782306eb266b549a281d79c96af3"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.release/pin.json",
-      "sha256": "fa3689074d5fd96c627122bacf7385663312cbba98b5aae1e5ba7aa15f4079c7"
+      "sha256": "2f94467b080f752281bbf6b0e65d88cab7fb7ab66e8bda6264f0db69760f002a"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.release/slot.json",
       "sha256": "ef4634954eee62d243f63a4dad701b6c6a430b3d1d484cacf67d00859875548d"
     },
     {
-      "path": "clossys/agents/director/focus.category.definition/candidates/studio-category-v1.md",
-      "sha256": "e27ce81a41c5c23d101b7f5b9ffde8137dca8def9724d2afebad3cae35a48f71"
+      "path": "clossys/agents/director/focus.category.definition/candidates/studio-category-v2.md",
+      "sha256": "14ac23c1b11df4bb0481f86dadaa88e277f9adf77fb029865ee8ff71d9ee2880"
     },
     {
       "path": "clossys/agents/director/focus.category.definition/pin.json",
-      "sha256": "ab88903590f0088918f2ae52743c6c225fcebae197b0eddcb6f9ccc2704549a3"
+      "sha256": "3ba9822d9688db18e74750b086961fba935d871f88c4bfe02c71c50df52ce7cf"
     },
     {
       "path": "clossys/agents/director/focus.category.definition/slot.json",
@@ -3506,60 +3506,60 @@
       "sha256": "c0b74e508bf93e3519944bc0abe0e0e77d3afe88a41fa9e219642dccb403fa8b"
     },
     {
-      "path": "clossys/agents/director/focus.lifecycle.acquisition/candidates/studio-acquisition-v1.md",
-      "sha256": "5859adb792a25ca24703b8487e01b6b8ccb5eb252f96102ec104df7365683826"
+      "path": "clossys/agents/director/focus.lifecycle.acquisition/candidates/studio-acquisition-v2.md",
+      "sha256": "603e5fcdec920f8391fce77b4cac2a41dabf9c65a660afaed6df14cddebd767c"
     },
     {
       "path": "clossys/agents/director/focus.lifecycle.acquisition/pin.json",
-      "sha256": "e948c7e0a669c8755e779daada05bddbf557bf4177ed31606f24aeccd486bf2e"
+      "sha256": "7a54cdace7d78c38e15ec11682bd02d01b1f928cdeb987b5ec723cc2f5279a0c"
     },
     {
       "path": "clossys/agents/director/focus.lifecycle.acquisition/slot.json",
       "sha256": "c49ab800825b74d537e89d10ced0a665b374be8af4c23eb6feb51e0e41b6e96a"
     },
     {
-      "path": "clossys/agents/director/focus.lifecycle.retention/candidates/studio-retention-v1.md",
-      "sha256": "1bfc5c69b8f5b529c3b5c54775f99dcea9fe1f8b6d90d9929a847047e836068b"
+      "path": "clossys/agents/director/focus.lifecycle.retention/candidates/studio-retention-v2.md",
+      "sha256": "7072a581ede5b89b8eeccb8beb2fd41c8caef0a808558a8214a1884fbc3482ae"
     },
     {
       "path": "clossys/agents/director/focus.lifecycle.retention/pin.json",
-      "sha256": "45316f1c990bd53b00818a0ca355b48046250a6a3b76ed0a27ae01a079bc39ea"
+      "sha256": "2a40473c4375aaf48deb17564ab1816545228264032ff94620dd64a6847f5140"
     },
     {
       "path": "clossys/agents/director/focus.lifecycle.retention/slot.json",
       "sha256": "48b351ca0b985598cc1a4a1f12e375ac611033f4e06fa66762c80017f5fe3808"
     },
     {
-      "path": "clossys/agents/director/focus.offer.excluded/candidates/studio-exclusions-v1.md",
-      "sha256": "0a4a533d0fa861f41776242f43dbf68f558e6a781323a5709558fbc448ff642e"
+      "path": "clossys/agents/director/focus.offer.excluded/candidates/studio-exclusions-v2.md",
+      "sha256": "8956dd09d2c95ec51967444180768574e84d7bcdfa71024b739be1c9d128aa2d"
     },
     {
       "path": "clossys/agents/director/focus.offer.excluded/pin.json",
-      "sha256": "ef08d4f08ccd8b1505d47929d1841eb88a4e1a1a449ae24d64f535f9b2833d08"
+      "sha256": "48d40f272ee6ef4566364e9aaa78fc321365f76b135c741f44001407aa860de3"
     },
     {
       "path": "clossys/agents/director/focus.offer.excluded/slot.json",
       "sha256": "22a4a3d94f8e06390aa19a1c9dc45a3b79cff11a5252c78ea1716abb3e6f3c59"
     },
     {
-      "path": "clossys/agents/director/focus.offer.included/candidates/studio-offer-v1.md",
-      "sha256": "76a1d9759d8e42179fe0d34bce30137f4b3dfa439a67167d5e594ea565caa461"
+      "path": "clossys/agents/director/focus.offer.included/candidates/studio-offer-v2.md",
+      "sha256": "87ae7c8a79ecdc4d77791f47c93e571dd681fd21c7bd94f1689170211a18b789"
     },
     {
       "path": "clossys/agents/director/focus.offer.included/pin.json",
-      "sha256": "b184e9a87e278c8e67a3b021a9594bc10674e485144e2f864d8de867c65c3fe0"
+      "sha256": "cd338d55dc0eaa194021c7025bddf99697f709d30a940992444aaf2fba001512"
     },
     {
       "path": "clossys/agents/director/focus.offer.included/slot.json",
       "sha256": "09375047159580984267a2776a86946a73c4443c0b8192d2a2abe6e1e04b304e"
     },
     {
-      "path": "clossys/agents/director/focus.reach.channel/candidates/studio-channel-v1.md",
-      "sha256": "723544b42e82f555679f4ce0ae885fab1de3de644744c884b63d096468d1ee1b"
+      "path": "clossys/agents/director/focus.reach.channel/candidates/studio-channel-v2.md",
+      "sha256": "0af14bfa89dedf45f66a5b9bc618a32154da1fb96ddac1d434ea964e5ac938e8"
     },
     {
       "path": "clossys/agents/director/focus.reach.channel/pin.json",
-      "sha256": "4f5a9503cbca87841071a7327c2ea8c163c159edd8459dc33ebbba8264e9c141"
+      "sha256": "710d16a9e2b9d0de9c83fe64664850f997cbb002b3c15e2d869c325137cb10d8"
     },
     {
       "path": "clossys/agents/director/focus.reach.channel/slot.json",
@@ -3578,24 +3578,24 @@
       "sha256": "6c0ca2dd6df8b7f455cfa0dafefeb16ec860601c86d8a6b05a33845aec4b435d"
     },
     {
-      "path": "clossys/agents/director/focus.segment.core/candidates/studio-segment-core-v1.md",
-      "sha256": "8559873b300c5ffdaed824f8812d0b8dee464ae6a60bd99eef63daf10620f0d4"
+      "path": "clossys/agents/director/focus.segment.core/candidates/studio-segment-core-v2.md",
+      "sha256": "58ab1c2bf5e4fc79dce57e5950c03de409981faa5f87963ef81933eca53615da"
     },
     {
       "path": "clossys/agents/director/focus.segment.core/pin.json",
-      "sha256": "c57ff5cec8b99a25a0110892005216a0acacf0510c0e3d49f1bb77c806f84566"
+      "sha256": "4b31f42bbd0cf71ab1835d8d516a8ac7841e814c6d810122b6584911075a52e9"
     },
     {
       "path": "clossys/agents/director/focus.segment.core/slot.json",
       "sha256": "c396a59a352e06fa3ee5eec265117b343b3149b6f38cc6ad078aecec0542c066"
     },
     {
-      "path": "clossys/agents/director/focus.segment.next/candidates/studio-segment-next-v1.md",
-      "sha256": "208b531bcb1a78739e5ea757f9a84740a8536d8e0ef12e84c96fc743a2a77f5e"
+      "path": "clossys/agents/director/focus.segment.next/candidates/studio-segment-next-v2.md",
+      "sha256": "68d80bd0978f48ecb7b51bb0296c483b5a2804199a93b8e897d4acb7b5efe3d9"
     },
     {
       "path": "clossys/agents/director/focus.segment.next/pin.json",
-      "sha256": "e767854db292f811ebc690a5a870d10324b342c22ec8957a313106429d4ba478"
+      "sha256": "82fdd7481a1b190c24da7d9e50fc463bf1de89e929b54275ead3a8b8da9238f6"
     },
     {
       "path": "clossys/agents/director/focus.segment.next/slot.json",
@@ -3606,24 +3606,24 @@
       "sha256": "a9bfe5b9233b34b29252c2d014d5356937f76ec41d96b032d4e016fed288fd6d"
     },
     {
-      "path": "clossys/agents/director/identity.brand.essence/candidates/studio-essence-v1.md",
-      "sha256": "49433d3e10e7746b9a4d06b833bc02fe9e418a44d1f671fc411d76ec1a288e61"
+      "path": "clossys/agents/director/identity.brand.essence/candidates/studio-essence-v2.md",
+      "sha256": "a85135e12433bea1f2c8ca6185df8710a5ae610e6407fe9a981d023965fa7309"
     },
     {
       "path": "clossys/agents/director/identity.brand.essence/pin.json",
-      "sha256": "eb9032381952163285e99c86085cae1c9efaa76fb336d3f9368be20d29c48a40"
+      "sha256": "c6603aa1814ae4ed97318c6296b872470b4e1f69b9f75764e322dccf1f759b30"
     },
     {
       "path": "clossys/agents/director/identity.brand.essence/slot.json",
       "sha256": "254ccabe2b2c20bf3a9f2d090c592489cf1d6fb5b67e2d488940adf4f8b7b4a4"
     },
     {
-      "path": "clossys/agents/director/identity.brand.personality/candidates/studio-personality-v1.md",
-      "sha256": "af84b99d6c155729e5ed3ad8a1063a126b636de63227f7f4ff6309dea6c3006f"
+      "path": "clossys/agents/director/identity.brand.personality/candidates/studio-personality-v2.md",
+      "sha256": "2234d1c15ad2ea120c9192957d2daea2c1ea5d6f7d1e33bf6e993ce26ca40075"
     },
     {
       "path": "clossys/agents/director/identity.brand.personality/pin.json",
-      "sha256": "cfbdf13fecef27fef4aa9878fa59af126116017508cffbbb356f9fe0fcc2b066"
+      "sha256": "c5694e50c9f57abe3ab5ef5de11fdb4aacc171b8c89cd561d9bfb95690f00257"
     },
     {
       "path": "clossys/agents/director/identity.brand.personality/slot.json",
@@ -3642,36 +3642,36 @@
       "sha256": "8820a07d3aba939801eb78ae7dc9e75a6393e32dd750978fcd300e72666f77e6"
     },
     {
-      "path": "clossys/agents/director/identity.naming.name/candidates/studio-naming-v1.md",
-      "sha256": "16187b626ae217debfbd4e2e9f23aaacc171d0cc07ef52ca4efd54f1aeb6ff29"
+      "path": "clossys/agents/director/identity.naming.name/candidates/studio-naming-v2.md",
+      "sha256": "17f213dd7c6613868671c628cb07eb0c16dc8c86148960ab94d78418b222f6b7"
     },
     {
       "path": "clossys/agents/director/identity.naming.name/pin.json",
-      "sha256": "52dac4ec07d17eb2b769cdae83ad1bff60ea9bcf367db5e8525fa5ec510608f6"
+      "sha256": "c0bf1362cb406c37adb3987100ba93516386599d68ff38024a62196e3d993463"
     },
     {
       "path": "clossys/agents/director/identity.naming.name/slot.json",
       "sha256": "03179d2fc1f8b5405263f149d6e02e16fe55e67a57cc0579429c76d9fa0737e6"
     },
     {
-      "path": "clossys/agents/director/identity.verbal.narrative/candidates/studio-narrative-v1.md",
-      "sha256": "ea136b2328c91508c06cee6909fdfa172979d9f73a01365ccb059bf6f58c02e2"
+      "path": "clossys/agents/director/identity.verbal.narrative/candidates/studio-narrative-v2.md",
+      "sha256": "87c6bc8c19d94a3ed9731398e834c7ce3e59e297ab2f770ef677915fe241d617"
     },
     {
       "path": "clossys/agents/director/identity.verbal.narrative/pin.json",
-      "sha256": "a1369ad1c95861ad58de06d8a4dab171983282ebc7142e0c68118bd6778fe5bc"
+      "sha256": "052b9977bd7de37a766ee404ac4630091ad638a7d9d930ec240db626e9568c45"
     },
     {
       "path": "clossys/agents/director/identity.verbal.narrative/slot.json",
       "sha256": "8b19dceefa596d7dc93ed032f872a6e5f0ad0a31c665da94386970a88053d69f"
     },
     {
-      "path": "clossys/agents/director/identity.verbal.voice/candidates/studio-voice-v1.md",
-      "sha256": "896485222bb24915069edcd162fe8f8e8142bfb76dd09c6621129b3685bd75f1"
+      "path": "clossys/agents/director/identity.verbal.voice/candidates/studio-voice-v2.md",
+      "sha256": "4b9b510773ec0aa2208d8dc8c1963f7a38ee92fb09c5f834e193884566511f87"
     },
     {
       "path": "clossys/agents/director/identity.verbal.voice/pin.json",
-      "sha256": "193ef9f0ebd0e3b5509ed34e813883c11af17024f0341e05dd14f8154fd33e51"
+      "sha256": "c212f15f8512da713eb09b283aa604d5b4d6f4823250058e5b6d20270216d767"
     },
     {
       "path": "clossys/agents/director/identity.verbal.voice/slot.json",
@@ -3690,12 +3690,12 @@
       "sha256": "851f1c2f2f92ad524dc6d9fa211c3f616e3bbc45a8ab769122ab113c9d78e72e"
     },
     {
-      "path": "clossys/agents/director/identity.visual.style/candidates/studio-visual-style-v1.md",
-      "sha256": "78623f6870a118a89ba8a57a6cf2805afcb686b059ba6a3e9bf7277ec886090d"
+      "path": "clossys/agents/director/identity.visual.style/candidates/studio-visual-style-v2.md",
+      "sha256": "26533761bd803240a87f5a69bcadaa15abe1b73ab319727626e3e240632496a8"
     },
     {
       "path": "clossys/agents/director/identity.visual.style/pin.json",
-      "sha256": "2af2997d60c684c0cfc6c96a9cdb706a29963ab72cc96409e3f69cf1e18464ab"
+      "sha256": "cc3c9ef480584d9304dda1ce4e5b2d78d65c0cf38f9577ba739683df90a6ecd8"
     },
     {
       "path": "clossys/agents/director/identity.visual.style/slot.json",

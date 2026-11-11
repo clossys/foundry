@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-alternative-v1.md",
-  "sha256": "9e34459127fe7880a5edfe07bae6110fde5c8f5a4b6978bc83ebb563ecd68341",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-alternative-v2.md",
+  "sha256": "1bf58f30c4ed7b47d1a1f73246b19afd15d2c5feb83ae3a0e337e77cb36af3ab",
+  "decidedBy": "owner",
+  "basis": "picked",
+  "at": "2026-11-11T08:33:58.712Z"
 }
