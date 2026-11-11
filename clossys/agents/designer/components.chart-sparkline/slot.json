@@ -75,9 +75,7 @@
     "themes.muted-foreground",
     "themes.radius"
   ],
-  "uses": [
-    "components.card"
-  ],
+  "uses": [],
   "notNeeded": {
     "reason": "retired: leaf in packages/designer/src/catalog/retired.json (owner D2/LAD-1 2026-11-11)",
     "since": "2026-11-11",
