@@ -4,7 +4,7 @@
 
 Import the shared records from `@clossys/designer/components`. Import navigation and selection from `@clossys/designer/catalog`. The components barrel remains client-only; charts render through the existing `@clossys/designer/charts` entry point. No new package subpath is introduced.
 
-44 legacy guidance records appear once below. Navigation follows 6 authoritative IA groups and 28 families with canonical leaf IDs. Unregistered legacy guidance appears separately, outside navigation.
+38 legacy guidance records appear once below. Navigation follows 6 authoritative IA groups and 28 families with canonical leaf IDs. Unregistered legacy guidance appears separately, outside navigation.
 
 Stable purpose, content and anatomy are separate from medium-specific implementation. Web cites current source; email, print and video are unassessed. Import safety, server rendering and visual resemblance establish no other medium’s support.
 
@@ -672,7 +672,7 @@ Token dependency coverage: partial. One representative chart colour binding is r
 - Purpose: Compare magnitudes across discrete categories.
 - Use when: A common numeric scale makes category differences easy to judge.
 - Avoid when: The story is continuous change, paired numeric relationships or incompatible units.
-- Alternatives and boundary: Use LineChart for change, ScatterChart for relationships, or separate charts for unlike units.
+- Alternatives and boundary: Use LineChart for change, or separate charts for unlike units.
 - Content: Supply category labels and aligned series values with stable series identity.
 - Anatomy: Discrete category marks sharing one magnitude scale and a text alternative.
 - Block composition example: In a consumer-owned comparison block, combine BarChart with a question heading and explanatory caption.
@@ -702,7 +702,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Purpose: Show how one or more series change over ordered positions.
 - Use when: Time or another meaningful ordered numeric axis explains the trend.
 - Avoid when: Unordered categories or unrelated measurement scales would imply a misleading connection.
-- Alternatives and boundary: Use BarChart for categories; ScatterChart for numeric association without a connecting sequence.
+- Alternatives and boundary: Use BarChart for categories.
 - Content: Supply a shared ordered x domain, aligned series values and stable names.
 - Anatomy: Ordered connected observations on one x scale and one y scale.
 - Block composition example: In a consumer-owned trend block, pair LineChart with an explanation of the shared units and period.
@@ -726,179 +726,7 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 #### Compact charts
 
-##### `depict.sparkline` — Sparkline
-
-- Purpose: Summarize a small inline sequence as a compact trend.
-- Use when: A nearby number or text supplies context and a full chart would be disproportionate.
-- Avoid when: The reader needs detailed axis reading, multiple series comparison or hover inspection.
-- Alternatives and boundary: Use LineChart for an inspectable trend; plain text for a value with no meaningful sequence.
-- Content: Provide the sequence and a title that explains its meaning.
-- Anatomy: One compact trend line with an end marker and a text data alternative.
-- Block composition example: In a consumer-owned metric-tile block, place Sparkline beside the current figure and period label.
-- Accessibility: The required title names the otherwise uncaptioned graphic; its native table remains available.
-- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
-
-| Medium | State | Reason and evidence |
-| --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/charts/Sparkline.tsx` |
-| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-
-Web implementation: `@clossys/designer/charts` → `Sparkline`. Source: `src/charts/Sparkline.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Intrinsic dimensions default to 120 by 24. The component owns its SVG title and native table disclosure; it does not use ChartFrame or supply hover, axes or legend.
-
-No finite scalar options are represented here; read the real prop type for authored content and data.
-
-
-Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-chart-categorical-1` (transitive): `src/charts/internal/chart-vars.ts`: `TOKENS["--color-chart-categorical-1"]!.value`; consumed via `src/charts/Sparkline.tsx`: `color ?? assignCategoricalColor(0)`.
-
-##### `depict.status-strip` — StatusStrip
-
-- Purpose: Show a compact chronological history of labelled states with widths proportional to their observed duration.
-- Use when: Uptime or program history consists of nonoverlapping intervals within a known observation window.
-- Avoid when: The task needs dependency editing or scheduling, interval bounds overlap or unobserved time would be presented as healthy operation.
-- Alternatives and boundary: Use RangeChart for authored activity intervals, LineChart for measured numeric trends or a table for detailed incident narratives.
-- Content: Author finite increasing bounds with ok, warn, error or unknown states; an optional full domain makes leading and trailing unknown periods explicit.
-- Anatomy: Chronological patterned segments share a time axis, a visible status legend, interval inspection and a gap-inclusive native table.
-- Block composition example: In a consumer-owned service-health block, place StatusStrip beside the observation window and the meaning of each operational state.
-- Accessibility: Every segment is named with its state and interval; distinct patterns, visible labels, keyboard inspection and table rows supplement colour.
-- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
-
-| Medium | State | Reason and evidence |
-| --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/charts/StatusStrip.tsx` |
-| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-
-Web implementation: `@clossys/designer/charts` → `StatusStrip`. Source: `src/charts/StatusStrip.tsx`. Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. No finite scalar configuration axis is represented for this interval-data component. Status keys belong to authored segment data. The server export retains the same chronological intervals, patterns and native table.
-
-No finite scalar options are represented here; read the real prop type for authored content and data.
-
-- data (runtime; `segments`, `domain`): Intervals must be finite, forward and nonoverlapping inside the observation domain; uncovered intervals are derived unknown segments. Evidence: `src/charts/internal/signature-geometry.ts`: `StatusStrip intervals overlap or fall outside the domain.`.
-
-Token dependency coverage: partial. One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.
-- `--color-chart-categorical-1` (transitive): `src/charts/internal/chart-vars.ts`: `TOKENS["--color-chart-categorical-1"]`; consumed via `src/charts/internal/signature-views.tsx`: `fill={assignCategoricalColor(index)}` → `src/charts/StatusStrip.tsx`: `<StatusView`.
-
 #### Analytic charts
-
-##### `depict.heatmap` — Heatmap
-
-- Purpose: Compare a rectangular set of magnitudes or categorical identities across named rows and columns.
-- Use when: The question concerns variation across two discrete dimensions and complete values remain available for inspection.
-- Avoid when: An unordered set needs precise rank comparisons, the category count exceeds eight identities or missing cells would be interpreted as zero.
-- Alternatives and boundary: Use BarChart for ranked magnitude, StatusStrip for interval history or a table when the cell values themselves are the primary task.
-- Content: Provide unique row and column names and a rectangular matrix; sequential data are finite numbers or null, while categorical identities use a stable domain.
-- Anatomy: A labelled matrix of cells shares a sequential ramp or categorical legend, a focused value readout and a complete native table.
-- Block composition example: In a consumer-owned capacity block, place Heatmap beside the meaning of each matrix dimension and its magnitude or identity legend.
-- Accessibility: Each cell exposes row, column and value in its name; arrow navigation and the native table retain access without colour matching.
-- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
-
-| Medium | State | Reason and evidence |
-| --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/charts/Heatmap.tsx` |
-| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-
-Web implementation: `@clossys/designer/charts` → `Heatmap`. Source: `src/charts/Heatmap.tsx`. Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. The categorical domain bounds identity encoding to eight entries. Controlled inspection uses row-major cell indices; the server export retains a static grid and native data table.
-
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `categorical` — Encoding mode | `false`: Map finite numeric magnitudes onto the seven-step sequential ramp.<br>`true`: Assign stable colours to at most eight distinct categorical identities. | `false` (`src/charts/internal/signature-views.tsx`: `categorical = false`) | Sequential mode requires numbers or null; categorical mode accepts names or numbers within the declared identity domain. implemented: The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels. Evidence: `src/charts/internal/signature-views.tsx`: `categorical = false` |
-
-- data (runtime; `rows`, `columns`, `values`): The matrix dimensions exactly match its unique nonblank row and column labels; null is a missing value rather than numeric zero. Evidence: `src/charts/internal/signature-views.tsx`: `Heatmap requires one value per row and column.`.
-
-Token dependency coverage: partial. One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.
-- `--color-chart-sequential-100` (transitive): `src/charts/internal/chart-vars.ts`: `TOKENS["--color-chart-sequential-100"]`; consumed via `src/charts/internal/signature-views.tsx`: `chartSequentialVar(` → `src/charts/Heatmap.tsx`: `<HeatmapView`.
-
-##### `depict.range-chart` — RangeChart
-
-- Purpose: Compare intervals against an authored sequence of periods.
-- Use when: Start and end boundaries within known tick periods describe the records accurately.
-- Avoid when: The task requires arbitrary date parsing, overlapping dependency management or an interactive scheduler.
-- Alternatives and boundary: Use a consumer-owned planning block for scheduling; Table for detailed interval records.
-- Content: Supply nonblank period names and rows with unique IDs, ordered bounds and optional labelled status.
-- Anatomy: Repeated labelled intervals over a shared ordered period scale.
-- Block composition example: In a consumer-owned timeline-summary block, combine RangeChart with the period definition and status explanation.
-- Accessibility: Retain complete row and status text and the table; status shape follows its tone rather than a separate option.
-- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
-
-| Medium | State | Reason and evidence |
-| --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/charts/RangeChart.tsx` |
-| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-
-Web implementation: `@clossys/designer/charts` → `RangeChart`. Source: `src/charts/RangeChart.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Fluid fit and width 360 are defaults; height is derived from complete row/status text. Bounds satisfy 0 <= from < to <= ticks.length. Nonblank tick periods, row IDs and labels are required. Status requires labels.status; shape follows tone. No independent status-shape option.
-
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `fit` — Sizing behavior | `fixed`: Intrinsic fixed-size graphic.<br>`fluid`: Fluid fitting of the intrinsic chart. | `fluid` (`src/charts/RangeChart.tsx`: `fit = "fluid"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/charts/RangeChart.tsx`: `fit={fit}` |
-
-
-Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-border-hairline` (transitive): `src/charts/internal/marks.ts`: `var(--ui-border-hairline,`; consumed via `src/charts/RangeChart.tsx`: `strokeWidth={CHART_HAIRLINE}`.
-
-##### `depict.scatter-chart` — ScatterChart
-
-- Purpose: Compare the relationship between two numeric measures across observations.
-- Use when: Three to twelve labelled observations can be read on shared numeric axes.
-- Avoid when: The claim implies causation, needs a dense point cloud or exceeds the declared series limit.
-- Alternatives and boundary: Use LineChart for ordered change; a consumer-owned analysis view for dense exploration.
-- Content: Author point identities and labels, axis names and any declared size or series meaning.
-- Anatomy: Labelled observations located by two measures, with optional area and series encoding.
-- Block composition example: In a consumer-owned analysis block, place ScatterChart beside the question, units and interpretation.
-- Accessibility: Keep direct labels and the table; area-scaled size needs a truthful named measure for every point.
-- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
-
-| Medium | State | Reason and evidence |
-| --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/charts/ScatterChart.tsx` |
-| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-
-Web implementation: `@clossys/designer/charts` → `ScatterChart`. Source: `src/charts/ScatterChart.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Fluid fit, width 360 and height 300 are defaults. Requires 3–12 points and at most four declared series. Point series must match the declared domain. Size encoding requires finite nonnegative size on every point and is forbidden without size. Dimensions are at least 240; axis names are at most 32 graphemes and point labels at most 20.
-
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `fit` — Sizing behavior | `fixed`: Intrinsic fixed-size graphic.<br>`fluid`: Fluid fitting of the intrinsic chart. | `fluid` (`src/charts/ScatterChart.tsx`: `fit = "fluid"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/charts/ScatterChart.tsx`: `fit={fit}` |
-
-
-Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-border-hairline` (transitive): `src/charts/internal/marks.ts`: `var(--ui-border-hairline,`; consumed via `src/charts/ScatterChart.tsx`: `strokeWidth={CHART_HAIRLINE}`.
-
-##### `depict.waterfall-chart` — WaterfallChart
-
-- Purpose: Explain how signed changes connect an opening and closing total.
-- Use when: The reader needs to account for contributions to a cumulative change.
-- Avoid when: The values are unrelated category totals or percentages without a meaningful accumulation.
-- Alternatives and boundary: Use BarChart for independent magnitudes; LineChart for a temporal sequence.
-- Content: Author opening total, uniquely identified signed steps, closing label and table headings.
-- Anatomy: Opening and closing totals connected by successive positive or negative changes.
-- Block composition example: In a consumer-owned reconciliation block, pair WaterfallChart with the accounting period and units.
-- Accessibility: Keep signed value labels and the table; a supplied closing value asserts the calculated total.
-- Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
-
-| Medium | State | Reason and evidence |
-| --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/charts/WaterfallChart.tsx` |
-| email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-| video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
-
-Web implementation: `@clossys/designer/charts` → `WaterfallChart`. Source: `src/charts/WaterfallChart.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Fluid fit, width 360 and height 280 are the defaults. All values and accumulated totals must be finite. Step IDs are unique/nonblank. Optional end.value asserts the accumulated closing total. valueFormat receives unsigned magnitude; the chart owns signs. Authored table/category/value labels are required.
-
-| Prop | Selection guidance | Package default | Applicability and support |
-| --- | --- | --- | --- |
-| `fit` — Sizing behavior | `fixed`: Intrinsic fixed-size graphic.<br>`fluid`: Fluid fitting of the intrinsic chart. | `fluid` (`src/charts/WaterfallChart.tsx`: `fit = "fluid"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/charts/WaterfallChart.tsx`: `fit={fit}` |
-
-
-Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-border-hairline` (transitive): `src/charts/internal/marks.ts`: `var(--ui-border-hairline,`; consumed via `src/charts/WaterfallChart.tsx`: `strokeWidth={CHART_HAIRLINE}`.
 
 #### Content
 
@@ -959,16 +787,16 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `StatusMark`. Source: `src/components/StatusMark.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. tone is required with no package default. Shape follows tone: success circle, warning triangle, danger diamond, info open-circle, neutral dash.
+Web implementation: `@clossys/designer/components` → `StatusMark`. Source: `src/components/StatusMark.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. tone is required with no package default. Shape follows tone: success circle-check, warning triangle-alert, danger circle-x, info circle, neutral dash.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `tone` — State tone | `success`: Success circle.<br>`warning`: Warning triangle.<br>`danger`: Danger diamond.<br>`info`: Information open circle.<br>`neutral`: Neutral dash. | required: Required by the prop type; no package default is supplied. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/StatusMark.tsx`: `SHAPES[tone]` |
+| `tone` — State tone | `success`: Success circle check.<br>`warning`: Warning triangle alert.<br>`danger`: Danger circle x.<br>`info`: Information circle.<br>`neutral`: Neutral dash. | required: Required by the prop type; no package default is supplied. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/StatusMark.tsx`: `SHAPES[tone]` |
 
 - derived (derived; `tone`): State glyph shape is derived from tone and is not an independent configurable prop. Evidence: `src/components/StatusMark.tsx`: `data-shape={SHAPES[tone]}`.
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-status-success` (transitive): `styles/theme-keys.css`: `--color-status-success:`; consumed via `src/components/StatusMark.tsx`: `fill-status-success`.
+- `--color-status-success` (transitive): `styles/theme-keys.css`: `--color-status-success:`; consumed via `src/components/StatusMark.tsx`: `text-status-success`.
 
 #### Progress
 
