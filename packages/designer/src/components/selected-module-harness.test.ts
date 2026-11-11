@@ -125,7 +125,9 @@ describe("real selected-module harness refusal contracts", () => {
   it("refuses missing glyph indexes and provider omission", () => {
     expect(() => assertGlyphRoute(fixture.library.files, values.assets)).toThrow("glyph/index/provider route unavailable");
     // Deliberately incomplete route control: it cannot be used as an emitted fixture.
-    const broken = [{ path: "assets/glyphs.ts", content: 'export const glyphs = {"assets.icon-check":{}}' }, { path: "components/icon/index.ts", content: "glyphs[asset]" }, { path: "component-index.ts", content: "export const LibraryProvider = null" }];
+    // Retargeted (planner:C5-DREC, owner LAD-3): before, an index without GlyphProvider differed; after, an index
+    // that still routes glyphs through the removed GlyphProvider differs.
+    const broken = [{ path: "assets/glyphs.ts", content: 'export const glyphs = {"assets.icon-check":{}}' }, { path: "components/icon/index.ts", content: "glyphs[asset]" }, { path: "component-index.ts", content: "import { GlyphProvider } from \"x\"; export const LibraryProvider = null" }];
     expect(() => assertGlyphRoute(broken, ["assets.icon-check"])).toThrow("glyph/provider route differs");
     expect(() => assertGlyphRoute(broken, ["assets.icon-foreign"])).toThrow("glyph/provider route differs");
     expect(() => assertGlyphRoute(broken, [])).toThrow("glyph/index/provider route unavailable");

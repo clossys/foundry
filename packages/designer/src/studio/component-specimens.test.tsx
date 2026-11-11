@@ -82,7 +82,7 @@ it("a host without the library's modules keeps the chosen cell unavailable and b
 
 it("names every other refusal and never substitutes a placeholder", () => {
   const profile = resolve(adoptedComponentIntegration());
-  const missingExport = componentSpecimenPreview({ modules: { "@clossys/designer/components": { GlyphProvider: components.GlyphProvider } } });
+  const missingExport = componentSpecimenPreview({ modules: { "@clossys/designer/components": { Icon: components.Icon } } });
   expect(missingExport.bind("components.button", profile)).toEqual({ refusal: { leaf: "components.button", code: "export-unavailable", detail: "@clossys/designer/components#Button" } });
   expect(missingExport.preview("components.button", profile)).toBeUndefined();
   const notRenderable = componentSpecimenPreview({ modules: { "@clossys/designer/components": { Button: "Button" } } });

@@ -85,13 +85,14 @@ describe("pinned shadcn aria component import", () => {
   it("regenerates every committed descriptor and coverage byte", () => {
     const files = generatedShadcnComponentFiles(pinnedInput());
     const destination = resolve(import.meta.dirname, "../catalog/fills/shadcn@aria");
-    expect([...Object.keys(files), "components.command.json", "components.dropdown-menu.json", "components.empty.json", "components.item.json", "components.rich-text.json", "components.scroll-area.json", "components.sheet.json", "components.sidebar.json"].sort()).toEqual(readdirSync(destination).sort());
+    expect([...Object.keys(files), "components.command.json", "components.dropdown-menu.json", "components.empty.json", "components.item.json", "components.scroll-area.json", "components.sheet.json", "components.sidebar.json"].sort()).toEqual(readdirSync(destination).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(destination, name), "utf8"), name).toBe(bytes);
     // This admitted Tiptap exception is authored as a package-backed composition,
-    // rather than regenerated from a pinned shadcn registry item.
-    const richText = JSON.parse(readFileSync(resolve(destination, "components.rich-text.json"), "utf8"));
-    expect(richText.$extensions["com.clossys.fill"]).toMatchObject({ author: "foundry", trust: "foundry",
-      id: "shadcn@aria/components.rich-text", sourceAddress: "./components#RichText" });
+    // rather than regenerated from a pinned shadcn registry item. Retargeted (planner:C5-DREC, owner D6 2026-11-11):
+    // before, it sat under shadcn@aria as shadcn@aria/components.rich-text; after, it carries its real source, foundry.
+    const richText = JSON.parse(readFileSync(resolve(destination, "../foundry/components.rich-text.json"), "utf8"));
+    expect(richText.$extensions["com.clossys.fill"]).toMatchObject({ author: "foundry", trust: "foundry", source: "foundry",
+      id: "foundry/components.rich-text", sourceAddress: "./components#RichText" });
     expect(richText.$extensions["com.clossys.engine-exception"]).toMatchObject({ component: "components.rich-text", engine: "Tiptap 3 / ProseMirror" });
     expect(richText.components["rich-text"].impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "RichText" });
     expect(richText.components["rich-text"].composes).toEqual(["components.badge", "components.link", "components.semantic-content", "components.table"]);

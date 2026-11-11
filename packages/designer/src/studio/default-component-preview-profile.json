@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:0e0e7106c4b624870364f906be7f0195ff8be90bb4050cf3b8aebae4ce4faeae",
+  "selectionHash": "sha256:bc54ac5fc23c9a5163635b7aa89f1e4ebe656a7f65085e16ca158cc1ec8bafa0",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -7864,8 +7864,8 @@
       "originKind": "adopted",
       "origin": {
         "kind": "adopted",
-        "source": "shadcn@aria",
-        "fill": "shadcn@aria/components.rich-text",
+        "source": "foundry",
+        "fill": "foundry/components.rich-text",
         "pin": {
           "package": "@clossys/designer",
           "version": "0.12.0",
@@ -8042,8 +8042,8 @@
         },
         "origin": {
           "kind": "adopted",
-          "source": "shadcn@aria",
-          "fill": "shadcn@aria/components.rich-text",
+          "source": "foundry",
+          "fill": "foundry/components.rich-text",
           "pin": {
             "package": "@clossys/designer",
             "version": "0.12.0",
@@ -17808,7 +17808,6 @@
       "FieldTitle",
       "FileTrigger",
       "Form",
-      "GlyphProvider",
       "GridList",
       "INVERSE_CONTROL_INK",
       "Icon",

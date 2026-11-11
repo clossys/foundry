@@ -276,20 +276,10 @@ export function emitComponents(profile: ResolvedComponents, targets: readonly Co
       }));
       generated.push({ path: glyphs.path, content: `export const glyphs = ${JSON.stringify(glyphData, null, 2)} as const;\n` });
     }
-    // Only a leaf that reads an asset needs the registered provider; the Icon adapter passes its glyph directly.
-    // A selection of sources only reaches its glyphs through that adapter, so it needs no provider package.
-    const providerModule = components.find(component => component.impl.kind === "package" && component.descriptor.pin?.package === "@clossys/designer")?.descriptor.pin?.package;
-    if (assets.length && (providerModule || components.some(component => component.impl.kind === "package" && component.reads.assets.length))) {
-      const glyphs = options.glyphModule!;
-      if (!providerModule) throw new CatalogError("components: registered glyph provider package is unavailable");
-      const module = `${providerModule}/components`;
-      if (!profile.packageExports[module]?.includes("GlyphProvider")) throw new CatalogError("components: GlyphProvider export is unavailable");
-      root.unshift('import { createElement, type ReactNode } from "react";', `import { GlyphProvider } from ${quote(module)};`, `import { glyphs } from ${quote(relative("component-index.ts", glyphs.path))};`);
-      root.push('export function LibraryProvider({ children }: { children: ReactNode }) { return createElement(GlyphProvider, { glyphs, children }); }');
-    } else {
-      root.unshift('import { Fragment, createElement, type ReactNode } from "react";');
-      root.push('export function LibraryProvider({ children }: { children: ReactNode }) { return createElement(Fragment, null, children); }');
-    }
+    // Owner LAD-3 (2026-11-11): icons are lucide and GlyphProvider is removed; packaged leaves draw their own
+    // lucide glyphs, and consumer icon assets reach a leaf only through the Icon adapter's glyph module.
+    root.unshift('import { Fragment, createElement, type ReactNode } from "react";');
+    root.push('export function LibraryProvider({ children }: { children: ReactNode }) { return createElement(Fragment, null, children); }');
     const all = [...retained, ...generated, { path: "component-index.ts", content: root.join("\n") + "\n" }];
     assertComponentImportClosure(all, { ...profile.packageExports, react: sortedComponentIds([...(profile.packageExports.react ?? []), "Fragment", "createElement", "forwardRef", "ReactNode", "ComponentType", "ComponentProps"]) });
     files.push(...all);

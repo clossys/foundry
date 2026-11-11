@@ -1,4 +1,4 @@
-import richTextFill from "./catalog/fills/shadcn@aria/components.rich-text.json" with { type: "json" };
+import richTextFill from "./catalog/fills/foundry/components.rich-text.json" with { type: "json" };
 import data from "./catalog-bundles.data.json" with { type: "json" };
 import starterData from "./rac-starter.data.json" with { type: "json" };
 import headlessPackage from "react-aria-components/package.json" with { type: "json" };

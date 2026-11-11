@@ -18,7 +18,8 @@ const columns = () => componentLibraryColumns(catalog.sources, documents, slots,
 describe("item-specific library provenance", () => {
   it("projects exactly 26 real drafts across 57 signed slots and one unqualified local draft", () => {
     // 66 -> 76 (planner:wd-reg): +rich-text (6463e7e59), +media-player (78237484a), +8 owner-signed specimen leaves (25a8fc7b2).
-    expect(slots).toHaveLength(76);
+    // 76 -> 78 (planner:C5-DREC, owner LAD-3): +canvas-zoom, +canvas-map.
+    expect(slots).toHaveLength(78);
     expect(columns().flatMap(column => column.candidates).some(candidate => candidate.fill.slot === "components.semantic-content")).toBe(false);
     expect(documents).toHaveLength(33);
     const result = columns();

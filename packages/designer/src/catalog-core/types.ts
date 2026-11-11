@@ -175,7 +175,7 @@ export type PlacementNode = { id: string; label: string; children: readonly Plac
 /** A placed leaf that is not consumed today (consumed-only rule); it keeps its id and placement but needs no fill. */
 export interface ParkedLeaf { leaf: string; basis: string }
 export interface Placement { layer: LayerId; nodes: readonly PlacementNode[]; parked?: readonly ParkedLeaf[] }
-export interface Retired { id: string; retiredAt: string; replacedBy?: string }
+export interface Retired { id: string; retiredAt: string; replacedBy?: string; decidedBy?: string; reason?: string }
 export interface CatalogData {
   slots: readonly Slot[]; standards: readonly Standard[]; sources: readonly Source[]; fills: readonly FillDoc[];
   rules?: readonly CatalogRule[];

@@ -3796,5 +3796,89 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "components.canvas-zoom",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [
+        "value",
+        "min",
+        "max",
+        "onChange",
+        "onFit",
+        "labels",
+        "formatValue"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.radius",
+          "themes.foreground"
+        ],
+        "assets": [],
+        "components": [
+          "components.toolbar",
+          "components.button",
+          "components.icon",
+          "components.semantic-content"
+        ]
+      },
+      "composes": [
+        "components.toolbar",
+        "components.button",
+        "components.icon",
+        "components.semantic-content"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.canvas-map",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [
+        "label",
+        "items",
+        "bounds",
+        "viewport",
+        "viewSize",
+        "onViewportChange"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.radius",
+          "themes.border",
+          "themes.muted",
+          "themes.card",
+          "themes.accent",
+          "themes.primary"
+        ],
+        "assets": [],
+        "components": [
+          "components.button",
+          "components.semantic-content"
+        ]
+      },
+      "composes": [
+        "components.button",
+        "components.semantic-content"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]

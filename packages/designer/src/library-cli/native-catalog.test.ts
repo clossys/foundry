@@ -107,11 +107,12 @@ it("adopts and reselects the existing RichText package candidate with its source
     baseHash: libraryHash(library),
     changes: [
       ...["components.badge", "components.link", "components.semantic-content", "components.checkbox", "components.table"].map(dependency => ({ portion: "components" as const, change: { op: "adopt" as const, slot: dependency, source: "foundry" } })),
-      { portion: "components", change: { op: "adopt", slot, source: "shadcn@aria" } },
+      // Retargeted (planner:C5-DREC, owner D6 2026-11-11): before shadcn@aria; after its real source, foundry.
+      { portion: "components", change: { op: "adopt", slot, source: "foundry" } },
     ],
   });
   const adopted = adopt(initial), selected = adopted.components.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === slot)!.components["rich-text"]!;
-  expect(selected.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria", fill: "shadcn@aria/components.rich-text", license: "MIT" });
+  expect(selected.origin).toMatchObject({ kind: "adopted", source: "foundry", fill: "foundry/components.rich-text", license: "MIT" });
   expect(selected.impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "RichText" });
   expect(adopted.components.files).toEqual([]);
   expect(adopt(adopted)).toEqual(adopted);

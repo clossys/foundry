@@ -36,7 +36,7 @@ function EditableRichText({ value, onChange, "aria-label": label, "aria-labelled
  * editor; only MIT Tiptap/ProseMirror packages supply its document engine.
  */
 export function RichText({ value, readOnly = true, onChange, className, ...rest }: RichTextProps) {
-  return <div {...rest} style={{ overflowWrap: "anywhere", ...rest.style }} data-ds-layer="components" data-ds-leaf="components.rich-text" data-ds-fill="shadcn@aria/components.rich-text" data-slot="rich-text" data-readonly={readOnly ? "true" : "false"} className={cx(RICH_TEXT_CLASSES, className)}>
+  return <div {...rest} style={{ overflowWrap: "anywhere", ...rest.style }} data-ds-layer="components" data-ds-leaf="components.rich-text" data-ds-fill="foundry/components.rich-text" data-slot="rich-text" data-readonly={readOnly ? "true" : "false"} className={cx(RICH_TEXT_CLASSES, className)}>
     {readOnly ? renderRichTextNode(richTextDocument(value)) : <EditableRichText value={value} onChange={onChange} aria-label={rest["aria-label"]} aria-labelledby={rest["aria-labelledby"]} />}
   </div>;
 }

@@ -42,7 +42,7 @@ export function componentIntegration(source = false): CompositeEngineInput {
   const { source: consumer, adoptedAt, ...valuePortion } = library;
   const composite: CompositeLibraryData = { source: consumer, adoptedAt, values: valuePortion, components: { fills: [], files: [] } };
   const catalog: CompositeCatalogData = { values, components: component.catalog };
-  return { catalog, library: composite, componentOptions: { evidence: { observations: component.check.observations, installedRac: component.check.installedRac }, packageExports: { "@clossys/designer/components": ["Button", "GlyphProvider"], "react-aria-components": ["Button"] } } };
+  return { catalog, library: composite, componentOptions: { evidence: { observations: component.check.observations, installedRac: component.check.installedRac }, packageExports: { "@clossys/designer/components": ["Button"], "react-aria-components": ["Button"] } } };
 }
 export function adoptedComponentIntegration(): CompositeEngineInput {
   const input = componentIntegration();

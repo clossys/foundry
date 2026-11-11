@@ -182,8 +182,7 @@ export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from ".
 export { GridList } from "./GridList.js";
 export type { GridListProps, GridListItemProps, GridListSelectionCheckboxProps } from "./GridList.js";
 
-export { GlyphProvider } from "./glyph-context.js";
-export type { GlyphBindings, GlyphProviderProps } from "./glyph-context.js";
+export type { GlyphBindings } from "./glyph-context.js";
 
 export { ColorPicker } from "./ColorPicker.js";
 export type { ColorPickerProps } from "./ColorPicker.js";

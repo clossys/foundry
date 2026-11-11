@@ -18,7 +18,7 @@ import { main } from "./cli.js";
  */
 const packageExports = {
   "@clossys/designer/charts": ["AreaChart"],
-  "@clossys/designer/components": ["Button", "GlyphProvider", "Icon"],
+  "@clossys/designer/components": ["Button", "Icon"],
   "react-aria-components": ["FileTrigger"],
 };
 let catalog: CompositeCatalogData, files: Map<string, string>, temporary: string, root: string;

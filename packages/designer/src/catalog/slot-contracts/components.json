@@ -6542,5 +6542,151 @@
     "references": [],
     "checkSuite": "designer.slot-contracts.components",
     "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.canvas-zoom",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Canvas zoom component (root presentational), under Navigation / Canvas.",
+    "inputs": [
+      {
+        "name": "value",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "min",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "max",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "onChange",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "onFit",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "formatValue",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.toolbar,components.button,components.icon,components.semantic-content",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.canvas-map",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Canvas map component (root presentational), under Navigation / Canvas.",
+    "inputs": [
+      {
+        "name": "label",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "bounds",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "viewport",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "viewSize",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "onViewportChange",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.button,components.semantic-content",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
   }
 ]

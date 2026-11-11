@@ -1,5 +1,3 @@
-import { createContext, createElement, useContext } from "react";
-import type { ReactNode } from "react";
 import type { IconNode } from "../icons/types.js";
 import { Check } from "../icons/Check.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
@@ -11,6 +9,10 @@ import { X } from "../icons/X.js";
 
 /** Plain glyph data from a consumer's asset module, keyed by catalog leaf. */
 export type GlyphBindings = Readonly<Partial<Record<`assets.icon-${string}`, IconNode>>>;
+/**
+ * Owner LAD-3 (2026-11-11): icons are lucide, so GlyphProvider is removed. Built-in controls draw these lucide
+ * glyphs; a consumer's icon assets reach a leaf through the emitted Icon adapter, never a context override.
+ */
 const DEFAULT_GLYPHS = {
   "assets.icon-check": Check,
   "assets.icon-chevron-down": ChevronDown,
@@ -19,27 +21,12 @@ const DEFAULT_GLYPHS = {
   "assets.icon-chevron-right": ChevronRight,
   "assets.icon-close": X,
 } as const;
-const GlyphContext = createContext({ glyphs: DEFAULT_GLYPHS as GlyphBindings, indeterminate: Minus });
-
-/** Client controls inherit overrides; omitted assets keep their parent binding. */
-export interface GlyphProviderProps {
-  glyphs: GlyphBindings;
-  /** No asset leaf currently maps the mixed checkbox mark; supply its glyph explicitly. */
-  indeterminateGlyph?: IconNode;
-  children: ReactNode;
-}
-export function GlyphProvider({ glyphs, indeterminateGlyph, children }: GlyphProviderProps) {
-  const parent = useContext(GlyphContext);
-  return createElement(GlyphContext.Provider, {
-    value: { glyphs: { ...parent.glyphs, ...glyphs }, indeterminate: indeterminateGlyph ?? parent.indeterminate },
-  }, children);
-}
 
 export function useGlyph(asset: keyof typeof DEFAULT_GLYPHS): IconNode {
-  return useContext(GlyphContext).glyphs[asset] ?? DEFAULT_GLYPHS[asset];
+  return DEFAULT_GLYPHS[asset];
 }
 
-/** Explicit input until the asset catalog has an indeterminate leaf. */
+/** The mixed checkbox mark; no asset leaf maps it. */
 export function useIndeterminateGlyph(): IconNode {
-  return useContext(GlyphContext).indeterminate;
+  return Minus;
 }

@@ -24,7 +24,10 @@ const OWNER_RESIGN = { signoff: "owner re-sign 2026-11-02", leaves: 236 } as con
 // Owner 2026-11-05 (DESIGNER-READOPT): the specimen previews get new Foundry leaves, the only
 // components addition on top of the re-signed tree.
 const SPECIMEN_LEAVES = ["components.specimen-swatch", "components.specimen-ladder", "components.specimen-player", "components.specimen-grid", "components.specimen-matrix", "components.specimen-viewport", "components.specimen-passage", "components.specimen-copy-in-context"] as const;
-const LOADED_LEAVES = OWNER_RESIGN.leaves + SPECIMEN_LEAVES.length;
+// planner:C5-DREC (owner LAD-3, 2026-11-11): CanvasZoom and CanvasMap join the pending components amendment;
+// loaded leaves 244 -> 246.
+const CANVAS_LEAVES = ["components.canvas-zoom", "components.canvas-map"] as const;
+const LOADED_LEAVES = OWNER_RESIGN.leaves + SPECIMEN_LEAVES.length + CANVAS_LEAVES.length;
 const loadedAssets = () => ({ ia: structuredClone(assetIA) as Placement, slots: structuredClone(assetSlots) });
 const view = (layer: string, ia: unknown, slots: unknown) => layer === "assets" ? loadedAssets() : { ia: structuredClone(ia) as Placement, slots: structuredClone(slots) as typeof assetSlots };
 
@@ -178,7 +181,7 @@ describe("themes leaf set", () => {
 describe("explicit local component amendment", () => {
   const amendedId = "components.semantic-content";
   it("records an explicit versioned proposal against the unchanged signed baseline", () => {
-    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId, "components.sidebar", "components.command", "components.sheet", "components.empty", "components.item", "components.scroll-area", "components.dropdown-menu", "components.rich-text", "components.media-player"] });
+    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId, "components.sidebar", "components.command", "components.sheet", "components.empty", "components.item", "components.scroll-area", "components.dropdown-menu", "components.rich-text", "components.media-player", ...CANVAS_LEAVES] });
     expect(OWNER_RESIGN.signoff).toBe("owner re-sign 2026-11-02");
   });
   const inputs = () => ({ ia: structuredClone(componentIA) as Placement, slots: structuredClone(componentSlots) });

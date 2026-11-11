@@ -79,9 +79,9 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.primary",
           "themes.border",
           "themes.input",
+          "themes.primary",
           "themes.sidebar-border"
         ]
       },

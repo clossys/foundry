@@ -62,6 +62,7 @@ import frameRetired from "../catalog/retired/frames.json" with { type: "json" };
 import { loadComponentRegistry } from "./component-registry.js";
 import { loadSectionRegistry } from "./sections-contract.js";
 import { assertIAPlacements } from "./ia-placement.js";
+import { assertRetiredLeaves } from "./retired-leaves.js";
 import { assertFrozenLeafSets } from "./leaf-freeze.js";
 import { withAssetCatalog } from "../catalog-assets/catalog.js";
 import type { BuildCatalogData, CatalogData, FillDoc, FrameSlot, Placement, Retired, Slot, Source, Standard, CatalogRule } from "./types.js";
@@ -123,6 +124,7 @@ export function loadBuildCatalog(reportLeafFreeze?: Parameters<typeof assertFroz
   };
   assertFrozenLeafSets(build.placements, build.slots, ["themes", "assets", "components"], reportLeafFreeze);
   assertIAPlacements(build.placements, build.slots);
+  assertRetiredLeaves(build.retired, build.placements);
   return build;
 }
 // Later component consumption, checking, resolution, emission and source importers

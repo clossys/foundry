@@ -70,13 +70,13 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.radius",
+          "themes.accent",
           "themes.background",
           "themes.card",
-          "themes.popover",
-          "themes.secondary",
-          "themes.accent",
           "themes.muted",
+          "themes.popover",
+          "themes.radius",
+          "themes.secondary",
           "themes.sidebar",
           "themes.sidebar-accent"
         ]

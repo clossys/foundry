@@ -75,20 +75,20 @@
         "assets": [],
         "components": [],
         "themes": [
-          "themes.radius",
-          "themes.ring",
-          "themes.sidebar-ring",
-          "themes.spacing",
-          "themes.foreground",
+          "themes.accent-foreground",
           "themes.card-foreground",
+          "themes.foreground",
+          "themes.muted-foreground",
           "themes.popover-foreground",
           "themes.primary-foreground",
+          "themes.radius",
+          "themes.ring",
           "themes.secondary-foreground",
-          "themes.accent-foreground",
-          "themes.muted-foreground",
+          "themes.sidebar-accent-foreground",
           "themes.sidebar-foreground",
           "themes.sidebar-primary-foreground",
-          "themes.sidebar-accent-foreground"
+          "themes.sidebar-ring",
+          "themes.spacing"
         ]
       },
       "root": "rac:Disclosure",

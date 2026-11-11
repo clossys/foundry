@@ -14,6 +14,8 @@
     "components.scroll-area",
     "components.dropdown-menu",
     "components.rich-text",
-    "components.media-player"
+    "components.media-player",
+    "components.canvas-zoom",
+    "components.canvas-map"
   ]
 }

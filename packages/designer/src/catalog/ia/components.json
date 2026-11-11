@@ -251,6 +251,14 @@
             "components.navigation-tree",
             "components.sidebar"
           ]
+        },
+        {
+          "id": "navigation-canvas",
+          "label": "Canvas",
+          "leaves": [
+            "components.canvas-zoom",
+            "components.canvas-map"
+          ]
         }
       ]
     },
