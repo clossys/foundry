@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "d621e936124d21608a2c8cd380ee09dbf2da5d6601276f5ccbdf484b2aebea30",
+  "revision": "3e652a17f69588c9bb7ad98af15b0bf651eaf029601044ca03ccf3ba81d932db",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2577,7 +2577,7 @@
     },
     {
       "id": "studio.pipeline.legend.untyped",
-      "text": "{count, plural, one {# declared step has} other {# declared steps have}} no command that runs it and {count, plural, one {is} other {are}} not drawn.",
+      "text": "{count, plural, one {# declared step has} other {# declared steps have}} no command that runs {count, plural, one {it} other {them}} and {count, plural, one {is} other {are}} not drawn.",
       "context": "lib/pipeline-flow.ts",
       "status": "draft"
     },
@@ -3065,6 +3065,72 @@
       "id": "studio.specimen-sample.motion",
       "text": "Motion preview",
       "context": "../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.play-motion",
+      "text": "Play motion",
+      "context": "studio.specimen.play-motion",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.reduced-motion",
+      "text": "Reduced motion is enabled.",
+      "context": "studio.specimen.reduced-motion",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.show-all-variants",
+      "text": "Show all ({count, number, integer})",
+      "context": "studio.specimen.show-all-variants",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.play",
+      "text": "Play",
+      "context": "studio.specimen-sample.media.play",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.pause",
+      "text": "Pause",
+      "context": "studio.specimen-sample.media.pause",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.mute",
+      "text": "Mute",
+      "context": "studio.specimen-sample.media.mute",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.unmute",
+      "text": "Unmute",
+      "context": "studio.specimen-sample.media.unmute",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.seek",
+      "text": "Seek",
+      "context": "studio.specimen-sample.media.seek",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.time",
+      "text": "{current} of {duration}",
+      "context": "studio.specimen-sample.media.time",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.captions-on",
+      "text": "Turn on captions",
+      "context": "studio.specimen-sample.media.captions-on",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.captions-off",
+      "text": "Turn off captions",
+      "context": "studio.specimen-sample.media.captions-off",
       "status": "draft"
     },
     {
@@ -3713,6 +3779,132 @@
       "id": "studio.nav.run",
       "text": "Run",
       "context": "studio.nav.run",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-context",
+      "text": "Context · Director · Clossys Studio",
+      "context": "studio.meta-title.director-context",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-aspiration",
+      "text": "Aspiration · Director · Clossys Studio",
+      "context": "studio.meta-title.director-aspiration",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-focus",
+      "text": "Focus · Director · Clossys Studio",
+      "context": "studio.meta-title.director-focus",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-advantage",
+      "text": "Advantage · Director · Clossys Studio",
+      "context": "studio.meta-title.director-advantage",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-identity",
+      "text": "Identity · Director · Clossys Studio",
+      "context": "studio.meta-title.director-identity",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-capability",
+      "text": "Capability · Director · Clossys Studio",
+      "context": "studio.meta-title.director-capability",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-execution",
+      "text": "Execution · Director · Clossys Studio",
+      "context": "studio.meta-title.director-execution",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-themes",
+      "text": "Themes · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-themes",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-assets",
+      "text": "Assets · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-assets",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-components",
+      "text": "Components · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-components",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-sections",
+      "text": "Sections · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-sections",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-frames",
+      "text": "Frames · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-frames",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-lexicon",
+      "text": "Lexicon · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-lexicon",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-strings",
+      "text": "Strings · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-strings",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-patterns",
+      "text": "Patterns · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-patterns",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-passages",
+      "text": "Passages · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-passages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-narratives",
+      "text": "Narratives · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-narratives",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.publisher-studio",
+      "text": "Studio · Publisher · Clossys Studio",
+      "context": "studio.meta-title.publisher-studio",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.producer-pipeline",
+      "text": "Content overview · Clossys Studio",
+      "context": "studio.meta-title.producer-pipeline",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.build-overview",
+      "text": "Build overview · Clossys Studio",
+      "context": "studio.meta-title.build-overview",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.run-overview",
+      "text": "Run overview · Clossys Studio",
+      "context": "studio.meta-title.run-overview",
       "status": "draft"
     },
     {
