@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-threat-v3.md",
-  "sha256": "5529b661ff28f847c029adfeb91badec3bf5f2934c254bff248388f8eb98863f",
+  "candidate": "studio-threat-v4.md",
+  "sha256": "7b32d6222bdf4635bff44d87d922fd9551eb3dba04bea78789e92fa3e5faaa29",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T16:20:43.927Z"
+  "at": "2026-11-11T16:45:07.600Z"
 }
