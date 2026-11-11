@@ -21,6 +21,11 @@
  *                      grouped (items that share one option set are one question whose options run
  *                      one call per item), in rounds of at most ROUND_SIZE.
  *
+ * The Director asks content (director-interview.ts): the archetype first while none is recorded, then
+ * one "Pick <cell>" question per owner-held core cell with an open option round, in dependency order,
+ * each option a candidate's exact pin argv; a request for a cell already asked folds into that
+ * question ("also unblocks N ... slots"); agent picks are one confirm question after the content.
+ *
  * Every option carries the exact `clossys` argv of each call; a `<model:tier>` word is filled from the
  * seat policy (seat-policy.ts) and never guessed, and while the policy is missing its question comes
  * first and every seat question waits on it. Order of agents: producer, director, designer, writer,
@@ -35,6 +40,8 @@ import type { SlotAgent } from "../records/slot-model/types.js";
 import { directorStoreReader, listSlots, readCandidate, readiness, readSlot, slotIndex } from "../records/slots.js";
 import type { SlotEntry } from "../records/slots.js";
 import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
+import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
+import type { DirectorContent } from "./director-interview.js";
 import { candidatesOf, contextOf, explainChain, openItems, packetOf, skillLine, skillOf, verbOf } from "./chain.js";
 import type { Context, Packet } from "./chain.js";
 import { ladderIssues } from "./candidate-ladder.js";
@@ -101,7 +108,12 @@ export interface Question {
   /** 2 to 4 answers, the recommended one first. */
   readonly options: readonly QuestionOption[];
   /** The free-text answer: recorded through this verb once the owner's words are its arguments. */
-  readonly freeText: { readonly id: "other"; readonly label: string; readonly verb: string };
+  readonly freeText: {
+    readonly id: "other"; readonly label: string; readonly verb: string;
+    /** The calls the owner's words run, when more than the verb (Director content: evidence, then a re-draft). */
+    readonly calls?: readonly (readonly string[])[];
+    readonly fill?: Readonly<Record<string, string>>;
+  };
   /** Questions that must be answered (and recorded) first; they sit in an earlier round. */
   readonly after: readonly string[];
   /** Downstream agents whose request this question answers. */
@@ -154,14 +166,16 @@ interface DirectorView {
   readonly unreadable: string | null;
   /** Pinned cells whose bullets carry TODO-OWNER or whose checks block, with why. */
   readonly unclear: ReadonlyMap<string, string>;
+  /** The content the owner decides (archetype, owner-held core rounds) and the agent picks. */
+  readonly content: DirectorContent | null;
 }
 const OWNER_LINE = /\bTODO-OWNER\b/;
 const bulletsOf = (cell: Cell) => [...cell.direction, ...cell.because, ...cell.watch];
-function directorView(consumer: string): DirectorView {
+function directorView(consumer: string, context: Context): DirectorView {
   let model: StrategyModel;
   try { model = readStrategyRoot(join(consumer, "agents", "director"), directorStoreReader); }
-  catch (error) { return { model: null, unreadable: error instanceof Error ? error.message : String(error), unclear: new Map() }; }
-  if (model.issues.length) return { model, unreadable: model.issues.slice(0, 3).map(issue => `${issue.path}:${issue.line} ${issue.message}`).join("; "), unclear: new Map() };
+  catch (error) { return { model: null, unreadable: error instanceof Error ? error.message : String(error), unclear: new Map(), content: null }; }
+  if (model.issues.length) return { model, unreadable: model.issues.slice(0, 3).map(issue => `${issue.path}:${issue.line} ${issue.message}`).join("; "), unclear: new Map(), content: null };
   const unclear = new Map<string, string>();
   for (const cell of model.cells) {
     const owner = bulletsOf(cell).filter(bullet => OWNER_LINE.test(`${bullet.key ?? ""} ${bullet.text}`)).length;
@@ -169,7 +183,9 @@ function directorView(consumer: string): DirectorView {
     const why = [owner ? `${plural(owner, "TODO-OWNER line")}` : "", blocking.length ? `${plural(blocking.length, "blocking finding")} (${listed([...new Set(blocking.map(finding => finding.rule))], 3)})` : ""].filter(Boolean);
     if (why.length) unclear.set(cell.id, why.join("; "));
   }
-  return { model, unreadable: null, unclear };
+  const pinStep = context.steps.find(step => step.id === "pin.director");
+  const content = directorContent(consumer, model, context.seats["pin.director"], pinStep?.decider === "owner");
+  return { model, unreadable: null, unclear, content };
 }
 
 // ---------------------------------------------------------------- Writer keys
@@ -193,7 +209,7 @@ const sharedPrefix = (a: string, b: string): number => {
 
 // ---------------------------------------------------------------- gaps
 /** Every gap of the workspace (unscoped) and the notes on empty request pairs. */
-function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes: string[] } {
+function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes: string[]; director: DirectorContent | null; unclear: ReadonlyMap<string, string> } {
   const steps = options.steps ?? STEPS;
   const packageRoot = options.packageRoot ?? PACKAGE_ROOT;
   const consumer = join(root, "clossys");
@@ -221,7 +237,16 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     const agent = /^agents\/([a-z]+)\//.exec(issue.path)?.[1];
     gaps.push({ kind: "coverage", code: `slot-model.${issue.code}`, agent: agent && isAgent(agent) ? agent : "producer", item: issue.path, step: null, decider: "agent", message: issue.message });
   }
-  const director = directorView(consumer);
+  const director = directorView(consumer, context);
+  const content = director.content;
+  // Director content: the archetype (while unrecorded), owner-held core rounds, agent picks to confirm.
+  if (content && content.owner.length && !content.archetypeRecorded) gaps.push({ kind: "coverage", code: "director.archetype", agent: "director", item: `evidence/director/${ARCHETYPE_RECORD_ID}.md`, step: "director.store", decider: "owner",
+    message: `no archetype is recorded: the core (${content.core.length} cells, default) waits on it` });
+  const openPin = new Set(gaps.filter(gap => gap.code === "open.pin.director").map(gap => gap.item));
+  for (const row of content?.owner ?? []) if (!openPin.has(row.item)) gaps.push({ kind: "coverage", code: "director.owner-round", agent: "director", item: row.item, step: "pin.director", decider: "owner",
+    message: `${row.item}: ${row.round.length} drafted options (${row.round.map(each => each.name).join(", ")}) newer than its pin ${row.pinned}` });
+  for (const pick of content?.agentPicks ?? []) gaps.push({ kind: "coverage", code: "director.agent-pick", agent: "director", item: pick.item, step: "pin.director", decider: "owner",
+    message: `${pick.item}: agent pick ${pick.candidate} waits for the owner's confirmation` });
   if (director.unreadable) gaps.push({ kind: "wiring", code: "director.unreadable", agent: "director", item: "agents/director", step: null, decider: "agent", message: `the Director root does not read in full: ${director.unreadable}` });
   for (const [cell, why] of director.unclear) gaps.push({ kind: "coverage", code: "director.check", agent: "director", item: `director/${cell}`, step: "pin.director", decider: "agent", message: `pinned cell ${cell}: ${why}` });
 
@@ -333,7 +358,7 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
 
   const order = (gap: Gap) => [INTERVIEW_AGENTS.indexOf(gap.agent), GAP_KINDS.indexOf(gap.kind)];
   gaps.sort((a, b) => { const [x, y] = [order(a), order(b)]; return x[0]! - y[0]! || x[1]! - y[1]!; });
-  return { gaps, notes };
+  return { gaps, notes, director: content, unclear: director.unclear };
 }
 
 /** One agent's gaps (its own and the requests it raised); every gap when no agent is named. */
@@ -351,7 +376,7 @@ export function gapsOf(root: string, options: InterviewOptions & { readonly agen
 }
 
 // ---------------------------------------------------------------- questions
-type Built = Omit<Question, "options" | "requestedBy"> & { options: QuestionOption[]; requestedBy: string[] };
+type Built = Omit<Question, "options" | "requestedBy" | "after" | "question"> & { options: QuestionOption[]; requestedBy: string[]; after: string[]; question: string };
 const FREE_LABEL = "Something else: answer in your own words.";
 const optionsFrom = (rows: readonly { label: string; calls: string[][] }[], models: Readonly<Partial<Record<SeatTier, string>>>): QuestionOption[] =>
   rows.slice(0, 4).map((row, index) => {
@@ -500,6 +525,57 @@ function requestQuestion(gap: Gap, root: string): Built {
   };
 }
 
+// ---------------------------------------------------------------- Director content
+const ARCHETYPE_QUESTION = "director.archetype";
+const AGENT_PICKS_QUESTION = "director.agent-picks";
+const today = () => new Date().toISOString().slice(0, 10);
+/** The owner's own words for a Director cell: recorded as owner evidence, then the cell is re-drafted on it. */
+const ownWords = (item: string) => ({
+  calls: [["clossys", "evidence", "<id>", "--source", "owner", "--observed", today(), "--by", "owner", "--body", "<answer.md>"], ["clossys", "options", item, "--redraft"]],
+  fill: { "<id>": "a finding id for your answer (owner-<topic>-<date>)", "<answer.md>": "a file with your words, verbatim" },
+});
+
+function archetypeQuestion(content: DirectorContent): Built {
+  const rows = content.archetypes.map(each => ({
+    label: each.name === "default" ? `default: the ${content.core.length} core cells stay as they are.` : `${each.name}: adds ${each.extras.join(", ")} to the core.`,
+    calls: [["clossys", "director", "check", "archetype", each.name, "--by", "owner"]],
+  }));
+  return {
+    id: ARCHETYPE_QUESTION, agent: "director", step: "director.store", header: "Archetype", items: [`evidence/director/${ARCHETYPE_RECORD_ID}.md`],
+    question: "Which archetype is the project? (it decides which cells are core; no archetype is recorded yet)",
+    options: optionsFrom(rows, {}), freeText: { id: "other", label: FREE_LABEL, verb: "clossys evidence", calls: [ownWords("").calls[0]!], fill: ownWords("").fill }, after: [], requestedBy: [],
+  };
+}
+
+function contentQuestions(content: DirectorContent, after: readonly string[]): Built[] {
+  return content.owner.map(row => {
+    const rows = row.round.slice(0, 4).map(candidate => ({ label: `${candidate.summary} (${candidate.name})`, calls: [["clossys", "pin", row.item, candidate.name, "--basis", "picked"]] }));
+    // Never a lone answer: the owner can always ask the Director for another option first.
+    if (rows.length < 2) rows.push({ label: "The Director drafts another option first.", calls: [["clossys", "options", row.item, "--more"]] });
+    return {
+      id: `director:${row.cell}`, agent: "director", step: "pin.director", header: row.header, items: [row.item],
+      question: `Pick ${row.title}`, options: optionsFrom(rows, {}),
+      freeText: { id: "other", label: FREE_LABEL, verb: "clossys evidence", ...ownWords(row.item) }, after: [...after], requestedBy: [],
+    };
+  });
+}
+
+function agentPicksQuestion(content: DirectorContent, unclear: ReadonlyMap<string, string>, after: readonly string[]): Built {
+  const picks = content.agentPicks;
+  const groups = new Map<string, string[]>();
+  for (const pick of picks) groups.set(pick.group, [...(groups.get(pick.group) ?? []), pick.cell]);
+  const failing = picks.filter(pick => unclear.has(pick.cell)).length;
+  const rows = [
+    { label: `Confirm all ${plural(picks.length, "agent pick")}${failing ? ` (${failing} still have blocking findings)` : ""}.`, calls: picks.map(pick => ["clossys", "pin", pick.item, pick.candidate, "--basis", "bulk"]) },
+    { label: `Review them by group (${[...groups].map(([group, cells]) => `${group} ${cells.length}`).join(", ")}): the Director plays each group back.`, calls: picks.map(pick => ["clossys", "options", pick.item]) },
+  ];
+  return {
+    id: AGENT_PICKS_QUESTION, agent: "director", step: "pin.director", header: "Agent picks", items: picks.map(pick => pick.item),
+    question: `Confirm ${plural(picks.length, "agent pick")} (the non-core cells the Director picked)?`, options: optionsFrom(rows, {}),
+    freeText: { id: "other", label: FREE_LABEL, verb: "clossys evidence", calls: [ownWords("").calls[0]!], fill: ownWords("").fill }, after: [...after], requestedBy: [],
+  };
+}
+
 /** Questions into rounds of at most ROUND_SIZE, each after every question it waits on. */
 export function roundsOf(questions: readonly Question[]): Question[][] {
   const rounds: Question[][] = [];
@@ -525,18 +601,44 @@ export function interviewOf(root: string, options: InterviewOptions & { readonly
   if (policy.state !== "ok") questions.push(policyQuestion(policy, options.models ?? {}));
   const seatItems = asked.filter(gap => gap.code === "open.seats").map(gap => gap.item);
   questions.push(...seatQuestions(seatItems, context, policy, packageRoot));
-  const packets = asked.filter(gap => gap.code.startsWith("open.") && gap.code !== "open.seats").map(gap => {
+  // The Director's content: the archetype first, then each owner-held core round as "Pick <cell>".
+  const content = all.director;
+  const contentItems = new Set(content?.owner.map(row => row.item) ?? []);
+  const archetype = content && asked.some(gap => gap.code === "director.archetype") ? archetypeQuestion(content) : null;
+  if (archetype) questions.push(archetype);
+  const contentAsked = content ? contentQuestions({ ...content, owner: content.owner.filter(row => asked.some(gap => gap.item === row.item && (gap.code === "director.owner-round" || gap.code === "open.pin.director"))) }, archetype ? [archetype.id] : []) : [];
+  questions.push(...contentAsked);
+  const packets = asked.filter(gap => gap.code.startsWith("open.") && gap.code !== "open.seats" && !(gap.code === "open.pin.director" && contentItems.has(gap.item))).map(gap => {
     const step = steps.find(each => each.id === gap.step)!;
     return packetOf(step, gap.item, 1, context, { packageRoot });
   });
   questions.push(...packetQuestions(packets));
+  // A request for a cell already asked folds into that question; the confirm question takes none.
+  const unblocks = new Map<string, Map<string, Set<string>>>();
   for (const gap of asked.filter(each => each.kind === "request")) {
-    const merged = questions.find(question => question.items.includes(gap.item) && question.agent === gap.agent);
-    if (merged) { merged.requestedBy = [...new Set([...merged.requestedBy, gap.from!])]; continue; }
+    const merged = questions.find(question => question.id !== AGENT_PICKS_QUESTION && question.items.includes(gap.item) && question.agent === gap.agent);
+    if (merged) {
+      merged.requestedBy = [...new Set([...merged.requestedBy, gap.from!])];
+      const byAgent = unblocks.get(merged.id) ?? new Map<string, Set<string>>();
+      for (const need of gap.need ?? []) byAgent.set(prefixOf(need), new Set([...(byAgent.get(prefixOf(need)) ?? []), need]));
+      unblocks.set(merged.id, byAgent);
+      continue;
+    }
     questions.push(requestQuestion(gap, root));
   }
-  // Requests first within an agent: a downstream agent is waiting on them.
-  const rank = (question: Question) => [INTERVIEW_AGENTS.indexOf(question.agent), question.id === "seat-policy" ? -1 : question.requestedBy.length ? 0 : 1];
+  for (const question of questions) {
+    const byAgent = unblocks.get(question.id);
+    if (byAgent?.size) question.question = `${question.question} (also unblocks ${[...byAgent].map(([agent, needs]) => plural(needs.size, `${agent} slot`)).join(", ")})`;
+  }
+  // The rest of the Director's round waits on its content: agent picks and request records cite the core.
+  const lastContent = contentAsked.at(-1)?.id;
+  const picks = asked.filter(gap => gap.code === "director.agent-pick");
+  if (content && picks.length) questions.push(agentPicksQuestion({ ...content, agentPicks: content.agentPicks.filter(pick => picks.some(gap => gap.item === pick.item)) }, all.unclear, lastContent ? [lastContent] : []));
+  if (lastContent) for (const question of questions) if (question.agent === "director" && question.id.startsWith("request:")) question.after = [...new Set([...question.after, lastContent])];
+  // Requests first within an agent (a downstream agent is waiting on them), except the Director's
+  // content, which runs archetype first, then the core in dependency order.
+  const contentIds = new Set(contentAsked.map(question => question.id));
+  const rank = (question: Question) => [INTERVIEW_AGENTS.indexOf(question.agent), question.id === "seat-policy" ? -3 : question.id === ARCHETYPE_QUESTION ? -2 : contentIds.has(question.id) ? -1 : question.requestedBy.length ? 0 : 1];
   const ordered = questions.map((question, index) => ({ question, index })).sort((a, b) => {
     const [x, y] = [rank(a.question), rank(b.question)];
     return x[0]! - y[0]! || x[1]! - y[1]! || a.index - b.index;

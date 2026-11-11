@@ -137,6 +137,53 @@ describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
   });
 });
 
+// DIR-INT: the Director's owner interview asks content (archetype, then "Pick <cell>"), not only meta requests.
+describe("Director content questions (next --owner --agent director)", { timeout: 120_000 }, () => {
+  const contentOf = (questions: readonly Question[]) => questions.filter(question => question.id.startsWith("director:"));
+  it("asks the archetype first, then each owner-held core cell as Pick <cell> with candidate pin options, recommended first", () => {
+    const root = workspace();
+    const interview = interviewOf(root, { agent: "director" });
+    const all = interview.rounds.flat().filter(question => question.step !== "seats");
+    expect(all[0]!.id).toBe("director.archetype");
+    expect(all[0]!.options[0]!.calls[0]).toEqual(["clossys", "director", "check", "archetype", "default", "--by", "owner"]);
+    const content = contentOf(all);
+    expect(content.length).toBe(24);
+    expect(all.slice(1, 1 + content.length).map(question => question.id)).toEqual(content.map(question => question.id));
+    for (const question of content) {
+      const item = question.items[0]!;
+      expect(question.question).toMatch(/^Pick /);
+      expect(question.after).toContain("director.archetype");
+      expect(question.options.length).toBeGreaterThanOrEqual(2);
+      const pins = question.options.filter(option => option.calls[0]?.[1] === "pin");
+      expect(pins.length).toBeGreaterThanOrEqual(1);
+      for (const option of pins) expect(option.calls[0]).toEqual(["clossys", "pin", item, expect.stringMatching(/-v\d+\.md$/), "--basis", "picked"]);
+      expect(question.freeText?.calls?.map(call => call.slice(0, 2))).toEqual([["clossys", "evidence"], ["clossys", "options"]]);
+    }
+    // Dependency order: Delivery before Bet; a cited cell (need) before the cells that cite it (promise).
+    const at = (cell: string) => content.findIndex(question => question.items[0] === `director/${cell}`);
+    expect(at("capability.operation.delivery")).toBeLessThan(at("execution.priority.bet"));
+    expect(at("context.customer.need")).toBeLessThan(at("advantage.proposition.promise"));
+    for (const round of interview.rounds) expect(round.length).toBeLessThanOrEqual(ROUND_SIZE);
+    expect(interviewIssues(interview, gapsOf(root, { agent: "director" }))).toEqual([]);
+  });
+
+  it("folds a request for an asked cell into its content question; agent picks are one confirm question", () => {
+    const root = workspace();
+    const all = interviewOf(root, { agent: "director" }).rounds.flat();
+    const promise = all.find(question => question.id === "director:advantage.proposition.promise")!;
+    expect(promise.requestedBy).toContain("designer");
+    expect(promise.question).toMatch(/\(also unblocks \d+ designer slots?/);
+    expect(all.some(question => question.id === "request:director/advantage.proposition.promise")).toBe(false);
+    const content = new Set(contentOf(all).flatMap(question => question.items));
+    for (const question of all.filter(each => each.id.startsWith("request:director/"))) expect(content.has(question.items[0]!)).toBe(false);
+    const picks = all.filter(question => question.id === "director.agent-picks");
+    expect(picks).toHaveLength(1);
+    expect(picks[0]!.options.map(option => option.calls[0]?.slice(0, 2))).toEqual([["clossys", "pin"], ["clossys", "options"]]);
+    expect(picks[0]!.options[0]!.calls.every(call => call.at(-1) === "bulk")).toBe(true);
+    for (const item of picks[0]!.items) expect(content.has(item)).toBe(false);
+  });
+});
+
 describe("candidate selection ladder", () => {
   it("select and adapt name their seed; create says why no seed fit", () => {
     expect(ladderIssues("writer", { rung: "select", seed: "writer/strings.statuses/statuses-v1" })).toEqual([]);

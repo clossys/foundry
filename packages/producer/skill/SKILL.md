@@ -60,7 +60,8 @@ cites it and runs it for its own agent id; `<id>` below is that id, `producer` h
   recommended answer first. Never answer an owner question for the owner.
 - **Record through the verbs**: run every argv in the chosen option's `calls`, exactly, filling only
   the words its `fill` names from the owner's answer. A free-text answer is recorded through
-  `freeText.verb` with the owner's words as its arguments. `<model:tier>` words come from
+  `freeText.verb` with the owner's words as its arguments; when it carries `freeText.calls`, run
+  each in order, filling its `fill` words. `<model:tier>` words come from
   `clossys/seat-policy.json`, written by `clossys seat --policy --model <tier>=<id>` (or
   `--human-only`); while it is missing its question is asked first. Never guess a model id; never
   edit a record by hand.

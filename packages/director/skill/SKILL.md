@@ -331,8 +331,17 @@ Run the Producer skill's Interview contract (`clossys-producer`, section Intervi
   question, recommended first.
   The rounds hold the owner decisions (pins, requests); the cell interview above stays one
   question per turn.
+- **What the rounds ask**: the archetype first while none is recorded (each option runs
+  `clossys director check archetype <name> --by owner`); then every owner-held core cell with an
+  open option round as "Pick <cell>", in dependency order (a cited cell before the cells citing it),
+  one option per candidate with its one-line summary, recommended first, each the exact
+  `clossys pin director/<cell> <name> --basis picked`. A downstream request for an asked cell is
+  folded into that question ("also unblocks N designer/writer slots"); a request stays its own
+  question only when its cell has no owner question. Non-core agent picks are one "Confirm N agent
+  picks" question: confirm all, review by group, or free text.
 - **Record through the verbs**: run the chosen option's `calls` exactly (a free-text answer goes
-  through `freeText.verb`); candidates go through `npx clossys next director/<slot> --submit`, agent
+  through `freeText.verb`, running each of `freeText.calls` in order: record the owner's words as
+  evidence, then `clossys options <item> --redraft` for a new round); candidates go through `npx clossys next director/<slot> --submit`, agent
   picks through `npx clossys pick director/<id> <name>-v<N> --by agent:director`, owner pins through `npx clossys pin`. Never edit a record by hand.
 - **Cascade**: `npx clossys run` after each round.
 - **Stop at 0 gaps**: repeat until `npx clossys gaps --agent director` reports 0 gaps.
