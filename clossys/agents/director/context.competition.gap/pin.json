@@ -1,7 +1,12 @@
 {
-  "candidate": "studio-gap-v4.md",
-  "sha256": "8f9bb8f1e8d2f4f799c765a148286603423797d0f4d7024c5178a3ad89c18b26",
+  "candidate": "studio-gap-v6.md",
+  "sha256": "c5e7829f01455db1d1243bbb319cc5d21f642c3f5238e74fa58998fbdef82777",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T18:40:45.616Z"
+  "at": "2026-11-11T23:24:46.241Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:26:04.125Z"
+  }
 }
