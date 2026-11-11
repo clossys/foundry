@@ -52,9 +52,10 @@ describe("Foundry source token reads", () => {
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") writeFileSync(resolve(here, "foundry-source-reads.json"), bytes);
     expect(readFileSync(resolve(here, "foundry-source-reads.json"), "utf8")).toBe(bytes);
   });
-  it("color-picker and number-field fills carry every themes slot their source consumes, so neither offer is blocked", () => {
+  // R2F-51: NumberField was deleted (ladder L3 DELETE); date-field, now the Intent UI field, carries the second leaf.
+  it("color-picker and date-field fills carry every themes slot their source consumes, so neither offer is blocked", () => {
     const reads = derived();
-    for (const leaf of ["color-picker", "number-field"]) {
+    for (const leaf of ["color-picker", "date-field"]) {
       const doc = importFoundryComponents().fills.find(fill => fill.$extensions["com.clossys.fill"].slot === `components.${leaf}`)!;
       const candidate = Object.values(doc.components)[0]!;
       expect(candidate.reads.themes, leaf).toEqual(expect.arrayContaining(reads[leaf]!));
@@ -63,14 +64,14 @@ describe("Foundry source token reads", () => {
     }
   });
   it("records, without blocking, a frozen read set that omits a themes slot its source consumes", () => {
-    const original = (componentSlots as unknown as ComponentSlot[]).find(row => row.id === "components.number-field")!;
+    const original = (componentSlots as unknown as ComponentSlot[]).find(row => row.id === "components.color-picker")!;
     const slot = structuredClone(original);
     (slot.contract as { allowedReads: { themes: string[] } }).allowedReads.themes = slot.contract.allowedReads.themes.filter(read => read !== "themes.radius");
-    const mappings = { "number-field": FOUNDRY_COMPONENT_MAP["number-field"]! };
-    const result = importFoundryComponents({ slots: [slot], mappings, sourceReads: { "number-field": ["themes.radius", "themes.font-sans"] } });
+    const mappings = { "color-picker": FOUNDRY_COMPONENT_MAP["color-picker"]! };
+    const result = importFoundryComponents({ slots: [slot], mappings, sourceReads: { "color-picker": ["themes.radius", "themes.font-sans"] } });
     expect(result.coverage[0]!.notes).toContain("Frozen reads omit source-consumed themes.radius; the contract's allowedReads must widen before this is enforced.");
     expect(Object.values(result.fills[0]!.components)[0]!.blockers).toBeUndefined();
-    const clean = importFoundryComponents({ slots: [structuredClone(original)], mappings, sourceReads: { "number-field": ["themes.radius"] } });
+    const clean = importFoundryComponents({ slots: [structuredClone(original)], mappings, sourceReads: { "color-picker": ["themes.radius"] } });
     expect(clean.coverage[0]!.notes.some(note => note.includes("source-consumed"))).toBe(false);
   });
   it("pins which mapped components' frozen reads still omit source-consumed themes slots (owner ASK: widen contracts, then enforce)", () => {
@@ -81,6 +82,6 @@ describe("Foundry source token reads", () => {
     // tag-group: its contract lists the focus ring its TagGroup source consumes.
     expect(omissions["tag-group"]).toBeUndefined();
     expect(omissions["color-picker"]).toBeUndefined();
-    expect(omissions["number-field"]).toBeUndefined();
+    expect(omissions["date-field"]).toBeUndefined();
   });
 });

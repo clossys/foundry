@@ -16,7 +16,9 @@ const srcDir = dirname(fileURLToPath(import.meta.url));
 const SHARED = ["icons/", "tokens/", "internal/peer-version.js", "internal/declared-peer-ranges.js", "internal/brandmark.js"];
 const RULES = {
   catalog: { bare: /^$/, local: ["catalog-core/", "catalog-assets/", "catalog/", "tokens/", "importers/", "icons/"] },
-  components: { bare: /^(?:react|react-aria-components(?:\/package\.json)?|tailwind-merge)$/, local: ["components/", ...SHARED] },
+  // lucide-react: ISC, basis owner words 2026-11-10 (R2F-51 Intent UI icons).
+  // tailwind-variants: MIT, basis owner words 2026-11-10 (R2F-51 Intent UI field styles).
+  components: { bare: /^(?:react|react-aria-components(?:\/package\.json)?|tailwind-merge|lucide-react|tailwind-variants)$/, local: ["components/", ...SHARED] },
   blocks: { bare: /^react$/, typeOnlyBare: /^react-aria-components$/, local: ["blocks/", "components/", "catalog-core/provenance-attrs.js", ...SHARED] },
   /**
    * tokens, icons, internal: bare specifiers follow the blocks rule plus Node built-ins (existing

@@ -135,8 +135,8 @@ export function ResourceList({
         onSelectionChange?.(next);
       }} onAction={onAction ? key => onAction(String(key)) : undefined}
       renderEmptyState={() => <EmptyState {...emptyState} />}>
-      {item => <GridList.Item className="px-0" id={item.id} textValue={item.textValue} href={item.href} isDisabled={item.isDisabled}>
-        {selectionMode === "multiple" && <GridList.SelectionCheckbox aria-label={selectRowLabel!(item.textValue)} />}
+      {item => <GridList.Item className="px-0" id={item.id} textValue={item.textValue} href={item.href} isDisabled={item.isDisabled}
+        selectionLabel={selectionMode === "multiple" ? selectRowLabel!(item.textValue) : undefined}>
         {item.media && <SemanticContent as="div" className="size-10 shrink-0">{item.media}</SemanticContent>}
         <SemanticContent as="div" className="min-w-0 flex-1">
           <SemanticContent as="div" className="truncate text-body text-ink-primary" title={item.textValue}>{item.title}</SemanticContent>

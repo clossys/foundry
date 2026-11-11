@@ -216,7 +216,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("TextField", "TextArea", "Label", "Text", "FieldError"),
     disposition: "keep",
   }),
-  onMain("SearchField", ["src/components/SearchField.tsx"], {
+  onMain("SearchField", ["src/components/intent/search-field.tsx"], {
     id: "enter.search-field",
     label: "Search field",
     racBase: rac("SearchField", "Input", "Button", "Label", "Text", "FieldError"),

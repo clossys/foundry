@@ -5,9 +5,9 @@ import { describe, expect, it } from "vitest";
 import { buttonClassName } from "./button-classes.js";
 import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { DateField } from "./DateField.js";
-import { NumberField } from "./NumberField.js";
 import { RadioGroup, RadioGroupItem } from "./preview-runtime/components/radio-group/radio-group.js";
-import { SearchField } from "./SearchField.js";
+import { SearchField, SearchInput } from "./intent/search-field.js";
+import { Label } from "./intent/field.js";
 import { StockSelect } from "../blocks/stock-select.js";
 import { StockCombobox } from "../blocks/stock-combobox.js";
 import { Switch } from "./preview-runtime/components/switch/switch.js";
@@ -23,29 +23,27 @@ import { Toggle } from "./preview-runtime/components/toggle-button/toggle.js";
  * and disabled states keep their own treatment.
  */
 const OPTIONS = [{ id: "apple", label: "Apple" }, { id: "pear", label: "Pear" }];
-const names = { incrementLabel: "Increase", decrementLabel: "Decrease" };
 const classes = (el: Element | null | undefined): string[] => (el?.getAttribute("class") ?? "").split(/\s+/).filter(Boolean);
-
-function expectControlLine(el: Element | null | undefined): void {
-  expect(classes(el)).toContain("border-line-control");
-  expect(classes(el)).not.toContain("border-line-base");
-}
 
 type Mount = () => Element | null | undefined;
 const fields: Array<[string, Mount, Mount]> = [
-  ["SearchField", () => { render(<SearchField label="Search" />); return screen.getByRole("searchbox"); }, () => { render(<SearchField label="Search" isInvalid />); return screen.getByRole("searchbox"); }],
-  ["NumberField", () => { render(<NumberField {...names} label="Qty" />); return screen.getByRole("textbox").closest("[role=group]"); }, () => { render(<NumberField {...names} label="Qty" isInvalid />); return screen.getByRole("textbox").closest("[role=group]"); }],
   ["DateField", () => { render(<DateField label="Start" defaultValue={new CalendarDate(2024, 1, 15)} />); return screen.getByRole("group", { name: /Start/ }); }, () => { render(<DateField label="Start" defaultValue={new CalendarDate(2024, 1, 15)} isInvalid />); return screen.getByRole("group", { name: /Start/ }); }],
+  ["SearchField", () => { render(<SearchField><Label>Search</Label><SearchInput /></SearchField>); return screen.getByRole("searchbox"); }, () => { render(<SearchField isInvalid><Label>Search</Label><SearchInput /></SearchField>); return screen.getByRole("searchbox"); }],
 ];
 
 describe("control boundary line (VF-8)", () => {
-  it.each(fields)("%s: resting boundary uses border-line-control; invalid keeps the danger border", (_name, rest, invalid) => {
+  // R2F-51: the Intent UI date and search fields draw the resting boundary with the theme input line (`border-input`,
+  // `--color-input`) and carry the invalid state as a data attribute that switches to the destructive border.
+  it.each(fields)("%s: resting boundary uses the input line role; invalid switches to the destructive border", (_name, rest, invalid) => {
     const { unmount } = { unmount: () => document.body.replaceChildren() };
-    expectControlLine(rest());
+    const resting = rest();
+    expect(classes(resting)).toContain("border-input");
+    expect(classes(resting)).not.toContain("border-line-base");
+    expect(resting).not.toHaveAttribute("data-invalid");
     unmount();
     const el = invalid();
-    expect(classes(el)).toContain("border-status-danger");
-    expect(classes(el)).not.toContain("border-line-control");
+    expect(classes(el)).toContain("invalid:border-destructive/70");
+    expect(el).toHaveAttribute("data-invalid", "true");
   });
 
   it.each([
@@ -61,11 +59,13 @@ describe("control boundary line (VF-8)", () => {
     expect(invalid).toHaveAccessibleDescription("Pick a fruit");
   });
 
-  it("DateField: the picker trigger button rests on the control line", () => {
+  it("DateField: the picker trigger button rests on the same input line as the date input", () => {
     render(<DatePicker defaultValue={new CalendarDate(2024, 1, 15)} aria-label="When">
       <Group><DateField label="When" pickerTrigger={{ label: "Choose date", children: <span /> }} /></Group>
     </DatePicker>);
-    expectControlLine(screen.getByRole("button", { name: /^Choose date/ }));
+    const trigger = screen.getByRole("button", { name: /^Choose date/ });
+    expect(classes(trigger)).toEqual(expect.arrayContaining(["border", "border-input"]));
+    expect(classes(trigger)).not.toContain("border-line-base");
   });
 
   it("Checkbox: the stock box rests on the strong line and binds selected and invalid to the action and danger edges", () => {

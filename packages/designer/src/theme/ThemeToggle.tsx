@@ -3,7 +3,7 @@ import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 import { createContext, useContext, useId, useState } from "react";
 import { Icon } from "../components/preview-runtime/components/icon/icon.js";
 import { ToggleGroup, ToggleGroupItem, type ToggleGroupProps } from "../components/ToggleGroup.js";
-import { Toolbar } from "../components/Toolbar.js";
+import { Toolbar } from "../components/intent/toolbar.js";
 import { Tooltip, TooltipTrigger, type TooltipBehaviorTiming } from "../components/preview-runtime/components/tooltip/tooltip.js";
 import { Monitor, Moon, Sun, type IconNode } from "../icons/index.js";
 import { useOptionalTheme } from "./ThemeProvider.js";
@@ -97,7 +97,7 @@ export function ThemeToggle({
   const inMenu = useContext(ThemeTogglePresentationContext) === "menu";
 
   return <>
-    <Toolbar aria-label={toolbarLabel} className="border-0 p-0">
+    <Toolbar aria-label={toolbarLabel} className="inset-ring-0 bg-transparent p-0">
     <ToggleGroup {...rest} aria-label={ariaLabel} aria-describedby={[describedby, statusId].filter(Boolean).join(" ")}
       selectionMode="single" disallowEmptySelection selectedKeys={new Set([preference])}
       onSelectionChange={keys => {

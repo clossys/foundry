@@ -466,19 +466,19 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "avoidWhen": "The value is ordinary form data with no search meaning.",
   "alternatives": "Use TextField for stored text; ComboBox for searching a fixed choice set.",
   "content": "Name what can be searched and give helpful query instructions when needed.",
-  "anatomy": "A query entry with a clear affordance when the query is nonempty.",
+  "anatomy": "A SearchField over a Label and a SearchInput: the query entry with a clear affordance shown when the query is nonempty.",
   "composition": "In a consumer-owned results-toolbar block, connect SearchField to the results query.",
   "accessibility": "The clear action must remain keyboard reachable and return attention to the query."
 },
 {
   "exportName": "SearchField",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry exports the Intent UI SearchField and SearchInput; a Label child names the field.",
   "options": [
     {
       "prop": "isDisabled",
       "label": "Availability",
-      "purpose": "Availability selects the existing SearchField isDisabled behavior.",
+      "purpose": "Availability selects the Intent SearchField isDisabled behavior.",
       "values": [
         {
           "value": false,
@@ -498,7 +498,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     {
       "prop": "isInvalid",
       "label": "Validation state",
-      "purpose": "Validation state selects the existing SearchField isInvalid behavior.",
+      "purpose": "Validation state selects the Intent SearchField isInvalid behavior.",
       "values": [
         {
           "value": false,
@@ -517,7 +517,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/SearchField.tsx"),
+}, "src/components/intent/search-field.tsx"),
   "enter.date-field": entry(
 {
   "purpose": "Collect a calendar-aware date through editable segments.",
@@ -532,7 +532,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "DateField",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Calendar-aware DateValue input supports inherited granularity and bounds; no calendar grid is rendered. Locale ordering belongs to the installed ARIA primitive.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Calendar-aware DateValue input supports inherited granularity and bounds; no calendar grid is rendered. Locale ordering belongs to the installed ARIA primitive. Styled by the vendored Intent UI date field (MIT); a thin Foundry adapter keeps the label, description, error and picker-trigger props.",
   "options": [
     {
       "prop": "isDisabled",
@@ -1473,11 +1473,11 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     alternatives: "Use Table for shared columns or ResourceList for an assembled record-list block.",
     content: "Supply a list name, each row’s plain text identity and host-authored checkbox names.",
     anatomy: "A named grid with repeated record rows and optional selection checkboxes.",
-    composition: "Compose GridList.Item content with GridList.SelectionCheckbox and named child actions.",
+    composition: "Compose GridList.Item content with named child actions; under multiple selection each Item names its own selection checkbox with selectionLabel.",
     accessibility: "Space toggles selection and Enter activates onAction during selection; href routing follows the peer’s toggle-selection semantics."
   }, {
     exportName: "GridList", entrypoint: "components",
-    notes: "Draft stack layout with toggle selection fixed by the component. The peer supplies collection, keyboard, disabled and action behavior. Supply aria-label or aria-labelledby; each Item requires textValue and each SelectionCheckbox requires its host aria-label. Direct-row Enter adapts onAction during active selection. Href rows route while selection is empty; active-selection row presses toggle selection without navigation.",
+    notes: "Draft stack layout with toggle selection fixed by the component. The peer supplies collection, keyboard, disabled and action behavior. Built on the Intent UI grid list. Supply aria-label or aria-labelledby; each Item requires textValue and, under multiple selection, a selectionLabel for the checkbox the Intent item renders. Direct-row Enter adapts onAction during active selection. Href rows route while selection is empty; active-selection row presses toggle selection without navigation.",
     options: [],
     constraints: [{ kind: "data", props: ["aria-label", "aria-labelledby"], reason: "At least one nonblank accessible naming path is required.", enforcement: "runtime", evidence: { source: "src/components/GridList.tsx", evidence: "GridList requires aria-label or aria-labelledby." } }]
   }, "src/components/GridList.tsx"),
@@ -2674,7 +2674,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "enter.search-field": {
     "exportName": "SearchField",
-    "source": "src/components/SearchField.tsx",
+    "source": "src/components/intent/search-field.tsx",
     "options": [
       {
         "prop": "isDisabled",
@@ -2687,8 +2687,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/SearchField.tsx",
-          "evidence": "AriaSearchField"
+          "source": "src/components/intent/search-field.tsx",
+          "evidence": "SearchFieldPrimitive"
         }
       },
       {
@@ -2702,8 +2702,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/SearchField.tsx",
-          "evidence": "<AriaSearchField {...rest}"
+          "source": "src/components/intent/search-field.tsx",
+          "evidence": "<SearchFieldPrimitive"
         }
       }
     ],
@@ -2712,14 +2712,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-ring:",
           "via": [
             {
-              "source": "src/components/SearchField.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/intent/input.tsx",
+              "evidence": "focus:ring-ring/20"
             }
           ]
         }
@@ -2742,7 +2742,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
         },
         "forwarding": {
           "source": "src/components/DateField.tsx",
-          "evidence": "AriaDateField"
+          "evidence": "<IntentDateField {...rest}"
         }
       },
       {
@@ -2757,7 +2757,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
         },
         "forwarding": {
           "source": "src/components/DateField.tsx",
-          "evidence": "<AriaDateField {...rest}"
+          "evidence": "<IntentDateField {...rest}"
         }
       }
     ],
@@ -2766,14 +2766,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-ring:",
           "via": [
             {
-              "source": "src/components/DateField.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/intent/date-field.tsx",
+              "evidence": "focus-within:ring-ring/20"
             }
           ]
         }

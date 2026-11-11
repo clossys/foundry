@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { cx } from "./internal/cx.js";
+import { cn } from "./preview-runtime/components/_parts/utils/index.js";
 import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "./internal/ui-vars.js";
 import type { MeterEmphasis, MeterProps, MeterTone } from "./Meter.js";
 
@@ -57,6 +58,23 @@ export const METER_TRACK_CLASSES = "relative h-2 w-full overflow-hidden rounded-
 export function meterRootClassName(emphasis: MeterEmphasis, className: string | undefined): string {
   return cx("flex flex-col font-body", ROOT_GAP_CLASSES[emphasis], className);
 }
+
+/**
+ * The Intent UI `Meter` root's own classes (`./intent/meter.tsx`), merged ahead of the Foundry root
+ * classes the same way that root merges them, so the server markup equals the client markup; the
+ * parity test fails if the vendored root changes and this copy does not follow.
+ */
+const INTENT_METER_ROOT = [
+  "w-full",
+  "[&>[data-slot=meter-header]+[data-slot=meter-track]]:mt-2",
+  "[&>[data-slot=meter-header]+[data-slot=meter-track]]:mt-2",
+  "[&>[data-slot=meter-header]+[slot='description']]:mt-1",
+  "[&>[slot='description']+[data-slot=meter-track]]:mt-2",
+  "[&>[data-slot=meter-track]+[slot=description]]:mt-2",
+  "[&>[data-slot=meter-track]+[slot=errorMessage]]:mt-2",
+  "*:data-[slot=meter-header]:font-medium",
+];
+export const intentMeterRootClassName = (className: string): string => cn(INTENT_METER_ROOT, className);
 
 export interface ResolvedMeter {
   /** The scale direction after the `"max"` default, for the root's `data-direction`. */
@@ -181,11 +199,12 @@ export function Meter({
   const resolved = resolveMeter({ value, scaleMax, limit, previous, previousText, direction });
   return (
     <div
+      data-slot="meter"
       {...rest}
       data-direction={direction}
       data-tone={tone}
       data-emphasis={emphasis}
-      className={meterRootClassName(emphasis, className)}
+      className={intentMeterRootClassName(meterRootClassName(emphasis, className))}
     >
       <div className={VALUE_ROW_CLASSES[emphasis].row}>
         <span className={VALUE_ROW_CLASSES[emphasis].value}>{valueText}</span>

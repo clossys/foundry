@@ -118,6 +118,7 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve as resolvePath } from "node:path";
+import { pathToFileURL } from "node:url";
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { resolveInstalledPeerVersion } from "../internal/resolve-installed-peer-version.js";
 import { TAILWINDCSS_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
@@ -263,7 +264,9 @@ function buildEntryCss(stylesDir: string): string {
     );
   }
 
-  return `@import "tailwindcss/theme" theme(reference);\n${themeBlockOnly}\n@import "tailwindcss/utilities" layer(foundry-ui-compiled);\n`;
+  // R2F-51: the vendored Intent UI parts use react-aria-components state variants (`selected:`, `pressed:`, `invalid:`,
+  // `group-empty/search-field:` ...), which the Apache-2.0 tailwindcss-react-aria-components plugin defines.
+  return `@import "tailwindcss/theme" theme(reference);\n${themeBlockOnly}\n@plugin "tailwindcss-react-aria-components";\n@import "tailwindcss/utilities" layer(foundry-ui-compiled);\n`;
 }
 
 /**
@@ -380,6 +383,14 @@ function addExplicitFallbacksForInternalProperties(css: string): string {
   });
 }
 
+/** Resolves the one Tailwind plugin the entry declares (`tailwindcss-react-aria-components`) from this package's dependencies. */
+async function loadPluginModule(id: string, base: string): Promise<{ path: string; base: string; module: unknown }> {
+  if (id !== "tailwindcss-react-aria-components") throw new Error(`generateCompiledCss: unexpected plugin "${id}"`);
+  const path = createRequire(import.meta.url).resolve(id);
+  const loaded = await import(pathToFileURL(path).href) as { default?: unknown };
+  return { path, base, module: loaded.default ?? loaded };
+}
+
 /**
  * `tailwindcss` is one of this package's optional peers (see
  * package.json's `peerDependenciesMeta`) — optional so a token-only or
@@ -411,6 +422,7 @@ export async function generateCompiledCss(options: GenerateCompiledCssOptions): 
   const compiled = await compile(entryCss, {
     base: options.stylesDir,
     loadStylesheet,
+    loadModule: loadPluginModule,
   });
 
   const rawCss = compiled.build(options.candidates);

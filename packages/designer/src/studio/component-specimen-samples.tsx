@@ -2,7 +2,7 @@
 import { cloneElement, useId, useRef, useState, type ComponentType, type ContextType, type FormEvent, type ReactElement, type ReactNode } from "react";
 import { TooltipTriggerStateContext } from "react-aria-components";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
+import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenProps, componentSpecimenSearchField, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 import { containedDialog, containedToaster } from "./component-specimen-contained.js";
 
@@ -49,7 +49,6 @@ const stateProps: Readonly<Record<string, StateProps>> = {
   "./components#ToggleButton": { ...toggle, pressed: { isSelected: true } },
   "./components#TextField": field,
   "./components#SearchField": field,
-  "./components#NumberField": field,
   "./components#DateField": field,
   "./components#Calendar": field,
   "./components#ComboBox": field,
@@ -80,7 +79,7 @@ const part = (owner: unknown, name: string): Renderable | undefined => {
   return typeof value === "function" || (typeof value === "object" && value !== null && "$$typeof" in value) ? value as Renderable : undefined;
 };
 
-type TreeItem = { readonly id: string; readonly label: string; readonly expandLabel: string; readonly children?: readonly TreeItem[] };
+type TreeItem = { readonly id: string; readonly label: string; readonly children?: readonly TreeItem[] };
 
 function collection(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
   const c = componentSpecimenCollections;
@@ -90,9 +89,9 @@ function collection(key: string, Component: unknown, exports: Namespace): Compon
       return Item && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Item>) };
     }
     case "./components#Tree": {
-      const Node = part(Component, "Node");
-      if (!Node) return undefined;
-      const node = (item: TreeItem): ReactNode => <Node key={item.id} id={item.id} textValue={item.label} label={item.label} expandLabel={item.expandLabel}>{item.children?.map(node)}</Node>;
+      const Item = part(exports, "TreeItem"), Content = part(exports, "TreeContent");
+      if (!Item || !Content) return undefined;
+      const node = (item: TreeItem): ReactNode => <Item key={item.id} id={item.id} textValue={item.label}><Content>{item.label}</Content>{item.children?.map(node)}</Item>;
       return { props: { "aria-label": c[key].label, defaultExpandedKeys: c[key].defaultExpandedKeys }, children: c[key].items.map(node) };
     }
     case "./components#Toolbar": {
@@ -111,8 +110,8 @@ function collection(key: string, Component: unknown, exports: Namespace): Compon
       ] };
     }
     case "./components#TagGroup": {
-      const List = part(Component, "List"), Item = part(Component, "Item");
-      return List && Item && { props: { label: c[key].label }, children: <List>{c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Item>)}</List> };
+      const Label = part(exports, "FieldLabel"), List = part(exports, "TagList"), Item = part(exports, "Tag");
+      return Label && List && Item && { props: {}, children: [<Label key="label">{c[key].label}</Label>, <List key="list">{c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Item>)}</List>] };
     }
     case "./components#ToggleGroup": {
       const Item = part(exports, "ToggleGroupItem");
@@ -152,6 +151,10 @@ function composed(key: string, exports: Namespace): ComponentSpecimenSample | un
     case "./components#FileTrigger": return Button && { props: {}, children: <Button>{a.upload}</Button> };
     case "./components#Form": return Button && TextField && { props: {}, children: [<TextField key="field" {...a.field} />, <Button key="submit" type="submit">{a.submit}</Button>] };
     case "./components#LinkButton": return { props: { href: a.href, variant: "link" } };
+    case "./components#SearchField": {
+      const Label = part(exports, "Label"), Input = part(exports, "SearchInput"), d = componentSpecimenSearchField;
+      return Label && Input && { props: {}, children: [<Label key="label">{d.label}</Label>, <Input key="input" placeholder={d.placeholder} />] };
+    }
     default: return undefined;
   }
 }

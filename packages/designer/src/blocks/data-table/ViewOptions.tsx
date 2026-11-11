@@ -19,7 +19,10 @@ const Sheet = componentLeaf<StockSheet["Sheet"]>("components.sheet");
 const SheetTrigger = componentLeaf<StockSheet["SheetTrigger"]>("components.sheet", "SheetTrigger");
 const SheetTitle = componentLeaf<StockSheet["SheetTitle"]>("components.sheet", "SheetTitle");
 const SheetClose = componentLeaf<StockSheet["SheetClose"]>("components.sheet", "SheetClose");
-const TagGroup = componentLeaf<typeof import("../../components/TagGroup.js").TagGroup>("components.tag-group");
+const TagGroup = componentLeaf<typeof import("../../components/intent/tag-group.js").TagGroup>("components.tag-group");
+const TagList = componentLeaf<typeof import("../../components/intent/tag-group.js").TagList>("components.tag-group", "TagList");
+const Tag = componentLeaf<typeof import("../../components/intent/tag-group.js").Tag>("components.tag-group", "Tag");
+const TagLabel = componentLeaf<typeof import("../../components/preview-runtime/components/field/field.js").FieldLabel>("components.tag-group", "FieldLabel");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const wideQuery = "(min-width: 768px)";
@@ -205,18 +208,19 @@ export function ViewOptions({
           <Popover aria-label={viewOptionsLabel} placement="bottom start" className="max-w-full overflow-auto"><SemanticContent as="h2" className="text-body font-medium text-ink-primary">{viewOptionsLabel}</SemanticContent>{controls}</Popover>
         </DialogTrigger>}
     </SemanticContent>
-    {groups.length || model.sort.length || filters.length ? <TagGroup label={activeRulesLabel} selectionMode="none" onRemove={keys => change(editView(model, {
+    {groups.length || model.sort.length || filters.length ? <TagGroup selectionMode="none" onRemove={keys => change(editView(model, {
       table: { ...model.table,
         groupBy: groups.filter(group => !keys.has(`group:${group.column}`)),
         filters: filters.filter((filter, index) => !keys.has(`filter:${filter.kind === "group" ? "group" : filter.column}:${index}`)),
       },
       sort: model.sort.filter(sort => !keys.has(`sort:${sort.column}`)),
     }))}>
-      <TagGroup.List className="flex flex-wrap gap-xs">
-        {groups.map(group => <TagGroup.Item key={`group:${group.column}`} id={`group:${group.column}`} textValue={groupChipMessage(label(group.column))} removeLabel={removeGroupMessage(label(group.column))}>{groupChipMessage(label(group.column))}</TagGroup.Item>)}
-        {model.sort.map(sort => <TagGroup.Item key={`sort:${sort.column}`} id={`sort:${sort.column}`} textValue={sortChipMessage(label(sort.column), sort.direction)} removeLabel={removeSortMessage(label(sort.column))}>{sortChipMessage(label(sort.column), sort.direction)}</TagGroup.Item>)}
-        {filters.map((filter, index) => <TagGroup.Item key={`filter:${filter.kind === "group" ? "group" : filter.column}:${index}`} id={`filter:${filter.kind === "group" ? "group" : filter.column}:${index}`} textValue={filterChipMessage(filterLabel(filter), filter)} removeLabel={removeFilterMessage(filterLabel(filter), filter)}>{filterChipMessage(filterLabel(filter), filter)}</TagGroup.Item>)}
-      </TagGroup.List>
+      <TagLabel>{activeRulesLabel}</TagLabel>
+      <TagList className="flex flex-wrap gap-xs">
+        {groups.map(group => <Tag key={`group:${group.column}`} id={`group:${group.column}`} textValue={groupChipMessage(label(group.column))} removeLabel={removeGroupMessage(label(group.column))}>{groupChipMessage(label(group.column))}</Tag>)}
+        {model.sort.map(sort => <Tag key={`sort:${sort.column}`} id={`sort:${sort.column}`} textValue={sortChipMessage(label(sort.column), sort.direction)} removeLabel={removeSortMessage(label(sort.column))}>{sortChipMessage(label(sort.column), sort.direction)}</Tag>)}
+        {filters.map((filter, index) => <Tag key={`filter:${filter.kind === "group" ? "group" : filter.column}:${index}`} id={`filter:${filter.kind === "group" ? "group" : filter.column}:${index}`} textValue={filterChipMessage(filterLabel(filter), filter)} removeLabel={removeFilterMessage(filterLabel(filter), filter)}>{filterChipMessage(filterLabel(filter), filter)}</Tag>)}
+      </TagList>
     </TagGroup> : null}
   </>;
 }

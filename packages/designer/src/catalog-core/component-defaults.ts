@@ -21,7 +21,7 @@ export const DEFAULT_COMPONENT_PICKS: Readonly<Record<string, string>> = {
 };
 /** Whole-component fallbacks stay subject to the normal eligibility checker. */
 export const DEFAULT_COMPONENT_FALLBACK = { source: "foundry", slots: ["checkbox", "dialog", "popover", "tabs", "toggle-button", "disclosure", "select", "chart-sparkline", "color-picker",
-  "number-field", "tag-group", "tree", "calendar", "menu", "table", "card"].map(leaf => `components.${leaf}`) };
+  "tag-group", "tree", "calendar", "menu", "table", "card"].map(leaf => `components.${leaf}`) };
 
 export interface ComponentDefaultsInput {
   catalog: ComponentCatalog;

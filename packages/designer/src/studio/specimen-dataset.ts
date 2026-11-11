@@ -641,8 +641,8 @@ export const specimenDataset = {
   tree: {
     label: "Files",
     items: [
-      { id: "docs", label: "Documents", expandLabel: "Toggle Documents", children: [{ id: "invoice", label: "Invoice.pdf", expandLabel: "Toggle Invoice.pdf" }] },
-      { id: "media", label: "Media", expandLabel: "Toggle Media", children: [{ id: "cover", label: "Cover.png", expandLabel: "Toggle Cover.png" }] },
+      { id: "docs", label: "Documents", children: [{ id: "invoice", label: "Invoice.pdf" }] },
+      { id: "media", label: "Media", children: [{ id: "cover", label: "Cover.png" }] },
     ],
     defaultExpandedKeys: ["docs"],
   },
@@ -669,7 +669,6 @@ export const specimenDataset = {
   textField: { label: "Project name", placeholder: "Untitled project", description: "Shown on the dashboard." },
   searchField: { label: "Search orders", placeholder: "Order or customer" },
   field: { label: "Project name", description: "Shown on the dashboard." },
-  numberField: { label: "Quantity", defaultValue: int(2, 8), minValue: 0, maxValue: 10, incrementLabel: "Increase quantity", decrementLabel: "Decrease quantity" },
   slider: { label: "Volume", defaultValue: int(20, 80) },
   progress: { label: "Upload progress", value: int(30, 90) } satisfies { label: string } & Pick<ComponentProps<typeof StockProgress>, "value">,
   meter: { label: "Storage used", value: 3, scaleMax: 5, valueText: "3 of 5 GB", tone: "info" } satisfies Partial<MeterProps>,

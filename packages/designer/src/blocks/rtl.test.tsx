@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ArticleBody } from "./ArticleBody.js";
-import { SearchField } from "../components/SearchField.js";
+import { SearchField, SearchInput } from "../components/intent/search-field.js";
+import { Label } from "../components/intent/field.js";
 import { Toolbar } from "./Toolbar.js";
 import { ContentSection } from "./ContentSection.js";
 import { Matrix } from "./Matrix.js";
@@ -15,12 +16,14 @@ describe("blocks and components RTL logical-direction utilities (#951)", () => {
   it("places SearchField's clear control at inline-end under dir=rtl", () => {
     render(
       <div dir="rtl">
-        <SearchField label="Search" value="query" onChange={() => {}} />
+        <SearchField value="query" onChange={() => {}}><Label>Search</Label><SearchInput /></SearchField>
       </div>,
     );
-    const button = screen.getByRole("button");
-    expect(button.className).toContain("end-sm");
-    expect(button.className).not.toContain("right-sm");
+    const button = screen.getByRole("button", { name: /clear/i });
+    const group = button.parentElement as HTMLElement;
+    expect(group.lastElementChild).toBe(button);
+    expect(group.className).toContain("[&>button:last-child]:end-0");
+    expect(`${group.className} ${button.className}`).not.toMatch(PHYSICAL);
   });
 
   it("pushes Toolbar trailing actions to inline-end with ms-auto", () => {

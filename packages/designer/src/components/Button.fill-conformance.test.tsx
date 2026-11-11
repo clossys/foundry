@@ -6,7 +6,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Button } from "./preview-runtime/components/button/button.js";
 import { IconButton } from "./IconButton.js";
-import { SearchField } from "./SearchField.js";
+import { SearchField, SearchInput } from "./intent/search-field.js";
+import { Label } from "./intent/field.js";
 import { StockSelect as Select } from "../blocks/stock-select.js";
 import { Toggle } from "./toggle-button/toggle.js";
 import { Toggle as StockToggle } from "./preview-runtime/components/toggle-button/toggle.js";
@@ -23,7 +24,6 @@ const options = [{ id: "one", label: "One" }];
 // R2F-33d1: the text field is the stock shadcn@aria input; its states are stock classes, pinned in control-boundary and field-focus.
 const cases: [string, (disabled: boolean) => ReactElement, () => HTMLElement][] = [
   ["IconButton", d => <IconButton isDisabled={d} icon={X} label={name} />, () => screen.getByRole("button", { name })],
-  ["SearchField", d => <SearchField isDisabled={d} label={name} placeholder="Search here" />, () => screen.getByRole("searchbox", { name })],
   ["Toggle", d => <Toggle isDisabled={d}>{name}</Toggle>, () => screen.getByRole("button", { name })],
   ["ToggleGroup", d => <ToggleGroup isDisabled={d} aria-label="Format" selectionMode="multiple"><ToggleGroupItem id="one">{name}</ToggleGroupItem></ToggleGroup>, () => screen.getByRole("button", { name })],
   ["Popover trigger", d => <PopoverTrigger><IconButton isDisabled={d} icon={X} label={name} /><Popover aria-label="Details">Details</Popover></PopoverTrigger>, () => screen.getByRole("button", { name })],
@@ -31,6 +31,23 @@ const cases: [string, (disabled: boolean) => ReactElement, () => HTMLElement][] 
 const layer = (control: HTMLElement) => control.style.backgroundImage;
 
 describe("control fill conformance", () => {
+  // R2F-51: SearchField is the Intent UI search field; it paints hover, focus and disabled through its own classes, not the
+  // Foundry state-alpha layer, so its states are pinned here instead of in the state-alpha table above.
+  it("SearchField: hover tints the input line, focus draws the ring, disabled mutes the fill and blocks entry", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<SearchField><Label>{name}</Label><SearchInput placeholder="Search here" /></SearchField>);
+    const search = screen.getByRole("searchbox", { name });
+    expect(search).toHaveClass("border-input", "enabled:hover:border-muted-foreground/30", "focus:ring-3", "focus:ring-ring/20", "disabled:bg-muted");
+    await user.hover(search);
+    expect(search).toHaveAttribute("data-hovered", "true");
+    expect(layer(search)).toBe("");
+    rerender(<SearchField isDisabled><Label>{name}</Label><SearchInput placeholder="Search here" /></SearchField>);
+    const disabled = screen.getByRole("searchbox", { name });
+    expect(disabled).toBeDisabled();
+    await user.type(disabled, "x");
+    expect(disabled).toHaveValue("");
+  });
+
   it.each(cases)("%s: rest, hover, pressed and release bind independent state-alpha tokens", async (_name, make, get) => {
     const user = userEvent.setup();
     render(make(false));
@@ -88,13 +105,11 @@ describe("control fill conformance", () => {
     expect(icon.style.inlineSize).toBe(icon.style.blockSize);
   });
 
+  // R2F-51: the Intent input suppresses native appearance and the WebKit cancel button by class (no injected style tag).
   it("search suppresses native appearance and search chrome, and uses token placeholder ink", () => {
-    render(<SearchField label="Search"/>);
+    render(<SearchField><Label>Search</Label><SearchInput /></SearchField>);
     const search = screen.getByRole("searchbox");
-    expect(search.style.appearance).toBe("none");
-    expect(search).toHaveClass("placeholder:text-ink-muted");
-    expect(document.head.querySelector('style[data-href="designer-native-search"]')?.textContent).toContain("::-webkit-search-cancel-button");
-    expect(document.head.querySelector('style[data-href="designer-native-search"]')?.textContent).toContain("appearance: none");
+    expect(search).toHaveClass("appearance-none", "[&::-webkit-search-cancel-button]:hidden", "placeholder:text-muted-foreground");
   });
 
   it("the stock toggle keeps its selected state and action fill through hover and press", async () => {

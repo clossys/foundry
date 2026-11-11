@@ -10,7 +10,8 @@ import { DetailView } from "../DetailView.js";
 import { Matrix } from "../Matrix.js";
 import { PAGINATION_COPY_REFS, Pagination } from "../Pagination.js";
 import { Button } from "../../components/preview-runtime/components/button/button.js";
-import { SearchField } from "../../components/SearchField.js";
+import { SearchField, SearchInput } from "../../components/intent/search-field.js";
+import { Label } from "../../components/intent/field.js";
 import { StockSelect as Select } from "../stock-select.js";
 import { selectChromium } from "../../__fixtures__/chromium-discovery.js";
 import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
@@ -89,7 +90,7 @@ const model = { version: 2, table: { version: 1, collation: { locale: "en", sens
 function fixture() {
   return <ShellCopyProvider resolver={paginationCopyResolver}>
     <section data-proof="table"><DataTable aria-label="Publisher" columns={columns} rows={rows} rowKey={row => row.id}
-      toolbar={<><SearchField label="Search publications" /><Select label="Status" options={[{ id: "all", label: "All publications" }]} selectedKey="all" /></>}
+      toolbar={<><SearchField><Label>Search publications</Label><SearchInput /></SearchField><Select label="Status" options={[{ id: "all", label: "All publications" }]} selectedKey="all" /></>}
       footer={<Pagination page={4} pageCount={15} onPageChange={() => {}} />} /></section>
     <section data-proof="grouped"><DataTable aria-label="Grouped" columns={[columns[0]!]} rows={rows} rowKey={row => row.id} model={model} onModelChange={() => {}} /></section>
     <section data-proof="detail"><DetailView title="Publication record" fields={[{ label: "Name", value: rows[0]!.name }]} actions={<><Button>Edit</Button><Button>Duplicate</Button></>} compactActions={<Button aria-haspopup="menu">Actions</Button>} /></section>

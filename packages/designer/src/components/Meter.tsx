@@ -1,5 +1,6 @@
 import type { HTMLAttributes } from "react";
-import { Label, Meter as AriaMeter } from "react-aria-components";
+import { Label } from "react-aria-components";
+import { Meter as IntentMeter } from "./intent/meter.js";
 import { MeterBar, VALUE_ROW_CLASSES, meterRootClassName, resolveMeter } from "./Meter.server.js";
 
 /**
@@ -69,7 +70,10 @@ export interface MeterProps extends Omit<HTMLAttributes<HTMLDivElement>, "childr
  * a cap. One row of visible text (value, then limit) above a thin bar;
  * `emphasis="figure"` sets the value as the focal number of its panel.
  *
- * Built on react-aria-components' own `Meter`, which supplies the root's
+ * Built on the Intent UI `Meter` root (`./intent/meter.tsx`) over react-aria-components' own `Meter`.
+ * Its value row and bar stay Foundry (L4): Intent's `MeterTrack` has no limit zone, previous marker or
+ * greyscale-safe texture, and the server variant must render the same markup without react-aria.
+ * The react-aria `Meter` supplies the root's
  * `role="meter progressbar"` (the meter role with a progressbar fallback for
  * browsers that lack it) and the `aria-valuenow`/`aria-valuemin`/
  * `aria-valuemax` wiring. The visible `valueText` is rendered through its
@@ -117,7 +121,7 @@ export function Meter({
   // An empty or blank label is treated as absent: an empty aria-label would give the meter no name.
   const name = label !== undefined && label.trim() !== "" ? label : undefined;
   return (
-    <AriaMeter
+    <IntentMeter
       {...rest}
       {...(name === undefined ? {} : { "aria-label": name })}
       value={value}
@@ -137,6 +141,6 @@ export function Meter({
       </div>
       {previousText !== undefined ? <p className="m-0 text-body-s text-ink-secondary tabular-nums">{previousText}</p> : null}
       <MeterBar tone={tone} {...resolved} />
-    </AriaMeter>
+    </IntentMeter>
   );
 }

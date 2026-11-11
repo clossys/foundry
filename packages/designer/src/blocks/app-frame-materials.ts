@@ -48,7 +48,7 @@ export const APP_FRAME_MATERIALS = [
     regions: ["heading", "search", "content", "status"],
     dependencies: [
       { exportName: "Dialog", source: "src/components/preview-runtime/components/dialog/dialog.tsx" },
-      { exportName: "SearchField", source: "src/components/SearchField.tsx" },
+      { exportName: "SearchField", source: "src/components/intent/search-field.tsx" },
       { exportName: "IconButton", source: "src/components/IconButton.tsx" },
     ],
     configs: [],

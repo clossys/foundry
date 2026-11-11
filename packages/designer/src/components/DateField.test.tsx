@@ -5,19 +5,19 @@ import { CalendarDate, CalendarDateTime } from "@internationalized/date";
 import { DateField } from "./DateField.js";
 import { DatePicker, DateRangePicker, Group } from "react-aria-components";
 import { createRef } from "react";
-import { UI_RING_FOCUS } from "./internal/ui-vars.js";
 
 describe("DateField", () => {
-  it("takes its input and picker-trigger height from the md control-size token, not from block padding", () => {
+  it("input and picker trigger share one control height: the same Intent block padding, the trigger stretched to the input", () => {
     render(<DateField label="Start date" defaultValue={new CalendarDate(2024, 1, 15)} pickerTrigger={{ label: "Open calendar", children: "+" }} />);
     const input = screen.getAllByRole("spinbutton")[0]!.parentElement!;
     const trigger = screen.getByRole("button", { name: "Open calendar" });
     for (const element of [input, trigger]) {
-      expect(element.className.split(/\s+/)).toContain("control-h-md");
-      expect(element.className).not.toMatch(/(?:^|\s)py-/);
+      expect(element.className.split(/\s+/)).toContain("py-[calc(--spacing(2.5)-1px)]");
+      expect(element.className.split(/\s+/)).toContain("sm:py-[calc(--spacing(1.5)-1px)]");
     }
-    // control-h-md lays a positioned tap-target ::before over the input; positioned segments stay above it and keep pointer hits.
-    for (const segment of screen.getAllByRole("spinbutton")) expect(segment.className.split(/\s+/)).toContain("relative");
+    expect(trigger.className.split(/\s+/)).toContain("self-stretch");
+    // No tap-target overlay sits over the input any more, so nothing can intercept segment pointer hits.
+    expect(input.className).not.toMatch(/control-h-|touch-target/);
   });
 
   it("renders a labeled group of editable segments", () => {
@@ -83,7 +83,7 @@ describe("DateField", () => {
     );
     const wrapper = screen.getByText("Start date").closest("div") as HTMLElement;
     expect(wrapper.className).toContain("gap-lg");
-    expect(wrapper.className).not.toContain("gap-xs");
+    expect(wrapper.className).toContain("w-full");
   });
 
   it("disabled: every segment reports its disabled state and does not accept ArrowUp changes", async () => {
@@ -111,7 +111,7 @@ describe("W2 source-local optional pickerTrigger", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(screen.getAllByRole("spinbutton")).toHaveLength(3);
     expect(container.firstElementChild?.children).toHaveLength(3);
-    expect(screen.getByRole("group", { name: /Date/ })).toHaveClass("bg-surface-raised");
+    expect(screen.getByRole("group", { name: /Date/ })).toHaveClass("border-input");
   });
 
   it("single: pickerTrigger names one child-owned button after the date input and consumes picker context", async () => {
@@ -122,8 +122,8 @@ describe("W2 source-local optional pickerTrigger", () => {
     </DatePicker>);
     const trigger = screen.getByRole("button", { name: /^Choose appointment date/ });
     expect(trigger).toContainElement(screen.getByTestId("date-glyph"));
-    expect(trigger.parentElement?.firstElementChild).toHaveClass("bg-surface-raised");
-    expect(trigger).toHaveClass("rounded-control", "text-ink-primary");
+    expect(trigger.parentElement?.firstElementChild?.firstElementChild).toHaveClass("border-input");
+    expect(trigger).toHaveClass("rounded-lg", "text-muted-foreground");
     await user.click(trigger);
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
   });
@@ -163,7 +163,7 @@ describe("W2 source-local optional pickerTrigger", () => {
     const trigger = screen.getByRole("button", { name: /^Choose date/ });
     expect(trigger).toHaveFocus();
     expect(trigger).toHaveAttribute("data-focus-visible", "true");
-    expect(trigger.style.boxShadow).toBe(UI_RING_FOCUS);
+    expect(trigger).toHaveClass("focus-visible:ring-3", "focus-visible:ring-ring/20");
   });
 
   it("forwards the field ref and function className/style without adding a trigger by default", () => {

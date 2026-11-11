@@ -126,7 +126,7 @@ describe("compiled record-list public contract", () => {
       const api = await import(pathToFileURL(join(packageRoot, "dist", entry)).href);
       expect(api.GridList).toBeTypeOf("function");
       expect(api.GridList.Item).toBeTypeOf("function");
-      expect(api.GridList.SelectionCheckbox).toBeTypeOf("function");
+      expect(api.GridList).not.toHaveProperty("SelectionCheckbox");
     }
     for (const entry of ["blocks/index.js", "index.js"]) {
       const api = await import(pathToFileURL(join(packageRoot, "dist", entry)).href);
@@ -139,10 +139,9 @@ describe("compiled record-list public contract", () => {
   it("resolves record-list prop types through emitted barrel declarations", () => {
     const filename = join(packageRoot, "record-list-consumer.check.tsx");
     const consumer = ["components/index.js", "index.js"].map((entry, index) => `
-      import type {GridListProps as Grid${index}, GridListItemProps as Item${index}, GridListSelectionCheckboxProps as Check${index}} from ${JSON.stringify(join(packageRoot, "dist", entry))};
+      import type {GridListProps as Grid${index}, GridListItemProps as Item${index}} from ${JSON.stringify(join(packageRoot, "dist", entry))};
       const grid${index}: Grid${index}<{id:string}> = {"aria-label":"Records", children:[]};
-      const item${index}: Item${index} = {id:"one", textValue:"Planning note", children:"Planning note"};
-      const check${index}: Check${index} = {"aria-label":"Choose planning note"};
+      const item${index}: Item${index} = {id:"one", textValue:"Planning note", selectionLabel:"Choose planning note", children:"Planning note"};
     `).join("\n") + ["blocks/index.js", "index.js"].map((entry, index) => `
       import type {ResourceListProps as List${index}, ResourceListItem as Record${index}, ResourceListAction as Action${index}} from ${JSON.stringify(join(packageRoot, "dist", entry))};
       const action${index}: Action${index} = {id:"edit",label:"Edit",onAction:()=>{}};

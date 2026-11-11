@@ -1,8 +1,9 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { Toolbar as FoundryToolbar, type ToolbarProps as FoundryToolbarProps } from "../components/Toolbar.js";
+import { Toolbar as FoundryToolbar, type ToolbarProps as FoundryToolbarProps } from "../components/intent/toolbar.js";
+import { cn } from "../components/preview-runtime/components/_parts/utils/index.js";
 
 export interface ToolbarProps
-  extends Omit<FoundryToolbarProps, "children" | "className" | "style" | "variant" | "title"> {
+  extends Omit<FoundryToolbarProps, "children" | "className" | "style" | "isCircle" | "title"> {
   /**
    * Header-row title at the start of the row — typically a heading. The actions in
    * `trailing` stay pinned to the end, so a header row of toolbar controls needs no
@@ -79,11 +80,10 @@ export function Toolbar({
   return (
     <FoundryToolbar
       {...rest}
-      variant="bare"
       orientation={orientation}
       aria-label={namedByTitle ? undefined : (ariaLabel ?? "Toolbar")}
       aria-labelledby={namedByTitle ? titleId : rest["aria-labelledby"]}
-      className={className}
+      className={cn("inset-ring-0 rounded-none bg-transparent p-0 flex-wrap gap-md", className)}
       style={style}
     >
       {title != null ? <div id={titleId} className="min-w-0">{title}</div> : null}

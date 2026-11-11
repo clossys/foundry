@@ -72,13 +72,14 @@ const EXPECTED_DEFAULTS = {
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
   "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "shadcn@aria", "color-picker": "foundry", "combo-box": "shadcn@aria",
   "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "compose:field@1", "grid-list": "foundry", "file-trigger": "compose:file-trigger@1", form: "foundry", icon: "derive:icon@1", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
-  menu: "shadcn@aria", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "shadcn@aria",
+  menu: "shadcn@aria", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "-", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "shadcn@aria",
   "resize-handle": "foundry", "search-field": "foundry", select: "shadcn@aria", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "shadcn@aria", slider: "shadcn@aria",
   spinner: "foundry", "status-mark": "foundry", switch: "shadcn@aria", table: "shadcn@aria", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "compose:text-field@1", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
   toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
 };
 /** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar, TagGroup and Tree are Foundry's since their measured K5 craft comparison passes. */
-const NOT_CHOSEN: string[] = [];
+// R2F-51 (planner:r2f-51): NumberField was deleted (ladder L3 DELETE) and rac-starter is not selectable, so number-field has no default.
+const NOT_CHOSEN: string[] = ["number-field"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -142,7 +143,8 @@ describe("component default fills", () => {
     const plan = planComponentDefaults(input);
     expect(plan.rows.filter(row => row.source === "rac-starter")).toEqual([]);
     // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) + slider (vf23) + tag-group and tree (vf30) = 59.
-    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(66);
+    // R2F-51 (planner:r2f-51): number-field left with its deleted Foundry candidate = 65 chosen of 66 rows.
+    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(65);
     expect(plan.rows).toHaveLength(66);
     const forced = Object.fromEntries(starterSlots.map(slot => [slot, "rac-starter"]));
     for (const plan of [planComponentDefaults({ ...input, picks: forced }), planComponentDefaults({ ...input, choices: forced })]) {
@@ -216,14 +218,14 @@ describe("component default fills", () => {
       return planComponentDefaults({ ...input, catalog: { ...input.catalog, fills: input.catalog.fills.map(doc => doc === target ? withBlocker : doc) }, bundles });
     };
     const clean = planComponentDefaults(input);
-    // A real, unblocked Foundry candidate is chosen on a fallback leaf (number-field) and on a preference leaf (calendar).
-    expect(clean.rows.find(row => row.slot === "components.number-field")).toMatchObject({ status: "default", source: "foundry" });
-    expect(reasons(clean, "number-field")).not.toContain("blocked");
+    // A real, unblocked Foundry candidate is chosen on a fallback leaf (color-picker; number-field left with its Foundry candidate, R2F-51) and on a preference leaf (calendar).
+    expect(clean.rows.find(row => row.slot === "components.color-picker")).toMatchObject({ status: "default", source: "foundry" });
+    expect(reasons(clean, "color-picker")).not.toContain("blocked");
     // The same leaf with a synthetic K11 blocker stays unchosen: listing it as a fallback leaf does not lift the finding.
-    const k11 = blocked("number-field", "K11");
-    expect(k11.rows.find(row => row.slot === "components.number-field")).toMatchObject({ status: "not-chosen" });
-    expect(reasons(k11, "number-field")).toContain("foundry: blocked K11");
-    expect(k11.decisions.some(row => row.slot === "components.number-field")).toBe(false);
+    const k11 = blocked("color-picker", "K11");
+    expect(k11.rows.find(row => row.slot === "components.color-picker")).toMatchObject({ status: "not-chosen" });
+    expect(reasons(k11, "color-picker")).toContain("foundry: blocked K11");
+    expect(k11.decisions.some(row => row.slot === "components.color-picker")).toBe(false);
     // A different offer blocker on a leaf chosen only through the fallback (card) behaves the same way, and other leaves are untouched.
     const k5 = blocked("card", "K5");
     expect(k5.rows.find(row => row.slot === "components.card")).toMatchObject({ status: "not-chosen" });

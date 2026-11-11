@@ -17,11 +17,9 @@ export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<str
   "./components#Logomark": d.logo,
   "./components#Meter": d.meter,
   "./components#NativeAction": d.nativeAction,
-  "./components#NumberField": d.numberField,
   "./components#ProgressBar": d.progress,
   "./components#ResizeHandle": d.resize,
   "./components#RichText": d.richText,
-  "./components#SearchField": d.searchField,
   "./components#SemanticContent": d.semantic,
   "./components#Separator": d.separator,
   "./components#Skeleton": d.skeleton,
@@ -78,6 +76,8 @@ export const componentSpecimenActions = { href: d.text.linkHref, upload: d.text.
 
 /** A starting color and a few swatches to pick from. */
 export const componentSpecimenColor = d.color;
+/** The Intent search field draws its label and input as composed parts. */
+export const componentSpecimenSearchField = d.searchField;
 
 /**
  * Exports a preview cannot draw from sample data, and why. The brand lockup draws the host's own mark asset

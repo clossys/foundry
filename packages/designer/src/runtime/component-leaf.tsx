@@ -17,7 +17,7 @@ export type { ConsumerComponentBinding, ConsumerComponentSelection } from "./com
 
 /** The selected GridList contract maps layout.list to the native stack geometry. */
 export type GridListLeaf = (<T extends object>(props: Omit<GridListProps<T>, "layout"> & { readonly layout?: "list" | "grid" }) => React.ReactElement)
-  & Pick<typeof import("../components/GridList.js").GridList, "Item" | "SelectionCheckbox">;
+  & Pick<typeof import("../components/GridList.js").GridList, "Item">;
 
 /** The selected Button contract: its members (primary, danger, md) map onto the stock button's own vocabulary. */
 export type ButtonLeaf = (props: Omit<React.ComponentProps<typeof import("../components/preview-runtime/components/button/button.js").Button>, "variant" | "size">

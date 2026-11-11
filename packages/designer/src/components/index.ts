@@ -147,8 +147,9 @@ export type { DateFieldProps } from "./DateField.js";
 export { Combobox as ComboBox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem } from "./preview-runtime/components/combo-box/combobox.js";
 export type ComboBoxProps = import("react").ComponentProps<typeof import("./preview-runtime/components/combo-box/combobox.js").Combobox>;
 
-export { SearchField } from "./SearchField.js";
-export type { SearchFieldProps } from "./SearchField.js";
+export { SearchField, SearchInput } from "./intent/search-field.js";
+export { Label } from "./intent/field.js";
+export type { SearchFieldProps } from "./intent/search-field.js";
 
 export { FileTrigger } from "./preview-runtime/components/file-trigger/file-trigger.js";
 export type { FileTriggerProps } from "./preview-runtime/components/file-trigger/file-trigger.js";
@@ -184,21 +185,19 @@ export { Logomark } from "./Logomark.js";
 export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./Logomark.js";
 
 export { GridList } from "./GridList.js";
-export type { GridListProps, GridListItemProps, GridListSelectionCheckboxProps } from "./GridList.js";
+export type { GridListProps, GridListItemProps } from "./GridList.js";
 
 export { GlyphProvider } from "./glyph-context.js";
 export type { GlyphBindings, GlyphProviderProps } from "./glyph-context.js";
 
 export { ColorPicker } from "./ColorPicker.js";
 export type { ColorPickerProps } from "./ColorPicker.js";
-export { NumberField } from "./NumberField.js";
-export type { NumberFieldProps } from "./NumberField.js";
-export { TagGroup } from "./TagGroup.js";
-export type { TagGroupProps, TagGroupItemProps } from "./TagGroup.js";
-export { Toolbar } from "./Toolbar.js";
-export type { ToolbarProps } from "./Toolbar.js";
-export { Tree } from "./Tree.js";
-export type { TreeProps, TreeNodeProps } from "./Tree.js";
+export { Tag, TagGroup, TagList } from "./intent/tag-group.js";
+export type { TagGroupProps, TagItemProps, TagListProps } from "./intent/tag-group.js";
+export { Toolbar, ToolbarGroup, ToolbarSeparator } from "./intent/toolbar.js";
+export type { ToolbarProps, ToolbarGroupProps, ToolbarSeparatorProps } from "./intent/toolbar.js";
+export { Tree, TreeItem, TreeContent, TreeIndicator } from "./intent/tree.js";
+export type { TreeProps, TreeItemProps, TreeContentProps } from "./intent/tree.js";
 
 export { Form } from "./Form.js";
 export type { FormProps } from "./Form.js";

@@ -1,31 +1,27 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { SearchField } from "./SearchField.js";
+import { SearchField, SearchInput } from "./intent/search-field.js";
+import { Label } from "./intent/field.js";
 import { Textarea } from "./preview-runtime/components/text-field/text-field.js";
 import { TextField } from "./preview-runtime/components/text-field/text-field.js";
 
 /*
  * Visual pass (VF-1, shell-01): a text entry never shows the browser's own
- * focus outline; SearchField draws one offset token outline for keyboard
- * focus. TextField and Textarea are the stock shadcn@aria input and textarea
+ * focus outline; SearchField (Intent UI) draws one token ring on focus. TextField and Textarea are the stock shadcn@aria input and textarea
  * (R2F-33d1): their focus ring is the stock focus-visible outline.
  */
 describe("text entry focus (VF-1 shell-01)", () => {
-  it.each([
-    ["SearchField", () => render(<SearchField label="Search" />), "searchbox"],
-  ] as const)("%s uses one keyboard outline and no pointer ring", async (_name, mount, role) => {
-    mount();
-    const field = screen.getByRole(role);
-    expect(field).toHaveClass("outline-none");
-    await userEvent.click(field);
-    expect(field.style.boxShadow).toBe("");
-    expect(field.style.outline).toBe("");
+  // R2F-51: SearchField is the Intent UI search field: the native outline stays hidden and one token ring
+  // (`--color-ring`) draws on focus by class; no inline outline or box-shadow is painted.
+  it("SearchField hides the native outline and draws one token focus ring", async () => {
+    render(<SearchField><Label>Search</Label><SearchInput /></SearchField>);
+    const field = screen.getByRole("searchbox");
+    expect(field).toHaveClass("outline-hidden", "focus:ring-3", "focus:ring-ring/20", "focus:border-ring/70");
     await userEvent.tab();
-    await userEvent.tab({ shift: true });
     expect(field).toHaveFocus();
-    expect(field.style.outline).toContain("--color-focus-ring");
-    expect(field.style.outlineOffset).toContain("--ui-focus-offset");
+    expect(field).toHaveAttribute("data-focused", "true");
+    expect(field.style.outline).toBe("");
     expect(field.style.boxShadow).toBe("");
   });
   it.each([

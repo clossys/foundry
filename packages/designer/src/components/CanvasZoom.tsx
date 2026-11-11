@@ -7,7 +7,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 const SemanticContent = componentLeaf<typeof import("./SemanticContent.js").SemanticContent>("components.semantic-content");
 const Icon = componentLeaf<typeof import("./preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
-const Toolbar = componentLeaf<typeof import("./Toolbar.js").Toolbar>("components.toolbar");
+const Toolbar = componentLeaf<typeof import("./intent/toolbar.js").Toolbar>("components.toolbar");
 
 export interface CanvasZoomProps {
   value: number; min: number; max: number;
@@ -24,7 +24,7 @@ export function CanvasZoom({ value, min, max, onChange, onFit, labels, formatVal
     throw new TypeError("CanvasZoom.formatValue.result");
   }
   const atReset = Math.round(value * 100) === 100;
-  return <Toolbar aria-label={labels.group} data-studio-panel="zoom" className="items-center rounded-control border-0 p-0">
+  return <Toolbar aria-label={labels.group} data-studio-panel="zoom" className="items-center rounded-control inset-ring-0 bg-transparent p-0">
     <Button size="sm" variant="ghost" className="icon-control-sm rounded-control p-0" aria-label={labels.out} data-studio-control="zoom-out" isDisabled={value <= min} onPress={() => onChange(Math.max(min, value / 1.2))}><Icon glyph={Minus} decorative size="sm" /></Button>
     <SemanticContent as="span" role="status" aria-label={labels.percent} className="text-body-s tabular-nums">{currentLabel}</SemanticContent>
     <Button size="sm" variant="ghost" className="icon-control-sm rounded-control p-0" aria-label={labels.in} data-studio-control="zoom-in" isDisabled={value >= max} onPress={() => onChange(Math.min(max, value * 1.2))}><Icon glyph={Plus} decorative size="sm" /></Button>

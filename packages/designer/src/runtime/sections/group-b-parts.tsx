@@ -6,9 +6,11 @@ import { componentLeaf } from "../component-leaf.js";
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/preview-runtime/components/checkbox/checkbox.js").Checkbox>("components.checkbox");
 const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
-const SearchField = componentLeaf<typeof import("../../components/SearchField.js").SearchField>("components.search-field");
+const SearchField = componentLeaf<typeof import("../../components/intent/search-field.js").SearchField>("components.search-field");
+const SearchInput = componentLeaf<typeof import("../../components/intent/search-field.js").SearchInput>("components.search-field", "SearchInput");
+const SearchLabel = componentLeaf<typeof import("../../components/intent/field.js").Label>("components.search-field", "Label");
 const TextField = componentLeaf<typeof import("../../components/preview-runtime/components/text-field/text-field.js").TextField>("components.text-field");
-const Toolbar = componentLeaf<typeof import("../../components/Toolbar.js").Toolbar>("components.toolbar");
+const Toolbar = componentLeaf<typeof import("../../components/intent/toolbar.js").Toolbar>("components.toolbar");
 
 /**
  * The region and action content shared by the group-b renderers, each rendered through a component the
@@ -24,7 +26,7 @@ export interface ActionContent { readonly id?: string; readonly label: string }
 /** A search region: `search` composes SearchField, `text` composes TextField (whichever the leaf may compose). */
 export function FieldRegion({ content, field }: { readonly content: FieldRegionContent; readonly field: "search" | "text" }) {
   return field === "search"
-    ? <SearchField label={content.search.label} placeholder={content.search.placeholder} />
+    ? <SearchField><SearchLabel>{content.search.label}</SearchLabel><SearchInput placeholder={content.search.placeholder} /></SearchField>
     : <TextField label={content.search.label} placeholder={content.search.placeholder} />;
 }
 
@@ -33,7 +35,7 @@ export function LinkRegion({ content }: { readonly content: LinkRegionContent })
 }
 
 export function ToggleToolbarRegion({ content }: { readonly content: ToggleToolbarContent }) {
-  return <Toolbar aria-label={content.label} variant="bare">
+  return <Toolbar aria-label={content.label} className="inset-ring-0 rounded-none bg-transparent p-0 flex-wrap gap-md">
     {content.toggles.map(toggle => <Checkbox key={toggle.id} defaultSelected={toggle.selected}>{toggle.label}</Checkbox>)}
   </Toolbar>;
 }

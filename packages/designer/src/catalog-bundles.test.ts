@@ -30,9 +30,9 @@ describe("offline catalog candidate bundle", () => {
       expect(fill.pin).toMatchObject({ package: pkg.name, version: pkg.version });
       expect(doc.$extensions["com.clossys.fill"].conforms).toEqual([]);
     }
-    // ColorPicker and NumberField reads are source-covered (no K11); Toolbar, TagGroup and Tree pass their measured
-    // K5 craft comparison (importers/foundry-craft.json), so none of these offers is blocked.
-    for (const slot of ["color-picker", "number-field", "tag-group", "toolbar", "tree"]) expect(Object.values(foundry.find(doc => doc.components[slot])!.components)[0]!.blockers, slot).toBeUndefined();
+    // ColorPicker and DateField reads are source-covered (no K11; NumberField deleted in R2F-51); Toolbar, TagGroup and
+    // Tree pass their measured K5 craft comparison (importers/foundry-craft.json), so none of these offers is blocked.
+    for (const slot of ["color-picker", "date-field", "tag-group", "toolbar", "tree"]) expect(Object.values(foundry.find(doc => doc.components[slot])!.components)[0]!.blockers, slot).toBeUndefined();
     expect(bundle.notices.some(file => file.path.endsWith("phosphor/LICENSE"))).toBe(true);
   });
 

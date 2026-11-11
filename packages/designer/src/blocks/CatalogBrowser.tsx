@@ -1,7 +1,8 @@
 import { useEffect, useReducer, useRef, useState, type ReactNode } from "react";
 import { Badge } from "../components/preview-runtime/components/badge/badge.js";
 import { BADGE_TONE } from "../components/surface-tones.js";
-import { SearchField } from "../components/SearchField.js";
+import { SearchField, SearchInput } from "../components/intent/search-field.js";
+import { Label } from "../components/intent/field.js";
 import { StockSelect } from "./stock-select.js";
 import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
 import { StockSwitch } from "./stock-switch.js";
@@ -101,7 +102,7 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
 
   const body = <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-md">
     <Toolbar aria-label={labels.toolbar}
-      search={<SearchField label={labels.search} value={state.query} onChange={query => update({ query })} />}
+      search={<SearchField value={state.query} onChange={query => update({ query })}><Label>{labels.search}</Label><SearchInput /></SearchField>}
       trailing={binding.filters?.length || tree.parkedCount ? <>
         {(binding.filters ?? []).map(filter => <StockSelect key={filter.id} label={filter.label}
           options={[{ id: ANY_VALUE, label: labels.anyValue }, ...filter.options]} selectedKey={own(state.filters, filter.id) ?? ANY_VALUE}

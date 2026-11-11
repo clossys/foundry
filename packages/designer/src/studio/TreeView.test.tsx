@@ -3,23 +3,23 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TreeView, type TreeViewNode } from "./TreeView.js";
 
-// Counts each preparation of the actual native Tree.Node; rendering delegates to the original RAC row.
+// Counts each preparation of the actual Intent TreeItem; rendering delegates to the original RAC row.
 const treeRows = vi.hoisted(() => ({ prepared: new Map<string, number>() }));
-vi.mock("../components/Tree.js", async importOriginal => {
-  const actual = await importOriginal<typeof import("../components/Tree.js")>();
-  const { createElement, forwardRef } = await import("react");
-  const Node = forwardRef<HTMLDivElement, import("../components/Tree.js").TreeNodeProps>(function CountedNode(props, ref) {
+vi.mock("../components/intent/tree.js", async importOriginal => {
+  const actual = await importOriginal<typeof import("../components/intent/tree.js")>();
+  const { createElement } = await import("react");
+  function TreeItem(props: import("../components/intent/tree.js").TreeItemProps<object>) {
     const id = String(props.id);
     treeRows.prepared.set(id, (treeRows.prepared.get(id) ?? 0) + 1);
-    return createElement(actual.Tree.Node, { ...props, ref });
-  });
-  return { ...actual, Tree: Object.assign(forwardRef<HTMLDivElement, import("../components/Tree.js").TreeProps<object>>(function CountedTree(props, ref) { return createElement(actual.Tree, { ...props, ref }); }), { Node }) };
+    return createElement(actual.TreeItem, props);
+  }
+  return { ...actual, TreeItem };
 });
 
 afterEach(() => { cleanup(); treeRows.prepared.clear(); });
 const nodes = [{ id: "group", label: "Group", children: [{ id: "one", label: "One" }, { id: "two", label: "Two" }] }];
 const prepared = () => [...treeRows.prepared.values()].reduce((sum, count) => sum + count, 0);
-it("uses the Foundry tree for expansion, selection and keyboard navigation", async () => {
+it("uses the Intent tree for expansion, selection and keyboard navigation", async () => {
   const navigate = vi.fn(), expanded = vi.fn(), user = userEvent.setup();
   render(<TreeView nodes={nodes} aria-label="Catalog" currentId="one" defaultExpandedIds={["group"]} onNavigate={navigate} onExpandedChange={expanded} />);
   expect(screen.getByRole("treegrid", {name:"Catalog"})).toBeInTheDocument();

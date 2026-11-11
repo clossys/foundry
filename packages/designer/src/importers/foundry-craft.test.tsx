@@ -8,9 +8,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { Button } from "../components/preview-runtime/components/button/button.js";
 import { GridList } from "../components/GridList.js";
-import { TagGroup } from "../components/TagGroup.js";
-import { Toolbar } from "../components/Toolbar.js";
-import { Tree } from "../components/Tree.js";
+import { Tag, TagGroup, TagList } from "../components/intent/tag-group.js";
+import { Toolbar } from "../components/intent/toolbar.js";
+import { Tree, TreeContent, TreeItem } from "../components/intent/tree.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { importFoundryComponents } from "./foundry-components.js";
 import { CRAFT_COMPARED_LEAVES, craftBlockers, craftFindings, type CraftComparison, type CraftPart } from "./foundry-craft.js";
@@ -104,7 +104,7 @@ async function measure(): Promise<CraftComparison> {
   // TagGroup: tag and remove targets, focus and disabled state.
   {
     const scenario = "removable+disabled";
-    const ui = <TagGroup label="Filters" disabledKeys={["two"]} onRemove={() => {}}><TagGroup.List><TagGroup.Item id="one" textValue="Design" removeLabel="Remove Design">Design</TagGroup.Item><TagGroup.Item id="two" textValue="Code" removeLabel="Remove Code">Code</TagGroup.Item></TagGroup.List></TagGroup>;
+    const ui = <TagGroup aria-label="Filters" disabledKeys={["two"]} onRemove={() => {}}><TagList><Tag id="one" textValue="Design" removeLabel="Remove Design">Design</Tag><Tag id="two" textValue="Code" removeLabel="Remove Code">Code</Tag></TagList></TagGroup>;
     render(ui);
     slots["tag-group"] = { scenarios: [scenario], parts: [] };
     await user.keyboard("{Tab}");
@@ -121,7 +121,7 @@ async function measure(): Promise<CraftComparison> {
   // so the chevron is the only pointer expansion target and must carry its own floor.
   {
     const scenario = "nested+disabled+selection=single";
-    const ui = <Tree aria-label="Documents" selectionMode="single" disabledKeys={["locked"]} defaultExpandedKeys={["folder"]}><Tree.Node id="folder" textValue="Folder" label="Folder" expandLabel="Toggle Folder"><Tree.Node id="child" textValue="Notes" label="Notes" expandLabel="Toggle Notes" /></Tree.Node><Tree.Node id="locked" textValue="Locked" label="Locked" expandLabel="Toggle Locked" /></Tree>;
+    const ui = <Tree aria-label="Documents" selectionMode="single" disabledKeys={["locked"]} defaultExpandedKeys={["folder"]}><TreeItem id="folder" textValue="Folder"><TreeContent>Folder</TreeContent><TreeItem id="child" textValue="Notes"><TreeContent>Notes</TreeContent></TreeItem></TreeItem><TreeItem id="locked" textValue="Locked"><TreeContent>Locked</TreeContent></TreeItem></Tree>;
     render(ui);
     slots.tree = { scenarios: [scenario], parts: [] };
     await user.keyboard("{Tab}");
@@ -130,7 +130,8 @@ async function measure(): Promise<CraftComparison> {
     await user.keyboard("{ArrowDown}");
     const child = screen.getByRole("row", { name: /Notes/ });
     slots.tree.parts.push(part(scenario, "row-nested", child, { keyboard: document.activeElement === child, pressable: true, focus: document.activeElement === child ? focusOf(child) : null }));
-    const chevron = screen.getByRole("button", { name: "Toggle Folder", hidden: true });
+    // R2F-51: the Intent tree chevron is React Aria's slot="chevron" button, named by RAC's localized "Collapse"/"Expand".
+    const chevron = screen.getByRole("button", { name: /^(?:Collapse|Expand)$/, hidden: true });
     act(() => folder.focus());
     await user.keyboard("{Tab}");
     const chevronKeyboard = document.activeElement === chevron;

@@ -1,19 +1,14 @@
 import { forwardRef, type ReactNode, type Ref, type RefAttributes, type ReactElement } from "react";
 import {
-  DateField as AriaDateField,
   Button as AriaButton,
-  DateInput,
-  DateSegment,
-  FieldError,
-  Label,
-  Text,
   type DateFieldProps as AriaDateFieldProps,
   type DateValue,
   type ValidationResult,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
 import { useTableTextEntry } from "./internal/table-text-entry.js";
+import { DateField as IntentDateField, DateInput } from "./intent/date-field.js";
+import { Description, FieldError, Label } from "./intent/field.js";
 
 export interface DateFieldProps<T extends DateValue = DateValue>
   extends Omit<AriaDateFieldProps<T>, "children"> {
@@ -44,6 +39,13 @@ export interface DateFieldProps<T extends DateValue = DateValue>
 }
 
 /**
+ * Built on the Intent UI date field (`./intent/date-field.tsx`: RAC `DateField` + `DateInput` +
+ * `DateSegment` with Intent's field, segment and invalid styling) and Intent's `Label`,
+ * `Description` and `FieldError`. This file stays a thin Foundry adapter (L4) only for the
+ * `label`/`description`/`errorMessage`/`pickerTrigger` props, which the receipted DatePicker
+ * composition (`catalog/rules/components.date-picker.json`) calls; the trigger takes the classes of
+ * Intent's `DatePickerTrigger` button (its `touch-target` utility has no token here and is dropped).
+ *
  * A segmented, keyboard-editable date entry — the same label/description/
  * error surface `TextField` bundles with its own `<input>`, for a date
  * value instead of free text. Built on react-aria-components' `DateField` +
@@ -79,7 +81,6 @@ export const DateField = forwardRef(function DateField<T extends DateValue = Dat
   label,
   description,
   errorMessage,
-  className,
   inputClassName,
   pickerTrigger,
   onFocusChange,
@@ -87,61 +88,31 @@ export const DateField = forwardRef(function DateField<T extends DateValue = Dat
 }: DateFieldProps<T>, ref: Ref<HTMLDivElement>) {
   const onTableTextEntry = useTableTextEntry(onFocusChange);
   return (
-    <AriaDateField {...rest} ref={ref} onFocusChange={onTableTextEntry} className={state => cx("flex flex-col gap-xs", typeof className === "function" ? className(state) : className)}>
+    <IntentDateField {...rest} {...({ ref } as object)} onFocusChange={onTableTextEntry}>
       {state => {
-        // Height comes from the md control-size token (control-h-md), as TextField, NumberField and TagGroup read it; the
-        // segments are positioned so they stay above that utility's tap-target layer and keep receiving pointer input.
-        const input = (
-            <DateInput
-              className={(renderProps) =>
-                cx(
-                  "control-h-md flex items-center gap-0.5 rounded-control border bg-surface-raised px-md text-body text-ink-primary",
-                  renderProps.isInvalid ? "border-status-danger" : "border-line-control",
-                  inputClassName,
-                )
-              }
-              style={(renderProps) => ({
-                opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-                boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
-              })}
-            >
-              {(segment) => (
-                <DateSegment
-                  segment={segment}
-                  className={(renderProps) =>
-                    cx(
-                      "relative rounded-default px-0.5 text-body tabular-nums outline-none",
-                      renderProps.isPlaceholder ? "text-ink-muted" : "text-ink-primary",
-                      renderProps.isFocused ? "bg-surface-selected" : "",
-                    )
-                  }
-                />
-              )}
-            </DateInput>
-        );
+        const input = <DateInput className={cx("*:data-[type=literal]:px-0", inputClassName)} />;
         return <>
-          <Label className="text-body-s text-ink-secondary font-body">{label}</Label>
-          {pickerTrigger ? <div className="flex items-center">
+          <Label>{label}</Label>
+          {pickerTrigger ? <div data-slot="control" className="relative flex items-stretch *:data-[slot=control]:w-full">
             {input}
             <AriaButton
               type="button"
+              data-slot="date-picker-trigger"
               aria-label={pickerTrigger.label}
               isDisabled={state.isDisabled || state.isReadOnly}
-              className="control-h-md rounded-control border border-line-control bg-surface-raised px-md text-body text-ink-primary"
-              style={button => ({
-                opacity: button.isDisabled ? UI_ALPHA_DISABLED : undefined,
-                boxShadow: button.isFocusVisible ? UI_RING_FOCUS : undefined,
-              })}
+              className={cx(
+                "grid place-content-center self-stretch rounded-lg border border-input outline-hidden",
+                "pressed:text-foreground text-muted-foreground hover:text-foreground focus-visible:text-foreground",
+                "focus-visible:ring-3 focus-visible:ring-ring/20 disabled:opacity-50",
+                "px-[calc(--spacing(3.5)-1px)] py-[calc(--spacing(2.5)-1px)] sm:px-[calc(--spacing(3)-1px)] sm:py-[calc(--spacing(1.5)-1px)]",
+                "*:size-5 sm:*:size-4",
+              )}
             >{pickerTrigger.children}</AriaButton>
           </div> : input}
-          {description ? (
-            <Text slot="description" className="text-caption text-ink-muted">
-              {description}
-            </Text>
-          ) : null}
-          <FieldError className="text-caption text-status-danger-text">{errorMessage}</FieldError>
+          {description ? <Description>{description}</Description> : null}
+          <FieldError>{errorMessage}</FieldError>
         </>;
       }}
-    </AriaDateField>
+    </IntentDateField>
   );
 }) as <T extends DateValue = DateValue>(props: DateFieldProps<T> & RefAttributes<HTMLDivElement>) => ReactElement;

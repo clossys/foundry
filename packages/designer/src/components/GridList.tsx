@@ -1,13 +1,11 @@
 "use client";
 
 import { createContext, useContext, useRef } from "react";
-import {
-  GridList as AriaGridList,
-  GridListItem as AriaGridListItem,
-  type GridListProps as AriaGridListProps,
-  type GridListItemProps as AriaGridListItemProps,
+import type {
+  GridListProps as AriaGridListProps,
+  GridListItemProps as AriaGridListItemProps,
 } from "react-aria-components";
-import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
+import { GridList as IntentGridList, GridListItem as IntentGridListItem } from "./intent/grid-list.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_LAYOUT_TAP_TARGET, UI_RING_FOCUS } from "./internal/ui-vars.js";
 
@@ -23,11 +21,12 @@ export interface GridListProps<T extends object> extends Omit<AriaGridListProps<
 export interface GridListItemProps extends Omit<AriaGridListItemProps, "className" | "style"> {
   /** Plain text identity for typeahead and host selection labels. */
   textValue: string;
+  /**
+   * The exact accessible name of the row's selection checkbox, which the Intent item renders
+   * itself under multiple selection. Required there: the item throws without it.
+   */
+  selectionLabel?: string;
   className?: string;
-}
-
-export interface GridListSelectionCheckboxProps {
-  "aria-label": string;
 }
 
 const GridListActionContext = createContext<AriaGridListProps<object>["onAction"]>(undefined);
@@ -37,16 +36,19 @@ function GridListRoot<T extends object>({ className, layout = "stack", ...rest }
     throw new TypeError("GridList requires aria-label or aria-labelledby.");
   }
   return <GridListActionContext.Provider value={rest.onAction}>
-    <AriaGridList {...rest} layout={layout} selectionBehavior="toggle"
-      className={cx("w-full min-w-0 text-body text-ink-primary outline-none", layout === "grid" ? "grid grid-cols-2 gap-sm" : "", className)} />
+    <IntentGridList {...rest} layout={layout} selectionBehavior="toggle"
+      className={cx("w-full min-w-0 outline-none", layout === "grid" ? "grid grid-cols-2 gap-sm divide-y-0" : "", className)} />
   </GridListActionContext.Provider>;
 }
 
-function GridListItem({ className, render, ...rest }: GridListItemProps) {
+function GridListItem({ className, render, selectionLabel, ...rest }: GridListItemProps) {
   const rootAction = useContext(GridListActionContext);
   const pendingEnter = useRef(false);
-  return <AriaGridListItem {...rest}
+  return <IntentGridListItem {...rest} selectionLabel={selectionLabel}
     render={(domProps, state) => {
+      if (state.selectionMode === "multiple" && !selectionLabel?.trim()) {
+        throw new TypeError("GridList.Item requires selectionLabel under multiple selection.");
+      }
       const adaptedProps: typeof domProps = {
         ...domProps,
         onKeyDown: event => {
@@ -82,8 +84,6 @@ function GridListItem({ className, render, ...rest }: GridListItemProps) {
       return render ? render(adaptedProps, state) : <div {...adaptedProps} />;
     }}
     className={({ isSelected, isFocusVisible }) => cx(
-      "flex min-w-0 items-center gap-md px-md py-sm border-b border-s-2 border-line-base last:border-b-0 outline-none",
-      isSelected ? "bg-accent border-s-primary" : "border-s-transparent hover:bg-control-tonal-hover",
       isSelected || isFocusVisible ? "forced-colors:outline forced-colors:outline-solid" : "",
       isFocusVisible ? "forced-colors:outline-2 forced-colors:-outline-offset-2" : "",
       className,
@@ -95,14 +95,12 @@ function GridListItem({ className, render, ...rest }: GridListItemProps) {
     })} />;
 }
 
-function GridListSelectionCheckbox({ "aria-label": ariaLabel }: GridListSelectionCheckboxProps) {
-  if (!ariaLabel?.trim()) throw new TypeError("GridList.SelectionCheckbox requires aria-label.");
-  // The host label already names the record; suppress the peer's additional row-name reference.
-  return <Checkbox slot="selection" aria-label={ariaLabel} aria-labelledby="">{null}</Checkbox>;
-}
-
-/** Draft record-list primitives with peer navigation and direct-row Enter actions during selection. */
+/**
+ * The Intent UI grid list (`./intent/grid-list.tsx`) with two Foundry guarantees it lacks (L4, kept on
+ * purpose): react-aria suppresses a row's Enter action in toggle selection once any row is selected,
+ * so this adapter restores direct-row Enter activation; and a grid with no accessible name throws.
+ * The Foundry focus ring, tap-target floor and disabled alpha are re-applied through `style`.
+ */
 export const GridList = Object.assign(GridListRoot, {
   Item: GridListItem,
-  SelectionCheckbox: GridListSelectionCheckbox,
 });

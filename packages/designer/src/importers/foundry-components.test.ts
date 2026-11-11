@@ -21,7 +21,7 @@ const exports = Object.fromEntries((["components", "charts", "shell"] as const).
   return [subpath, names];
 })) as Record<FoundryComponentSubpath, string[]>;
 const imported = () => importFoundryComponents({ exports });
-// I1 retains no blocked candidates in its dynamic bundle: color-picker and number-field left it once their
+// I1 retains no blocked candidates in its dynamic bundle: color-picker and number-field (deleted in R2F-51) left it once their
 // source-derived reads proved covered (no K11); toolbar, tag-group and tree pass their measured K5 craft comparison.
 const dynamicBlockedLeaves: string[] = [];
 const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).filter(([leaf]) => !dynamicBlockedLeaves.includes(leaf) && !["semantic-content", "native-action"].includes(leaf)));

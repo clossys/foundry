@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Toolbar } from "../../components/Toolbar.js";
+import { Toolbar } from "../../components/intent/toolbar.js";
 import { Toolbar as ToolbarBlock } from "../Toolbar.js";
 import { disclosureRow } from "./disclosure-row.js";
 
@@ -22,16 +22,21 @@ describe("disclosureRow (FAQ/reveal rows render through the stock accordion part
   });
 });
 
-describe("Toolbar bare variant (the block's action bar)", () => {
-  it("drops the framed chrome and keeps the wrapping action-bar layout", () => {
-    render(<><Toolbar aria-label="Framed"><button>a</button></Toolbar><Toolbar aria-label="Bare" variant="bare"><button>b</button></Toolbar></>);
-    expect(screen.getByRole("toolbar", { name: "Framed" }).className).toContain("border-line-base");
-    const bare = screen.getByRole("toolbar", { name: "Bare" });
-    expect(bare.className).toBe("flex flex-wrap items-center gap-md");
+// R2F-51: the strip is the Intent UI Toolbar (no `variant`); the block strips its framed chrome by class instead.
+describe("Toolbar block chrome (the block's action bar)", () => {
+  it("the Intent Toolbar keeps its framed chrome; the block drops it and keeps the wrapping action-bar layout", () => {
+    render(<><Toolbar aria-label="Framed"><button>a</button></Toolbar><ToolbarBlock aria-label="Bare" /></>);
+    const framed = screen.getByRole("toolbar", { name: "Framed" }).className.split(/\s+/);
+    expect(framed).toEqual(expect.arrayContaining(["inset-ring", "inset-ring-border", "bg-popover"]));
+    const bare = screen.getByRole("toolbar", { name: "Bare" }).className.split(/\s+/);
+    expect(bare).toEqual(expect.arrayContaining(["inset-ring-0", "bg-transparent", "p-0", "rounded-none", "flex-wrap", "items-center", "gap-md"]));
+    expect(bare).not.toContain("bg-popover");
+    expect(bare).not.toContain("inset-ring-border");
   });
-  it("the Toolbar block renders through the Foundry Toolbar with its consumer class merged last", () => {
+  it("the Toolbar block renders through the Intent Toolbar with its consumer class merged last", () => {
     render(<ToolbarBlock aria-label="Rows" className="mt-sm" leading={<button>Bulk</button>} />);
     const bar = screen.getByRole("toolbar", { name: "Rows" });
-    expect(bar.className).toBe("flex flex-wrap items-center gap-md mt-sm");
+    expect(bar.className.split(/\s+/).at(-1)).toBe("mt-sm");
+    expect(bar.className.split(/\s+/)).toEqual(expect.arrayContaining(["flex-wrap", "items-center", "gap-md"]));
   });
 });
