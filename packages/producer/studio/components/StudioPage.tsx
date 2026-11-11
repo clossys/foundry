@@ -31,7 +31,7 @@ import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
 import { resolveStudioRoute, studioGroupOf, studioGroups, studioLanding, studioLeafHref, studioLeafTitle, studioAgentRecords, studioRecordTabs, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
 import { useSlotCensus } from '../lib/slot-census';
-import { pipelineInputs, type PipelineGraphFile } from '../lib/pipeline-flow';
+import { pipelineInputs, type PipelineWiringFile } from '../lib/pipeline-flow';
 import { loadLeaf, loadPipeline, loadSlotGroups, type LeafRecord, type SlotGroupsRecord, type StudioPageSeed } from '../lib/studio-seed';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
 import { useStudioRoutes } from './StudioRouteMap';
@@ -223,7 +223,7 @@ function useSeatParam(): string | null {
 
 /** A system overview: graph.json's roster as the team strip, its steps and edges as the swimlane flow, its counts and kinds as the legend. */
 function usePipelineInputs({ page }: LoaderProps): Loaded {
-  const record = useResource<PipelineGraphFile>('pipeline', undefined, loadPipeline, studioCopy("studio.pipeline.empty.description"));
+  const record = useResource<PipelineWiringFile>('pipeline', undefined, loadPipeline, studioCopy("studio.pipeline.empty.description"));
   const seat = useSeatParam();
   return useMemo((): Loaded => {
     if (record.state === 'loading') return { state: 'loading' };

@@ -1,19 +1,27 @@
 'use client';
 import { Background, Badge, BaseNode, BaseNodeContent, Card, CardContent, CardDescription, CardHeader, CardTitle, Controls, Field, FieldDescription, FieldGroup, FieldTitle, Item, ItemActions, ItemContent, ItemTitle, LabeledHandle, MiniMap, NodeStatusIndicator, Panel, Position, ReactFlow, Sheet, SheetDescription, SheetHeader, SheetTitle, SmoothStepEdge, useReactFlow, type Edge, type Node, type NodeProps, type ReactFlowProps } from '@clossys/designer-ui';
 
-/** The node kinds a pipeline step carries; graph.json names one per step. */
+/** The node kinds a pipeline step carries; the step's definition names one. */
 export type StepKind = 'plumb' | 'decide:creative' | 'decide:judgment';
 
-/** One step's facts as graph.json records them; the step sheet shows them, the node shows only counts. */
+/** One step's facts from its latest run record (`clossys pipeline wiring`); the step sheet shows them, the node shows its state and counts. */
 export interface StepFacts {
+  /** What ran: the invocation as typed, or the step's command when it never ran. */
   command: string;
+  /** The steps whose latest run wrote a file this step's latest run read, as their resolved labels. */
   inputs: readonly string[];
+  /** The steps whose latest run read a file this step's latest run wrote, as their resolved labels. */
   outputs: readonly string[];
-  options: readonly string[];
+  /** The files this step read that have changed since its latest run (a stale step only). */
+  changed: readonly string[];
   /** The seat holder, or null for an open seat. */
   seat: string | null;
-  /** graph.json's step state; the node's status border and the sheet's Writer label follow it. */
+  /** The state of the step's latest run record; the node's status border, badge and the sheet's Writer label follow it. */
   status: StepStatus;
+  /** The run record the status comes from (store, line, exit, time), as resolved Writer copy; null when the step never ran. */
+  citation: string | null;
+  /** The checks that decide this step, each with its own latest run state and citation. */
+  checks: readonly StepCheck[];
   /** The step's round (the column group its stage sits in), as its Writer label. */
   round: string;
   /** The step's stage (its column inside the round), as its Writer label. */
@@ -32,10 +40,15 @@ export interface StepHolder {
   derived: boolean;
 }
 
-/** A step's state as `clossys pipeline status` names it. */
-export type StepStatus = 'ready' | 'pending';
+/** A step's state as `clossys pipeline status` names it, from its latest run record only. */
+export type StepStatus = 'passed' | 'failed' | 'stale' | 'never-run';
+/** A check's state: a run state, or not run (no record of the check). */
+export type CheckStatus = StepStatus | 'not-run';
 
-/** A step node's data. Positions are graph.json's; this section computes no layout. */
+/** One check of a step: its id, the state of its latest run record and that record (resolved Writer copy), or null when it has not run. */
+export interface StepCheck { id: string; status: CheckStatus; citation: string | null }
+
+/** A step node's data. Positions are the computed wiring layout's; this section computes no layout. */
 export interface StepData {
   [key: string]: unknown;
   label: string;
@@ -48,16 +61,16 @@ export interface StepData {
   facts: StepFacts;
 }
 
-/** One swim row (WHO): its lane id, a roster entry or `unassigned`, and the position graph.json gives its label. */
+/** One swim row (WHO): its lane id, a roster entry or `unassigned`, and the position the wiring layout gives its label. */
 export interface PipelineLane { id: string; position: { x: number; y: number } }
 
-/** One column (WHEN): its stage id (`<round>.<stage>`) and the position graph.json gives its header. */
+/** One column (WHEN): its stage id (`<round>.<stage>`) and the position the wiring layout gives its header. */
 export interface PipelineStage { id: string; position: { x: number; y: number } }
 
-/** One round (a group of columns): its round id and the position graph.json gives its header, above its first stage's header. */
+/** One round (a group of columns): its round id and the position the wiring layout gives its header, above its first stage's header. */
 export interface PipelineRound { id: string; position: { x: number; y: number } }
 
-/** graph.json: the steps with their positions, the lanes, the rounds and their stages, and the edges between steps. */
+/** The active wiring: the steps that exist and ran with their positions, the lanes, the rounds and their stages, and the observed edges between steps. */
 export interface PipelineGraph { nodes: readonly Node<StepData>[]; edges: readonly Edge[]; lanes: readonly PipelineLane[]; stages: readonly PipelineStage[]; rounds: readonly PipelineRound[] }
 
 /** Writer copy of the flow and its step sheet (studio.pipeline.*). */
@@ -72,15 +85,17 @@ export interface PipelineFlowCopy {
   command: string;
   inputs: string;
   outputs: string;
-  options: string;
+  changed: string;
   seat: string;
   status: string;
+  citation: string;
+  checks: string;
   round: string;
   stage: string;
   holder: string;
   none: string;
   openSeat: string;
-  statuses: Readonly<Record<StepStatus, string>>;
+  statuses: Readonly<Record<CheckStatus, string>>;
   /** What a node is called to assistive technology (`aria-roledescription`). */
   nodeRole: string;
   /** The React Flow attribution link's text and accessible name. */
@@ -101,14 +116,17 @@ type RoundNodeData = { [key: string]: unknown; label: string };
 /** Each kind's stock Badge variant; the legend uses the same mapping. */
 const KIND_VARIANT = { plumb: 'outline', 'decide:creative': 'secondary', 'decide:judgment': 'default' } as const;
 
-/** A step's status on the stock React Flow UI NodeStatusIndicator: a ready step shows the success border, a pending one the loading border. */
-const STATUS_INDICATOR = { ready: 'success', pending: 'loading' } as const;
+/** A step's status on the stock React Flow UI NodeStatusIndicator: a passed run shows the success border, a failed run the error border; a stale or never-run step has none (its badge says which). */
+const STATUS_INDICATOR = { passed: 'success', failed: 'error', stale: 'initial', 'never-run': 'initial' } as const;
+/** Each state's stock Badge variant: the node's status badge and the sheet's state badges. */
+const STATUS_VARIANT = { passed: 'secondary', failed: 'destructive', stale: 'outline', 'never-run': 'ghost', 'not-run': 'ghost' } as const;
 
 /**
  * One step: the stock React Flow UI BaseNode anatomy inside the stock NodeStatusIndicator. Its header
  * is the stock shadcn Item: the title in ItemContent (ItemTitle clamps it to one line) and the kind
  * Badge in ItemActions, so the badge stays inside the card at any title length (Item wraps the
- * actions under the title when both do not fit). One labeled handle per side carries the port count.
+ * actions under the title when both do not fit); the status Badge before it names the latest run's state.
+ * One labeled handle per side carries the observed file count.
  * The step's sheet follows React Flow's own selection: a click anywhere on the node, or Enter on the
  * focused node, selects it and opens the sheet; closing the sheet clears the selection. A step in the
  * highlighted lane shows the stock muted Item.
@@ -122,6 +140,7 @@ function StepNode({ id, data, selected }: NodeProps<Node<StepNodeData, 'step'>>)
           <ItemTitle>{data.label}</ItemTitle>
         </ItemContent>
         <ItemActions>
+          <Badge variant={STATUS_VARIANT[data.facts.status]} data-status={data.facts.status}>{data.copy.statuses[data.facts.status]}</Badge>
           <Badge variant={KIND_VARIANT[data.kind]}>{data.kindLabel}</Badge>
         </ItemActions>
       </Item>
@@ -190,14 +209,20 @@ function StepSheet({ step, copy, isOpen, onOpenChange }: { step: StepData; copy:
       <Field data-fact="command"><FieldTitle>{copy.command}</FieldTitle><FieldDescription><code>{facts.command}</code></FieldDescription></Field>
       <Field data-fact="inputs"><FieldTitle>{copy.inputs}</FieldTitle><FieldDescription>{list(facts.inputs, copy.none)}</FieldDescription></Field>
       <Field data-fact="outputs"><FieldTitle>{copy.outputs}</FieldTitle><FieldDescription>{list(facts.outputs, copy.none)}</FieldDescription></Field>
-      <Field data-fact="options"><FieldTitle>{copy.options}</FieldTitle><FieldDescription>{list(facts.options, copy.none)}</FieldDescription></Field>
       <Field data-fact="seat"><FieldTitle>{copy.seat}</FieldTitle><FieldDescription>{facts.seat ?? <Badge variant="outline">{copy.openSeat}</Badge>}</FieldDescription></Field>
-      <Field data-fact="status"><FieldTitle>{copy.status}</FieldTitle><FieldDescription><Badge variant="secondary" data-status={facts.status}>{copy.statuses[facts.status]}</Badge></FieldDescription></Field>
+      <Field data-fact="status"><FieldTitle>{copy.status}</FieldTitle><FieldDescription><Badge variant={STATUS_VARIANT[facts.status]} data-status={facts.status}>{copy.statuses[facts.status]}</Badge></FieldDescription></Field>
+      <Field data-fact="citation"><FieldTitle>{copy.citation}</FieldTitle><FieldDescription>{facts.citation ? <code>{facts.citation}</code> : copy.none}</FieldDescription></Field>
+      {facts.changed.length ? <Field data-fact="changed"><FieldTitle>{copy.changed}</FieldTitle><FieldDescription>{list(facts.changed, copy.none)}</FieldDescription></Field> : null}
+      <Field data-fact="checks"><FieldTitle>{copy.checks}</FieldTitle>
+        {facts.checks.length ? facts.checks.map(check => <FieldDescription key={check.id} data-check={check.id}>
+          <code>{check.id}</code> <Badge variant={STATUS_VARIANT[check.status]} data-status={check.status}>{copy.statuses[check.status]}</Badge>{check.citation ? <> <code>{check.citation}</code></> : null}
+        </FieldDescription>) : <FieldDescription>{copy.none}</FieldDescription>}
+      </Field>
     </FieldGroup>
   </Sheet>;
 }
 
-/** `sections.producer.pipeline-flow`: the standard canvas-app layout, as a swimlane: lanes are WHO (one per seat holder), columns are WHEN (one per stage, grouped by round). graph.json rendered by @xyflow/react in the stock fixed-height Card of the shadcn message-scroller-example block (Card h-140, its CardContent min-h-0 flex-1 overflow-hidden p-0 holding the canvas): components.flow.* step nodes with their status, one lane label per swim row, one round header above each round's columns, one stage header per column, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
+/** `sections.producer.pipeline-flow`: the standard canvas-app layout, as a swimlane: lanes are WHO (one per seat holder), columns are WHEN (one per stage, grouped by round). The active wiring (`clossys pipeline wiring`: the steps that exist and ran, the files their runs read and wrote, each state cited to its run record) rendered by @xyflow/react in the stock fixed-height Card of the shadcn message-scroller-example block (Card h-140, its CardContent min-h-0 flex-1 overflow-hidden p-0 holding the canvas): components.flow.* step nodes with their latest run's status, one lane label per swim row, one round header above each round's columns, one stage header per column, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
 export default function PipelineFlowSection({ flow, ...provenance }: { flow: PipelineFlowInput } & { [marker: `data-clossys-${string}`]: string }) {
   const { graph, copy, seat } = flow;
   if (!graph.nodes.length) return <Card size="sm" {...provenance}>
@@ -225,7 +250,7 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
   const top = Math.min(...graph.rounds.map(round => round.position.y), ...graph.stages.map(stage => stage.position.y), ...graph.lanes.map(lane => lane.position.y), ...graph.nodes.map(node => node.position.y));
   const viewport = { x: INSET - left * READABLE_ZOOM, y: INSET - top * READABLE_ZOOM, zoom: READABLE_ZOOM };
   // Uncontrolled (defaultNodes, defaultEdges): React Flow keeps the measured node sizes, which the stock MiniMap draws from.
-  // The flow is read-only and mounts once graph.json has loaded (the empty state renders until then).
+  // The flow is read-only and mounts once the wiring has loaded (the empty state renders until then).
   // The stock Card is the canvas's frame at the block's fixed height; its stock CardContent takes the Card's height and the canvas fills it.
   // A new highlighted lane (`?seat=`) remounts the uncontrolled flow with that lane's nodes marked.
   return <Card size="sm" className="h-140" {...provenance}>

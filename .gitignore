@@ -64,3 +64,7 @@ packages/writer/reports/mechanical-audit.json
 # Studio check inputs, emitted fresh per run by packages/producer/scripts/emit-studio-check-inputs.mjs
 # (the check:studio fill-source-imports row); evidence, never source.
 /.clossys/check-inputs/
+
+# Pipeline run records (packages/producer/src/pipeline/trace.ts): one store per step, appended by every run;
+# the pipeline page and `clossys pipeline status` derive state from them. Local evidence, never source.
+/.clossys/runs/

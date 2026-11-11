@@ -7,6 +7,7 @@ import type { Step } from "./define.js";
 import { HANDLERS, MODULE_HANDLERS } from "./handlers.js";
 import type { StepContext } from "./handlers.js";
 import { STEPS } from "./steps/index.js";
+import { appendRecord, buildRecord, invocationOf, observe, sanitizeArgv, tracingEnabled } from "./trace.js";
 
 /**
  * The CLI runs a step only by looking it up here: the verb (and its mode flags) selects one
@@ -48,24 +49,79 @@ async function dispatch(step: Step, context: Omit<StepContext, "step">, steps: r
   return handler({ ...context, step, ...(composed ? { composed } : {}) });
 }
 
+/** The step a run resolved to, so the runner can record it (trace.ts). */
+interface Resolved { step?: Step }
+
+/**
+ * Steps the runner does not record: the trace wrapper records the step it wraps instead, and the
+ * Studio server runs until it is stopped, so it has no end or exit to record.
+ */
+const untraced = (step: Step, argv: readonly string[]): boolean =>
+  (step.command.cli?.verb === "pipeline" && argv[1] === "trace") || step.command.cli?.verb === "produce";
+
+/** The workspace a run belongs to: `--root <dir>` when given, else the workspace around cwd; null when there is none. */
+function runRoot(argv: readonly string[], cwd: string): string | null {
+  const at = argv.findIndex(arg => arg === "--root" || arg.startsWith("--root="));
+  const given = at < 0 ? undefined : argv[at]!.includes("=") ? argv[at]!.slice("--root=".length) : argv[at + 1];
+  try { return discoverRoot(resolve(cwd, given ?? ".")); } catch { return null; }
+}
+
+/**
+ * Every step execution appends one run record (trace.ts): what it read and wrote, with hashes, and
+ * how it exited. The pipeline page and `clossys pipeline status` derive state from these alone.
+ */
 export async function runPipeline(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
+  const resolved: Resolved = {};
+  if (!tracingEnabled()) return run(argv, cwd, steps, resolved);
+  const start = new Date();
+  const watch = observe();
+  let recorded = false;
+  const record = (exit: number) => {
+    const seen = watch.stop();
+    if (recorded || !resolved.step || untraced(resolved.step, argv) || argv.includes("--help")) return;
+    recorded = true;
+    const root = runRoot(argv, cwd);
+    if (!root) return;
+    const step = resolved.step;
+    appendRecord(root, buildRecord({
+      root, step: step.id, invocation: invocationOf(argv, step.command.cli?.target), argv: sanitizeArgv(root, argv, cwd),
+      start, end: new Date(), exit, observation: seen,
+    }));
+  };
+  // A handler that exits the process still leaves its record.
+  const onExit = (code: number) => record(code);
+  process.once("exit", onExit);
+  try {
+    const result = await run(argv, cwd, steps, resolved);
+    record(result.exitCode);
+    return result;
+  } catch (error) {
+    record(2);
+    throw error;
+  } finally {
+    process.removeListener("exit", onExit);
+    watch.stop();
+  }
+}
+
+async function run(argv: readonly string[], cwd: string, steps: readonly Step[], resolved: Resolved): Promise<CliResult> {
   try {
     const head = argv[0];
     // A verb with its own parser (specimen, migrate, pipeline) gets its argv untouched.
     // A verb with a target per step (`clossys pin <agent>/<slot>`) runs the step whose agent the argument names.
     const owners = steps.filter(step => step.command.cli?.parser !== undefined && step.command.cli.verb === head);
     const own = owners.find(step => step.command.cli?.target !== undefined && argv.slice(1).some(arg => arg.startsWith(`${step.command.cli!.target}/`))) ?? owners[0];
-    if (own) return await dispatch(own, { argv: argv.slice(1), cwd, root: () => discoverRoot(cwd) }, steps);
+    if (own) return await dispatch(resolved.step = own, { argv: argv.slice(1), cwd, root: () => discoverRoot(cwd) }, steps);
     // A declared verb the shared parser does not know yet belongs to a pending step.
     const declared = head && !(VERBS as readonly string[]).includes(head) ? steps.find(step => step.command.cli?.verb === head) : undefined;
-    if (declared) return await dispatch(declared, { argv, cwd, root: () => discoverRoot(cwd) }, steps);
+    if (declared) return await dispatch(resolved.step = declared, { argv, cwd, root: () => discoverRoot(cwd) }, steps);
     const args = parseArgs(argv);
     if (args.help) return { exitCode: 0, message: USAGE };
     const verb = args.verb!;
     const step = selectStep(verb, args, steps);
     if (!step) return { exitCode: 2, message: `${verb}: no pipeline step declares this command` };
     let root: string | undefined;
-    return await dispatch(step, { argv, args, cwd, root: () => root ??= discoverRoot(resolve(cwd, args.root ?? ".")) }, steps);
+    return await dispatch(resolved.step = step, { argv, args, cwd, root: () => root ??= discoverRoot(resolve(cwd, args.root ?? ".")) }, steps);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { exitCode: 2, message: error instanceof CliUsageError ? `${message}\n${USAGE}` : message };

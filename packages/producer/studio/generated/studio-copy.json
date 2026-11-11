@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "3adbc6ab417bce15ad813166b001d2da8e8cbfb7b18a0498055a6abda9938016",
+  "revision": "d621e936124d21608a2c8cd380ee09dbf2da5d6601276f5ccbdf484b2aebea30",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2318,12 +2318,6 @@
       "status": "draft"
     },
     {
-      "id": "studio.pipeline.step.options",
-      "text": "Options",
-      "context": "sections/producer-pipeline-flow/index.tsx",
-      "status": "draft"
-    },
-    {
       "id": "studio.pipeline.step.seat",
       "text": "Seat",
       "context": "sections/producer-pipeline-flow/index.tsx",
@@ -2427,25 +2421,7 @@
     },
     {
       "id": "studio.pipeline.counts",
-      "text": "{steps, plural, one {# step} other {# steps}} joined by {edges, plural, one {# edge} other {# edges}}; {open, plural, one {# step has} other {# steps have}} open work.",
-      "context": "lib/pipeline-flow.ts",
-      "status": "draft"
-    },
-    {
-      "id": "studio.pipeline.legend.untyped",
-      "text": "{count, plural, one {# file is} other {# files are}} read or written by no typed step yet.",
-      "context": "lib/pipeline-flow.ts",
-      "status": "draft"
-    },
-    {
-      "id": "studio.pipeline.status.ready",
-      "text": "Ready",
-      "context": "lib/pipeline-flow.ts",
-      "status": "draft"
-    },
-    {
-      "id": "studio.pipeline.status.pending",
-      "text": "Pending",
+      "text": "{steps, plural, one {# step} other {# steps}} joined by {edges, plural, one {# observed edge} other {# observed edges}}: {passed} passed, {failed} failed, {stale} stale, {never} never run, from {runs, plural, one {# run record} other {# run records}}.",
       "context": "lib/pipeline-flow.ts",
       "status": "draft"
     },
@@ -2524,6 +2500,84 @@
     {
       "id": "studio.pipeline.round.publish",
       "text": "Publish",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.passed",
+      "text": "Passed",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.failed",
+      "text": "Failed",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.stale",
+      "text": "Stale",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.never-run",
+      "text": "Never run",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.not-run",
+      "text": "Not run",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.citation",
+      "text": "Run record",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.checks",
+      "text": "Checks",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.changed",
+      "text": "Changed since the run",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.changed-more",
+      "text": "{count, plural, one {and # more file} other {and # more files}}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.citation",
+      "text": "{store} line {line}, exit {exit}, {end}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.check",
+      "text": "Check {id}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.invocation",
+      "text": "{step} ({mode})",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.legend.untyped",
+      "text": "{count, plural, one {# declared step has} other {# declared steps have}} no command that runs it and {count, plural, one {is} other {are}} not drawn.",
       "context": "lib/pipeline-flow.ts",
       "status": "draft"
     },

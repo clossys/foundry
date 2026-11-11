@@ -4,11 +4,15 @@
 //
 // It bundles the view's own input builder (packages/producer/studio/lib/
 // pipeline-flow.ts, the code the page renders from) with esbuild, runs it on
-// packages/producer/pipeline/graph.json, and reads each canvas node's label.
-// A finding is a node whose label equals its step id (ignoring case and
-// surrounding space), or a node whose label does not resolve at all.
+// the active wiring (`clossys pipeline wiring`, built from the run records
+// under the repository) and on every step graph.json defines (so a step that
+// has not run yet is titled the moment it does, in each node form the wiring
+// draws: a step, a step run in more than one way, a check), and reads each
+// canvas node's label. A finding is a node whose label equals its id
+// (ignoring case and surrounding space), or a node whose label does not
+// resolve at all.
 //
-// Usage: node scripts/check-pipeline-step-labels.mjs [--root REPO] [--graph FILE] [--json]
+// Usage: node scripts/check-pipeline-step-labels.mjs [--root REPO] [--graph FILE] [--wiring FILE] [--json]
 // Exit 0 when every label is copy, 1 on any finding, 2 on a usage or environment error.
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -28,8 +32,37 @@ export function stepLabelFindings(nodes) {
   return findings;
 }
 
-/** Builds the page's flow input from `graph` with the view code under `root`. */
-export async function renderedStepNodes(root, graph) {
+/**
+ * A wiring-shaped input with one never-run node per graph.json step, one node per step in the
+ * invocation form (`<step>[<mode>]`) and one per check a step names (`check:<id>`): every label
+ * the page can draw, whether or not that step has run.
+ */
+export function everyStepWiring(graph) {
+  // Each node sits in its step's own lane and stage (a check in its first step's), so lane and stage labels resolve as drawn.
+  const node = (id, step, kind, at) => ({ id, step, kind, invocation: null, command: "", holder: at.holder, stage: at.layout.stage,
+    state: "never-run", citation: null, changed: [], changedCount: 0, reads: 0, writes: 0, checks: [], layout: { lane: at.layout.lane, stage: at.layout.stage, rank: 0, x: 0, y: 0 } });
+  const steps = graph.nodes ?? [];
+  const checks = [...new Set(steps.flatMap((step) => step.checks ?? []))].sort();
+  return {
+    schema: "clossys.pipeline-wiring/1", store: ".clossys/runs", edges: [], roster: [], seats: {}, undrawn: [],
+    counts: { passed: 0, failed: 0, stale: 0, "never-run": steps.length, runs: 0 },
+    layout: { constants: { nodeWidth: 240 }, lanes: [], stages: [], rounds: [] },
+    nodes: [
+      ...steps.map((step) => node(step.id, step.id, step.kind, step)),
+      ...steps.map((step) => node(`${step.id}[--mode]`, step.id, step.kind, step)),
+      ...checks.map((id) => node(`check:${id}`, `check:${id}`, "plumb", steps.find((step) => (step.checks ?? []).includes(id)))),
+    ],
+  };
+}
+
+/** The active wiring of the repository at `root`, from the built Producer (runs nothing, records nothing). */
+export async function activeWiring(root) {
+  const { buildWiring } = await import(pathToFileURL(join(root, "packages/producer/dist/pipeline/wiring.js")).href);
+  return buildWiring(root);
+}
+
+/** Builds the page's flow input from `wiring` with the view code under `root`. */
+export async function renderedStepNodes(root, wiring) {
   const { build } = await import("esbuild");
   const dir = mkdtempSync(join(tmpdir(), "pipeline-step-labels-"));
   try {
@@ -40,20 +73,21 @@ export async function renderedStepNodes(root, graph) {
       nodePaths: [join(root, "node_modules")],
     });
     const { pipelineInputs } = await import(pathToFileURL(outfile).href);
-    return pipelineInputs(graph, { title: "Content" }, "/content").flow.graph.nodes;
+    return pipelineInputs(wiring, { title: "Content" }, "/content").flow.graph.nodes;
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
 function parseArgs(argv) {
-  const args = { root: resolve(fileURLToPath(new URL("..", import.meta.url))), graph: null, json: false };
+  const args = { root: resolve(fileURLToPath(new URL("..", import.meta.url))), graph: null, wiring: null, json: false };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
     if (flag === "--json") args.json = true;
     else if (flag === "--root" && argv[index + 1]) args.root = resolve(argv[++index]);
     else if (flag === "--graph" && argv[index + 1]) args.graph = resolve(argv[++index]);
-    else throw new Error(`unknown argument ${flag}; usage: check-pipeline-step-labels.mjs [--root REPO] [--graph FILE] [--json]`);
+    else if (flag === "--wiring" && argv[index + 1]) args.wiring = resolve(argv[++index]);
+    else throw new Error(`unknown argument ${flag}; usage: check-pipeline-step-labels.mjs [--root REPO] [--graph FILE] [--wiring FILE] [--json]`);
   }
   args.graph ??= join(args.root, "packages/producer/pipeline/graph.json");
   return args;
@@ -65,7 +99,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   catch (error) { console.error(`check:pipeline-step-labels: ${error.message}`); process.exit(2); }
   const graph = JSON.parse(readFileSync(args.graph, "utf8"));
   let nodes;
-  try { nodes = await renderedStepNodes(args.root, graph); }
+  try {
+    const wiring = args.wiring ? JSON.parse(readFileSync(args.wiring, "utf8")) : await activeWiring(args.root);
+    nodes = [...await renderedStepNodes(args.root, wiring), ...await renderedStepNodes(args.root, everyStepWiring(graph))];
+  }
   catch (error) {
     // An unresolved Writer key throws inside the view code: that is a finding, not an environment error.
     if (/Studio copy is unresolved/.test(error?.message ?? "")) {

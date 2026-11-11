@@ -1,0 +1,10 @@
+{
+  "schema": "clossys.pipeline-wiring/1",
+  "store": ".clossys/runs",
+  "nodes": [
+    { "id": "designer.check", "step": "designer.check", "kind": "plumb", "invocation": "design --check", "state": "failed",
+      "citation": { "store": ".clossys/runs/designer.check.jsonl", "line": 1, "run": "0123456789abcdef", "end": "2026-11-10T00:00:00.000Z", "exit": 1 } },
+    { "id": "writer.check", "step": "writer.check", "kind": "plumb", "invocation": null, "state": "never-run", "citation": null }
+  ],
+  "edges": []
+}

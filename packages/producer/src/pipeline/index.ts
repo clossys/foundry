@@ -7,7 +7,11 @@ export type { CycleBreak, Crossings, LaneLayout, LayoutAxes, LayoutStep, NodeLay
 export { holderIdOf, holderOf, isRostered, laneIds, laneOf, ROSTER, rosterOf, UNASSIGNED } from "./roster.js";
 export type { Holder, RosterEntry, RosterId, SeatKind, SeatTier } from "./roster.js";
 export { pipelineStatus, slotCounts, STATUS_SCHEMA } from "./status.js";
-export type { PipelineStatus, StepStatus } from "./status.js";
+export type { DecisionCounter, PipelineStatus, StepStatus } from "./status.js";
+export { appendRecord, buildRecord, currentSha, invocationOf, observe, readRuns, readStore, RUN_SCHEMA, RUNS_DIR, RUNS_KEPT, sanitizeArgv, storeFile } from "./trace.js";
+export type { FileVersion, Observation, RunRecord, StoredRun } from "./trace.js";
+export { buildWiring, RUN_STATES, runState, whyNotRunnable, wiringCitationIssues, WIRING_SCHEMA } from "./wiring.js";
+export type { Citation, CheckState, PipelineWiring, RunState, Undrawn, WiringCheck, WiringEdge, WiringNode } from "./wiring.js";
 export { readSeat, readSeats } from "./seats.js";
 export type { Seat, SeatReport } from "./seats.js";
 export { parserFlags, stepOptions, PACKAGE_ROOT } from "./options.js";

@@ -240,13 +240,16 @@ describe("status", () => {
     expect(slotCounts(root).designer).toMatchObject({ slots: 2, candidates: 3, pinned: 1, notNeeded: 0, open: 1 });
     expect(slotCounts(root).writer).toMatchObject({ slots: 1, candidates: 0, pinned: 0, open: 1 });
     const status = pipelineStatus(root);
-    expect(status.steps.find(each => each.id === "pin.designer")!.state).toBe("ready");
+    // A declared step with no run record is never run, never ready: a declaration alone proves nothing.
+    expect(status.steps.find(each => each.id === "pin.designer")).toMatchObject({ state: "never-run", citation: null });
+    expect(status.steps.every(each => each.state === "never-run")).toBe(true);
+    expect(status.open).toBe(status.openParts.slots + status.openParts.seats);
     expect(status.steps.every(each => each.checks.every(check => check.state !== "pass" as never))).toBe(true);
   });
   it("never counts the Producer seat tree's placed seats as slots without slot.json", () => {
     const root = workspace();
     const ia = (slots: string[]) => JSON.stringify({ schema: "clossys.ia/1", source: "x#y", extensions: [], nodes: [{ id: "design", label: "Design", children: [{ id: "design.pin", label: "Pin", slots }] }] });
-    const opened = () => pipelineStatus(root).steps.find(each => each.id === "ia")!.open!.count;
+    const opened = () => pipelineStatus(root).decisions.find(each => each.step === "ia")!.count;
     const before = opened();
     mkdirSync(join(root, "clossys", "agents", "producer", "pin.designer"), { recursive: true });
     writeFileSync(join(root, "clossys", "agents", "producer", "ia.json"), ia(["pin.designer"]));
