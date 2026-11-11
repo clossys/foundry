@@ -5,10 +5,7 @@
   "kind": "decide:judgment",
   "stage": "direct.brief",
   "summary": "The workspace marker and config the CLI discovers.",
-  "gap": {
-    "unit": "W6a",
-    "reason": "no clossys verb writes the workspace config yet"
-  },
+  "run": "clossys config --init",
   "inputs": [],
   "outputs": [
     {
@@ -34,7 +31,9 @@
   "checks": [
     "workspace"
   ],
-  "uses": [],
+  "uses": [
+    "skill/SKILL.md"
+  ],
   "decider": "owner",
   "packet": {
     "inputs": [],

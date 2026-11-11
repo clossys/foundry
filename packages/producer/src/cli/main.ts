@@ -24,6 +24,10 @@ export interface CliResult {
   decisions?: unknown;
   /** The command already printed its own output (clossys director); nothing more is printed. */
   printed?: boolean;
+  /** A refusal that leaves no run record (a rejected `clossys next --submit`): nothing was decided. */
+  unrecorded?: boolean;
+  /** A decide step's submission, kept in its run record (trace.ts RunDecision). */
+  runDecision?: import("../pipeline/trace.js").RunDecision;
 }
 
 /** Every command runs through the pipeline runner: only a defined step can run (src/pipeline/steps). */

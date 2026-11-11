@@ -6,6 +6,7 @@
   "stage": "publish.assemble",
   "summary": "Print the pinned Writer projection (read-only; written only to --out).",
   "run": "clossys write --out <file>",
+  "chain": "clossys write --out node_modules/.cache/clossys/chain/writer.json",
   "inputs": [
     {
       "glob": "clossys/agents/writer/*/pin.json",

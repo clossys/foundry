@@ -6,6 +6,7 @@
   "stage": "publish.check",
   "summary": "Report pipeline status (read-only) and the step graph built from the action registry.",
   "run": "clossys pipeline graph --out <file>",
+  "chain": "clossys pipeline graph --out node_modules/.cache/clossys/chain/pipeline-graph.json",
   "inputs": [
     {
       "glob": "clossys/agents/producer/*/candidates/*",

@@ -6,6 +6,7 @@
   "stage": "publish.assemble",
   "summary": "Print the pinned Designer projection (read-only; written only to --out).",
   "run": "clossys design --out <file>",
+  "chain": "clossys design --out node_modules/.cache/clossys/chain/designer.json",
   "inputs": [
     {
       "glob": "clossys/agents/designer/*/pin.json",

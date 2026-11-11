@@ -63,6 +63,20 @@ export interface RunRecord {
   readonly inputs: string;
   readonly reads: readonly FileVersion[];
   readonly writes: readonly FileVersion[];
+  /** A decide step's submission (`clossys next --submit`): who produced the output and with which skill. */
+  readonly decision?: RunDecision;
+}
+/**
+ * What a submitted decide-step output declares about how it was made: the model and tier that ran,
+ * the basis, and the skill file (its contract path and the sha256 of the bytes that were read).
+ */
+export interface RunDecision {
+  readonly model: string;
+  readonly tier: string;
+  readonly basis: string;
+  readonly skill: FileVersion;
+  /** The recorded output: the candidate file written. */
+  readonly output: FileVersion;
 }
 /** A record as read back from the store, with where it is: the citation the page shows. */
 export interface StoredRun { readonly record: RunRecord; readonly store: string; readonly line: number }
@@ -315,6 +329,7 @@ export interface RunInput {
   readonly end: Date;
   readonly exit: number;
   readonly observation: Observation;
+  readonly decision?: RunDecision;
 }
 
 /** The record for one finished run: reads with the sha seen, writes with the sha now. Deterministic for the same inputs. */
@@ -329,6 +344,7 @@ export function buildRecord(input: RunInput): RunRecord {
   const body = {
     step: input.step, invocation: input.invocation, argv: [...input.argv], start: input.start.toISOString(), end: input.end.toISOString(),
     exit: input.exit, head: gitHead(input.root), tool: tool(), inputs, reads: readList, writes: writeList,
+    ...(input.decision ? { decision: input.decision } : {}),
   };
   return { schema: RUN_SCHEMA, run: sha(JSON.stringify(body)).slice(0, 16), ...body };
 }

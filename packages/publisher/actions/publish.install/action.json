@@ -6,6 +6,9 @@
   "stage": "publish.publish",
   "summary": "Install pinned pages, a routed site or Next routes into a consumer app.",
   "run": "clossys publish --install",
+  "chain": {
+    "skip": "installs into a caller-chosen page or site (--page or --site); run it with its target once the chain passes"
+  },
   "inputs": [
     {
       "glob": "clossys/agents/publisher/*/pin.json",

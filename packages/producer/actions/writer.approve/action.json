@@ -4,11 +4,8 @@
   "agent": "owner",
   "kind": "decide:judgment",
   "stage": "design.pin",
-  "summary": "Owner approves Writer copy keys (status approved).",
-  "gap": {
-    "unit": "W6a",
-    "reason": "no clossys verb records a Writer key approval yet; the owner sets the key status"
-  },
+  "summary": "Owner approves a Writer slot's copy keys: the approved candidate is pinned (clossys approve).",
+  "run": "clossys approve writer/<slot> <candidate-id>",
   "inputs": [
     {
       "glob": "clossys/agents/writer/*/candidates/*",
@@ -17,8 +14,8 @@
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/writer/*/candidates/*#status",
-      "schema": "candidate-strings"
+      "glob": "clossys/agents/writer/*/pin.json",
+      "schema": "pin"
     }
   ],
   "pass": {
@@ -39,7 +36,9 @@
   "checks": [
     "workspace"
   ],
-  "uses": [],
+  "uses": [
+    "skill/SKILL.md"
+  ],
   "decider": "owner",
   "packet": {
     "inputs": [
@@ -47,8 +46,8 @@
     ],
     "write": [
       {
-        "glob": "clossys/agents/writer/*/candidates/*#status",
-        "schema": "candidate-strings"
+        "glob": "clossys/agents/writer/*/pin.json",
+        "schema": "pin"
       }
     ],
     "checks": [

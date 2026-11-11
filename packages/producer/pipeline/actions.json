@@ -10,11 +10,8 @@
         "agent": "owner",
         "kind": "decide:judgment",
         "stage": "direct.brief",
-        "summary": "Place every L3 slot: the agent IA tree and each slot's contract.",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb records an IA placement or a slot contract yet; the owner edits ia.json and slot.json"
-        },
+        "summary": "Place every L3 slot: the agent IA tree and each slot's contract (clossys ia).",
+        "run": "clossys ia <agent>/<slot> --under <l1>/<l2> --contract <file>",
         "inputs": [],
         "outputs": [
           {
@@ -44,7 +41,9 @@
         "checks": [
           "workspace"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [],
@@ -76,10 +75,7 @@
         "kind": "decide:judgment",
         "stage": "direct.brief",
         "summary": "Owner answers and director findings the Director cites.",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb records an owner answer as evidence yet; answers are written as evidence files"
-        },
+        "run": "clossys evidence <id> --source <source> --observed <date> --by <who> --body <file>",
         "inputs": [],
         "outputs": [
           {
@@ -110,7 +106,9 @@
           "pipeline",
           "workspace"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [],
@@ -141,10 +139,7 @@
         "kind": "decide:judgment",
         "stage": "direct.brief",
         "summary": "The workspace marker and config the CLI discovers.",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb writes the workspace config yet"
-        },
+        "run": "clossys config --init",
         "inputs": [],
         "outputs": [
           {
@@ -170,7 +165,9 @@
         "checks": [
           "workspace"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [],
@@ -197,10 +194,7 @@
         "kind": "decide:judgment",
         "stage": "direct.brief",
         "summary": "Who decides each decide step: an llm seat, a human seat, or both.",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb assigns a seat yet; the owner writes a seat candidate and pins it"
-        },
+        "run": "clossys seat <step> --by <who> --procedure <text> --command <verb>",
         "inputs": [],
         "outputs": [
           {
@@ -230,7 +224,9 @@
         "checks": [
           "pipeline"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [],
@@ -262,10 +258,7 @@
         "kind": "decide:judgment",
         "stage": "direct.brief",
         "summary": "Rule registry rows and gate yes/no.",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb records a rule row or a gate decision yet"
-        },
+        "run": "clossys rule <rule-id> --quote <text> --date <date> --status <status>",
         "inputs": [],
         "outputs": [
           {
@@ -291,7 +284,9 @@
         "checks": [
           "rules"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [],
@@ -318,10 +313,7 @@
         "kind": "decide:creative",
         "stage": "direct.make",
         "summary": "Create Director candidates: one immutable file per option, per L3 slot.",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
-        },
+        "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
         "inputs": [
           {
             "glob": "clossys/evidence/director/*.md",
@@ -463,6 +455,7 @@
         "stage": "direct.pin",
         "summary": "Director's own store commands (clossys director check, rate-check) through the slot-model reader and writer.",
         "run": "clossys director check <command>",
+        "chain": "clossys director check brand",
         "inputs": [
           {
             "glob": "clossys/agents/director/*/pin.json",
@@ -571,7 +564,9 @@
           "pin-propagation",
           "every-candidate-previewable"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [
@@ -693,10 +688,7 @@
         "kind": "decide:creative",
         "stage": "design.make",
         "summary": "Create Designer candidates: one immutable file per option, per L3 slot.",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
-        },
+        "run": "clossys next designer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
         "inputs": [
           {
             "glob": "clossys/agents/director/*/pin.json",
@@ -774,10 +766,7 @@
         "kind": "decide:creative",
         "stage": "design.make",
         "summary": "Create Writer candidates: one immutable file per option, per L3 slot.",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
-        },
+        "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
         "inputs": [
           {
             "glob": "clossys/agents/director/*/pin.json",
@@ -988,11 +977,8 @@
         "agent": "owner",
         "kind": "decide:judgment",
         "stage": "design.pin",
-        "summary": "Owner approves Writer copy keys (status approved).",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb records a Writer key approval yet; the owner sets the key status"
-        },
+        "summary": "Owner approves a Writer slot's copy keys: the approved candidate is pinned (clossys approve).",
+        "run": "clossys approve writer/<slot> <candidate-id>",
         "inputs": [
           {
             "glob": "clossys/agents/writer/*/candidates/*",
@@ -1001,8 +987,8 @@
         ],
         "outputs": [
           {
-            "glob": "clossys/agents/writer/*/candidates/*#status",
-            "schema": "candidate-strings"
+            "glob": "clossys/agents/writer/*/pin.json",
+            "schema": "pin"
           }
         ],
         "pass": {
@@ -1023,7 +1009,9 @@
         "checks": [
           "workspace"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [
@@ -1031,8 +1019,8 @@
           ],
           "write": [
             {
-              "glob": "clossys/agents/writer/*/candidates/*#status",
-              "schema": "candidate-strings"
+              "glob": "clossys/agents/writer/*/pin.json",
+              "schema": "pin"
             }
           ],
           "checks": [
@@ -1096,7 +1084,9 @@
           "pin-propagation",
           "every-candidate-previewable"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [
@@ -1175,7 +1165,9 @@
           "pin-propagation",
           "every-candidate-previewable"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [
@@ -1211,10 +1203,7 @@
         "kind": "decide:creative",
         "stage": "publish.make",
         "summary": "Create Publisher candidates: one immutable file per option, per L3 slot.",
-        "gap": {
-          "unit": "W6a",
-          "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate"
-        },
+        "run": "clossys next publisher/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
         "inputs": [
           {
             "glob": "clossys/agents/designer/*/pin.json",
@@ -1407,7 +1396,9 @@
           "pin-propagation",
           "every-candidate-previewable"
         ],
-        "uses": [],
+        "uses": [
+          "skill/SKILL.md"
+        ],
         "decider": "owner",
         "packet": {
           "inputs": [
@@ -1444,6 +1435,7 @@
         "stage": "publish.assemble",
         "summary": "Print the pinned Designer projection (read-only; written only to --out).",
         "run": "clossys design --out <file>",
+        "chain": "clossys design --out node_modules/.cache/clossys/chain/designer.json",
         "inputs": [
           {
             "glob": "clossys/agents/designer/*/pin.json",
@@ -1496,6 +1488,7 @@
         "stage": "publish.assemble",
         "summary": "Print the pinned Writer projection (read-only; written only to --out).",
         "run": "clossys write --out <file>",
+        "chain": "clossys write --out node_modules/.cache/clossys/chain/writer.json",
         "inputs": [
           {
             "glob": "clossys/agents/writer/*/pin.json",
@@ -1684,6 +1677,9 @@
         "stage": "publish.assemble",
         "summary": "Serve or snapshot a library element specimen.",
         "run": "clossys specimen <command>",
+        "chain": {
+          "skip": "specimen serves or snapshots a caller-chosen specimen; Studio and capture run it"
+        },
         "inputs": [
           {
             "glob": "clossys/agents/*/ia.json",
@@ -2360,6 +2356,7 @@
         "stage": "publish.check",
         "summary": "Report pipeline status (read-only) and the step graph built from the action registry.",
         "run": "clossys pipeline graph --out <file>",
+        "chain": "clossys pipeline graph --out node_modules/.cache/clossys/chain/pipeline-graph.json",
         "inputs": [
           {
             "glob": "clossys/agents/producer/*/candidates/*",
@@ -2611,6 +2608,9 @@
         "stage": "publish.publish",
         "summary": "Install pinned pages, a routed site or Next routes into a consumer app.",
         "run": "clossys publish --install",
+        "chain": {
+          "skip": "installs into a caller-chosen page or site (--page or --site); run it with its target once the chain passes"
+        },
         "inputs": [
           {
             "glob": "clossys/agents/publisher/*/pin.json",
@@ -2663,6 +2663,9 @@
         "stage": "publish.publish",
         "summary": "Serve the local Studio over the live slot model (no compile step).",
         "run": "clossys produce",
+        "chain": {
+          "skip": "serves Studio until it is stopped; it has no end or exit to record"
+        },
         "inputs": [
           {
             "glob": "clossys/agents/*/ia.json",

@@ -14,6 +14,7 @@
       ],
       "verbs": [
         "design",
+        "next",
         "pick"
       ],
       "commands": [],
@@ -29,10 +30,10 @@
       ],
       "code": [
         "packages/producer/src/cli/design.ts#runDesign",
+        "packages/producer/src/cli/next.ts",
+        "packages/producer/src/cli/next.ts#runNextSubmitCli",
         "packages/producer/src/cli/options.ts",
-        "packages/producer/src/cli/options.ts#runPickCli",
-        "packages/producer/src/records/slot-write.ts#writeCandidate",
-        "packages/producer/src/specimen/catalog-materialization.ts#materializeCatalogCandidate"
+        "packages/producer/src/cli/options.ts#runPickCli"
       ],
       "exceptions": [
         {
@@ -146,6 +147,7 @@
       "verbs": [
         "direct",
         "director",
+        "next",
         "pick"
       ],
       "commands": [
@@ -161,9 +163,10 @@
         "packages/producer/src/cli/direct.ts#runDirect",
         "packages/producer/src/cli/director.ts",
         "packages/producer/src/cli/director.ts#runDirectorVerb",
+        "packages/producer/src/cli/next.ts",
+        "packages/producer/src/cli/next.ts#runNextSubmitCli",
         "packages/producer/src/cli/options.ts",
-        "packages/producer/src/cli/options.ts#runPickCli",
-        "packages/producer/src/records/slot-write.ts#writeCandidate"
+        "packages/producer/src/cli/options.ts#runPickCli"
       ],
       "exceptions": [
         {
@@ -191,7 +194,13 @@
         "pin.publisher"
       ],
       "verbs": [
-        "pin"
+        "approve",
+        "config",
+        "evidence",
+        "ia",
+        "pin",
+        "rule",
+        "seat"
       ],
       "commands": [],
       "skills": [
@@ -204,9 +213,17 @@
         "packages/producer/actions/rules/skill.md",
         "packages/producer/actions/seats/skill.md",
         "packages/producer/actions/workspace.config/skill.md",
-        "packages/producer/actions/writer.approve/skill.md"
+        "packages/producer/actions/writer.approve/skill.md",
+        "packages/producer/skill/SKILL.md"
       ],
       "code": [
+        "packages/producer/src/cli/owner.ts",
+        "packages/producer/src/cli/owner.ts#runApproveCli",
+        "packages/producer/src/cli/owner.ts#runConfigCli",
+        "packages/producer/src/cli/owner.ts#runEvidenceCli",
+        "packages/producer/src/cli/owner.ts#runIaCli",
+        "packages/producer/src/cli/owner.ts#runRuleCli",
+        "packages/producer/src/cli/owner.ts#runSeatCli",
         "packages/producer/src/cli/pin.ts",
         "packages/producer/src/cli/pin.ts#runPinCli"
       ],
@@ -276,14 +293,7 @@
         "packages/producer/src/cli/specimen.ts#runSpecimenCli",
         "packages/producer/studio/checks/p0-studio-check.cjs"
       ],
-      "exceptions": [
-        {
-          "package": "producer",
-          "item": "skill/SKILL.md",
-          "unit": "W6a",
-          "reason": "A stale CLI scaffold note; the chain runner's skill replaces it."
-        }
-      ]
+      "exceptions": []
     },
     "publisher": {
       "packages": [
@@ -296,6 +306,7 @@
         "publish.install"
       ],
       "verbs": [
+        "next",
         "pick",
         "publish"
       ],
@@ -306,11 +317,12 @@
         "packages/publisher/skill/SKILL.md"
       ],
       "code": [
+        "packages/producer/src/cli/next.ts",
+        "packages/producer/src/cli/next.ts#runNextSubmitCli",
         "packages/producer/src/cli/options.ts",
         "packages/producer/src/cli/options.ts#runPickCli",
         "packages/producer/src/cli/publish.ts#runPublish",
-        "packages/producer/src/cli/publish.ts#runPublishCheck",
-        "packages/producer/src/records/slot-write.ts#writeCandidate"
+        "packages/producer/src/cli/publish.ts#runPublishCheck"
       ],
       "exceptions": [
         {
@@ -381,6 +393,7 @@
         "writer.check"
       ],
       "verbs": [
+        "next",
         "pick",
         "write"
       ],
@@ -391,10 +404,11 @@
         "packages/writer/skill/SKILL.md"
       ],
       "code": [
+        "packages/producer/src/cli/next.ts",
+        "packages/producer/src/cli/next.ts#runNextSubmitCli",
         "packages/producer/src/cli/options.ts",
         "packages/producer/src/cli/options.ts#runPickCli",
-        "packages/producer/src/cli/write.ts#runWrite",
-        "packages/producer/src/records/slot-write.ts#writeCandidate"
+        "packages/producer/src/cli/write.ts#runWrite"
       ],
       "exceptions": [
         {
