@@ -61,7 +61,12 @@
     "identity.visual.style",
     "themes.destructive",
     "themes.muted-foreground",
-    "themes.spacing"
+    "themes.spacing",
+    "themes.background",
+    "themes.muted",
+    "themes.primary",
+    "themes.radius",
+    "themes.ring"
   ],
   "uses": [
     "components.separator"

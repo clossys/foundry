@@ -192,7 +192,8 @@
     "themes.muted",
     "themes.muted-foreground",
     "themes.primary",
-    "themes.spacing"
+    "themes.spacing",
+    "assets.pattern"
   ],
   "uses": [
     "components.button"
