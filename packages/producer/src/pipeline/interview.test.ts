@@ -138,10 +138,21 @@ describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
 });
 
 // DIR-INT: the Director's owner interview asks content (archetype, then "Pick <cell>"), not only meta requests.
+/** The copied Director as it was before the owner's interview: no archetype recorded, no owner pick (temp copy only). */
+function unrecorded(root: string): string {
+  const director = join(root, "clossys", "agents", "director");
+  rmSync(join(root, "clossys", "evidence", "director", "director-archetype.md"), { force: true });
+  for (const cell of readdirSync(director)) {
+    const pin = join(director, cell, "pin.json");
+    if (existsSync(pin) && JSON.parse(readFileSync(pin, "utf8")).basis === "picked") rmSync(pin);
+  }
+  return root;
+}
+
 describe("Director content questions (next --owner --agent director)", { timeout: 120_000 }, () => {
   const contentOf = (questions: readonly Question[]) => questions.filter(question => question.id.startsWith("director:"));
   it("asks the archetype first, then each owner-held core cell as Pick <cell> with candidate pin options, recommended first", () => {
-    const root = workspace();
+    const root = unrecorded(workspace());
     const interview = interviewOf(root, { agent: "director" });
     const all = interview.rounds.flat().filter(question => question.step !== "seats");
     expect(all[0]!.id).toBe("director.archetype");
@@ -168,7 +179,7 @@ describe("Director content questions (next --owner --agent director)", { timeout
   });
 
   it("folds a request for an asked cell into its content question; agent picks are one confirm question", () => {
-    const root = workspace();
+    const root = unrecorded(workspace());
     const all = interviewOf(root, { agent: "director" }).rounds.flat();
     const promise = all.find(question => question.id === "director:advantage.proposition.promise")!;
     expect(promise.requestedBy).toContain("designer");
@@ -181,6 +192,21 @@ describe("Director content questions (next --owner --agent director)", { timeout
     expect(picks[0]!.options.map(option => option.calls[0]?.slice(0, 2))).toEqual([["clossys", "pin"], ["clossys", "options"]]);
     expect(picks[0]!.options[0]!.calls.every(call => call.at(-1) === "bulk")).toBe(true);
     for (const item of picks[0]!.items) expect(content.has(item)).toBe(false);
+  });
+
+  it("an unclear request on an agent-held cell recommends the Director's re-draft, not owner evidence", () => {
+    const root = unrecorded(workspace());
+    const requests = interviewOf(root, { agent: "director" }).rounds.flat().filter(question => question.id.startsWith("request:director/"));
+    const director = join(root, "clossys", "agents", "director");
+    const held = new Set(readdirSync(director).filter(cell => existsSync(join(director, cell, "pin.json")) && JSON.parse(readFileSync(join(director, cell, "pin.json"), "utf8")).decidedBy === "agent:director").map(cell => `director/${cell}`));
+    const unclear = requests.filter(question => held.has(question.items[0]!) && question.question.includes("unclear"));
+    expect(unclear.length).toBeGreaterThan(0);
+    for (const question of unclear) {
+      const [first, second] = question.options;
+      expect(first).toMatchObject({ recommended: true, calls: [["clossys", "options", question.items[0], "--redraft"]] });
+      expect(first!.label).toMatch(/^The Director re-drafts/);
+      expect(second!.calls[0]?.slice(0, 2)).toEqual(["clossys", "evidence"]);
+    }
   });
 });
 

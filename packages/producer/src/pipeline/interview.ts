@@ -492,7 +492,7 @@ function candidateNames(packet: Packet): Map<string, number> {
 }
 
 /** A request gap as a question for its addressee: settle the upstream slot, or the downstream slots re-draft without it. */
-function requestQuestion(gap: Gap, root: string): Built {
+function requestQuestion(gap: Gap, root: string, agentHeld: ReadonlySet<string> = new Set()): Built {
   const to = gap.to!, need = gap.need ?? [];
   const names = gap.item.includes("/") ? candidatesOf(root, gap.item) : [];
   const newest = names.slice(-2).reverse();
@@ -509,8 +509,10 @@ function requestQuestion(gap: Gap, root: string): Built {
     if (newest[0]) rows.push({ label: `Reopen it: pin ${newest[0]}.`, calls: [["clossys", "pin", gap.item, newest[0], "--basis", "picked"]] });
     else rows.push({ label: `Reopen it: the ${to} drafts it.`, calls: [redraft(gap.item)] });
   } else if (gap.code === "request.input-unclear") {
-    rows.push({ label: "Answer it as owner evidence; the Director re-drafts the cell on it.", calls: [["clossys", "evidence", "<id>", "--source", "owner", "--observed", new Date().toISOString().slice(0, 10), "--by", "owner", "--body", "<answer.md>"], redraft(gap.item)] });
-    rows.push({ label: "The Director re-drafts the cell from the evidence it has.", calls: [redraft(gap.item)] });
+    const evidence = { label: "Answer it as owner evidence; the Director re-drafts the cell on it.", calls: [["clossys", "evidence", "<id>", "--source", "owner", "--observed", new Date().toISOString().slice(0, 10), "--by", "owner", "--body", "<answer.md>"], redraft(gap.item)] };
+    const own = { label: "The Director re-drafts the cell from the evidence it has.", calls: [redraft(gap.item)] };
+    // An agent-held cell is the Director's to re-draft (owner, 2026-11-11); owner evidence is the alternative, not the ask.
+    rows.push(...(agentHeld.has(gap.item) ? [own, evidence] : [evidence, own]));
     rows.push(downstream);
   } else if (gap.code === "request.input-unpinned") {
     for (const name of newest) rows.push({ label: `Pin ${name}.`, calls: [["clossys", "pin", gap.item, name, "--basis", "picked"]] });
@@ -614,6 +616,7 @@ export function interviewOf(root: string, options: InterviewOptions & { readonly
   });
   questions.push(...packetQuestions(packets));
   // A request for a cell already asked folds into that question; the confirm question takes none.
+  const agentHeld = new Set(content?.agentPicks.map(pick => pick.item) ?? []);
   const unblocks = new Map<string, Map<string, Set<string>>>();
   for (const gap of asked.filter(each => each.kind === "request")) {
     const merged = questions.find(question => question.id !== AGENT_PICKS_QUESTION && question.items.includes(gap.item) && question.agent === gap.agent);
@@ -624,7 +627,7 @@ export function interviewOf(root: string, options: InterviewOptions & { readonly
       unblocks.set(merged.id, byAgent);
       continue;
     }
-    questions.push(requestQuestion(gap, root));
+    questions.push(requestQuestion(gap, root, agentHeld));
   }
   for (const question of questions) {
     const byAgent = unblocks.get(question.id);
