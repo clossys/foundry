@@ -1,6 +1,6 @@
 {
   "schema": "designer-foundation/v1",
-  "sourceTree": "b5cf86d8e2684dce842404bc38f1f2e29c616b50",
+  "sourceTree": "883314f0c5f349abf07db0831473ff276a244953",
   "files": {
     "src/backdrop/consumer-art.ts": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e",
     "src/backdrop/contract.ts": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8",
@@ -344,7 +344,7 @@
     "src/catalog-core/theme-vocabulary.ts": "78a60f02f69951a16032051bd112b6a80401e8d96484d7e1a2505d2aaec43189",
     "src/catalog-core/themes-migration.ts": "956aec7f9d8fb2e312f576a00a1772be03848224d8c94531fcadcce327962b11",
     "src/catalog-core/token-contract-scan.ts": "fc48edbac6661f257de5f24c3fb3776acbdb32692f3ea665717e89a1c1bd24db",
-    "src/catalog-core/token-contract.ts": "fb5987e023f92290bd3f88cb20fd50d29c6e0d51e5d4cf9993cd89046e453b6c",
+    "src/catalog-core/token-contract.ts": "2a4423b09d3b25cc568206a2f65f918722a3c11f1e244466987f6fb1a1023db5",
     "src/catalog-core/token-css-syntax.ts": "2122d0f383c2a712cd669483c82f258295acf1df96e487eaaa4bc09bd8b53495",
     "src/catalog-core/types.ts": "cb3a414a4e50b6b7f00d1cdc37565e27d8aa7c87fd2eeed2a186f299faa61a6e",
     "src/catalog-core/usage-graph.ts": "610724762a6db15dc125831f176337a7dc51d6521c349e587f56fab00d6952ce",
@@ -705,7 +705,7 @@
     "src/catalog/rules/identity-mark.json": "d27e329eea6e203ca4132eaeea9864381cb9171ba91f837d4f1334b319bf5777",
     "src/catalog/rules/provenance.json": "2bca75c02a8ae3aa1e648f4130d7bdec31af51ca1071568a218616f55c575b66",
     "src/catalog/rules/shadcn-refresh-needs.json": "7092d325574a72d426b524e5af3a70ccefa774fa1296f6b8c49b638f9053b0e6",
-    "src/catalog/rules/source-roster.json": "8a21a943348cd50c77081d17117d52d1ab876efed1b4965609d9d45bccf5a55c",
+    "src/catalog/rules/source-roster.json": "be1744afe0fb6b5e04915c2d0348b02ad95376acdbe2694afa3a205e30a63788",
     "src/catalog/rules/token-contract.json": "8b3f13cf4633cf4acce2637468ccfcff63368b0d9e302ff2886a38ac00c586df",
     "src/catalog/rules/wiring-exceptions.json": "af779c1dea4c6b472330c33e22f55b6e880c3973478e0a3639ed3e4a9fa62ac4",
     "src/catalog/slot-contracts/assets.json": "241f639f1b727d8491638d05360728d2dd5c6305066decb46bf2b8a58134f7de",
