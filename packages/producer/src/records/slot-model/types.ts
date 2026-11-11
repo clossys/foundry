@@ -74,6 +74,12 @@ export type PinBasis = typeof PIN_BASES[number];
 /** A pin's review status: `pinned` only for an owner pick (basis picked); bulk, planner and agent pins are `confirm`. */
 export type PinStatus = "pinned" | "confirm";
 export const pinStatus = (basis: PinBasis): PinStatus => basis === "picked" ? "pinned" : "confirm";
+/**
+ * Whether a pin is the owner's approval (owner Producer round 2, "Pin = approval"): an owner pick
+ * (`picked`) or a blanket owner approval (`bulk`). A planner or agent pin is decided but not approved:
+ * it stays a confirm item until the owner pins. Writer copy reads its editorial approval from this.
+ */
+export const pinApproved = (basis: PinBasis): boolean => basis === "picked" || basis === "bulk";
 
 /** How many candidates a slot offers for choice (CANDIDATE-OPTIONS). */
 export const OPTION_COUNTS = [1, 2, 3] as const;

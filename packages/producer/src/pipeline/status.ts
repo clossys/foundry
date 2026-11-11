@@ -93,9 +93,11 @@ function iaSlots(root: string, agent: string): string[] {
 
 /**
  * Writer keys awaiting a decision, per Writer slot: keys a slot's candidates propose that its pinned
- * candidate does not hold (every key of an unpinned slot's newest candidate). A pinned key is decided:
- * the pin is the approval (`clossys approve writer/<slot>`; no `status: approved` field exists in the
- * Writer record format).
+ * candidate does not hold (every key of an unpinned slot's newest candidate). A pinned key is decided.
+ * Pin = approval (owner Producer round 2): an owner pin (`pinApproved`: basis picked or bulk) is the
+ * editorial approval (`clossys approve writer/<slot>`; no `status: approved` field exists in the Writer
+ * record format); a planner or agent pin stays a confirm item until the owner pins. `records/writer-copy.ts`
+ * reads the same rule.
  */
 export function writerKeysUnapproved(root: string): ReadonlyMap<string, readonly string[]> {
   const unapproved = new Map<string, string[]>();

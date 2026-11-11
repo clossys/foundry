@@ -1,7 +1,7 @@
 import { createCopyResolver } from '@clossys/writer/resolve';
 import registry from '../generated/studio-copy.json';
 
-// Studio previews the migrated source; a slot pin does not create editorial approval.
+// Studio previews the projected copy; editorial approval is the owner's pin (pin = approval, records/writer-copy.ts).
 const resolve = createCopyResolver(registry, { target: 'preview' });
 
 /** The Writer's source locale for Studio copy (the pinned candidates' first locale): the document's `lang`. */
