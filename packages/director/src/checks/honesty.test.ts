@@ -277,4 +277,29 @@ describe("C4-JUDGE: a judge verdict is recorded only by `director check judge`",
     expect(done.value.result.recorded.id).toBe(`judge-q3-${CORE.replace(/\./g, "-")}-v1-${done.value.result.recorded.id.slice(-10)}`);
     expect(recordedJudgeVerdicts(readStrategyRoot(root, reader))[`Q3:${CORE}@1`]).toBe("pass");
   });
+  it("C5-DIR: the cited run record travels with the verdict, so a checkout without the local run store still counts it", () => {
+    const { root, base } = unjudgedRoot([CORE]);
+    const local = join(base, ".clossys", "runs", "critic.cell.jsonl");
+    const line = JSON.stringify({ schema: "clossys.pipeline-run/1", run: RUN, step: "critic.cell", invocation: "director check check", argv: ["director", "check", "check"], exit: 0, reads: [], writes: [] });
+    mkdirSync(dirname(local), { recursive: true });
+    writeFileSync(local, `${line}\n`);
+    const tracked = join(evidenceDir(root), "runs", "critic.cell.jsonl");
+    const q = (rule: number) => judge(root, `Q${rule}:${CORE}@1`, "--verdict", "pass", "--heard", "owner-heard", "--run", `critic.cell#${RUN}`, "--reason", "Judged from the traced run.");
+    const done = q(3);
+    expect(done.code).toBe(0);
+    expect(done.value.result.recorded.runRecord).toBe("../../evidence/director/runs/critic.cell.jsonl");
+    // Copied verbatim, once per run id: a second verdict citing the same run adds no line.
+    expect(readFileSync(tracked, "utf8")).toBe(`${line}\n`);
+    expect(q(2).value.result.recorded.runRecord).toBeUndefined();
+    expect(readFileSync(tracked, "utf8")).toBe(`${line}\n`);
+    // A fresh checkout: the gitignored local store is gone, the tracked copy still resolves both verdicts.
+    rmSync(join(base, ".clossys"), { recursive: true, force: true });
+    const model = readStrategyRoot(root, reader);
+    expect(model.issues).toEqual([]);
+    expect(recordedJudgeVerdicts(model)).toMatchObject({ [`Q3:${CORE}@1`]: "pass", [`Q2:${CORE}@1`]: "pass" });
+    expect(strategyStatus(model, { scope: "core" }).cells.find(cell => cell.id === CORE)!.findings.some(f => f.rule === "judgment-uncited")).toBe(false);
+    // The tracked copy also satisfies the verb; a run in neither store is still refused.
+    expect(q(4).code).toBe(0);
+    expect(judge(root, `Q6:${CORE}@1`, "--verdict", "pass", "--heard", "owner-heard", "--run", "critic.cell#00000000000000aa", "--reason", "x").value.error).toContain("not a finished run");
+  });
 });

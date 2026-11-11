@@ -163,7 +163,7 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
     const archetype = recordedArchetype(model.findings, model.catalog);
     if (archetype?.ok === false) issue(`${EVIDENCE_PREFIX}/${ARCHETYPE_RECORD_ID}.md`, "invalid-format", `Archetype record: ${archetype.message}`);
     else if (archetype && model.tree) model.tree = { ...model.tree, archetype: archetype.archetype };
-    model.runs = citedRuns(dirname(base), store, model.findings);
+    model.runs = citedRuns(dirname(base), store, model.findings, base);
   }
   return model;
 }
@@ -172,11 +172,43 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
 export function runStoreFile(step: string): string { return `.clossys/runs/${step.replace(/[^a-z0-9.-]/gi, ".")}.jsonl`; }
 
 /**
- * Resolves the run citations of the model's findings against the local run store under `repo`
- * (`<repo>/.clossys/runs/<step>.jsonl`, gitignored, one clossys.pipeline-run/1 record per line).
- * Only records of the cited step with the cited run id resolve; an absent store resolves nothing.
+ * The tracked copy of one step's cited run records, under the consumer folder:
+ * `<consumer>/evidence/director/runs/<step>.jsonl`. `director check judge` copies the run record a
+ * cell judgement cites here, verbatim, so the citation still resolves in a checkout that never ran it
+ * (the local `.clossys/runs` store is gitignored).
  */
-export function citedRuns(repo: string, store: DirectorStoreReader, findings: readonly { run?: string }[]): Record<string, { step: string; run: string; exit: number }> {
+export function trackedRunFile(step: string): string { return `evidence/director/runs/${step.replace(/[^a-z0-9.-]/gi, ".")}.jsonl`; }
+
+/** The clossys.pipeline-run/1 records of `step` in one run store file's text, each with its exact line. */
+export function parseRunRecords(text: string, step: string): { line: string; run: string; exit: number }[] {
+  const records: { line: string; run: string; exit: number }[] = [];
+  for (const line of text.split("\n")) {
+    if (!line.trim()) continue;
+    let record: { schema?: unknown; run?: unknown; step?: unknown; exit?: unknown };
+    try { record = JSON.parse(line); } catch { continue; }
+    if (record.schema !== "clossys.pipeline-run/1" || record.step !== step || typeof record.run !== "string" || typeof record.exit !== "number") continue;
+    records.push({ line, run: record.run, exit: record.exit });
+  }
+  return records;
+}
+
+/** The run records of `step` in the local run store under `repo`, then in the tracked copy under the consumer folder `base`. */
+export function runRecordLines(repo: string, store: DirectorStoreReader, step: string, base?: string): { line: string; run: string; exit: number }[] {
+  const sources: [string, string][] = [[repo, runStoreFile(step)], ...(base === undefined ? [] : [[base, trackedRunFile(step)] as [string, string]])];
+  return sources.flatMap(([dir, file]) => {
+    let text: string | undefined;
+    try { text = store.read(dir, file); } catch { text = undefined; }
+    return parseRunRecords(text ?? "", step);
+  });
+}
+
+/**
+ * Resolves the run citations of the model's findings against the local run store under `repo`
+ * (`<repo>/.clossys/runs/<step>.jsonl`, gitignored, one clossys.pipeline-run/1 record per line)
+ * and the tracked copy under the consumer folder `base` (`evidence/director/runs/<step>.jsonl`).
+ * Only records of the cited step with the cited run id resolve; absent stores resolve nothing.
+ */
+export function citedRuns(repo: string, store: DirectorStoreReader, findings: readonly { run?: string }[], base?: string): Record<string, { step: string; run: string; exit: number }> {
   const runs: Record<string, { step: string; run: string; exit: number }> = Object.create(null);
   const cited = [...new Set(findings.map(finding => finding.run).filter((run): run is string => run !== undefined))];
   const byStep = new Map<string, string[]>();
@@ -185,14 +217,8 @@ export function citedRuns(repo: string, store: DirectorStoreReader, findings: re
     byStep.set(match[1]!, [...byStep.get(match[1]!) ?? [], match[2]!]);
   }
   for (const [step, ids] of byStep) {
-    let text: string | undefined;
-    try { text = store.read(repo, runStoreFile(step)); } catch { text = undefined; }
-    for (const line of (text ?? "").split("\n")) {
-      if (!line.trim()) continue;
-      let record: { schema?: unknown; run?: unknown; step?: unknown; exit?: unknown };
-      try { record = JSON.parse(line); } catch { continue; }
-      if (record.schema !== "clossys.pipeline-run/1" || record.step !== step || typeof record.run !== "string" || !ids.includes(record.run) || typeof record.exit !== "number") continue;
-      runs[`${step}#${record.run}`] = { step, run: record.run, exit: record.exit };
+    for (const record of runRecordLines(repo, store, step, base)) {
+      if (ids.includes(record.run) && runs[`${step}#${record.run}`] === undefined) runs[`${step}#${record.run}`] = { step, run: record.run, exit: record.exit };
     }
   }
   return runs;

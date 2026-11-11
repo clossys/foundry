@@ -44,7 +44,7 @@ export interface Finding {
   value?: string | number | boolean; unit?: string; aliases?: string[];
   /** A judgement finding: the verdict a judge gave on exactly these pinned cell versions. */
   judge?: string; verdict?: "pass" | "fail"; judged?: string[];
-  /** The run record a judgement cites, `<step>#<run id>` in the local `.clossys/runs` store. */
+  /** The run record a judgement cites, `<step>#<run id>` in the local `.clossys/runs` store or its tracked copy `evidence/director/runs`. */
   run?: string;
   bullets: Bullet[]; path: string;
 }
@@ -72,7 +72,8 @@ export interface StrategyModel {
   candidateVersions?: Record<string, number[]>;
   /**
    * The run records judgement findings cite (`<step>#<run id>`) that resolve in the local run
-   * store `<repo>/.clossys/runs/<step>.jsonl`. A cited run absent here does not resolve.
+   * store `<repo>/.clossys/runs/<step>.jsonl` or the tracked copy
+   * `<consumer>/evidence/director/runs/<step>.jsonl`. A cited run absent from both does not resolve.
    */
   runs?: Record<string, { step: string; run: string; exit: number }>;
 }

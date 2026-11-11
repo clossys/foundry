@@ -7,7 +7,9 @@
  * one the judge read. It refuses when a covered cell is unpinned, when a cell judgement's version is
  * not the pinned one or its run does not resolve in `.clossys/runs`, and when `--heard` does not name
  * the owner's words routed to a judged cell (a verdict is recorded only after the owner has heard
- * the reading). It never edits an earlier finding: a second verdict gets the next free id. The
+ * the reading). A cited run record is copied verbatim to `<consumer>/evidence/director/runs/<step>.jsonl`
+ * (once per run id), so the citation resolves in any checkout, not only where the gitignored local
+ * store holds it. It never edits an earlier finding: a second verdict gets the next free id. The
  * clossys CLI traces each `director check` run as step `director.store`. Exit 0 done, 2 could not run.
  */
 import { dirname } from "node:path";
@@ -15,7 +17,7 @@ import { judgedCells } from "../checks/judgements.js";
 import { JUDGE_ID_PATTERN, RUN_CITATION_PATTERN } from "../format/finding.js";
 import { RECORD_ID_PATTERN } from "../format/ref.js";
 import type { Finding, StrategyModel } from "../format/types.js";
-import { citedRuns, EVIDENCE_PREFIX, evidenceBase, readStrategyFile, readStrategyRoot } from "../store.js";
+import { EVIDENCE_PREFIX, evidenceBase, parseRunRecords, readStrategyFile, readStrategyRoot, runRecordLines, trackedRunFile } from "../store.js";
 import { resolveStrategyRoot } from "../strategy-dir-default.js";
 import type { DirectorStore } from "../store-io.js";
 
@@ -24,7 +26,8 @@ export const JUDGE_USAGE = `Usage: clossys director check judge <C4 | C2:X<n> | 
 Records a judge's verdict as evidence/director/<id>.md (critic-storyline-<date>, critic-x<n>-<date> or
 judge-q<n>-<cell>-v<N>-<date>), with judged set to every covered cell at its pinned version. --heard names
 the owner's words (a source: user finding with an Informs: bullet naming a judged cell); a cell judgement
-also needs --run, a finished run in .clossys/runs. Each --reason is one bullet of the judge's reading.`;
+also needs --run, a finished run in .clossys/runs; its run record is copied to evidence/director/runs/<step>.jsonl
+so the citation travels with the repository. Each --reason is one bullet of the judge's reading.`;
 
 interface JudgeArgs { judge?: string; verdict?: string; heard?: string; run?: string; root?: string; reasons: string[]; json: boolean; help: boolean }
 
@@ -106,10 +109,20 @@ export function runJudgeCli(argv: string[], store: DirectorStore, print: (text: 
       const judged = cells.map(cell => `${cell}@${model.tree!.active[cell]}`);
       const cellJudgement = /^Q[1-7]:/.test(judge);
       if (cellJudgement && !judged.includes(judge.slice(judge.indexOf(":") + 1))) throw new Error(`${judge} does not name the pinned version (${judged[0]})`);
+      // The cited run record travels with the verdict: copied verbatim to the tracked run file, once per run id.
+      let tracked: { path: string; before?: string; after: string } | undefined;
       if (args.run !== undefined) {
-        if (!RUN_CITATION_PATTERN.test(args.run)) throw new Error("--run expects <step>#<16-hex run id>");
-        const run = citedRuns(dirname(base), store.reader, [{ run: args.run }])[args.run];
-        if (!run || (run.exit !== 0 && run.exit !== 1)) throw new Error(`--run ${args.run} is not a finished run in .clossys/runs`);
+        const match = RUN_CITATION_PATTERN.exec(args.run);
+        if (!match) throw new Error("--run expects <step>#<16-hex run id>");
+        const [, step, runId] = match;
+        const record = runRecordLines(dirname(base), store.reader, step!, base).find(candidate => candidate.run === runId);
+        if (!record || (record.exit !== 0 && record.exit !== 1)) throw new Error(`--run ${args.run} is not a finished run in .clossys/runs`);
+        const path = trackedRunFile(step!);
+        const before = store.reader.read(base, path);
+        if (!parseRunRecords(before ?? "", step!).some(candidate => candidate.run === runId)) {
+          const kept = before === undefined || before === "" || before.endsWith("\n") ? before ?? "" : `${before}\n`;
+          tracked = { path, ...(before === undefined ? {} : { before }), after: `${kept}${record.line}\n` };
+        }
       } else if (cellJudgement) throw new Error("--run <step>#<run id> is required for a cell judgement: cite the judge's traced run");
       const heard = heardBy(model, args.heard!, cells).id;
       const date = now();
@@ -118,8 +131,9 @@ export function runJudgeCli(argv: string[], store: DirectorStore, print: (text: 
       if (!RECORD_ID_PATTERN.test(id)) throw new Error(`Cannot form a finding id from ${judge}`);
       const after = judgeRecord({ id, date, judge, verdict, judged, ...(args.run === undefined ? {} : { run: args.run }) }, reasons, heard);
       const path = `${EVIDENCE_PREFIX}/${id}.md`;
-      store.writer.commit(base, [{ path: `evidence/director/${id}.md`, after }]);
-      return out(0, { result: { judge, verdict, judged, heard, recorded: { path, id } } }, `Judgement ${judge}: ${verdict} on ${judged.join(", ")}, recorded in ${path}.`);
+      store.writer.commit(base, [{ path: `evidence/director/${id}.md`, after }, ...(tracked ? [tracked] : [])]);
+      const runCopy = tracked ? { runRecord: `${EVIDENCE_PREFIX}/${tracked.path.slice("evidence/director/".length)}` } : {};
+      return out(0, { result: { judge, verdict, judged, heard, recorded: { path, id, ...runCopy } } }, `Judgement ${judge}: ${verdict} on ${judged.join(", ")}, recorded in ${path}${tracked ? ` (run record copied to ${runCopy.runRecord})` : ""}.`);
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
