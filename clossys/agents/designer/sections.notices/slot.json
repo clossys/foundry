@@ -152,7 +152,8 @@
     "identity.visual.style",
     "themes.card",
     "themes.destructive",
-    "themes.spacing"
+    "themes.spacing",
+    "assets.icon-close"
   ],
   "uses": [
     "components.badge",

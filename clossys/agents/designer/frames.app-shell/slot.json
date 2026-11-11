@@ -246,7 +246,8 @@
     "themes.sidebar-accent-foreground",
     "themes.sidebar-foreground",
     "themes.sidebar-primary-foreground",
-    "themes.spacing"
+    "themes.spacing",
+    "assets.icon-close"
   ],
   "uses": [
     "assets.icon-arrow-right",

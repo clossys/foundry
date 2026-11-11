@@ -204,6 +204,58 @@ describe("Designer references manifest", () => {
     if (!checked.ok) expect(checked.issues.some(issue => issue.path.endsWith(".kind"))).toBe(true);
   });
 
+  describe("generator index fields (registries.*.index, items[].indexed)", () => {
+    const readManifest = () => JSON.parse(readFileSync(join(referencesRoot, "manifest.json"), "utf8"));
+    const issuePaths = (manifest: unknown) => {
+      const result = validateReferencesManifest(manifest);
+      expect(result.ok).toBe(false);
+      return result.ok ? [] : result.issues.map((issue) => `${issue.path} ${issue.message}`);
+    };
+
+    it("accepts the real manifest, which carries both fields", () => {
+      const manifest = readManifest();
+      expect(Object.values(manifest.registries).some((entry) => (entry as { index?: unknown }).index !== undefined)).toBe(true);
+      expect(manifest.items.some((item: { indexed?: unknown }) => item.indexed === true)).toBe(true);
+      expect(validateReferencesManifest(manifest)).toMatchObject({ ok: true });
+    });
+
+    it("rejects a non-boolean indexed flag (M1)", () => {
+      const manifest = readManifest();
+      const at = manifest.items.findIndex((item: { indexed?: unknown }) => item.indexed === true);
+      manifest.items[at].indexed = "yes";
+      expect(issuePaths(manifest).some((line) => line.startsWith(`$.items[${at}].indexed `))).toBe(true);
+    });
+
+    it("rejects an unknown item field (M2)", () => {
+      const manifest = readManifest();
+      manifest.items[0].bogus = true;
+      expect(issuePaths(manifest).some((line) => line.startsWith("$.items[0].bogus "))).toBe(true);
+    });
+
+    it("rejects an extra key inside a registry index (M3)", () => {
+      const manifest = readManifest();
+      const name = Object.keys(manifest.registries).find((key) => manifest.registries[key].index !== undefined)!;
+      manifest.registries[name].index.extra = 1;
+      expect(issuePaths(manifest).some((line) => line.startsWith(`$.registries.${name}.index.extra `))).toBe(true);
+    });
+
+    it("rejects a malformed index sha256 or a non-integer items count", () => {
+      const manifest = readManifest();
+      const name = Object.keys(manifest.registries).find((key) => manifest.registries[key].index !== undefined)!;
+      manifest.registries[name].index.sha256 = "not-hex";
+      manifest.registries[name].index.items = 1.5;
+      const lines = issuePaths(manifest);
+      expect(lines.some((line) => line.startsWith(`$.registries.${name}.index.sha256 `))).toBe(true);
+      expect(lines.some((line) => line.startsWith(`$.registries.${name}.index.items `))).toBe(true);
+    });
+
+    it("still rejects item hash drift with the new fields present (M4)", () => {
+      const manifest = readManifest();
+      manifest.items[0].hash = `sha256:${"0".repeat(64)}`;
+      expect(issuePaths(manifest).some((line) => line.startsWith("$.items[0].hash ") && /does not match its files/.test(line))).toBe(true);
+    });
+  });
+
   it("rejects a manifest whose item hash no longer matches its files (mutation)", () => {
     const manifest = JSON.parse(readFileSync(join(referencesRoot, "manifest.json"), "utf8"));
     manifest.items[0].files[0].sha256 = "0".repeat(64);

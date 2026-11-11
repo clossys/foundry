@@ -108,7 +108,9 @@
     "identity.visual.style",
     "themes.border",
     "themes.popover",
-    "themes.spacing"
+    "themes.spacing",
+    "themes.foreground",
+    "themes.muted-foreground"
   ],
   "uses": [
     "components.button",

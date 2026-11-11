@@ -188,6 +188,8 @@ export type ReferenceItem = {
   readonly license: string;
   readonly direct: boolean;
   readonly slots: readonly string[];
+  /** Vendored because the registry index lists it, not because a slot maps it. */
+  readonly indexed?: boolean;
   readonly requiredBy?: readonly string[];
   readonly registryDependencies?: readonly string[];
   readonly dependencies?: readonly string[];
@@ -220,6 +222,8 @@ export type ReferencesManifest = {
         readonly upstream?: string;
         readonly style?: string;
         readonly fetchedAt?: string;
+        /** The style's registry.json the generator vendored every listed item from. */
+        readonly index?: { readonly url: string; readonly sha256: string; readonly items: number };
         readonly license: string;
         readonly licenseFiles: readonly string[];
       }
