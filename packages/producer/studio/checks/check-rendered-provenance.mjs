@@ -10,10 +10,16 @@
  *     markers `data-clossys-slot` / `data-clossys-candidate` / `data-clossys-hash`; framework
  *     scaffolding (Next's runtime scripts, route announcer and empty boundaries) is the only
  *     exception, recognised by exact shape, never by class or id;
+ *   - a marked root covers only its own markup, never the content it is handed: its nearest
+ *     boundary is a content outlet (CONTENT_OUTLETS, the frame's body column and popover bodies),
+ *     and every element placed in an outlet must carry its own marker (a pinned section root).
+ *     A frame's marker on its provider therefore cannot cover hand-rolled page content;
  *   - every marker names a registered Designer slot whose current pin is exactly that candidate
  *     file with exactly that content hash (a stale or hand-typed marker fails).
- * Exit 0 only when no route has a finding. Each run proves the detector on the first route: an
- * unmarked element appended to <body> and a marker whose hash is altered must both fail.
+ * Exit 0 only when no route has a finding and at least one route rendered (zero checked routes is
+ * an error, exit 2). Each run proves the detector on the first route: an unmarked element appended
+ * to <body>, an unmarked element placed in the frame's content outlet and a marker whose hash is
+ * altered must all fail.
  *
  * Every route is checked; none is sampled or skipped. The routes are sharded across a bounded pool
  * of headless Chrome workers (`--workers N` or RENDERED_PROVENANCE_WORKERS, default and maximum
@@ -54,8 +60,15 @@ export function timeoutSeconds(routes = studioRouteCount(), workers = MAX_WORKER
   return startSeconds + Math.ceil(routes / workerCount(workers, routes)) * ROUTE_SECONDS;
 }
 
-// Serialized into the page; keep it standalone.
-function inspectProvenance() {
+/**
+ * The content outlets of the pinned Studio frame: where the frame places what the page hands it
+ * (`#studio-main`, the body column the settle wait also reads, and each header popover body). The
+ * frame's marker does not reach past them; each element child must be its own marked root.
+ */
+export const CONTENT_OUTLETS = '#studio-main, [data-popover-body]';
+
+// Serialized into the page; keep it standalone (the outlet selector is its one argument).
+export function inspectProvenance(outlets = '#studio-main, [data-popover-body]') {
   const only = (element, names) => element.getAttributeNames().every(name => names.includes(name));
   const scaffolding = element => {
     if (element.parentElement !== document.body) return false;
@@ -71,9 +84,12 @@ function inspectProvenance() {
   const marked = element => element.hasAttribute('data-clossys-slot');
   const findings = [], markers = new Map();
   let checked = 0;
-  // `inside`: under a marked root. `open`: the finding for the outermost unmarked ancestor, which
-  // counts every unmarked element below it; a marked descendant starts a covered subtree again.
-  const visit = (parent, inside, open) => {
+  const outlet = element => typeof element.matches === 'function' && element.matches(outlets);
+  // `inside`: under a marked root with no content outlet in between (the nearest boundary). `open`:
+  // the finding for the outermost unmarked ancestor, which counts every unmarked element below it;
+  // a marked descendant starts a covered subtree again. `placed`: the parent is a content outlet,
+  // so an unmarked child is content the frame was handed without its own provenance.
+  const visit = (parent, inside, open, placed) => {
     for (const element of parent.children) {
       if (!inside && !open && parent === document.body && scaffolding(element)) continue;
       checked++;
@@ -85,15 +101,17 @@ function inspectProvenance() {
       const covered = inside || own;
       let finding = covered ? undefined : open;
       if (!covered && !open) {
-        finding = { rule: 'element-without-provenance', tag: element.localName, slot: element.getAttribute('data-slot') ?? undefined, html: element.cloneNode(false).outerHTML.slice(0, 200), elements: 0 };
+        finding = { rule: placed ? 'outlet-content-without-provenance' : 'element-without-provenance', tag: element.localName, slot: element.getAttribute('data-slot') ?? undefined, html: element.cloneNode(false).outerHTML.slice(0, 200), elements: 0 };
         findings.push(finding);
       }
       if (finding) finding.elements++;
-      visit(element, covered, finding);
-      if (element.shadowRoot) visit(element.shadowRoot, covered, finding);
+      // A content outlet ends its marked ancestor's cover: what sits in it must be marked itself.
+      const boundary = outlet(element);
+      visit(element, covered && !boundary, finding, boundary);
+      if (element.shadowRoot) visit(element.shadowRoot, covered && !boundary, finding, boundary);
     }
   };
-  visit(document.body, false, undefined);
+  visit(document.body, false, undefined, false);
   return { checked, findings, markers: [...markers.entries()] };
 }
 
@@ -119,16 +137,28 @@ const SETTLED = `new Promise(resolve => {
   })();
 })`;
 
-/** Mutation proof on the live page: an unmarked body element and an altered marker hash must each fail. */
+/** The inspector as one page expression over the frame's content outlets. */
+const INSPECT = `(${inspectProvenance.toString()})(${JSON.stringify(CONTENT_OUTLETS)})`;
+
+/**
+ * Mutation proof on the live page: an unmarked body element, an unmarked element placed in the
+ * frame's content outlet (under the frame's marker) and an altered marker hash must each fail.
+ */
 async function proveDetector(browser) {
-  const inspect = `(${inspectProvenance.toString()})()`;
   await browser.evaluate(`(() => { const probe = document.createElement('div'); probe.id = 'rendered-provenance-probe'; document.body.append(probe); })()`);
-  const unmarked = await browser.evaluate(inspect);
+  const unmarked = await browser.evaluate(INSPECT);
   await browser.evaluate(`document.getElementById('rendered-provenance-probe')?.remove()`);
   if (!unmarked?.findings.some(row => row.html?.includes('rendered-provenance-probe'))) throw new Error('detector proof: an unmarked element in the page body was not reported');
-  const altered = await browser.evaluate(`(() => { const node = document.querySelector('[data-clossys-hash]'); if (!node) return null; const was = node.getAttribute('data-clossys-hash'); node.setAttribute('data-clossys-hash', 'sha256:' + '0'.repeat(64)); const out = (${inspectProvenance.toString()})(); node.setAttribute('data-clossys-hash', was); return out; })()`);
+  const placed = await browser.evaluate(`(() => { const outlet = document.querySelector('#studio-main'); if (!outlet) return null; const probe = document.createElement('div'); probe.id = 'rendered-provenance-outlet-probe'; outlet.append(probe); const out = ${INSPECT}; probe.remove(); return out; })()`);
+  if (placed && !placed.findings.some(row => row.rule === 'outlet-content-without-provenance' && row.html?.includes('rendered-provenance-outlet-probe'))) throw new Error('detector proof: an unmarked element in the frame content outlet was covered by the frame marker');
+  const altered = await browser.evaluate(`(() => { const node = document.querySelector('[data-clossys-hash]'); if (!node) return null; const was = node.getAttribute('data-clossys-hash'); node.setAttribute('data-clossys-hash', 'sha256:' + '0'.repeat(64)); const out = ${INSPECT}; node.setAttribute('data-clossys-hash', was); return out; })()`);
   if (altered && !markerFindings(new Map(altered.markers)).some(row => row.rendered?.endsWith('0'.repeat(64)))) throw new Error('detector proof: an altered provenance hash was not reported');
-  return { unmarked: 'rejected', alteredHash: altered ? 'rejected' : 'no marker on page' };
+  return { unmarked: 'rejected', outletContent: placed ? 'rejected' : 'no content outlet on page', alteredHash: altered ? 'rejected' : 'no marker on page' };
+}
+
+/** Throws unless at least one route rendered and was inspected. */
+export function assertRoutesChecked(routes, entries) {
+  if (!routes) throw new Error(`rendered provenance: 0 routes checked (${entries} map entr${entries === 1 ? 'y' : 'ies'} in scope); a run that checks no route proves nothing`);
 }
 
 export async function runRenderedProvenance(origin, { only, workers } = {}) {
@@ -162,7 +192,7 @@ export async function runRenderedProvenance(origin, { only, workers } = {}) {
           await browser.send('Page.navigate', { url: new URL(entry.path, origin).href });
           await sleep(300);
           settled = await browser.evaluate(SETTLED);
-          result = await browser.evaluate(`(${inspectProvenance.toString()})()`);
+          result = await browser.evaluate(INSPECT);
         } catch (error) {
           rows[index] = { route: { path: entry.path, id: entry.id, checked: 0, markers: 0, findings: [{ rule: 'route-error', error: String(error?.message ?? error).slice(0, 200) }] } };
           continue;
@@ -183,6 +213,9 @@ export async function runRenderedProvenance(origin, { only, workers } = {}) {
   const rendered = rows.some(row => row.route && !row.route.findings.some(finding => finding.rule === 'route-unreachable' || finding.rule === 'route-error'));
   if (rendered && !proof) throw new Error('rendered provenance: the detector proof did not run');
   const routes = rows.filter(row => row.route).map(row => row.route), skipped = rows.filter(row => row.skipped).map(row => row.skipped);
+  // Zero checked routes proves nothing: an empty map, an `--only` that matches no entry or a map of
+  // landing redirects only is an error, never a pass.
+  assertRoutesChecked(routes.length, targets.length);
   const red = routes.filter(route => route.findings.length);
   return { check: 'rendered provenance (R-DS-ONLY)', origin, workers: pool, entries: targets.length, routes: routes.length, landingRedirects: skipped.length, red: red.length, findings: red.reduce((n, route) => n + route.findings.length, 0), proof, results: routes };
 }

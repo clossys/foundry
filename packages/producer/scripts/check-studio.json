@@ -307,7 +307,8 @@
       "id": "producer check-no-handrolling (live)",
       "cwd": "packages/producer",
       "run": "node studio/checks/check-no-handrolling.cjs \"$STUDIO_ORIGIN\"",
-      "kind": "live"
+      "kind": "live",
+      "timeout": "handrolling-routes"
     },
     {
       "id": "producer check-rendered-provenance (live)",
@@ -518,6 +519,12 @@
       "id": "designer page-dogfood --check",
       "cwd": "packages/designer",
       "run": "node scripts/page-dogfood.mjs --check",
+      "kind": "static"
+    },
+    {
+      "id": "designer page-dogfood --freshness",
+      "cwd": "packages/designer",
+      "run": "node scripts/page-dogfood.mjs --freshness",
       "kind": "static"
     },
     {

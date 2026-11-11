@@ -17,7 +17,8 @@
  *
  * Each sub-check gets the --timeout bound (default 600 s). A sub-check whose manifest row names
  * `"timeout": "studio-routes"` walks every Studio map entry, and one naming `"timeout": "copy-routes"`
- * reads every installed route, so its bound is sized from the route count instead: the check module's
+ * reads every installed route, and one naming `"timeout": "handrolling-routes"` visits every mapped route and
+ * leaf assembly, so its bound is sized from the route count instead: the check module's
  * own `timeoutSeconds()` (Chrome start plus each route's share, across its bounded worker pool), never
  * less than the --timeout bound. A sub-check
  * that still runs past its bound is killed and reported red with its timeout; it never passes.
@@ -71,6 +72,7 @@ const delay = ms => new Promise(accept => setTimeout(accept, ms));
 export const SIZED_TIMEOUTS = {
   "studio-routes": async () => (await import("../studio/checks/check-rendered-provenance.mjs")).timeoutSeconds(),
   "copy-routes": async () => (await import("../studio/checks/check-copy-rendered.mjs")).timeoutSeconds(),
+  "handrolling-routes": async () => (await import("../studio/checks/check-no-handrolling.cjs")).default.timeoutSeconds(),
 };
 
 /** The bound for one sub-check: the runner's bound, or for a sized row the larger of that and its sized bound. */
