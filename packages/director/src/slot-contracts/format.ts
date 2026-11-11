@@ -59,8 +59,11 @@ export interface DirectorFramework {
   id: string; kind: "framework"; meaning: string; layers: string[]; good: string[]; bad: string[];
 }
 export interface DirectorContracts { framework: DirectorFramework; slots: DirectorSlotContract[] }
-/** `negativeKeys` bullets (Never, Avoid, ...) may name filler on purpose and are exempt. */
-export interface Specificity { filler: string[]; placeholders: string[]; negativeKeys: string[] }
+/**
+ * `negativeKeys` bullets (Never, Avoid, ...) may name filler on purpose and are exempt.
+ * `clauseEndFiller` phrases are filler only at the end of a clause (see `endsClause`).
+ */
+export interface Specificity { filler: string[]; clauseEndFiller: string[]; placeholders: string[]; negativeKeys: string[] }
 
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === "string");
@@ -159,8 +162,8 @@ export function loadSpecificity(): Specificity {
   if (cachedSpecificity) return cachedSpecificity;
   const raw = readJson("specificity.json");
   const lexicon = JSON.parse(readFileSync(new URL("../../src/catalog/lexicon.json", import.meta.url), "utf8")) as { banned?: unknown; negativeKeys?: unknown };
-  if (!object(raw) || !strings(raw.filler) || !strings(raw.placeholders)) throw new Error("specificity.json: unexpected shape");
+  if (!object(raw) || !strings(raw.filler) || !strings(raw.placeholders) || !strings(raw.clauseEndFiller)) throw new Error("specificity.json: unexpected shape");
   const banned = strings(lexicon.banned) ? lexicon.banned : [];
-  cachedSpecificity = { filler: [...new Set([...banned, ...raw.filler].map(p => p.toLowerCase()))], placeholders: raw.placeholders.map(p => p.toLowerCase()), negativeKeys: strings(lexicon.negativeKeys) ? [...lexicon.negativeKeys] : [] };
+  cachedSpecificity = { filler: [...new Set([...banned, ...raw.filler].map(p => p.toLowerCase()))], clauseEndFiller: raw.clauseEndFiller.map(p => p.toLowerCase()), placeholders: raw.placeholders.map(p => p.toLowerCase()), negativeKeys: strings(lexicon.negativeKeys) ? [...lexicon.negativeKeys] : [] };
   return cachedSpecificity;
 }

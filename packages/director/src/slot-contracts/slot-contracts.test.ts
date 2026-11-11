@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadCatalog } from "../catalog.js";
 import { parseCell } from "../format/cell.js";
-import { checkDirectorCell, checkDirectorCoverage, DIRECTOR_CHECKS, onlyAsProperName, parseDownstream, runDirectorSuite } from "./checks.js";
+import { checkDirectorCell, checkDirectorCoverage, DIRECTOR_CHECKS, endsClause, onlyAsProperName, parseDownstream, runDirectorSuite } from "./checks.js";
 import { runSlotCheckCli } from "./cli.js";
 import { adaptDirectorContract, loadDirectorContracts } from "./format.js";
 
@@ -79,6 +79,19 @@ describe("Director slot contracts", () => {
     const generic = good.map((b, i) => i === 0 ? `${b}; follow best practices` : b);
     expect(checkDirectorCell(cell(slot.id, generic), slot).map(f => f.check)).toEqual(["D-SPEC"]);
     expect(onlyAsProperName("Best Practices, then best practices", "best practices")).toBe(false);
+  });
+
+  it("flags \"and more\" only where it closes a clause", () => {
+    const slot = contracts.slots.find(s => s.id === "advantage.proposition.promise")!;
+    const good = slot.references[0]!.good;
+    const spec = (extra: string) => checkDirectorCell(cell(slot.id, good.map((b, i) => i === 0 ? `${b}; ${extra}` : b)), slot).filter(f => f.check === "D-SPEC");
+    expect(checkDirectorCell(cell(slot.id, good), slot)).toEqual([]);
+    expect(spec("and more agents (Designer, Writer, Publisher) adopted in the same workspace")).toEqual([]);
+    for (const vague of ["tools and more.", "tools, and more", "tools, and more, for teams", "tools and more; all in one", "tools And More!", "tools and more — for teams", "tools and more...", "tools (and more)", "tools and more to come"])
+      expect(spec(vague).map(f => f.message), vague).toEqual([expect.stringMatching(/"and more/)]);
+    expect(endsClause("tools and more.", "and more")).toBe(true);
+    expect(endsClause("and more agents (Designer, Writer)", "and more")).toBe(false);
+    expect(endsClause("grandmore.", "and more")).toBe(false);
   });
 
   it("computes D-COVER from downstream Writer and Designer citations", () => {
