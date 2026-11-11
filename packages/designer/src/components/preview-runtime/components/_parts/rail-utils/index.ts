@@ -1,4 +1,4 @@
-import { cn as cx } from "../../../../index.js"
+import { cn as cx } from "../../../../_parts/utils/index.js"
 import type { ClassValue, CopyResolver, CopyRef } from "./types.js"
 export { type ClassValue, type VariantProps, type CopyResolver } from "./types.js"
 export { RAIL_COPY_REFS } from "./copy.js"

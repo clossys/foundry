@@ -8,9 +8,23 @@ function previewSource(content, path) {
   return code;
 }
 
+/**
+ * Public barrel bindings whose defining Designer module is known. A named import that takes only
+ * such bindings relocates to that module, not the barrel: the rail host's `cn` (its declared
+ * `source`, components/_parts/utils) through the components barrel loaded every component, so the
+ * shell's stock sheet reached RichText and rejected without the optional tiptap peers (WD-REG).
+ */
+const DEFINING_MODULE = { "@clossys/designer/components": { cn: "components/_parts/utils" } };
+function narrowBarrelImports(content) {
+  return content.replace(/(import\s*\{([^}]*)\}\s*from\s*["'])(@clossys\/designer\/[^"']+)(["'])/g, (all, before, names, specifier, after) => {
+    const homes = new Set(names.split(",").map(part => part.trim()).filter(Boolean).map(part => DEFINING_MODULE[specifier]?.[part.split(/\s+as\s+/)[0]]));
+    return homes.size === 1 && !homes.has(undefined) ? `${before}@clossys/designer/${[...homes][0]}${after}` : all;
+  });
+}
+
 /** Preview bytes of one retained emitted module: package specifiers relocate to Designer modules, relative ESM gains `.js`, then the documented source adaptations. */
 export function previewModuleSource(content, path, { root, target }) {
-  const code = /\.[cm]?tsx?$/.test(path) ? content.replace(/((?:from\s*|import\s*)["'])([^"']+)(["'])/g, (_all, before, original, after) => {
+  const code = /\.[cm]?tsx?$/.test(path) ? narrowBarrelImports(content).replace(/((?:from\s*|import\s*)["'])([^"']+)(["'])/g, (_all, before, original, after) => {
     let specifier = original;
     if (specifier.startsWith("@clossys/designer/")) {
       specifier = posix.relative(posix.dirname(posix.join(target, path)), posix.join(root, "src", specifier.slice("@clossys/designer/".length), "index.js"));
