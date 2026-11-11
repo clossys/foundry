@@ -120,8 +120,9 @@ async function writerCallerFixture(t) {
   // page titles resolve through them); this caller places only strings.common, the slot under test.
   const previewItems = await pinnedBindings(options.clossysRoot, STUDIO_SLOTS);
   assert.equal(previewItems.length, STUDIO_SLOTS.length);
-  // Draft binds what the slot model pins: options v8 and specimen v12 (stock re-adoption, planner:R2F-03).
-  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 8], ['sections.studio.specimen', 12]]);
+  // Draft binds what the slot model pins: options v8 (stock re-adoption, planner:R2F-03) and specimen v13
+  // (every shown status cites its check, planner:WS-HON).
+  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 8], ['sections.studio.specimen', 13]]);
   async function candidate(text, version, pin = false) {
     const name = `studio-v${version}.md`;
     const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### studio.greeting\n<!-- {"id":"studio.greeting","bindings":["test"]} -->\n${text}\n`;
@@ -328,7 +329,8 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
   for (const page of projection.pages) assert.equal(page.frameId, 'frames.studio-shell', page.id);
   // Owner P3 (2026-11-11): the menu is Agents only, so the four agent groups are the top-level groups.
   assert.deepEqual(projection.map.entries.filter(row => row.kind === 'group' && !row.parentId).map(row => row.id), ['director', 'designer', 'writer', 'publisher']);
-  assert.deepEqual(projection.pages.find(page => page.id === 'home').sectionIds, ['sections.studio.page-header', 'sections.studio.home']);
+  // Owner P4 (C5-HOME, page.home page-v10): decisions waiting for the owner, then the agents' work, then the pipeline.
+  assert.deepEqual(projection.pages.find(page => page.id === 'home').sectionIds, ['sections.studio.page-header', 'sections.module.checks', 'sections.studio.home', 'sections.producer.team-strip', 'sections.producer.pipeline-legend', 'sections.producer.pipeline-flow']);
   assert.deepEqual(projection.pages.find(page => page.id === 'publisher-studio').sectionIds, ['sections.studio.page-header', 'sections.studio.page-tabs', 'sections.studio.slot-groups']);
   const leafPages = projection.pages.filter(page => page.leaf);
   assert.ok(leafPages.length && leafPages.every(page => PAGE_NAMES.some(name => page.id.startsWith(`${name}.`))), 'leaf templates sit on the expanded tabs');
