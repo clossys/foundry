@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-acquire-v2.md",
-  "sha256": "5684f820731a5e2537fa0c81982630ed6d5523ca2353719c6309dee8e65f5fa0",
+  "candidate": "studio-acquire-v4.md",
+  "sha256": "e4018851c9c7a69ea9251c1b95700ea2ae1e576cd997c24de514517bb0606b9e",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T09:14:55.719Z"
+  "at": "2026-11-11T18:50:08.244Z"
 }

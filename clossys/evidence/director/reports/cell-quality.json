@@ -1,0 +1,43 @@
+{
+  "cells": [
+    {
+      "cell": "identity.visual.imagery",
+      "version": 4
+    }
+  ],
+  "findings": [
+    {
+      "rule": "Q2",
+      "severity": "judge",
+      "message": "Judge whether each labelled bullet answers its key rather than supplying filler",
+      "cell": "identity.visual.imagery",
+      "path": "identity.visual.imagery/candidates/studio-imagery-v4.md",
+      "judgeId": "Q2:identity.visual.imagery@4"
+    },
+    {
+      "rule": "Q3",
+      "severity": "judge",
+      "message": "Judge whether the cited evidence supports each Because bullet",
+      "cell": "identity.visual.imagery",
+      "path": "identity.visual.imagery/candidates/studio-imagery-v4.md",
+      "judgeId": "Q3:identity.visual.imagery@4"
+    },
+    {
+      "rule": "Q4",
+      "severity": "judge",
+      "message": "Judge whether each Watch threshold is meaningful for this Direction",
+      "cell": "identity.visual.imagery",
+      "path": "identity.visual.imagery/candidates/studio-imagery-v4.md",
+      "judgeId": "Q4:identity.visual.imagery@4"
+    },
+    {
+      "rule": "Q6",
+      "severity": "judge",
+      "message": "Judge whether a real alternative was given up",
+      "cell": "identity.visual.imagery",
+      "path": "identity.visual.imagery/candidates/studio-imagery-v4.md",
+      "code": "tradeoff",
+      "judgeId": "Q6:identity.visual.imagery@4"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-behavior-v2.md",
-  "sha256": "f37f246b52eee44283b131d07d105faebed8fedf5e4ed1028bbd8be00a27055a",
+  "candidate": "studio-behavior-v3.md",
+  "sha256": "3f3af21a6e3d58a4c021f35331d8902cf9935efcb7cfdac960402ecbbac46038",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T09:14:51.954Z"
+  "at": "2026-11-11T18:40:35.223Z"
 }

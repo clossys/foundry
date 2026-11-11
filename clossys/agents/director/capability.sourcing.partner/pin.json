@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-partner-v1.md",
-  "sha256": "d5aaba55f635e4efc0ed001cc4c625576aaaae151d882cd851fae24f38a3d003",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-partner-v2.md",
+  "sha256": "89ba512d64186b272fa64f80a99024150fb51ce5919e8104a6ddcda196e95e85",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:43.752Z"
+  "at": "2026-11-11T18:40:42.200Z"
 }
