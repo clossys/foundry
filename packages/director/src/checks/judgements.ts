@@ -9,7 +9,7 @@ function citedRun(model: StrategyModel, finding: Finding): boolean {
 }
 
 /** The cell ids a verdict must have judged to count: every storyline cell, both sides of a judge pair, or the one cell. */
-function judgedCells(model: StrategyModel, judge: string): string[] | undefined {
+export function judgedCells(model: StrategyModel, judge: string): string[] | undefined {
   if (judge === 'C4') return [...model.catalog.coherence.storyline];
   const pair = /^C2:(X[1-9][0-9]*)$/.exec(judge)?.[1];
   if (pair !== undefined) {
@@ -60,7 +60,7 @@ export function uncitedJudgements(model: StrategyModel): JudgmentFinding[] {
     const match = finding.judge === undefined || finding.verdict === undefined ? undefined : CELL_JUDGE.exec(finding.judge);
     if (!match || model.tree?.active[match[1]!] !== Number(match[2])) continue;
     if (citedRun(model, finding)) continue;
-    const why = finding.run === undefined ? 'cites no run record' : `cites run ${finding.run}, which is not a finished run in .clossys/runs`;
+    const why = finding.run === undefined ? 'cites no run record' : `cites run ${finding.run}, which is not a finished run in .clossys/runs or evidence/director/runs`;
     findings.push({ rule: 'judgment-uncited', severity: 'hard', code: 'judgment-uncited', cell: match[1]!, path: finding.path, judgeId: finding.judge, verdict: finding.verdict,
       message: `Judgement ${finding.judge} (${finding.verdict}, finding ${finding.id}) ${why}; re-run the critic through \`clossys pipeline trace\` and cite its run as run: <step>#<run id>` });
   }

@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-market-trend-v1.md",
-  "sha256": "c7b4d2855d8f1c62924b224f5bc0ef61a49663d44cef983dee5868c57c1691d6",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-market-trend-v2.md",
+  "sha256": "7e1406d7615db8c454b11b48ff44cff8937151213de16ce879e3858ac6948856",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:51.349Z"
+  "at": "2026-11-11T17:15:27.850Z"
 }

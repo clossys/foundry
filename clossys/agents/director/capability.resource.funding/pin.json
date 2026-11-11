@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-funding-v1.md",
-  "sha256": "e187d1263f8ec1bd32d146f253cdc3a98135e87c76cdcf55224f9793dc556478",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-funding-v3.md",
+  "sha256": "bcf23b61bac96076d2b2e08f2d01869959555dc66c31d56b20a57247e46821ab",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:41.177Z"
+  "at": "2026-11-11T17:15:25.638Z"
 }

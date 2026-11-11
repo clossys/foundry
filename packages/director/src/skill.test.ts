@@ -15,7 +15,7 @@ describe("Director interview skill", () => {
   it("names only Director check commands the CLI has", () => {
     const named = [...skill.matchAll(/clossys director check ([a-z-]+)/g)].map(match => match[1]!);
     expect(named.length).toBeGreaterThan(0);
-    for (const command of named) expect([...READ_COMMANDS, "review", "archetype"], command).toContain(command);
+    for (const command of named) expect([...READ_COMMANDS, "review", "archetype", "judge"], command).toContain(command);
   });
 
   it("asks one question per turn with a multiple-choice control on Claude and numbered options on Codex", () => {
@@ -55,5 +55,7 @@ describe("Director interview skill", () => {
     expect(critic).toMatch(/fresh-context helper/);
     expect(critic).toMatch(/judge: C4/);
     expect(critic).toMatch(/a new pin voids it/);
+    expect(critic).toContain("npx clossys director check judge C4 --verdict pass|fail --heard");
+    expect(critic).toMatch(/never write or\s+edit that file by hand/);
   });
 });

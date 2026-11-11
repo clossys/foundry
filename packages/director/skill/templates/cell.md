@@ -135,7 +135,7 @@ by: director
 
 ## Judgement finding
 
-A judge a script cannot replace (the storyline critic `C4`, the pairs `C2:X3` and `C2:X7`, or a cell check `Q<n>:<cell-id>@<N>`) is recorded as a finding once the owner has heard the reading. `judged` lists every cell the judge read at its pinned version; for `C4` that is all seven storyline cells. The CLI counts the verdict only while every listed version is still the pinned one, so a newer pin of any of them means not judged again. When two current verdicts for one judge disagree, `fail` wins. A cell check (`Q<n>:<cell-id>@<N>`) also needs `run: <step>#<run id>`, the run record of the judge's traced run in `.clossys/runs/<step>.jsonl`; without a resolvable run the verdict is not counted and the cell shows `judgment-uncited`. This example is fictional.
+A judge a script cannot replace (the storyline critic `C4`, the pairs `C2:X3` and `C2:X7`, or a cell check `Q<n>:<cell-id>@<N>`) is recorded as a finding once the owner has heard the reading, only by `npx clossys director check judge <judge id> --verdict pass|fail --heard <finding-id> --reason <text>`; never write the file by hand. `judged` lists every cell the judge read at its pinned version; for `C4` that is all seven storyline cells. The CLI counts the verdict only while every listed version is still the pinned one, so a newer pin of any of them means not judged again. When two current verdicts for one judge disagree, `fail` wins. A cell check (`Q<n>:<cell-id>@<N>`) also needs `--run <step>#<run id>` (recorded as `run:`), the run record of the judge's traced run in `.clossys/runs/<step>.jsonl`, which the verb copies to the tracked `evidence/director/runs/<step>.jsonl`; without a resolvable run the verdict is not counted and the cell shows `judgment-uncited`. This example is fictional.
 
 ```markdown
 ---
@@ -149,5 +149,5 @@ judged: ["context.customer.need@1", "aspiration.purpose.mission@1", "focus.segme
 ---
 - Pre-mortem, read in a fresh context with the pinned core cells only: the likeliest failures are a second kiln-booking tool bundling scheduling for free, and studios under 40 members signing up and churning.
 - Storyline: need, mission, core segment, promise, essence, delivery and bet read as one argument; no cell breaks it.
-- The owner heard both risks and said: "Add the churn tripwire to the segment; the bundling one we accept."
+- The owner heard the reading (finding:owner-critic-2026-11-10)
 ```

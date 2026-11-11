@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-imagery-v1.md",
-  "sha256": "e4e90dfa1eeec00512f4cd2d72dc72526b1d94b86ce7d3bf0f81ef637a726159",
-  "decidedBy": "agent:planner:WDIR",
+  "candidate": "studio-imagery-v2.md",
+  "sha256": "df5f22b17d6407f6f6371b7fb312ec3ed4ae97cfb3e0171373d4fdd9c02d558e",
+  "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T05:27:59.909Z"
+  "at": "2026-11-11T09:14:54.473Z"
 }

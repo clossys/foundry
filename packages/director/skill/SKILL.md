@@ -249,19 +249,26 @@ again.
   draft, a sharper Watch on an existing cell, or nothing, as the owner
   decides. Pin any changes first; that voids the earlier reading, so the
   critic reads again.
-- **Record the verdict** only after the owner has heard it, as
+- **Record the verdict** only after the owner has heard it, and only with
+  `npx clossys director check judge C4 --verdict pass|fail --heard
+  <finding-id> --reason "<one reason>"` (one `--reason` per critic reason).
+  `--heard` names the owner's words, a `source: user` finding whose
+  `Informs:` bullet names a judged cell. The verb writes
   `clossys/evidence/director/critic-storyline-<YYYY-MM-DD>.md` (format in the
-  template): `source: user`, `by: critic`, `judge: C4`, `verdict: pass` or
-  `fail`, and `judged:` listing every storyline cell at its pinned version
-  (`["context.customer.need@2", …]`). The body quotes the critic's reasons and
-  the owner's words accepting them. A pair verdict uses `judge: C2:X3` (core
-  vs next segment) or `C2:X7` (allocation vs bet) and lists both cells. Never
-  record a pass the critic did not give.
+  template) with `source: user`, `by: critic`, `judge: C4`, the verdict and
+  `judged:` set to every storyline cell at its pinned version; never write or
+  edit that file by hand. A pair verdict uses `judge: C2:X3` (core vs next
+  segment) or `C2:X7` (allocation vs bet) and the verb lists both cells.
+  Never record a pass the critic did not give.
 - **A cell judgement** (`judge: Q<n>:<cell-id>@<N>`) also cites the run that
   produced it: run the judge through `npx clossys pipeline trace <step> -- …`
-  and add `run: <step>#<run id>` from `.clossys/runs/<step>.jsonl`. A cell
-  verdict with no resolvable run is not counted and shows as
-  `judgment-uncited` on that cell.
+  (every `npx clossys director check …` run, such as `check check
+  <cell-id>@<N>`, is already traced as `director.store`) and pass `--run
+  <step>#<run id>` from `.clossys/runs/<step>.jsonl`. The verb copies that run
+  record to `clossys/evidence/director/runs/<step>.jsonl`, which is committed
+  with the verdict, so the citation resolves in any checkout. A cell verdict
+  with no resolvable run is not counted and shows as `judgment-uncited` on
+  that cell.
 
 ## Progress
 

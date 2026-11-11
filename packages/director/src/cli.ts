@@ -4,6 +4,7 @@
  * (`clossys director check`) calls runDirectorCli with its store reader and writer.
  */
 import { ARCHETYPE_USAGE, runArchetypeCli } from "./cli/archetype.js";
+import { JUDGE_USAGE, runJudgeCli } from "./cli/judge.js";
 import { runReviewCli, REVIEW_USAGE } from "./cli/review.js";
 import { runCitationIndex } from "./citations/cli.js";
 import { runSlotCheckCli } from "./slot-contracts/cli.js";
@@ -33,6 +34,7 @@ Run "clossys director check wont-claim --help" for active prohibitions.
 ${READ_USAGE}
 ${REVIEW_USAGE}
 ${ARCHETYPE_USAGE}
+${JUDGE_USAGE}
 `;
 
 const WONT_CLAIM_USAGE = `Usage: clossys director check wont-claim <strategy-dir> <scan-dir> [options]
@@ -331,6 +333,7 @@ export function main(argv: string[], store: DirectorStore): number {
   }
   if (argv[0] === "index") return runCitationIndex(argv.slice(1), store);
   if (argv[0] === "archetype") return runArchetypeCli(argv.slice(1), store);
+  if (argv[0] === "judge") return runJudgeCli(argv.slice(1), store);
   if (isReadCommand(argv)) {
     return runReadCommand(argv, { execute: args => args.command === "brief" || args.command === "handoff" ? executeBriefCommand(args, store) : executeChecksCommand(args, store) });
   }

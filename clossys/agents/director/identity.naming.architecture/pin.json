@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-agent-naming-v2.md",
-  "sha256": "a72912f0511a7007f7b0779cec0b3488f6f2716fd66a1e6f93afef731f6ba6cb",
+  "candidate": "studio-agent-naming-v3.md",
+  "sha256": "114e2090b175087f935c88837bfec277e8c5f6e007670cde0d2dd26120d0aa7d",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T07:10:31.503Z"
+  "at": "2026-11-11T09:14:53.844Z"
 }
