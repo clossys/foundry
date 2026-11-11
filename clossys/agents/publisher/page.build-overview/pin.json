@@ -1,7 +1,7 @@
 {
-  "candidate": "page-v4.json",
-  "sha256": "e47eca2eb5a08f77099fa6b59ffad2723361da1aeb4370e38bd702736152c1a3",
-  "decidedBy": "planner:R2C-studio",
+  "candidate": "page-v6.json",
+  "sha256": "f98270f0463d7b52c2db2f1a66b30bedb100ec2efe5b6b34831ff9f38cd5c4e1",
+  "decidedBy": "planner:W2",
   "basis": "planner",
-  "at": "2026-11-07T03:27:51.265Z"
+  "at": "2026-11-11T02:11:54.772Z"
 }

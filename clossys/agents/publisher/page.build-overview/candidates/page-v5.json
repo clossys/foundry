@@ -1,0 +1,107 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/build-overview",
+  "title": "studio.page.build-overview",
+  "frame": "frames.studio-shell",
+  "sections": [
+    "sections.studio.page-header",
+    "sections.producer.system-empty"
+  ],
+  "copy": {},
+  "nav": {
+    "nav": true,
+    "group": "build"
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "icon": "assets.icon-package",
+        "note": "SYSTEMS-IA 2026-11-04 (D5): the Build system's overview stub, the frame, the page header and one empty state (the pinned stock Empty) saying the system is not set up yet. Copy is studio.build.empty.* Writer keys (draft). v4 (R2C-studio): served at /build-overview, because an installed route directory named build/ is build output to the public-safety gate."
+      },
+      "blocks": {
+        "Actions": [],
+        "Route": {
+          "archetype": "workspace",
+          "body": "plain",
+          "data": {
+            "loader": "empty",
+            "description": "studio.build.empty.description",
+            "empty": {
+              "title": "studio.build.empty.title",
+              "description": "studio.build.empty.description"
+            }
+          },
+          "inputs": {
+            "sections.studio.page-header": "header",
+            "sections.producer.system-empty": "empty"
+          },
+          "manifest": {
+            "navigator": "outline",
+            "modules": [
+              {
+                "id": "outline",
+                "icon": "assets.icon-outline",
+                "label": "studio.outline-label",
+                "section": "sections.module.outline",
+                "source": "page.outline",
+                "shortcut": "o"
+              },
+              {
+                "id": "checks",
+                "icon": "assets.icon-checks",
+                "label": "studio.checks",
+                "section": "sections.module.checks",
+                "source": "page.checks",
+                "shortcut": "c"
+              }
+            ],
+            "actions": [],
+            "wiring": [
+              {
+                "do": "open outline",
+                "expect": "outline open"
+              },
+              {
+                "do": "open checks",
+                "expect": "checks open"
+              },
+              {
+                "do": "select outline",
+                "expect": "target in view and highlighted"
+              },
+              {
+                "do": "cmdk",
+                "expect": "every popover listed with its shortcut"
+              },
+              {
+                "do": "key o",
+                "expect": "outline open"
+              },
+              {
+                "do": "key escape",
+                "expect": "popover closed"
+              },
+              {
+                "do": "click outside",
+                "expect": "popover closed"
+              }
+            ]
+          }
+        }
+      },
+      "publication": "studio",
+      "entryId": "build-overview",
+      "entryMeta": {
+        "pin": {
+          "nav": true,
+          "group": "build"
+        }
+      }
+    }
+  }
+}

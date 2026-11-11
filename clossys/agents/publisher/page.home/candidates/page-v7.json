@@ -1,0 +1,112 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/",
+  "title": "studio.page.home",
+  "frame": "frames.studio-shell",
+  "sections": [
+    "sections.studio.page-header",
+    "sections.studio.home"
+  ],
+  "copy": {},
+  "nav": {
+    "nav": true
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "icon": "assets.icon-home",
+        "note": "STUDIO-ASSEMBLE-ONLY 2026-11-03: one parameterized record per agent top group; the content map expands it into one tab route per IA group and one leaf route per slot. W2-COPY-THROUGH-WRITER 2026-11-03: module and action labels and the request-change prompt are Writer keys."
+      },
+      "blocks": {
+        "Actions": [
+          {
+            "id": "needs",
+            "label": "studio.needs",
+            "icon": "assets.icon-needs",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.task-list",
+              "source": "home.open-requests"
+            }
+          }
+        ],
+        "Route": {
+          "archetype": "workspace",
+          "body": "plain",
+          "data": {
+            "loader": "home",
+            "description": "studio.your-agents-and-what-they-have-written"
+          },
+          "inputs": {
+            "sections.studio.page-header": "header",
+            "sections.studio.home": "home"
+          },
+          "manifest": {
+            "navigator": "outline",
+            "modules": [
+              {
+                "id": "outline",
+                "icon": "assets.icon-outline",
+                "label": "studio.outline-label",
+                "section": "sections.module.outline",
+                "source": "page.outline",
+                "shortcut": "o"
+              },
+              {
+                "id": "checks",
+                "icon": "assets.icon-checks",
+                "label": "studio.checks",
+                "section": "sections.module.checks",
+                "source": "page.checks",
+                "shortcut": "c"
+              }
+            ],
+            "actions": [],
+            "wiring": [
+              {
+                "do": "open outline",
+                "expect": "outline open"
+              },
+              {
+                "do": "open checks",
+                "expect": "checks open"
+              },
+              {
+                "do": "select outline",
+                "expect": "target in view and highlighted"
+              },
+              {
+                "do": "cmdk",
+                "expect": "every popover listed with its shortcut"
+              },
+              {
+                "do": "key o",
+                "expect": "outline open"
+              },
+              {
+                "do": "key escape",
+                "expect": "popover closed"
+              },
+              {
+                "do": "click outside",
+                "expect": "popover closed"
+              }
+            ]
+          }
+        }
+      },
+      "publication": "studio",
+      "entryId": "home",
+      "entryMeta": {
+        "pin": {
+          "nav": true
+        }
+      }
+    }
+  }
+}
