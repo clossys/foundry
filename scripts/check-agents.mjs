@@ -39,10 +39,8 @@ export const AGENT_CHECKS = Object.freeze([
   { id: "direct-check", agent: "director", args: ["direct", "--check"] },
   { id: "design-check", agent: "designer", args: ["design", "--check"] },
   { id: "write-check", agent: "writer", args: ["write", "--check"] },
-  // Pending: `pipeline check` exists only on the W1b branch. The integrator removes `pending` when W1b lands;
-  // until then the step is reported as pending (never as passed). check-agents.test.mjs pins that this is
-  // the only pending step.
-  { id: "pipeline-check", agent: "all", args: ["pipeline", "check"], pending: "enable when W1b (pipeline check verb) lands" },
+  // `pipeline check` landed with W1b: every pipeline-page status and step-contract status field must cite its run record.
+  { id: "pipeline-check", agent: "all", args: ["pipeline", "check"] },
 ].map(Object.freeze));
 
 const list = value => (Array.isArray(value) ? value : []);
@@ -67,6 +65,10 @@ export const FINDINGS = Object.freeze({
   "direct-check": value => codes(value.findings),
   "design-check": value => codes(value.checks?.findings),
   "write-check": value => codes(value.checks?.findings, "rule"),
+  // pipeline check: one finding per uncited pipeline-page status and per uncited step-contract status field.
+  "pipeline-check": value => (Array.isArray(value.page) && Array.isArray(value.contracts)
+    ? [...value.page.map(() => "page-status-uncited"), ...value.contracts.map(() => "contract-status-uncited")]
+    : ["unreadable-output"]),
 });
 function handoffCodes(value) {
   return [...list(value.result?.missing).map(() => "handoff-missing"), ...list(value.result?.stale).map(() => "handoff-stale")];

@@ -21,7 +21,7 @@ test("the step list is every agent's strict check, in order, with no flag that s
     "write --check",
     "pipeline check",
   ]);
-  assert.deepEqual(AGENT_CHECKS.filter(check => check.pending).map(check => check.id), ["pipeline-check"], "only the W1b pipeline step may be pending");
+  assert.deepEqual(AGENT_CHECKS.filter(check => check.pending).map(check => check.id), [], "no step is pending: W1b landed pipeline check");
   assert.equal(new Set(AGENT_CHECKS.map(check => check.id)).size, AGENT_CHECKS.length);
   for (const check of AGENT_CHECKS) {
     assert.ok(Object.isFrozen(check));
@@ -41,14 +41,16 @@ test("root check runs check:agents after build, and check:agents runs this runne
 test("every step runs even after one fails, and any red step makes the gate red", () => {
   const seen = [];
   const statuses = new Map([["direct", 1], ["design", 2]]);
-  const results = runChecks(AGENT_CHECKS, { log: () => {}, run: args => { seen.push(args.join(" ")); return { status: statuses.get(args[0]) ?? 0, output: `ran ${args[0]}\n` }; } });
-  assert.equal(seen.length, AGENT_CHECKS.filter(check => !check.pending).length, "every non-pending step runs");
-  assert.ok(!seen.includes("pipeline check"), "a pending step is not run");
+  const pendingStep = Object.freeze({ id: "pending-step", agent: "all", args: ["pending", "step"], pending: "lands later" });
+  const results = runChecks([...AGENT_CHECKS, pendingStep], { log: () => {}, run: args => { seen.push(args.join(" ")); return { status: statuses.get(args[0]) ?? 0, output: `ran ${args[0]}\n` }; } });
+  assert.equal(seen.length, AGENT_CHECKS.length, "every non-pending step runs");
+  assert.ok(seen.includes("pipeline check"), "the enabled pipeline step runs");
+  assert.ok(!seen.includes("pending step"), "a pending step is not run");
   assert.deepEqual(results.filter(result => !result.pending && result.exit !== 0).map(result => result.id), ["direct-check", "design-check"]);
   const summary = summarize(results);
   assert.equal(summary.exitCode, 1);
-  assert.match(summary.lines[0], /9 step\(s\), 6 passed, 2 failed, 1 pending \(not run\)/);
-  assert.ok(summary.lines.some(line => /PENDING\s+pipeline-check/.test(line)), "a pending step is listed, never counted as passed");
+  assert.match(summary.lines[0], /10 step\(s\), 7 passed, 2 failed, 1 pending \(not run\)/);
+  assert.ok(summary.lines.some(line => /PENDING\s+pending-step/.test(line)), "a pending step is listed, never counted as passed");
 });
 
 test("mutation: one red step alone is enough, a null status is red, and all-green is the only exit 0", () => {
@@ -58,9 +60,8 @@ test("mutation: one red step alone is enough, a null status is red, and all-gree
     const results = runChecks(AGENT_CHECKS, { log: () => {}, run: args => ({ status: args.join(" ") === failing.args.join(" ") ? 1 : 0, output: "" }) });
     assert.equal(summarize(results).exitCode, 1, `${failing.id} red must turn the gate red`);
   }
-  const enabled = AGENT_CHECKS.map(check => Object.fromEntries(Object.entries(check).filter(([key]) => key !== "pending")));
-  const unpended = runChecks(enabled, { log: () => {}, run: args => ({ status: args[0] === "pipeline" ? 1 : 0, output: "" }) });
-  assert.equal(summarize(unpended).exitCode, 1, "once enabled, a red pipeline check turns the gate red");
+  const redPipeline = runChecks(AGENT_CHECKS, { log: () => {}, run: args => ({ status: args[0] === "pipeline" ? 1 : 0, output: "" }) });
+  assert.equal(summarize(redPipeline).exitCode, 1, "a red pipeline check turns the gate red");
   const killed = runChecks([AGENT_CHECKS[0]], { log: () => {}, run: () => ({ status: null, output: "" }) });
   assert.equal(killed[0].exit, 1);
   assert.equal(summarize(killed).exitCode, 1);
@@ -92,11 +93,14 @@ test("mutation: unreadable output is a finding, never zero; a clean output is ze
   assert.deepEqual(findingCodes("direct-check", { findings: [] }), []);
   assert.deepEqual(findingCodes("director-complete-mvs", { result: { mvs: true, cells: [], findings: [] } }), []);
   assert.deepEqual(findingCodes("director-handoff-designer-identity", { result: { state: "ready", missing: [], stale: [] } }), []);
+  assert.deepEqual(findingCodes("pipeline-check", { page: [], contracts: [] }), []);
+  assert.deepEqual(findingCodes("pipeline-check", { page: ["a"], contracts: ["b", "c"] }), ["page-status-uncited", "contract-status-uncited", "contract-status-uncited"]);
+  assert.deepEqual(findingCodes("pipeline-check", { findings: [] }), ["unreadable-output"], "a pipeline output without page/contracts is unreadable, never zero");
 });
 
 test("the scoreboard is one stable row per check: no timings, no output text, top codes by count then code", () => {
   assert.deepEqual(topCodes(["b", "a", "b", "c", "a", "b", "d", "e", "f"]), [{ code: "b", count: 3 }, { code: "a", count: 2 }, { code: "c", count: 1 }, { code: "d", count: 1 }, { code: "e", count: 1 }]);
-  const run = args => ({ status: args[0] === "write" ? 1 : 0, output: `noise ${Math.random()}`, value: args[0] === "write" ? { checks: { findings: [{ rule: "suites/meta/meta-title-missing" }, { rule: "suites/meta/meta-title-missing" }] } } : { findings: [], checks: { findings: [] }, slots: { findings: [] }, suites: { suites: [] }, result: { mvs: true, cells: [], findings: [], missing: [], stale: [] } } });
+  const run = args => ({ status: args[0] === "write" ? 1 : 0, output: `noise ${Math.random()}`, value: args[0] === "write" ? { checks: { findings: [{ rule: "suites/meta/meta-title-missing" }, { rule: "suites/meta/meta-title-missing" }] } } : { findings: [], page: [], contracts: [], checks: { findings: [] }, slots: { findings: [] }, suites: { suites: [] }, result: { mvs: true, cells: [], findings: [], missing: [], stale: [] } } });
   const first = JSON.stringify(scoreboard(runChecks(AGENT_CHECKS, { log: () => {}, run })));
   const second = JSON.stringify(scoreboard(runChecks(AGENT_CHECKS, { log: () => {}, run })));
   assert.equal(first, second, "two runs over the same outputs write the same bytes");
@@ -106,5 +110,5 @@ test("the scoreboard is one stable row per check: no timings, no output text, to
   assert.equal(board.rows.length, AGENT_CHECKS.length);
   for (const row of board.rows) assert.deepEqual(Object.keys(row).filter(key => key !== "pending"), ["id", "agent", "command", "exit", "findings", "topCodes"]);
   assert.deepEqual(board.rows.find(row => row.id === "write-check"), { id: "write-check", agent: "writer", command: `node ${CLI} write --check`, exit: 1, findings: 2, topCodes: [{ code: "suites/meta/meta-title-missing", count: 2 }] });
-  assert.deepEqual(board.rows.find(row => row.id === "pipeline-check"), { id: "pipeline-check", agent: "all", command: `node ${CLI} pipeline check`, exit: null, findings: null, topCodes: [], pending: AGENT_CHECKS.find(check => check.id === "pipeline-check").pending });
+  assert.deepEqual(board.rows.find(row => row.id === "pipeline-check"), { id: "pipeline-check", agent: "all", command: `node ${CLI} pipeline check`, exit: 0, findings: 0, topCodes: [] });
 });

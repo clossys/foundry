@@ -54,17 +54,16 @@
 //   manifest.stale     pipeline/manifest.json differs from the registry and bindings
 //   steps.drift        the built STEPS are not the registry's contracts, in order, with their runs
 //   step.hand-written  a src/pipeline/steps/ module defines a step by hand (defineStep) instead of a contract
-//   pending.stale      a pending marker whose change has landed (the trace subcommand, a pending check's command)
+//   pending.stale      a pending marker whose change has landed (a pending check's command exists)
 //   dist.missing       dist/pipeline is absent or older than src/pipeline; build first
 //
-// Traced runs wait on `clossys pipeline trace` (TRACE_LANDS_ON) and a check with `pending` waits on
-// its branch: both are listed as PENDING, never as passing. Exit 0 pass, 1 findings, 2 could not run.
+// A check with `pending` waits on its branch: it is listed as PENDING, never as passing. Exit 0 pass, 1 findings, 2 could not run.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   ACTION_FOLDER_FILES, ACTIONS_DIR, coverageOf, iaRows, manifestOf, orderActions, PACKAGES, packageBins, packageScripts,
-  packageSkills, PKG, readRegistry, REPO, SKILL_FILE, snapshotOf, stableJson, TRACE_LANDS_ON, tracedCommand,
+  packageSkills, PKG, readRegistry, REPO, SKILL_FILE, snapshotOf, stableJson, tracedCommand,
 } from "./action-registry.mjs";
 
 const argv = process.argv.slice(2);
@@ -176,7 +175,6 @@ function innerTarget(command, pkg) {
   return null;
 }
 const allBins = new Set(PACKAGES.flatMap(pkg => packageBins(PACKAGES_DIR, pkg)));
-const traced = [];
 const EXIT = JSON.stringify(define.EXIT_CONTRACT);
 
 for (const action of loaded) {
@@ -208,7 +206,6 @@ for (const action of loaded) {
     try { run = define.parseRun(contract.run); } catch (error) { fail("run.invalid", `${id}: ${error.message}`); }
     if (run && !VERBS.has(run.form === "trace" ? "pipeline" : run.verb)) fail("run.verb-unknown", `${id} runs clossys ${run.verb}, which the CLI does not have`);
     if (run?.form === "trace") {
-      traced.push(id);
       if (run.step !== contract.id) fail("run.trace-id", `${id} traces ${run.step}; a traced run records its own id`);
       const target = innerTarget(tracedCommand(contract.run), action.package);
       if (target === null) fail("run.untraced", `${id} traces \`${tracedCommand(contract.run)}\`; a traced command is npm run <script> or node <file>`);
@@ -345,9 +342,6 @@ for (const file of existsSync(stepsDir) ? readdirSync(stepsDir).filter(name => /
 }
 
 // ---------------------------------------------------------------- pending
-const pipelineCli = text(join(CLI_SRC, "pipeline.ts"));
-if (/["']trace["']/.test(pipelineCli)) fail("pending.stale", `clossys pipeline trace has landed; drop TRACE_LANDS_ON (${TRACE_LANDS_ON}) from scripts/action-registry.mjs`);
-else if (traced.length) pending.push({ subject: "pipeline trace", message: `lands on ${TRACE_LANDS_ON}; traced runs not yet runnable here: ${traced.join(", ")}` });
 for (const check of CHECKS ?? []) if (check.pending && check.command) {
   const [, verb, sub] = words(check.command);
   const source = text(join(CLI_SRC, `${verb}.ts`));

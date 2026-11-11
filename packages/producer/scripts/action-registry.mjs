@@ -23,12 +23,6 @@ export const EXCEPTIONS_FILE = "exceptions.json";
 export const ACTION_FOLDER_FILES = Object.freeze([ACTION_FILE, SKILL_FILE]);
 /** The registry-level files beside the action folders. */
 export const REGISTRY_FILES = Object.freeze([IA_FILE, EXCEPTIONS_FILE]);
-/**
- * `clossys pipeline trace <id> -- <command>` lands with W1b on this branch. Until then traced runs are
- * PENDING; once src/cli/pipeline.ts handles `trace`, check:step-standard fails (pending.stale) until
- * this marker is removed.
- */
-export const TRACE_LANDS_ON = "claude/w1b-pipeline-wiring";
 
 const SKIP = new Set(["node_modules", "dist", ".next", ".turbo", "coverage", ".cache", ACTIONS_DIR]);
 const readJson = file => JSON.parse(readFileSync(file, "utf8"));

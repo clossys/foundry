@@ -108,12 +108,14 @@ proves("step.hand-written", f => {
   writeFileSync(join(dir, "extra.ts"), `import { defineStep } from "../define.js";\nexport const EXTRA = defineStep({} as never);\n`);
   return ["--steps-src", dir];
 });
+// A check still marked pending although its command (`clossys pipeline check`) exists in src/cli.
 proves("pending.stale", f => {
-  const dir = join(f.root, "cli-src");
-  mkdirSync(dir);
-  copyFileSync(join(PKG, "src", "cli", "args.ts"), join(dir, "args.ts"));
-  writeFileSync(join(dir, "pipeline.ts"), `export const SUBCOMMANDS = ["graph", "trace", "check"];\n`);
-  return ["--cli-src", dir];
+  const dir = join(f.root, "dist-pipeline");
+  cpSync(DIST, dir, { recursive: true });
+  const checks = join(dir, "steps", "checks.js");
+  copyFileSync(checks, join(dir, "steps", "checks.real.js"));
+  writeFileSync(checks, `export * from "./checks.real.js";\nimport { CHECKS as REAL } from "./checks.real.js";\nexport const CHECKS = [...REAL, { ...REAL[0], command: "clossys pipeline check", pending: { branch: "claude/landed" } }];\n`);
+  return ["--dist", dir];
 });
 proves("dist.missing", f => { const dir = join(f.root, "no-dist"); mkdirSync(dir); return ["--dist", dir]; });
 
