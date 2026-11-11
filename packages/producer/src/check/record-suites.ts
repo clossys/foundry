@@ -14,6 +14,8 @@ import { readPinnedDirector } from "../records/director-pinned.js";
 import { readPublisher, readWriter } from "../publish/site-source.js";
 import { writerText } from "../publish/site-plan.js";
 import { validateSlotContract } from "../records/validate.js";
+import { listSlots, readCandidate } from "../records/slots.js";
+import { parseFrontmatter } from "../records/slot-model/index.js";
 
 export interface SuiteFinding { readonly severity: "error" | "warning" | "info"; readonly where: string; readonly code: string; readonly message: string }
 
@@ -96,12 +98,39 @@ export async function archetypeSuite(root: string, strict: boolean): Promise<Sui
 }
 
 /**
- * Writer's slot suite parses legacy cell documents; pinned Writer candidates are a different
- * format, so the suite reports that it cannot run rather than passing over nothing.
- * Locale coverage, won't-claim and Director links run in `clossys write --check`.
+ * Writer's own slot suite (`runWriterSlotSuite`) over every pinned Writer candidate, each read
+ * through the Writer's slot-body parser and checked against its slot's contract, with the pinned
+ * Director voice. A pin that cannot be read is an INPUT error, never skipped.
+ * Locale coverage and Director links run in `clossys write --check`.
  */
-async function writerSuite(): Promise<SuiteReport> {
-  return failed("writer-slots", new Error("Writer's slot suite reads cell documents, not pinned slot candidates; run clossys write --check"));
+export async function writerSuite(root: string): Promise<SuiteReport> {
+  const checks = await agentModule("writer", "slot-contracts/checks.js");
+  const parser = await agentModule("writer", "slot-body.js");
+  const consumer = join(root, "clossys");
+  const findings: SuiteFinding[] = [];
+  const slots: unknown[] = [];
+  let unreadable = 0;
+  for (const entry of listSlots(consumer, "writer")) {
+    if (!entry.pin) continue;
+    const path = `agents/writer/${entry.id}/candidates/${entry.pin.candidate}`;
+    try {
+      const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);
+      if (candidate.sha256 !== entry.pin.sha256) throw new Error("Pin sha256 does not match candidate bytes");
+      const parsed = parseFrontmatter(candidate.bytes);
+      if (!parsed.ok) throw new Error("Invalid candidate frontmatter");
+      const locales = parsed.value.fields.locales;
+      if (!Array.isArray(locales) || !locales.length || !locales.every(locale => typeof locale === "string")) throw new Error("Candidate locales must be a nonempty string list");
+      slots.push({ slot: entry.id, path, locales, rows: parser.parseWriterSlotBody(parsed.value.body, locales) });
+    } catch (error) { unreadable++; findings.push({ severity: "error", code: "INPUT", message: message(error), where: `${entry.id} ${path}` }); }
+  }
+  let director: unknown;
+  try { director = checks.directorVoiceFromCells((await readPinnedDirector(consumer)).cells); }
+  catch (error) { findings.push({ severity: "error", code: "INPUT", message: `Pinned Director voice could not be read: ${message(error)}`, where: "director" }); }
+  const result = checks.runWriterSlotSuite({ slots, ...(director ? { director } : {}) });
+  for (const finding of result.findings as { check: string; severity: SuiteFinding["severity"]; slot: string; path?: string; record?: string; locale?: string; key?: string; message: string }[]) {
+    findings.push({ severity: finding.severity, code: finding.check, message: finding.message, where: `${finding.slot}${finding.record ? ` ${finding.record}` : finding.path ? ` ${finding.path}` : ""}${finding.locale ? ` [${finding.locale}]` : ""}${finding.key ? ` .${finding.key}` : ""}` });
+  }
+  return report("writer-slots", slots.length + unreadable, findings);
 }
 
 /** The Director's own contract checks over each pinned Director candidate. */
@@ -158,7 +187,7 @@ export async function runRecordSuites(rootIn: string, options: { strict?: boolea
   const run = (suite: SuiteReport["suite"], body: () => Promise<SuiteReport>) => body().catch(error => failed(suite, error));
   const suites = [
     await run("archetypes", () => archetypeSuite(rootIn, strict)),
-    await run("writer-slots", () => writerSuite()),
+    await run("writer-slots", () => writerSuite(rootIn)),
     await run("director-slots", () => directorSuite(rootIn)),
     await run("slot-contracts", () => slotContractSuite()),
     await run("ref-verbatim", () => refVerbatimSuite(rootIn)),
@@ -168,7 +197,7 @@ export async function runRecordSuites(rootIn: string, options: { strict?: boolea
 }
 
 const LABEL: Record<SuiteReport["suite"], string> = { "archetypes": "Archetypes", "writer-slots": "Writer slots", "director-slots": "Director slots", "slot-contracts": "Slot contracts", "ref-verbatim": "Ref verbatim" };
-const UNIT: Record<SuiteReport["suite"], string> = { "archetypes": "pages", "writer-slots": "cells", "director-slots": "cells", "slot-contracts": "contracts", "ref-verbatim": "pins" };
+const UNIT: Record<SuiteReport["suite"], string> = { "archetypes": "pages", "writer-slots": "slots", "director-slots": "cells", "slot-contracts": "contracts", "ref-verbatim": "pins" };
 
 /** Human summary: every archetype finding, at most `limit` per other suite. */
 export function recordSuitesSummary(result: RecordSuitesReport, limit = 20): string {

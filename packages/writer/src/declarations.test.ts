@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { writerText, type WriterInput } from "../../producer/src/publish/site-plan.js";
 import { parseWriterSlotBody, type WriterSlotBodyRecord } from "./slot-body.js";
-import { parseWriterDeclarations, projectWriterDeclarations, WriterDeclarationsParseError, WRITER_DECLARATIONS_SCHEMA } from "./declarations.js";
+import { parseWriterDeclarations, projectWriterDeclarations, serializeWriterDeclarations, writeWriterDeclarations, WriterDeclarationsParseError, WRITER_DECLARATIONS_SCHEMA } from "./declarations.js";
+import { mkdirSync, mkdtempSync, readFileSync as readText, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const page = JSON.parse(readFileSync(new URL("./cells/__fixtures__/generic-admin/example-page.r1.en.json", import.meta.url), "utf8"));
 const common = JSON.parse(readFileSync(new URL("./cells/__fixtures__/generic-admin/example-common.r1.en.json", import.meta.url), "utf8"));
@@ -126,5 +129,35 @@ describe("native Writer declarations", () => {
     const selected = projectWriterDeclarations(parsed, "en");
     expect(Object.is(selected.zero, -0)).toBe(true);
     expect(selected.large).toBe(parsed.locales.en!.large);
+  });
+});
+
+describe("writing native Writer declarations", () => {
+  const declared = () => parseWriterDeclarations(document({ en: { aliases: { "page.home.meta-title": "title-1" }, sections: [section()] } }));
+  const consumer = () => { const dir = mkdtempSync(join(tmpdir(), "writer-declarations-")); mkdirSync(join(dir, "agents", "writer"), { recursive: true }); return dir; };
+
+  it("serializes canonical bytes the one reader accepts unchanged", () => {
+    const bytes = serializeWriterDeclarations(declared());
+    expect(bytes.endsWith("}\n")).toBe(true);
+    expect(parseWriterDeclarations(bytes)).toEqual(declared());
+    expect(() => serializeWriterDeclarations({ schema: WRITER_DECLARATIONS_SCHEMA, locales: { en: { aliases: {}, sections: [{ sectionId: "s", configId: "", fields: [] }] } } } as never)).toThrow(WriterDeclarationsParseError);
+  });
+
+  it("writes agents/writer/declarations.json only when every target is a pinned record", async () => {
+    const dir = consumer();
+    try {
+      await expect(writeWriterDeclarations(dir, declared(), { completeRecords: [row("other")] })).rejects.toThrow(/Missing record title-1/);
+      const written = await writeWriterDeclarations(dir, declared(), { completeRecords: [row("title-1")] });
+      expect(written.path).toBe(join(dir, "agents", "writer", "declarations.json"));
+      expect(readText(written.path, "utf8")).toBe(serializeWriterDeclarations(declared()));
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it("refuses a symbolic link in place of the declarations file", async () => {
+    const dir = consumer();
+    try {
+      symlinkSync(join(dir, "elsewhere.json"), join(dir, "agents", "writer", "declarations.json"));
+      await expect(writeWriterDeclarations(dir, declared())).rejects.toThrow(/symbolic link/);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });

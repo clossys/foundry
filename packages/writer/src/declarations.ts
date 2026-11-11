@@ -160,3 +160,41 @@ export function projectWriterDeclarations(
   }
   return structuredClone(selected);
 }
+
+/**
+ * Canonical declarations.json bytes: validated by the one reader, two-space indent,
+ * authored key and array order, trailing newline. Throws on anything the reader refuses.
+ */
+export function serializeWriterDeclarations(declarations: WriterDeclarations): string {
+  const bytes = `${JSON.stringify(declarations, null, 2)}\n`;
+  parseWriterDeclarations(bytes);
+  return bytes;
+}
+
+/**
+ * Write a consumer's `agents/writer/declarations.json` through the reader's own validation.
+ * With completeRecords, every alias and section field must name a pinned record in each
+ * declared locale before anything is written. Symbolic links are refused.
+ */
+export async function writeWriterDeclarations(
+  consumerDir: string,
+  declarations: WriterDeclarations,
+  options: WriterDeclarationsProjectOptions = {},
+): Promise<{ path: string; bytes: string }> {
+  const { lstat, rename, writeFile } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const bytes = serializeWriterDeclarations(declarations);
+  const parsed = parseWriterDeclarations(bytes);
+  if (options.completeRecords !== undefined) for (const locale of Object.keys(parsed.locales)) projectWriterDeclarations(parsed, locale, options);
+  const dir = join(consumerDir, "agents", "writer");
+  const path = join(dir, WRITER_DECLARATIONS_FILENAME);
+  for (const target of [dir, path]) {
+    const stat = await lstat(target).catch((error: NodeJS.ErrnoException) => { if (error.code === "ENOENT") return undefined; throw error; });
+    if (stat?.isSymbolicLink()) throw new WriterDeclarationsParseError(`Refusing symbolic link at ${target}`, "");
+    if (target === dir && !stat?.isDirectory()) throw new WriterDeclarationsParseError(`No Writer agent folder at ${dir}`, "");
+  }
+  const temp = `${path}.${process.pid}.tmp`;
+  await writeFile(temp, bytes, { encoding: "utf8", flag: "wx" });
+  await rename(temp, path);
+  return { path, bytes };
+}
