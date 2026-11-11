@@ -145,8 +145,20 @@ export function stripDates(text: string): string {
  */
 const FIRST_CLAIM = /(?<![\p{L}\p{N}])(?:(?:world|industry|market|country|nation|sector|category)['’]s\s+first|first[-\s]ever|first\s+of\s+its\s+kind|first\s+(?:[\p{L}-]+\s+){0,2}to\s+(?!the\b|a\b|an\b)\p{L}+)(?![\p{L}\p{N}])/iu;
 
+/**
+ * Numbers that count nothing: an index after a sequence noun (Heading 1, Chart 3, Step 2)
+ * and the digit set shown as a type specimen (0123456789). Ranks and amounts (Top 10,
+ * Save 20, 99 teams) are not in this list and stay claims.
+ */
+const INDEX_NOUNS = "heading|chart|step|stage|level|column|row|slide|chapter|section|page|figure|table|option|item|series";
+const INDEX_RE = new RegExp(`(?<![\\p{L}\\p{N}])(?:${INDEX_NOUNS})\\s+\\d{1,2}(?![\\p{L}\\p{N}%]|[.,]\\p{N})`, "giu");
+const DIGIT_SET_RE = /(?<![\p{N}])0123456789(?![\p{N}])/gu;
+export function stripCounters(text: string): string {
+  return text.replace(INDEX_RE, " ").replace(DIGIT_SET_RE, " ");
+}
+
 function claimHits(text: string): string[] {
-  const bare = stripDates(stripIcu(text)); const hits: string[] = [];
+  const bare = stripCounters(stripDates(stripIcu(text))); const hits: string[] = [];
   if (/\p{N}/u.test(bare)) hits.push("number");
   if (/%/.test(bare)) hits.push("percentage");
   if (/[$€£¥₹]/u.test(bare)) hits.push("currency");
@@ -158,11 +170,49 @@ function brandRe(name: string): RegExp {
   const letters = [...name.replace(/[\s-]+/g, "")].map(escape).join("[\\s-]?");
   return new RegExp(`(?<![\\p{L}\\p{N}])${letters}(?![\\p{L}\\p{N}])`, "giu");
 }
+const brandLetters = (s: string) => s.replace(/[\s-]+/g, "").toLowerCase();
+
+/**
+ * One rule per distinct name. A brand record's forms are either spellings of its term
+ * ("Clossys Studio") or further names it governs ("Designer", "Writer" beside "Director");
+ * each name is matched on its own letters and must use one of the record's forms for it.
+ * Several records naming the same letters (brand-names and pronunciation both list
+ * "Clossys") merge into one rule, so a misspelling is one finding, not one per record.
+ */
+export function brandNameRules(brands: DirectorVoice["brands"]): Array<{ re: RegExp; forms: string[]; source: string }> {
+  const byLetters = new Map<string, { name: string; forms: string[]; sources: string[] }>();
+  for (const brand of brands) {
+    const names = [brand.name, ...brand.forms.filter(form => !brandLetters(brand.name).endsWith(brandLetters(form)) && !brandLetters(brand.name).startsWith(brandLetters(form)))];
+    for (const name of names) {
+      const key = brandLetters(name);
+      if (!key) continue;
+      const forms = brand.forms.filter(form => brandLetters(form) === key);
+      const rule = byLetters.get(key) ?? { name, forms: [], sources: [] };
+      for (const form of forms.length ? forms : [name]) if (!rule.forms.includes(form)) rule.forms.push(form);
+      if (!rule.sources.includes(brand.source)) rule.sources.push(brand.source);
+      byLetters.set(key, rule);
+    }
+  }
+  return [...byLetters.values()].map(rule => ({ re: brandRe(rule.name), forms: rule.forms, source: rule.sources.join(", ") }));
+}
+
+/**
+ * Spans where a brand's letters are an identifier, not the brand in prose: inline code
+ * (`clossys check`), a syntax placeholder (<writer slot>#<key>), a path or package segment
+ * (clossys/, @clossys/writer) and a host name (clossys.com). Brand spelling does not apply inside them.
+ */
+function identifierSpans(text: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  for (const m of text.matchAll(/`[^`\n]+`|<[\p{L}\p{N} ._-]+>/gu)) spans.push([m.index!, m.index! + m[0].length]);
+  for (const m of text.matchAll(/(?<![\p{L}\p{N}])[@\p{L}\p{N}._-]*(?:\/[\p{L}\p{N}._@-]*)+|(?<![\p{L}\p{N}])[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.(?:com|org|net|io|dev|app|co|ai)(?![\p{L}\p{N}])/giu)) if (m[0].length) spans.push([m.index!, m.index! + m[0].length]);
+  return spans;
+}
 
 interface VoiceRules {
   banned: DirectorVoice["banned"];
   brands: DirectorVoice["brands"];
   patternRules: Array<{ re: RegExp; source: string; severity: "error" | "warning" }>;
+  brandRules?: ReturnType<typeof brandNameRules>;
 }
 
 /** Banned phrases, brand spellings and avoided patterns: the Director voice plus the Writer's own lexicon records. */
@@ -178,6 +228,7 @@ function voiceRules(records: readonly JsonRecord[], director: DirectorVoice | un
       try { rules.patternRules.push({ re: new RegExp(r.pattern.source, `${typeof r.pattern.flags === "string" ? r.pattern.flags.replace(/g/g, "") : ""}u`), source: `writer:${String(r.id)}`, severity: r.severity === "error" ? "error" : "warning" }); } catch { /* invalid rule is the lexicon checker's finding */ }
     }
   }
+  rules.brandRules = brandNameRules(rules.brands);
   return rules;
 }
 
@@ -191,7 +242,13 @@ function textFindings(text: string, limit: WriterFieldLimit | undefined, contrac
   const governed = contract.layer !== "lexicon";
   if (governed) for (const b of rules.banned) if (phraseRe(b.phrase).test(text)) out.push({ check: "W-VOICE", severity: "error", message: `Banned phrase "${b.phrase}" (${b.source})` });
   if (governed) for (const rule of rules.patternRules) if (rule.re.test(text)) out.push({ check: "W-VOICE", severity: rule.severity, message: `Matches avoided pattern /${rule.re.source}/ (${rule.source})` });
-  if (governed) for (const brand of rules.brands) for (const m of text.matchAll(brandRe(brand.name))) if (!brand.forms.includes(m[0])) out.push({ check: "W-BRAND", severity: "error", message: `"${m[0]}" should be spelled ${brand.forms.map(f => `"${f}"`).join(" or ")} (${brand.source})` });
+  if (governed) {
+    const spans = identifierSpans(text);
+    for (const brand of (rules.brandRules ?? brandNameRules(rules.brands))) for (const m of text.matchAll(brand.re)) {
+      if (brand.forms.includes(m[0]) || spans.some(([from, to]) => m.index! >= from && m.index! + m[0].length <= to)) continue;
+      out.push({ check: "W-BRAND", severity: "error", message: `"${m[0]}" should be spelled ${brand.forms.map(f => `"${f}"`).join(" or ")} (${brand.source})` });
+    }
+  }
   if (L.claims && r.claim === undefined && r.evidence === undefined) { const hits = claimHits(text); if (hits.length) out.push({ check: "W-CLAIM", severity: "error", message: `Claim-like ${hits.join(", ")} without a claim or evidence reference` }); }
   const copied = copiedExemplar(text, exemplars);
   if (copied) out.push({ check: "W-ORIG", severity: "error", message: `${copied.mode === "contains" ? "Contains" : `Is ${Math.round(copied.score * 100)}% similar to`} reference exemplar of ${copied.slot}: "${copied.exemplar}"` });
@@ -215,7 +272,7 @@ export function runWriterSuite(input: { cells: WriterSuiteInput[]; director?: Di
     }
   }
   const exemplars = exemplarTexts(contracts);
-  const { banned, brands, patternRules } = voiceRules(located.map(({ item }) => item.record), input.director);
+  const rules = voiceRules(located.map(({ item }) => item.record), input.director);
   const unique = new Map<string, Array<{ page: string; at: Located; slot: string }>>();
   for (const at of located) {
     const { cell, path, item } = at; const r = item.record;
@@ -240,7 +297,7 @@ export function runWriterSuite(input: { cells: WriterSuiteInput[]; director?: Di
     }
     for (const { key, text } of texts) {
       const at2 = { ...base, key };
-      findings.push(...textFindings(text, L.fields[key], contract, r, source, { banned, brands, patternRules }, exemplars).map(f => ({ ...at2, ...f })));
+      findings.push(...textFindings(text, L.fields[key], contract, r, source, rules, exemplars).map(f => ({ ...at2, ...f })));
       if (L.unique && source) {
         const norm = normalizeText(text);
         if (norm) { const page = String(r.context ?? cell.id).split(".")[0] || cell.id; const list = unique.get(norm) ?? []; list.push({ page, at, slot }); unique.set(norm, list); }

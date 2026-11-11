@@ -506,7 +506,7 @@
       ],
       "limits": {
         "translationHeadroom": 0.3,
-        "unique": true,
+        "unique": false,
         "claims": true,
         "fields": {
           "text": {

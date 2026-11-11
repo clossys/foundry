@@ -62,6 +62,45 @@ describe("writer.copy.v1 over pinned slot candidates", () => {
     expect(checks([b, c]).filter(found => found.startsWith("W-DUP"))).toEqual([]);
   });
 
+  it("lets names repeat across pages: a name labels the same thing wherever it appears", () => {
+    const names = slot("strings.names", `## en\n\n${text("designer.item.sections.cards", "Cards")}${text("writer.item.passages.cards", "Cards")}`);
+    expect(checks([names]).filter(found => found.startsWith("W-DUP"))).toEqual([]);
+    // Page titles stay unique per page.
+    const titles = slot("strings.page-titles", `## en\n\n${text("designer.title", "Cards")}${text("writer.title", "Cards")}`);
+    expect(checks([titles])).toContain("W-DUP:strings.page-titles:writer.title");
+  });
+
+  it("reports one brand misspelling once, however many lexicon records name the brand", () => {
+    const term = (id: string, value: Record<string, unknown>) => json(id, { kind: "term", termStatus: "brand", reason: "name", ...value });
+    const lexicon = slot("lexicon.brand-names", `## en\n\n${term("term.clossys", { term: "Clossys", forms: ["Clossys"] })}`);
+    const pronounce = slot("lexicon.pronunciation", `## en\n\n${term("term.pronounce.clossys", { term: "Clossys", forms: ["Clossys"] })}`);
+    const copy = slot("strings.common", `## en\n\n${text("c.one", "Open CLOSSYS")}`);
+    expect(checks([lexicon, pronounce, copy]).filter(found => found.startsWith("W-BRAND"))).toEqual(["W-BRAND:strings.common:c.one"]);
+  });
+
+  it("checks every name a brand record governs, each on its own spelling", () => {
+    const agents = slot("lexicon.brand-names", `## en\n\n${json("term.agents", { kind: "term", term: "Director", forms: ["Director", "Designer", "Writer"], termStatus: "brand", reason: "agent names" })}`);
+    const copy = slot("strings.common", `## en\n\n${text("c.dir", "Ask the director")}${text("c.des", "Ask the designer")}${text("c.ok", "Ask the Designer and the Writer")}`);
+    const found = runWriterSlotSuite({ slots: [agents, copy] }).findings.filter(f => f.check === "W-BRAND");
+    expect(found.map(f => f.record)).toEqual(["c.dir", "c.des"]);
+    // The message names the accepted form of that name, not every name on the record.
+    expect(found[1]!.message).toMatch(/^"designer" should be spelled "Designer" \(/);
+  });
+
+  it("does not apply brand spelling inside code, paths, packages or host names", () => {
+    const brand = slot("lexicon.brand-names", `## en\n\n${json("term.clossys", { kind: "term", term: "Clossys", forms: ["Clossys"], termStatus: "brand", reason: "name" })}`);
+    const copy = slot("strings.common", `## en\n\n${text("c.code", "Run \`clossys check --slots\` to see why.")}${text("c.path", "clossys/")}${text("c.pkg", "Install @clossys/writer.")}${text("c.host", "clossys.com is set at release.")}${text("c.syntax", "Written as <clossys slot>#<key>.")}${text("c.prose", "Run clossys check --slots to see why.")}`);
+    expect(checks([brand, copy]).filter(found => found.startsWith("W-BRAND"))).toEqual(["W-BRAND:strings.common:c.prose"]);
+  });
+
+  it("does not read an index or a digit specimen as a numeric claim", () => {
+    const copy = slot("strings.common", `## en\n\n${text("c.h1", "Heading 1")}${text("c.chart", "Chart 5")}${text("c.digits", "0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ")}`);
+    expect(checks([copy])).toEqual([]);
+    // Ranks and amounts remain claims.
+    const claims = slot("strings.common", `## en\n\n${text("c.top", "Top 10 studios")}${text("c.save", "Save 20 hours")}${text("c.of", "Page 3 of 10")}`);
+    expect(checks([claims])).toEqual(["W-CLAIM:strings.common:c.top", "W-CLAIM:strings.common:c.save", "W-CLAIM:strings.common:c.of"]);
+  });
+
   it("runs over the consumer's pinned Writer candidates with a contract for every pinned slot", () => {
     const writer = fileURLToPath(new URL("../../../../clossys/agents/writer/", import.meta.url));
     if (!existsSync(writer)) return;
