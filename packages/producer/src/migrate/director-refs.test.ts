@@ -10,13 +10,27 @@ import { directionSection, planDirectorRefs } from "./director-refs.js";
 const CELL = "identity.naming.architecture";
 const SLOT = "strings.navigation";
 
-/** A copy of the repository consumer with the Director cell picked at its v2 (Direction unchanged from v1). */
+const directorDir = (consumer: string) => join(consumer, "agents", "director", CELL, "candidates");
+/** The Director cell's pinned candidate in a fixture: its name, version and bytes. */
+function pinnedDirector(consumer: string) {
+  const name = readPin(consumer, "director", CELL)!.candidate;
+  return { name, version: Number(/-v(\d+)\.md$/.exec(name)![1]), bytes: readFileSync(join(directorDir(consumer), name), "utf8") };
+}
+/** Write the cell's next version (bytes from `edit`) and pick it, as a Director re-draft would. */
+async function nextDirector(root: string, edit: (bytes: string) => string) {
+  const consumer = join(root, "clossys");
+  const current = pinnedDirector(consumer);
+  const written = writeCandidate(consumer, "director", CELL, current.name.replace(/-v\d+\.md$/, ""), edit(current.bytes));
+  const pick = await runCli(["pick", `director/${CELL}`, written.name, "--by", "agent:director", "--root", root], root);
+  expect(pick.exitCode, pick.message).toBe(0);
+  return { from: current.version, to: current.version + 1 };
+}
+/** A copy of the repository consumer with the Director cell picked at a new version whose Direction is unchanged. */
 async function bumpedConsumer() {
   const root = flatConsumer(["director", "writer"]);
   const consumer = join(root, "clossys");
-  const pick = await runCli(["pick", `director/${CELL}`, "studio-agent-naming-v2", "--by", "agent:director", "--root", root], root);
-  expect(pick.exitCode, pick.message).toBe(0);
-  return { root, consumer };
+  const versions = await nextDirector(root, bytes => bytes.replace(/^note: "/m, 'note: "Re-cited fixture. '));
+  return { root, consumer, ...versions };
 }
 const writerDir = (consumer: string, slot: string) => join(consumer, "agents", "writer", slot, "candidates");
 const pinnedBytes = (consumer: string, slot: string) => readFileSync(join(writerDir(consumer, slot), readPin(consumer, "writer", slot)!.candidate), "utf8");
@@ -26,25 +40,27 @@ describe("clossys migrate director-refs", () => {
     const root = flatConsumer(["director", "writer"]);
     const clean = await runCli(["migrate", "director-refs", "--check", "--root", root], root);
     expect(clean.exitCode, clean.message).toBe(0);
-    const { root: bumped, consumer } = await bumpedConsumer();
+    const { root: bumped, consumer, from, to } = await bumpedConsumer();
     const before = readdirSync(writerDir(consumer, SLOT)).sort();
     const pending = await runCli(["migrate", "director-refs", "--check", "--root", bumped], bumped);
     expect(pending.exitCode).toBe(1);
-    expect(pending.message).toContain(`writer/${SLOT}: studio-v1.md cites ${CELL} @1 -> @2`);
+    expect(pending.message).toContain(`writer/${SLOT}: ${readPin(consumer, "writer", SLOT)!.candidate} cites ${CELL} @${from} -> @${to}`);
     expect(readdirSync(writerDir(consumer, SLOT)).sort()).toEqual(before);
   }, 120_000);
 
   it("re-cites at the pinned version: only the refs change, the copy is identical, and the agent pick lands", async () => {
-    const { root, consumer } = await bumpedConsumer();
+    const { root, consumer, from, to } = await bumpedConsumer();
     const original = pinnedBytes(consumer, SLOT);
+    const before = readPin(consumer, "writer", SLOT)!.candidate;
     const result = await runCli(["migrate", "director-refs", "--by", "agent:writer", "--root", root], root);
     expect(result.exitCode, result.message).toBe(0);
     const pin = readPin(consumer, "writer", SLOT)!;
-    expect(pin).toMatchObject({ candidate: "studio-v2.md", decidedBy: "agent:writer", basis: "agent" });
+    expect(pin).toMatchObject({ decidedBy: "agent:writer", basis: "agent" });
+    expect(pin.candidate).not.toBe(before);
     const recited = pinnedBytes(consumer, SLOT);
     expect(recited).not.toBe(original);
-    expect(recited).not.toContain(`director:${CELL}@1`);
-    expect(recited.replaceAll(`director:${CELL}@2`, `director:${CELL}@1`)).toBe(original);
+    expect(recited).not.toContain(`director:${CELL}@${from}`);
+    expect(recited.replaceAll(`director:${CELL}@${to}`, `director:${CELL}@${from}`)).toBe(original);
     const check = await runCli(["migrate", "director-refs", "--check", "--root", root], root);
     expect(check.exitCode, check.message).toBe(0);
     const write = await runCli(["write", "--check", "--root", root, "--json"], root);
@@ -54,21 +70,19 @@ describe("clossys migrate director-refs", () => {
   it("refuses a slot whose cited Direction changed, and writes nothing for it", async () => {
     const root = flatConsumer(["director", "writer"]);
     const consumer = join(root, "clossys");
-    const v1 = readFileSync(join(consumer, "agents", "director", CELL, "candidates", "studio-agent-naming-v1.md"), "utf8");
-    const changed = v1.replace("## Direction\n- Model:", "## Direction\n- Model: Re-stated.");
-    expect(directionSection(changed)).not.toBe(directionSection(v1));
-    writeCandidate(consumer, "director", CELL, "studio-agent-naming", changed);
-    const v3 = readdirSync(join(consumer, "agents", "director", CELL, "candidates")).find(name => name === "studio-agent-naming-v3.md");
-    expect(v3).toBeDefined();
-    expect((await runCli(["pick", `director/${CELL}`, "studio-agent-naming-v3", "--by", "agent:director", "--root", root], root)).exitCode).toBe(0);
+    const original = pinnedDirector(consumer).bytes;
+    const changed = original.replace("## Direction\n- Model:", "## Direction\n- Model: Re-stated.");
+    expect(directionSection(changed)).not.toBe(directionSection(original));
+    const before = readPin(consumer, "writer", SLOT)!.candidate;
+    const { from, to } = await nextDirector(root, () => changed);
     const plan = await planDirectorRefs(consumer);
     expect(plan.bumps.map(bump => bump.slot)).not.toContain(SLOT);
-    expect(plan.refusals).toContainEqual(expect.objectContaining({ slot: SLOT, cell: CELL, from: 1, to: 3, reason: expect.stringContaining("Direction changed") }));
-    const before = readdirSync(writerDir(consumer, SLOT)).sort();
+    expect(plan.refusals).toContainEqual(expect.objectContaining({ slot: SLOT, cell: CELL, from, to, reason: expect.stringContaining("Direction changed") }));
+    const files = readdirSync(writerDir(consumer, SLOT)).sort();
     const result = await runCli(["migrate", "director-refs", "--root", root], root);
     expect(result.exitCode).toBe(1);
     expect(result.message).toContain(`refused writer/${SLOT}`);
-    expect(readdirSync(writerDir(consumer, SLOT)).sort()).toEqual(before);
-    expect(readPin(consumer, "writer", SLOT)!.candidate).toBe("studio-v1.md");
+    expect(readdirSync(writerDir(consumer, SLOT)).sort()).toEqual(files);
+    expect(readPin(consumer, "writer", SLOT)!.candidate).toBe(before);
   }, 120_000);
 });
