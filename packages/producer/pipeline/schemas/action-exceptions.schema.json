@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/action-exceptions.schema.json",
+  "title": "Registry exceptions (packages/<agent>/actions/exceptions.json)",
+  "description": "A package bin or skill file that is not (yet) part of any action, each with the reason and the unit that closes it.",
+  "type": "object",
+  "required": [
+    "schema",
+    "exceptions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.action-exceptions/1"
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "item",
+          "reason",
+          "unit"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "item": {
+            "type": "string",
+            "pattern": "^(bin:[a-z][a-z0-9-]*|[A-Za-z0-9_./-]+\\.md)$"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unit": {
+            "type": "string",
+            "pattern": "^W[0-9][a-z0-9]*$"
+          }
+        }
+      }
+    }
+  }
+}

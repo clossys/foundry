@@ -8,6 +8,12 @@ import { PACKAGE_ROOT } from "./options.js";
  * subset those files use: type, const, enum, pattern, minLength, minItems, minimum, items, properties,
  * required, additionalProperties, propertyNames, anyOf, oneOf, not and $ref (to a sibling file
  * or to #/$defs/<name>).
+ *
+ * `x-format` names how a file is read before validation: absent, a `.json` file is parsed as JSON and
+ * a `.md` file by its frontmatter; `text` validates the raw file text as a string (generated `.ts` and
+ * `.css` modules); `scalar-frontmatter` reads a `.md` file's plain `key: value` frontmatter lines as
+ * strings (Director evidence); `binary` (an opaque file) and `directory` (a tree a caller names) have no readable
+ * contract beyond their path.
  */
 export interface JsonSchema {
   $ref?: string; $defs?: Record<string, JsonSchema>;
@@ -87,15 +93,27 @@ function validateValueAt(value: unknown, schema: JsonSchema, root: JsonSchema, p
   return validateValue(value, { ...schema, $defs: { ...root.$defs, ...schema.$defs } }, packageRoot);
 }
 
-/** Validate one committed file: JSON files as JSON, Markdown candidates by their frontmatter. */
+/** Validate one committed file: JSON files as JSON, Markdown candidates by their frontmatter, `x-format` text as text. */
 export function validateFile(schemaName: string, file: string, bytes: string, packageRoot = PACKAGE_ROOT): SchemaIssue[] {
+  const schema = loadSchema(schemaName, packageRoot);
   let value: unknown;
-  if (file.endsWith(".md")) {
+  if (schema["x-format"] === "binary" || schema["x-format"] === "directory") return [];
+  if (schema["x-format"] === "text") value = bytes;
+  else if (schema["x-format"] === "scalar-frontmatter") {
+    const block = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(bytes);
+    if (!block) return [{ path: "/", message: "frontmatter: no --- block at the top of the file" }];
+    const fields: Record<string, string> = {};
+    for (const line of block[1]!.split(/\r?\n/)) {
+      const match = /^([A-Za-z][\w-]*):\s*(.*)$/.exec(line);
+      if (match) fields[match[1]!] = match[2]!.trim();
+    }
+    value = fields;
+  } else if (file.endsWith(".md")) {
     const parsed = parseFrontmatter(bytes);
     if (!parsed.ok) return [{ path: "/", message: `frontmatter: ${parsed.message}` }];
     value = parsed.value.fields;
   } else if (file.endsWith(".json")) {
     try { value = JSON.parse(bytes); } catch { return [{ path: "/", message: "not JSON" }]; }
   } else return [{ path: "/", message: `no schema reader for ${file}` }];
-  return validateValue(value, loadSchema(schemaName, packageRoot), packageRoot);
+  return validateValue(value, schema, packageRoot);
 }

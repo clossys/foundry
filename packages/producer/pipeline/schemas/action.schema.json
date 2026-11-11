@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/action.schema.json",
+  "title": "Action contract (packages/<agent>/actions/<id>/action.json)",
+  "description": "One pipeline step's contract (docs/step-standard.md). check:step-standard validates every action file against this schema and the rules it states.",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "agent",
+    "kind",
+    "stage",
+    "summary",
+    "inputs",
+    "outputs",
+    "pass",
+    "record",
+    "checks",
+    "uses"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.action/1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+    },
+    "agent": {
+      "enum": [
+        "director",
+        "designer",
+        "writer",
+        "publisher",
+        "producer",
+        "owner"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "plumb",
+        "decide:creative",
+        "decide:judgment"
+      ]
+    },
+    "stage": {
+      "type": "string",
+      "pattern": "^(direct|design|publish)\\.[a-z]+$"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run": {
+      "type": "string",
+      "pattern": "^clossys [a-z]"
+    },
+    "gap": {
+      "type": "object",
+      "required": [
+        "unit",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "type": "string",
+          "pattern": "^W[0-9][a-z0-9]*$"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "glob",
+          "schema"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "glob": {
+            "type": "string",
+            "minLength": 1
+          },
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "glob",
+          "schema"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "glob": {
+            "type": "string",
+            "minLength": 1
+          },
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          }
+        }
+      }
+    },
+    "pass": {
+      "type": "object",
+      "required": [
+        "command",
+        "exit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string",
+          "pattern": "^clossys [a-z]"
+        },
+        "exit": {
+          "type": "object",
+          "required": [
+            "pass",
+            "fail",
+            "error"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "pass": {
+              "const": [
+                0
+              ]
+            },
+            "fail": {
+              "const": [
+                1
+              ]
+            },
+            "error": {
+              "const": [
+                2
+              ]
+            }
+          }
+        }
+      }
+    },
+    "record": {
+      "const": "clossys.pipeline-run/1"
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "uses": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "decider": {
+      "enum": [
+        "owner",
+        "agent"
+      ]
+    },
+    "packet": {
+      "type": "object",
+      "required": [
+        "inputs",
+        "write",
+        "checks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "write": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "glob",
+              "schema"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1
+              },
+              "schema": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              }
+            }
+          }
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "skill": {
+      "const": "skill.md"
+    },
+    "open": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pending": {
+      "type": "object",
+      "required": [
+        "branch",
+        "change"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "change": {
+          "enum": [
+            "adds",
+            "removes"
+          ]
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "run"
+      ],
+      "not": {
+        "required": [
+          "gap"
+        ]
+      }
+    },
+    {
+      "required": [
+        "gap"
+      ],
+      "not": {
+        "required": [
+          "run"
+        ]
+      }
+    }
+  ]
+}

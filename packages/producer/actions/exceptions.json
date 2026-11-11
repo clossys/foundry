@@ -1,0 +1,10 @@
+{
+  "schema": "clossys.action-exceptions/1",
+  "exceptions": [
+    {
+      "item": "skill/SKILL.md",
+      "reason": "A stale CLI scaffold note; the chain runner's skill replaces it.",
+      "unit": "W6a"
+    }
+  ]
+}

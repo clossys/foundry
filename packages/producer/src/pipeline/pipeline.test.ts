@@ -59,7 +59,7 @@ describe("step definitions", () => {
   });
   it("keeps plumb steps on code and decide steps off it", () => {
     expect(() => defineStep({ id: "x", kind: "plumb", actor: "owner", stage: "publish.check", summary: "x", inputs: [], outputs: [], command: { npm: "x" }, checks: [] })).toThrow(/actor is code/);
-    expect(() => defineStep({ id: "x", kind: "decide:judgment", actor: "code", stage: "direct.pin", summary: "x", inputs: [], outputs: [], command: { manual: "x" }, checks: [] })).toThrow(/deciding actor/);
+    expect(() => defineStep({ id: "x", kind: "decide:judgment", actor: "code", stage: "direct.pin", summary: "x", inputs: [], outputs: [], command: { skill: "x" }, checks: [] })).toThrow(/deciding actor/);
   });
   it("gives every decide step a seat file and no plumb step one", () => {
     for (const each of STEPS) expect(Boolean(each.seat)).toBe(each.kind !== "plumb");
@@ -75,11 +75,11 @@ describe("derived graph", () => {
     const edges = deriveEdges(STEPS);
     expect(edges.some(edge => edge.from === "pin.publisher" && edge.to === "publish.install")).toBe(true);
     expect(edges.every(edge => edge.via.length > 0 && edge.via.every(via => typeof via.schema === "string"))).toBe(true);
-    // studio-map.json is typed, so it feeds the Studio checks; a port with no schema feeds no edge and is listed as untyped.
+    // studio-map.json is typed, so it feeds the Studio checks; the step standard types every port, so none is untyped.
     expect(edges.some(edge => edge.from === "studio.map" && edge.to === "studio.checks")).toBe(true);
     expect(edges.some(edge => edge.from === "studio.map" && edge.to === "capture")).toBe(true);
     expect(untypedPorts(STEPS)).not.toContainEqual({ step: "studio.map", port: "output", glob: "pkg:studio/generated/studio-map.json" });
-    expect(untypedPorts(STEPS)).toContainEqual({ step: "studio.map", port: "output", glob: "pkg:studio/generated/assembly-bindings.ts" });
+    expect(untypedPorts(STEPS)).toEqual([]);
     const make = (id: string, inputs: { glob: string; schema?: string }[], outputs: { glob: string; schema?: string }[]) =>
       defineStep({ id, kind: "plumb", actor: "code", stage: "publish.check", summary: id, inputs, outputs, command: { npm: "x" }, checks: [] });
     const a = make("a", [], [{ glob: "x/*.json", schema: "slot" }]);

@@ -108,8 +108,10 @@ describe("check:pipeline", { concurrency: 3 }, () => {
     assert.ok(result.out.failures.some(failure => failure.rule === "layout.stale" && failure.message.startsWith("compile: ")), JSON.stringify(result.out.failures));
   });
   it("lists untyped ports instead of dropping them", () => {
-    const result = run([]);
-    assert.ok(result.out.untyped.some(port => port.step === "studio.map" && port.port === "output"));
+    // The step standard types every committed port (check:step-standard port.untyped); a mutant's untyped port is still listed.
+    assert.deepEqual(run([]).out.untyped, []);
+    const result = run(["--steps", stepsModule("untyped", extra(`command: { npm: "check:pipeline" }, outputs: [{ glob: "pkg:studio/generated/mutant.json" }, { glob: "arg:--out" }]`))]);
+    assert.ok(result.out.untyped.some(port => port.step === "mutant" && port.port === "output"), JSON.stringify(result.out.untyped));
     assert.ok(result.out.untyped.every(port => !port.glob.startsWith("arg:")));
   });
   it("fails an output and input that overlap with different schemas", () => {

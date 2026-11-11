@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/studio-screenshots.schema.json",
+  "title": "Studio screenshots (--screenshots of studio:check, --out of capture:studio)",
+  "description": "A directory of route screenshots and the contact sheet; opaque to the graph beyond its path.",
+  "x-format": "directory"
+}

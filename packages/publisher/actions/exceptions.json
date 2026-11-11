@@ -1,0 +1,50 @@
+{
+  "schema": "clossys.action-exceptions/1",
+  "exceptions": [
+    {
+      "item": "bin:publisher-web-route-check",
+      "reason": "Web route check; part of the Publisher contract work.",
+      "unit": "W2"
+    },
+    {
+      "item": "bin:publisher-registered-route-check",
+      "reason": "Registered route check; part of the Publisher contract work.",
+      "unit": "W2"
+    },
+    {
+      "item": "bin:publisher-media-check",
+      "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:publisher-record-check",
+      "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:publisher-rate-check",
+      "reason": "Verified-publication rate tool; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:publisher-preview",
+      "reason": "Standalone preview tool; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:publisher-seal",
+      "reason": "Pack seal tool; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:publisher-head-lint",
+      "reason": "Pack head lint; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:publisher-site-instantiate",
+      "reason": "Site template instantiation tool; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    }
+  ]
+}

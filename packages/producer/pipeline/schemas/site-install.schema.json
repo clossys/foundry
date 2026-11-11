@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/site-install.schema.json",
+  "title": "Installed pages (--out / --next of clossys publish --install)",
+  "description": "A directory of generated page or Next route files written into a caller-chosen consumer path; opaque to the graph beyond its path.",
+  "x-format": "directory"
+}

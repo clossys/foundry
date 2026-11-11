@@ -1,0 +1,40 @@
+{
+  "schema": "clossys.actions-ia/1",
+  "nodes": [
+    {
+      "id": "designer",
+      "children": [
+        {
+          "id": "design.brief",
+          "actions": [
+            "designer.brief"
+          ]
+        },
+        {
+          "id": "design.make",
+          "actions": [
+            "designer.candidates"
+          ]
+        },
+        {
+          "id": "design.pin",
+          "actions": [
+            "pick.designer"
+          ]
+        },
+        {
+          "id": "publish.assemble",
+          "actions": [
+            "designer.compile"
+          ]
+        },
+        {
+          "id": "publish.check",
+          "actions": [
+            "designer.check"
+          ]
+        }
+      ]
+    }
+  ]
+}

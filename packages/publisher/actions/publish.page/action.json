@@ -1,0 +1,47 @@
+{
+  "schema": "clossys.action/1",
+  "id": "publish.page",
+  "agent": "publisher",
+  "kind": "plumb",
+  "stage": "publish.check",
+  "summary": "Bare publish: dry-run check of every pinned page against pinned Designer slots and Writer copy (read-only).",
+  "run": "clossys publish",
+  "inputs": [
+    {
+      "glob": "clossys/agents/publisher/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    },
+    {
+      "glob": "clossys/agents/designer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/writer/*/pin.json",
+      "schema": "pin"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys publish",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": []
+}

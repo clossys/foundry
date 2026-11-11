@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/studio-flow-theme.schema.json",
+  "title": "Studio flow theme (studio/generated/studio-flow-theme.css)",
+  "description": "CSS generated from the pinned themes.* tokens the flow canvas reads; validated as text: it opens with the generated header.",
+  "x-format": "text",
+  "type": "string",
+  "pattern": "^/\\* Generated"
+}

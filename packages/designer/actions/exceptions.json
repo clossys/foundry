@@ -1,0 +1,85 @@
+{
+  "schema": "clossys.action-exceptions/1",
+  "exceptions": [
+    {
+      "item": "bin:designer-library",
+      "reason": "The Designer library CLI (adopt, choose, emit); its modes are not yet steps.",
+      "unit": "W4"
+    },
+    {
+      "item": "bin:designer-section-check",
+      "reason": "Section token check; not yet a step of the Designer round.",
+      "unit": "W4"
+    },
+    {
+      "item": "bin:designer-provenance-check",
+      "reason": "Provenance check; not yet a step of the Designer round.",
+      "unit": "W4"
+    },
+    {
+      "item": "bin:designer-ref-verbatim",
+      "reason": "Reference-verbatim check; not yet a step of the Designer round.",
+      "unit": "W4"
+    },
+    {
+      "item": "bin:designer-overflow-check",
+      "reason": "Published-page overflow probe; belongs to the Publisher check stage.",
+      "unit": "W2"
+    },
+    {
+      "item": "bin:designer-token-check",
+      "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:designer-brand-check",
+      "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:designer-contrast-check",
+      "reason": "Package self-check (root check:contrast runs its build); whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:designer-environment-check",
+      "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:designer-fold-check",
+      "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:designer-type-check",
+      "reason": "Package self-check shipped to consumers; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "bin:designer-rate-check",
+      "reason": "Conformance-rate tool over a caller-supplied assessment; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    },
+    {
+      "item": "skill/library-check.md",
+      "reason": "Library check guide reached only through library-emit.md; not part of the candidates skill path.",
+      "unit": "W4"
+    },
+    {
+      "item": "skill/library-choose.md",
+      "reason": "Library choose guide for the designer-library CLI; not part of the candidates skill path.",
+      "unit": "W4"
+    },
+    {
+      "item": "skill/library-studio.md",
+      "reason": "Library Studio guide for the designer-library CLI; not part of the candidates skill path.",
+      "unit": "W4"
+    },
+    {
+      "item": "skill/library-emit.md",
+      "reason": "Library emit guide for the designer-library CLI; not part of the candidates skill path.",
+      "unit": "W4"
+    }
+  ]
+}
