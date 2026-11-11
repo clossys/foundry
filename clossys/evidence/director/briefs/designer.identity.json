@@ -1,0 +1,195 @@
+{
+  "contract": "designer.identity",
+  "state": "ready",
+  "cells": [
+    {
+      "cell": "identity.brand.essence",
+      "version": 3,
+      "direction": [
+        {
+          "key": "Essence",
+          "text": "Judgment where it matters.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "Meaning",
+          "text": "agents do the production; people spend judgment only on the calls that need it.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Not",
+          "text": "a promise that no person is needed, or a public claim of autonomy before proof shows it.",
+          "refs": [],
+          "line": 12
+        }
+      ],
+      "watch": [
+        {
+          "text": "If public pages whose story leaves out where people decide > 0 in any month, then return them to Writer.",
+          "refs": [],
+          "line": 20
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "owner-critic-autonomous-2026-11-11"
+        },
+        {
+          "kind": "finding",
+          "id": "owner-essence-2026-11-11"
+        },
+        {
+          "kind": "cell",
+          "ref": {
+            "cell": "advantage.proposition.proof",
+            "version": 3
+          }
+        }
+      ]
+    },
+    {
+      "cell": "identity.brand.personality",
+      "version": 2,
+      "direction": [
+        {
+          "key": "Traits",
+          "text": "precise, plain-spoken and calm; careful about evidence, never hypes, steady under scale.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "Not",
+          "text": "hype, or claims ahead of proof.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Example",
+          "text": "a card that says NEED rather than guessing.",
+          "refs": [],
+          "line": 12
+        }
+      ],
+      "watch": [
+        {
+          "text": "If copy flagged as hype > 0 in any month, then return it to Writer.",
+          "refs": [],
+          "line": 18
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "owner-personality-2026-11-11"
+        }
+      ]
+    },
+    {
+      "cell": "identity.visual.imagery",
+      "version": 2,
+      "direction": [
+        {
+          "key": "Use",
+          "text": "live previews of real candidates, such as the Designer specimen, Writer strings, the Director brief and the Publisher page.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "Never",
+          "text": "stock photos, invented screenshots or mock data presented as real output.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Source",
+          "text": "rendered output from the workspace itself; original assets only for consumer items such as a logo.",
+          "refs": [],
+          "line": 12
+        }
+      ],
+      "watch": [
+        {
+          "text": "If Studio images that are not rendered workspace output > 0 in any month, then replace them with live previews.",
+          "refs": [],
+          "line": 19
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "foundry-public-studio-mission"
+        },
+        {
+          "kind": "finding",
+          "id": "foundry-public-studio-offer"
+        },
+        {
+          "kind": "finding",
+          "id": "foundry-public-studio-delivery"
+        }
+      ]
+    },
+    {
+      "cell": "identity.visual.style",
+      "version": 4,
+      "direction": [
+        {
+          "key": "Feel",
+          "text": "quiet and exact, like a well-kept reference manual.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "Signature",
+          "text": "the live preview card, full width, preview first, then name, version and status beneath.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Avoid",
+          "text": "custom-styled components and loud colour; stock shadcn with restrained colour only.",
+          "refs": [],
+          "line": 12
+        }
+      ],
+      "watch": [
+        {
+          "text": "If Studio components that are not stock shadcn > 0 in any month, then return them to Designer.",
+          "refs": [],
+          "line": 21
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "owner-style-2026-11-11"
+        },
+        {
+          "kind": "finding",
+          "id": "owner-round3-style-2026-11-11"
+        },
+        {
+          "kind": "cell",
+          "ref": {
+            "cell": "identity.brand.essence",
+            "version": 3
+          }
+        },
+        {
+          "kind": "cell",
+          "ref": {
+            "cell": "identity.verbal.voice",
+            "version": 3
+          }
+        }
+      ]
+    }
+  ],
+  "missing": [],
+  "stale": [],
+  "fingerprint": "5c5b802d26eb82ddf81b1b3df99da5d878d3678ad190163d00d8722f49d2b6d2",
+  "compiledAt": "2026-11-11T17:21:44.273Z"
+}

@@ -1,0 +1,146 @@
+[
+  {
+    "rule": "C1",
+    "severity": "hard",
+    "message": "Required link Essence-Voice cites a version that is no longer active",
+    "cell": "identity.verbal.voice",
+    "cells": [
+      "identity.brand.essence",
+      "identity.verbal.voice"
+    ],
+    "path": "identity.verbal.voice/candidates/studio-voice-v2.md",
+    "code": "stale"
+  },
+  {
+    "rule": "C1",
+    "severity": "hard",
+    "message": "Required link Essence-Style cites a version that is no longer active",
+    "cell": "identity.visual.style",
+    "cells": [
+      "identity.brand.essence",
+      "identity.visual.style"
+    ],
+    "path": "identity.visual.style/candidates/studio-visual-style-v2.md",
+    "code": "stale"
+  },
+  {
+    "rule": "C2",
+    "severity": "judge",
+    "message": "Next is not the Core segment restated",
+    "code": "X3",
+    "cell": "focus.segment.core",
+    "cells": [
+      "focus.segment.core",
+      "focus.segment.next"
+    ],
+    "judgeId": "C2:X3"
+  },
+  {
+    "rule": "C2",
+    "severity": "judge",
+    "message": "the largest Split share goes to the active Bet",
+    "code": "X7",
+    "cell": "capability.resource.allocation",
+    "cells": [
+      "capability.resource.allocation",
+      "execution.priority.bet"
+    ],
+    "judgeId": "C2:X7"
+  },
+  {
+    "rule": "C3",
+    "severity": "warning",
+    "message": "Unknown installed brief contract patterns.messaging-kit",
+    "cell": "identity.brand.essence",
+    "path": "identity.brand.essence/candidates/studio-essence-v3.md",
+    "code": "unknown-feed"
+  },
+  {
+    "rule": "C3",
+    "severity": "warning",
+    "message": "Unknown installed brief contract strings.taglines",
+    "cell": "identity.brand.essence",
+    "path": "identity.brand.essence/candidates/studio-essence-v3.md",
+    "code": "unknown-feed"
+  },
+  {
+    "rule": "C3",
+    "severity": "warning",
+    "message": "Unknown installed brief contract lexicon.brand-names",
+    "cell": "identity.naming.name",
+    "path": "identity.naming.name/candidates/studio-naming-v2.md",
+    "code": "unknown-feed"
+  },
+  {
+    "rule": "C3",
+    "severity": "warning",
+    "message": "Unknown installed brief contract lexicon.pronunciation",
+    "cell": "identity.naming.name",
+    "path": "identity.naming.name/candidates/studio-naming-v2.md",
+    "code": "unknown-feed"
+  },
+  {
+    "rule": "C3",
+    "severity": "warning",
+    "message": "Unknown installed brief contract passages.logo-hero",
+    "cell": "identity.naming.name",
+    "path": "identity.naming.name/candidates/studio-naming-v2.md",
+    "code": "unknown-feed"
+  },
+  {
+    "rule": "C3",
+    "severity": "warning",
+    "message": "Unknown installed brief contract passages.logo-mark",
+    "cell": "identity.naming.name",
+    "path": "identity.naming.name/candidates/studio-naming-v2.md",
+    "code": "unknown-feed"
+  },
+  {
+    "rule": "C3",
+    "severity": "warning",
+    "message": "Unknown installed brief contract strings.names",
+    "cell": "identity.naming.name",
+    "path": "identity.naming.name/candidates/studio-naming-v2.md",
+    "code": "unknown-feed"
+  },
+  {
+    "rule": "C3",
+    "severity": "warning",
+    "message": "Unknown installed brief contract strings.page-titles",
+    "cell": "identity.naming.name",
+    "path": "identity.naming.name/candidates/studio-naming-v2.md",
+    "code": "unknown-feed"
+  },
+  {
+    "rule": "C3",
+    "severity": "hard",
+    "message": "Unresolved cite identity.brand.essence@2",
+    "cell": "identity.verbal.voice",
+    "path": "identity.verbal.voice/candidates/studio-voice-v2.md",
+    "code": "dangling"
+  },
+  {
+    "rule": "C3",
+    "severity": "hard",
+    "message": "Cite identity.brand.essence@2 is no longer active",
+    "cell": "identity.verbal.voice",
+    "path": "identity.verbal.voice/candidates/studio-voice-v2.md",
+    "code": "stale"
+  },
+  {
+    "rule": "C3",
+    "severity": "hard",
+    "message": "Unresolved cite identity.brand.essence@2",
+    "cell": "identity.visual.style",
+    "path": "identity.visual.style/candidates/studio-visual-style-v2.md",
+    "code": "dangling"
+  },
+  {
+    "rule": "C3",
+    "severity": "hard",
+    "message": "Cite identity.brand.essence@2 is no longer active",
+    "cell": "identity.visual.style",
+    "path": "identity.visual.style/candidates/studio-visual-style-v2.md",
+    "code": "stale"
+  }
+]

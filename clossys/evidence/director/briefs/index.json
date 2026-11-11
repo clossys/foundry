@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-11T17:21:44.273Z",
+  "briefs": [
+    {
+      "contract": "designer.identity",
+      "path": "briefs/designer.identity.json",
+      "state": "ready",
+      "missing": [],
+      "stale": [],
+      "refs": [
+        {
+          "cell": "identity.brand.essence",
+          "version": 3
+        },
+        {
+          "cell": "identity.brand.personality",
+          "version": 2
+        },
+        {
+          "cell": "identity.visual.imagery",
+          "version": 2
+        },
+        {
+          "cell": "identity.visual.style",
+          "version": 4
+        }
+      ],
+      "fingerprint": "5c5b802d26eb82ddf81b1b3df99da5d878d3678ad190163d00d8722f49d2b6d2",
+      "compiledAt": "2026-11-11T17:21:44.273Z"
+    },
+    {
+      "contract": "writer.messaging",
+      "path": "briefs/writer.messaging.json",
+      "state": "stale",
+      "missing": [],
+      "stale": [
+        {
+          "cell": "context.competition.alternative",
+          "version": 2
+        },
+        {
+          "cell": "context.customer.need",
+          "version": 2
+        }
+      ],
+      "refs": [
+        {
+          "cell": "advantage.proposition.promise",
+          "version": 2
+        },
+        {
+          "cell": "advantage.proposition.proof",
+          "version": 3
+        },
+        {
+          "cell": "context.customer.need",
+          "version": 3
+        },
+        {
+          "cell": "focus.segment.core",
+          "version": 2
+        },
+        {
+          "cell": "identity.verbal.narrative",
+          "version": 3
+        },
+        {
+          "cell": "identity.verbal.voice",
+          "version": 3
+        }
+      ],
+      "fingerprint": "4e1c55e37b5bac74c9f19474d08e096d86f753aab060a15a8614cad98aae398b",
+      "compiledAt": "2026-11-11T17:21:37.077Z"
+    }
+  ]
+}

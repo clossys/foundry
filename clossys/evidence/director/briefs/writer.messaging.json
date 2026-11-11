@@ -1,0 +1,309 @@
+{
+  "contract": "writer.messaging",
+  "state": "stale",
+  "cells": [
+    {
+      "cell": "advantage.proposition.promise",
+      "version": 2,
+      "direction": [
+        {
+          "key": "Promise",
+          "text": "give the agents your direction once; they build and run brand, copy and site consistently.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "For",
+          "text": "Clossys and the businesses it starts.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Versus",
+          "text": "people plus ad-hoc agents redoing the same production for each business.",
+          "refs": [],
+          "line": 12
+        },
+        {
+          "text": "You spend judgment only where it matters.",
+          "refs": [],
+          "line": 13
+        }
+      ],
+      "watch": [
+        {
+          "text": "If pages that needed a hand edit after the brief > 0 in any month, then review the promise wording with the owner.",
+          "refs": [],
+          "line": 22
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "owner-promise-2026-11-11"
+        },
+        {
+          "kind": "cell",
+          "ref": {
+            "cell": "context.customer.need",
+            "version": 2
+          }
+        },
+        {
+          "kind": "cell",
+          "ref": {
+            "cell": "focus.segment.core",
+            "version": 2
+          }
+        },
+        {
+          "kind": "cell",
+          "ref": {
+            "cell": "context.competition.alternative",
+            "version": 2
+          }
+        }
+      ]
+    },
+    {
+      "cell": "advantage.proposition.proof",
+      "version": 3,
+      "direction": [
+        {
+          "key": "Proof",
+          "text": "every record, check and pin is public and inspectable.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "Gap",
+          "text": "no business has yet run from idea to live on its own.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Never-claim",
+          "text": "public claims that Clossys is \"autonomous\" or \"production ready\", or claims of business results, until one business runs idea to live on its own; goals may still name the aim.",
+          "refs": [],
+          "line": 12
+        }
+      ],
+      "watch": [
+        {
+          "text": "If public claims using a Never-claim phrase > 0 in any month, then remove them before release.",
+          "refs": [],
+          "line": 20
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "owner-critic-autonomous-2026-11-11"
+        },
+        {
+          "kind": "finding",
+          "id": "owner-proof-2026-11-11"
+        },
+        {
+          "kind": "cell",
+          "ref": {
+            "cell": "aspiration.goal.long-term",
+            "version": 2
+          }
+        }
+      ]
+    },
+    {
+      "cell": "context.customer.need",
+      "version": 3,
+      "direction": [
+        {
+          "key": "Job",
+          "text": "get a business's design, copy and pages made without spending skilled judgment on redoing them.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "Pain",
+          "text": "skilled people redo the same production for each product, and the results still drift apart.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Trigger",
+          "text": "the next product or business means the same work again.",
+          "refs": [],
+          "line": 12
+        },
+        {
+          "text": "People keep the creative calls; only the production moves to the agents.",
+          "refs": [],
+          "line": 13
+        }
+      ],
+      "watch": [
+        {
+          "text": "If the share of the next Clossys business's design and copy made from scratch rather than reused rises above 50% by 2026-12-31, then the repeat-work trigger is weaker than stated; review this cell with the owner.",
+          "refs": [],
+          "line": 21
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "owner-need-2026-11-11"
+        },
+        {
+          "kind": "finding",
+          "id": "owner-critic2-need-alternative-2026-11-11"
+        },
+        {
+          "kind": "finding",
+          "id": "owner-round3-need-2026-11-11"
+        }
+      ]
+    },
+    {
+      "cell": "focus.segment.core",
+      "version": 2,
+      "direction": [
+        {
+          "key": "Who",
+          "text": "Clossys and the businesses it starts.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "Situation",
+          "text": "each needs brand, copy and a live site from the agents.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Not",
+          "text": "outside teams until one business runs idea to live on its own.",
+          "refs": [],
+          "line": 12
+        }
+      ],
+      "watch": [
+        {
+          "text": "If outside teams onboarded before one business runs idea to live > 0 by 2027-06-30, then stop and review this cell with the owner.",
+          "refs": [],
+          "line": 19
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "owner-segment-core-2026-11-11"
+        },
+        {
+          "kind": "cell",
+          "ref": {
+            "cell": "aspiration.goal.long-term",
+            "version": 2
+          }
+        }
+      ]
+    },
+    {
+      "cell": "identity.verbal.narrative",
+      "version": 3,
+      "direction": [
+        {
+          "key": "Change",
+          "text": "production is cheap; agents can produce almost anything cheaply.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "Stakes",
+          "text": "judgment is scarce, and it is wasted on redoing production.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Way",
+          "text": "Clossys keeps agents consistent, so people spend judgment where it matters.",
+          "refs": [],
+          "line": 12
+        }
+      ],
+      "watch": [
+        {
+          "text": "If published stories that lead with features rather than judgment > 0 in any month, then return them to Writer.",
+          "refs": [],
+          "line": 19
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "owner-critic-narrative-2026-11-11"
+        },
+        {
+          "kind": "finding",
+          "id": "owner-narrative-2026-11-11"
+        }
+      ]
+    },
+    {
+      "cell": "identity.verbal.voice",
+      "version": 3,
+      "direction": [
+        {
+          "key": "Sound",
+          "text": "plain, specific and calm.",
+          "refs": [],
+          "line": 10
+        },
+        {
+          "key": "Do",
+          "text": "short sentences and concrete nouns.",
+          "refs": [],
+          "line": 11
+        },
+        {
+          "key": "Never",
+          "text": "\"seamless\" or \"magic\".",
+          "refs": [],
+          "line": 12
+        }
+      ],
+      "watch": [
+        {
+          "text": "If public copy using a Never word > 0 in any month, then return it to Writer.",
+          "refs": [],
+          "line": 19
+        }
+      ],
+      "sources": [
+        {
+          "kind": "finding",
+          "id": "owner-voice-2026-11-11"
+        },
+        {
+          "kind": "cell",
+          "ref": {
+            "cell": "identity.brand.essence",
+            "version": 3
+          }
+        }
+      ]
+    }
+  ],
+  "missing": [],
+  "stale": [
+    {
+      "cell": "context.competition.alternative",
+      "version": 2
+    },
+    {
+      "cell": "context.customer.need",
+      "version": 2
+    }
+  ],
+  "fingerprint": "4e1c55e37b5bac74c9f19474d08e096d86f753aab060a15a8614cad98aae398b",
+  "compiledAt": "2026-11-11T17:21:37.077Z"
+}
