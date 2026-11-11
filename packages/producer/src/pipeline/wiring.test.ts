@@ -3,12 +3,12 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runPipelineCli, uncitedStatusFields } from "../cli/pipeline.js";
-import { buildGraph } from "./graph.js";
 import { runPipeline } from "./runner.js";
+import { PACKAGE_ROOT } from "./options.js";
 import { pipelineStatus } from "./status.js";
 import { appendRecord, buildRecord, invocationOf, observe, readRuns, RUN_SCHEMA, sanitizeArgv, storeFile } from "./trace.js";
 import type { RunRecord } from "./trace.js";
-import { buildWiring, RUN_STATES, wiringCitationIssues } from "./wiring.js";
+import { buildWiring, readStepGraph, RUN_STATES, wiringCitationIssues } from "./wiring.js";
 import type { PipelineWiring, WiringNode } from "./wiring.js";
 
 const dirs: string[] = [];
@@ -82,10 +82,10 @@ describe("wiring from run records (mutation proofs)", () => {
     expect(wiring.nodes.every(each => each.state === "never-run" && each.citation === null)).toBe(true);
     expect(wiring.edges).toEqual([]);
     expect(wiring.nodes.every(each => (RUN_STATES as readonly string[]).includes(each.state))).toBe(true);
-    // Steps with no command are listed, not drawn.
-    const graph = buildGraph(root);
-    const manual = graph.nodes.filter(step => step.command.manual !== undefined || (step.command.skill !== undefined && !step.command.cli && step.command.script === undefined));
-    for (const step of manual) expect(wiring.undrawn.map(row => row.step)).toContain(step.id);
+    // Steps that name no command (a skill, a module) are listed, not drawn; step fields come from the generated graph.
+    const graph = readStepGraph();
+    const commandless = graph.nodes.filter(step => !step.command.cli && step.command.script === undefined && step.command.npm === undefined);
+    for (const step of commandless) expect(wiring.undrawn.map(row => row.step)).toContain(step.id);
   });
 
   it("delete a run record -> never run", async () => {
@@ -107,7 +107,7 @@ describe("wiring from run records (mutation proofs)", () => {
 
   it("a step exiting 1 -> failed", async () => {
     const root = workspace();
-    const step = buildGraph(root).nodes.find(each => each.command.script !== undefined)!.id;
+    const step = readStepGraph().nodes.find(each => each.command.script !== undefined)!.id;
     // One command; the exit code it reads decides how it exits, so both runs are the same invocation.
     const read = "const fs = require('node:fs'); fs.readFileSync('clossys/clossys.config.ts'); process.exit(Number(fs.readFileSync('exit.txt', 'utf8')))";
     writeFileSync(join(root, "exit.txt"), "1");
@@ -143,7 +143,7 @@ describe("wiring from run records (mutation proofs)", () => {
   it("draws an edge only where one run wrote a file another run read", async () => {
     const root = workspace();
     await runPipeline(["pipeline", "graph", "--root", root, "--out", join(root, "graph.json")], root);
-    const [writer, reader] = buildGraph(root).nodes.filter(each => each.command.script !== undefined);
+    const [writer, reader] = readStepGraph().nodes.filter(each => each.command.script !== undefined);
     await runPipelineCli(["trace", reader!.id, "--", process.execPath, "-e", "require('node:fs').readFileSync('graph.json')"], root);
     const wiring = buildWiring(root);
     expect(wiring.edges).toEqual([{ from: "pipeline[graph]", to: reader!.id, files: 1, sample: ["graph.json"], fresh: true }]);
@@ -199,5 +199,21 @@ describe("status citations", () => {
     const kept = readRuns(root);
     expect(kept.map(run => run.record.end)).toEqual([3, 4, 5].map(end => new Date(end).toISOString()));
     expect(kept.map(run => run.line)).toEqual([1, 2, 3]);
+  });
+  it("reads steps only from the generated graph file (drop a step from graph.json -> its node is gone)", () => {
+    const root = workspace();
+    const drawn = buildWiring(root).nodes.find(each => readStepGraph().nodes.some(step => step.id === each.step && step.command.cli))!;
+    expect(drawn).toBeDefined();
+    const pkg = realpathSync(mkdtempSync(join(tmpdir(), "wiring-pkg-")));
+    dirs.push(pkg);
+    mkdirSync(join(pkg, "pipeline"));
+    writeFileSync(join(pkg, "package.json"), readFileSync(join(PACKAGE_ROOT, "package.json")));
+    const graph = readStepGraph();
+    writeFileSync(join(pkg, "pipeline", "graph.json"), JSON.stringify({ ...graph, nodes: graph.nodes.filter(step => step.id !== drawn.step) }));
+    const without = buildWiring(root, { packageRoot: pkg });
+    expect(without.nodes.some(each => each.step === drawn.step)).toBe(false);
+    expect(without.nodes.length).toBeGreaterThan(0);
+    writeFileSync(join(pkg, "pipeline", "graph.json"), JSON.stringify({ ...graph, schema: "clossys.pipeline-graph/0" }));
+    expect(() => buildWiring(root, { packageRoot: pkg })).toThrow(/is not a clossys.pipeline-graph\/1 graph/);
   });
 });

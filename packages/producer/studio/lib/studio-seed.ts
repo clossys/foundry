@@ -13,7 +13,7 @@ import { loadSlotDetail } from './slot-detail';
 import type { SlotDetail } from '../../src/server/slot-detail';
 import type { SlotGallerySection } from '../../src/server/slot-gallery';
 import { studioReports, type StudioReport } from './studio-report';
-import type { PipelineGraphFile } from './pipeline-flow';
+import type { PipelineWiringFile } from './pipeline-flow';
 
 export type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
 /** The consumer's brand as its Designer output names it; the mark image is served by Producer. */
@@ -54,13 +54,13 @@ export async function loadSlotGroups(agent: string, signal: AbortSignal): Promis
   return { sections, count: typeof value.count === 'number' ? value.count : 0, ...(publication ? { publication } : {}) };
 }
 
-/** The pipeline graph as Producer serves it: `packages/producer/pipeline/graph.json`, read and nothing else. */
-export async function loadPipeline(signal: AbortSignal): Promise<PipelineGraphFile> {
-  const response = await fetch(producerUrl('/api/pipeline'), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+/** The active wiring as Producer derives it (`clossys pipeline wiring`): the steps that exist and the run records they left, read and nothing else. */
+export async function loadPipeline(signal: AbortSignal): Promise<PipelineWiringFile> {
+  const response = await fetch(producerUrl('/api/pipeline/wiring'), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
   if (!response.ok) throw new StudioCopyError("studio.pipeline.empty.description");
-  const value = await response.json() as { state?: unknown; graph?: PipelineGraphFile };
-  if (value.state !== 'ready' || !value.graph || !Array.isArray(value.graph.nodes) || !Array.isArray(value.graph.edges)) throw new StudioCopyError("studio.pipeline.empty.description");
-  return value.graph;
+  const value = await response.json() as { state?: unknown; wiring?: PipelineWiringFile };
+  if (value.state !== 'ready' || value.wiring?.schema !== 'clossys.pipeline-wiring/1' || !Array.isArray(value.wiring.nodes) || !Array.isArray(value.wiring.edges)) throw new StudioCopyError("studio.pipeline.empty.description");
+  return value.wiring;
 }
 
 export async function loadLeaf(agent: string, slug: string, signal: AbortSignal): Promise<LeafRecord | undefined> {

@@ -2014,12 +2014,12 @@
       "sha256": "e9e9d0bc9572c066a9cfd6db98af0539a88ac563a9dc224b3497fa7b85f699f4"
     },
     {
-      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v13.json",
-      "sha256": "8f972eee9374ab8d7c046d930bcdb2361c69dba276ac9e06b843354f34bf8109"
+      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v14.json",
+      "sha256": "8a910292e26fb910f3cff0636f293a2e691c00398651046e27ad2eb10170f58a"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/pin.json",
-      "sha256": "2b93209b08d7cb2a5b4e6809b79a2de3d7634fc179ad616412f53a542d3e4b00"
+      "sha256": "9f7f930d15792e398389200d016084b652e3ed9e15623e6d68baa30419e5e030"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/slot.json",
@@ -5470,12 +5470,12 @@
       "sha256": "0d974eb32e0459440d7ceefd90c017af5d917dddaac98e8c44ab733f96bd993f"
     },
     {
-      "path": "clossys/agents/writer/strings.common/candidates/studio-v17.md",
-      "sha256": "1212b7ac319cf73359d55006303f901df3c1376750ff58c3c98e0dd10f2bcb26"
+      "path": "clossys/agents/writer/strings.common/candidates/studio-v19.md",
+      "sha256": "b947109baf4a7b05948a0ff24016b3b922a884ca86d0d3745fc65074b6cf9ceb"
     },
     {
       "path": "clossys/agents/writer/strings.common/pin.json",
-      "sha256": "4ec1779e47ccb1a7a9d2030f81e9a28aa637b00a945fdfa80605e22ab5e3472c"
+      "sha256": "cd04419aea2bc6389ad3ac09b8adc4e5025a52c826533253a4b71ae4c2eb5ab5"
     },
     {
       "path": "clossys/agents/writer/strings.common/slot.json",
@@ -6545,7 +6545,7 @@
     },
     {
       "path": "generated/studio-copy.json",
-      "sha256": "5a1525f391b6402d1c5e23540f7b2e5773425ffc69147a89b632e9a0351496b4"
+      "sha256": "a253658ef24a4d273ff8db4f8a1a4243f2309983ca3324642144d3777216fce9"
     },
     {
       "path": "generated/studio-flow-theme.css",
@@ -6557,7 +6557,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "c1a2cefca00d2fed2e678407024309b23f2ee35e2b7eae6e0f24b621e47d9974"
+      "sha256": "e5dbfc42c6b3d0f5a15178bae3dbeadbbddb44f3df6a921656879d9322d5b56e"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6565,7 +6565,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "1fb7847728c884d8452c3ab0d5589c4b89fc58132f0de36262cc9cf427a103f8"
+      "sha256": "a8fd3fd0a734904fbc3a759b7a7bc1919fe44c56da8a55c3b8096b08b129cf2e"
     }
   ]
 }

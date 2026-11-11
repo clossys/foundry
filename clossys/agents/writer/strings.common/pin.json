@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v17.md",
-  "sha256": "1212b7ac319cf73359d55006303f901df3c1376750ff58c3c98e0dd10f2bcb26",
-  "decidedBy": "planner:INTEGRATE-R2",
+  "candidate": "studio-v19.md",
+  "sha256": "b947109baf4a7b05948a0ff24016b3b922a884ca86d0d3745fc65074b6cf9ceb",
+  "decidedBy": "planner:W1b",
   "basis": "planner",
-  "at": "2026-11-05T16:16:17.705Z"
+  "at": "2026-11-11T00:09:13.096Z"
 }

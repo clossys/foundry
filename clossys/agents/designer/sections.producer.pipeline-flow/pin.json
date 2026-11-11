@@ -1,7 +1,7 @@
 {
-  "candidate": "producer-pipeline-flow-v13.json",
-  "sha256": "8f972eee9374ab8d7c046d930bcdb2361c69dba276ac9e06b843354f34bf8109",
-  "decidedBy": "planner:R2F-39",
+  "candidate": "producer-pipeline-flow-v14.json",
+  "sha256": "8a910292e26fb910f3cff0636f293a2e691c00398651046e27ad2eb10170f58a",
+  "decidedBy": "planner:W1b",
   "basis": "planner",
-  "at": "2026-11-10T12:00:05.248Z"
+  "at": "2026-11-11T00:04:36.293Z"
 }

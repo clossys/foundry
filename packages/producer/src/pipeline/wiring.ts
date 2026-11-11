@@ -1,7 +1,8 @@
 /**
  * The real, active wiring: what the pipeline page draws and `clossys pipeline status` prints. It is
  * derived only from what exists and what ran, never from what a step declares it should touch. Step
- * fields are read only through the pipeline graph (graph.ts buildGraph), and runs are keyed by step id:
+ * fields are read only through readStepGraph (the generated pipeline/graph.json, never steps/*.ts), so
+ * the page follows whatever generates that file; runs are keyed by step id:
  *
  *   nodes   the steps whose command exists in this build (a registered CLI handler, or a script or
  *           npm script that is there), one node per invocation that ran (`check --slots
@@ -17,14 +18,13 @@
  *             passed     it exited 0 and every file it read is unchanged
  *           every state but never-run cites its record (store file, line, run id)
  *   layout  computeLayout over the observed edges: lanes are the seat holders, columns the stages
- *   undrawn the declared steps with no command in this build (a manual decision, a skill, a module
+ *   undrawn the declared steps with no command in this build (a skill, a module
  *           no handler runs, a step pending on another branch): listed, never drawn
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ROUNDS, STAGES } from "./define.js";
 import type { StepKind } from "./define.js";
-import { buildGraph } from "./graph.js";
+import { GRAPH_FILE, GRAPH_SCHEMA } from "./graph.js";
 import type { GraphNode, PipelineGraph } from "./graph.js";
 import { HANDLERS } from "./handlers.js";
 import { computeLayout } from "./layout.js";
@@ -100,7 +100,6 @@ export function whyNotRunnable(step: GraphNode, packageRoot = PACKAGE_ROOT): str
   if (command.script !== undefined) return existsSync(join(packageRoot, command.script)) ? null : `script ${command.script} does not exist`;
   if (command.npm !== undefined) return npmScripts(packageRoot)[command.npm] !== undefined ? null : `npm script ${command.npm} does not exist`;
   if (command.skill !== undefined) return `skill only (${command.skill}); no command runs it`;
-  if (command.manual !== undefined) return `manual: ${command.manual}`;
   if (command.module !== undefined) return `module ${[command.module].flat().join(", ")} has no command that runs it`;
   return "names nothing that runs it";
 }
@@ -152,11 +151,22 @@ export function nodeId(step: Pick<GraphNode, "command"> | null, stepId: string, 
   return rest.length ? `${stepId}[${rest.join(" ")}]` : stepId;
 }
 
+/**
+ * The page's one reader of step contracts: the generated graph file (pipeline/graph.json), never
+ * steps/*.ts. When the generator moves to the action registry, the page follows with no rewrite.
+ */
+export function readStepGraph(packageRoot = PACKAGE_ROOT): PipelineGraph {
+  const path = join(packageRoot, GRAPH_FILE);
+  const graph = JSON.parse(readFileSync(path, "utf8")) as PipelineGraph;
+  if (graph?.schema !== GRAPH_SCHEMA || !Array.isArray(graph.nodes)) throw new Error(`${path} is not a ${GRAPH_SCHEMA} graph`);
+  return graph;
+}
+
 export interface WiringOptions { readonly graph?: PipelineGraph; readonly packageRoot?: string; readonly runs?: readonly StoredRun[] }
 
 export function buildWiring(root: string, options: WiringOptions = {}): PipelineWiring {
   const packageRoot = options.packageRoot ?? PACKAGE_ROOT;
-  const graph = options.graph ?? buildGraph(root, undefined, packageRoot);
+  const graph = options.graph ?? readStepGraph(packageRoot);
   const steps = graph.nodes;
   const runs = options.runs ?? readRuns(root);
   const latest = latestRuns(runs);
@@ -223,7 +233,11 @@ export function buildWiring(root: string, options: WiringOptions = {}): Pipeline
   const holders = drafts.map(draft => draft.holder);
   const { nodes: positions, ...layout } = computeLayout(
     drafts.map(draft => ({ id: draft.id, lane: laneOf(draft.holder), stage: draft.stage })), edges,
-    { lanes: laneIds(holders), stages: STAGES, rounds: ROUNDS.map(round => ({ id: round.id, stages: round.stages.map(stage => `${round.id}.${stage}`) })) },
+    {
+      lanes: laneIds(holders),
+      stages: [...graph.layout.stages].sort((a, b) => a.index - b.index).map(stage => stage.id),
+      rounds: [...graph.layout.rounds].sort((a, b) => a.index - b.index).map(round => ({ id: round.id, stages: round.stages })),
+    },
   );
   const counts: Record<RunState, number> = { passed: 0, failed: 0, stale: 0, "never-run": 0 };
   const nodes = drafts.map((draft): WiringNode => {

@@ -1,13 +1,18 @@
 #!/usr/bin/env node
 /**
- * check:pipeline-canvas: the Studio page /content (the Content overview) draws packages/producer/pipeline/graph.json
- * and nothing else. It builds dist/studio from the current source (packages/producer/scripts/build-studio.mjs, the
+ * check:pipeline-canvas: the Studio page /content (the Content overview) draws the active wiring (`clossys pipeline
+ * wiring`: the steps that exist and the run records they left, served at /api/pipeline/wiring) and nothing else;
+ * nothing on it is the declared graph.json. It builds dist/studio from the current source (packages/producer/scripts/build-studio.mjs, the
  * same build check:studio runs), starts the built Producer (`clossys produce`) on the single preview port
  * (packages/producer/studio/checks/studio-origin.mjs, 4503 unless --port), opens the page headless in the
  * Chrome already installed on this machine (playwright, never a downloaded browser) and fails unless
  *
- *   node-ids   the rendered React Flow node ids equal the graph's step ids;
- *   edge-ids   the rendered edge ids equal the graph's edges, as `from->to` (the form check:pipeline uses);
+ *   node-ids   the rendered React Flow node ids equal the wiring's node ids (the server's own, read from the page's
+ *              origin in the same run);
+ *   edge-ids   the rendered edge ids equal the wiring's observed edges (a file one run wrote and another read), as
+ *              `from->to`;
+ *   status     every drawn step's status badge (`data-status`) is the wiring node's state: passed, failed, stale or
+ *              never-run, from its latest run record;
  *   flow-css   React Flow's stylesheet (pinned components.flow.canvas dist/style.css) is applied;
  *   flow-theme the generated --xy-* theme resolves to the pinned tokens (--xy-node-background-color
  *              equals --card on the canvas);
@@ -19,7 +24,9 @@
  *   flow       every edge flows forward: the source's stage is the target's stage or an earlier one, and an
  *              edge inside one stage runs left to right (its source box starts left of its target box);
  *   rank       inside one stage column a lower graph rank starts further left (rank order per stage);
- *   orphan     only a first-stage step may start the flow: every step in a later stage has an edge into it;
+ *   orphan     (a declared graph only) only a first-stage step may start the flow: every step in a later stage has
+ *              an edge into it. The active wiring's edges are observations, so a step that never ran, or whose run
+ *              read no file another run wrote, has none; edge-ids compares them instead;
  *   stage      each stage has exactly one header, and every step sits inside its stage's column (from its
  *              header across to the next stage's header); when graph.json groups the stages in rounds,
  *              each round has exactly one header, above its stages' headers, and every stage header sits
@@ -37,10 +44,13 @@
  *              focused step node opens it too (browser runs only).
  *
  * `--rendered <file>` compares a recorded rendering (`{ nodes: [...], edges: [...] }`, optionally
- * `boxes`, `parts`, `legend`, `titlePx` and `canvas`; `parts` are `{ id, part: "badge" | "title", x, y,
+ * `boxes`, `parts`, `statuses` ({ id: data-status }), `legend`, `titlePx` and `canvas`; `parts` are `{ id, part: "badge" | "title", x, y,
  * width, height }` screen boxes inside step `id`) instead of opening a browser: the same comparison, for the rule fixture.
  *
- * Usage: node scripts/check-pipeline-canvas.mjs [--root CLOSSYS_DIR] [--graph FILE] [--port N]
+ * `--wiring <file>` (or `--graph <file>`, a declared graph of the same shape) is the expected input for a recorded
+ * rendering; a browser run reads the wiring from the Producer it starts.
+ *
+ * Usage: node scripts/check-pipeline-canvas.mjs [--root CLOSSYS_DIR] [--wiring FILE | --graph FILE] [--port N]
  *        [--screenshot FILE] [--sheet-screenshot FILE] [--color-scheme light|dark] [--rendered FILE] [--json]
  * `--sheet-screenshot` also captures the step sheet the sheet test opened by a click on the first step;
  * `--color-scheme` emulates prefers-color-scheme for the run (default light).
@@ -64,10 +74,29 @@ export const READABLE_PX = 12;
 /** How far above the window's bottom edge the canvas may stop and still count as filling it (frame padding). */
 export const FILL_SLACK_PX = 48;
 
-/** The ids a graph.json defines: step ids, and edges as `from->to`. */
+export const WIRING_SCHEMA = "clossys.pipeline-wiring/1";
+/** The active wiring's node states (packages/producer/src/pipeline/wiring.ts RUN_STATES). */
+export const RUN_STATES = Object.freeze(["passed", "failed", "stale", "never-run"]);
+const isWiring = input => input?.schema === WIRING_SCHEMA;
+
+/** The ids an input defines: node ids, and edges as `from->to`. */
 export function graphIds(graph) {
-  if (!graph || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) throw new Error("graph.json has no nodes and edges");
+  if (!graph || !Array.isArray(graph.nodes) || !Array.isArray(graph.edges)) throw new Error("the wiring has no nodes and edges");
   return { nodes: graph.nodes.map(node => node.id), edges: graph.edges.map(edge => `${edge.from}->${edge.to}`) };
+}
+
+/** Findings for the drawn status badges against the wiring: every node shows its latest run's state, and only a run state. */
+export function compareStatuses(wiring, statuses) {
+  const findings = [];
+  if (!isWiring(wiring) || statuses === undefined) return findings;
+  for (const node of wiring.nodes) {
+    if (!RUN_STATES.includes(node.state)) findings.push({ rule: "status", message: `wiring node ${node.id} has state ${node.state}, not a run state` });
+    if (node.state !== "never-run" && !node.citation) findings.push({ rule: "status", message: `wiring node ${node.id} shows ${node.state} without citing a run record` });
+    const drawn = statuses?.[node.id];
+    if (drawn === undefined) findings.push({ rule: "status", message: `step ${node.id} draws no status badge` });
+    else if (drawn !== node.state) findings.push({ rule: "status", message: `step ${node.id} shows ${drawn}, but its latest run record says ${node.state}` });
+  }
+  return findings;
 }
 
 /** Findings for a rendering against the graph: every id missing from, or extra in, the drawing. */
@@ -75,10 +104,10 @@ export function compareRendering(expected, rendered) {
   const findings = [];
   for (const [kind, rule] of [["nodes", "node-ids"], ["edges", "edge-ids"]]) {
     const want = new Set(expected[kind]), have = new Set(rendered[kind] ?? []);
-    if (want.size !== expected[kind].length) findings.push({ rule, message: `graph.json repeats a ${kind.slice(0, -1)} id` });
+    if (want.size !== expected[kind].length) findings.push({ rule, message: `the wiring repeats a ${kind.slice(0, -1)} id` });
     if (have.size !== (rendered[kind] ?? []).length) findings.push({ rule, message: `the page draws a ${kind.slice(0, -1)} id twice` });
     for (const id of want) if (!have.has(id)) findings.push({ rule, message: `${kind.slice(0, -1)} missing from the page: ${id}` });
-    for (const id of have) if (!want.has(id)) findings.push({ rule, message: `${kind.slice(0, -1)} drawn but not in graph.json: ${id}` });
+    for (const id of have) if (!want.has(id)) findings.push({ rule, message: `${kind.slice(0, -1)} drawn but not in the wiring: ${id}` });
   }
   return findings;
 }
@@ -104,9 +133,10 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
     const from = stageIndex.get(nodeOf.get(edge.from)?.layout?.stage), to = stageIndex.get(nodeOf.get(edge.to)?.layout?.stage);
     if (from !== undefined && to !== undefined && from > to) findings.push({ rule: "flow", message: `edge ${edge.from}->${edge.to} runs backward: ${edge.from} (${nodeOf.get(edge.from).layout.stage}) feeds ${edge.to} (${nodeOf.get(edge.to).layout.stage})` });
   }
-  // R-c: only a first-stage step may start the flow; every later step has an edge into it.
+  // R-c: only a first-stage step may start the flow; every later step has an edge into it. A declared
+  // graph only: the wiring's edges are what runs read and wrote, compared by edge-ids.
   const fed = new Set((graph.edges ?? []).map(edge => edge.to));
-  for (const node of graph.nodes ?? []) {
+  for (const node of isWiring(graph) ? [] : graph.nodes ?? []) {
     const stage = node.layout?.stage;
     if (stage !== undefined && stageIndex.has(stage) && stage !== first && !fed.has(node.id)) findings.push({ rule: "orphan", message: `step ${node.id} (${stage}) has no edge into it, so it starts the flow outside ${first}` });
   }
@@ -216,12 +246,12 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
 }
 
 function parseArgs(argv) {
-  const args = { root: join(repo, "clossys"), graph: join(producerDir, "pipeline/graph.json"), port: DEFAULT_PORT, json: false };
+  const args = { root: join(repo, "clossys"), port: DEFAULT_PORT, json: false };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     const value = () => { const next = argv[++i]; if (next === undefined) throw new Error(`${flag} needs a value`); return next; };
     if (flag === "--root") args.root = resolve(value());
-    else if (flag === "--graph") args.graph = resolve(value());
+    else if (flag === "--graph" || flag === "--wiring") args.graph = resolve(value());
     else if (flag === "--port") args.port = Number(value());
     else if (flag === "--screenshot") args.screenshot = resolve(value());
     else if (flag === "--sheet-screenshot") args.sheetScreenshot = resolve(value());
@@ -232,6 +262,7 @@ function parseArgs(argv) {
   }
   if (args.colorScheme !== undefined && !["light", "dark"].includes(args.colorScheme)) throw new Error("--color-scheme must be light or dark");
   if (!Number.isInteger(args.port) || args.port < 1 || args.port > 65535) throw new Error("--port must be 1-65535");
+  if (args.rendered && !args.graph) throw new Error("--rendered needs the expected --wiring (or --graph) file");
   return args;
 }
 
@@ -300,6 +331,7 @@ async function renderPage({ origin, expected, screenshot, sheetScreenshot, color
       const titlePx = titles.length ? Math.min(...titles.map(title => parseFloat(getComputedStyle(title).fontSize) * scale)) : null;
       return {
         nodes: ids('.react-flow__node-step[data-testid^="rf__node-"]', "rf__node-"), edges: ids('[data-testid^="rf__edge-"]', "rf__edge-"),
+        statuses: Object.fromEntries([...document.querySelectorAll('.react-flow__node-step[data-testid^="rf__node-"]')].map(element => [element.getAttribute("data-testid").slice("rf__node-".length), element.querySelector('[data-slot="badge"][data-status]')?.getAttribute("data-status")]).filter(([, status]) => status)),
         boxes: [...document.querySelectorAll('.react-flow__node[data-testid^="rf__node-"]')].map(element => {
           const id = element.getAttribute("data-testid").slice("rf__node-".length);
           const kind = element.classList.contains("react-flow__node-lane") ? "lane" : element.classList.contains("react-flow__node-stage") ? "stage" : element.classList.contains("react-flow__node-round") ? "round" : "step";
@@ -359,19 +391,25 @@ async function renderPage({ origin, expected, screenshot, sheetScreenshot, color
 }
 
 export async function checkPipelineCanvas(args) {
-  const graph = JSON.parse(readFileSync(args.graph, "utf8"));
-  const expected = graphIds(graph);
   if (args.rendered) {
+    const graph = JSON.parse(readFileSync(args.graph, "utf8"));
+    const expected = graphIds(graph);
     const rendered = JSON.parse(readFileSync(args.rendered, "utf8"));
-    return { expected, rendered, findings: [...compareRendering(expected, rendered), ...checkGeometry(graph, rendered)] };
+    return { expected, rendered, findings: [...compareRendering(expected, rendered), ...compareStatuses(graph, rendered.statuses), ...checkGeometry(graph, rendered)] };
   }
   const producer = await startProducer(args);
   try {
+    // The expected wiring is the one the started Producer serves the page: the same run records, read once.
+    const served = await fetch(`${producer.origin}/api/pipeline/wiring`).then(response => response.json());
+    if (served?.state !== "ready" || !isWiring(served.wiring)) throw envError("/api/pipeline/wiring did not answer a clossys.pipeline-wiring/1 wiring");
+    const graph = served.wiring;
+    const expected = graphIds(graph);
     const rendered = await renderPage({ origin: producer.origin, expected, screenshot: args.screenshot, sheetScreenshot: args.sheetScreenshot, colorScheme: args.colorScheme });
     const findings = [];
     if (rendered.status !== 200) findings.push({ rule: "page", message: `${ROUTE} answered ${rendered.status}` });
     for (const error of rendered.errors) findings.push({ rule: "page", message: error.split("\n")[0] });
     findings.push(...compareRendering(expected, rendered));
+    findings.push(...compareStatuses(graph, rendered.statuses));
     if (rendered.nodes.length && rendered.nodePosition !== "absolute") findings.push({ rule: "flow-css", message: `React Flow's stylesheet is not applied (.react-flow__node is position ${rendered.nodePosition})` });
     findings.push(...checkGeometry(graph, rendered));
     if (rendered.nodes.length && (!rendered.xyNodeBackground || rendered.xyNodeBackground !== rendered.card)) findings.push({ rule: "flow-theme", message: `--xy-node-background-color (${rendered.xyNodeBackground || "unset"}) is not the pinned --card (${rendered.card || "unset"})` });
