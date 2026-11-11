@@ -25,7 +25,8 @@ root gate and runs after `check:pipeline`. Its header lists one failure rule per
 | `kind` | yes | One of `plumb`, `decide:creative` or `decide:judgment`. |
 | `stage` | yes | `<round>.<stage>`, taken from `define.ts` `STAGES`. |
 | `summary` | yes | One sentence. |
-| `run` / `gap` | exactly one | `run` is one `clossys` command, run from the action's package directory. `gap` is `{unit, reason}`: a decision that has no clossys verb yet, together with the backlog unit that adds one. Only a decide action may be a gap. |
+| `run` / `gap` | exactly one | `run` is one `clossys` command, run from the action's package directory. `gap` is `{unit, reason, awaits}`: a decision that has no clossys verb yet, the backlog unit that adds one, and the `clossys <verb>` it awaits. Only a decide action may be a gap. A gap whose awaited verb the CLI now has fails as `gap.stale`. |
+| `chain` | plumb, when `run` has a placeholder | What `clossys run` executes: the run with each `<placeholder>` filled (same verb, flags and order), or `{skip}` with why the chain never runs the step (a server, a caller-chosen target). Absent, the chain runs `run` itself. A decide action never names a chain. |
 | `inputs` / `outputs` | yes | Typed ports `{glob, schema}`. Every schema is a file under `pipeline/schemas/`. Globs are workspace-relative. `pkg:` is relative to this package, `arg:` is a path the caller passes, and `#field` names one field of the file (the port uses the file's schema). |
 | `pass` | yes | `{command, exit}`. This is the check that decides pass or fail, never "it ran". `command` is a `clossys` command, and `exit` is always `{pass:[0], fail:[1], error:[2]}`. |
 | `record` | yes | Always `clossys.pipeline-run/1`, W1b's run-record format. Rows go to `.clossys/runs/<step>.jsonl`. |
@@ -107,7 +108,7 @@ The inputs above are trimmed; the file lists every candidate port.
 {
   "schema": "clossys.action/1", "id": "writer.candidates", "agent": "writer", "kind": "decide:creative", "stage": "design.make",
   "summary": "Create Writer candidates: one immutable file per option, per L3 slot.",
-  "gap": { "unit": "W6a", "reason": "no clossys verb records a candidate yet; the agent's skill writes through writeCandidate" },
+  "run": "clossys next writer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file>",
   "inputs": [{ "glob": "clossys/agents/director/*/pin.json", "schema": "pin" }, { "glob": "clossys/agents/writer/*/slot.json", "schema": "slot" }],
   "outputs": [{ "glob": "clossys/agents/writer/*/candidates/*", "schema": "candidate-strings" }],
   "pass": { "command": "clossys check", "exit": { "pass": [0], "fail": [1], "error": [2] } },
@@ -134,6 +135,24 @@ The inputs above are trimmed; the file lists every candidate port.
   "skill": "skill.md", "open": "slots-undecided:designer"
 }
 ```
+
+## The chain (`clossys run`, `clossys next`)
+
+`clossys run [--from <step>] [--until <step>] [--dry]` walks the steps in pipeline order. A plumb
+step whose last run record is fresh (no input hash changed) is skipped; any other runs its `chain`
+(or `run`) command, which records its own run. The walk stops red at a failed plumb step (a failed
+run record is written) and stops at the first decide step with open work. It makes no model calls.
+`clossys run --explain` prints the graph: step, agent, kind, decider and last run state.
+
+`clossys next [--json]` prints that open decide step as a packet: the compiled brief, the slot
+contract, the options, the output path and schema, the checks, the decider (from the seat), the
+step's `skill.md` with its hash, and the command that records the answer. `clossys next --owner
+--json` lists every open owner packet in order, each as a multiple-choice question whose options map
+to exact verb arguments. `clossys next <agent>/<slot> --submit <file> --model <id> --tier <tier>
+--basis <basis> --skill <file>` records a candidate: the skill must be the contract's own, the
+model and tier must match the seat, and the file must pass its schema and the slot model; a refused
+submission writes nothing and records no run. An accepted one records the model, tier, basis, skill
+hash and output hash in its run record.
 
 ## Adding or changing a step
 
