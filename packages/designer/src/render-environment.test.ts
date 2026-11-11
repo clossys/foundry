@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { RENDER_ENVIRONMENT } from "./render-environment.js";
@@ -40,7 +40,8 @@ it("resolves canonical Frames from its real compiled public entry and refuses th
   expect(importKeysNormally("index.js")).not.toContain("AppFrameSpecimen");
   expect(importKeysNormally("studio/index.js")).toContain("AppFrameSpecimen");
   expect(probeUnderReactServer("frames/index.js").ok).toBe(false);
-});
+  // planner:wd-reg: six sequential compiled-entry spawns (~1 s each) cannot fit the 5 s default; same budget as the line-74 spawn test.
+}, 30_000);
 
 
 it("retains the AccountMenu client export and typed host-data contract without a server export", () => {
@@ -326,7 +327,8 @@ describe("no regression: every existing subpath still resolves normally (test 3)
 
   for (const [subpath, entry] of jsSubpaths) {
     it(`${subpath} still imports without throwing (no regression)`, () => {
-      const distRelPath = entry.import.replace(/^\.\/dist\//, "");
+      // planner:wd-reg: ./shadcn-flavor and ./ref-verbatim ship from scripts/, not dist/; resolve every entry from the package root.
+      const distRelPath = relative(distDir, join(packageRoot, entry.import));
       expect(() => importKeysNormally(distRelPath)).not.toThrow();
     });
   }

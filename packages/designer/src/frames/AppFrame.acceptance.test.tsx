@@ -126,11 +126,19 @@ describe("AppFrame acceptance", () => {
     await user.keyboard(apple ? "{Meta>}k{/Meta}" : "{Control>}k{/Control}");
     const search = await screen.findByRole("searchbox", { name: "Search commands" });
     await user.type(search, "Open p");
-    expect(screen.getAllByRole("option")).toHaveLength(1);
-    expect(screen.getByRole("option", { name: "Open projects" })).toHaveAttribute("href", "#projects");
+    // Stock shadcn@aria Command is an Autocomplete over a Menu: rows are menuitems and the
+    // selection is virtual focus (aria-activedescendant + data-focused), as CommandMenu.test pins.
+    expect(screen.getAllByRole("menuitem")).toHaveLength(1);
+    expect(screen.getByRole("menuitem", { name: "Open projects" })).toHaveAttribute("href", "#projects");
     await user.clear(search); await user.type(search, "Open");
+    // RAC 1.21 Autocomplete starts with no focused row after an edit, and publishes
+    // aria-activedescendant after its screen-reader delay; ArrowDown walks rows in order.
     await user.keyboard("{ArrowDown}");
-    expect(screen.getByRole("option", { name: "Open projects" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("menuitem", { name: "Open home" })).toHaveAttribute("data-focused", "true");
+    await user.keyboard("{ArrowDown}");
+    const selected = screen.getByRole("menuitem", { name: "Open projects" });
+    expect(selected).toHaveAttribute("data-focused", "true");
+    await waitFor(() => expect(search).toHaveAttribute("aria-activedescendant", selected.id), { timeout: 2000 });
     await user.keyboard("{Enter}");
     await waitFor(() => expect(window.location.hash).toBe("#projects"));
     await waitFor(() => expect(trigger).toHaveFocus());

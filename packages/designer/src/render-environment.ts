@@ -83,5 +83,11 @@ export const RENDER_ENVIRONMENT: Readonly<Record<string, RenderEnvironment>> = {
   "./studio": "client-only",
   "./studio/queries": "server-safe",
   "./studio/state": "client-only",
+  // Measured under --conditions=react-server (WD-REG): route.js reads useContext at module scope; the rest import cleanly.
+  "./studio/route": "client-only",
+  "./studio/route/server": "server-safe",
+  "./frames/error": "server-safe",
+  "./shadcn-flavor": "server-safe",
+  "./ref-verbatim": "server-safe",
   "./render-environment": "server-safe",
 };

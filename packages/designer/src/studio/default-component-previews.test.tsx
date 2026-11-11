@@ -10,10 +10,11 @@ const profile = () => ({ selectionHash: profileData.selectionHash, components: s
 // 59 -> 67: ab36457b2 adopts the eight composed defaults (command, dropdown-menu, empty, item, rich-text, scroll-area, sheet, sidebar).
 // 67 -> 75 (planner:R2F-15b): generate-default-component-preview.mjs selects the eight owner-signed components.specimen-*
 // leaves (25a8fc7b2) once R2F-33d1 ships their preview-runtime modules.
-it("renders all 75 selected default component leaves with zero unavailable previews", () => {
+// 75 -> 69 (planner:wd-reg): R2F-53 (2e12f31e5) deleted the six zero-caller chart fills; the regenerated profile (82b9f070e) drops them.
+it("renders all 69 selected default component leaves with zero unavailable previews", () => {
   const selected = profile();
   const leaves = Object.keys(selected.components.components);
-  expect(leaves).toHaveLength(75);
+  expect(leaves).toHaveLength(69);
   const failures: Record<string,string> = {};
   for (const leaf of leaves) {
     const node = defaultComponentPreviews.preview(leaf, selected);

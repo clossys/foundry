@@ -84,6 +84,12 @@ const designerLandedExports = [
   "@clossys/designer/studio/route",
   "@clossys/designer/studio/route/server",
 ];
+// WD-REG: server entries that carry stock shadcn@aria members (Badge, Card, Alert) and so the
+// stock `cn` dependencies (clsx, tailwind-merge).
+const STOCK_UTILS_SERVER_ENTRIES = ["@clossys/designer/components/server", "@clossys/designer/blocks/server"];
+// WD-REG: the full client barrels that export a stock member backed by a single optional UI
+// peer (lucide-react, media-chrome, sonner).
+const STOCK_PEER_CLIENT_ENTRIES = ["@clossys/designer/components", "@clossys/designer/blocks"];
 const publisherLandedExports = [
   "@clossys/publisher/archetypes",
   "@clossys/publisher/content",
@@ -259,11 +265,12 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/designer/studio/state": "rejects",
       ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
     },
+    // WD-REG, measured 2026-11-10: the stock shadcn@aria fills declare clsx and tailwind-merge as
+    // dependencies (catalog/fills/shadcn@aria/components.{badge,card,banner}.json `deps`), and their
+    // stock `cn` imports both statically. R2F-29 put stock Badge, Card and Alert in the server
+    // entries, so blocks/server, components/server and react-server frames now reject too.
     "clsx": {
-      ...omissionRow(designerExports, designerClientExports),
-      // WCx: measured 2026-11-10; the server entries now reach the stock cn() helper.
-      "@clossys/designer/components/server": "rejects",
-      "@clossys/designer/blocks/server": "rejects",
+      ...omissionRow(designerExports, [...designerClientExports, ...STOCK_UTILS_SERVER_ENTRIES]),
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -273,14 +280,12 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/designer/studio/state": "rejects",
       ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
     },
-    // R2F-52: lucide-react is the stock shadcn icon set behind Icon, Spinner and
-    // the stock button slots. WCx: measured 2026-11-10 with
-    // `npm run check:packed-consumer -- --package @clossys/designer`; the stock
-    // Spinner puts it on components/server, and the theme entry does not reach it.
+    // R2F-52: lucide-react is the stock shadcn icon set behind Icon, Spinner and the stock button
+    // slots. WD-REG measured 2026-11-10: only the full client barrels reject; the server entries'
+    // Spinner and LinkButton keep their deferred stock boundary when the peer is absent
+    // (runtime/absent-peer.ts), and shell and theme never reach it.
     "lucide-react": {
-      ...omissionRow(designerExports, designerClientExports),
-      "@clossys/designer/components/server": "rejects",
-      "@clossys/designer/theme": "imports",
+      ...omissionRow(designerExports, STOCK_PEER_CLIENT_ENTRIES),
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -290,11 +295,21 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/designer/studio/state": "rejects",
       ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
     },
-    // R2F-53: media-chrome (Kibo video-player) is an optional peer. WCx: measured 2026-11-10;
-    // the theme entry does not reach it.
+    // R2F-53: media-chrome backs MediaPlayer; sonner backs Toaster, which the shell mounts.
+    // Measured 2026-11-10 (WD-REG): only the client barrels that export them reject.
     "media-chrome": {
-      ...omissionRow(designerExports, designerClientExports),
-      "@clossys/designer/theme": "imports",
+      ...omissionRow(designerExports, STOCK_PEER_CLIENT_ENTRIES),
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("rejects", "imports"),
+      "@clossys/designer/studio": "rejects",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "rejects",
+      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
+    },
+    "sonner": {
+      ...omissionRow(designerExports, [...STOCK_PEER_CLIENT_ENTRIES, "@clossys/designer/shell"]),
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
@@ -350,19 +365,6 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/designer/studio/state": "rejects",
       ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
     },
-    // R2F-53: sonner (Toast) is an optional peer. Mirrors clsx; NOT yet runtime-measured: the 2026-11-10
-    // WCx run stops first at the react-dom row (components/server now rejects without react-dom).
-    sonner: {
-      ...omissionRow(designerExports, designerClientExports),
-      "@clossys/designer/catalog": "imports",
-      "@clossys/designer/catalog-bundles": "imports",
-      "@clossys/designer/catalog/server": "imports",
-      "@clossys/designer/frames": conditionOutcomes("rejects", "imports"),
-      "@clossys/designer/studio": "rejects",
-      "@clossys/designer/studio/queries": "imports",
-      "@clossys/designer/studio/state": "rejects",
-      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
-    },
     // #749: components/internal/cx.ts used to import tailwind-merge STATICALLY,
     // so every one of designerReactExports (the entry points that reach
     // it) rejected the moment tailwind-merge was omitted -- a bare
@@ -377,12 +379,17 @@ export const OPTIONAL_PEER_POLICY = {
     // retired the old row (which this test caught drifting from reality).
     // Measured 2026-11-04: studio and studio/state now reject (WholeStudioProvider reaches
     // the Studio board graph); every other entry point still imports.
+    // WD-REG, measured 2026-11-10: the stock shadcn@aria components (R2F-28..R2F-53) import the
+    // stock `cn` (components/preview-runtime/components/_parts/utils), which imports tailwind-merge
+    // statically, and their fills declare it as a dependency (see the clsx row). Designer's own
+    // cn still degrades as above, but every entry that carries a stock component now rejects.
+    // Whether tailwind-merge stays an optional peer is an owner decision (WD-REG report).
     "tailwind-merge": {
-      ...omissionRow(designerExports),
+      ...omissionRow(designerExports, [...designerClientExports, ...STOCK_UTILS_SERVER_ENTRIES]),
       "@clossys/designer/catalog": "imports",
       "@clossys/designer/catalog-bundles": "imports",
       "@clossys/designer/catalog/server": "imports",
-      "@clossys/designer/frames": conditionOutcomes("imports", "imports"),
+      "@clossys/designer/frames": conditionOutcomes("rejects", "rejects"),
       "@clossys/designer/studio": "rejects",
       "@clossys/designer/studio/queries": "imports",
       "@clossys/designer/studio/state": "rejects",

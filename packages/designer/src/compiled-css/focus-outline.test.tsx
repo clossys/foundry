@@ -51,7 +51,9 @@ describe("compiled focus-outline cascade", () => {
     expect(outlineNoneRule).toMatch(/--tw-outline-style:\s*none/);
     expect(focusWidthRule).toMatch(/outline-width:\s*2px/);
     expect(focusOffsetRule).toMatch(/outline-offset:\s*2px/);
-    expect(focusColorRule).toMatch(/outline-color:\s*var\(--color-accent/);
+    // planner:wd-reg: after the P0 shadcn reset --color-primary is var(--primary) (theme-keys.css, 931102357) and the legacy
+    // brand/action colour maps to primary (legacy-color-map.json); the emitted brand CSS defines --primary in both modes.
+    expect(focusColorRule).toMatch(/outline-color:\s*var\(--primary\)/);
     for (const control of controls) {
       expect(control).toBeInstanceOf(HTMLElement);
       expect(resolvedFocusOutlineStyle((control as HTMLElement).className)).toBe("solid");

@@ -69,16 +69,21 @@ const ledger = (rows: ReturnType<typeof planComponentDefaults>["rows"]) => Objec
 const EXPECTED_DEFAULTS = {
   sidebar: "shadcn@aria", command: "shadcn@aria", sheet: "shadcn@aria", empty: "shadcn@aria", item: "shadcn@aria", "scroll-area": "shadcn@aria", "dropdown-menu": "shadcn@aria",
   avatar: "shadcn@aria", badge: "shadcn@aria", banner: "shadcn@aria", breadcrumbs: "shadcn@aria", button: "shadcn@aria", calendar: "shadcn@aria", card: "shadcn@aria",
-  "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
-  "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "shadcn@aria", "color-picker": "foundry", "combo-box": "shadcn@aria",
+  "chart-area": "foundry", "chart-bar": "foundry", "chart-line": "foundry", checkbox: "shadcn@aria", "color-picker": "foundry", "combo-box": "shadcn@aria",
   "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "compose:field@1", "grid-list": "foundry", "file-trigger": "compose:file-trigger@1", form: "foundry", icon: "derive:icon@1", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   menu: "shadcn@aria", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "shadcn@aria",
   "resize-handle": "foundry", "search-field": "foundry", select: "shadcn@aria", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "shadcn@aria", slider: "shadcn@aria",
   spinner: "foundry", "status-mark": "foundry", switch: "shadcn@aria", table: "shadcn@aria", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "compose:text-field@1", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
   toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
+  // planner:wd-reg: rich-text (6463e7e59) and the eight owner-signed specimen leaves (25a8fc7b2) are registered and defaulted.
+  "rich-text": "shadcn@aria", "specimen-copy-in-context": "foundry", "specimen-grid": "foundry", "specimen-ladder": "foundry", "specimen-matrix": "foundry",
+  "specimen-passage": "foundry", "specimen-player": "foundry", "specimen-swatch": "foundry", "specimen-viewport": "foundry",
 };
 /** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar, TagGroup and Tree are Foundry's since their measured K5 craft comparison passes. */
-const NOT_CHOSEN: string[] = [];
+// planner:wd-reg: R2F-53 (2e12f31e5) deleted the six zero-caller chart fills, so those draft slots have no candidate;
+// media-player reads assets.image and assets.video, which this defaults consumer (themes and icon glyphs only) does not adopt.
+const DELETED_CHARTS = ["chart-heatmap", "chart-range", "chart-scatter", "chart-sparkline", "chart-status-strip", "chart-waterfall"];
+const NOT_CHOSEN: string[] = [...DELETED_CHARTS, "media-player"];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -127,6 +132,8 @@ describe("component default fills", () => {
       expect(row.source ?? row.rule, leaf).toBeUndefined();
       expect(row.reasons.length, leaf).toBeGreaterThan(0);
     }
+    for (const leaf of DELETED_CHARTS) expect(reasons(plan, leaf), leaf).toBe("no implementation candidate");
+    expect(reasons(plan, "media-player")).toBe("foundry: K3 Asset read assets.image does not resolve; K3 Asset read assets.video does not resolve");
     // The consumed table follows the approved shadcn owner pick with its complete public API.
     expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "default", basis: "owner-pick", source: "shadcn@aria", fill: "shadcn@aria/components.table", reasons: [] });
     // With K11 at 0 a mixed controls group is coherent, so the slider takes the preferred shadcn@aria fill.
@@ -142,8 +149,9 @@ describe("component default fills", () => {
     const plan = planComponentDefaults(input);
     expect(plan.rows.filter(row => row.source === "rac-starter")).toEqual([]);
     // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) + slider (vf23) + tag-group and tree (vf30) = 59.
-    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(66);
-    expect(plan.rows).toHaveLength(66);
+    // 66 -> 69 chosen of 66 -> 76 rows (planner:wd-reg): +rich-text, +8 specimen leaves, +media-player (unchosen), -6 deleted charts (unchosen).
+    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(69);
+    expect(plan.rows).toHaveLength(76);
     const forced = Object.fromEntries(starterSlots.map(slot => [slot, "rac-starter"]));
     for (const plan of [planComponentDefaults({ ...input, picks: forced }), planComponentDefaults({ ...input, choices: forced })]) {
       for (const slot of starterSlots) {
@@ -166,8 +174,8 @@ describe("component default fills", () => {
     expect(adopted.components.fills.map(doc => componentOf(doc).slot).sort()).toEqual(plan.decisions.map(row => row.slot).sort());
     const seen = new Set<string>();
     for (const row of plan.decisions) {
-      // A registered composition (date-picker) is adopted by rule and reads its inputs directly; a fill reads its own graph.
-      const reads = row.kind === "compose" ? row.reads : (() => {
+      // A registered composition (date-picker) or derive rule (icon) is adopted by rule and reads its inputs directly; a fill reads its own graph.
+      const reads = row.kind === "compose" || row.kind === "derive" ? row.reads : (() => {
         const fill = componentOf(input.catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].id === (row as { fill: string }).fill)!);
         return [...fill.composes, ...fill.reads.components];
       })();
@@ -324,10 +332,19 @@ describe("component default fills", () => {
     expect(unbundled.findings).toEqual([]);
   });
   it("eligibility follows the consumer's own values: an unresolved token read keeps the owner pick unchosen", () => {
-    const { input } = setup({}, ["foundry", "shadcn@aria"]);
-    const plan = planComponentDefaults(input);
-    expect(plan.rows.find(row => row.slot === "components.tooltip")).toMatchObject({ status: "not-chosen" });
-    expect(reasons(plan, "tooltip")).toMatch(/^shadcn@aria: .*K3 Token read themes\.radius\.subtle does not resolve.* \|\| owner pick shadcn@aria is not eligible/);
-    expect(plan.findings).toEqual([]);
+    // planner:wd-reg: every themes leaf now has a single value source (P0 shadcn reset), so a value order can no longer drop
+    // themes.radius.subtle. The consumer instead lacks one token the owner-picked Tooltip reads; with it, the pick holds.
+    const { input } = setup();
+    const tooltip = (plan: ReturnType<typeof planComponentDefaults>) => plan.rows.find(row => row.slot === "components.tooltip");
+    expect(tooltip(planComponentDefaults(input))).toMatchObject({ status: "default", basis: "owner-pick", source: "shadcn@aria" });
+    const fill = componentOf(input.catalog.fills.find(doc => doc.$extensions["com.clossys.fill"].id === "shadcn@aria/components.tooltip")!);
+    const read = "themes.background.default";
+    expect(fill.reads.themes).toContain(read); expect(input.tokens[read]).toBeDefined();
+    const { [read]: _unresolved, ...tokens } = input.tokens;
+    const plan = planComponentDefaults({ ...input, tokens });
+    expect(tooltip(plan)).toMatchObject({ status: "not-chosen" });
+    expect(reasons(plan, "tooltip")).toMatch(/^shadcn@aria: .*K3 Token read themes\.background\.default does not resolve.* \|\| owner pick shadcn@aria is not eligible/);
+    // The registered field composition reads the same token, so the plan names it exactly; nothing else is found.
+    expect(plan.findings).toEqual([{ code: "K3", rule: "K3", severity: "error", subject: "components.field", message: "Token read themes.background.default does not resolve" }]);
   });
 });
