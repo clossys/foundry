@@ -1,7 +1,12 @@
 {
   "candidate": "studio-moat-v4.md",
   "sha256": "6ed57b079bb54aeb0ecb1f68a3855edd02f3e083b1176975f8232d3deb07682f",
-  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
-  "basis": "bulk",
-  "at": "2026-11-11T22:47:49.960Z"
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:13.542Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:48.192Z"
+  }
 }

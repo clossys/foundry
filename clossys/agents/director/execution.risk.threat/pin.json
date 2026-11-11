@@ -1,7 +1,12 @@
 {
   "candidate": "studio-threat-v7.md",
   "sha256": "8c8fbd24ef750997c5b3b1742f5d9e292f846c9264c405d0e834650e49d8e232",
-  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
-  "basis": "bulk",
-  "at": "2026-11-11T22:47:56.987Z"
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:21.402Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:54.464Z"
+  }
 }

@@ -1,7 +1,12 @@
 {
   "candidate": "studio-release-v6.md",
   "sha256": "8979305c135c899d9997669c9ce4ed2911b2bfea61a4c0ae91af6ab8af3472aa",
-  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
-  "basis": "bulk",
-  "at": "2026-11-11T22:47:56.160Z"
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:22.144Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:53.724Z"
+  }
 }

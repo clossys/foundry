@@ -1,7 +1,12 @@
 {
   "candidate": "studio-competency-critical-v7.md",
   "sha256": "04fd8330df31585c73dfea31f52f797880e15f6f666255fc2bd00e28b9b3d35d",
-  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
-  "basis": "bulk",
-  "at": "2026-11-11T22:47:51.595Z"
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:15.041Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:49.665Z"
+  }
 }
