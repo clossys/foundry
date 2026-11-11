@@ -14,6 +14,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * import touched `cx`, even though nothing they imported was documented
  * as needing it. See `cx.ts`'s own header for the fix.
  *
+ * C5-DRT (owner D1, 2026-11-11): tailwind-merge is now a runtime
+ * `dependencies` entry, not an optional peer, so a normal install always
+ * has it. The degrade path stays pinned here as defense in depth (a broken
+ * or pruned install), not as a supported consumer configuration.
+ *
  * `vi.mock` below makes THIS test file's own resolution of
  * `"tailwind-merge"` throw, the same shape of failure Node's real
  * resolver produces for a package that genuinely is not installed —

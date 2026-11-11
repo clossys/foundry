@@ -14,6 +14,7 @@ import {
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
   peerDependencies: Record<string, string>;
+  dependencies: Record<string, string>;
 };
 
 describe("declared peer ranges", () => {
@@ -21,7 +22,8 @@ describe("declared peer ranges", () => {
     expect(REACT_DECLARED_RANGE).toBe(packageJson.peerDependencies["react"]);
     expect(REACT_DOM_DECLARED_RANGE).toBe(packageJson.peerDependencies["react-dom"]);
     expect(REACT_ARIA_COMPONENTS_DECLARED_RANGE).toBe(packageJson.peerDependencies["react-aria-components"]);
-    expect(TAILWIND_MERGE_DECLARED_RANGE).toBe(packageJson.peerDependencies["tailwind-merge"]);
+    // Owner D1 (2026-11-11): tailwind-merge is a runtime dependency; the version guard checks the same declared range.
+    expect(TAILWIND_MERGE_DECLARED_RANGE).toBe(packageJson.dependencies["tailwind-merge"]);
     expect(TAILWINDCSS_DECLARED_RANGE).toBe(packageJson.peerDependencies["tailwindcss"]);
     expect(INTERNATIONALIZED_DATE_DECLARED_RANGE).toBe(packageJson.peerDependencies["@internationalized/date"]);
   });

@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { RENDER_ENVIRONMENT } from "./render-environment.js";
 import ts from "typescript";
 
@@ -23,6 +23,11 @@ import ts from "typescript";
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = join(packageRoot, "dist");
 
+// C5-DRT: file-level budget for this spawn-heavy contract file. Each test spawns node against the
+// real dist (or type-checks emitted barrels), ~1-5 s apiece under a loaded machine, so the 5 s default
+// timed out whichever tests landed on a busy moment. An explicit per-test budget still overrides it.
+vi.setConfig({ testTimeout: 30_000 });
+
 if (!existsSync(distDir)) {
   throw new Error(
     `render-environment.test.ts requires a built dist/ (run "npm run build" in ${packageRoot} first) — ` +
@@ -32,6 +37,31 @@ if (!existsSync(distDir)) {
 }
 
 type ProbeResult = { ok: true } | { ok: false; message: string };
+
+/**
+ * Owner D3 (2026-11-11): a server-rendered graph gets its component selections from the pinned
+ * selection file, the same source the Studio client and the in-process Vitest harness use
+ * (studio/default-component-preview-profile.json, read through marketingComponentSelection). A
+ * spawned server render therefore wraps its tree in that selection's provider (`Pinned`). There is
+ * no implicit default: without the provider a leaf still refuses with "NEED component selection".
+ * Under react-server the graph emits selected-leaf references (resolved at the client boundary),
+ * so those proofs check every emitted leaf is chosen in the pinned file, then render the same
+ * props with the pinned selection to prove the semantic output.
+ */
+const PINNED_SELECTION_FILE = join(distDir, "studio/default-component-preview-profile.json");
+const PINNED_PROVIDER = `import {MarketingComponentProvider as Pinned} from ${JSON.stringify(join(distDir, "studio/marketing-component-selection.js"))};`;
+/** Leaf ids chosen in the pinned selection file. */
+function pinnedLeaves(): ReadonlySet<string> {
+  return new Set(Object.keys((JSON.parse(readFileSync(PINNED_SELECTION_FILE, "utf8")) as { components: Record<string, unknown> }).components));
+}
+/** Walks a react-server element tree: intrinsic nodes plus the component leaves it references. */
+const SERVER_WALK = `function walk(node, out = { nodes: [], leaves: [] }) { if (Array.isArray(node)) { for (const child of node) walk(child, out); return out; } if (!node || typeof node !== "object" || !node.props) return out; if (typeof node.type === "function") return walk(node.type(node.props), out); const leaf = node.type && typeof node.type.displayName === "string" && /^components\\./.test(node.type.displayName) ? node.type.displayName.split(".").slice(0, 2).join(".") : undefined; if (leaf) out.leaves.push(leaf); else if (typeof node.type === "string") out.nodes.push(node); walk(node.props.children, out); return out; }`;
+/** Asserts the react-server graph referenced only leaves the pinned selection file chooses. */
+function expectPinnedLeaves(leaves: readonly string[], expected: readonly string[]): void {
+  const pinned = pinnedLeaves();
+  expect([...new Set(leaves)].sort()).toEqual([...expected].sort());
+  for (const leaf of leaves) expect(pinned.has(leaf), `NEED component selection: ${leaf} is not chosen in the pinned selection file`).toBe(true);
+}
 
 it("resolves canonical Frames from its real compiled public entry and refuses the server condition", () => {
   expect(RENDER_ENVIRONMENT["./frames"]).toBe("client-only");
@@ -202,20 +232,36 @@ it("imports and calls the compiled TableOfContents server graph under react-serv
   const result = probeUnderReactServer("blocks/TableOfContents.server.js");
   expect(result.ok, result.ok ? undefined : result.message).toBe(true);
   const absolute = join(distDir, "blocks/TableOfContents.server.js");
-  const script = `import {TableOfContents} from ${JSON.stringify(absolute)}; function nodes(node){if(Array.isArray(node))return node.flatMap(nodes);if(!node||typeof node!=="object"||!node.props)return [];if(typeof node.type==="function")return nodes(node.type(node.props));return [node,...nodes(node.props.children)];} const tree=nodes(TableOfContents({label:"On this page",items:[{id:"a",label:"One"},{id:"b",label:"Two"},{id:"c",label:"Three"}],currentId:"b"})); if(tree.filter(n=>n.type==="nav"&&n.props["aria-label"]==="On this page").length!==1||tree.filter(n=>n.type==="a").length!==3||tree.filter(n=>n.type==="a"&&n.props["aria-current"]==="location").length!==1)throw new Error("missing semantic table of contents");process.stdout.write("OK");`;
-  expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+  const props = { label: "On this page", items: [{ id: "a", label: "One" }, { id: "b", label: "Two" }, { id: "c", label: "Three" }], currentId: "b" };
+  // planner:c5-drt (D3): react-server emits selected leaves (semantic-content nav, link anchors), never a default implementation.
+  const server = `import {TableOfContents} from ${JSON.stringify(absolute)}; ${SERVER_WALK} const out = walk(TableOfContents(${JSON.stringify(props)})); process.stdout.write(JSON.stringify(out.leaves));`;
+  expectPinnedLeaves(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", server], { encoding: "utf8", timeout: 10_000 })), ["components.link", "components.semantic-content"]);
+  const rendered = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {TableOfContents} from ${JSON.stringify(absolute)}; ${PINNED_PROVIDER} process.stdout.write(renderToStaticMarkup(h(Pinned, null, h(TableOfContents, ${JSON.stringify(props)}))));`;
+  const host = document.createElement("div");
+  host.innerHTML = execFileSync(process.execPath, ["--input-type=module", "-e", rendered], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });
+  expect(host.querySelectorAll('nav[aria-label="On this page"]')).toHaveLength(1);
+  expect(host.querySelectorAll("a")).toHaveLength(3);
+  expect(host.querySelectorAll('a[aria-current="location"]')).toHaveLength(1);
 }, 15_000);
 
 it("imports and calls TaskList and EventItem under react-server without browser globals", () => {
   const entry = join(distDir, "blocks/server.js");
+  const tasksProps = { "aria-label": "Tasks", items: [], statusLabels: { todo: "To do", "in-progress": "In progress", blocked: "Blocked", done: "Done" }, progressText: "No tasks", emptyState: { title: "No tasks" } };
+  const eventProps = { event: { id: "evt_1042", at: "2026-10-19T14:32:00Z", timeText: "Oct 19, 14:32 UTC", actor: { name: "Priya Nair" }, summary: "Priya Nair approved invoice 1042." }, labels: { unread: "Unread", changedFrom: "changed from", changedTo: "to", cleared: "cleared" } };
+  // planner:c5-drt (D3): the roots are selected semantic-content leaves (as section / div), resolved from the pinned selection.
   const script = `import {TaskList, EventItem} from ${JSON.stringify(entry)};
     if(typeof window!=="undefined")throw new Error("unexpected browser global");
-    const tasks=TaskList({"aria-label":"Tasks",items:[],statusLabels:{todo:"To do","in-progress":"In progress",blocked:"Blocked",done:"Done"},progressText:"No tasks",emptyState:{title:"No tasks"}});
-    const event=EventItem({event:{id:"evt_1042",at:"2026-10-19T14:32:00Z",timeText:"Oct 19, 14:32 UTC",actor:{name:"Priya Nair"},summary:"Priya Nair approved invoice 1042."},labels:{unread:"Unread",changedFrom:"changed from",changedTo:"to",cleared:"cleared"}});
-    if(tasks.type!=="section"||event.type!=="div"||event.props["data-event-item"]!=="")throw new Error("missing semantic task/event blocks");
-    process.stdout.write("OK");`;
-  expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
-});
+    const tasks=TaskList(${JSON.stringify(tasksProps)});
+    const event=EventItem(${JSON.stringify(eventProps)});
+    process.stdout.write(JSON.stringify({ tasks: [tasks.type.displayName, tasks.props.as], event: [event.type.displayName, event.props.as, event.props["data-event-item"]] }));`;
+  const roots = JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000 }));
+  expect(roots).toEqual({ tasks: ["components.semantic-content", "section"], event: ["components.semantic-content", "div", ""] });
+  expectPinnedLeaves([roots.tasks[0], roots.event[0]], ["components.semantic-content"]);
+  const rendered = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {TaskList, EventItem} from ${JSON.stringify(entry)}; ${PINNED_PROVIDER} process.stdout.write(JSON.stringify([renderToStaticMarkup(h(Pinned, null, h(TaskList, ${JSON.stringify(tasksProps)}))), renderToStaticMarkup(h(Pinned, null, h(EventItem, ${JSON.stringify(eventProps)})))]));`;
+  const [tasks, event] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", rendered], { encoding: "utf8", timeout: 10_000, cwd: packageRoot })) as [string, string];
+  expect(tasks).toMatch(/^<section\b/);
+  expect(event).toMatch(/^<div\b[^>]*\bdata-event-item=""/);
+}, 15_000);
 
 it("keeps the interactive preview export exact and its emitted client boundary explicit", () => {
   expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview", "TokenValuePreview"]);
@@ -261,7 +307,7 @@ describe("pure StockItem and Items compiled graphs", () => {
 describe("compiled grouped Items SSR", () => {
   it.each(["Items", "Items.server"])("retains disclosure answers and local references across duplicate compiled %s instances", name => {
     const absolute = join(distDir, "blocks", "items", `${name}.js`);
-    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; const props={arrangement:"rows",reveal:"disclose",order:"numbered",items:[0,1,2,3].map(i=>({id:String(i),heading:"Question "+i,description:"Answer "+i})),groups:[{id:"a",label:"A",items:["2","0"]},{id:"b",label:"B",items:["3","1"]}]}; process.stdout.write(renderToStaticMarkup(h("div",null,h(Items,props),h(Items,props))));`;
+    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; ${PINNED_PROVIDER} const props={arrangement:"rows",reveal:"disclose",order:"numbered",items:[0,1,2,3].map(i=>({id:String(i),heading:"Question "+i,description:"Answer "+i})),groups:[{id:"a",label:"A",items:["2","0"]},{id:"b",label:"B",items:["3","1"]}]}; process.stdout.write(renderToStaticMarkup(h(Pinned,null,h("div",null,h(Items,props),h(Items,props)))));`;
     const html = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });
     const host = document.createElement("div"); host.innerHTML = html;
     const ids = [...host.querySelectorAll("[id]")].map(node => node.id);
@@ -281,7 +327,7 @@ describe("compiled grouped Items SSR", () => {
   it("gives duplicate instances unique heading IDs and resolves every reference", () => {
     const absolute = join(distDir, "blocks", "items", "Items.server.js");
     const server = join(distDir, "blocks", "server.js");
-    const script = `import { createElement as h } from "react"; import { renderToStaticMarkup } from "react-dom/server"; import { Items } from ${JSON.stringify(absolute)}; import * as barrel from ${JSON.stringify(server)}; const props = { arrangement: "rows", items: [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, badge: { label: "Beta", tone: "info" }, meta: "Actor" })), groups: [{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }] }; if(barrel.Items !== Items) throw new Error("server barrel identity"); process.stdout.write(renderToStaticMarkup(h("div", null, h(Items, props), h(Items, props))));`;
+    const script = `import { createElement as h } from "react"; import { renderToStaticMarkup } from "react-dom/server"; import { Items } from ${JSON.stringify(absolute)}; import * as barrel from ${JSON.stringify(server)}; const props = { arrangement: "rows", items: [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, badge: { label: "Beta", tone: "info" }, meta: "Actor" })), groups: [{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }] }; ${PINNED_PROVIDER} if(barrel.Items !== Items) throw new Error("server barrel identity"); process.stdout.write(renderToStaticMarkup(h(Pinned, null, h("div", null, h(Items, props), h(Items, props)))));`;
     const html = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
     const references = [...html.matchAll(/aria-labelledby="([^"]+)"/g)].map((match) => match[1]);
@@ -394,7 +440,7 @@ describe("render-environment declaration exhaustiveness (test 4)", () => {
 describe("compiled collection scale retirement", () => {
   it.each(["index.js", "blocks/index.js", "blocks/server.js"])("accepts scale and rejects own retired emphasis in %s", entry => {
     const absolute = join(distDir, entry);
-    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; const items=[0,1,2].map(i=>({id:String(i),heading:"Title "+i})); const props={arrangement:"columns",items}; const markup=renderToStaticMarkup(h(Items,{...props,scale:"statement"})); if(!markup.includes("text-h0")) throw new Error("scale statement lost"); renderToStaticMarkup(h(Items,{...props,scale:undefined})); for(const fields of [{emphasis:undefined},{emphasis:"item"},{emphasis:"statement",scale:"statement"}]) { let refused=false; try { renderToStaticMarkup(h(Items,{...props,...fields})); } catch(e) { if(e.message!=="Items: emphasis is retired; use scale instead.") throw e; refused=true; } if(!refused)throw new Error("retired emphasis accepted"); } process.stdout.write("OK");`;
+    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; ${PINNED_PROVIDER} const render=props=>renderToStaticMarkup(h(Pinned,null,h(Items,props))); const items=[0,1,2].map(i=>({id:String(i),heading:"Title "+i})); const props={arrangement:"columns",items}; const markup=render({...props,scale:"statement"}); if(!markup.includes("text-h0")) throw new Error("scale statement lost"); render({...props,scale:undefined}); for(const fields of [{emphasis:undefined},{emphasis:"item"},{emphasis:"statement",scale:"statement"}]) { let refused=false; try { render({...props,...fields}); } catch(e) { if(e.message!=="Items: emphasis is retired; use scale instead.") throw e; refused=true; } if(!refused)throw new Error("retired emphasis accepted"); } process.stdout.write("OK");`;
     expect(execFileSync(process.execPath, ["-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   }, 15_000);
 });
