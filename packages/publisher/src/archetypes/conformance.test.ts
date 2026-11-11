@@ -112,6 +112,12 @@ describe("page conformance", () => {
       expect(report.findings.filter(row => row.check === "archetype" || row.check === "format"), sections.join(" ")).toEqual([]);
       expect(report.pages[0]).toMatchObject({ archetype: "workspace", format: "vertical-page" });
     }
+    // Home (owner P3/P4): decisions, then the agents, then the pipeline; every role required, in that order.
+    const homePage = (sections: string[]) => page({ archetype: "workspace-home", frame: { id: "frames.studio-shell" }, sections: sections.map(section => bound(section)) });
+    const homeShape = ["sections.studio.page-header", "sections.module.checks", "sections.studio.home", "sections.producer.team-strip", "sections.producer.pipeline-legend", "sections.producer.pipeline-flow"];
+    expect(checkPageRecords({ records: [homePage(homeShape)] }).findings.filter(row => row.check === "archetype" || row.check === "format")).toEqual([]);
+    expect(codes(checkPageRecords({ records: [homePage([homeShape[0]!, homeShape[2]!, homeShape[1]!, ...homeShape.slice(3)])] }).findings)).toContain("archetype-order");
+    expect(codes(checkPageRecords({ records: [homePage(homeShape.filter(section => section !== "sections.module.checks"))] }).findings)).toEqual(["archetype-role-missing"]);
     // Package frames and sections fill no catalog archetype, and a package archetype takes no catalog frame or section.
     expect(codes(checkPageRecords({ records: [page({ archetype: "app-page", frame: { id: "frames.studio-shell" }, sections: [bound("sections.page-header"), bound("sections.data-table")] })] }).findings)).toEqual(["format-frame"]);
     expect(codes(checkPageRecords({ records: [workspace(shapes[0]!, { frame: { id: "frames.app-shell" } })] }).findings)).toEqual(["format-frame"]);
@@ -138,7 +144,7 @@ describe("page conformance", () => {
     expect(records.length).toBeGreaterThan(0);
     const report = checkPageRecords({ records, routes: routes.map(route => (route as { path?: string }).path ?? "") });
     expect(report.findings.filter(row => row.check === "archetype" || row.check === "format")).toEqual([]);
-    expect(new Set(report.pages.map(row => `${row.archetype} ${row.format}`))).toEqual(new Set(["workspace vertical-page"]));
+    expect(new Set(report.pages.map(row => `${row.archetype} ${row.format}`))).toEqual(new Set(["workspace vertical-page", "workspace-home vertical-page"]));
   });
 
   it("consumes copy-fit measurements and stubs the probe", async () => {

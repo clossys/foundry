@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { resolveAgent } from "../agents.js";
 import { join } from "node:path";
 import { designerPins, installFailed, installSummary, pageRecordFromCell, publishInstall, writerCopy } from "../publish/install.js";
-import { readPublisher } from "../publish/site-source.js";
+import { readPublisher, readWriter } from "../publish/site-source.js";
 import { readPinned } from "../records/pinned.js";
 import { publishSite, siteFailed, siteSummary } from "../publish/install-site.js";
 import { nextFailed, nextSummary, publishNext } from "../publish/install-next.js";
@@ -48,6 +48,9 @@ export async function runPublishCheck(args: CliArgs, root: string): Promise<CliR
     const pins = designerPins(root);
     const copy = await writerCopy(root);
     const writerSlots = new Set(readPinned(consumer, "writer").pinned.map(candidate => candidate.id));
+    // A page ref `<cell>#<key>` whose cell is no Writer slot reads the Writer declarations alias
+    // `<cell>.<key>` (`page.home#meta-title` -> `page.home.meta-title`), as `check --readiness` does.
+    const writerAliases = (await readWriter(root)).aliases;
     const pages = publisher.pinned.filter(candidate => candidate.doc.kind === "page");
     const rows: { page: string; frame: string; sections: number; copy: number }[] = [];
     for (const candidate of pages) {
@@ -62,7 +65,8 @@ export async function runPublishCheck(args: CliArgs, root: string): Promise<CliR
       for (const ref of refs) {
         const text = String(ref), hash = text.indexOf("#");
         if (hash < 1) { findings.push({ code: "copy-ref-invalid", page: candidate.id, message: `Copy ref ${text} is not <writer slot>#<key>` }); continue; }
-        if (!writerSlots.has(text.slice(0, hash))) findings.push({ code: "writer-slot-unpinned", page: candidate.id, message: `${text.slice(0, hash)} is not a pinned Writer slot` });
+        const cell = text.slice(0, hash);
+        if (!writerSlots.has(cell) && !Object.hasOwn(writerAliases, `${cell}.${text.slice(hash + 1)}`)) findings.push({ code: "writer-slot-unpinned", page: candidate.id, message: `${cell} is not a pinned Writer slot or a Writer declarations alias` });
       }
       const keys = [...Object.values(record.copy ?? {}), ...Object.values(record.bindings ?? {}).flatMap(binding => Object.values(binding.copy ?? {}))];
       for (const key of keys) if (!Object.hasOwn(copy, key)) findings.push({ code: "copy-unresolved", page: candidate.id, message: `Copy key ${key} has no pinned Writer text` });

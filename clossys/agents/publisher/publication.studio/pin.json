@@ -1,7 +1,7 @@
 {
-  "candidate": "publication-v6.json",
-  "sha256": "50a6ffbda6dfe3c4daeda845bd5cae5dd99b3b4432d0114e790ed551624284fe",
-  "decidedBy": "planner:SEEN-COPY",
-  "basis": "planner",
-  "at": "2026-11-05T05:31:28.892Z"
+  "candidate": "publication-v7.json",
+  "sha256": "9247415670e4b36fb56df39da206d4ad0908624e0b40dde508b2d5d40d99ae04",
+  "decidedBy": "agent:publisher",
+  "basis": "agent",
+  "at": "2026-11-11T16:37:16.040Z"
 }

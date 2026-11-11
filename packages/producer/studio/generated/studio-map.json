@@ -20,7 +20,11 @@
           "frameId": "frames.studio-shell",
           "sectionIds": [
             "sections.studio.page-header",
-            "sections.studio.home"
+            "sections.module.checks",
+            "sections.studio.home",
+            "sections.producer.team-strip",
+            "sections.producer.pipeline-legend",
+            "sections.producer.pipeline-flow"
           ]
         },
         "pin": {
@@ -41,23 +45,8 @@
         ]
       },
       {
-        "path": "/systems/content",
-        "kind": "group",
-        "source": {
-          "planItemId": "studio.content"
-        },
-        "pin": {
-          "nav": true
-        },
-        "icon": "assets.icon-team",
-        "id": "content",
-        "title": "Content",
-        "order": 1
-      },
-      {
         "id": "producer-pipeline",
-        "parentId": "content",
-        "order": 0,
+        "order": 1,
         "title": "Overview",
         "kind": "page",
         "path": "/content",
@@ -69,10 +58,6 @@
             "sections.producer.pipeline-legend",
             "sections.producer.pipeline-flow"
           ]
-        },
-        "pin": {
-          "nav": true,
-          "group": "content"
         },
         "icon": "assets.icon-team",
         "actions": []
@@ -89,8 +74,7 @@
         "icon": "assets.icon-guide",
         "id": "director",
         "title": "Director",
-        "order": 1,
-        "parentId": "content"
+        "order": 1
       },
       {
         "id": "director-context",
@@ -251,8 +235,7 @@
         "icon": "assets.icon-layers",
         "id": "designer",
         "title": "Designer",
-        "order": 2,
-        "parentId": "content"
+        "order": 2
       },
       {
         "id": "designer-themes",
@@ -371,8 +354,7 @@
         "icon": "assets.icon-document",
         "id": "writer",
         "title": "Writer",
-        "order": 3,
-        "parentId": "content"
+        "order": 3
       },
       {
         "id": "writer-lexicon",
@@ -491,8 +473,7 @@
         "icon": "assets.icon-website",
         "id": "publisher",
         "title": "Publisher",
-        "order": 4,
-        "parentId": "content"
+        "order": 4
       },
       {
         "id": "publisher-studio",
@@ -516,23 +497,8 @@
         "actions": []
       },
       {
-        "path": "/systems/build",
-        "kind": "group",
-        "source": {
-          "planItemId": "studio.build"
-        },
-        "pin": {
-          "nav": true
-        },
-        "icon": "assets.icon-package",
-        "id": "build",
-        "title": "Build",
-        "order": 2
-      },
-      {
         "id": "build-overview",
-        "parentId": "build",
-        "order": 0,
+        "order": 2,
         "title": "Overview",
         "kind": "page",
         "path": "/build-overview",
@@ -543,31 +509,12 @@
             "sections.producer.system-empty"
           ]
         },
-        "pin": {
-          "nav": true,
-          "group": "build"
-        },
         "icon": "assets.icon-package",
         "actions": []
       },
       {
-        "path": "/systems/run",
-        "kind": "group",
-        "source": {
-          "planItemId": "studio.run"
-        },
-        "pin": {
-          "nav": true
-        },
-        "icon": "assets.icon-settings",
-        "id": "run",
-        "title": "Run",
-        "order": 3
-      },
-      {
         "id": "run-overview",
-        "parentId": "run",
-        "order": 0,
+        "order": 3,
         "title": "Overview",
         "kind": "page",
         "path": "/run",
@@ -577,10 +524,6 @@
             "sections.studio.page-header",
             "sections.producer.system-empty"
           ]
-        },
-        "pin": {
-          "nav": true,
-          "group": "run"
         },
         "icon": "assets.icon-settings",
         "actions": []
@@ -4538,7 +4481,11 @@
       "frameId": "frames.studio-shell",
       "sectionIds": [
         "sections.studio.page-header",
-        "sections.studio.home"
+        "sections.module.checks",
+        "sections.studio.home",
+        "sections.producer.team-strip",
+        "sections.producer.pipeline-legend",
+        "sections.producer.pipeline-flow"
       ],
       "body": "plain",
       "data": {
@@ -4547,7 +4494,11 @@
       },
       "inputs": {
         "sections.studio.page-header": "header",
-        "sections.studio.home": "home"
+        "sections.module.checks": "checks",
+        "sections.studio.home": "home",
+        "sections.producer.team-strip": "team",
+        "sections.producer.pipeline-legend": "legend",
+        "sections.producer.pipeline-flow": "flow"
       },
       "manifest": {
         "navigator": "outline",
@@ -27797,7 +27748,6 @@
   ],
   "landings": {
     "home": "/",
-    "content": "/content",
     "producer-pipeline": "/content",
     "director": "/director/context/market",
     "director-context": "/director/context/market",
@@ -27821,9 +27771,7 @@
     "writer-narratives": "/writer/narratives/web",
     "publisher": "/publisher/studio/pages",
     "publisher-studio": "/publisher/studio/pages",
-    "build": "/build-overview",
     "build-overview": "/build-overview",
-    "run": "/run",
     "run-overview": "/run",
     "director-context.market": "/director/context/market",
     "director-context.customer": "/director/context/customer",
@@ -27927,22 +27875,12 @@
     ],
     "producer-pipeline": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "producer-pipeline",
         "label": "Overview",
         "href": "/content"
       }
     ],
     "director-context": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -27956,11 +27894,6 @@
     ],
     "director-aspiration": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -27972,11 +27905,6 @@
       }
     ],
     "director-focus": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -27990,11 +27918,6 @@
     ],
     "director-advantage": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28006,11 +27929,6 @@
       }
     ],
     "director-identity": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28024,11 +27942,6 @@
     ],
     "director-capability": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28040,11 +27953,6 @@
       }
     ],
     "director-execution": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28058,11 +27966,6 @@
     ],
     "designer-themes": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -28074,11 +27977,6 @@
       }
     ],
     "designer-assets": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -28092,11 +27990,6 @@
     ],
     "designer-components": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -28108,11 +28001,6 @@
       }
     ],
     "designer-sections": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -28126,11 +28014,6 @@
     ],
     "designer-frames": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -28142,11 +28025,6 @@
       }
     ],
     "writer-lexicon": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -28160,11 +28038,6 @@
     ],
     "writer-strings": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -28176,11 +28049,6 @@
       }
     ],
     "writer-patterns": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -28194,11 +28062,6 @@
     ],
     "writer-passages": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -28210,11 +28073,6 @@
       }
     ],
     "writer-narratives": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -28228,11 +28086,6 @@
     ],
     "publisher-studio": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -28245,11 +28098,6 @@
     ],
     "build-overview": [
       {
-        "id": "build",
-        "label": "Build",
-        "href": "/build-overview"
-      },
-      {
         "id": "build-overview",
         "label": "Overview",
         "href": "/build-overview"
@@ -28257,22 +28105,12 @@
     ],
     "run-overview": [
       {
-        "id": "run",
-        "label": "Run",
-        "href": "/run"
-      },
-      {
         "id": "run-overview",
         "label": "Overview",
         "href": "/run"
       }
     ],
     "director-context.market": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28291,11 +28129,6 @@
     ],
     "director-context.customer": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28312,11 +28145,6 @@
       }
     ],
     "director-context.competition": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28335,11 +28163,6 @@
     ],
     "director-context.company": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28356,11 +28179,6 @@
       }
     ],
     "director-aspiration.purpose": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28379,11 +28197,6 @@
     ],
     "director-aspiration.culture": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28400,11 +28213,6 @@
       }
     ],
     "director-aspiration.goal": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28423,11 +28231,6 @@
     ],
     "director-focus.category": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28444,11 +28247,6 @@
       }
     ],
     "director-focus.segment": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28467,11 +28265,6 @@
     ],
     "director-focus.offer": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28488,11 +28281,6 @@
       }
     ],
     "director-focus.reach": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28511,11 +28299,6 @@
     ],
     "director-focus.lifecycle": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28532,11 +28315,6 @@
       }
     ],
     "director-advantage.proposition": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28555,11 +28333,6 @@
     ],
     "director-advantage.defensibility": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28576,11 +28349,6 @@
       }
     ],
     "director-advantage.model": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28599,11 +28367,6 @@
     ],
     "director-identity.brand": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28620,11 +28383,6 @@
       }
     ],
     "director-identity.naming": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28643,11 +28401,6 @@
     ],
     "director-identity.verbal": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28664,11 +28417,6 @@
       }
     ],
     "director-identity.visual": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28687,11 +28435,6 @@
     ],
     "director-capability.competency": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28708,11 +28451,6 @@
       }
     ],
     "director-capability.sourcing": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28731,11 +28469,6 @@
     ],
     "director-capability.operation": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28752,11 +28485,6 @@
       }
     ],
     "director-capability.team": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28775,11 +28503,6 @@
     ],
     "director-capability.resource": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28796,11 +28519,6 @@
       }
     ],
     "director-execution.priority": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28819,11 +28537,6 @@
     ],
     "director-execution.roadmap": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28840,11 +28553,6 @@
       }
     ],
     "director-execution.measure": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -28863,11 +28571,6 @@
     ],
     "director-execution.risk": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -28884,11 +28587,6 @@
       }
     ],
     "designer-themes.colors": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -28907,11 +28605,6 @@
     ],
     "designer-themes.shape": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -28928,11 +28621,6 @@
       }
     ],
     "designer-themes.typography": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -28951,11 +28639,6 @@
     ],
     "designer-themes.space": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -28972,11 +28655,6 @@
       }
     ],
     "designer-themes.depth": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -28995,11 +28673,6 @@
     ],
     "designer-themes.motion": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29016,11 +28689,6 @@
       }
     ],
     "designer-assets.logo": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29039,11 +28707,6 @@
     ],
     "designer-assets.app-identity": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29060,11 +28723,6 @@
       }
     ],
     "designer-assets.icons": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29083,11 +28741,6 @@
     ],
     "designer-assets.imagery": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29104,11 +28757,6 @@
       }
     ],
     "designer-components.actions": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29127,11 +28775,6 @@
     ],
     "designer-components.inputs": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29148,11 +28791,6 @@
       }
     ],
     "designer-components.display": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29171,11 +28809,6 @@
     ],
     "designer-components.feedback": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29192,11 +28825,6 @@
       }
     ],
     "designer-components.navigation": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29215,11 +28843,6 @@
     ],
     "designer-components.containment": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29236,11 +28859,6 @@
       }
     ],
     "designer-components.flow": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29259,11 +28877,6 @@
     ],
     "designer-components.studio": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29280,11 +28893,6 @@
       }
     ],
     "designer-sections.specimens": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29303,11 +28911,6 @@
     ],
     "designer-sections.parts": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29324,11 +28927,6 @@
       }
     ],
     "designer-sections.explain": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29347,11 +28945,6 @@
     ],
     "designer-sections.organize": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29368,11 +28961,6 @@
       }
     ],
     "designer-sections.collect": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29391,11 +28979,6 @@
     ],
     "designer-sections.navigate": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29412,11 +28995,6 @@
       }
     ],
     "designer-sections.respond": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29435,11 +29013,6 @@
     ],
     "designer-sections.extensions": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29456,11 +29029,6 @@
       }
     ],
     "designer-sections.producer": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29479,11 +29047,6 @@
     ],
     "designer-frames.page-shells": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29500,11 +29063,6 @@
       }
     ],
     "designer-frames.regions": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29523,11 +29081,6 @@
     ],
     "designer-frames.overlay-shells": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -29544,11 +29097,6 @@
       }
     ],
     "designer-frames.extensions": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -29567,11 +29115,6 @@
     ],
     "writer-lexicon.voice": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29588,11 +29131,6 @@
       }
     ],
     "writer-lexicon.terminology": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -29611,11 +29149,6 @@
     ],
     "writer-lexicon.claims": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29632,11 +29165,6 @@
       }
     ],
     "writer-lexicon.formats": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -29655,11 +29183,6 @@
     ],
     "writer-strings.interface": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29676,11 +29199,6 @@
       }
     ],
     "writer-strings.feedback": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -29699,11 +29217,6 @@
     ],
     "writer-strings.identity": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29720,11 +29233,6 @@
       }
     ],
     "writer-strings.media-text": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -29743,11 +29251,6 @@
     ],
     "writer-strings.metadata": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29764,11 +29267,6 @@
       }
     ],
     "writer-patterns.headings": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -29787,11 +29285,6 @@
     ],
     "writer-patterns.actions": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29808,11 +29301,6 @@
       }
     ],
     "writer-patterns.messages": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -29831,11 +29319,6 @@
     ],
     "writer-patterns.forms": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29852,11 +29335,6 @@
       }
     ],
     "writer-patterns.data-and-lists": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -29875,11 +29353,6 @@
     ],
     "writer-patterns.attribution": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29896,11 +29369,6 @@
       }
     ],
     "writer-patterns.identity": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -29919,11 +29387,6 @@
     ],
     "writer-passages.parts": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29940,11 +29403,6 @@
       }
     ],
     "writer-passages.explain": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -29963,11 +29421,6 @@
     ],
     "writer-passages.organize": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -29984,11 +29437,6 @@
       }
     ],
     "writer-passages.collect": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -30007,11 +29455,6 @@
     ],
     "writer-passages.navigate": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -30028,11 +29471,6 @@
       }
     ],
     "writer-passages.respond": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -30051,11 +29489,6 @@
     ],
     "writer-narratives.web": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -30072,11 +29505,6 @@
       }
     ],
     "writer-narratives.documents": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -30095,11 +29523,6 @@
     ],
     "writer-narratives.communications": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -30116,11 +29539,6 @@
       }
     ],
     "publisher-studio.pages": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -30139,11 +29557,6 @@
     ],
     "publisher-studio.director": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -30160,11 +29573,6 @@
       }
     ],
     "publisher-studio.designer": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -30183,11 +29591,6 @@
     ],
     "publisher-studio.writer": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -30204,11 +29607,6 @@
       }
     ],
     "publisher-studio.publisher": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -30227,11 +29625,6 @@
     ],
     "publisher-studio.systems": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -30249,11 +29642,6 @@
     ],
     "publisher-studio.publication": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -30270,11 +29658,6 @@
       }
     ],
     "director-context.market:context.market.size": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30298,11 +29681,6 @@
     ],
     "director-context.market:context.market.trend": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30324,11 +29702,6 @@
       }
     ],
     "director-context.customer:context.customer.need": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30352,11 +29725,6 @@
     ],
     "director-context.customer:context.customer.buying": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30378,11 +29746,6 @@
       }
     ],
     "director-context.competition:context.competition.alternative": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30406,11 +29769,6 @@
     ],
     "director-context.competition:context.competition.gap": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30432,11 +29790,6 @@
       }
     ],
     "director-context.company:context.company.strength": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30460,11 +29813,6 @@
     ],
     "director-context.company:context.company.constraint": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30486,11 +29834,6 @@
       }
     ],
     "director-aspiration.purpose:aspiration.purpose.mission": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30514,11 +29857,6 @@
     ],
     "director-aspiration.purpose:aspiration.purpose.vision": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30540,11 +29878,6 @@
       }
     ],
     "director-aspiration.culture:aspiration.culture.belief": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30568,11 +29901,6 @@
     ],
     "director-aspiration.culture:aspiration.culture.behavior": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30594,11 +29922,6 @@
       }
     ],
     "director-aspiration.goal:aspiration.goal.long-term": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30622,11 +29945,6 @@
     ],
     "director-aspiration.goal:aspiration.goal.annual": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30648,11 +29966,6 @@
       }
     ],
     "director-focus.category:focus.category.definition": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30676,11 +29989,6 @@
     ],
     "director-focus.category:focus.category.stance": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30702,11 +30010,6 @@
       }
     ],
     "director-focus.segment:focus.segment.core": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30730,11 +30033,6 @@
     ],
     "director-focus.segment:focus.segment.next": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30756,11 +30054,6 @@
       }
     ],
     "director-focus.offer:focus.offer.included": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30784,11 +30077,6 @@
     ],
     "director-focus.offer:focus.offer.excluded": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30810,11 +30098,6 @@
       }
     ],
     "director-focus.reach:focus.reach.geography": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30838,11 +30121,6 @@
     ],
     "director-focus.reach:focus.reach.channel": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30864,11 +30142,6 @@
       }
     ],
     "director-focus.lifecycle:focus.lifecycle.acquisition": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30892,11 +30165,6 @@
     ],
     "director-focus.lifecycle:focus.lifecycle.retention": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30918,11 +30186,6 @@
       }
     ],
     "director-advantage.proposition:advantage.proposition.promise": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -30946,11 +30209,6 @@
     ],
     "director-advantage.proposition:advantage.proposition.proof": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -30972,11 +30230,6 @@
       }
     ],
     "director-advantage.defensibility:advantage.defensibility.differentiator": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31000,11 +30253,6 @@
     ],
     "director-advantage.defensibility:advantage.defensibility.moat": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31026,11 +30274,6 @@
       }
     ],
     "director-advantage.model:advantage.model.pricing": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31054,11 +30297,6 @@
     ],
     "director-advantage.model:advantage.model.margin": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31080,11 +30318,6 @@
       }
     ],
     "director-identity.brand:identity.brand.essence": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31108,11 +30341,6 @@
     ],
     "director-identity.brand:identity.brand.personality": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31134,11 +30362,6 @@
       }
     ],
     "director-identity.naming:identity.naming.name": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31162,11 +30385,6 @@
     ],
     "director-identity.naming:identity.naming.architecture": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31188,11 +30406,6 @@
       }
     ],
     "director-identity.verbal:identity.verbal.narrative": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31216,11 +30429,6 @@
     ],
     "director-identity.verbal:identity.verbal.voice": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31242,11 +30450,6 @@
       }
     ],
     "director-identity.visual:identity.visual.style": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31270,11 +30473,6 @@
     ],
     "director-identity.visual:identity.visual.imagery": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31296,11 +30494,6 @@
       }
     ],
     "director-capability.competency:capability.competency.critical": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31324,11 +30517,6 @@
     ],
     "director-capability.competency:capability.competency.gap": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31350,11 +30538,6 @@
       }
     ],
     "director-capability.sourcing:capability.sourcing.build": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31378,11 +30561,6 @@
     ],
     "director-capability.sourcing:capability.sourcing.partner": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31404,11 +30582,6 @@
       }
     ],
     "director-capability.sourcing:capability.sourcing.acquire": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31432,11 +30605,6 @@
     ],
     "director-capability.operation:capability.operation.delivery": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31458,11 +30626,6 @@
       }
     ],
     "director-capability.operation:capability.operation.technology": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31486,11 +30649,6 @@
     ],
     "director-capability.team:capability.team.role": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31512,11 +30670,6 @@
       }
     ],
     "director-capability.team:capability.team.structure": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31540,11 +30693,6 @@
     ],
     "director-capability.resource:capability.resource.funding": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31566,11 +30714,6 @@
       }
     ],
     "director-capability.resource:capability.resource.allocation": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31594,11 +30737,6 @@
     ],
     "director-execution.priority:execution.priority.bet": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31620,11 +30758,6 @@
       }
     ],
     "director-execution.priority:execution.priority.parked": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31648,11 +30781,6 @@
     ],
     "director-execution.roadmap:execution.roadmap.milestone": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31674,11 +30802,6 @@
       }
     ],
     "director-execution.roadmap:execution.roadmap.release": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31702,11 +30825,6 @@
     ],
     "director-execution.measure:execution.measure.north-star": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31728,11 +30846,6 @@
       }
     ],
     "director-execution.measure:execution.measure.driver": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31756,11 +30869,6 @@
     ],
     "director-execution.risk:execution.risk.threat": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "director",
         "label": "Director",
         "href": "/director/context/market"
@@ -31782,11 +30890,6 @@
       }
     ],
     "director-execution.risk:execution.risk.mitigation": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "director",
         "label": "Director",
@@ -31810,11 +30913,6 @@
     ],
     "designer-themes.colors:themes.background": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -31836,11 +30934,6 @@
       }
     ],
     "designer-themes.colors:themes.foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -31864,11 +30957,6 @@
     ],
     "designer-themes.colors:themes.card": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -31890,11 +30978,6 @@
       }
     ],
     "designer-themes.colors:themes.card-foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -31918,11 +31001,6 @@
     ],
     "designer-themes.colors:themes.popover": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -31944,11 +31022,6 @@
       }
     ],
     "designer-themes.colors:themes.popover-foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -31972,11 +31045,6 @@
     ],
     "designer-themes.colors:themes.primary": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -31998,11 +31066,6 @@
       }
     ],
     "designer-themes.colors:themes.primary-foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32026,11 +31089,6 @@
     ],
     "designer-themes.colors:themes.secondary": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32052,11 +31110,6 @@
       }
     ],
     "designer-themes.colors:themes.secondary-foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32080,11 +31133,6 @@
     ],
     "designer-themes.colors:themes.accent": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32106,11 +31154,6 @@
       }
     ],
     "designer-themes.colors:themes.accent-foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32134,11 +31177,6 @@
     ],
     "designer-themes.colors:themes.destructive": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32160,11 +31198,6 @@
       }
     ],
     "designer-themes.colors:themes.success": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32188,11 +31221,6 @@
     ],
     "designer-themes.colors:themes.warning": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32214,11 +31242,6 @@
       }
     ],
     "designer-themes.colors:themes.info": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32242,11 +31265,6 @@
     ],
     "designer-themes.colors:themes.muted": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32268,11 +31286,6 @@
       }
     ],
     "designer-themes.colors:themes.muted-foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32296,11 +31309,6 @@
     ],
     "designer-themes.colors:themes.border": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32322,11 +31330,6 @@
       }
     ],
     "designer-themes.colors:themes.input": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32350,11 +31353,6 @@
     ],
     "designer-themes.colors:themes.ring": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32376,11 +31374,6 @@
       }
     ],
     "designer-themes.colors:themes.chart-1": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32404,11 +31397,6 @@
     ],
     "designer-themes.colors:themes.chart-2": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32430,11 +31418,6 @@
       }
     ],
     "designer-themes.colors:themes.chart-3": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32458,11 +31441,6 @@
     ],
     "designer-themes.colors:themes.chart-4": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32484,11 +31462,6 @@
       }
     ],
     "designer-themes.colors:themes.chart-5": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32512,11 +31485,6 @@
     ],
     "designer-themes.colors:themes.sidebar": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32538,11 +31506,6 @@
       }
     ],
     "designer-themes.colors:themes.sidebar-foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32566,11 +31529,6 @@
     ],
     "designer-themes.colors:themes.sidebar-primary": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32592,11 +31550,6 @@
       }
     ],
     "designer-themes.colors:themes.sidebar-primary-foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32620,11 +31573,6 @@
     ],
     "designer-themes.colors:themes.sidebar-accent": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32646,11 +31594,6 @@
       }
     ],
     "designer-themes.colors:themes.sidebar-accent-foreground": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32674,11 +31617,6 @@
     ],
     "designer-themes.colors:themes.sidebar-border": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32700,11 +31638,6 @@
       }
     ],
     "designer-themes.colors:themes.sidebar-ring": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32728,11 +31661,6 @@
     ],
     "designer-themes.shape:themes.radius": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32754,11 +31682,6 @@
       }
     ],
     "designer-themes.typography:themes.font-sans": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32782,11 +31705,6 @@
     ],
     "designer-themes.typography:themes.font-heading": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32808,11 +31726,6 @@
       }
     ],
     "designer-themes.typography:themes.font-mono": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32836,11 +31749,6 @@
     ],
     "designer-themes.typography:themes.font-serif": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32862,11 +31770,6 @@
       }
     ],
     "designer-themes.typography:themes.tracking-tight": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32890,11 +31793,6 @@
     ],
     "designer-themes.space:themes.spacing": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32916,11 +31814,6 @@
       }
     ],
     "designer-themes.depth:themes.shadow": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32944,11 +31837,6 @@
     ],
     "designer-themes.motion:themes.animate-marquee": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -32970,11 +31858,6 @@
       }
     ],
     "designer-themes.motion:themes.animate-marquee-vertical": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -32998,11 +31881,6 @@
     ],
     "designer-themes.motion:themes.animate-shiny-text": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33024,11 +31902,6 @@
       }
     ],
     "designer-assets.logo:assets.lockup": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33052,11 +31925,6 @@
     ],
     "designer-assets.logo:assets.mark": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33078,11 +31946,6 @@
       }
     ],
     "designer-assets.app-identity:assets.favicon": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33106,11 +31969,6 @@
     ],
     "designer-assets.app-identity:assets.app-icon": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33132,11 +31990,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-chevron-down": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33160,11 +32013,6 @@
     ],
     "designer-assets.icons:assets.icon-chevron-up": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33186,11 +32034,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-chevron-left": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33214,11 +32057,6 @@
     ],
     "designer-assets.icons:assets.icon-chevron-right": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33240,11 +32078,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-arrow-right": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33268,11 +32101,6 @@
     ],
     "designer-assets.icons:assets.icon-external-link": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33294,11 +32122,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-home": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33322,11 +32145,6 @@
     ],
     "designer-assets.icons:assets.icon-panel-left": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33348,11 +32166,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-search": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33376,11 +32189,6 @@
     ],
     "designer-assets.icons:assets.icon-close": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33402,11 +32210,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-check": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33430,11 +32233,6 @@
     ],
     "designer-assets.icons:assets.icon-settings": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33456,11 +32254,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-list-view": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33484,11 +32277,6 @@
     ],
     "designer-assets.icons:assets.icon-grid-view": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33510,11 +32298,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-theme-light": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33538,11 +32321,6 @@
     ],
     "designer-assets.icons:assets.icon-theme-dark": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33564,11 +32342,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-theme-system": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33592,11 +32365,6 @@
     ],
     "designer-assets.icons:assets.icon-success": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33618,11 +32386,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-warning": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33646,11 +32409,6 @@
     ],
     "designer-assets.icons:assets.icon-danger": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33672,11 +32430,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-info": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33700,11 +32453,6 @@
     ],
     "designer-assets.icons:assets.icon-user": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33726,11 +32474,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-team": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33754,11 +32497,6 @@
     ],
     "designer-assets.icons:assets.icon-organization": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33780,11 +32518,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-website": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33808,11 +32541,6 @@
     ],
     "designer-assets.icons:assets.icon-institution": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33834,11 +32562,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-guide": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33862,11 +32585,6 @@
     ],
     "designer-assets.icons:assets.icon-document": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33888,11 +32606,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-document-approved": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33916,11 +32629,6 @@
     ],
     "designer-assets.icons:assets.icon-folder": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33942,11 +32650,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-date": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -33970,11 +32673,6 @@
     ],
     "designer-assets.icons:assets.icon-time": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -33996,11 +32694,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-payment": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34024,11 +32717,6 @@
     ],
     "designer-assets.icons:assets.icon-receipt": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34050,11 +32738,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-business": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34078,11 +32761,6 @@
     ],
     "designer-assets.icons:assets.icon-security": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34104,11 +32782,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-locked": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34132,11 +32805,6 @@
     ],
     "designer-assets.icons:assets.icon-legal": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34158,11 +32826,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-package": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34186,11 +32849,6 @@
     ],
     "designer-assets.icons:assets.icon-layers": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34212,11 +32870,6 @@
       }
     ],
     "designer-assets.icons:assets.icon-integration": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34240,11 +32893,6 @@
     ],
     "designer-assets.imagery:assets.image-ratio": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34266,11 +32914,6 @@
       }
     ],
     "designer-assets.imagery:assets.image": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34294,11 +32937,6 @@
     ],
     "designer-assets.imagery:assets.video": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34320,11 +32958,6 @@
       }
     ],
     "designer-assets.imagery:assets.pattern": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34348,11 +32981,6 @@
     ],
     "designer-components.actions:components.button": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34374,11 +33002,6 @@
       }
     ],
     "designer-components.actions:components.native-action": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34402,11 +33025,6 @@
     ],
     "designer-components.actions:components.toggle-button": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34428,11 +33046,6 @@
       }
     ],
     "designer-components.actions:components.menu": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34456,11 +33069,6 @@
     ],
     "designer-components.actions:components.command": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34482,11 +33090,6 @@
       }
     ],
     "designer-components.actions:components.dropdown-menu": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34510,11 +33113,6 @@
     ],
     "designer-components.actions:components.toolbar": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34536,11 +33134,6 @@
       }
     ],
     "designer-components.inputs:components.field": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34564,11 +33157,6 @@
     ],
     "designer-components.inputs:components.form": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34590,11 +33178,6 @@
       }
     ],
     "designer-components.inputs:components.text-field": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34618,11 +33201,6 @@
     ],
     "designer-components.inputs:components.search-field": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34644,11 +33222,6 @@
       }
     ],
     "designer-components.inputs:components.checkbox": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34672,11 +33245,6 @@
     ],
     "designer-components.inputs:components.radio-group": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34698,11 +33266,6 @@
       }
     ],
     "designer-components.inputs:components.switch": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34726,11 +33289,6 @@
     ],
     "designer-components.inputs:components.select": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34752,11 +33310,6 @@
       }
     ],
     "designer-components.inputs:components.combo-box": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34780,11 +33333,6 @@
     ],
     "designer-components.inputs:components.toggle-group": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34806,11 +33354,6 @@
       }
     ],
     "designer-components.inputs:components.tag-group": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34834,11 +33377,6 @@
     ],
     "designer-components.inputs:components.number-field": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34860,11 +33398,6 @@
       }
     ],
     "designer-components.inputs:components.slider": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34888,11 +33421,6 @@
     ],
     "designer-components.inputs:components.date-field": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34914,11 +33442,6 @@
       }
     ],
     "designer-components.inputs:components.date-picker": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34942,11 +33465,6 @@
     ],
     "designer-components.inputs:components.calendar": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -34968,11 +33486,6 @@
       }
     ],
     "designer-components.inputs:components.color-picker": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -34996,11 +33509,6 @@
     ],
     "designer-components.inputs:components.file-trigger": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35022,11 +33530,6 @@
       }
     ],
     "designer-components.display:components.table": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35050,11 +33553,6 @@
     ],
     "designer-components.display:components.grid-list": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35076,11 +33574,6 @@
       }
     ],
     "designer-components.display:components.tree": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35104,11 +33597,6 @@
     ],
     "designer-components.display:components.meter": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35130,11 +33618,6 @@
       }
     ],
     "designer-components.display:components.badge": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35158,11 +33641,6 @@
     ],
     "designer-components.display:components.keyboard": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35184,11 +33662,6 @@
       }
     ],
     "designer-components.display:components.avatar": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35212,11 +33685,6 @@
     ],
     "designer-components.display:components.media-player": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35238,11 +33706,6 @@
       }
     ],
     "designer-components.display:components.icon": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35266,11 +33729,6 @@
     ],
     "designer-components.display:components.logo": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35292,11 +33750,6 @@
       }
     ],
     "designer-components.display:components.chart-bar": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35320,11 +33773,6 @@
     ],
     "designer-components.display:components.chart-line": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35346,11 +33794,6 @@
       }
     ],
     "designer-components.display:components.chart-area": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35374,11 +33817,6 @@
     ],
     "designer-components.display:components.chart-sparkline": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35400,11 +33838,6 @@
       }
     ],
     "designer-components.display:components.chart-status-strip": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35428,11 +33861,6 @@
     ],
     "designer-components.display:components.chart-scatter": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35454,11 +33882,6 @@
       }
     ],
     "designer-components.display:components.chart-heatmap": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35482,11 +33905,6 @@
     ],
     "designer-components.display:components.chart-range": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35508,11 +33926,6 @@
       }
     ],
     "designer-components.display:components.chart-waterfall": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35536,11 +33949,6 @@
     ],
     "designer-components.display:components.semantic-content": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35562,11 +33970,6 @@
       }
     ],
     "designer-components.display:components.rich-text": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35590,11 +33993,6 @@
     ],
     "designer-components.display:components.item": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35616,11 +34014,6 @@
       }
     ],
     "designer-components.feedback:components.banner": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35644,11 +34037,6 @@
     ],
     "designer-components.feedback:components.toast": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35670,11 +34058,6 @@
       }
     ],
     "designer-components.feedback:components.empty": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35698,11 +34081,6 @@
     ],
     "designer-components.feedback:components.status-mark": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35724,11 +34102,6 @@
       }
     ],
     "designer-components.feedback:components.progress-bar": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35752,11 +34125,6 @@
     ],
     "designer-components.feedback:components.spinner": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35778,11 +34146,6 @@
       }
     ],
     "designer-components.feedback:components.skeleton": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35806,11 +34169,6 @@
     ],
     "designer-components.navigation:components.link": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35832,11 +34190,6 @@
       }
     ],
     "designer-components.navigation:components.breadcrumbs": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35860,11 +34213,6 @@
     ],
     "designer-components.navigation:components.tabs": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35886,11 +34234,6 @@
       }
     ],
     "designer-components.navigation:components.navigation-tree": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35914,11 +34257,6 @@
     ],
     "designer-components.navigation:components.sidebar": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35940,11 +34278,6 @@
       }
     ],
     "designer-components.containment:components.card": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -35968,11 +34301,6 @@
     ],
     "designer-components.containment:components.separator": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -35994,11 +34322,6 @@
       }
     ],
     "designer-components.containment:components.disclosure": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36022,11 +34345,6 @@
     ],
     "designer-components.containment:components.resize-handle": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36048,11 +34366,6 @@
       }
     ],
     "designer-components.containment:components.scroll-area": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36076,11 +34389,6 @@
     ],
     "designer-components.containment:components.dialog": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36102,11 +34410,6 @@
       }
     ],
     "designer-components.containment:components.popover": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36130,11 +34433,6 @@
     ],
     "designer-components.containment:components.tooltip": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36156,11 +34454,6 @@
       }
     ],
     "designer-components.containment:components.sheet": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36184,11 +34477,6 @@
     ],
     "designer-components.flow:components.flow.base-node": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36210,11 +34498,6 @@
       }
     ],
     "designer-components.flow:components.flow.node-header": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36238,11 +34521,6 @@
     ],
     "designer-components.flow:components.flow.base-handle": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36264,11 +34542,6 @@
       }
     ],
     "designer-components.flow:components.flow.labeled-handle": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36292,11 +34565,6 @@
     ],
     "designer-components.flow:components.flow.node-status": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36318,11 +34586,6 @@
       }
     ],
     "designer-components.flow:components.flow.edge": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36346,11 +34609,6 @@
     ],
     "designer-components.flow:components.flow.canvas": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36372,11 +34630,6 @@
       }
     ],
     "designer-components.studio:components.studio.card-grid": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36400,11 +34653,6 @@
     ],
     "designer-components.studio:components.studio.card-stack": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36426,11 +34674,6 @@
       }
     ],
     "designer-components.studio:components.studio.text-link": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36454,11 +34697,6 @@
     ],
     "designer-components.studio:components.studio.sidebar-static-row": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36480,11 +34718,6 @@
       }
     ],
     "designer-components.studio:components.studio.home-grid": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36508,11 +34741,6 @@
     ],
     "designer-components.studio:components.studio.specimen-frame": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36534,11 +34762,6 @@
       }
     ],
     "designer-components.studio:components.studio.specimen-figure": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36562,11 +34785,6 @@
     ],
     "designer-components.studio:components.studio.block-viewer-iframe": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36588,11 +34806,6 @@
       }
     ],
     "designer-components.studio:components.studio.specimen-document": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36616,11 +34829,6 @@
     ],
     "designer-sections.specimens:sections.specimen-swatch": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36642,11 +34850,6 @@
       }
     ],
     "designer-sections.specimens:sections.specimen-color-ramp": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36670,11 +34873,6 @@
     ],
     "designer-sections.specimens:sections.specimen-type-ladder": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36696,11 +34894,6 @@
       }
     ],
     "designer-sections.specimens:sections.specimen-spacing-ladder": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36724,11 +34917,6 @@
     ],
     "designer-sections.specimens:sections.specimen-radius-ladder": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36750,11 +34938,6 @@
       }
     ],
     "designer-sections.specimens:sections.specimen-motion-player": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36778,11 +34961,6 @@
     ],
     "designer-sections.specimens:sections.specimen-asset-grid": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36804,11 +34982,6 @@
       }
     ],
     "designer-sections.specimens:sections.specimen-icon-grid": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36832,11 +35005,6 @@
     ],
     "designer-sections.specimens:sections.specimen-variant-matrix": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36858,11 +35026,6 @@
       }
     ],
     "designer-sections.specimens:sections.specimen-section-viewports": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36886,11 +35049,6 @@
     ],
     "designer-sections.specimens:sections.specimen-frame-viewports": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36912,11 +35070,6 @@
       }
     ],
     "designer-sections.specimens:sections.specimen-rich-passage": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36940,11 +35093,6 @@
     ],
     "designer-sections.specimens:sections.specimen-copy-in-context": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -36966,11 +35114,6 @@
       }
     ],
     "designer-sections.specimens:sections.specimen-page-viewports": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -36994,11 +35137,6 @@
     ],
     "designer-sections.parts:sections.band": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37020,11 +35158,6 @@
       }
     ],
     "designer-sections.parts:sections.section-header": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37048,11 +35181,6 @@
     ],
     "designer-sections.parts:sections.pagination": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37074,11 +35202,6 @@
       }
     ],
     "designer-sections.explain:sections.hero": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37102,11 +35225,6 @@
     ],
     "designer-sections.explain:sections.logo-hero": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37128,11 +35246,6 @@
       }
     ],
     "designer-sections.explain:sections.page-header": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37156,11 +35269,6 @@
     ],
     "designer-sections.explain:sections.logo-mark": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37182,11 +35290,6 @@
       }
     ],
     "designer-sections.explain:sections.content": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37210,11 +35313,6 @@
     ],
     "designer-sections.explain:sections.article": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37236,11 +35334,6 @@
       }
     ],
     "designer-sections.explain:sections.sectioned-document": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37264,11 +35357,6 @@
     ],
     "designer-sections.explain:sections.legal-prose": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37290,11 +35378,6 @@
       }
     ],
     "designer-sections.explain:sections.features": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37318,11 +35401,6 @@
     ],
     "designer-sections.explain:sections.call-to-action": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37344,11 +35422,6 @@
       }
     ],
     "designer-sections.explain:sections.testimonials": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37372,11 +35445,6 @@
     ],
     "designer-sections.explain:sections.logo-cloud": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37398,11 +35466,6 @@
       }
     ],
     "designer-sections.explain:sections.people": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37426,11 +35489,6 @@
     ],
     "designer-sections.explain:sections.media": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37452,11 +35510,6 @@
       }
     ],
     "designer-sections.explain:sections.gallery": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37480,11 +35533,6 @@
     ],
     "designer-sections.explain:sections.faq": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37506,11 +35554,6 @@
       }
     ],
     "designer-sections.explain:sections.steps": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37534,11 +35577,6 @@
     ],
     "designer-sections.explain:sections.timeline": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37560,11 +35598,6 @@
       }
     ],
     "designer-sections.organize:sections.cards": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37588,11 +35621,6 @@
     ],
     "designer-sections.organize:sections.resource-list": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37614,11 +35642,6 @@
       }
     ],
     "designer-sections.organize:sections.task-list": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37642,11 +35665,6 @@
     ],
     "designer-sections.organize:sections.comparison": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37668,11 +35686,6 @@
       }
     ],
     "designer-sections.organize:sections.pricing": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37696,11 +35709,6 @@
     ],
     "designer-sections.organize:sections.stats": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37722,11 +35730,6 @@
       }
     ],
     "designer-sections.organize:sections.status-list": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37750,11 +35753,6 @@
     ],
     "designer-sections.organize:sections.usage": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37776,11 +35774,6 @@
       }
     ],
     "designer-sections.organize:sections.account-summary": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37804,11 +35797,6 @@
     ],
     "designer-sections.organize:sections.data-table": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37830,11 +35818,6 @@
       }
     ],
     "designer-sections.organize:sections.data-grid": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37858,11 +35841,6 @@
     ],
     "designer-sections.organize:sections.record-detail": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37884,11 +35862,6 @@
       }
     ],
     "designer-sections.organize:sections.activity-feed": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37912,11 +35885,6 @@
     ],
     "designer-sections.organize:sections.audit-log": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37938,11 +35906,6 @@
       }
     ],
     "designer-sections.collect:sections.form": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -37966,11 +35929,6 @@
     ],
     "designer-sections.collect:sections.newsletter": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -37992,11 +35950,6 @@
       }
     ],
     "designer-sections.collect:sections.wizard": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38020,11 +35973,6 @@
     ],
     "designer-sections.collect:sections.settings": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38046,11 +35994,6 @@
       }
     ],
     "designer-sections.collect:sections.column-mapper": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38074,11 +36017,6 @@
     ],
     "designer-sections.collect:sections.access-matrix": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38100,11 +36038,6 @@
       }
     ],
     "designer-sections.collect:sections.chat": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38128,11 +36061,6 @@
     ],
     "designer-sections.collect:sections.sign-in-form": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38154,11 +36082,6 @@
       }
     ],
     "designer-sections.navigate:sections.link-index": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38182,11 +36105,6 @@
     ],
     "designer-sections.navigate:sections.table-of-contents": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38208,11 +36126,6 @@
       }
     ],
     "designer-sections.navigate:sections.explorer": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38236,11 +36149,6 @@
     ],
     "designer-sections.navigate:sections.filter-builder": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38262,11 +36170,6 @@
       }
     ],
     "designer-sections.respond:sections.empty-state": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38290,11 +36193,6 @@
     ],
     "designer-sections.respond:sections.error-state": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38316,11 +36214,6 @@
       }
     ],
     "designer-sections.respond:sections.boundary-message": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38344,11 +36237,6 @@
     ],
     "designer-sections.respond:sections.notices": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38370,11 +36258,6 @@
       }
     ],
     "designer-sections.respond:sections.consent": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38398,11 +36281,6 @@
     ],
     "designer-sections.extensions:sections.module.checks": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38424,11 +36302,6 @@
       }
     ],
     "designer-sections.extensions:sections.module.outline": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38452,11 +36325,6 @@
     ],
     "designer-sections.extensions:sections.studio.checks": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38478,11 +36346,6 @@
       }
     ],
     "designer-sections.extensions:sections.studio.contract": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38506,11 +36369,6 @@
     ],
     "designer-sections.extensions:sections.studio.history": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38532,11 +36390,6 @@
       }
     ],
     "designer-sections.extensions:sections.studio.home": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38560,11 +36413,6 @@
     ],
     "designer-sections.extensions:sections.studio.leaf-header": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38586,11 +36434,6 @@
       }
     ],
     "designer-sections.extensions:sections.studio.options": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38614,11 +36457,6 @@
     ],
     "designer-sections.extensions:sections.studio.page-header": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38640,11 +36478,6 @@
       }
     ],
     "designer-sections.extensions:sections.studio.page-tabs": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38668,11 +36501,6 @@
     ],
     "designer-sections.extensions:sections.studio.publications": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38694,11 +36522,6 @@
       }
     ],
     "designer-sections.extensions:sections.studio.references": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38722,11 +36545,6 @@
     ],
     "designer-sections.extensions:sections.studio.slot-groups": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38748,11 +36566,6 @@
       }
     ],
     "designer-sections.extensions:sections.studio.specimen": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38776,11 +36589,6 @@
     ],
     "designer-sections.producer:sections.producer.pipeline-header": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38802,11 +36610,6 @@
       }
     ],
     "designer-sections.producer:sections.producer.pipeline-flow": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38830,11 +36633,6 @@
     ],
     "designer-sections.producer:sections.producer.step-sheet": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38856,11 +36654,6 @@
       }
     ],
     "designer-sections.producer:sections.producer.pipeline-legend": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38884,11 +36677,6 @@
     ],
     "designer-sections.producer:sections.producer.team-strip": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38910,11 +36698,6 @@
       }
     ],
     "designer-sections.producer:sections.producer.system-empty": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38938,11 +36721,6 @@
     ],
     "designer-frames.page-shells:frames.site-shell": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -38964,11 +36742,6 @@
       }
     ],
     "designer-frames.page-shells:frames.document": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -38992,11 +36765,6 @@
     ],
     "designer-frames.page-shells:frames.app-shell": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -39018,11 +36786,6 @@
       }
     ],
     "designer-frames.page-shells:frames.auth-shell": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -39046,11 +36809,6 @@
     ],
     "designer-frames.regions:frames.site-header": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -39072,11 +36830,6 @@
       }
     ],
     "designer-frames.regions:frames.app-header": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -39100,11 +36853,6 @@
     ],
     "designer-frames.regions:frames.app-sidebar": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -39126,11 +36874,6 @@
       }
     ],
     "designer-frames.regions:frames.inspector": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -39154,11 +36897,6 @@
     ],
     "designer-frames.regions:frames.site-footer": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -39180,11 +36918,6 @@
       }
     ],
     "designer-frames.overlay-shells:frames.sheet": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -39208,11 +36941,6 @@
     ],
     "designer-frames.overlay-shells:frames.command": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "designer",
         "label": "Designer",
         "href": "/designer/themes/colors"
@@ -39234,11 +36962,6 @@
       }
     ],
     "designer-frames.extensions:frames.studio-shell": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "designer",
         "label": "Designer",
@@ -39262,11 +36985,6 @@
     ],
     "writer-lexicon.voice:lexicon.formality": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39288,11 +37006,6 @@
       }
     ],
     "writer-lexicon.voice:lexicon.warmth": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39316,11 +37029,6 @@
     ],
     "writer-lexicon.voice:lexicon.energy": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39342,11 +37050,6 @@
       }
     ],
     "writer-lexicon.voice:lexicon.person": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39370,11 +37073,6 @@
     ],
     "writer-lexicon.voice:lexicon.mood": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39396,11 +37094,6 @@
       }
     ],
     "writer-lexicon.voice:lexicon.sentence-length": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39424,11 +37117,6 @@
     ],
     "writer-lexicon.voice:lexicon.reading-level": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39450,11 +37138,6 @@
       }
     ],
     "writer-lexicon.terminology:lexicon.brand-names": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39478,11 +37161,6 @@
     ],
     "writer-lexicon.terminology:lexicon.preferred-terms": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39504,11 +37182,6 @@
       }
     ],
     "writer-lexicon.terminology:lexicon.avoid-terms": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39532,11 +37205,6 @@
     ],
     "writer-lexicon.terminology:lexicon.avoid-patterns": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39558,11 +37226,6 @@
       }
     ],
     "writer-lexicon.terminology:lexicon.spelling-variant": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39586,11 +37249,6 @@
     ],
     "writer-lexicon.terminology:lexicon.pronunciation": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39612,11 +37270,6 @@
       }
     ],
     "writer-lexicon.claims:lexicon.product-claims": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39640,11 +37293,6 @@
     ],
     "writer-lexicon.claims:lexicon.metric-claims": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39666,11 +37314,6 @@
       }
     ],
     "writer-lexicon.claims:lexicon.compliance-statements": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39694,11 +37337,6 @@
     ],
     "writer-lexicon.claims:lexicon.comparison-claims": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39720,11 +37358,6 @@
       }
     ],
     "writer-lexicon.formats:lexicon.number-format": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39748,11 +37381,6 @@
     ],
     "writer-lexicon.formats:lexicon.plural-rules": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39774,11 +37402,6 @@
       }
     ],
     "writer-lexicon.formats:lexicon.date-format": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39802,11 +37425,6 @@
     ],
     "writer-lexicon.formats:lexicon.time-format": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39828,11 +37446,6 @@
       }
     ],
     "writer-lexicon.formats:lexicon.currency-format": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39856,11 +37469,6 @@
     ],
     "writer-lexicon.formats:lexicon.unit-format": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39882,11 +37490,6 @@
       }
     ],
     "writer-lexicon.formats:lexicon.capitalization": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39910,11 +37513,6 @@
     ],
     "writer-lexicon.formats:lexicon.punctuation": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39936,11 +37534,6 @@
       }
     ],
     "writer-lexicon.formats:lexicon.direction": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -39964,11 +37557,6 @@
     ],
     "writer-lexicon.formats:lexicon.expansion-budget": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -39990,11 +37578,6 @@
       }
     ],
     "writer-strings.interface:strings.actions": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40018,11 +37601,6 @@
     ],
     "writer-strings.interface:strings.navigation": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40044,11 +37622,6 @@
       }
     ],
     "writer-strings.interface:strings.field-labels": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40072,11 +37645,6 @@
     ],
     "writer-strings.interface:strings.common": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40098,11 +37666,6 @@
       }
     ],
     "writer-strings.interface:strings.statuses": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40126,11 +37689,6 @@
     ],
     "writer-strings.interface:strings.counters": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40152,11 +37710,6 @@
       }
     ],
     "writer-strings.feedback:strings.errors": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40180,11 +37733,6 @@
     ],
     "writer-strings.feedback:strings.warnings": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40206,11 +37754,6 @@
       }
     ],
     "writer-strings.feedback:strings.confirmations": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40234,11 +37777,6 @@
     ],
     "writer-strings.feedback:strings.empty": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40260,11 +37798,6 @@
       }
     ],
     "writer-strings.feedback:strings.loading": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40288,11 +37821,6 @@
     ],
     "writer-strings.identity:strings.names": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40314,11 +37842,6 @@
       }
     ],
     "writer-strings.identity:strings.taglines": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40342,11 +37865,6 @@
     ],
     "writer-strings.identity:strings.legal-lines": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40368,11 +37886,6 @@
       }
     ],
     "writer-strings.media-text:strings.alt-text": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40396,11 +37909,6 @@
     ],
     "writer-strings.media-text:strings.captions": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40422,11 +37930,6 @@
       }
     ],
     "writer-strings.media-text:strings.transcripts": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40450,11 +37953,6 @@
     ],
     "writer-strings.metadata:strings.page-titles": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40476,11 +37974,6 @@
       }
     ],
     "writer-strings.metadata:strings.descriptions": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40504,11 +37997,6 @@
     ],
     "writer-strings.metadata:strings.share-text": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40530,11 +38018,6 @@
       }
     ],
     "writer-strings.metadata:strings.email-subjects": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40558,11 +38041,6 @@
     ],
     "writer-strings.metadata:strings.email-preheaders": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40584,11 +38062,6 @@
       }
     ],
     "writer-patterns.headings:patterns.headline": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40612,11 +38085,6 @@
     ],
     "writer-patterns.headings:patterns.headline-subhead": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40638,11 +38106,6 @@
       }
     ],
     "writer-patterns.headings:patterns.eyebrow-headline": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40666,11 +38129,6 @@
     ],
     "writer-patterns.headings:patterns.section-title": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40692,11 +38150,6 @@
       }
     ],
     "writer-patterns.actions:patterns.primary-action": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40720,11 +38173,6 @@
     ],
     "writer-patterns.actions:patterns.secondary-action": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40746,11 +38194,6 @@
       }
     ],
     "writer-patterns.actions:patterns.inline-link": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40774,11 +38217,6 @@
     ],
     "writer-patterns.messages:patterns.error-message": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40800,11 +38238,6 @@
       }
     ],
     "writer-patterns.messages:patterns.warning-message": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40828,11 +38261,6 @@
     ],
     "writer-patterns.messages:patterns.confirmation": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40854,11 +38282,6 @@
       }
     ],
     "writer-patterns.messages:patterns.empty-state": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40882,11 +38305,6 @@
     ],
     "writer-patterns.messages:patterns.hint": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40908,11 +38326,6 @@
       }
     ],
     "writer-patterns.messages:patterns.tooltip": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40936,11 +38349,6 @@
     ],
     "writer-patterns.forms:patterns.form-field": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -40962,11 +38370,6 @@
       }
     ],
     "writer-patterns.forms:patterns.consent-line": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -40990,11 +38393,6 @@
     ],
     "writer-patterns.data-and-lists:patterns.feature-bullet": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41016,11 +38414,6 @@
       }
     ],
     "writer-patterns.data-and-lists:patterns.stat": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41044,11 +38437,6 @@
     ],
     "writer-patterns.data-and-lists:patterns.pricing-item": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41070,11 +38458,6 @@
       }
     ],
     "writer-patterns.data-and-lists:patterns.table-header": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41098,11 +38481,6 @@
     ],
     "writer-patterns.data-and-lists:patterns.table-caption": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41124,11 +38502,6 @@
       }
     ],
     "writer-patterns.attribution:patterns.quote": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41152,11 +38525,6 @@
     ],
     "writer-patterns.attribution:patterns.testimonial": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41178,11 +38546,6 @@
       }
     ],
     "writer-patterns.attribution:patterns.figure-caption": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41206,11 +38569,6 @@
     ],
     "writer-patterns.identity:patterns.messaging-kit": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41232,11 +38590,6 @@
       }
     ],
     "writer-passages.parts:passages.band": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41260,11 +38613,6 @@
     ],
     "writer-passages.parts:passages.section-header": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41286,11 +38634,6 @@
       }
     ],
     "writer-passages.parts:passages.pagination": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41314,11 +38657,6 @@
     ],
     "writer-passages.explain:passages.hero": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41340,11 +38678,6 @@
       }
     ],
     "writer-passages.explain:passages.logo-hero": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41368,11 +38701,6 @@
     ],
     "writer-passages.explain:passages.page-header": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41394,11 +38722,6 @@
       }
     ],
     "writer-passages.explain:passages.logo-mark": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41422,11 +38745,6 @@
     ],
     "writer-passages.explain:passages.content": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41448,11 +38766,6 @@
       }
     ],
     "writer-passages.explain:passages.article": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41476,11 +38789,6 @@
     ],
     "writer-passages.explain:passages.sectioned-document": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41502,11 +38810,6 @@
       }
     ],
     "writer-passages.explain:passages.legal-prose": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41530,11 +38833,6 @@
     ],
     "writer-passages.explain:passages.features": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41556,11 +38854,6 @@
       }
     ],
     "writer-passages.explain:passages.call-to-action": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41584,11 +38877,6 @@
     ],
     "writer-passages.explain:passages.testimonials": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41610,11 +38898,6 @@
       }
     ],
     "writer-passages.explain:passages.logo-cloud": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41638,11 +38921,6 @@
     ],
     "writer-passages.explain:passages.people": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41664,11 +38942,6 @@
       }
     ],
     "writer-passages.explain:passages.media": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41692,11 +38965,6 @@
     ],
     "writer-passages.explain:passages.gallery": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41718,11 +38986,6 @@
       }
     ],
     "writer-passages.explain:passages.faq": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41746,11 +39009,6 @@
     ],
     "writer-passages.explain:passages.steps": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41772,11 +39030,6 @@
       }
     ],
     "writer-passages.explain:passages.timeline": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41800,11 +39053,6 @@
     ],
     "writer-passages.organize:passages.cards": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41826,11 +39074,6 @@
       }
     ],
     "writer-passages.organize:passages.resource-list": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41854,11 +39097,6 @@
     ],
     "writer-passages.organize:passages.task-list": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41880,11 +39118,6 @@
       }
     ],
     "writer-passages.organize:passages.comparison": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41908,11 +39141,6 @@
     ],
     "writer-passages.organize:passages.pricing": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41934,11 +39162,6 @@
       }
     ],
     "writer-passages.organize:passages.stats": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -41962,11 +39185,6 @@
     ],
     "writer-passages.organize:passages.status-list": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -41988,11 +39206,6 @@
       }
     ],
     "writer-passages.organize:passages.usage": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42016,11 +39229,6 @@
     ],
     "writer-passages.organize:passages.account-summary": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42042,11 +39250,6 @@
       }
     ],
     "writer-passages.organize:passages.data-table": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42070,11 +39273,6 @@
     ],
     "writer-passages.organize:passages.data-grid": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42096,11 +39294,6 @@
       }
     ],
     "writer-passages.organize:passages.record-detail": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42124,11 +39317,6 @@
     ],
     "writer-passages.organize:passages.activity-feed": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42150,11 +39338,6 @@
       }
     ],
     "writer-passages.organize:passages.audit-log": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42178,11 +39361,6 @@
     ],
     "writer-passages.collect:passages.form": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42204,11 +39382,6 @@
       }
     ],
     "writer-passages.collect:passages.newsletter": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42232,11 +39405,6 @@
     ],
     "writer-passages.collect:passages.wizard": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42258,11 +39426,6 @@
       }
     ],
     "writer-passages.collect:passages.settings": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42286,11 +39449,6 @@
     ],
     "writer-passages.collect:passages.column-mapper": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42312,11 +39470,6 @@
       }
     ],
     "writer-passages.collect:passages.access-matrix": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42340,11 +39493,6 @@
     ],
     "writer-passages.collect:passages.chat": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42366,11 +39514,6 @@
       }
     ],
     "writer-passages.collect:passages.sign-in-form": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42394,11 +39537,6 @@
     ],
     "writer-passages.navigate:passages.link-index": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42420,11 +39558,6 @@
       }
     ],
     "writer-passages.navigate:passages.table-of-contents": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42448,11 +39581,6 @@
     ],
     "writer-passages.navigate:passages.explorer": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42474,11 +39602,6 @@
       }
     ],
     "writer-passages.navigate:passages.filter-builder": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42502,11 +39625,6 @@
     ],
     "writer-passages.respond:passages.empty-state": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42528,11 +39646,6 @@
       }
     ],
     "writer-passages.respond:passages.error-state": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42556,11 +39669,6 @@
     ],
     "writer-passages.respond:passages.boundary-message": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42582,11 +39690,6 @@
       }
     ],
     "writer-passages.respond:passages.notices": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42610,11 +39713,6 @@
     ],
     "writer-passages.respond:passages.consent": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42636,11 +39734,6 @@
       }
     ],
     "writer-narratives.web:narratives.page-story": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42664,11 +39757,6 @@
     ],
     "writer-narratives.web:narratives.screen": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42690,11 +39778,6 @@
       }
     ],
     "writer-narratives.web:narratives.site-chrome": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42718,11 +39801,6 @@
     ],
     "writer-narratives.web:narratives.app-chrome": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42744,11 +39822,6 @@
       }
     ],
     "writer-narratives.documents:narratives.article": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42772,11 +39845,6 @@
     ],
     "writer-narratives.documents:narratives.guide": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42798,11 +39866,6 @@
       }
     ],
     "writer-narratives.documents:narratives.release-notes": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42826,11 +39889,6 @@
     ],
     "writer-narratives.documents:narratives.legal-document": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42852,11 +39910,6 @@
       }
     ],
     "writer-narratives.documents:narratives.deck-script": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42880,11 +39933,6 @@
     ],
     "writer-narratives.communications:narratives.email": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42906,11 +39954,6 @@
       }
     ],
     "writer-narratives.communications:narratives.notification": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "writer",
         "label": "Writer",
@@ -42934,11 +39977,6 @@
     ],
     "writer-narratives.communications:narratives.video-script": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "writer",
         "label": "Writer",
         "href": "/writer/lexicon/voice"
@@ -42960,11 +39998,6 @@
       }
     ],
     "publisher-studio.pages:page.home": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -42988,11 +40021,6 @@
     ],
     "publisher-studio.director:page.director-context": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43014,11 +40042,6 @@
       }
     ],
     "publisher-studio.director:page.director-aspiration": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43042,11 +40065,6 @@
     ],
     "publisher-studio.director:page.director-focus": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43068,11 +40086,6 @@
       }
     ],
     "publisher-studio.director:page.director-advantage": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43096,11 +40109,6 @@
     ],
     "publisher-studio.director:page.director-identity": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43122,11 +40130,6 @@
       }
     ],
     "publisher-studio.director:page.director-capability": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43150,11 +40153,6 @@
     ],
     "publisher-studio.director:page.director-execution": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43176,11 +40174,6 @@
       }
     ],
     "publisher-studio.designer:page.designer-themes": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43204,11 +40197,6 @@
     ],
     "publisher-studio.designer:page.designer-assets": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43230,11 +40218,6 @@
       }
     ],
     "publisher-studio.designer:page.designer-components": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43258,11 +40241,6 @@
     ],
     "publisher-studio.designer:page.designer-sections": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43284,11 +40262,6 @@
       }
     ],
     "publisher-studio.designer:page.designer-frames": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43312,11 +40285,6 @@
     ],
     "publisher-studio.writer:page.writer-lexicon": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43338,11 +40306,6 @@
       }
     ],
     "publisher-studio.writer:page.writer-strings": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43366,11 +40329,6 @@
     ],
     "publisher-studio.writer:page.writer-patterns": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43392,11 +40350,6 @@
       }
     ],
     "publisher-studio.writer:page.writer-passages": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43420,11 +40373,6 @@
     ],
     "publisher-studio.writer:page.writer-narratives": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43446,11 +40394,6 @@
       }
     ],
     "publisher-studio.publisher:page.publisher-studio": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43474,11 +40417,6 @@
     ],
     "publisher-studio.systems:page.producer-pipeline": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43500,11 +40438,6 @@
       }
     ],
     "publisher-studio.systems:page.build-overview": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -43528,11 +40461,6 @@
     ],
     "publisher-studio.systems:page.run-overview": [
       {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
-      {
         "id": "publisher",
         "label": "Publisher",
         "href": "/publisher/studio/pages"
@@ -43554,11 +40482,6 @@
       }
     ],
     "publisher-studio.publication:publication.studio": [
-      {
-        "id": "content",
-        "label": "Content",
-        "href": "/content"
-      },
       {
         "id": "publisher",
         "label": "Publisher",
@@ -46080,19 +43003,14 @@
       "version": 5
     },
     {
-      "slot": "sections.studio.home",
-      "element": "studio-home",
-      "version": 10
-    },
-    {
-      "slot": "sections.module.outline",
-      "element": "module-outline",
-      "version": 7
-    },
-    {
       "slot": "sections.module.checks",
       "element": "module-checks",
       "version": 6
+    },
+    {
+      "slot": "sections.studio.home",
+      "element": "studio-home",
+      "version": 10
     },
     {
       "slot": "sections.producer.team-strip",
@@ -46108,6 +43026,11 @@
       "slot": "sections.producer.pipeline-flow",
       "element": "producer-pipeline-flow",
       "version": 14
+    },
+    {
+      "slot": "sections.module.outline",
+      "element": "module-outline",
+      "version": 7
     },
     {
       "slot": "sections.studio.page-tabs",

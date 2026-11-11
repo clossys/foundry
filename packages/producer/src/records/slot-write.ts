@@ -4,7 +4,7 @@
  * Candidates are immutable (a change is the next version); a decision is replaced, and its
  * history is git. Decisions are written through `clossys pin` (rule R-DECISIONS-BY-CLI).
  */
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { closeSync, constants, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
@@ -133,6 +133,54 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
   }
   return pin;
   });
+}
+
+/**
+ * The P0 propagation probe's only pin write (`studio/checks/p0-propagate.mjs`). The probe mutates a
+ * pinned Designer theme candidate for one build and must keep its pin selecting those bytes, so this
+ * re-points the pin's `sha256` at `candidateText` and keeps every other field; `restoreThemeProbePin`
+ * puts the original pin text back byte for byte. Only a Designer `themes.*` slot is accepted: every
+ * other agent's pin (Publisher, Writer, Director, seats) is out of the probe's reach, and the decision
+ * itself (candidate, decidedBy, basis, at) is never changed here.
+ */
+export interface ThemeProbePin { readonly path: string; readonly original: string; readonly repointed: string }
+const THEME_SLOT = /^themes\.[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)*$/;
+const canonicalJson = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
+function themeProbePath(consumer: string, id: string): string {
+  if (!THEME_SLOT.test(id)) throw new Error(`theme probe refused: ${id} is not a Designer themes.* slot`);
+  const path = pinFile(join(consumer, "agents", "designer", id));
+  canonicalDirectory(path);
+  return path;
+}
+/** Read and check the theme slot's pin: canonical JSON that selects `candidate` by the sha256 of `candidateText`. */
+export function readThemeProbePin(consumer: string, id: string, candidate: string, candidateText: string): string {
+  const path = themeProbePath(consumer, id);
+  const original = readFileSync(path, "utf8");
+  let pin: PinDoc;
+  try { pin = JSON.parse(original) as PinDoc; } catch { throw new Error("The theme slot pin is not JSON."); }
+  if (canonicalJson(pin) !== original) throw new Error("The theme slot pin is not canonical JSON (two-space indent, trailing newline); refusing to rewrite it.");
+  if (pin.candidate !== candidate) throw new Error(`The theme slot pin selects ${pin.candidate}, not ${candidate}.`);
+  if (pin.sha256 !== createHash("sha256").update(candidateText).digest("hex")) throw new Error(`The theme slot pin's sha256 does not match ${candidate}; the candidate is not what Studio serves.`);
+  return original;
+}
+/** The pin text with only its sha256 re-pointed at `candidateText`. */
+export function repointedThemePin(original: string, candidateText: string): string {
+  const pin = JSON.parse(original) as PinDoc;
+  return canonicalJson({ ...pin, sha256: createHash("sha256").update(candidateText).digest("hex") });
+}
+/** Re-point the theme slot's pin at the probe's mutated candidate bytes. */
+export function repointThemeProbePin(consumer: string, id: string, original: string, candidateText: string): ThemeProbePin {
+  const path = themeProbePath(consumer, id);
+  if (readFileSync(path, "utf8") !== original) throw new Error("theme probe refused: the pin changed since it was read");
+  const repointed = repointedThemePin(original, candidateText);
+  replaceFile(path, repointed);
+  return { path, original, repointed };
+}
+/** Put the theme slot's original pin text back; true when the file now holds exactly those bytes. */
+export function restoreThemeProbePin(consumer: string, id: string, original: string): boolean {
+  const path = themeProbePath(consumer, id);
+  replaceFile(path, original);
+  return readFileSync(path, "utf8") === original;
 }
 
 /** Mark a slot not needed: slot.json `notNeeded {reason, since, decidedBy}`, and any pin.json removed. */

@@ -18,7 +18,7 @@ import { StudioShell, type PopoverSpec } from './StudioShell';
 import type { ChecksInput } from '../sections/studio-checks';
 import type { HistoryInput } from '../sections/studio-history';
 import type { HomeCensus, HomeCensusLabels, HomeInput } from '../sections/studio-home';
-import type { ModuleCheckGroup, ModuleCheckRow, ModuleChecksInput } from '../sections/module-checks';
+import type { ModuleCheckRow, ModuleChecksInput } from '../sections/module-checks';
 import type { OptionsInput } from '../sections/studio-options';
 import type { PageHeaderInput } from '../sections/studio-page-header';
 import type { PageTabsInput } from '../sections/studio-page-tabs';
@@ -32,6 +32,7 @@ import type { StudioReport } from '../lib/studio-report';
 import { resolveStudioRoute, studioGroupOf, studioGroups, studioLanding, studioLeafHref, studioLeafTitle, studioAgentRecords, studioRecordTabs, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
 import { useSlotCensus } from '../lib/slot-census';
 import { pipelineInputs, type PipelineWiringFile } from '../lib/pipeline-flow';
+import { checksInput, homeDecisions, homePipeline, needRow, openNeeds } from '../lib/home-inputs';
 import { checkCitation, SLOT_PINS_CHECK, slotStateCitation } from '../lib/status-citation';
 import { loadLeaf, loadPipeline, loadSlotGroups, type LeafRecord, type SlotGroupsRecord, type StudioPageSeed } from '../lib/studio-seed';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
@@ -43,31 +44,13 @@ interface ModuleData { checks?: ModuleChecksInput }
 type Loaded = { state: 'loading' } | { state: 'notice'; notice: PageNoticeData } | { state: 'ready'; inputs: Inputs; modules?: ModuleData };
 interface LoaderProps { entry: ContentMapEntry; page: StudioPageRecord; spec: StudioAssemblySpec; slug?: string }
 
-const SEVERITY_TONE: Record<string, ModuleCheckRow['tone']> = { error: 'destructive', warning: 'outline', info: 'secondary' };
 /** A slot card's tone by its shown state. */
 const STATUS_TONE: Record<string, SlotTone> = { active: 'secondary', draft: 'outline', missing: 'outline', failing: 'destructive' };
-/** A report's severity as shown (Writer copy). */
-const SEVERITY_LABEL: Record<string, string> = { error: studioCopy('studio.severity-error'), warning: studioCopy('studio.severity-warning'), info: studioCopy('studio.severity-info') };
 /** A placed section's root, by the slot id the assembly's generated provenance marks it with. */
 const sectionTarget = (slot: string) => `[data-clossys-slot=${JSON.stringify(slot)}]`;
 const pageById = new Map(studioPages.map(page => [page.id, page]));
 
 /* Module data: what the checks module shows, from the same records the sections read. */
-
-const needRow = (report: StudioReport): ModuleCheckRow => ({ id: report.id, badge: SEVERITY_LABEL[report.severity] ?? report.severity, tone: SEVERITY_TONE[report.severity] ?? 'outline', title: report.title, detail: report.detail });
-const openNeeds = (reports: readonly StudioReport[], keep: (report: StudioReport) => boolean = () => true) => reports.filter(report => report.severity !== 'info' && report.area !== 'compile' && keep(report));
-
-function checksInput(failing: readonly ModuleCheckRow[], options: readonly ModuleCheckRow[], needs: readonly ModuleCheckRow[]): ModuleChecksInput {
-  const total = failing.length + options.length + needs.length;
-  return {
-    summary: total ? studioCopy("studio.page-attention-count", { count: total }) : studioCopy("studio.nothing-needs-attention-on-this-page"),
-    groups: [
-      { id: 'failing', label: studioCopy("studio.failing-checks"), empty: studioCopy("studio.no-check-reports-a-finding"), rows: failing },
-      { id: 'options', label: studioCopy("studio.pending-options"), empty: studioCopy("studio.no-option-waits-for-approval"), rows: options },
-      { id: 'needs', label: studioCopy("studio.open-needs"), empty: studioCopy("studio.nothing-is-waiting-on-you"), rows: needs },
-    ] satisfies ModuleCheckGroup[],
-  };
-}
 
 function leafChecks(inputs: Inputs, reports: readonly StudioReport[], agent: string, slug: string): ModuleChecksInput {
   const checks = (inputs.checks as ChecksInput | undefined)?.rows ?? [];
@@ -84,6 +67,7 @@ const OUTLINE_LABEL: Record<string, string> = {
   home: studioCopy("studio.agents"), 'page-header': studioCopy("studio.overview"), 'page-tabs': studioCopy("studio.overview"), 'slot-groups': studioCopy("studio.library"),
   'leaf-header': studioCopy("studio.overview"), specimen: studioCopy("studio.specimen"), options: studioCopy("studio.options"), checks: studioCopy("studio.checks"),
   contract: studioCopy("studio.contract"), history: studioCopy("studio.history"), references: studioCopy("studio.references"),
+  'sections.module.checks': studioCopy("studio.needs"), 'sections.producer.pipeline-flow': studioCopy("studio.pipeline.flow-label"),
 };
 const shortName = (slot: string) => slot.replace(/^sections\.studio\./, '');
 
@@ -127,6 +111,9 @@ function useResource<T>(key: string | undefined, seed: { key: string; record: Re
 function useHomeInputs({ page }: LoaderProps): Loaded {
   const { reports, revision, census: initialCensus } = useStudioData();
   const census = useSlotCensus(revision, initialCensus);
+  // The pipeline moved onto Home (owner P3): the same Producer wiring the pipeline page reads.
+  const pipeline = useResource<PipelineWiringFile>('pipeline', undefined, loadPipeline, studioCopy("studio.pipeline.empty.description"));
+  const seat = useSeatParam();
   return useMemo(() => {
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     // Home lists the projected agent groups; each opens on its projected landing (its first record's first tab).
@@ -143,10 +130,14 @@ function useHomeInputs({ page }: LoaderProps): Loaded {
       }];
     });
     const home: HomeInput = { agentsLabel: studioCopy("studio.agents"), agents };
+    const header = pageHeader(page);
+    // Owner P4: Home leads with the decisions waiting for the owner (the open needs Studio loads), then the agents' work, then the pipeline.
+    const decisions = homeDecisions(list);
+    const flow = homePipeline(pipeline.state === 'ready' ? pipeline.value : undefined, header, page.path, seat);
     const needs = openNeeds(list).map(needRow);
     const checks = checksInput(needs.filter(row => row.tone === 'destructive'), [], needs.filter(row => row.tone !== 'destructive'));
-    return { state: 'ready', inputs: { header: pageHeader(page), home }, modules: { checks } };
-  }, [reports, census, page]);
+    return { state: 'ready', inputs: { header, checks: decisions, home, ...flow }, modules: { checks } };
+  }, [reports, census, page, pipeline, seat]);
 }
 
 /** A group-tab page: the record's head, its tab routes, and the tab's IA groups of slot cards. */
