@@ -115,8 +115,13 @@ There is no session log. What the owner says is recorded as findings:
    team role, critical competency and margin; marketplace adds next segment,
    retention, moat, driver and buying. If no finding records the owner's
    choice, your first question is the archetype, with your hypothesis. Record
-   the answer as `owner-archetype-<date>`. The CLI does not store it, so pass
-   `--archetype <name>` on every `status` and `complete` run.
+   the owner's answer with
+   `npx clossys director check archetype <name> --by owner`, never by editing
+   a file: it writes `clossys/evidence/director/director-archetype.md` and the
+   run is traced. `status`, `complete` and `clossys direct --check` then use
+   its core cells; `npx clossys director check archetype` shows the recorded
+   one. Pass `--archetype <name>` on `status` and `complete` as well, so the
+   scope is visible in each command.
 3. Pins with basis `bulk`, `planner` or `agent` are hypotheses, not owner
    picks. Play each one back like a draft. When the owner keeps it unchanged,
    re-pin the same candidate with `--basis picked`; when they change it, draft
@@ -252,6 +257,11 @@ again.
   the owner's words accepting them. A pair verdict uses `judge: C2:X3` (core
   vs next segment) or `C2:X7` (allocation vs bet) and lists both cells. Never
   record a pass the critic did not give.
+- **A cell judgement** (`judge: Q<n>:<cell-id>@<N>`) also cites the run that
+  produced it: run the judge through `npx clossys pipeline trace <step> -- …`
+  and add `run: <step>#<run id>` from `.clossys/runs/<step>.jsonl`. A cell
+  verdict with no resolvable run is not counted and shows as
+  `judgment-uncited` on that cell.
 
 ## Progress
 

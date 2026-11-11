@@ -3,6 +3,7 @@
  * 1 findings, 2 could not run. The store commands ship no executable: the clossys CLI
  * (`clossys director check`) calls runDirectorCli with its store reader and writer.
  */
+import { ARCHETYPE_USAGE, runArchetypeCli } from "./cli/archetype.js";
 import { runReviewCli, REVIEW_USAGE } from "./cli/review.js";
 import { runCitationIndex } from "./citations/cli.js";
 import { runSlotCheckCli } from "./slot-contracts/cli.js";
@@ -31,6 +32,7 @@ Grounding reads the consumer's evidence/director/*.md. Exit codes: 0 clean, 1 fi
 Run "clossys director check wont-claim --help" for active prohibitions.
 ${READ_USAGE}
 ${REVIEW_USAGE}
+${ARCHETYPE_USAGE}
 `;
 
 const WONT_CLAIM_USAGE = `Usage: clossys director check wont-claim <strategy-dir> <scan-dir> [options]
@@ -328,6 +330,7 @@ export function main(argv: string[], store: DirectorStore): number {
     throw new CliInputError(`${argv[0]} is retired: the strategy store is the flat slot model, and pins are made by \`clossys pin\``);
   }
   if (argv[0] === "index") return runCitationIndex(argv.slice(1), store);
+  if (argv[0] === "archetype") return runArchetypeCli(argv.slice(1), store);
   if (isReadCommand(argv)) {
     return runReadCommand(argv, { execute: args => args.command === "brief" || args.command === "handoff" ? executeBriefCommand(args, store) : executeChecksCommand(args, store) });
   }

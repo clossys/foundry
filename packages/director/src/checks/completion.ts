@@ -4,16 +4,20 @@ import { blocks } from './types.js';
 import { activeCell, fresh, scopeIds } from './shared.js';
 import { checkCell } from './quality.js';
 import { checkCoherence } from './coherence.js';
+import { recordedJudgeVerdicts, uncitedJudgements } from './judgements.js';
 /** Canonical quality, coherence and completion status for the selected scope. */
 export function strategyStatus(model: StrategyModel, selection?: { scope?: Scope }, options?: CheckOptions): StatusReport;
 /** @deprecated Pass { scope } instead of a positional scope. */
 export function strategyStatus(model: StrategyModel, scope: Scope, options?: CheckOptions): StatusReport;
-export function strategyStatus(model: StrategyModel, selection: { scope?: Scope } | Scope = {}, options: CheckOptions = {}): StatusReport {
+export function strategyStatus(model: StrategyModel, selection: { scope?: Scope } | Scope = {}, given: CheckOptions = {}): StatusReport {
+  // One evaluator: without caller-supplied verdicts, the recorded judgement findings that are still current count.
+  const options: CheckOptions = { ...given, judgeVerdicts: given.judgeVerdicts ?? recordedJudgeVerdicts(model) };
   const scope = typeof selection === 'string' ? selection : selection.scope ?? 'full';
   const ids = scopeIds(model, scope), selected = new Set(ids), core = new Set(scopeIds(model, 'core'));
+  const uncited = uncitedJudgements(model);
   const cells = ids.map(id => {
     const cell = activeCell(model, id);
-    const findings = cell ? checkCell(cell, { model, ...options }) : [];
+    const findings = cell ? [...checkCell(cell, { model, ...options }), ...uncited.filter(finding => finding.cell === id)] : [];
     return { id, version: cell?.version, active: Boolean(cell) && !findings.some(blocks), fresh: Boolean(cell && fresh(cell, model)), findings };
   });
   const valid = (id: string) => cells.some(cell => cell.id === id && cell.active && cell.fresh);

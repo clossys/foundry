@@ -2,8 +2,21 @@ import { isSlotCandidatePath } from '../format/slot.js';
 import type { Cell } from '../format/types.js';
 import type { CellFinding, CheckContext } from './types.js';
 import { cellJudgeId } from './types.js';
-import { containsPhrase, escapeRegex, refText, resolves, words } from './shared.js';
+import { containsPhrase, escapeRegex, refText, resolves, scopeIds, words } from './shared.js';
 /** A Watch is a complete conditional with a measurable threshold and a review window. */
+/**
+ * Whether a pin satisfies the cell's decider. A core cell's decider is the owner: it counts only
+ * when owner-picked (`--by owner[:<ref>] --basis picked`). Any other cell may also be agent-picked
+ * (`clossys pick --by agent:<seat>`, basis `agent`). Bulk and planner pins are hypotheses and never count.
+ */
+export function pinSatisfiesDecider(pin: { decidedBy: string; basis: string }, decider: 'owner' | 'agent'): boolean {
+  const owner = pin.basis === 'picked' && /^owner(?::\S.*)?$/.test(pin.decidedBy);
+  return owner || decider === 'agent' && pin.basis === 'agent' && /^agent:\S+$/.test(pin.decidedBy);
+}
+
+/** Drops double-quoted spans: a Direction bullet under a negative key quotes the words it bans. */
+function unquoted(text: string): string { return text.replace(/["“][^"”]*["”]/g, ' '); }
+
 export function validWatch(text: string): boolean {
   const match = /^If\s+(.+?)\s+(>=|<=|>|<|=|rises above|falls below|reaches|stays below|stays above|is still|appears)\s+(.+?)\s+(by\s+(\d{4}-\d{2}-\d{2})|each\s+[\p{L}\p{N}][\p{L}\p{N}\s-]*|in any\s+[\p{L}\p{N}][\p{L}\p{N}\s-]*),\s+then\s+(.+)\.$/iu.exec(text.trim());
   if (!match || !(/\d/.test(match[3]!) || /"[^"\n]+"|'[^'\n]+'/.test(match[3]!)))
@@ -54,8 +67,11 @@ export function checkCell(cell: Cell, ctx: CheckContext): CellFinding[] {
       add('Q4', 'Watch must contain a signal, comparator, numeric or quoted threshold, window, and action', bullet.line);
   judge('Q4', 'Judge whether each Watch threshold is meaningful for this Direction');
   for (const bullet of [...cell.direction, ...cell.because, ...cell.watch]) {
+    // A banned phrase quoted under a negative key (Never: "seamless") is the ban itself, not a use of it.
+    const negative = cell.direction.includes(bullet) && ctx.model.catalog.lexicon.negativeKeys.includes(bullet.key ?? '');
+    const scanned = negative ? unquoted(bullet.text) : bullet.text;
     for (const phrase of ctx.model.catalog.lexicon.banned)
-      if (containsPhrase(bullet.text, phrase))
+      if (containsPhrase(scanned, phrase))
         add('Q5', `Banned generic phrase: ${phrase}`, bullet.line, 'generic');
     if (cell.id.startsWith('identity.visual.') && /#[\da-f]{3,8}\b/i.test(bullet.text))
       add('Q5', 'Visual strategy must not prescribe hex colours', bullet.line, 'hex');
@@ -66,7 +82,17 @@ export function checkCell(cell: Cell, ctx: CheckContext): CellFinding[] {
   }
   const hasTradeoff = cell.direction.some(bullet => ctx.model.catalog.lexicon.negativeKeys.includes(bullet.key ?? '') || ctx.model.catalog.lexicon.tradeOffMarkers.some(marker => containsPhrase(bullet.text, marker)));
   judge('Q6', hasTradeoff ? 'Judge whether a real alternative was given up' : 'No trade-off marker or negative key; judge whether a real alternative was given up', hasTradeoff ? 'tradeoff' : 'absent-tradeoff');
-  // A pinned slot candidate is confirmed by its pin (pin.json decidedBy/basis), not by a session line.
+  // A pinned slot candidate is confirmed by its pin (pin.json decidedBy/basis), not by a session line:
+  // it counts only when the pin satisfies the cell's decider.
+  if (cell.status === 'active' && isSlotCandidatePath(cell.id, cell.path)) {
+    const decider = scopeIds(ctx.model, 'core').includes(cell.id) ? 'owner' : 'agent';
+    if (!cell.pin)
+      add('Q7', `Pinned candidate ${cell.id}@${cell.version} carries no pin decision`, undefined, 'pin-basis');
+    else if (!pinSatisfiesDecider(cell.pin, decider))
+      add('Q7', `Pin of ${cell.id}@${cell.version} is decided by "${cell.pin.decidedBy}" with basis ${cell.pin.basis}; ${decider === 'owner'
+        ? 'a core cell counts only when owner-picked (clossys pin --by owner --basis picked)'
+        : 'this cell counts only when owner-picked or agent-picked (basis picked or agent)'}`, undefined, 'pin-basis');
+  }
   if (cell.status === 'active' && !isSlotCandidatePath(cell.id, cell.path)) {
     const ref = cell.confirmed;
     const session = ref?.kind === 'msg' ? ctx.model.sessions.find(session => session.id === ref.session) : undefined;

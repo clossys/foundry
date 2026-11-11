@@ -20,6 +20,8 @@ export interface Cell {
   /** Optional shared cell links; absence preserves the existing document shape. */
   links?: string[];
   direction: Bullet[]; because: Bullet[]; watch: Bullet[]; path: string;
+  /** A slot candidate's pin: who decided it (`decidedBy`) and how (`basis`), as pin.json records them. */
+  pin?: { decidedBy: string; basis: string };
 }
 export interface FormatIssue extends ValidationIssue { line: number }
 export type FormatResult<T> = { ok: true; value: T } | { ok: false; issues: FormatIssue[] };
@@ -42,6 +44,8 @@ export interface Finding {
   value?: string | number | boolean; unit?: string; aliases?: string[];
   /** A judgement finding: the verdict a judge gave on exactly these pinned cell versions. */
   judge?: string; verdict?: "pass" | "fail"; judged?: string[];
+  /** The run record a judgement cites, `<step>#<run id>` in the local `.clossys/runs` store. */
+  run?: string;
   bullets: Bullet[]; path: string;
 }
 export interface StrategyRequest {
@@ -66,4 +70,9 @@ export interface StrategyModel {
    * (stale) rather than unknown (dangling). Absent for models that list every version as a cell.
    */
   candidateVersions?: Record<string, number[]>;
+  /**
+   * The run records judgement findings cite (`<step>#<run id>`) that resolve in the local run
+   * store `<repo>/.clossys/runs/<step>.jsonl`. A cited run absent here does not resolve.
+   */
+  runs?: Record<string, { step: string; run: string; exit: number }>;
 }

@@ -39,6 +39,8 @@ export interface SlotFixture {
   watch?: string[];
   /** Write the candidate without a pin (an open decision). */
   unpinned?: boolean;
+  /** Who decided the pin and how; defaults to an owner pick, the decision every cell's decider accepts. */
+  pin?: { decidedBy: string; basis: string };
 }
 
 /** The candidate bytes `stageSlot` writes, for tests that edit or hash them. */
@@ -65,8 +67,8 @@ export function candidateFixture(id: string, direction: readonly string[], optio
 }
 
 /** A pin for candidate bytes, as `clossys pin` records it. */
-export function pinFixture(candidate: string, bytes: string): string {
-  return `${JSON.stringify({ candidate, sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "fixture", basis: "test", at: "2026-10-29T00:00:00Z" }, null, 2)}\n`;
+export function pinFixture(candidate: string, bytes: string, decision: { decidedBy: string; basis: string } = { decidedBy: "owner:fixture", basis: "picked" }): string {
+  return `${JSON.stringify({ candidate, sha256: createHash("sha256").update(bytes).digest("hex"), ...decision, at: "2026-10-29T00:00:00Z" }, null, 2)}\n`;
 }
 
 /** Stages one slot folder with one candidate and (unless `unpinned`) the pin naming it. */
@@ -84,7 +86,7 @@ export function stageSlot(root: string, id: string, version: number, direction: 
   const name = `${options.name ?? "fixture"}-v${version}.md`;
   const bytes = candidateFixture(id, typeof direction === "string" ? [direction] : direction, options);
   writeFileSync(join(dir, "candidates", name), bytes);
-  if (!options.unpinned) writeFileSync(join(dir, "pin.json"), pinFixture(name, bytes));
+  if (!options.unpinned) writeFileSync(join(dir, "pin.json"), pinFixture(name, bytes, options.pin));
   return { path: `${id}/candidates/${name}`, bytes };
 }
 

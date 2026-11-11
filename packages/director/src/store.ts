@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { basename, dirname, resolve } from "node:path";
 import { loadCatalog, type StrategyCatalog } from "./catalog.js";
-import { parseFinding } from "./format/finding.js";
+import { ARCHETYPE_RECORD_ID, recordedArchetype } from "./archetype.js";
+import { parseFinding, RUN_CITATION_PATTERN } from "./format/finding.js";
 import { RECORD_ID_PATTERN } from "./format/ref.js";
 import { parseSlotPin, slotCandidateCell, slotCandidateVersion } from "./format/slot.js";
 import { validateTree } from "./format/tree.js";
@@ -29,7 +30,7 @@ function faultIssue(error: unknown, operation: "list" | "read"): Issue {
 }
 
 /** The consumer folder holding Director evidence, when the root is `<consumer>/agents/director`. */
-function evidenceBase(root: string): string | undefined {
+export function evidenceBase(root: string): string | undefined {
   return basename(root) === "director" && basename(dirname(root)) === "agents" ? dirname(dirname(root)) : undefined;
 }
 
@@ -123,7 +124,7 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
     const path = `${id}/candidates/${pin.value.candidate}`;
     const bytes = read(model.root, path); if (bytes === undefined) continue;
     if (createHash("sha256").update(bytes).digest("hex") !== pin.value.sha256) { issue(path, "invalid-format", "Pinned candidate bytes disagree with pin.json sha256"); continue; }
-    try { model.cells.push(slotCandidateCell({ id, version, updated: pin.value.at.slice(0, 10), path, bytes })); active[id] = version; }
+    try { model.cells.push({ ...slotCandidateCell({ id, version, updated: pin.value.at.slice(0, 10), path, bytes }), pin: { decidedBy: pin.value.decidedBy, basis: pin.value.basis } }); active[id] = version; }
     catch (error) { issue(path, "invalid-format", error instanceof Error ? error.message : String(error)); }
   }
 
@@ -159,6 +160,40 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
       if (!result.ok) { for (const error of result.issues) issue(path, "invalid-format", `${error.path}: ${error.message}`, error.line); continue; }
       if (result.value.id !== id) issue(path, "invalid-path", "Finding id disagrees with its filename"); else model.findings.push(result.value);
     }
+    const archetype = recordedArchetype(model.findings, model.catalog);
+    if (archetype?.ok === false) issue(`${EVIDENCE_PREFIX}/${ARCHETYPE_RECORD_ID}.md`, "invalid-format", `Archetype record: ${archetype.message}`);
+    else if (archetype && model.tree) model.tree = { ...model.tree, archetype: archetype.archetype };
+    model.runs = citedRuns(dirname(base), store, model.findings);
   }
   return model;
+}
+
+/** The run store file of one step, as the clossys CLI names it: `check:pipeline` -> `.clossys/runs/check.pipeline.jsonl`. */
+export function runStoreFile(step: string): string { return `.clossys/runs/${step.replace(/[^a-z0-9.-]/gi, ".")}.jsonl`; }
+
+/**
+ * Resolves the run citations of the model's findings against the local run store under `repo`
+ * (`<repo>/.clossys/runs/<step>.jsonl`, gitignored, one clossys.pipeline-run/1 record per line).
+ * Only records of the cited step with the cited run id resolve; an absent store resolves nothing.
+ */
+function citedRuns(repo: string, store: DirectorStoreReader, findings: readonly { run?: string }[]): Record<string, { step: string; run: string; exit: number }> {
+  const runs: Record<string, { step: string; run: string; exit: number }> = Object.create(null);
+  const cited = [...new Set(findings.map(finding => finding.run).filter((run): run is string => run !== undefined))];
+  const byStep = new Map<string, string[]>();
+  for (const citation of cited) {
+    const match = RUN_CITATION_PATTERN.exec(citation); if (!match) continue;
+    byStep.set(match[1]!, [...byStep.get(match[1]!) ?? [], match[2]!]);
+  }
+  for (const [step, ids] of byStep) {
+    let text: string | undefined;
+    try { text = store.read(repo, runStoreFile(step)); } catch { text = undefined; }
+    for (const line of (text ?? "").split("\n")) {
+      if (!line.trim()) continue;
+      let record: { schema?: unknown; run?: unknown; step?: unknown; exit?: unknown };
+      try { record = JSON.parse(line); } catch { continue; }
+      if (record.schema !== "clossys.pipeline-run/1" || record.step !== step || typeof record.run !== "string" || !ids.includes(record.run) || typeof record.exit !== "number") continue;
+      runs[`${step}#${record.run}`] = { step, run: record.run, exit: record.exit };
+    }
+  }
+  return runs;
 }
