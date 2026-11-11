@@ -80,7 +80,7 @@ export function assertGlyphRoute(files: readonly ComponentFile[], assets: readon
   const icon = files.find(file => file.path === "components/icon/index.ts");
   const provider = files.find(file => file.path === "component-index.ts");
   if (!assets.length || !glyphs || !icon || !provider) throw new Error("selected glyph/index/provider route unavailable");
-  if (assets.some(asset => !glyphs.content.includes(JSON.stringify(asset))) || !icon.content.includes("glyphs[asset]") || !provider.content.includes("GlyphProvider") || !provider.content.includes("LibraryProvider")) throw new Error("selected glyph/provider route differs");
+  if (assets.some(asset => !glyphs.content.includes(JSON.stringify(asset))) || !icon.content.includes("glyphs[asset]") || provider.content.includes("GlyphProvider") || !provider.content.includes("LibraryProvider")) throw new Error("selected glyph/provider route differs");
 }
 /** Only writes exact emitter results and explicit host/config bytes into a new owned folder. */
 export function writeFixture(parent: string, emitted: readonly ComponentFile[], host: readonly ComponentFile[], bindings: Readonly<Record<string, string>>, status: ModuleManifest["status"] = "emitted"): ModuleManifest {

@@ -76,14 +76,18 @@ const EXPECTED_DEFAULTS = {
   spinner: "foundry", "status-mark": "foundry", switch: "shadcn@aria", table: "shadcn@aria", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "compose:text-field@1", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
   toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
   // planner:wd-reg: rich-text (6463e7e59) and the eight owner-signed specimen leaves (25a8fc7b2) are registered and defaulted.
-  "rich-text": "shadcn@aria", "specimen-copy-in-context": "foundry", "specimen-grid": "foundry", "specimen-ladder": "foundry", "specimen-matrix": "foundry",
+  // planner:C5-DREC (owner D6, 2026-11-11): rich-text is relabelled to its real source; shadcn@aria -> foundry.
+  "rich-text": "foundry", "specimen-copy-in-context": "foundry", "specimen-grid": "foundry", "specimen-ladder": "foundry", "specimen-matrix": "foundry",
   "specimen-passage": "foundry", "specimen-player": "foundry", "specimen-swatch": "foundry", "specimen-viewport": "foundry",
 };
 /** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar, TagGroup and Tree are Foundry's since their measured K5 craft comparison passes. */
 // planner:wd-reg: R2F-53 (2e12f31e5) deleted the six zero-caller chart fills, so those draft slots have no candidate;
-// media-player reads assets.image and assets.video, which this defaults consumer (themes and icon glyphs only) does not adopt.
+// D4 (owner, 2026-11-11): media-player stays absent until assets exist. It reads assets.image and assets.video, which
+// this defaults consumer (themes and icon glyphs only) does not adopt, so it is stated unchosen with that reason.
+// planner:C5-DREC (owner LAD-3): canvas-zoom and canvas-map are new leaves with no implementation candidate yet.
 const DELETED_CHARTS = ["chart-heatmap", "chart-range", "chart-scatter", "chart-sparkline", "chart-status-strip", "chart-waterfall"];
-const NOT_CHOSEN: string[] = [...DELETED_CHARTS, "media-player"];
+const NEW_LEAVES = ["canvas-map", "canvas-zoom"];
+const NOT_CHOSEN: string[] = [...DELETED_CHARTS, "media-player", ...NEW_LEAVES];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
@@ -132,7 +136,7 @@ describe("component default fills", () => {
       expect(row.source ?? row.rule, leaf).toBeUndefined();
       expect(row.reasons.length, leaf).toBeGreaterThan(0);
     }
-    for (const leaf of DELETED_CHARTS) expect(reasons(plan, leaf), leaf).toBe("no implementation candidate");
+    for (const leaf of [...DELETED_CHARTS, ...NEW_LEAVES]) expect(reasons(plan, leaf), leaf).toBe("no implementation candidate");
     expect(reasons(plan, "media-player")).toBe("foundry: K3 Asset read assets.image does not resolve; K3 Asset read assets.video does not resolve");
     // The consumed table follows the approved shadcn owner pick with its complete public API.
     expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "default", basis: "owner-pick", source: "shadcn@aria", fill: "shadcn@aria/components.table", reasons: [] });
@@ -151,7 +155,8 @@ describe("component default fills", () => {
     // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) + slider (vf23) + tag-group and tree (vf30) = 59.
     // 66 -> 69 chosen of 66 -> 76 rows (planner:wd-reg): +rich-text, +8 specimen leaves, +media-player (unchosen), -6 deleted charts (unchosen).
     expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(69);
-    expect(plan.rows).toHaveLength(76);
+    // 76 -> 78 rows (planner:C5-DREC, owner LAD-3): +canvas-zoom, +canvas-map (unchosen); chosen stays 69.
+    expect(plan.rows).toHaveLength(78);
     const forced = Object.fromEntries(starterSlots.map(slot => [slot, "rac-starter"]));
     for (const plan of [planComponentDefaults({ ...input, picks: forced }), planComponentDefaults({ ...input, choices: forced })]) {
       for (const slot of starterSlots) {

@@ -103,19 +103,26 @@ it("feeds every sample from the dataset: no inline per-specimen arrays or litera
   expect(Object.entries(exportsFed).flatMap(([name, value]) => unfed(value, name))).toEqual([]);
 });
 
-it("feeds all 76 registered component slots from the dataset", () => {
+// planner:C5-DREC (2026-11-11): the six retired charts (owner D2; fills deleted in R2F-53) and the two new
+// LAD-3 canvas leaves have no implementation fill, so they are stated unfed: before every slot was fed, after 70 of 78.
+// D4: media-player keeps its fill and is fed; it stays unchosen as a default until assets exist.
+const UNFED_WITHOUT_FILL = ["canvas-map", "canvas-zoom", "chart-heatmap", "chart-range", "chart-scatter", "chart-sparkline", "chart-status-strip", "chart-waterfall"].map(leaf => `components.${leaf}`);
+
+it("feeds every registered component slot that has a fill from the dataset", () => {
   const slots = loadBuildCatalog().slots.filter(slot => slot.id.startsWith("components.")).map(slot => slot.id);
   // 66 -> 68: the rich-text (6463e7e59) and media-player (78237484a) leaf amendments.
   // 68 -> 76 (planner:R2F-15b): the eight owner-signed components.specimen-* leaves (25a8fc7b2).
-  expect(slots).toHaveLength(76);
+  // 76 -> 78 (planner:C5-DREC, owner LAD-3): +canvas-zoom, +canvas-map.
+  expect(slots).toHaveLength(78);
   // The date picker has no registered implementation fill; its composition rule's template is what draws.
   const fills = [...loadCatalogBundles().componentFills.flatMap(doc => Object.values(doc.components)), ...loadComponentCompositionRules().map(rule => rule.template)];
   const keys = fedKeys();
   const fed = slots.filter(slot => fills.some(fill => fill.slot === slot && keys.has(keyOf(fill))));
   const exceptions = Object.fromEntries(slots.filter(slot => !fed.includes(slot)).map(slot => [slot, fills.filter(fill => fill.slot === slot).map(keyOf)]));
-  expect(exceptions).toEqual({});
+  expect(exceptions).toEqual(Object.fromEntries(UNFED_WITHOUT_FILL.map(slot => [slot, []])));
+  for (const slot of UNFED_WITHOUT_FILL.filter(slot => slot.includes("chart-"))) expect(loadBuildCatalog().retired.map(entry => entry.id), slot).toContain(slot);
   console.info(`specimen dataset: slots fed ${fed.length}/${slots.length}`);
-  expect(fed).toHaveLength(76);
+  expect(fed).toHaveLength(70);
 });
 
 it("draws every fed Foundry component with dataset content, never its leaf label", () => {

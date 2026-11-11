@@ -20,6 +20,8 @@ import { boardRowLeaf } from "./canvas-boards.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
 import { specimenDataset } from "./specimen-dataset.js";
 import { studioHostCopy } from "./__fixtures__/copy-hand-roll.js";
+import { STUDIO_MESSAGE_REFS } from "./copy-records.js";
+import type { PlacementNode } from "../catalog-core/types.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
@@ -40,6 +42,26 @@ function hostStudio(preview: CompositeStudioSnapshot["preview"]) {
 const chosenCells = () => [...document.querySelectorAll<HTMLElement>("section[data-library-board] tr")]
   .flatMap(row => { const id = boardRowLeaf(row); return id ? [{ id, cell: row.querySelector<HTMLElement>("[data-candidate-cell]")! }] : []; })
   .filter(({ cell }) => cell && cell.dataset.previewState !== "not-chosen" && cell.dataset.previewState !== "planned");
+
+/**
+ * planner:C5-DREC (owner L7 2026-11-11): the host tests below throw StudioCopyNeedsError on the first IA cell with no
+ * Writer copy, which names one cell. This test names every missing Writer copy key for the components IA at once,
+ * so the Writer unit sees the full NEED. It stays red until Writer adds the records; Designer never authors copy.
+ */
+it("every components IA group and leaf has a Writer copy key (names each missing key)", () => {
+  const components = loadBuildCatalog().placements.find(placement => placement.layer === "components")!;
+  const keys: string[] = [];
+  const walk = (nodes: readonly PlacementNode[]) => {
+    for (const node of nodes) {
+      keys.push(`designer.ia.components.${node.id}`);
+      if ("leaves" in node) keys.push(...node.leaves.map(leaf => `designer.item.${leaf}`));
+      else walk(node.children);
+    }
+  };
+  walk(components.nodes);
+  const missing = keys.filter(key => !(key in STUDIO_MESSAGE_REFS));
+  expect(missing, `Writer copy NEED (StudioCopyNeedsError): add ${missing.join(", ")} to STUDIO_MESSAGE_REFS`).toEqual([]);
+});
 
 it("is the public studio entry", () => {
   expect(studioEntry.componentSpecimenPreview).toBe(fromModule);
@@ -82,7 +104,7 @@ it("a host without the library's modules keeps the chosen cell unavailable and b
 
 it("names every other refusal and never substitutes a placeholder", () => {
   const profile = resolve(adoptedComponentIntegration());
-  const missingExport = componentSpecimenPreview({ modules: { "@clossys/designer/components": { GlyphProvider: components.GlyphProvider } } });
+  const missingExport = componentSpecimenPreview({ modules: { "@clossys/designer/components": { Icon: components.Icon } } });
   expect(missingExport.bind("components.button", profile)).toEqual({ refusal: { leaf: "components.button", code: "export-unavailable", detail: "@clossys/designer/components#Button" } });
   expect(missingExport.preview("components.button", profile)).toBeUndefined();
   const notRenderable = componentSpecimenPreview({ modules: { "@clossys/designer/components": { Button: "Button" } } });

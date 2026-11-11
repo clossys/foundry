@@ -1,9 +1,9 @@
 {
   "$extensions": {
     "com.clossys.fill": {
-      "id": "shadcn@aria/components.rich-text",
+      "id": "foundry/components.rich-text",
       "slot": "components.rich-text",
-      "source": "shadcn@aria",
+      "source": "foundry",
       "mode": "implementation",
       "sourceAddress": "./components#RichText",
       "relation": "same-contract",
@@ -38,7 +38,7 @@
   "components": {
     "rich-text": {
       "slot": "components.rich-text",
-      "source": "shadcn@aria",
+      "source": "foundry",
       "root": "presentational",
       "members": [
         "value.markdown",

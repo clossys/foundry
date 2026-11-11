@@ -106,7 +106,8 @@ describe("catalog theme bindings", () => {
     expect(placed).toHaveLength(42);
     expect(new Set(placed).size).toBe(42);
     expect(placed.toSorted(compare)).toEqual(slots.map(slot => slot.id));
-    expect(retired).toEqual([]);
+    // planner:C5-DREC: the global registry now holds owner D2/LAD-1/LAD-2 retirements; none is a theme.
+    expect(retired.filter(entry => entry.id.startsWith("themes."))).toEqual([]);
   });
   it("keeps colors as role-tier slots and every other theme as scale-tier metadata", () => {
     for (const slot of slots) expect(slot.contract.tier).toBe(colorIds.has(slot.id) ? "role" : "scale");

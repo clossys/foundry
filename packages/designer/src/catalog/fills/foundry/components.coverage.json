@@ -40,6 +40,18 @@
       ]
     },
     {
+      "missing": [
+        "collapsed",
+        "current"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.breadcrumbs",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
       "missing": [],
       "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
@@ -115,6 +127,20 @@
       ]
     },
     {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-heatmap",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
       "missing": [],
       "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
@@ -129,10 +155,79 @@
       ]
     },
     {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-range",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-scatter",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-sparkline",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-status-strip",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-waterfall",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
       "missing": [],
       "notes": [
         "The stock shadcn@aria checkbox; its label is the children beside the indicator.",
-        "Frozen reads omit source-consumed themes.font-sans; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.checkbox",
@@ -171,15 +266,6 @@
         "allows-custom",
         "state.invalid"
       ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.command",
-      "status": "unavailable",
-      "supported": []
     },
     {
       "missing": [],
@@ -223,8 +309,7 @@
     {
       "missing": [],
       "notes": [
-        "Group scope dispatches to Disclosure.Group (RAC DisclosureGroup); members are addressed by id.",
-        "Frozen reads omit source-consumed themes.border; the contract's allowedReads must widen before this is enforced.",
+        "The stock Accordion (RAC DisclosureGroup) holds AccordionItem rows, each an AccordionTrigger over AccordionContent addressed by id.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.disclosure",
@@ -232,24 +317,6 @@
       "supported": [
         "scope.group"
       ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.dropdown-menu",
-      "status": "unavailable",
-      "supported": []
-    },
-    {
-      "missing": [],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.empty",
-      "status": "unavailable",
-      "supported": []
     },
     {
       "missing": [],
@@ -269,6 +336,19 @@
       ]
     },
     {
+      "missing": [
+        "accept",
+        "directory",
+        "multiple"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.file-trigger",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
       "missing": [],
       "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
@@ -283,7 +363,6 @@
     {
       "missing": [],
       "notes": [
-        "Frozen reads omit source-consumed themes.input; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.grid-list",
@@ -306,15 +385,6 @@
         "size.md",
         "size.sm"
       ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.item",
-      "status": "unavailable",
-      "supported": []
     },
     {
       "missing": [
@@ -361,18 +431,6 @@
     {
       "missing": [],
       "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.media-player",
-      "status": "candidate",
-      "supported": [
-        "controls.full",
-        "controls.minimal"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
         "Menu is the stock DropdownMenu opened by DropdownMenuTrigger; InlineMenu presents the same items inline. Root selectionMode applies to both.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
@@ -396,24 +454,6 @@
       "supported": [
         "emphasis",
         "tone"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Fixed primary/md/base appearance is intrinsic, not a variant API. Native button activation and disabled state; no RAC root or press/pending abstraction. Source and runtime qualification remain unmeasured.",
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.native-action",
-      "status": "candidate",
-      "supported": [
-        "appearance.primary",
-        "ground.base",
-        "size.md",
-        "state.disabled",
-        "state.focus-visible",
-        "state.hover",
-        "state.pressed"
       ]
     },
     {
@@ -494,29 +534,6 @@
       ]
     },
     {
-      "missing": [
-        "state.editable",
-        "state.read-only",
-        "value.json",
-        "value.markdown"
-      ],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.rich-text",
-      "status": "unavailable",
-      "supported": []
-    },
-    {
-      "missing": [],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.scroll-area",
-      "status": "unavailable",
-      "supported": []
-    },
-    {
       "missing": [],
       "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
@@ -547,63 +564,14 @@
       ]
     },
     {
-      "missing": [],
-      "notes": [
-        "One explicit native content element with forwarded attributes and refs, no wrapper or internal paint. Caller presentation reads and actual runtime qualification remain separate.",
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      "missing": [
+        "orientation.horizontal",
+        "orientation.vertical"
       ],
-      "slot": "components.semantic-content",
-      "status": "candidate",
-      "supported": [
-        "as.article",
-        "as.aside",
-        "as.blockquote",
-        "as.code",
-        "as.dd",
-        "as.div",
-        "as.dl",
-        "as.dt",
-        "as.figcaption",
-        "as.figure",
-        "as.footer",
-        "as.h1",
-        "as.h2",
-        "as.h3",
-        "as.h4",
-        "as.h5",
-        "as.h6",
-        "as.img",
-        "as.li",
-        "as.main",
-        "as.nav",
-        "as.ol",
-        "as.p",
-        "as.picture",
-        "as.section",
-        "as.small",
-        "as.source",
-        "as.span",
-        "as.strong",
-        "as.sup",
-        "as.time",
-        "as.ul"
-      ]
-    },
-    {
-      "missing": [],
       "notes": [
         "No package implementation is available."
       ],
-      "slot": "components.sheet",
-      "status": "unavailable",
-      "supported": []
-    },
-    {
-      "missing": [],
-      "notes": [
-        "No package implementation is available."
-      ],
-      "slot": "components.sidebar",
+      "slot": "components.separator",
       "status": "unavailable",
       "supported": []
     },
@@ -622,7 +590,6 @@
       "missing": [],
       "notes": [
         "The stock shadcn@aria slider: a value array is a range with one thumb per value; it has no label or output part, so its name is aria-label or aria-labelledby and its value text is the formatOptions Intl format.",
-        "Frozen reads omit source-consumed themes.radius, themes.foreground, themes.font-sans; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.slider",
@@ -637,92 +604,7 @@
     {
       "missing": [],
       "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.specimen-copy-in-context",
-      "status": "candidate",
-      "supported": []
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.specimen-grid",
-      "status": "candidate",
-      "supported": [
-        "variant.asset",
-        "variant.icon"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.specimen-ladder",
-      "status": "candidate",
-      "supported": [
-        "variant.radius",
-        "variant.spacing",
-        "variant.type"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.specimen-matrix",
-      "status": "candidate",
-      "supported": []
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.specimen-passage",
-      "status": "candidate",
-      "supported": []
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.specimen-player",
-      "status": "candidate",
-      "supported": []
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.specimen-swatch",
-      "status": "candidate",
-      "supported": [
-        "variant.color-ramp",
-        "variant.swatch"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.specimen-viewport",
-      "status": "candidate",
-      "supported": [
-        "variant.frame",
-        "variant.page",
-        "variant.section"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
+        "The stock shadcn@aria Spinner (lucide Loader2Icon, role=\"status\", default name \"Loading\") has no size prop; each size member dispatches the stock size utility on its className (sm is the stock size-4).",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.spinner",
@@ -804,7 +686,7 @@
     {
       "missing": [],
       "notes": [
-        "Size applies to the single-line TextField; multiline dispatches independently to Textarea.",
+        "The stock shadcn@aria input and textarea inside a RAC TextField over the composed field; one control size; multiline dispatches to Textarea.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.text-field",
@@ -812,9 +694,6 @@
       "supported": [
         "line.multiline",
         "line.single-line",
-        "size.lg",
-        "size.md",
-        "size.sm",
         "state.disabled",
         "state.invalid",
         "state.read-only"
@@ -824,7 +703,6 @@
       "missing": [],
       "notes": [
         "Toaster is the region; tone, timeout and authored action dispatch through shell toast.",
-        "Frozen reads omit source-consumed themes.radius, themes.shadow, themes.spacing, themes.destructive, themes.foreground, themes.font-sans; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.toast",
@@ -899,7 +777,6 @@
     {
       "missing": [],
       "notes": [
-        "Frozen reads omit source-consumed themes.input; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.tree",

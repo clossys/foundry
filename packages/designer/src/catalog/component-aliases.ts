@@ -1,8 +1,10 @@
 /** Compatibility addresses only. Targets are existing IA leaves; this is not another placement tree. */
 export const COMPONENT_ALIASES: Readonly<Record<string, string>> = Object.freeze({
-  "act.native-action": "components.native-action",
   "act.button": "components.button",
   "act.icon-button": "components.button",
+  // Owner LAD-2 (2026-11-11): native-action merged into components.button and kept as an alias
+  // (components.native-action is retired with replacedBy components.button in retired.json).
+  "act.native-action": "components.button",
   "act.menu": "components.menu",
   "act.toolbar": "components.toolbar",
   "act.toggle-button": "components.toggle-button",

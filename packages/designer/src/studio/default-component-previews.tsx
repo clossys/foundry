@@ -1,5 +1,4 @@
 "use client";
-import type { ReactNode } from "react";
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
 import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
@@ -37,7 +36,7 @@ const modules = {
  */
 const specimens = componentSpecimenPreview({ modules, leafSamples: componentSpecimenLeafSamples, probes: {
   "components.rich-text": { props: componentSpecimenProps["./components#RichText"] },
-}, provider: ({ children }: { children?: ReactNode }) => <components.GlyphProvider glyphs={glyphs}>{children}</components.GlyphProvider>, restOnly: true });
+}, restOnly: true });
 
 /** A local executable port for approved defaults. An edited/custom closure needs a host-supplied preview. */
 export const defaultComponentPreviews = { preview(leaf: string, profile: CompositeResolved) {

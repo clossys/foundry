@@ -24,23 +24,44 @@ const imported = () => importFoundryComponents({ exports });
 // I1 retains no blocked candidates in its dynamic bundle: color-picker and number-field left it once their
 // source-derived reads proved covered (no K11); toolbar, tag-group and tree pass their measured K5 craft comparison.
 const dynamicBlockedLeaves: string[] = [];
-const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).filter(([leaf]) => !dynamicBlockedLeaves.includes(leaf) && !["semantic-content", "native-action"].includes(leaf)));
+// planner:C5-DREC (2026-11-11): the signed regeneration maps only signed slots. Before, it took every mapping except
+// semantic-content and native-action and threw "mapping has no contract components.media-player" once media-player
+// and the owner-signed specimen leaves were mapped outside the 57-leaf freeze. After, every mapped amendment leaf
+// (outside the freeze) is byte-checked from the full import below. D4: media-player stays absent from defaults until assets exist.
+const signedLeaves = new Set(signedSlots.map(slot => slot.id.slice("components.".length)));
+const AMENDMENT_ONLY = Object.keys(FOUNDRY_COMPONENT_MAP).filter(leaf => !signedLeaves.has(leaf)).sort();
+// Stock-only leaves keep a stale package mapping but their Foundry drafts were deliberately deleted (separator 922b3a337,
+// file-trigger 72374a987, breadcrumbs 75202fdb4), so the stored regeneration must not recreate them.
+const STOCK_ONLY = ["breadcrumbs", "file-trigger", "separator"];
+const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).filter(([leaf]) => !dynamicBlockedLeaves.includes(leaf) && signedLeaves.has(leaf) && !STOCK_ONLY.includes(leaf)));
 const changedMap = (leaf: string, change: Partial<FoundryComponentMapping>) => ({ ...FOUNDRY_COMPONENT_MAP, [leaf]: { ...FOUNDRY_COMPONENT_MAP[leaf]!, ...change } });
 
 describe("Foundry component package descriptors", () => {
-  it("regenerates 55 stored package descriptors and keeps no dynamic blocked candidates", () => {
+  it("regenerates 46 stored package descriptors and keeps no dynamic blocked candidates", () => {
     const files = generatedFoundryComponentFiles({ exports, mappings: storedMappings, slots: signedSlots });
     // Explicit local regeneration writes only this generator's enumerated component artifacts.
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(fillsDirectory, name), bytes);
     const committed = readdirSync(fillsDirectory).filter(name => name.startsWith("components.") && name.endsWith(".json")).sort();
-    expect(committed).toEqual([...Object.keys(files), ...loadComponentCompositionRules().filter(rule => rule.template.source === "foundry").map(rule => `${rule.slot}.json`), "components.native-action.json", "components.semantic-content.json"].sort());
+    expect(committed).toEqual([...Object.keys(files), ...loadComponentCompositionRules().filter(rule => rule.template.source === "foundry").map(rule => `${rule.slot}.json`), ...AMENDMENT_ONLY.map(leaf => `components.${leaf}.json`),
+      // rich-text: the hand-adopted minimal-tiptap fill relabelled from shadcn@aria to foundry by owner D6
+      // (planner:C5-DREC); no package mapping generates it.
+      "components.rich-text.json"].sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(fillsDirectory, name), "utf8"), name).toBe(bytes);
+    const full = generatedFoundryComponentFiles({ exports });
+    for (const name of AMENDMENT_ONLY.map(leaf => `components.${leaf}.json`)) {
+      if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") writeFileSync(resolve(fillsDirectory, name), full[name]!);
+      expect(readFileSync(resolve(fillsDirectory, name), "utf8"), name).toBe(full[name]);
+    }
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
-    expect(imported().coverage).toHaveLength(66);
+    // 66 -> 78 (planner:C5-DREC): coverage spans every registered component slot, now incl. the LAD-3 canvas leaves.
+    expect(imported().coverage).toHaveLength(78);
     expect(signedSlots).toHaveLength(57);
-    expect(importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills).toHaveLength(55);
-    expect(imported().fills).toHaveLength(57);
-    expect(imported().fills.filter(doc => !["components.semantic-content", "components.native-action"].includes(doc.$extensions["com.clossys.fill"].slot))).toHaveLength(55);
+    // planner:C5-DREC: 55 -> 46 stored = 57 signed less the 8 unmapped signed leaves and the 3 stock-only leaves;
+    // the full import maps all 58 entries (46 stored + 3 stock-only + 9 amendment-only... checked by name below).
+    const storedFills = importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills;
+    expect(storedFills).toHaveLength(46);
+    expect(imported().fills.map(doc => doc.$extensions["com.clossys.fill"].slot).sort()).toEqual(Object.keys(FOUNDRY_COMPONENT_MAP).map(leaf => `components.${leaf}`).sort());
+    expect(imported().fills.filter(doc => ![...AMENDMENT_ONLY, ...STOCK_ONLY].includes(doc.$extensions["com.clossys.fill"].slot.slice("components.".length)))).toHaveLength(46);
     const blocked = imported().fills.filter(doc => Object.values(doc.components)[0]!.blockers?.length);
     expect(blocked.map(doc => doc.$extensions["com.clossys.fill"].id)).toEqual(dynamicBlockedLeaves.map(leaf => `foundry/components.${leaf}`));
     for (const doc of blocked) {
@@ -52,12 +73,18 @@ describe("Foundry component package descriptors", () => {
       expect(imported().coverage.find(row => row.slot === meta.slot)!.status).toBe("blocked");
     }
     const storedCoverage = importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).coverage;
-    const baselineRows = (rows: typeof storedCoverage) => rows.filter(row => !["components.semantic-content", "components.native-action"].includes(row.slot) && !dynamicBlockedLeaves.some(leaf => row.slot === `components.${leaf}`));
-    const newSourceSlots = ["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`);
+    // planner:C5-DREC: amendment-only and stock-only rows differ between the full and stored imports by design, and
+    // rich-text (unsigned, no package mapping) is unavailable in the full import only.
+    const excluded = [...AMENDMENT_ONLY, ...STOCK_ONLY, "rich-text", ...dynamicBlockedLeaves].map(leaf => `components.${leaf}`);
+    const baselineRows = (rows: typeof storedCoverage) => rows.filter(row => !excluded.includes(row.slot));
+    expect(imported().coverage.find(row => row.slot === "components.rich-text")).toMatchObject({ status: "unavailable", supported: [] });
+    // + canvas-map and canvas-zoom (owner LAD-3, 2026-11-11): new leaves with no package mapping yet.
+    const newSourceSlots = ["canvas-map", "canvas-zoom", "command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`);
     expect(baselineRows(imported().coverage)).toEqual([...baselineRows(storedCoverage), ...newSourceSlots.map(slot => ({
       slot, status: "unavailable", supported: [], missing: [], notes: ["No package implementation is available."],
     }))].sort((a, b) => a.slot.localeCompare(b.slot)));
-    expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger", "components.icon"]);
+    // planner:C5-DREC: + field and text-field (registered compose:field@1 / compose:text-field@1 at base 0150c5e8e).
+    expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger", "components.field", "components.text-field", "components.icon"]);
   });
 
   it("pins real primary and member-dispatched package exports without copied source", () => {

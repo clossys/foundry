@@ -125,9 +125,12 @@ describe("pack check: every selectable component fill persists", () => {
   // Imported packs only: Foundry's own package map is checked by its importer and is not regenerated here.
   const imported = fills.filter(doc => doc.$extensions["com.clossys.fill"].source !== "foundry");
   it("emitComponents (persist path) refuses no imported pack fill's propMap", () => {
-    // 33 importer-written shadcn@aria fills, plus the one Foundry-authored engine exception the library lists (rich-text, 6463e7e59).
+    // 33 importer-written shadcn@aria fills. Retargeted (planner:C5-DREC, owner D6 2026-11-11): before, the Foundry-authored
+    // rich-text engine exception (6463e7e59) was labelled shadcn@aria; after, it carries its real source, foundry.
     expect(imported.filter(isImporterFill).filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria")).toHaveLength(33);
-    expect(imported.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria" && !isImporterFill(doc)).map(doc => [fillId(doc), doc.$extensions["com.clossys.fill"].author, !!doc.$extensions["com.clossys.engine-exception"]])).toEqual([["shadcn@aria/components.rich-text", "foundry", true]]);
+    expect(imported.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria" && !isImporterFill(doc))).toEqual([]);
+    const richText = fills.find(doc => fillId(doc) === "foundry/components.rich-text")!;
+    expect([richText.$extensions["com.clossys.fill"].author, !!richText.$extensions["com.clossys.engine-exception"]]).toEqual(["foundry", true]);
     expect(imported.length).toBeGreaterThanOrEqual(33);
     expect(persistThrows(imported).filter(message => PROPMAP_REFUSAL.test(message))).toEqual([]);
   });
@@ -309,8 +312,10 @@ describe("pack check: the asset Icon adapter persists with no asset-reading leaf
 describe("pack check: every selectable fill from every source persists, except a shrinking known-refused list", () => {
   const bySource = (source: string) => everyFill.filter(fill => fill.source === source);
   it("covers every source: shadcn@aria, Foundry including charts, and every composition template", () => {
-    // 33 importer-written fills plus the Foundry-authored rich-text engine exception (6463e7e59).
-    expect(bySource("shadcn@aria")).toHaveLength(34);
+    // 33 importer-written fills; the Foundry-authored rich-text engine exception (6463e7e59) moved to foundry (owner D6,
+    // planner:C5-DREC): 34 -> 33.
+    expect(bySource("shadcn@aria")).toHaveLength(33);
+    expect(bySource("foundry").map(fill => fill.slot)).toContain("components.rich-text");
     expect(bySource("foundry").length).toBeGreaterThanOrEqual(57);
     // planner:r2f-53: six zero-caller chart fills deleted (9 -> 3).
     expect(bySource("foundry").filter(fill => fill.slot.startsWith("components.chart-")).length).toBeGreaterThanOrEqual(3);

@@ -41,7 +41,9 @@ describe("combined five-layer build IA", () => {
 
   it("keeps frame migration evidence owned and separate from global retirements", () => {
     const build = loadBuildCatalog();
-    expect(build.retired).toEqual([]);
+    // planner:C5-DREC: 13 owner retirements (D2/LAD-1/LAD-2); frames and sections migration stay separate.
+    expect(build.retired).toHaveLength(13);
+    expect(build.retired.filter(entry => entry.id.startsWith("frames."))).toEqual([]);
     expect(build.retiredByLayer.frames).toEqual(frameRetired);
     expect(build.retiredByLayer.frames).toHaveLength(4);
     expect(build.retiredByLayer.sections).toEqual(loadSectionRegistry().retired);

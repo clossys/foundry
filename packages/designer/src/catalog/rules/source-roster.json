@@ -47,7 +47,7 @@
           "ladder": {
             "rung": "L4",
             "slotNeeded": "a native <button> with browser form semantics (type, form, formAction) and native activation; the stock aria Button is a react-aria Button",
-            "reason": "native-action: kept per R2F-53 ladder; styles come from stock buttonVariants; merge into components.button is an owner leaf decision",
+            "reason": "native-action: retired 2026-11-11, merged into components.button (owner LAD-2; act.native-action now aliases components.button); NativeAction stays shipped for native <button> form semantics until callers move; styles come from stock buttonVariants",
             "checkedAt": "2026-11-10"
           }
         }
@@ -235,7 +235,7 @@
             "chosen": {
               "id": "question:delete"
             },
-            "reason": "number-field: zero callers; delete candidate (owner leaf decision); Intent UI number-field (1980 stars) if it is needed later",
+            "reason": "number-field: retired 2026-11-11 (owner LAD-1; zero callers, R2F-50 DELETE); id kept, never reused; Intent UI number-field (1980 stars) if it is needed later",
             "adoption": {
               "state": "pending",
               "wave": "A"
@@ -492,9 +492,41 @@
         {
           "source": "shadcn@aria",
           "leaves": [
-            "components.rich-text",
             "components.item"
           ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.rich-text"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "minimal-tiptap",
+              "url": "https://github.com/Aslam97/minimal-tiptap",
+              "stars": 1798,
+              "weeklyDownloads": 29366338,
+              "licence": "MIT"
+            },
+            "rejected": [
+              {
+                "id": "@kibo-ui/editor",
+                "url": "https://www.kibo-ui.com/components/editor",
+                "stars": 3982,
+                "weeklyDownloads": 5679525,
+                "licence": "MIT",
+                "reason": "stars are the whole Kibo UI repo; minimal-tiptap is the most used dedicated Tiptap shadcn editor"
+              }
+            ],
+            "reason": "rich-text: relabelled to its real source (D6, 2026-11-11): shipped RichText is Foundry-authored on Tiptap 3 (engine exception, fill foundry/components.rich-text); no stock rich-text; partner minimal-tiptap per R2F-50",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-11"
+          }
         },
         {
           "source": "foundry",
@@ -718,6 +750,29 @@
               "wave": "A"
             },
             "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "navigation-canvas",
+      "leaves": [
+        "components.canvas-zoom",
+        "components.canvas-map"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.canvas-zoom",
+            "components.canvas-map"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L4",
+            "slotNeeded": "Studio's canvas camera: zoom controls and a board overview minimap over the Foundry CanvasSurface projection; both are visible in Studio, so they are registered (owner LAD-3, 2026-11-11)",
+            "reason": "canvas-zoom composes stock toolbar+button+icon; canvas-map composes stock button over SVG board rects; no stock shadcn@aria canvas camera part, and partner canvases (React Flow controls/minimap) own their own surface, so they cannot drive CanvasSurface",
+            "checkedAt": "2026-11-11"
           }
         }
       ]
@@ -1288,7 +1343,7 @@
               "weeklyDownloads": 0,
               "licence": "MIT"
             },
-            "reason": "hero: ReUI hero (runner-up Tailark hero-section 2341, Base-UI button); logo-hero composes hero+logo; page-header composes breadcrumb+typography; logo-mark merge into logo-hero (owner leaf decision); weeklyDownloads 0: registry-distributed, no npm download count",
+            "reason": "hero: ReUI hero (runner-up Tailark hero-section 2341, Base-UI button); logo-hero composes hero+logo; page-header composes breadcrumb+typography; logo-mark retired 2026-11-11 (owner LAD-1); weeklyDownloads 0: registry-distributed, no npm download count",
             "adoption": {
               "state": "pending",
               "wave": "B"
@@ -1321,7 +1376,7 @@
             "chosen": {
               "id": "compose:typography+table-of-contents"
             },
-            "reason": "content, article: stock typography prose; sectioned-document adds table-of-contents; legal-prose merge into article (owner leaf decision)",
+            "reason": "content, article: stock typography prose; sectioned-document adds table-of-contents; legal-prose retired 2026-11-11 (owner LAD-1)",
             "adoption": {
               "state": "pending",
               "wave": "B"
@@ -1589,7 +1644,7 @@
               "weeklyDownloads": 35545733,
               "licence": "MIT"
             },
-            "reason": "data-table: L1 stock aria data-table page; data-grid: tablecn data-grid, most popular non-Base-UI (Dice UI 2111; ReUI excluded, Base UI); new dep @tanstack/react-virtual; record-detail merge into account-summary (owner leaf decision)",
+            "reason": "data-table: L1 stock aria data-table page; data-grid: tablecn data-grid, most popular non-Base-UI (Dice UI 2111; ReUI excluded, Base UI); new dep @tanstack/react-virtual; record-detail retired 2026-11-11 (owner LAD-1)",
             "adoption": {
               "state": "pending",
               "wave": "B"
@@ -1647,7 +1702,7 @@
             "chosen": {
               "id": "shadcn@aria/form+field"
             },
-            "reason": "L1 decision: form composes stock form+field; newsletter merge into call-to-action (ReUI cta-1; owner leaf decision)",
+            "reason": "L1 decision: form composes stock form+field; newsletter retired 2026-11-11 (owner LAD-1)",
             "adoption": {
               "state": "pending",
               "wave": "B"
@@ -1885,7 +1940,7 @@
             "chosen": {
               "id": "shadcn@aria/empty"
             },
-            "reason": "L1 decision: empty-state and error-state move to stock empty; boundary-message merge into empty-state (owner leaf decision)",
+            "reason": "L1 decision: empty-state and error-state move to stock empty; boundary-message retired 2026-11-11 (owner LAD-1)",
             "adoption": {
               "state": "pending",
               "wave": "B"

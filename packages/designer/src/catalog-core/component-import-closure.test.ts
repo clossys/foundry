@@ -87,7 +87,7 @@ describe("component selection dependency closure", () => {
   }, 60_000);
 
   it("shadcn@aria disclosure with the default Foundry icon emits a tree that tsc accepts", async () => {
-    const packageExports = { "@clossys/designer/components": ["GlyphProvider", "Icon"] };
+    const packageExports = { "@clossys/designer/components": ["Icon"] };
     const profile = await select([{ op: "adopt", slot: "components.icon", source: "foundry" }, { op: "adopt", slot: "components.disclosure", source: "shadcn@aria" }], packageExports);
     expect(errors(profile)).toEqual([]);
     const files = emitComponents(profile, ["component-index"], { glyphModule: glyphModule(profile.components["components.disclosure"]!.reads.assets) });

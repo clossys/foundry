@@ -30,6 +30,8 @@ const families: Record<string, readonly string[]> = {
   "navigation-links": ["link", "breadcrumbs"],
   "navigation-panels": ["tabs"],
   "navigation-trees": ["navigation-tree", "sidebar"],
+  // planner:C5-DREC (owner LAD-3, 2026-11-11): CanvasZoom and CanvasMap gain leaves; 28 -> 29 L2, 76 -> 78 slots.
+  "navigation-canvas": ["canvas-zoom", "canvas-map"],
   "containment-structure": ["card", "separator", "disclosure", "resize-handle", "scroll-area"],
   "containment-overlays": ["dialog", "popover", "tooltip", "sheet"],
 };
@@ -46,12 +48,14 @@ const roots: Record<string, string> = {
   popover: "Popover", tooltip: "Tooltip",
 };
 const specimens = ["specimen-swatch", "specimen-ladder", "specimen-player", "specimen-grid", "specimen-matrix", "specimen-viewport", "specimen-passage", "specimen-copy-in-context"];
-const presentational = ["badge", "avatar", "icon", "logo", "status-mark", "skeleton", "card", "banner", "semantic-content", "sidebar", "empty", "item", "scroll-area", "rich-text", "media-player", ...specimens];
+const presentational = ["badge", "avatar", "icon", "logo", "status-mark", "skeleton", "card", "banner", "semantic-content", "sidebar", "empty", "item", "scroll-area", "rich-text", "media-player", "canvas-zoom", "canvas-map", ...specimens];
 const fullId = (leaf: string) => `components.${leaf}`;
 const inventory = Object.values(families).flat().map(fullId).sort();
 // Appended in amendment order: components.leaf-amendments.json, then the owner-signed 2026-11-05
 // specimen leaves (components.specimen-leaf-amendments.json).
-const addedInventory = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu", "rich-text", "media-player", ...specimens].map(fullId);
+const addedInventory = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu", "rich-text", "media-player", ...specimens,
+  // planner:C5-DREC (owner LAD-3, 2026-11-11): the canvas leaves are registered after the specimen leaves.
+  "canvas-zoom", "canvas-map"].map(fullId);
 const leafNodes = (nodes: readonly PlacementNode[]): PlacementNode[] => nodes.flatMap(node => "leaves" in node ? [node] : leafNodes(node.children));
 
 // These prove shape only; component execution belongs to later implementation units.
@@ -67,20 +71,20 @@ describe("component build IA registry", () => {
   });
 
 
-  it("registers the 57 signed ids and two explicit local drafts once as draft contracts without a freeze claim", () => {
+  it("registers the 57 signed ids and the explicit local drafts once as draft contracts without a freeze claim", () => {
     const registry = loadComponentRegistry();
     expect(registry.status).toBe("build-unfrozen");
-    expect(registry.slots).toHaveLength(76);
+    expect(registry.slots).toHaveLength(78);
     expect(registry.slots.map(slot => slot.id)).toEqual([...inventory.filter(id => !addedInventory.includes(id)), ...addedInventory]);
-    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(76);
+    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(78);
     expect(registry.slots.every(slot => isValidId("slot", slot.id) && slot.layer === "components" && slot.status === "draft" && slot.signoff === undefined)).toBe(true);
     expect(componentRegistryFindings(registry)).toEqual([]);
   });
 
-  it("places every id once under six L1 groups and twenty-eight L2 families", () => {
+  it("places every id once under six L1 groups and twenty-nine L2 families", () => {
     const registry = loadComponentRegistry();
     expect(registry.placement.nodes.map(node => node.id)).toEqual(["actions", "inputs", "display", "feedback", "navigation", "containment"]);
-    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(28);
+    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(29);
     const nodes = leafNodes(registry.placement.nodes);
     expect(Object.fromEntries(nodes.map(node => [node.id, "leaves" in node ? node.leaves : []]))).toEqual(Object.fromEntries(Object.entries(families).map(([id, leaves]) => [id, leaves.map(fullId)])));
     expect(nodes.flatMap(node => "leaves" in node ? node.leaves : []).sort()).toEqual(inventory);
@@ -94,10 +98,13 @@ describe("component build IA registry", () => {
     "semantic-content": ["as"],
     "rich-text": ["value", "readOnly", "onChange", "className", "id", "dir", "aria-label", "aria-labelledby"],
     "media-player": ["video", "poster", "passage", "captions", "muted", "autoplay", "loop", "controls", "className", "decorative"],
+    // planner:C5-DREC (owner LAD-3): the canvas leaves declare their typed props.
+    "canvas-zoom": ["value", "min", "max", "onChange", "onFit", "labels", "formatValue"],
+    "canvas-map": ["label", "items", "bounds", "viewport", "viewSize", "onViewportChange"],
     ...Object.fromEntries(["swatch", "ladder", "grid", "viewport"].map(leaf => [`specimen-${leaf}`, [...specimenProps, "variant"]])),
     ...Object.fromEntries(["player", "matrix", "passage", "copy-in-context"].map(leaf => [`specimen-${leaf}`, specimenProps])),
   };
-  it("records all audited runtime roots: 42 React Aria, 23 presentational, eleven without an engine", () => {
+  it("records all audited runtime roots: 42 React Aria, 25 presentational, eleven without an engine", () => {
     const registry = loadComponentRegistry();
     for (const slot of registry.slots) {
       const leaf = slot.id.slice("components.".length);
@@ -108,7 +115,7 @@ describe("component build IA registry", () => {
       expect(slot.contract.props, slot.id).toEqual(declaredProps[leaf] ?? []);
     }
     expect(registry.slots.filter(slot => slot.contract.root.startsWith("rac:"))).toHaveLength(42);
-    expect(registry.slots.filter(slot => slot.contract.root === "presentational")).toHaveLength(23);
+    expect(registry.slots.filter(slot => slot.contract.root === "presentational")).toHaveLength(25);
     expect(registry.slots.filter(slot => slot.contract.root === "engine:none")).toHaveLength(11);
   });
 
@@ -137,14 +144,15 @@ describe("component build IA registry", () => {
     const build = loadBuildCatalog();
     // 42 themes (shadcn theme leaves since 736153e72) + 49 assets, less the panel icon.
     expect(runtime.slots.filter(slot => slot.id !== "assets.icon-panel-left")).toHaveLength(90);
-    expect(build.slots.filter(slot => slot.layer === "themes" || slot.layer === "assets" || slot.layer === "components")).toHaveLength(167);
+    expect(build.slots.filter(slot => slot.layer === "themes" || slot.layer === "assets" || slot.layer === "components")).toHaveLength(169);
     expect(build.registryStatus).toBe("build-unfrozen");
     expect(build.slots.filter(slot => slot.layer === "themes" || slot.layer === "assets")).toEqual(runtime.slots);
     expect(build.fills).toEqual(runtime.fills);
     expect(build.fills.every(fill => !fill.$extensions["com.clossys.fill"].slot.startsWith("components."))).toBe(true);
     expect(build.placements.filter(row => row.layer === "themes" || row.layer === "assets")).toEqual(runtime.placements);
     expect(build.retired).toEqual(retired);
-    expect(retired).toEqual([]);
+    // planner:C5-DREC: owner D2/LAD-1/LAD-2 retirements (retired-leaves.test.ts pins the ids).
+    expect(retired).toHaveLength(13);
     const component = build.slots.find(slot => slot.layer === "components")!;
     component.id = "components.changed";
     expect(loadBuildCatalog().slots.some(slot => slot.id === "components.changed")).toBe(false);
@@ -158,7 +166,7 @@ describe("component build IA registry", () => {
     });
     expect(registry.aliases.find(alias => alias.id === "components.icon-button")?.memberMap).toEqual({ shape: "shape.icon-only" });
     expect(registry.aliases.find(alias => alias.id === "components.textarea")?.memberMap).toEqual({ line: "line.multiline" });
-    expect(loadBuildCatalog().retired).toEqual([]);
+    expect(loadBuildCatalog().retired).toEqual(retired);
   });
 
   it("reports duplicate placement rather than concealing it in a set", () => {

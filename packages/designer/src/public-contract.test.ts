@@ -1113,9 +1113,11 @@ describe("headless project model public contract", () => {
 
 
 describe("compiled control glyph bindings", () => {
-  it("exports the provider only from the client components entry and keeps StatusMark server-safe", () => {
+  // Retargeted (planner:C5-DREC, owner LAD-3 2026-11-11): GlyphProvider is removed (icons are lucide);
+  // before: the client entry exported it as a function; after: neither entry exports it.
+  it("exports no glyph provider from either components entry and keeps StatusMark server-safe", () => {
     const clientScript = `import * as api from ${JSON.stringify(join(packageRoot, "dist/components/index.js"))}; process.stdout.write(JSON.stringify(typeof api.GlyphProvider));`;
-    expect(execFileSync(process.execPath, ["--input-type=module", "-e", clientScript], { encoding: "utf8", cwd: packageRoot })).toBe('"function"');
+    expect(execFileSync(process.execPath, ["--input-type=module", "-e", clientScript], { encoding: "utf8", cwd: packageRoot })).toBe('"undefined"');
     const serverScript = `import * as api from ${JSON.stringify(join(packageRoot, "dist/components/server.js"))}; const mark = api.StatusMark({ tone: "success", children: "Ready", glyphs: { "assets.icon-success": [["path", { d: "M1 2h3" }]] } }); let host = mark; while (typeof host.type === "function") host = host.type(host.props); process.stdout.write(JSON.stringify({ provider: "GlyphProvider" in api, mark: host.type }));`;
     expect(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", serverScript], { encoding: "utf8", cwd: packageRoot }))).toEqual({ provider: false, mark: "span" });
   });
