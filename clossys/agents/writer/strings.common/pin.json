@@ -3,10 +3,5 @@
   "sha256": "85b2b8fd027a57a51cb77c3960e2579efb348af62052e994d7bdbde1c5ba3b40",
   "decidedBy": "agent:writer",
   "basis": "agent",
-  "at": "2026-11-12T06:13:35.174Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "planner-delegation-2026-11-12-studio-checks: recommended option taken, no owner question",
-    "at": "2026-11-12T06:13:50.787Z"
-  }
+  "at": "2026-11-12T12:35:44.168Z"
 }
