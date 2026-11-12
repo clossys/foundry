@@ -17,10 +17,11 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { checkSlotModel } from "../records/slot-check.js";
-import { AGENT_KIND, CANDIDATE_NAME, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA } from "../records/slot-model/types.js";
+import { AGENT_KIND, CANDIDATE_NAME, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
 import { candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
-import { slotPositions } from "../records/slot-model/foundry-ia.js";
+import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
+import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { readSlotEntry } from "../records/slots.js";
 import { writePin } from "../records/slot-write.js";
@@ -38,7 +39,10 @@ import { discoverRoot } from "./root.js";
 
 export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --remove [--root <dir>]\n"
-  + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).";
+  + "       clossys ia <agent> --adopt | --start [--root <dir>]\n"
+  + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
+  + "  --adopt writes the agent's Foundry IA (ia.json and every slot.json, inputs and uses derived) where it has no ia.json (Director, Designer, Writer; the Director's first).\n"
+  + "  --start writes an empty workspace IA instead; --under then adds its L1/L2 groups as it places each slot.";
 export const EVIDENCE_USAGE = "Usage: clossys evidence <id> --source <source> --observed <YYYY-MM-DD> --by <who> --body <file> [--finding] [--root <dir>]\n"
   + "  writes clossys/evidence/director/<id>.md (--finding: findings/<id>.md), the evidence the Director cites.";
 export const CONFIG_USAGE = "Usage: clossys config --init [--from <file>] [--root <dir>]\n"
@@ -112,20 +116,72 @@ function guarded(consumer: string, paths: readonly string[], write: () => void):
 const readJsonFile = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
 
 // ---------------------------------------------------------------- clossys ia
-const parseIa = parser(IA_USAGE, ["--contract", "--under", "--kind", "--inputs", "--uses", "--root"], ["--remove"]);
+const parseIa = parser(IA_USAGE, ["--contract", "--under", "--kind", "--inputs", "--uses", "--root"], ["--remove", "--adopt", "--start"]);
+const FOUNDRY_IA: Readonly<Record<keyof typeof FOUNDRY_IA_AFTER, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
+/** The source of a workspace-owned IA (`--start`): `--under` may add L1/L2 groups to it, never to a Foundry IA. */
+export const WORKSPACE_IA_SOURCE = "workspace#owner";
+
+/** `clossys ia <agent> --start`: an empty workspace-owned ia.json, where the agent has none. */
+function startIa(agent: string, root: string): CliResult {
+  if (!(SLOT_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`ia --start takes one of ${SLOT_AGENTS.join(", ")}\n${IA_USAGE}`);
+  const consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent as SlotAgent);
+  if (existsSync(iaFile)) return refuse("ia", `${agent} ia.json exists; change it slot by slot (--under, --remove)`);
+  const doc = { schema: IA_SCHEMA, source: WORKSPACE_IA_SOURCE, extensions: [], nodes: [] };
+  const added = guarded(consumer, [iaFile], () => replaceFile(iaFile, jsonBytes(doc)));
+  if (added.length) return refuse("ia", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
+  return { exitCode: 0, root, message: `ia: started an empty ${agent} IA (clossys/agents/${agent}/ia.json); place each slot with clossys ia ${agent}/<slot> --under <l1>/<l2> --contract <file>` };
+}
+
+/** `clossys ia <agent> --adopt`: the agent's Foundry IA and every slot.json, written only where the agent has no ia.json. */
+function adoptIa(agent: string, root: string): CliResult {
+  if (!(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`ia --adopt takes ${FOUNDRY_IA_AGENTS.join(", ")}; the Publisher IA is the workspace's own (ia publisher --start)\n${IA_USAGE}`);
+  const read = FOUNDRY_IA[agent as keyof typeof FOUNDRY_IA], after = FOUNDRY_IA_AFTER[agent as keyof typeof FOUNDRY_IA];
+  const consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent as SlotAgent);
+  if (existsSync(iaFile)) return refuse("ia", `${agent} ia.json exists; change it slot by slot (--under, --remove)`);
+  const first = after.filter(up => !existsSync(iaPath(consumer, up)));
+  if (first.length) return refuse("ia", `adopt the ${first.join(", ")} IA first: ${agent} slots read its slots`);
+  const foundry = read();
+  // Refs resolve against the slots this workspace places, plus the adopted ones; the Director's feeds become downstream inputs.
+  const known = new Set(foundry.slots.keys());
+  for (const other of SLOT_AGENTS) if (other !== agent && existsSync(iaPath(consumer, other))) {
+    for (const id of slotPositions(other, readJsonFile(iaPath(consumer, other)) as IaDoc).keys()) known.add(id);
+  }
+  const feeds = feedsIndex([...(agent === "director" ? foundry : directorIa()).slots.values()].map(slot => [slot.id, slot.feeds] as const), known);
+  const writes: [string, string][] = [[iaFile, jsonBytes(foundry.ia)]];
+  let dropped = 0;
+  for (const [id, position] of slotPositions(agent as SlotAgent, foundry.ia)) {
+    const slot = foundry.slots.get(id)!, file = slotFile(slotDir(consumer, agent as SlotAgent, id));
+    if (existsSync(file)) return refuse("ia", `clossys/agents/${agent}/${id}/slot.json exists with no ${agent} ia.json; place it with --under or remove it first`);
+    const derived = deriveRefs(agent as SlotAgent, slot.kind, id, { inputs: slot.declaredInputs, uses: slot.declaredUses }, { known, feeds });
+    dropped += derived.dropped.length;
+    const doc = { schema: SLOT_SCHEMA, id, agent, ia: { ...position }, kind: slot.kind, contract: slot.contract, inputs: derived.inputs, uses: derived.uses };
+    const issues = validateSlotDoc(doc, file);
+    if (issues.length) return refuse("ia", `${agent}/${id}: ${issues.map(issue => issue.message).join("; ")}`);
+    writes.push([file, jsonBytes(doc)]);
+  }
+  const added = guarded(consumer, writes.map(([path]) => path), () => { for (const [path, bytes] of writes) replaceFile(path, bytes); });
+  if (added.length) return refuse("ia", `the slot model check fails after the adoption: ${added.slice(0, 5).join("; ")}`);
+  const slots = writes.length - 1;
+  return { exitCode: 0, root, message: `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts)${dropped ? `; ${dropped} declared refs name no placed slot and were left out` : ""}` };
+}
 const ids = (value: string | undefined) => value ? value.split(",").map(id => id.trim()).filter(Boolean) : [];
 
 export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parseIa(argv);
   if (flags.help) return { exitCode: 0, message: IA_USAGE };
   const [target, ...extra] = flags.positional;
+  const whole = (["--adopt", "--start"] as const).filter(flag => flags.bare.has(flag));
+  if (whole.length) {
+    if (whole.length > 1 || !target || extra.length || target.includes("/") || flags.bare.has("--remove") || flags.values.size > (flags.values.has("--root") ? 1 : 0)) throw new CliUsageError(`ia ${whole.join(" ")} takes one agent and no other flag but --root\n${IA_USAGE}`);
+    return whole[0] === "--adopt" ? adoptIa(target, rootOf(cwd, flags)) : startIa(target, rootOf(cwd, flags));
+  }
   if (!target || extra.length) throw new CliUsageError(`ia takes one <agent>/<slot>\n${IA_USAGE}`);
   const slash = target.indexOf("/");
   const agent = target.slice(0, slash) as SlotAgent, slot = target.slice(slash + 1);
   if (!(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`ia target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${IA_USAGE}`);
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");
   const iaFile = iaPath(consumer, agent);
-  if (!existsSync(iaFile)) return refuse("ia", `${agent} has no ia.json`);
+  if (!existsSync(iaFile)) return refuse("ia", `${agent} has no ia.json: ${(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent) ? `adopt the Foundry IA (clossys ia ${agent} --adopt) or start` : "start"} an empty one (clossys ia ${agent} --start)`);
   const ia = readJsonFile(iaFile) as { extensions?: string[]; nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] } & Record<string, unknown>;
   const dir = slotDir(consumer, agent, slot);
   const placed = ia.nodes.some(node => node.children.some(child => child.slots.includes(slot)));
@@ -148,10 +204,15 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
     const under = one(flags, "--under");
     if (!under) throw new CliUsageError(`${target} is not placed yet: --under <l1>/<l2> names where\n${IA_USAGE}`);
     const [l1, l2] = [under.slice(0, under.indexOf("/")), under.slice(under.indexOf("/") + 1)];
-    const node = ia.nodes.find(each => each.id === l1);
+    // A workspace IA (--start) gains the L1/L2 groups its slots name; a Foundry IA only takes slots under the groups it lists.
+    const own = ia.source === WORKSPACE_IA_SOURCE && under.includes("/");
+    let base = ia.nodes;
+    if (own && l1 && l2 && !base.some(each => each.id === l1)) base = [...base, { id: l1, label: l1, children: [] }];
+    if (own && l1 && l2) base = base.map(each => each.id !== l1 || each.children.some(group => group.id === l2 || group.id === `${l1}.${l2}`) ? each : { ...each, children: [...each.children, { id: l2, label: l2, slots: [] }] });
+    const node = base.find(each => each.id === l1);
     const child = node?.children.find(each => each.id === l2 || each.id === `${l1}.${l2}`);
     if (!node || !child) return refuse("ia", `${agent} ia.json has no ${under} (L1/L2 ids as ia.json lists them)`);
-    next = { ...ia, nodes: ia.nodes.map(each => each !== node ? each : { ...each, children: each.children.map(group => group !== child ? group : { ...group, slots: [...group.slots, slot] }) }) };
+    next = { ...ia, nodes: base.map(each => each !== node ? each : { ...each, children: each.children.map(group => group !== child ? group : { ...group, slots: [...group.slots, slot] }) }) };
   } else if (one(flags, "--under")) return refuse("ia", `${target} is already placed; --under only places a new slot`);
   const iaIssues = validateIa(next, iaFile);
   if (iaIssues.length) return refuse("ia", iaIssues.map(issue => issue.message).join("; "));

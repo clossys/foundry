@@ -14,7 +14,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CANDIDATES_DIR, FOLDER_KIND, SLOT_AGENTS } from "../records/slot-model/types.js";
+import { CANDIDATES_DIR, FOLDER_KIND, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
 import { isDecide } from "./define.js";
 import type { Step } from "./define.js";
@@ -127,10 +127,13 @@ export function openItems(step: Step, context: Context): string[] {
   const root = context.root;
   if (counter === "slots-without-slot-json") {
     const dir = join(root, "clossys", "agents");
-    return (existsSync(dir) ? readdirSync(dir).sort() : [])
+    // An agent with a Foundry IA and no ia.json is one open item (its bare id), once the agents it reads have theirs.
+    const placed = (agent: string) => existsSync(join(dir, agent, "ia.json"));
+    const unplaced = FOUNDRY_IA_AGENTS.filter(agent => !placed(agent) && FOUNDRY_IA_AFTER[agent].every(placed));
+    return [...unplaced, ...(existsSync(dir) ? readdirSync(dir).sort() : [])
       // The seat tree's ia.json places seats, which have no slot.json (status.ts counts the same).
       .filter(agent => (FOLDER_KIND as Readonly<Record<string, string>>)[agent] !== "seat")
-      .flatMap(agent => iaSlots(root, agent).filter(slot => !existsSync(join(dir, agent, slot, "slot.json"))).map(slot => `${agent}/${slot}`));
+      .flatMap(agent => iaSlots(root, agent).filter(slot => !existsSync(join(dir, agent, slot, "slot.json"))).map(slot => `${agent}/${slot}`))];
   }
   if (counter?.startsWith("slots-without-candidates:")) {
     const agent = counter.slice("slots-without-candidates:".length);
@@ -268,6 +271,9 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
     else add(`The ${target.agent} agent does it at mid tier with its skill; you review the result in Studio.`, seatArgs("mid", "<model:mid>"));
     add(owner ? "You decide; a high-tier llm drafts the recommendation." : `The ${target.agent} agent does it at high tier.`, seatArgs("high", "<model:high>"));
     add("Human only, no llm: the seat stays listed open until an llm part is added.", ["clossys", "seat", item, "--by", by, "--no-llm", "--procedure", procedure, "--command", command]);
+  } else if (step.id === "ia" && !item.includes("/")) {
+    add(`Adopt the Foundry ${item} IA: its tree and every slot's contract, inputs and uses.`, ["clossys", "ia", item, "--adopt"]);
+    add(`Start an empty ${item} IA and place each slot yourself with clossys ia ${item}/<slot> --under <l1>/<l2>.`, ["clossys", "ia", item, "--start"]);
   } else if (step.id === "ia") {
     const [agent, slot] = [item.slice(0, item.indexOf("/")), item.slice(item.indexOf("/") + 1)];
     add(`Keep ${slot} where ia.json places it and give it its contract.`, ["clossys", "ia", item, "--contract", "<contract.json>"]);
@@ -305,12 +311,14 @@ function outputOf(step: Step, item: string): { path: string; schema: string } {
     return { path: glob.replace(`clossys/agents/${agent}/*`, `clossys/agents/${agent}/${slot}`).replace("clossys/agents/*/*", `clossys/agents/${agent}/${slot}`), schema: port?.schema ?? "" };
   }
   if (step.id === "seats") return { path: `clossys/agents/producer/${item}/pin.json`, schema: "seat" };
+  if (step.id === "ia") return { path: `clossys/agents/${item}/ia.json`, schema: "ia" };
   return { path: glob, schema: port?.schema ?? "" };
 }
 
 /** The question a packet asks, one line. */
 function questionOf(step: Step, item: string, context: Context, packageRoot: string): string {
   if (step.id === "seats") { const target = context.steps.find(each => each.id === item); return `Who decides ${item}${target ? ` (${target.summary.replace(/\.$/, "")})` : ""}?`; }
+  if (step.id === "ia" && !item.includes("/")) return `Which ${item} IA does this workspace start from?`;
   if (step.id === "ia") return `Does ${item} belong in the IA, and what is its contract?`;
   if (step.id === "writer.approve") return `Approve the Writer copy for ${item}?`;
   if (step.id.startsWith("pin.")) return `Which candidate ships for ${item}?`;

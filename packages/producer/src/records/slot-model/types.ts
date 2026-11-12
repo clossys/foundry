@@ -13,6 +13,12 @@
  * Nothing about pinning lives in a candidate. Provenance is one `source` key.
  */
 export const SLOT_AGENTS = ["director", "designer", "writer", "publisher"] as const;
+/**
+ * The agents whose IA is Foundry data (`clossys ia <agent> --adopt`), each with the agents whose IA it is adopted
+ * after (its slots read theirs); the Publisher IA is the workspace's own (`clossys ia publisher --start`).
+ */
+export const FOUNDRY_IA_AFTER: Readonly<Record<"director" | "designer" | "writer", readonly ("director" | "designer" | "writer" | "publisher")[]>> = { director: [], designer: ["director"], writer: ["director"] };
+export const FOUNDRY_IA_AGENTS = Object.keys(FOUNDRY_IA_AFTER) as (keyof typeof FOUNDRY_IA_AFTER)[];
 export type SlotAgent = typeof SLOT_AGENTS[number];
 
 /**

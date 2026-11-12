@@ -11,6 +11,7 @@ import type { Step } from "./define.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { runPipeline } from "./runner.js";
 import { STEPS } from "./steps/index.js";
+import { checkSlotModel } from "../records/slot-check.js";
 import { appendRecord, buildRecord, readStore, storeFile } from "./trace.js";
 
 /** The foundry consumer this package ships beside: a real slot model to copy. */
@@ -255,6 +256,54 @@ describe("clossys next", { timeout: 60_000 }, () => {
       expect(after.packets.some(each => each.step === "writer.approve" && each.item === argv[1])).toBe(false);
     }
   });
+
+  it("opens the ia step on a fresh workspace and places a Foundry IA through clossys ia --adopt, the Director first", async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "chain-fresh-")));
+    dirs.push(root);
+    const at = ["--root", root], consumer = join(root, "clossys");
+    expect((await runPipeline(["config", "--init", ...at], root)).exitCode).toBe(0);
+    const iaPackets = () => openPackets(root).filter(packet => packet.step === "ia" && !packet.item.includes("/"));
+    // The Designer and Writer IAs read Director slots: only the Director is open until it has an IA.
+    const first = iaPackets();
+    expect(first.map(packet => packet.item)).toEqual(["director"]);
+    expect(first[0]!.output.path).toBe("clossys/agents/director/ia.json");
+    expect(first[0]!.options.filter(option => option.argv).map(option => option.argv)).toEqual([["clossys", "ia", "director", "--adopt"], ["clossys", "ia", "director", "--start"]]);
+    expect((await runPipeline(["ia", "designer", "--adopt", ...at], root)).message).toContain("adopt the director IA first");
+    const adopt = await runPipeline([...first[0]!.options[0]!.argv!.slice(1), ...at], root);
+    expect(adopt.exitCode, adopt.message).toBe(0);
+    expect(iaPackets().map(packet => packet.item)).toEqual(["designer", "writer"]);
+    for (const agent of ["designer", "writer"]) expect((await runPipeline(["ia", agent, "--adopt", ...at], root)).exitCode).toBe(0);
+    expect(iaPackets()).toEqual([]);
+    expect(checkSlotModel(consumer)).toEqual([]);
+    expect((await runPipeline(["ia", "director", "--adopt", ...at], root)).message).toContain("director ia.json exists");
+    // The adopted records are the Foundry's own: the same contract and derived inputs this repository's consumer holds.
+    for (const rel of ["director/advantage.defensibility.differentiator", "designer/assets.icon-arrow-right"]) {
+      const read = (base: string) => JSON.parse(readFileSync(join(base, "agents", rel, "slot.json"), "utf8")) as { contract: unknown; inputs: string[]; kind: string };
+      const [ours, foundry] = [read(consumer), read(FOUNDRY)];
+      expect({ kind: ours.kind, contract: ours.contract, inputs: ours.inputs }).toEqual({ kind: foundry.kind, contract: foundry.contract, inputs: foundry.inputs });
+    }
+    // A Foundry IA takes slots only under the groups it lists.
+    writeFileSync(join(root, "contract.json"), "{}\n");
+    expect((await runPipeline(["ia", "designer/assets.fixture-mark", "--under", "nowhere/at-all", "--contract", join(root, "contract.json"), ...at], root)).message).toContain("has no nowhere/at-all");
+  }, 120_000);
+
+  it("starts a workspace IA with clossys ia --start, and --under grows its groups as slots are placed", async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "chain-start-")));
+    dirs.push(root);
+    const at = ["--root", root], consumer = join(root, "clossys");
+    expect((await runPipeline(["config", "--init", ...at], root)).exitCode).toBe(0);
+    writeFileSync(join(root, "contract.json"), "{}\n");
+    const place = (slot: string, under: string) => runPipeline(["ia", slot, "--under", under, "--contract", join(root, "contract.json"), ...at], root);
+    expect((await place("director/focus.segment.core", "focus/focus.segment")).message).toContain("director has no ia.json");
+    expect((await runPipeline(["ia", "director", "--start", ...at], root)).exitCode).toBe(0);
+    expect(openPackets(root).some(packet => packet.step === "ia" && packet.item === "director")).toBe(false);
+    expect((await place("director/focus.segment.core", "focus/focus.segment")).exitCode).toBe(0);
+    expect((await place("director/focus.segment.edge", "focus/focus.segment")).exitCode).toBe(0);
+    const ia = JSON.parse(readFileSync(join(consumer, "agents", "director", "ia.json"), "utf8")) as { nodes: { id: string; children: { id: string; slots: string[] }[] }[] };
+    expect(ia.nodes).toEqual([{ id: "focus", label: "focus", children: [{ id: "focus.segment", label: "focus.segment", slots: ["focus.segment.core", "focus.segment.edge"] }] }]);
+    expect(checkSlotModel(consumer)).toEqual([]);
+    expect((await runPipeline(["ia", "director", "--start", ...at], root)).message).toContain("director ia.json exists");
+  }, 120_000);
 
   it("nextPacket and openPackets agree on the first open step", () => {
     const root = workspace();
