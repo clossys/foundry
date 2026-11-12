@@ -37,6 +37,15 @@ describe('slot-groups gallery (R2F-03b)', () => {
     expect(frame.getAttribute('loading')).toBe('lazy');
   });
 
+  it('renders no frame until the client knows the theme, then one frame keyed to its source', () => {
+    const deferred = card('a', { name: 'a', kind: 'viewports', empty: EMPTY, deferred: true, specimens: [{ viewport: 1280, light: '/__specimen?element=a&width=1280', title: 'a' }] });
+    const before = render({ empty: 'none', groups: [{ id: 'g', label: 'Group', cards: [deferred] }] });
+    expect(before.querySelector('iframe')).toBeNull();
+    expect(before.querySelector('[data-specimen-fit="content"]')).not.toBeNull();
+    const after = render({ empty: 'none', groups: [{ id: 'g', label: 'Group', cards: [framed('a')] }] });
+    expect(after.querySelectorAll('iframe')).toHaveLength(1);
+  });
+
   it('shows the check behind a card status, and no citation line when none is cited', () => {
     const cited = { ...card('cited', { name: 'cited', kind: 'record', empty: EMPTY, citation: null }), citation: { source: 'check:slot-pins', result: 'Passed' } };
     const document = render({ empty: 'none', groups: [{ id: 'g', label: 'Group', cards: [cited, card('plain', { name: 'plain', kind: 'record', empty: EMPTY, citation: null })] }] });

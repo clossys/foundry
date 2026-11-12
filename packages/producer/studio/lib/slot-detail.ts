@@ -61,7 +61,11 @@ function candidateRows(candidate: DetailCandidate): { key: string; label: string
   return detailStrings(candidate.content).map(({ key, text }) => ({ key, label: key, text }));
 }
 
-export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark', publication?: PublicationResponse): Record<string, unknown> {
+/**
+ * `deferred`: Studio has not yet mounted and resolved its theme (the server render and hydration), so the
+ * specimen and option frames are left out until it has; they then load once, at the theme the page shows.
+ */
+export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark', publication?: PublicationResponse, deferred = false): Record<string, unknown> {
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
   // The header status is the shared slot loader's decision, cited as the check that reports it.
@@ -77,10 +81,11 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     // A preview (any candidate that is not the valid pin) never stands as the slot's specimen; it renders in its option row.
     ...(page ? { page } : {}), ...(shown?.specimen && !shown.preview ? { element: { specimen: shown.specimen, version: shown.version } } : {}),
     ...(shown?.record && !shown.preview ? { record: { ...resolveCopy(shown.record), citation: null } as RecordDraft } : {}),
-  });
+  }, undefined, deferred);
   const options: OptionsInput = {
     copy: optionsCopy(),
     name, description: detail.pin ? studioCopy("studio.recorded-candidates-beside-the-pin") : studioCopy("studio.no-pin-candidates-await-approval"),
+    ...(deferred ? { deferred: true } : {}),
     rows: [...detail.candidates].sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.version - b.version).map(candidate => ({
       version: candidate.version, pinned: candidate.pinned, copy: optionCopy(name, candidate), label: candidate.name, reason: candidate.pinned ? studioCopy("studio.pinned") : studioCopy("studio.unpinned"),
       preview: candidate.specimen ? { kind: 'frame' as const, viewport: 1280 as const, src: specimenHref({ specimen: candidate.specimen, version: candidate.version }, theme, 1280)! }
@@ -166,14 +171,14 @@ export interface SpecimenSource {
  * (No pin, pin unavailable), each citing the slot check that decided it, and Not run (page not
  * emitted, no renderer: no run record to cite). It never draws candidate file text.
  */
-export function slotSpecimen(source: SpecimenSource, card?: { theme: 'light' | 'dark'; loading: string }): SpecimenInput {
+export function slotSpecimen(source: SpecimenSource, card?: { theme: 'light' | 'dark'; loading: string }, deferred = false): SpecimenInput {
   const name = source.name;
   const heading = (viewport: Viewport) => studioCopy('studio.viewport-heading', { viewport });
   const frames = (src: (viewport: Viewport, theme: 'light' | 'dark') => string) => card
     ? [{ viewport: 1280 as const, light: src(1280, card.theme), interactive: false, heading: heading(1280), title: studioCopy('studio.specimen-frame-title', { name, viewport: 1280 }) }]
     : ([375, 768, 1280] as const).map(viewport => ({ viewport, light: src(viewport, 'light'), dark: src(viewport, 'dark'), heading: heading(viewport),
       title: studioCopy('studio.specimen-frame-title-light', { name, viewport }), darkTitle: studioCopy('studio.specimen-frame-title-dark', { name, viewport }) }));
-  const head = { name: source.name, title: studioCopy("studio.specimen"), description: source.description, empty: studioCopy("studio.no-candidate"), ...(card ? { loading: card.loading } : {}) };
+  const head = { name: source.name, title: studioCopy("studio.specimen"), description: source.description, empty: studioCopy("studio.no-candidate"), ...(card ? { loading: card.loading } : {}), ...(deferred ? { deferred: true } : {}) };
   // Every status cites the check that decided it; one with no run record or check behind it reads as not run.
   const status = (label: string, tone: 'secondary' | 'outline' | 'destructive', description: string, citation: StatusCitation | null): SpecimenInput =>
     withRowsCopy({ name: source.name, title: head.title, description: source.description, kind: 'record', empty: label, status: { label, tone, description }, citation });
@@ -203,7 +208,7 @@ function withRowsCopy(input: RecordDraft): SpecimenInput {
 export const versionLabel = (version: number) => studioCopy('studio.version-label', { version });
 
 /** A gallery card's specimen: the same path as the detail page, from the card data the gallery has. */
-export function slotCardSpecimen(card: Pick<SlotGalleryCard, 'id' | 'kind' | 'state' | 'options' | 'status' | 'specimen' | 'version' | 'excerpt'>, label: string, theme: 'light' | 'dark', publication?: PublicationResponse): SpecimenInput {
+export function slotCardSpecimen(card: Pick<SlotGalleryCard, 'id' | 'kind' | 'state' | 'options' | 'status' | 'specimen' | 'version' | 'excerpt'>, label: string, theme: 'light' | 'dark', publication?: PublicationResponse, deferred = false): SpecimenInput {
   const active = card.status === 'active';
   const page = active && publication?.state === 'ready'
     ? publication.pages.find(row => row.cellId === card.id && row.emitted && safePreviewUrl(row.previewUrl)) : undefined;
@@ -214,5 +219,5 @@ export function slotCardSpecimen(card: Pick<SlotGalleryCard, 'id' | 'kind' | 'st
     name: label, description: card.id, state, kind: card.kind, options: card.options, ...(page ? { page } : {}),
     ...(active && card.specimen ? { element: { specimen: card.specimen, version: card.version } } : {}),
     ...(active && card.excerpt.length ? { record: { ...head, kind: 'record', lead: card.excerpt, citation: null, empty: studioCopy("studio.no-candidate") } } : {}),
-  }, { theme, loading: label });
+  }, { theme, loading: label }, deferred);
 }

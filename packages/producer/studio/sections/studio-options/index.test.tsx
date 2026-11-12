@@ -16,6 +16,13 @@ it('binds an option to its actual viewport and preserves its version and pin exp
   expect(document.body.textContent).toContain('Native pin');
 });
 
+it('renders no option frame while deferred, so the server never ships a frame for the wrong theme', () => {
+  const options: OptionsInput = { name: 'Example', description: 'Recorded candidates', copy: optionsCopy(), deferred: true, rows: [{ version: 3, pinned: true, copy: optionCopy('Example', { version: 3, pinned: true }), label: 'Pinned v3', reason: 'Native pin', preview: { kind: 'frame', src: '/__specimen?element=example&width=768&v=3', viewport: 768 } }] };
+  const document = new JSDOM(renderToStaticMarkup(<OptionsSection options={options} />)).window.document;
+  expect(document.querySelector('iframe')).toBeNull();
+  expect(document.body.textContent).toContain('Native pin');
+});
+
 it('keeps stock comparison columns and complete Writer records without an intrinsic cell width floor', () => {
   const values = ['Publications', 'Overview', '  significant spaces\nsecond line  ', 'UnbrokenRecordValue'.repeat(24)];
   const options: OptionsInput = {
@@ -36,9 +43,11 @@ it('keeps stock comparison columns and complete Writer records without an intrin
     expect(figure.getAttribute('data-slot')).toBe('field');
     const cells = [...figure.querySelectorAll<HTMLElement>('[data-slot="table-cell"]')];
     expect(cells.map(cell => cell.textContent)).toEqual(values.flatMap((text, index) => [index === 3 ? 'UnbrokenRecordKey'.repeat(24) : `record-${index}`, text]));
-    expect(cells.every(cell => cell.style.overflowWrap === 'anywhere' && cell.classList.contains('whitespace-pre-wrap'))).toBe(true);
-    expect(cells.every(cell => !['min-w-48', 'whitespace-nowrap', 'truncate', 'overflow-hidden', 'text-ellipsis'].some(token => cell.classList.contains(token)))).toBe(true);
+    // Stock aria-nova table (P0 shadcn reset): no clipping tokens or inline restyle; a wide record
+    // scrolls inside the stock table container.
+    expect(cells.every(cell => !['min-w-48', 'truncate', 'overflow-hidden', 'text-ellipsis', 'line-clamp-1'].some(token => cell.classList.contains(token)))).toBe(true);
+    expect(cells.every(cell => !cell.hasAttribute('style'))).toBe(true);
+    expect(cells[0]!.closest('[data-slot="table-container"]')!.classList.contains('overflow-x-auto')).toBe(true);
   }
-  expect(document.querySelector('[data-slot="card-content"]')!.classList.contains('min-w-0')).toBe(true);
   expect(JSON.stringify(options)).toBe(before);
 });

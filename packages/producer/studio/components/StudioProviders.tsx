@@ -2,7 +2,7 @@
 import { studioCopy, errorText } from '../lib/studio-copy';
 
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { RouterProvider } from '@clossys/designer-ui';
 import { studioCellChange } from '../lib/cell-events';
@@ -17,7 +17,11 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 /** `census` is only the server-rendered slot census; Home refreshes it per revision itself. */
 interface StudioData { revision: number; reports: Resource<StudioReport[]>; brand: Resource<StudioBrandInfo>; census?: StudioSeed['census'] }
 const DataContext = createContext<StudioData>({ revision: 0, reports: { state: 'loading' }, brand: { state: 'loading' } });
-const ThemeContext = createContext<{ mode: ThemeMode; resolved: 'light' | 'dark'; setMode: (mode: ThemeMode) => void }>({ mode: 'system', resolved: 'light', setMode: () => {} });
+/**
+ * `ready` is false through the server render and hydration and true once the client has applied the
+ * stored mode: `resolved` is then the theme the page shows, not the server's light default.
+ */
+const ThemeContext = createContext<{ mode: ThemeMode; resolved: 'light' | 'dark'; ready: boolean; setMode: (mode: ThemeMode) => void }>({ mode: 'system', resolved: 'light', ready: false, setMode: () => {} });
 
 export function useStudioData() { return useContext(DataContext); }
 export function useThemeMode() { return useContext(ThemeContext); }
@@ -70,11 +74,15 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
   const seeded = useRef(seed ? 0 : undefined);
   const [mode, setModeState] = useState<ThemeMode>('system');
   const [resolved, setResolved] = useState<'light' | 'dark'>('light');
+  const [ready, setReady] = useState(false);
 
-  useEffect(() => {
+  // A layout effect: the stored mode is resolved before the first client paint, in one update with
+  // `ready`, so nothing that waits for `ready` (the specimen frames) ever renders at the server's default.
+  useLayoutEffect(() => {
     const initial = storedMode();
     setModeState(initial);
     setResolved(applyMode(initial));
+    setReady(true);
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const follow = () => { if (storedMode() === 'system') setResolved(applyMode('system')); };
     media.addEventListener('change', follow);
@@ -114,7 +122,7 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
 
   const census = seed?.census;
   const data = useMemo(() => ({ revision, reports, brand, ...(census ? { census } : {}) }), [revision, reports, brand, census]);
-  const theme = useMemo(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);
+  const theme = useMemo(() => ({ mode, resolved, ready, setMode }), [mode, resolved, ready, setMode]);
   return <RouterProvider navigate={href => router.push(href)}>
     <ThemeContext.Provider value={theme}><DataContext.Provider value={data}><StudioRouteMapProvider>{children}</StudioRouteMapProvider></DataContext.Provider></ThemeContext.Provider>
   </RouterProvider>;

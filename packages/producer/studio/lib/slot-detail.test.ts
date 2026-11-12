@@ -19,6 +19,15 @@ describe('native detail viewport data for stock iframe consumers', () => {
     expect(input.options).toMatchObject({ rows: [{ version: 2, preview: { kind: 'frame', viewport: 1280, src: '/__specimen?element=sections.example%2Fexample&theme=dark&width=1280&v=2' } }] });
   });
 
+  it('marks specimen and options deferred until the client has resolved its theme, and only then', () => {
+    const before = slotDetailInputs(detail, links, 'light', undefined, true);
+    expect(before.specimen).toMatchObject({ kind: 'viewports', deferred: true });
+    expect(before.options).toMatchObject({ deferred: true });
+    const after = slotDetailInputs(detail, links, 'dark');
+    expect(after.specimen).not.toHaveProperty('deferred');
+    expect(after.options).not.toHaveProperty('deferred');
+  });
+
   it('never manufactures iframe data when the native candidate has no matching artifact', () => {
     const missing = { ...detail, candidates: detail.candidates.map(candidate => ({ ...candidate, specimen: undefined })) };
     const input = slotDetailInputs(missing, links, 'light');

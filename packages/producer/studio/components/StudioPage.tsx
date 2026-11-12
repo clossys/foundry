@@ -143,7 +143,7 @@ function useHomeInputs({ page }: LoaderProps): Loaded {
 /** A group-tab page: the record's head, its tab routes, and the tab's IA groups of slot cards. */
 function useSlotGroupsInputs({ entry, page, spec }: LoaderProps): Loaded {
   const { reports } = useStudioData();
-  const { resolved } = useThemeMode();
+  const { resolved, ready } = useThemeMode();
   const agent = spec.data.agent;
   const seed = useContext(PageSeedContext).groups;
   const record = useResource<SlotGroupsRecord>(agent, seed && { key: seed.agent, record: seed.record }, signal => loadSlotGroups(agent!, signal), studioCopy("studio.the-library-could-not-load"));
@@ -166,7 +166,7 @@ function useSlotGroupsInputs({ entry, page, spec }: LoaderProps): Loaded {
             statusLabel: studioCopy(`studio.${card.status}`), statusTone: STATUS_TONE[card.status] ?? 'outline',
             // The card status is the gallery loader's pin check (failing: the pin's candidate or bytes do not hold), else the slot state.
             citation: card.status === 'failing' ? checkCitation(SLOT_PINS_CHECK, false) : slotStateCitation(card.state, card.status === 'active'),
-            ...(card.version ? { version: card.version, versionLabel: versionLabel(card.version) } : {}), specimen: slotCardSpecimen(card, name, resolved, record.value.publication),
+            ...(card.version ? { version: card.version, versionLabel: versionLabel(card.version) } : {}), specimen: slotCardSpecimen(card, name, resolved, record.value.publication, !ready),
           };
         }) }] : [];
       }),
@@ -178,13 +178,13 @@ function useSlotGroupsInputs({ entry, page, spec }: LoaderProps): Loaded {
     const waiting = record.value.sections.flatMap(section => section.level === 2 && sections.has(section.id) ? section.cards.filter(card => card.status !== 'active' && card.options > 0) : []);
     const options = cards.filter(card => waiting.some(row => row.id === card.id)).map(cardRow);
     return { state: 'ready', inputs: { header: { ...pageHeader(owner) }, tabs, groups }, modules: { checks: checksInput(failing, options, openNeeds(list, report => report.agent === agent).map(needRow)) } };
-  }, [agent, record, entry, page, spec, reports, resolved]);
+  }, [agent, record, entry, page, spec, reports, resolved, ready]);
 }
 
 /** A leaf page: one slot's detail, back-linked to the tab that lists it. */
 function useLeafInputs({ page, spec, slug }: LoaderProps): Loaded {
   const { reports } = useStudioData();
-  const { resolved } = useThemeMode();
+  const { resolved, ready } = useThemeMode();
   const agent = spec.data.agent;
   const seed = useContext(PageSeedContext).leaf;
   const key = agent && slug ? `${agent}/${slug}` : undefined;
@@ -197,10 +197,10 @@ function useLeafInputs({ page, spec, slug }: LoaderProps): Loaded {
     const label = studioGroupOf(page.id)?.title;
     if (label === undefined) throw new Error(`Studio map has no group for ${page.id}`);
     if (!record.value) return { state: 'notice', notice: { title: studioCopy("studio.this-leaf-is-gone"), description: studioCopy("studio.no-longer-records", { value0: String(label), value1: String(slug) }) } };
-    const inputs = slotDetailInputs(record.value.detail, { leaf: studioLeafHref, label: studioLeafTitle, back: { href: page.path, label: page.title } }, resolved, record.value.publication);
+    const inputs = slotDetailInputs(record.value.detail, { leaf: studioLeafHref, label: studioLeafTitle, back: { href: page.path, label: page.title } }, resolved, record.value.publication, !ready);
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     return { state: 'ready', inputs, modules: { checks: leafChecks(inputs, list, agent, slug) } };
-  }, [agent, slug, record, page, spec, resolved, reports]);
+  }, [agent, slug, record, page, spec, resolved, ready, reports]);
 }
 
 /** The URL's `?seat=<id>` (a team card's link): the lane the overview highlights. Read after mount, so the server render and hydration agree. */

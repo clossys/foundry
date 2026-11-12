@@ -13,7 +13,7 @@ const rowsCopy = { label: 'Example specimen', key: 'Key', content: 'Content' };
 const render = (element: React.ReactNode) => new JSDOM(renderToStaticMarkup(element)).window.document;
 
 describe('detail and gallery specimen binding', () => {
-  it.each(['tables', 'rows'] as const)('keeps complete Writer %s content wrappable in a narrow candidate pane', kind => {
+  it.each(['tables', 'rows'] as const)('keeps complete Writer %s content in the stock table, scrolling rather than clipping in a narrow candidate pane', kind => {
     const values = ['Publications', 'Overview', '  significant spaces\nsecond line  ', 'UnbrokenRecordValue'.repeat(24)];
     const specimen: SpecimenInput = {
       kind: 'record', name: 'strings.common', title: 'Candidate', description: '', empty: 'No records', rowsCopy, citation: null,
@@ -29,14 +29,16 @@ describe('detail and gallery specimen binding', () => {
     const document = render(<SpecimenContent specimen={specimen} />);
     const cells = [...document.querySelectorAll<HTMLElement>('[data-slot="table-cell"]')];
     expect(cells.map(cell => cell.textContent)).toEqual(values.flatMap((text, index) => [`record-${index}`, text]));
-    expect(cells.every(cell => cell.style.overflowWrap === 'anywhere' && cell.classList.contains('whitespace-pre-wrap'))).toBe(true);
-    expect(cells.every(cell => !['min-w-48', 'whitespace-nowrap', 'truncate', 'overflow-hidden', 'text-ellipsis'].some(token => cell.classList.contains(token)))).toBe(true);
-    expect(document.querySelector('[data-slot="card-content"]')!.classList.contains('min-w-0')).toBe(true);
+    // Stock aria-nova table (P0 shadcn reset): cells keep the stock classes and are never clipped; a wide
+    // record scrolls inside the stock table container instead of being restyled to wrap.
+    expect(cells.every(cell => !['min-w-48', 'truncate', 'overflow-hidden', 'text-ellipsis', 'line-clamp-1'].some(token => cell.classList.contains(token)))).toBe(true);
+    expect(cells.every(cell => !cell.hasAttribute('style'))).toBe(true);
+    const container = cells[0]!.closest('[data-slot="table-container"]')!;
+    expect(container.classList.contains('overflow-x-auto')).toBe(true);
     const link = document.querySelector<HTMLElement>('a[href="/records/long"]')!;
     expect(link.textContent).toBe(values[3]);
-    expect(link.style.overflowWrap).toBe('anywhere');
-    expect(link.classList.contains('max-w-full')).toBe(true);
-    expect(link.classList.contains('whitespace-pre-wrap')).toBe(true);
+    expect(container.contains(link)).toBe(true);
+    expect(['truncate', 'overflow-hidden', 'text-ellipsis'].some(token => link.classList.contains(token))).toBe(false);
     expect(JSON.stringify(specimen)).toBe(before);
   });
 
@@ -50,6 +52,13 @@ describe('detail and gallery specimen binding', () => {
     expect(actual.every(frame => !frame.hasAttribute('class') && !frame.hasAttribute('style') && frame.parentElement?.getAttribute('data-slot') === 'scroll-area')).toBe(true);
     expect(document.querySelector('[data-slot="specimen-frame"]')).toBeNull();
     expect(actual.every(frame => !frame.hasAttribute('inert'))).toBe(true);
+  });
+
+  it('leaves the frames out while deferred (server render and hydration) and keeps the viewport headings', () => {
+    const document = render(<SpecimenContent specimen={{ kind: 'viewports', name: 'Example', title: 'Specimen', description: '', specimens: frames, empty: 'No preview', deferred: true }} />);
+    expect(document.querySelector('iframe')).toBeNull();
+    expect(document.body.textContent).toContain('1280 px');
+    expect(document.body.textContent).not.toContain('No preview');
   });
 
   it('keeps gallery previews inert and errors visible instead of inventing a preview', () => {
