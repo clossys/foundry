@@ -89,21 +89,28 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
  * A record card's lead: the first rows' text as plain sentences, so a gallery card reads at card
  * size without framing the record page (the L3 route keeps the full-width render).
  */
-/** A structured row (a JSON rule or entry) reads as its value, not as its serialization. */
+/**
+ * A structured row (a JSON rule or entry) reads as its value, not as its serialization: a format or
+ * voice rule's value, a term, a pattern, a narrative's title, or a claim's first phrasing.
+ */
 function readable(text: string): string {
   if (!/^\s*\{/.test(text)) return text;
   // Plain text that starts with a brace is not JSON and reads as itself.
   const parsed = parseJson(text);
   const value = parsed.ok && parsed.value && typeof parsed.value === 'object' ? parsed.value as Record<string, unknown> : undefined;
-  if (value) for (const key of ['value', 'text', 'description', 'rule']) if (typeof value[key] === 'string' && value[key]) return value[key] as string;
-  return text;
+  if (value) for (const key of ['value', 'text', 'description', 'rule', 'term', 'pattern', 'title']) if (typeof value[key] === 'string' && value[key]) return value[key] as string;
+  const phrasing = Array.isArray(value?.phrasings) ? value.phrasings.find(entry => typeof entry === 'string' && entry) : undefined;
+  return typeof phrasing === 'string' ? phrasing : text;
 }
 
 export function recordLead(input: RecordSpecimenInput | undefined, rows = 2, length = 220): string[] {
   return (input?.rows ?? []).slice(0, rows).map(row => {
     const text = readable(row.text).split('\n').map(line => line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '').trim()).filter(Boolean).join(' ')
       .replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim();
-    return text.length > length ? `${text.slice(0, length - 1).trimEnd()}…` : text;
+    if (text.length <= length) return text;
+    // Cut at a word boundary so a lead never ends inside a word, a citation or an id.
+    const cut = text.slice(0, length - 1), space = cut.lastIndexOf(' ');
+    return `${(space > 0 ? cut.slice(0, space) : cut).trimEnd()}…`;
   }).filter(Boolean);
 }
 

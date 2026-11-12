@@ -426,5 +426,11 @@ describe('record card lead text', () => {
     expect(recordLead(rows('- **Unit:** teams that ship', '{"id":"x","kind":"voice-rule","value":"neutral: plain words"}', 'third row'))).toEqual(['Unit: teams that ship', 'neutral: plain words']);
     expect(recordLead(rows('{not json', 'x'.repeat(300)))).toEqual(['{not json', `${'x'.repeat(219)}…`]);
     expect(recordLead(undefined)).toEqual([]);
+    expect(recordLead(rows(`${'word '.repeat(43)}(context.competition.alternative@5)`))).toEqual([`${'word '.repeat(43).trimEnd()}…`]);
+    // A claim, term or pattern record reads as its words, never as its JSON (the cited strategy stays in the record).
+    expect(recordLead(rows('{"id":"c","kind":"claim","strategy":"director:context.competition.alternative@1","phrasings":["Unlike an unguided run, each slot keeps its lineage."]}',
+      '{"id":"t","kind":"term","term":"Studio","forms":[]}'))).toEqual(['Unlike an unguided run, each slot keeps its lineage.', 'Studio']);
+    expect(recordLead(rows('{"id":"p","kind":"pattern-rule","pattern":"click here","severity":"error"}', '{"id":"n","frame":"f","regions":[]}')))
+      .toEqual(['click here', '{"id":"n","frame":"f","regions":[]}']);
   });
 });
