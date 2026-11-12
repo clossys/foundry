@@ -8,7 +8,7 @@
  *   clossys decisions [--root <dir>] [--json]
  */
 import { join, resolve } from "node:path";
-import { CONFIRMED_BY, PIN_BASES, SLOT_AGENTS, type PinBasis, type PinConfirmation, type SlotAgent } from "../records/slot-model/index.js";
+import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AGENTS, type PinBasis, type PinConfirmation, type SlotAgent } from "../records/slot-model/index.js";
 import { listSlots, readSlotEntry } from "../records/slots.js";
 import { writeConfirm, writeNotNeeded, writePin } from "../records/slot-write.js";
 import { CliUsageError } from "./args.js";
@@ -119,6 +119,7 @@ export async function runPinCli(argv: readonly string[], cwd: string): Promise<C
     if (flags.basis !== undefined) throw new CliUsageError(`--confirm keeps the agent pick's basis agent; it takes no --basis\n${PIN_USAGE}`);
     if (!CONFIRMED_BY.test(flags.by)) throw new CliUsageError(`--confirm is the owner's: --by must be owner[:<ref>], got ${flags.by}\n${PIN_USAGE}`);
     if (!flags.ref?.trim()) throw new CliUsageError(`--confirm requires --ref <ledger ref> (where the owner's words are recorded)\n${PIN_USAGE}`);
+    if (!OWNER_WORDS_REF.test(flags.ref.trim())) throw new CliUsageError(`--confirm --ref must cite the ledger comment that holds the owner's words (${OWNER_WORDS_REF_FORM}), got ${flags.ref.trim()}\n${PIN_USAGE}`);
   }
   const basis = flags.notNeeded || flags.confirm ? undefined : pinBasis(flags.by, flags.basis);
   const consumer = consumerOf(cwd, flags.root);

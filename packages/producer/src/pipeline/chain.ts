@@ -260,6 +260,7 @@ export const PLACEHOLDER_MEANING: Readonly<Record<string, string>> = {
   "<why>": "the owner's reason, in their words",
   "<contract.json>": "a file with the slot's contract (the slot.json contract object)",
   "<clossys.config.ts>": "the path of the config file to start from",
+  "<ref>": "the ledger comment that holds the owner's words (<org>/<repo>#<issue> issuecomment-<id>)",
 };
 /** Fill `<model:tier>` placeholders from `--model <tier>=<id>` answers; name every other placeholder in `fill`. */
 function filled(argv: string[], models: Readonly<Record<string, string>>): { argv: string[]; fill: Record<string, string> } {

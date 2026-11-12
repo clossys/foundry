@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../records/hash.js";
-import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
+import { jsonBytes, slotPositions, validatePin, type IaDoc } from "../records/slot-model/index.js";
+import { checkSlotModel } from "../records/slot-check.js";
 import { runCli } from "./main.js";
 
 let workspace: string;
@@ -233,6 +234,25 @@ describe("clossys pin --confirm (the owner confirms an agent pick)", () => {
     const result = await pin(`designer/${ID}`, "example-v1", "--confirm", "--ref", REF);
     expect(result.exitCode).toBe(1);
     expect(result.message).toMatch(/^confirm refused: .*not an agent pick/);
+  });
+
+  // A confirmation cites the ledger comment that holds the owner's words; e144bec93 cited a launch instruction.
+  it("refuses a --ref that cites no ledger comment, and the record check fails a confirmation written without one", async () => {
+    expect((await pick(`designer/${ID}`, "example-v1", "--by", "agent:director", "--at", "2026-11-11T10:00:00.000Z")).exitCode).toBe(0);
+    const before = readFileSync(join(slotDir, "pin.json"), "utf8");
+    for (const ref of ["owner standing instruction 2026-11-12: take the recommended option", "clossys/workspace#46", "2026-11-12 launch prompt"]) {
+      const result = await pin(`designer/${ID}`, "example-v1", "--confirm", "--ref", ref);
+      expect(result.exitCode, ref).toBe(2);
+      expect(result.message).toContain("must cite the ledger comment");
+    }
+    expect(readFileSync(join(slotDir, "pin.json"), "utf8")).toBe(before);
+    for (const ref of [REF, "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269", `${REF} (OWNER WORDS r9, option a)`]) {
+      expect(validatePin({ ...load(join(slotDir, "pin.json")), confirmed: { by: "owner", ref, at: "2026-11-11T23:30:00.000Z" } }), ref).toEqual([]);
+    }
+    const forged = { ...load(join(slotDir, "pin.json")), confirmed: { by: "owner", ref: "owner standing instruction 2026-11-12", at: "2026-11-12T00:00:00.000Z" } };
+    expect(validatePin(forged).map(issue => issue.message)).toEqual([expect.stringContaining("must cite the ledger comment")]);
+    writeFileSync(join(slotDir, "pin.json"), jsonBytes(forged));
+    expect(checkSlotModel(join(workspace, "clossys")).filter(issue => issue.code === "pin-invalid").map(issue => issue.message)).toEqual([expect.stringContaining("must cite the ledger comment")]);
   });
 
   it("a later agent re-pick drops the confirmation: it confirms only the pick it was given", async () => {

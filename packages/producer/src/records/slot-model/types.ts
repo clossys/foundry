@@ -191,6 +191,13 @@ export interface PinConfirmation {
 }
 /** Who may confirm an agent pick: the owner only. */
 export const CONFIRMED_BY = /^owner(?::\S.*)?$/;
+/**
+ * Where a confirmation's owner words are: one ledger comment, `<org>/<repo>#<issue> issuecomment-<id>`
+ * or its GitHub URL, optionally followed by a note in parentheses. A ref that cites no comment (a launch
+ * instruction, a "standing instruction", a date) records no owner words and is refused.
+ */
+export const OWNER_WORDS_REF = /^(?:[\w.-]+\/[\w.-]+#\d+ issuecomment-\d+|https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/issues\/\d+#issuecomment-\d+)(?: \([^()]*\))?$/;
+export const OWNER_WORDS_REF_FORM = "<org>/<repo>#<issue> issuecomment-<id> or https://github.com/<org>/<repo>/issues/<issue>#issuecomment-<id>";
 
 export const SOURCE_KINDS = ["registry", "derived", "original", "composition", "npm"] as const;
 /** The one ref of an `npm` source: `npm/<package>@<exact version>` (ref-verbatim proves it against package-lock.json). */

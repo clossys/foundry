@@ -1,7 +1,7 @@
 import { parseSlotRecite } from "@clossys/director";
 import { parseFrontmatter } from "./frontmatter.js";
 import {
-  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, CONFIRMED_BY, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
+  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
   PUBLICATION_SCHEMA, OPTION_COUNTS, PIN_BASES, VARY_ID, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "./types.js";
@@ -129,7 +129,7 @@ export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[]
     else {
       for (const key of Object.keys(confirmed)) if (!["by", "ref", "at"].includes(key)) fail(`confirmed has unknown key ${key}`);
       if (typeof confirmed.by !== "string" || !CONFIRMED_BY.test(confirmed.by)) fail("confirmed.by must be owner[:<ref>]");
-      if (!nonEmpty(confirmed.ref)) fail("confirmed.ref must name where the owner's words are recorded");
+      if (!nonEmpty(confirmed.ref) || !OWNER_WORDS_REF.test(confirmed.ref)) fail(`confirmed.ref must cite the ledger comment that holds the owner's words (${OWNER_WORDS_REF_FORM})`);
       if (typeof confirmed.at !== "string" || Number.isNaN(Date.parse(confirmed.at)) || !/^\d{4}-\d{2}-\d{2}T/.test(confirmed.at)) fail("confirmed.at must be an ISO timestamp");
     }
   }
