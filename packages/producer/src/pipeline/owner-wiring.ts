@@ -61,7 +61,9 @@ function filled(option: QuestionOption, scratch: string): string[][] {
       const file = join(scratch, "owner-wiring-answer.md");
       writeFileSync(file, "Owner words for the owner.wiring check.\n");
       values.set(key, file);
-    } else values.set(key, /^<model:/.test(key) ? "owner-wiring-model" : key === "<R-ID>" ? "R-OWNER-WIRING-CHECK" : "owner-wiring-check");
+    } else values.set(key, /^<model:/.test(key) ? "owner-wiring-model" : key === "<R-ID>" ? "R-OWNER-WIRING-CHECK"
+      // A confirmation cites a ledger comment (OWNER_WORDS_REF); the scratch copy gets a well-formed one.
+      : key === "<ref>" ? "owner-wiring/scratch#0 issuecomment-0" : "owner-wiring-check");
   }
   return option.calls.map(argv => argv.map(word => { let out = word; for (const [key, value] of values) out = out.split(key).join(value); return out; }));
 }
