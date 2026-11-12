@@ -22,7 +22,7 @@ async function fixtureServer() {
       : mutation === 'console' ? '<script>console.error("Injected fixture console failure")</script>'
       : mutation === 'pageerror' ? '<script>throw new TypeError("Injected page TypeError")</script>'
       : mutation === 'defects' ? '<p>[fact:pending] TODO-OWNER page.home</p><h2> </h2><img src="/missing.png">' : '';
-    response.end(`<!doctype html><html><head><title>Studio fixture</title><style>body { color: #111; background: #fff } .dark body { color: #fff; background: #111 }</style></head><body><main><h1>Published content</h1><p>Current publication is available.</p><a href="/">Home</a>${extra}</main></body></html>`);
+    response.end(`<!doctype html><html><head><title>Studio fixture</title><style>body { color: #111; background: #fff } .dark body { color: #fff; background: #111 }</style></head><body><main><h1>Published content</h1><p>Current publication is available.</p><p>Example: a card that says NEED rather than guessing.</p><a href="/">Home</a>${extra}</main></body></html>`);
   });
   await new Promise((accept, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', accept); });
   return {

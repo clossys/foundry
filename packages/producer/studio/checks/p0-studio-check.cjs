@@ -127,7 +127,19 @@ async function discoverRoutePlan(options = {}) {
   // The per-agent gallery pages were retired: tab pages assemble slot groups and are covered as ordinary pages.
   const galleries = {};
   const home = content.entries.find(row => row.kind === 'page' && row.id === 'home')?.path;
-  return { routes: [...represented].sort(), templates: templates.sort(), leafTemplates: leafTemplates.sort(), agents, galleries, home };
+  // A group page lands on its first tab (the projection's `landings`); the check expects that redirect, no other.
+  const landings = {};
+  for (const page of projection.pages ?? []) {
+    const landing = projection.landings?.[page.id];
+    if (!landing || landing === page.path || !routes.includes(page.path)) continue;
+    assert.ok(routes.includes(landing), `Landing of ${page.path} is not a published route: ${landing}`);
+    landings[page.path] = landing;
+  }
+  // A projection leaf is a covered link only under its tab's installed leaf template; one leaf per agent
+  // is rendered so every agent's leaf view runs through the same rules as its pages.
+  const leaves = (projection.leaves ?? []).map(row => row.path).filter(leaf => leafTemplates.includes(leaf.replace(/\/[^/]+$/, '/[slug]')));
+  const leafRoutes = agents.map(agent => leaves.find(leaf => leaf.startsWith(`/${agent}/`))).filter(Boolean);
+  return { routes: [...represented].sort(), templates: templates.sort(), leafTemplates: leafTemplates.sort(), agents, galleries, home, landings, leaves: leaves.sort(), leafRoutes };
 }
 /** Observe the initial page's own client channel; never substitute a Node/API probe. */
 function initialResource(plan, route) {
@@ -166,7 +178,8 @@ function initialDataFindings(expected, actual) {
       const card = actual.agents.find(card => card.agent === row.agent);
       if (!card || card.state !== 'ready' || card.total !== String(row.total) || card.totalLabel !== `${row.total} slots`
         || card.candidates !== String(row.withCandidate) || card.candidatesLabel !== `${row.withCandidate} slots with candidates`
-        || card.pinned !== `${row.pinned} pinned slots`) findings.push(`Home ${row.agent} does not display its native census`);
+        // The footer line leads with the pinned count; the agent's description may follow it in the same line.
+        || !new RegExp(`^${row.pinned} pinned slots(?:\\s|$)`).test(card.pinned ?? '')) findings.push(`Home ${row.agent} does not display its native census`);
     }
   } else {
     if (actual.cards.length !== expected.cards.length) findings.push('Gallery slot count differs from its library');
@@ -199,14 +212,31 @@ function initialDataSnapshot() {
     headings: [...main.querySelectorAll('[role="heading"],h1,h2')].map(heading => heading.textContent.trim()),
   };
 }
+// Serialized into the real browser: the page reads its own origin's resource, as its client would.
+async function readFromPage(path) {
+  const response = await fetch(path, { cache: 'no-store', headers: { Accept: 'application/json' } });
+  return { status: response.status, value: response.ok ? await response.json() : undefined };
+}
+/**
+ * The page's data must match the native resource. A route that fetches it on the client is compared
+ * with that very response; a route whose first paint is server-seeded (Studio routes load their
+ * Producer data server-side, 1bb829f5f) makes no client request, so the page reads the resource from
+ * its own origin and the DOM must show exactly that. Either way the comparison is the same.
+ */
 async function checkInitialData(page, resource, observed, timeout) {
   const deadline = Date.now() + timeout;
-  // Hydration may start after the general resource quiet period. Share one budget with the DOM commit.
-  while ((!observed.request || !observed.response) && Date.now() < deadline) await page.waitForTimeout(50);
-  assert.ok(observed.request, `Browser did not initiate ${resource.path}`);
-  assert.ok(observed.response, `Browser did not receive ${resource.path}`);
-  assert.equal(observed.response.status(), 200, `Initial client resource ${resource.path}`);
-  const expected = initialExpectation(resource, await observed.response.json());
+  let value;
+  if (observed.request) {
+    while (!observed.response && Date.now() < deadline) await page.waitForTimeout(50);
+    assert.ok(observed.response, `Browser did not receive ${resource.path}`);
+    assert.equal(observed.response.status(), 200, `Initial client resource ${resource.path}`);
+    value = await observed.response.json();
+  } else {
+    const read = await page.evaluate(readFromPage, resource.path);
+    assert.equal(read.status, 200, `Native resource ${resource.path}`);
+    value = read.value;
+  }
+  const expected = initialExpectation(resource, value);
   // API completion can precede React's committed data render.
   let findings;
   do {
@@ -217,21 +247,33 @@ async function checkInitialData(page, resource, observed, timeout) {
   assert.fail(findings.join('; '));
 }
 
-// Serialized directly into Playwright. Keep browser globals inside this function.
-function inspectPage(cellIds) {
-  const findings = [], text = document.body?.innerText ?? '';
-  for (const [rule, expression] of [['need', /\bNEED\b/], ['fact-placeholder', /\[fact:/i], ['owner-placeholder', /TODO-OWNER/]]) {
+const CELL_PREFIX = /^(?:assets|components|sections|foundations|context|page|plan|specimen|surface|system|tokens)\./;
+/**
+ * Text rules over what the page shows (pure, so the tests pin them). A NEED marker is `NEED:` or an
+ * element reading exactly `NEED`; prose that names the convention ("a card that says NEED rather than
+ * guessing") is not a marker.
+ */
+function textFindings({ text = '', leafTexts = [] }, cellIds = []) {
+  const findings = [];
+  if (/\bNEED\b\s*:/.test(text) || leafTexts.includes('NEED')) findings.push({ rule: 'need' });
+  for (const [rule, expression] of [['fact-placeholder', /\[fact:/i], ['owner-placeholder', /TODO-OWNER/]]) {
     if (expression.test(text)) findings.push({ rule });
   }
   const tokens = new Set(text.match(/[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*){1,2}/g) ?? []);
-  const rawIds = [...new Set([...cellIds.filter(id => tokens.has(id)), ...[...tokens].filter(id => /^(?:assets|components|sections|foundations|context|page|plan|specimen|surface|system|tokens)\./.test(id))])];
+  const rawIds = [...new Set([...cellIds.filter(id => tokens.has(id)), ...[...tokens].filter(id => CELL_PREFIX.test(id))])];
   if (rawIds.length) findings.push({ rule: 'raw-cell-id', ids: rawIds });
+  return findings;
+}
+// Serialized directly into Playwright. Keep browser globals inside this function.
+function inspectPage() {
+  const findings = [], text = document.body?.innerText ?? '';
   const visible = element => Boolean(element.getClientRects().length) && getComputedStyle(element).visibility !== 'hidden';
+  const leafTexts = [...(document.body?.querySelectorAll('*') ?? [])].filter(element => !element.children.length && element.textContent.trim() === 'NEED' && visible(element)).map(() => 'NEED');
   const headings = [...document.querySelectorAll('h1,h2,h3,h4,h5,h6,[role="heading"]')].filter(visible);
   if (!headings.length) findings.push({ rule: 'missing-heading' });
   for (const element of headings) if (!(element.innerText || element.getAttribute('aria-label') || '').trim()) findings.push({ rule: 'empty-heading', tag: element.localName });
   for (const image of document.images) if (!image.complete || image.naturalWidth === 0) findings.push({ rule: 'missing-asset', src: image.getAttribute('src') });
-  return { findings, headingCount: headings.length, links: [...document.querySelectorAll('a[href]')].map(element => element.href) };
+  return { findings, text, leafTexts, headingCount: headings.length, links: [...document.querySelectorAll('a[href]')].map(element => element.href) };
 }
 function screenshotName(route, variant, theme) {
   const digest = createHash('sha256').update(route).digest('hex').slice(0, 10);
@@ -260,8 +302,8 @@ async function runStudioCheck(options = {}) {
   const browser = options.browser ?? await launchStudioBrowser(options);
   const checks = [], failures = [];
   try {
-    const coverage = { routes: plan.routes, cellIds: [] };
-    const expectedPaths = new Set(coverage.routes.map(route => new URL(route, origin).pathname));
+    const coverage = { routes: [...plan.routes, ...(plan.leafRoutes ?? []).filter(route => !plan.routes.includes(route))], cellIds: [] };
+    const expectedPaths = new Set([...coverage.routes, ...(plan.leaves ?? [])].map(route => new URL(route, origin).pathname));
     for (const variant of variants) for (const theme of ['light', 'dark']) {
       // Firefox supports the mobile viewport but has no Playwright isMobile emulation.
       const emulation = browser.browserType().name() === 'firefox' ? {} : { isMobile: variant.isMobile };
@@ -288,7 +330,7 @@ async function runStudioCheck(options = {}) {
             await page.addInitScript(theme => { try { localStorage.setItem('theme', theme); } catch {} const root = document.documentElement; if (root) { root.classList.toggle('dark', theme === 'dark'); root.dataset.theme = theme; } }, theme);
             const response = await page.goto(origin + route, { waitUntil: 'load', timeout });
             if (response?.status() !== 200) errors.push({ rule: 'route-status', status: response?.status() ?? null });
-            if (page.url() !== origin + route) errors.push({ rule: 'unexpected-redirect', url: page.url() });
+            if (page.url() !== origin + (plan.landings?.[route] ?? route)) errors.push({ rule: 'unexpected-redirect', url: page.url() });
             await settle(page, pending, timeout);
             if (resource) {
               try {
@@ -311,7 +353,8 @@ async function runStudioCheck(options = {}) {
               }
             }
             await page.evaluate(theme => { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.dataset.theme = theme; }, theme);
-            audit = await page.evaluate(inspectPage, coverage.cellIds);
+            const inspected = await page.evaluate(inspectPage);
+            audit = { ...inspected, findings: [...textFindings(inspected, coverage.cellIds), ...inspected.findings] };
             for (const href of audit.links ?? []) {
               const target = new URL(href);
               if (target.origin === origin && !target.pathname.startsWith('/api/') && !/\.[a-z0-9]+$/i.test(target.pathname) && !expectedPaths.has(target.pathname)) errors.push({ rule: 'uncovered-linked-route', path: target.pathname });
@@ -385,5 +428,5 @@ function parseArgs(args) {
   }
   return options;
 }
-module.exports = { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, inspectPage, screenshotName, checkStudio, checkCommand, servedCheck, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
+module.exports = { textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, inspectPage, screenshotName, checkStudio, checkCommand, servedCheck, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
 if (require.main === module) Promise.resolve().then(() => servedCheck(parseArgs(process.argv.slice(2)))).then(({ exitCode, report }) => { console.log(JSON.stringify(report, null, 2)); process.exitCode = exitCode; }).catch(error => { const report = failureReport(error); console.error(JSON.stringify(report, null, 2)); process.exitCode = REPORT_EXIT_CODES[report.status] ?? 1; });

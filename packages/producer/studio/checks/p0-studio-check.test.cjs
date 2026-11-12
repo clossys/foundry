@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { after, test } = require('node:test');
 const { ROUTE_MARKER, readStudioPublication } = require('./check-studio-routes.cjs');
-const { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, servedCheck, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
+const { textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, servedCheck, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
 // Fixtures live in the OS temp directory (TMPDIR), never under the checkout (a write there dirties the tree), and are removed after the run.
@@ -43,6 +43,40 @@ test('checked-in publication and every real App Router route are discovered', as
   assert.ok(plan.leafTemplates.includes('/designer/themes/colors/[slug]') && !plan.templates.includes('/designer/[slug]'));
   assert.deepEqual(plan.agents, ['designer', 'director', 'publisher', 'writer']);
   assert.ok(!plan.templates.some(template => template.startsWith('/content/')), 'the standalone content route is retired');
+});
+
+test('group pages expect their projected landing and leaves count as covered only under an installed leaf template', async () => {
+  const plan = await discoverRoutePlan();
+  assert.ok(Object.keys(plan.landings).length > 0);
+  for (const [route, landing] of Object.entries(plan.landings)) assert.ok(plan.routes.includes(route) && plan.routes.includes(landing) && landing.startsWith(`${route}/`), `${route} -> ${landing}`);
+  assert.equal(plan.landings['/'], undefined, 'Home lands on itself');
+  assert.ok(plan.leaves.length > 0 && plan.leaves.every(leaf => plan.leafTemplates.includes(leaf.replace(/\/[^/]+$/, '/[slug]'))));
+  assert.deepEqual(plan.leafRoutes.map(leaf => leaf.split('/')[1]), plan.agents, 'one rendered leaf per agent');
+  assert.ok(plan.leafRoutes.every(leaf => plan.leaves.includes(leaf)));
+  const fixture = projectionFixture();
+  const projection = path.join(fixture.studio, 'generated/studio-map.json');
+  const map = JSON.parse(fs.readFileSync(projection, 'utf8'));
+  write(fixture.root, 'studio/generated/studio-map.json', JSON.stringify({ ...map,
+    pages: [{ id: 'home', path: '/' }, { id: 'publisher-studio', path: '/publisher/studio' }],
+    landings: { home: '/', 'publisher-studio': '/publisher/studio' },
+    leaves: [{ path: '/publisher/studio/page.home' }, { path: '/writer/strings/strings.label' }] }));
+  const fixed = await discoverRoutePlan(fixture.options);
+  assert.deepEqual(fixed.landings, {});
+  assert.deepEqual(fixed.leaves, ['/publisher/studio/page.home'], 'a leaf without an installed template is not covered');
+  assert.deepEqual(fixed.leafRoutes, ['/publisher/studio/page.home']);
+  write(fixture.root, 'studio/generated/studio-map.json', JSON.stringify({ ...map, pages: [{ id: 'publisher-studio', path: '/publisher/studio' }], landings: { 'publisher-studio': '/publisher/studio/missing' } }));
+  await assert.rejects(discoverRoutePlan(fixture.options), /Landing of \/publisher\/studio is not a published route/);
+});
+
+test('a NEED marker fails, prose naming the convention does not, and raw ids still fail', () => {
+  const page = (text, leafTexts = []) => ({ text, leafTexts });
+  assert.deepEqual(textFindings(page('Example: a card that says NEED rather than guessing.')), []);
+  assert.deepEqual(textFindings(page('NEED: fixture evidence unavailable')), [{ rule: 'need' }]);
+  assert.deepEqual(textFindings(page('NEED : selected Icon asset is unavailable')), [{ rule: 'need' }]);
+  assert.deepEqual(textFindings(page('Status', ['NEED'])), [{ rule: 'need' }], 'a status that reads exactly NEED');
+  assert.deepEqual(textFindings(page('Shown as strings.label'), ['strings.label']), [{ rule: 'raw-cell-id', ids: ['strings.label'] }]);
+  assert.deepEqual(textFindings(page('components.button')), [{ rule: 'raw-cell-id', ids: ['components.button'] }]);
+  assert.deepEqual(textFindings(page('[fact:pending] TODO-OWNER page.home')).map(finding => finding.rule), ['fact-placeholder', 'owner-placeholder', 'raw-cell-id']);
 });
 
 test('new static pages join coverage, unknown dynamic pages and publication drift fail closed', async () => {
@@ -112,7 +146,24 @@ test('Home rejects initial loading and stale totals while accepting a real zero 
   assert.deepEqual(initialDataFindings(expected, ready), []);
   assert.match(initialDataFindings(expected, { loading: false, agents: [{ agent: 'writer', state: 'loading' }] }).join('; '), /native census/);
   assert.match(initialDataFindings(expected, { ...ready, agents: [{ ...ready.agents[0], total: '435' }] }).join('; '), /native census/);
+  assert.deepEqual(initialDataFindings(expected, { ...ready, agents: [{ ...ready.agents[0], pinned: '0 pinned slots Copy: every string the product shows.' }] }), [], 'the description may follow the count');
+  assert.match(initialDataFindings(expected, { ...ready, agents: [{ ...ready.agents[0], pinned: '01 pinned slots' }] }).join('; '), /native census/);
+  assert.match(initialDataFindings(expected, { ...ready, agents: [{ ...ready.agents[0], pinned: '0 pinned slotsX' }] }).join('; '), /native census/);
   assert.throws(() => initialExpectation({ kind: 'home', agents: ['writer'] }, { writer: { state: 'error' } }), /unavailable/);
+});
+
+test('a server-seeded Home is compared with the census its page reads, and a stale census still fails', async () => {
+  const resource = { kind: 'home', path: '/api/slots/census', agents: ['writer'] };
+  const census = { writer: { state: 'ready', total: 3, withCandidate: 2, pinned: 1 } };
+  const shown = total => ({ loading: false, agents: [{ agent: 'writer', state: 'ready', total: String(total), totalLabel: `${total} slots`,
+    candidates: '2', candidatesLabel: '2 slots with candidates', pinned: '1 pinned slots' }], gallery: false, cards: [], headings: [] });
+  const fake = (snapshot, status = 200) => ({ waitForTimeout: async () => {}, evaluate: async (fn, arg) => arg === undefined ? snapshot : { status, value: status === 200 ? census : undefined } });
+  assert.equal((await checkInitialData(fake(shown(3)), resource, {}, 200)).agents[0].total, 3);
+  await assert.rejects(checkInitialData(fake(shown(4)), resource, {}, 200), /native census/);
+  await assert.rejects(checkInitialData(fake(shown(3), 500), resource, {}, 200), /Native resource/);
+  const response = { status: () => 200, json: async () => census };
+  assert.equal((await checkInitialData(fake(shown(3)), resource, { request: {}, response }, 200)).agents[0].pinned, 1, 'a client request is compared with its own response');
+  await assert.rejects(checkInitialData(fake(shown(3)), resource, { request: {} }, 100), /did not receive/);
 });
 
 test('gallery requires every native slot link but an unfilled slot needs no specimen', () => {
