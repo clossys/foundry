@@ -417,14 +417,22 @@ export function runChain(root: string, options: ChainOptions = {}): ChainResult 
   const rows: ChainRow[] = [];
   let stop: ChainResult["stop"] = null;
   let failed: ChainResult["failed"] = null;
-  let context = contextOf(root, steps);
+  // The decide steps' context, measured when a decide step needs it, and again only after a command ran.
+  let current: Context | null = null;
+  const contextNow = () => current ??= contextOf(root, steps);
+  // Each plumb step's state as last measured, and the walk index of the last command that ran: a
+  // state measured after it is still current, so the stale list below re-measures only the rest.
+  const measured = new Map<number, ReturnType<typeof lastOf>>();
+  let ranAt = -1;
   steps.forEach((step, index) => {
     const command = isDecide(step) ? null : chainCommand(step, root, packageRoot);
     const seen = command ? lastOf(root, step, command) : { last: "never-run" as RunState, changed: [] as string[] };
+    if (command) measured.set(index, seen);
     const row = (state: RowState, detail: string, last = seen.last, changed = seen.changed) => rows.push({ step: step.id, kind: step.kind, state, detail, last, changed });
     if (index < from || index > until) return row("outside", index < from ? "before --from" : "after --until");
     if (stop || failed) return row("not-reached", `${stop ? `the chain stopped at ${stop.step}` : `the chain stopped red at ${failed!.step}`}${command && !("skip" in command) ? `; last run ${seen.last}` : ""}`);
     if (isDecide(step)) {
+      const context = contextNow();
       const items = openItems(step, context);
       if (!items.length) return row("decided", "nothing open");
       const packet = packetOf(step, items[0]!, items.length, context, { packageRoot });
@@ -438,7 +446,7 @@ export function runChain(root: string, options: ChainOptions = {}): ChainResult 
     if (first && !/^(arg:|pkg:)/.test(first) && !first.includes("**") && matches(root, first).length === 0) {
       const agent = step.agent ?? "producer";
       const ask = `clossys next --owner --agent ${agent}`;
-      const packet: Packet = { ...packetOf(step, step.id, 1, context, { packageRoot }), decider: "owner",
+      const packet: Packet = { ...packetOf(step, step.id, 1, contextNow(), { packageRoot }), decider: "owner",
         question: `${step.id} has no input yet (${first} matches no file): the ${agent} interview (${agent === "director" ? "archetype and content" : "its owner questions"}) records it first.`, record: ask };
       stop = { step: step.id, open: 1, decider: "owner", packet };
       return row("open", `no input yet (${first} matches no file); decided by owner; ${ask}`);
@@ -449,6 +457,7 @@ export function runChain(root: string, options: ChainOptions = {}): ChainResult 
     const before = readStore(root, storeFile(step.id)).length;
     const start = new Date();
     const exit = exec(command!.argv, command!.cwd);
+    ranAt = index;
     const after = readStore(root, storeFile(step.id));
     let store: string | null = after.length > before || (after.length && after.at(-1)!.record.start >= start.toISOString()) ? after.at(-1)!.store : null;
     if (exit !== 0 && store === null) {
@@ -457,18 +466,18 @@ export function runChain(root: string, options: ChainOptions = {}): ChainResult 
       store = record ? `${record.store}:${record.line}` : null;
     }
     const now = lastOf(root, step, command!);
+    measured.set(index, now);
     if (exit !== 0) {
       failed = { step: step.id, exit, store };
       return row("failed", `${shown} exited ${exit}`, now.last, now.changed);
     }
     // A plumb step may change what later decide steps count.
-    context = contextOf(root, steps);
+    current = null;
     return row("ran", `${shown} exited 0`, now.last, now.changed);
   });
-  const stale = steps.flatMap(step => {
+  const stale = steps.flatMap((step, index) => {
     if (isDecide(step)) return [];
-    const command = chainCommand(step, root, packageRoot);
-    const seen = lastOf(root, step, command);
+    const seen = index >= ranAt && measured.has(index) ? measured.get(index)! : lastOf(root, step, chainCommand(step, root, packageRoot));
     return seen.last === "stale" ? [{ step: step.id, changed: seen.changed }] : [];
   });
   return { schema: CHAIN_SCHEMA, dry: Boolean(options.dry), rows, stop, failed, stale };

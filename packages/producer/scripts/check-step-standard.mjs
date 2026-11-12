@@ -63,14 +63,17 @@
 //   step.hand-written  a src/pipeline/steps/ module defines a step by hand (defineStep) instead of a contract
 //   pending.stale      a pending marker whose change has landed (a pending check's command exists)
 //   dist.missing       dist/pipeline is absent or older than src/pipeline; build first
-//   skill.interview    an agent skill (packages/<agent>/skill/SKILL.md) lacks the Interview section, or
-//                      the section misses a part of the shared shape (when, gaps, next --owner, the
-//                      verbs, clossys run, 0 gaps) or, outside the Producer, the contract it cites
+//   skill.interview    an agent skill (packages/<agent>/skill/SKILL.md) lacks the Interview section or its
+//                      own gaps and next --owner calls; the Producer's misses a part of the shared shape
+//                      (when, rounds of at most 4, the verbs, clossys run, 0 gaps, no hand-fill); another
+//                      agent's does not cite the Producer's contract, or restates a part of it
 //   skill.ladder       a <agent>.candidates step skill lacks the selection ladder: its rungs, bold, in order
 //                      (select, adapt, create; the Designer's L1 stock, L2 partner, L3 question, L4
 //                      Foundry) and the --rung record next --submit keeps
 //   owner.argv         an owner question of `clossys next --owner` has an option with no exact clossys
 //                      argv, an unfilled placeholder, a round over 4, or not 2-4 answers recommended first
+//   owner.policy       a Designer, Writer or Publisher owner question asked per slot (not the <agent>.policy
+//                      question, not a request) carries no reason the policy could not infer it
 //   request.addressee  a `clossys gaps` request names no upstream addressee distinct from its requester
 //
 // A check with `pending` waits on its branch: it is listed as PENDING, never as passing. Exit 0 pass, 1 findings, 2 could not run.
@@ -385,12 +388,16 @@ for (const agent of INTERVIEW_AGENTS) {
   const file = `packages/${agent}/skill/SKILL.md`;
   const body = interviewSection(text(join(PACKAGES_DIR, agent, "skill", "SKILL.md")));
   if (body === null) { fail("skill.interview", `${file} has no "## Interview" section`); continue; }
-  const parts = [
-    ["When to run", "when to run it"], [`clossys gaps --agent ${agent}`, "the gaps call"], [`clossys next --owner --agent ${agent}`, "the rounds"],
-    ["AskUserQuestion", "asking each round"], ["through the verbs", "recording answers"], ["clossys run", "re-running the cascade"], ["0 gaps", "the stop rule"],
-    ...(agent === "producer" ? [["Interview contract", "the shared contract"]] : [["Producer skill's Interview contract", "the cited contract"]]),
+  // The shared shape is stated once, in the Producer's contract; every other agent skill cites it and
+  // names its own calls, and restating a part of the contract there is a duplicate.
+  const shared = [
+    ["When to run", "when to run it"], ["AskUserQuestion", "asking each round"], ["at most 4", "the round size"], ["through the verbs", "recording answers"],
+    ["clossys run", "re-running the cascade"], ["0 gaps", "the stop rule"], ["hand-fill", "the request rule"],
   ];
+  const own = [[`clossys gaps --agent ${agent}`, "the gaps call"], [`clossys next --owner --agent ${agent}`, "the rounds"]];
+  const parts = agent === "producer" ? [...own, ...shared, ["Interview contract", "the shared contract"]] : [...own, ["Producer skill's Interview contract", "the cited contract"]];
   for (const [needle, what] of parts) if (!body.includes(needle)) fail("skill.interview", `${file}'s Interview section misses ${what} ("${needle}")`);
+  if (agent !== "producer") for (const [needle, what] of shared) if (body.includes(needle)) fail("skill.interview", `${file}'s Interview section restates the contract's ${what} ("${needle}"); state it once, in the Producer skill`);
 }
 const LADDERS = { designer: ["L1", "L2", "L3", "L4"], other: ["select", "adapt", "create"] };
 for (const action of loaded.filter(each => /^(director|designer|writer|publisher)\.candidates$/.test(each.contract.id))) {

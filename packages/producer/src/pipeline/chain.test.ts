@@ -80,6 +80,20 @@ describe("clossys run", { timeout: 60_000 }, () => {
     expect(exec.calls).toEqual(["a", "b", "a", "b"]);
   });
 
+  it("re-measures for the stale list only the steps a later command could have changed", () => {
+    const root = workspace();
+    writeFileSync(join(root, INPUT), "one\n");
+    const steps = [plumb("a"), plumb("b")];
+    const base = fixtureExec(root);
+    runChain(root, { steps, exec: base });
+    writeFileSync(join(root, INPUT), "two\n");
+    // b re-runs and then rewrites the input a read: a is stale again although it ran in this walk.
+    const writes = ((argv: readonly string[], cwd: string) => { const exit = base(argv, cwd); if (argv[1] === "--b") writeFileSync(join(root, INPUT), "three\n"); return exit; }) as Exec;
+    const result = runChain(root, { steps, exec: writes });
+    expect(result.rows.map(row => row.state)).toEqual(["ran", "ran"]);
+    expect(result.stale.map(entry => entry.step)).toEqual(["fx.a", "fx.b"]);
+  });
+
   it("stops red at a broken plumb step with a failed run record", () => {
     const root = workspace();
     writeFileSync(join(root, INPUT), "one\n");

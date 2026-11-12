@@ -130,6 +130,17 @@ proves("skill.interview", f => {
   const file = f.at("writer", "skill", "SKILL.md");
   writeFileSync(file, readFileSync(file, "utf8").replace(/^## Interview\b/m, "## Talking to the owner"));
 });
+// Stated once: an agent skill that restates a part of the Producer's contract is a duplicate.
+test("mutation: skill.interview (an agent skill restates the contract)", () => {
+  const f = fixture();
+  try {
+    const file = f.at("designer", "skill", "SKILL.md");
+    writeFileSync(file, readFileSync(file, "utf8").replace(/^## Interview\n/m, "## Interview\n\nAsk each round with one AskUserQuestion call.\n"));
+    const result = run("--packages", f.packages);
+    assert.equal(result.status, 1, result.stderr);
+    assert.ok(result.failures.some(row => row.rule === "skill.interview" && /restates the contract's asking each round/.test(row.message)), JSON.stringify(result.failures));
+  } finally { f.done(); }
+});
 proves("skill.ladder", f => {
   const file = f.at("designer", "actions", "designer.candidates", "skill.md");
   writeFileSync(file, readFileSync(file, "utf8").replace("**L4**", "**Foundry**"));

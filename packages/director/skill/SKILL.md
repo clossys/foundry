@@ -317,35 +317,20 @@ need). Do not let a downstream agent start while its brief is missing.
 ## Interview
 
 Run the Producer skill's Interview contract (`clossys-producer`, section Interview) for agent
-`director`, in the same shape as every agent skill:
+`director`: `npx clossys gaps --agent director --json`, then
+`npx clossys next --owner --agent director --json`. Director gaps are open cells, unpinned or
+unclear pinned cells (TODO-OWNER lines, blocking checks) and open request records. The rounds hold
+the owner decisions (pins, requests); the cell interview above stays one question per turn.
 
-- **When to run it**: at session start, after each pin, and whenever a downstream agent reports a need (a request).
-- **Gaps first**: `npx clossys gaps --agent director --json`. Director gaps are open cells, unpinned or unclear pinned cells (TODO-OWNER lines, blocking checks)
-  and open request records.
-  Requests addressed to the Director (`to: director`) come from a downstream agent; requests from the
-  Director (`from: director`) go to the upstream agent's round. Never hand-fill either.
-- **Then the rounds**: `npx clossys next --owner --agent director --json`: rounds of at most 4
-  questions, each with 2 to 4 options (recommended first, each the exact clossys argv of every call
-  it runs) and a free-text answer.
-- **Ask each round**: on Claude one `AskUserQuestion` call per round; on Codex a numbered list per
-  question, recommended first.
-  The rounds hold the owner decisions (pins, requests); the cell interview above stays one
-  question per turn.
-- **What the rounds ask**: the archetype first while none is recorded (each option runs
-  `clossys director check archetype <name> --by owner`); then every owner-held core cell with an
-  open option round as "Pick <cell>", in dependency order (a cited cell before the cells citing it),
-  one option per candidate with its one-line summary, recommended first, each the exact
-  `clossys pin director/<cell> <name> --basis picked`. A downstream request for an asked cell is
-  folded into that question ("also unblocks N designer/writer slots"); a request stays its own
-  question only when its cell has no owner question. Non-core agent picks are one "Confirm N agent
-  picks" question: confirm all (each `clossys pin director/<cell> <name> --confirm --ref <ref>`,
-  which keeps the pick basis `agent` and records the owner's confirmation), review by group, or free text.
-- **Record through the verbs**: run the chosen option's `calls` exactly (a free-text answer goes
-  through `freeText.verb`, running each of `freeText.calls` in order: record the owner's words as
-  evidence, then `clossys options <item> --redraft` for a new round); candidates go through `npx clossys next director/<slot> --submit`, agent
-  picks through `npx clossys pick director/<id> <name>-v<N> --by agent:director`, owner pins through `npx clossys pin`. Never edit a record by hand.
-- **Cascade**: `npx clossys run` after each round.
-- **Stop at 0 gaps**: repeat until `npx clossys gaps --agent director` reports 0 gaps.
+What the Director's rounds ask: the archetype first while none is recorded (each option runs
+`clossys director check archetype <name> --by owner`); then every owner-held core cell with an open
+option round as "Pick <cell>", in dependency order (a cited cell before the cells citing it), one
+option per candidate with its one-line summary, each the exact
+`clossys pin director/<cell> <name> --basis picked`. A downstream request for an asked cell is
+folded into that question ("also unblocks N designer/writer slots"). Non-core agent picks are one
+"Confirm N agent picks" question: confirm all (each `clossys pin director/<cell> <name> --confirm
+--ref <ref>`), review by group, or free text. A free-text answer records the owner's words as
+evidence, then `clossys options <item> --redraft` opens a new round.
 
 ## Done when
 

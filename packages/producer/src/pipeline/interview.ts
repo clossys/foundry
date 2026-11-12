@@ -764,11 +764,14 @@ export function interviewOf(root: string, options: InterviewOptions & { readonly
 }
 
 /** Problems with emitted questions: what check:step-standard's owner.argv and request.addressee rules fail on. */
-export function interviewIssues(interview: Pick<Interview, "rounds">, gaps: Pick<Gaps, "gaps">): { rule: "owner.argv" | "request.addressee"; message: string }[] {
-  const issues: { rule: "owner.argv" | "request.addressee"; message: string }[] = [];
+export function interviewIssues(interview: Pick<Interview, "rounds">, gaps: Pick<Gaps, "gaps">): { rule: "owner.argv" | "owner.policy" | "request.addressee"; message: string }[] {
+  const issues: { rule: "owner.argv" | "owner.policy" | "request.addressee"; message: string }[] = [];
   for (const round of interview.rounds) {
     if (round.length > ROUND_SIZE) issues.push({ rule: "owner.argv", message: `a round holds ${round.length} questions (at most ${ROUND_SIZE})` });
     for (const question of round) {
+      // A policy agent asks by policy; a slot it asks on its own (not a request) states why it could not infer one.
+      const perSlot = (POLICY_AGENTS as readonly string[]).includes(question.agent) && question.id !== `${question.agent}.policy` && !question.requestedBy.length && !question.id.startsWith("request:");
+      if (perSlot && !question.reason?.trim()) issues.push({ rule: "owner.policy", message: `${question.id}: a per-slot ${question.agent} question with no reason the policy could not infer it` });
       if (question.options.length < 2 || question.options.length > 4) issues.push({ rule: "owner.argv", message: `${question.id}: ${question.options.length} options (2 to 4, plus free text)` });
       if (!question.options[0]?.recommended) issues.push({ rule: "owner.argv", message: `${question.id}: the first option is not the recommended one` });
       if (!question.freeText?.verb?.startsWith("clossys ")) issues.push({ rule: "owner.argv", message: `${question.id}: the free-text answer names no clossys verb` });

@@ -7,6 +7,12 @@ description: Run the clossys chain (clossys run), answer its open decide step (c
 The producer chain is the action registry in pipeline order. Records change only through clossys
 verbs; never edit a Director cell, pin, brief, candidate, seat or rules registry by hand.
 
+Run every verb from the workspace root (the folder that holds `clossys/`) as `npx --no-install clossys
+<verb>`: the `clossys` binary of the installed `@clossys/producer` (in the Foundry repository, its
+workspace package, built with `npm run build`). `--no-install` stops npx from fetching a package of
+that name from the registry; when it reports no `clossys`, the package is not installed or built, and
+that is the first gap to report.
+
 ## Run the chain
 
 - `clossys run --dry` lists every step in order and what would run; it stops at the first decide
@@ -28,15 +34,43 @@ verbs; never edit a Director cell, pin, brief, candidate, seat or rules registry
   [--reason <text>]`. A submission whose skill is not the contract's, whose model or tier is not
   the seat's, whose file fails its schema or the slot model, which is byte-identical to a held
   candidate, or whose selection-ladder record does not hold is refused and records nothing.
-- The selection ladder (each `<agent>.candidates` skill): select a seed first (stock shadcn, a
-  trusted free registry, an existing candidate or template), adapt one only when none fits, create
-  only when none can be adapted. `--rung` records which (`select`, `adapt`, `create`; the Designer's
-  source-ladder rungs `L1` to `L4`), `--seed` names the seed, and a created candidate needs
-  `--reason`: why no seed fit.
+- `--rung`, `--seed` and `--reason` record the selection ladder the packet's skill states (see
+  Rules).
 - An agent pick (a `pick.<agent>` seat with an llm) is recorded with
   `clossys pick <agent>/<slot> <candidate> --by agent:<agent>`; the owner confirms it with
   `clossys pin <agent>/<slot> <candidate> --confirm --ref <where their words are>` (the pick keeps
   basis `agent` and gains `confirmed`), or re-pins it with `--basis picked`.
+
+## Rules
+
+Each rule is stated once, here or in the one place named, and the named check or refusal holds it.
+
+- **Only wiring blocks.** A step fails red only on wiring: a missing, stale or invalid input,
+  record or citation, or a check that cannot run. A wording or visual finding is a report: the step
+  passes and lists it under its `reports` for the owning agent. A gate's mode (`block` or `report`)
+  and the reason live in the gate's own config (the Designer's `scripts/process-gates.json`); a
+  broken gate fails in every mode.
+- **Each step runs only its own check.** A step's contract (`actions/<id>/action.json`) names its
+  inputs, outputs, command, `checks` and `pass`; `clossys run` runs a step's own command only when
+  an input it read last time changed, and re-measures nothing a later step could not have changed
+  (`check:step-standard`, rules `snapshot.stale` and `steps.drift`).
+- **Owner questions are policy-level**: the Interview below (`check:step-standard` rules
+  `owner.argv` and `owner.policy`; `clossys pipeline check` rule `owner.wiring`).
+- **The selection ladder** is stated in each `<agent>.candidates` step skill, the skill the
+  packet hands over (`check:step-standard` rule `skill.ladder`). A submission whose
+  ladder record does not hold is refused, and `clossys gaps` lists a recorded one as a `ladder` gap;
+  the Designer's sources are held by `check:source-ladder`.
+- **A pointer-only upstream change is re-cited in place.** After `pin.director` and `pin.writer`,
+  `clossys run` runs `recite.direct` and `recite.design` (`clossys migrate recite --cascade`): a
+  citer whose cited meaning is byte-for-byte unchanged (the Director cell's Direction section; any
+  other candidate without its note and slot versions) is re-cited by `agent:producer`, with the
+  meaning hash recorded as `recited.proof`. A changed meaning re-cites nothing and opens
+  `<agent>.candidates` for that slot (its pick, once a newer candidate is drafted). The steps' pass,
+  `--cascade --check`, fails while a re-cite is pending.
+- **Requests go to the upstream owner**: the Interview's gaps below (`check:step-standard` rule
+  `request.addressee`).
+- **Agent work is submitted only through `clossys next --submit`** from the step's seat (Answer
+  the open decide step lists what it refuses).
 
 ## Interview
 
@@ -51,7 +85,8 @@ cites it and runs it for its own agent id; `<id>` below is that id, `producer` h
   seat, plumb steps that failed or went stale (chain drift), a candidate whose ladder record does
   not hold. Requests: a downstream agent's need addressed `to` this agent (`from`, `need`), such as
   a Designer slot citing an unclear Director cell or a Publisher page naming Writer keys the copy
-  lacks. Close agent-decided gaps with the agent's own skill; never hand-fill a request.
+  lacks. A request is asked in the upstream agent's round; never hand-fill it or the slot it names.
+  Close agent-decided gaps with the agent's own skill.
 - **Then the rounds**: `clossys next --owner --agent <id> --json` returns `rounds` of at most 4
   questions, taken from the gaps. Each question has 2 to 4 options, the recommended one first, and a
   free-text answer (`freeText.verb`). Items that share an option set are one question whose option

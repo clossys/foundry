@@ -117,6 +117,11 @@ describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
     const request: Gap = { kind: "request", code: "request.input-unpinned", agent: "director", item: "director/x", step: "pin.director", decider: "owner", message: "fixture", from: "designer" };
     expect(interviewIssues({ rounds: [] }, { gaps: [request] }).map(issue => issue.rule)).toEqual(["request.addressee"]);
     expect(interviewIssues({ rounds: [] }, { gaps: [{ ...request, to: "director" }] })).toEqual([]);
+    // A policy agent's per-slot question states why its policy could not infer the slot.
+    const perSlot = { ...first!, id: "writer.confirm:writer/x", agent: "writer" as const, items: ["writer/x"], requestedBy: [], reason: "it has no candidate to approve or pin" };
+    expect(interviewIssues({ rounds: [[perSlot]] }, gaps)).toEqual([]);
+    expect(interviewIssues({ rounds: [[{ ...perSlot, reason: undefined }]] }, gaps).map(issue => issue.rule)).toEqual(["owner.policy"]);
+    expect(interviewIssues({ rounds: [[{ ...perSlot, id: "writer.policy", reason: undefined }]] }, gaps)).toEqual([]);
   });
 
   it("a recorded created candidate with no reason no seed fit is a ladder gap", () => {
