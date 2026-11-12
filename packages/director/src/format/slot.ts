@@ -14,7 +14,48 @@ const SHA256 = /^[0-9a-f]{64}$/;
 const SECTIONS = { "## Direction": "direction", "## Because": "because", "## Watch": "watch" } as const;
 
 /** A pin names one candidate of its slot by file name and by the sha256 of its bytes. */
-export interface SlotPin { candidate: string; sha256: string; decidedBy: string; basis: string; at: string }
+export interface SlotPin { candidate: string; sha256: string; decidedBy: string; basis: string; at: string; recited?: SlotRecite }
+/**
+ * A pointer-only update in place (`clossys migrate recite`): the pinned candidate's meaning is unchanged,
+ * only the upstream versions it cites moved. `cites` maps `<agent>:<slot>` to the version the record now
+ * cites; readers see the pinned bytes with those refs re-addressed (recitedBytes). The pin keeps its
+ * candidate, basis and decider; no new version is written.
+ */
+export interface SlotRecite { by: string; at: string; cites: Record<string, number>; reason?: string }
+const CITE_KEY = /^(director|designer|writer|publisher):([a-z0-9][a-z0-9.-]*)$/;
+
+/** The structural shape of a pin's `recited` field, or a message. */
+export function parseSlotRecite(value: unknown): { ok: true; value: SlotRecite } | { ok: false; message: string } {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return { ok: false, message: "recited must be {by, at, cites, reason?}" };
+  const recite = value as Record<string, unknown>;
+  for (const key of Object.keys(recite)) if (!["by", "at", "cites", "reason"].includes(key)) return { ok: false, message: `recited has unknown key ${key}` };
+  if (typeof recite.by !== "string" || !/^(?:agent:[a-z][a-z0-9.-]*|planner(?::.+)?)$/.test(recite.by)) return { ok: false, message: "recited.by must be agent:<seat> or planner[:<ref>]" };
+  if (typeof recite.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(recite.at) || !Number.isFinite(Date.parse(recite.at))) return { ok: false, message: "recited.at must be an ISO timestamp" };
+  if (typeof recite.cites !== "object" || recite.cites === null || Array.isArray(recite.cites) || !Object.keys(recite.cites).length) return { ok: false, message: "recited.cites must map <agent>:<slot> to a version" };
+  for (const [key, version] of Object.entries(recite.cites)) {
+    if (!CITE_KEY.test(key)) return { ok: false, message: `recited.cites key ${key} is not <agent>:<slot>` };
+    if (!Number.isInteger(version) || (version as number) < 1) return { ok: false, message: `recited.cites ${key} must be a version >= 1` };
+  }
+  if (recite.reason !== undefined && (typeof recite.reason !== "string" || !recite.reason.trim())) return { ok: false, message: "recited.reason must be a non-empty string" };
+  return { ok: true, value: { by: recite.by, at: recite.at, cites: { ...(recite.cites as Record<string, number>) }, ...(recite.reason ? { reason: recite.reason as string } : {}) } };
+}
+
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * The pinned bytes as the record now cites: every `<agent>:<slot>@<n>` ref (and, for the slot's own agent,
+ * a bare `<slot>@<n>`) re-addressed to the version `recited.cites` names. Bytes are hashed against the pin
+ * before this; the overlay is what readers parse.
+ */
+export function recitedBytes(bytes: string, agent: string, recited: Pick<SlotRecite, "cites"> | undefined): string {
+  if (!recited) return bytes;
+  let out = bytes;
+  for (const [key, version] of Object.entries(recited.cites)) {
+    const [cited, slot] = key.split(":") as [string, string];
+    const prefix = cited === agent ? `(?:${cited}:)?` : `${cited}:`;
+    out = out.replace(new RegExp(`(?<![a-z0-9.:-])(${prefix}${escape(slot)})@[1-9][0-9]*(?![0-9])`, "g"), `$1@${version}`);
+  }
+  return out;
+}
 
 /** The structural shape of pin.json; `decidedBy` and `basis` are recorded by `clossys pin`. */
 export function parseSlotPin(value: unknown): { ok: true; value: SlotPin } | { ok: false; message: string } {
@@ -24,7 +65,13 @@ export function parseSlotPin(value: unknown): { ok: true; value: SlotPin } | { o
   if (typeof pin.sha256 !== "string" || !SHA256.test(pin.sha256)) return { ok: false, message: "Expected a lowercase hex sha256" };
   for (const key of ["decidedBy", "basis"] as const) if (typeof pin[key] !== "string" || !pin[key]) return { ok: false, message: `Expected a ${key} string` };
   if (typeof pin.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(pin.at) || !Number.isFinite(Date.parse(pin.at))) return { ok: false, message: "Expected an ISO at timestamp" };
-  return { ok: true, value: { candidate: pin.candidate, sha256: pin.sha256, decidedBy: pin.decidedBy as string, basis: pin.basis as string, at: pin.at } };
+  let recited: SlotRecite | undefined;
+  if (pin.recited !== undefined) {
+    const parsed = parseSlotRecite(pin.recited);
+    if (!parsed.ok) return parsed;
+    recited = parsed.value;
+  }
+  return { ok: true, value: { candidate: pin.candidate, sha256: pin.sha256, decidedBy: pin.decidedBy as string, basis: pin.basis as string, at: pin.at, ...(recited ? { recited } : {}) } };
 }
 
 /** The candidate version a file name carries, or undefined for a name that is not a candidate. */

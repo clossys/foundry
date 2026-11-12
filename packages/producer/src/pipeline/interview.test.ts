@@ -24,13 +24,22 @@ function workspace(): string {
   return root;
 }
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
+/**
+ * The copy with no Producer seat recorded: each seat slot's pin removed, as before the owner's Producer round 1
+ * recorded the 18 seats (the real records now carry them; these cases ask how unassigned seats are asked).
+ */
+function unseated(root: string): string {
+  const producer = join(root, "clossys", "agents", "producer");
+  for (const slot of readdirSync(producer)) if (existsSync(join(producer, slot, "pin.json"))) rmSync(join(producer, slot, "pin.json"));
+  return root;
+}
 
 const seatQuestions = (questions: readonly Question[]) => questions.filter(question => question.step === "seats");
 
 // Each case reads the whole copied slot model (gaps take a second or two), so cases get a minute.
 describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
   it("asks the seat policy first while it is missing, and the 18 seats as a handful of grouped questions", () => {
-    const root = workspace();
+    const root = unseated(workspace());
     expect(readSeatPolicy(root).state).toBe("missing");
     const interview = interviewOf(root, { agent: "producer" });
     expect(interview.rounds[0]![0]!.id).toBe("seat-policy");
@@ -48,7 +57,7 @@ describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
   });
 
   it("fills the seat answers from the recorded seat policy, and asks it no more", async () => {
-    const root = workspace();
+    const root = unseated(workspace());
     const policy = await runPipeline(["seat", "--policy", "--model", "mid=fixture-mid", "--model", "high=fixture-high", "--root", root], root);
     expect(policy.exitCode, policy.message).toBe(0);
     expect(existsSync(join(root, SEAT_POLICY_FILE))).toBe(true);
@@ -140,6 +149,20 @@ describe("interview (next --owner) and gaps", { timeout: 120_000 }, () => {
 
 // DIR-INT: the Director's owner interview asks content (archetype, then "Pick <cell>"), not only meta requests.
 /** The copied Director as it was before the owner's interview: no archetype recorded, no owner pick (temp copy only). */
+/**
+ * The copy with every Director agent pick awaiting the owner's confirmation (its `confirmed` dropped), so the
+ * agent-picks question and the agent-held request order are asked whatever the real records confirmed since.
+ */
+function unconfirmed(root: string): string {
+  const director = join(root, "clossys", "agents", "director");
+  for (const cell of readdirSync(director)) {
+    const path = join(director, cell, "pin.json");
+    if (!existsSync(path)) continue;
+    const pin = JSON.parse(readFileSync(path, "utf8")) as { basis: string; confirmed?: unknown };
+    if (pin.basis === "agent" && pin.confirmed !== undefined) { delete pin.confirmed; writeFileSync(path, `${JSON.stringify(pin, null, 2)}\n`); }
+  }
+  return root;
+}
 function unrecorded(root: string): string {
   const director = join(root, "clossys", "agents", "director");
   rmSync(join(root, "clossys", "evidence", "director", "director-archetype.md"), { force: true });
@@ -180,7 +203,7 @@ describe("Director content questions (next --owner --agent director)", { timeout
   });
 
   it("folds a request for an asked cell into its content question; agent picks are one confirm question", () => {
-    const root = unrecorded(workspace());
+    const root = unconfirmed(unrecorded(workspace()));
     const all = interviewOf(root, { agent: "director" }).rounds.flat();
     const promise = all.find(question => question.id === "director:advantage.proposition.promise")!;
     expect(promise.requestedBy).toContain("designer");
@@ -190,8 +213,11 @@ describe("Director content questions (next --owner --agent director)", { timeout
     for (const question of all.filter(each => each.id.startsWith("request:director/"))) expect(content.has(question.items[0]!)).toBe(false);
     const picks = all.filter(question => question.id === "director.agent-picks");
     expect(picks).toHaveLength(1);
-    expect(picks[0]!.options.map(option => option.calls[0]?.slice(0, 2))).toEqual([["clossys", "pin"], ["clossys", "options"]]);
-    expect(picks[0]!.options[0]!.calls.every(call => call.includes("--confirm") && !call.includes("--basis"))).toBe(true);
+    // Every option records: confirm all, or confirm one group (largest first); none only prints a brief.
+    expect(picks[0]!.options.length).toBeGreaterThanOrEqual(2);
+    expect(picks[0]!.options.length).toBeLessThanOrEqual(4);
+    expect(picks[0]!.options[0]!.calls).toHaveLength(picks[0]!.items.length);
+    for (const option of picks[0]!.options) expect(option.calls.every(call => call[1] === "pin" && call.includes("--confirm") && !call.includes("--basis"))).toBe(true);
     for (const item of picks[0]!.items) expect(content.has(item)).toBe(false);
   });
 
@@ -221,7 +247,7 @@ describe("Director content questions (next --owner --agent director)", { timeout
   });
 
   it("an unclear request on an agent-held cell recommends the Director's re-draft, not owner evidence", () => {
-    const root = unrecorded(workspace());
+    const root = unconfirmed(unrecorded(workspace()));
     const requests = interviewOf(root, { agent: "director" }).rounds.flat().filter(question => question.id.startsWith("request:director/"));
     const director = join(root, "clossys", "agents", "director");
     const held = new Set(readdirSync(director).filter(cell => existsSync(join(director, cell, "pin.json")) && JSON.parse(readFileSync(join(director, cell, "pin.json"), "utf8")).decidedBy === "agent:director").map(cell => `director/${cell}`));

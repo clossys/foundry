@@ -3,5 +3,25 @@
   "sha256": "9a630b549bc6817f839cf209a53c51881950b607f19095e5e81b7072e34b55b0",
   "decidedBy": "agent:publisher",
   "basis": "agent",
-  "at": "2026-11-11T16:37:10.130Z"
+  "at": "2026-11-11T16:37:10.130Z",
+  "recited": {
+    "by": "agent:publisher",
+    "at": "2026-11-12T00:37:00.175Z",
+    "cites": {
+      "designer:frames.studio-shell": 21,
+      "designer:sections.module.checks": 6,
+      "designer:sections.module.outline": 7,
+      "designer:sections.studio.checks": 6,
+      "designer:sections.studio.contract": 6,
+      "designer:sections.studio.history": 6,
+      "designer:sections.studio.leaf-header": 8,
+      "designer:sections.studio.options": 8,
+      "designer:sections.studio.page-header": 5,
+      "designer:sections.studio.page-tabs": 6,
+      "designer:sections.studio.references": 6,
+      "designer:sections.studio.slot-groups": 12,
+      "designer:sections.studio.specimen": 13
+    },
+    "reason": "CASCADE fc9d9cd80 re-pinned these Designer inputs with each candidate unchanged (clossys/workspace#46)"
+  }
 }

@@ -26,6 +26,12 @@
  * each option a candidate's exact pin argv; a request for a cell already asked folds into that
  * question ("also unblocks N ... slots"); agent picks are one confirm question after the content.
  *
+ * The Designer, Writer and Publisher ask policy, not slots (policyQuestions): every open approve or pin
+ * and every unconfirmed agent pick the agent can infer (its inputs clear, no wiring gap, a candidate to
+ * name) is one "<agent>.policy" question: approve or confirm all of them under one policy reference, or
+ * one group (the slot id's first segment) at a time. A slot the policy cannot cover is asked on its own,
+ * with the reason stated (Question.reason).
+ *
  * Every option carries the exact `clossys` argv of each call; a `<model:tier>` word is filled from the
  * seat policy (seat-policy.ts) and never guessed, and while the policy is missing its question comes
  * first and every seat question waits on it. Order of agents: producer, director, designer, writer,
@@ -40,6 +46,7 @@ import type { SlotAgent } from "../records/slot-model/types.js";
 import { directorStoreReader, listSlots, readCandidate, readiness, readSlot, slotIndex } from "../records/slots.js";
 import type { SlotEntry } from "../records/slots.js";
 import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
+import { candidateVersion } from "../records/pinned.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
 import { candidatesOf, contextOf, explainChain, openItems, packetOf, skillLine, skillOf, verbOf } from "./chain.js";
@@ -62,6 +69,9 @@ export const GAP_KINDS = ["coverage", "wiring", "request"] as const;
 export type GapKind = typeof GAP_KINDS[number];
 /** At most this many questions per round. */
 export const ROUND_SIZE = 4;
+/** The agents whose owner decisions are asked as policy, not per slot. */
+export const POLICY_AGENTS = ["designer", "writer", "publisher"] as const;
+type PolicyAgent = typeof POLICY_AGENTS[number];
 
 export interface Gap {
   readonly kind: GapKind;
@@ -118,6 +128,8 @@ export interface Question {
   readonly after: readonly string[];
   /** Downstream agents whose request this question answers. */
   readonly requestedBy: readonly string[];
+  /** A per-slot question of a policy agent: why the agent's policy could not infer it. */
+  readonly reason?: string;
 }
 
 export interface Gaps {
@@ -261,7 +273,9 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     const stale: string[] = [];
     for (const input of readSlot(consumer, agent, entry.id).inputs) {
       const upstream = index.get(input);
-      if (upstream?.pin && upstream.pin.at > entry.pin.at) stale.push(`${upstream.agent}/${input}`);
+      // A pointer-only recite (pin.recited) vouches for the upstream version it names, whenever that was pinned.
+      const recited = entry.pin.recited?.cites[`${upstream?.agent}:${input}`];
+      if (upstream?.pin && upstream.pin.at > entry.pin.at && recited !== candidateVersion(upstream.pin.candidate)) stale.push(`${upstream.agent}/${input}`);
     }
     const broken = readiness(consumer, agent, entry.id, index).blockedBy.filter(block => ["invalid-pin", "missing-candidate", "hash-drift", "invalid-candidate", "invalid-slot"].includes(block.reason));
     if (stale.length) gaps.push({ kind: "wiring", code: "citation.stale", agent, item: `${agent}/${entry.id}`, step: `${agent}.candidates`, decider: "agent", message: `pinned ${entry.pin.at.slice(0, 10)}; ${plural(stale.length, "input")} pinned since: ${listed(stale)}` });
@@ -278,6 +292,10 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     for (const issue of ladderIssues(agent, record.decision.ladder)) gaps.push({ kind: "wiring", code: `ladder.${issue.rule}`, agent: agent as InterviewAgent, item: record.decision.output.path, step: record.step, decider: "agent",
       message: `${store}:${line} ${issue.detail}; submit a new candidate with its ladder record` });
   }
+
+  // An agent pick (basis agent) of the Designer, Writer or Publisher waits for the owner's confirmation, by policy.
+  for (const agent of POLICY_AGENTS) for (const entry of entries.get(agent) ?? []) if (entry.pin?.basis === "agent" && !entry.pin.confirmed)
+    gaps.push({ kind: "coverage", code: "agent-pick.unconfirmed", agent, item: `${agent}/${entry.id}`, step: `pin.${agent}`, decider: "owner", message: `${agent}/${entry.id}: agent pick ${entry.pin.candidate} waits for the owner's confirmation` });
 
   // requests: a downstream slot citing an upstream slot only its agent can settle.
   const cited = new Map<string, { to: SlotAgent; from: SlotAgent; cell: string; need: string[] }>();
@@ -454,6 +472,10 @@ function policyQuestion(policy: SeatPolicyState, given: Readonly<Partial<Record<
   };
 }
 
+/** An argv that only prints a brief (`clossys options ...`): it records nothing, so it is never an owner answer. */
+const briefOnly = (argv: readonly string[]) => argv[0] === "clossys" && argv[1] === "options";
+const notNeeded = (items: readonly string[]) => ({ label: `Set ${items.length > 1 ? "them" : "it"} aside: not needed, for your reason.`, calls: items.map(item => ["clossys", "pin", item, "--not-needed", "--reason", "<reason>"]) });
+
 /** Owner packets of one step grouped by option shape: items whose answers differ only by item and candidate rank are one question. */
 function packetQuestions(packets: readonly Packet[]): Built[] {
   const groups = new Map<string, Packet[]>();
@@ -469,12 +491,13 @@ function packetQuestions(packets: readonly Packet[]): Built[] {
     const first = group[0]!;
     const many = group.length > 1;
     const names = candidateNames(first);
-    const rows = (first.options ?? []).filter(option => option.argv).map((option, index) => ({
+    const live = (first.options ?? []).filter(option => option.argv && !briefOnly(option.argv));
+    const rows = live.map((option, index) => ({
       label: many ? option.label.replace(/\s*\(.*\)/, "").replace(first.item, "each").replace(/\S+-v\d+\.(?:md|json)/g, word => names.get(word) === 0 ? "the newest candidate" : names.get(word) === 1 ? "the previous candidate" : "an earlier candidate") : option.label,
-      calls: group.map(packet => [...(packet.options ?? []).filter(each => each.argv)[index]!.argv!]),
+      calls: group.map(packet => [...(packet.options ?? []).filter(each => each.argv && !briefOnly(each.argv))[index]!.argv!]),
     }));
-    // Never a lone answer: a slot's owner can always ask its agent for a draft first.
-    if (rows.length < 2 && first.item.includes("/")) rows.push({ label: `The ${prefixOf(first.item)} drafts ${many ? "each" : first.item} (again) first.`, calls: group.map(packet => ["clossys", "options", packet.item, "--redraft"]) });
+    // Never a lone answer, and never one that records nothing (a brief is not an answer): a slot can be set aside.
+    if (rows.length < 2 && first.item.includes("/")) rows.push(notNeeded(group.map(packet => packet.item)));
     const agent = isAgent(prefixOf(first.item)) ? prefixOf(first.item) as InterviewAgent : first.step === "evidence" ? "director" : "producer";
     return {
       id: many ? `${first.step}:${group.length}` : `${first.step}:${first.item}`, agent, step: first.step, header: first.step.slice(0, 12),
@@ -573,13 +596,94 @@ function agentPicksQuestion(content: DirectorContent, unclear: ReadonlyMap<strin
     // The owner's confirm keeps the agent pick (basis agent) and records the confirmation (owner Foundry
     // Director round 8): basis bulk would replace it with a blanket owner pin that Q7 never counts.
     { label: `Confirm all ${plural(picks.length, "agent pick")}${failing ? ` (${failing} still have blocking findings)` : ""}.`, calls: picks.map(pick => ["clossys", "pin", pick.item, pick.candidate, "--confirm", "--ref", CONFIRM_REF]) },
-    { label: `Review them by group (${[...groups].map(([group, cells]) => `${group} ${cells.length}`).join(", ")}): the Director plays each group back.`, calls: picks.map(pick => ["clossys", "options", pick.item]) },
+    // By group (largest first): one group confirmed now, the others stay open for the next round.
+    ...[...groups].sort((a, b) => b[1].length - a[1].length).slice(0, groups.size > 1 ? 3 : 0).map(([group, cells]) => ({
+      label: `Confirm only the ${group} group (${plural(cells.length, "pick")}); the other groups stay open.`,
+      calls: picks.filter(pick => cells.includes(pick.cell)).map(pick => ["clossys", "pin", pick.item, pick.candidate, "--confirm", "--ref", CONFIRM_REF]),
+    })),
   ];
+  if (rows.length < 2) rows.push(notNeeded(picks.map(pick => pick.item)));
   const options = optionsFrom(rows, {}).map(option => CONFIRM_REF in option.fill ? { ...option, fill: { ...option.fill, [CONFIRM_REF]: "where your words are recorded (the ledger comment with your answer)" } } : option);
   return {
     id: AGENT_PICKS_QUESTION, agent: "director", step: "pin.director", header: "Agent picks", items: picks.map(pick => pick.item),
     question: `Confirm ${plural(picks.length, "agent pick")} (the non-core cells the Director picked)?`, options,
     freeText: { id: "other", label: FREE_LABEL, verb: "clossys evidence", calls: [ownWords("").calls[0]!], fill: ownWords("").fill }, after: [...after], requestedBy: [],
+  };
+}
+
+// ---------------------------------------------------------------- policy (Designer, Writer, Publisher)
+const POLICY_WORDS: Readonly<Record<PolicyAgent, string>> = {
+  designer: "visual records that pass wiring and realise your Director pins",
+  writer: "copy that passes wiring and derives from your Director pins",
+  publisher: "pages that pass wiring and assemble only pinned Designer and Writer records",
+};
+const isPolicyGap = (gap: Gap) => (POLICY_AGENTS as readonly string[]).includes(gap.agent) && gap.item.startsWith(`${gap.agent}/`)
+  && (gap.code === "agent-pick.unconfirmed" || gap.code === `open.pin.${gap.agent}` || gap.code === "open.writer.approve");
+const CANDIDATE_WORD = /-v\d+\.(?:md|json)$/;
+
+/**
+ * The policy agents' owner decisions as policy: each gap the agent can infer becomes one call (confirm its agent
+ * pick, or approve / pin the recommended candidate) under the owner's policy reference, and all of an agent's calls
+ * are one "<agent>.policy" question, answered for all or one group at a time. What the policy cannot cover is
+ * returned with its reason and asked on its own.
+ */
+function policyQuestions(gaps: readonly Gap[], all: readonly Gap[], root: string, context: Context, steps: readonly Step[], packageRoot: string): { questions: Built[]; perSlot: { gap: Gap; reason: string }[] } {
+  const consumer = join(root, "clossys");
+  const index = slotIndex(consumer);
+  const wiring = new Set(all.filter(gap => gap.kind === "wiring").map(gap => gap.item));
+  const questions: Built[] = [], perSlot: { gap: Gap; reason: string }[] = [];
+  for (const agent of POLICY_AGENTS) {
+    const inferred: { item: string; call: string[] }[] = [];
+    for (const gap of gaps.filter(each => each.agent === agent && isPolicyGap(each))) {
+      const id = slotOf(gap.item), entry = index.get(id);
+      const ready = entry ? readiness(consumer, agent, id, index) : null;
+      let call: string[] | null = null, reason = "";
+      if (!entry) reason = "it is not a slot of the IA";
+      else if (wiring.has(gap.item)) reason = "its citations are stale or broken (a wiring gap the agent closes first)";
+      else if (!ready!.ready) reason = `its inputs do not clear (${listed(ready!.blockedBy.map(block => `${block.slot} ${block.reason}`))})`;
+      else if (gap.code === "agent-pick.unconfirmed") call = ["clossys", "pin", gap.item, entry.pin!.candidate, "--confirm", "--ref", CONFIRM_REF];
+      else {
+        const packet = packetOf(steps.find(step => step.id === gap.step)!, gap.item, 1, context, { packageRoot });
+        const first = (packet.options ?? []).find(option => option.argv && !briefOnly(option.argv) && option.argv.some(word => CANDIDATE_WORD.test(word)));
+        if (!first) reason = "it has no candidate to approve or pin";
+        else call = [...first.argv!, ...(first.argv!.includes("--by") ? [] : ["--by", `owner:${CONFIRM_REF}`])];
+      }
+      if (call) inferred.push({ item: gap.item, call }); else perSlot.push({ gap, reason });
+    }
+    if (!inferred.length) continue;
+    const groupOf = (item: string, depth: number) => slotOf(item).split(".").slice(0, depth).join(".");
+    let depth = 1;
+    if (new Set(inferred.map(row => groupOf(row.item, 1))).size === 1) depth = 2;
+    const groups = new Map<string, { item: string; call: string[] }[]>();
+    for (const row of inferred) groups.set(groupOf(row.item, depth), [...(groups.get(groupOf(row.item, depth)) ?? []), row]);
+    if (groups.size < 2) { for (const row of inferred) perSlot.push({ gap: gaps.find(gap => gap.item === row.item)!, reason: `the only open ${agent} decision of its kind: there is no policy to infer from it` }); continue; }
+    const verb = agent === "writer" ? "Approve" : "Confirm";
+    const sorted = [...groups].sort((a, b) => b[1].length - a[1].length || (a[0] < b[0] ? -1 : 1));
+    const rows = [
+      { label: `${verb} all ${plural(inferred.length, "slot")} by one policy: ${POLICY_WORDS[agent]}.`, calls: inferred.map(row => row.call) },
+      ...sorted.slice(0, 3).map(([group, list]) => ({ label: `${verb} only the ${group} group (${plural(list.length, "slot")}); the other groups stay open for the next round.`, calls: list.map(row => row.call) })),
+    ];
+    const options = optionsFrom(rows, {}).map(option => ({ ...option, fill: { ...option.fill, [CONFIRM_REF]: "where your policy words are recorded (the ledger comment with your answer)" } }));
+    questions.push({
+      id: `${agent}.policy`, agent, step: `pin.${agent}`, header: "Policy", items: inferred.map(row => row.item),
+      question: `${verb} the ${agent[0]!.toUpperCase()}${agent.slice(1)}'s ${plural(inferred.length, "open slot")} by policy (${sorted.map(([group, list]) => `${group} ${list.length}`).join(", ")})? Each is the agent's pick or recommended candidate.`,
+      options, freeText: { id: "other", label: FREE_LABEL, verb: agent === "writer" ? "clossys approve" : "clossys pin" }, after: [], requestedBy: [],
+    });
+  }
+  return { questions, perSlot };
+}
+
+/** An agent pick the policy could not cover, asked on its own with the reason. */
+function confirmQuestion(gap: Gap, reason: string, root: string): Built {
+  const candidate = slotIndex(join(root, "clossys")).get(slotOf(gap.item))?.pin?.candidate ?? "";
+  const options = optionsFrom([
+    { label: `Confirm ${candidate}.`, calls: [["clossys", "pin", gap.item, candidate, "--confirm", "--ref", CONFIRM_REF]] },
+    notNeeded([gap.item]),
+  ], {}).map(option => CONFIRM_REF in option.fill ? { ...option, fill: { ...option.fill, [CONFIRM_REF]: "where your words are recorded (the ledger comment with your answer)" } } : option);
+  return {
+    id: `${gap.agent}.confirm:${gap.item}`, agent: gap.agent, step: gap.step, header: "Confirm", items: [gap.item], reason,
+    question: `Confirm ${gap.item}'s agent pick ${candidate}? Asked on its own: ${reason}.`, options,
+    freeText: { id: "other", label: FREE_LABEL, verb: "clossys pin" }, after: [], requestedBy: [],
   };
 }
 
@@ -615,11 +719,20 @@ export function interviewOf(root: string, options: InterviewOptions & { readonly
   if (archetype) questions.push(archetype);
   const contentAsked = content ? contentQuestions({ ...content, owner: content.owner.filter(row => asked.some(gap => gap.item === row.item && (gap.code === "director.owner-round" || gap.code === "open.pin.director"))) }, archetype ? [archetype.id] : []) : [];
   questions.push(...contentAsked);
-  const packets = asked.filter(gap => gap.code.startsWith("open.") && gap.code !== "open.seats" && !(gap.code === "open.pin.director" && contentItems.has(gap.item))).map(gap => {
+  // The Designer, Writer and Publisher ask policy; a slot the policy cannot cover is asked on its own, with the reason.
+  const policy_ = policyQuestions(asked, all.gaps, root, context, steps, packageRoot);
+  questions.push(...policy_.questions);
+  const covered = new Set(policy_.questions.flatMap(question => question.items));
+  const reasons = new Map(policy_.perSlot.map(row => [row.gap.item, row.reason]));
+  for (const row of policy_.perSlot) if (row.gap.code === "agent-pick.unconfirmed") questions.push(confirmQuestion(row.gap, row.reason, root));
+  const packets = asked.filter(gap => gap.code.startsWith("open.") && gap.code !== "open.seats" && !covered.has(gap.item) && !(gap.code === "open.pin.director" && contentItems.has(gap.item))).map(gap => {
     const step = steps.find(each => each.id === gap.step)!;
     return packetOf(step, gap.item, 1, context, { packageRoot });
   });
-  questions.push(...packetQuestions(packets));
+  for (const built of packetQuestions(packets)) {
+    const reason = built.items.length === 1 ? reasons.get(built.items[0]!) : undefined;
+    questions.push(reason ? { ...built, reason, question: `${built.question} Asked on its own: ${reason}.` } : built);
+  }
   // A request for a cell already asked folds into that question; the confirm question takes none.
   const agentHeld = new Set(content?.agentPicks.map(pick => pick.item) ?? []);
   const unblocks = new Map<string, Map<string, Set<string>>>();

@@ -3,5 +3,17 @@
   "sha256": "1bf6325baf7ebb9aacca27ce9aacb84003825430e6b6668802ece417f64c249d",
   "decidedBy": "agent:writer",
   "basis": "agent",
-  "at": "2026-11-12T00:07:41.141Z"
+  "at": "2026-11-12T00:07:41.141Z",
+  "recited": {
+    "by": "agent:writer",
+    "at": "2026-11-12T00:36:34.415Z",
+    "cites": {
+      "director:execution.roadmap.milestone": 7,
+      "director:identity.verbal.voice": 4,
+      "director:execution.roadmap.release": 6,
+      "director:execution.measure.driver": 8,
+      "director:execution.measure.north-star": 4
+    },
+    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+  }
 }

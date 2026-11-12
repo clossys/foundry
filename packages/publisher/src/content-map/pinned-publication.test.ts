@@ -156,6 +156,14 @@ it("NATIVE reads the repository's actual selected Studio publication and page pa
   }
 });
 
+it("NATIVE reads a pin carrying a pointer-only re-cite and refuses a malformed one", async () => {
+  const f = await fixture(), pin = join(dir(f.path, "page.designer"), "pin.json");
+  await edit(pin, value => { value.recited = { by: "agent:publisher", at: "2026-11-11T00:00:00Z", cites: { "designer:frames.app-shell": 2 } }; });
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+  await edit(pin, value => { value.recited = { by: "agent:publisher" }; });
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid pin recite/);
+});
+
 it("NATIVE hash-verification mutation control refuses tampered selected bytes", async () => {
   const f = await fixture();
   await edit(candidatePath(f.path, "page.designer"), value => { value.title = "Tampered"; });

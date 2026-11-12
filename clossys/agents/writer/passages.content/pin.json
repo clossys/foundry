@@ -3,5 +3,16 @@
   "sha256": "debb1d2ccf0e76496376af4cee75f6af8baf510658152bc494794ced4c7b8459",
   "decidedBy": "agent:writer",
   "basis": "agent",
-  "at": "2026-11-12T00:07:39.083Z"
+  "at": "2026-11-12T00:07:39.083Z",
+  "recited": {
+    "by": "agent:writer",
+    "at": "2026-11-12T00:36:34.070Z",
+    "cites": {
+      "director:identity.verbal.narrative": 4,
+      "director:identity.verbal.voice": 4,
+      "director:aspiration.goal.long-term": 3,
+      "director:execution.measure.driver": 8
+    },
+    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+  }
 }

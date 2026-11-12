@@ -59,6 +59,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Migrate: clossys migrate copy-keys [--check] [--root <dir>] (camelCase copy ids to the catalog's kebab-case ids; record text unchanged)\n"
   + "Migrate: clossys migrate inputs [--check] [--root <dir>] (declare Designer and Writer slot inputs from the read graph; only adds)\n"
   + "Migrate: clossys migrate director-refs [--check] [--by agent:writer] [--root <dir>] (re-cite pinned Writer copy at the pinned Director version when its Direction is unchanged, then pick)\n"
+  + "Migrate: clossys migrate recite [<agent>/<slot>... | --agent <id>] --by agent:<seat> [--reason <text>] [--restore <rev>] [--check] (pointer-only update in place: the pin records the upstream versions it now cites; no new candidate, basis and decider kept)\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Slots: clossys check [--slots] [--readiness [--strict]] [--root <dir>] (enforced by default; --readiness --strict fails on every blocked slot)\n"
   + "Chain: clossys run [--from <step>] [--until <step>] [--dry] [--explain] [--json] (runs every stale plumb step in order, stops at the first open decide step); clossys next [--owner [--agent <id>]] [--json] (that step's packet; --owner the interview's questions); clossys gaps [--agent <id>] [--json] (coverage, wiring and request gaps, read-only)\n"

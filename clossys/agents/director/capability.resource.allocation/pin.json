@@ -1,7 +1,21 @@
 {
-  "candidate": "studio-allocation-v11.md",
-  "sha256": "d6c5fbdffb6b782a7b128076b2f6157d8f81e8527256d3c585ef51a9f7a084c5",
+  "candidate": "studio-allocation-v10.md",
+  "sha256": "5ba8e95ae9326335bfac5e7e53bf879b7a08ccfa990814a6710c11fef0a5c451",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:57:22.284Z"
+  "at": "2026-11-11T23:24:46.612Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:26:04.854Z"
+  },
+  "recited": {
+    "by": "agent:director",
+    "at": "2026-11-12T00:35:24.954Z",
+    "cites": {
+      "director:execution.priority.bet": 6,
+      "director:capability.operation.delivery": 7
+    },
+    "reason": "owner r9: Delivery v7 keeps the pinned v4 meaning, only re-addressed (clossys/workspace#46 issuecomment-6810103642)"
+  }
 }

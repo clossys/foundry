@@ -4,6 +4,7 @@
  * `design`, `write`, `publish`) read; nothing here writes into the consumer.
  */
 import { join, relative, sep } from "node:path";
+import { recitedBytes } from "@clossys/director";
 import { hasPinFile, listSlots, readCandidate, readSlot } from "./slots.js";
 import {
   CANDIDATE_NAME, candidatesDir, parseFrontmatter, validateCandidate,
@@ -18,7 +19,9 @@ export interface PinnedCandidate {
   /** Candidate file name, e.g. `studio-essence-v1.md`. */
   readonly name: string;
   readonly version: number;
+  /** The candidate as it now cites: the pinned bytes with a pointer-only recite's refs re-addressed (pin.recited). */
   readonly bytes: string;
+  /** The pinned sha256 of the candidate file's own bytes (before any recite overlay). */
   readonly sha256: string;
   /** Consumer-root-relative path, e.g. `clossys/agents/director/<id>/candidates/<name>`. */
   readonly path: string;
@@ -58,7 +61,7 @@ export function readPinned(consumer: string, agent: SlotAgent): PinnedSet {
     if (invalid.length) { issue(entry.id, "invalid-candidate", `${agent}/${entry.id}: ${invalid[0]!.message}`); continue; }
     const name = entry.pin.candidate;
     const root = join(consumer, "..");
-    pinned.push({ id: entry.id, agent, doc, pin: entry.pin, name, version: candidateVersion(name), bytes, sha256,
+    pinned.push({ id: entry.id, agent, doc, pin: entry.pin, name, version: candidateVersion(name), bytes: recitedBytes(bytes, agent, entry.pin.recited), sha256,
       path: relative(root, join(candidatesDir(entry.dir), name)).split(sep).join("/") });
   }
   return { agent, pinned, unpinned, issues };

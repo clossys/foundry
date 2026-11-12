@@ -1,7 +1,22 @@
 {
   "candidate": "icon-chevron-left-v1.json",
   "sha256": "226415a3adb6225bd82769ab4f147538976bcb9ffdd458f57f299781764e9bbf",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
-  "basis": "planner",
-  "at": "2026-11-12T00:00:40.580Z"
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:02Z",
+  "recited": {
+    "by": "agent:designer",
+    "at": "2026-11-12T00:36:26.340Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "director:focus.category.definition": 5,
+      "director:focus.segment.core": 3,
+      "director:identity.brand.essence": 4,
+      "director:identity.brand.personality": 3,
+      "director:identity.verbal.voice": 4,
+      "director:identity.visual.imagery": 4,
+      "director:identity.visual.style": 7
+    },
+    "reason": "CASCADE fc9d9cd80: the Director r9 inputs keep the visual meaning these candidates realise; candidate unchanged (clossys/workspace#46)"
+  }
 }

@@ -57,6 +57,10 @@ cites it and runs it for its own agent id; `<id>` below is that id, `producer` h
   free-text answer (`freeText.verb`). Items that share an option set are one question whose option
   runs one call per item (the 18 seats are about 4 questions); a request joins the question on the
   same item and lists `requestedBy`. A question with `after` waits for those questions' answers.
+  The Designer, Writer and Publisher ask by policy: one `<id>.policy` question covers every slot the
+  agent can infer (its agent pick or recommended candidate), with by-group options; a slot is asked
+  on its own only with a stated `reason`. `clossys pipeline check` (owner.wiring) runs every option
+  on a scratch copy, so an option that records nothing fails the check.
 - **Ask each round** with the host's control: on Claude one `AskUserQuestion` call per round (each
   question's `header`, `question` and option labels); on Codex a numbered list per question, the
   recommended answer first. Never answer an owner question for the owner.

@@ -1,7 +1,22 @@
 {
   "candidate": "icon-user-v1.json",
   "sha256": "74408ad4f066dfaf4b3ccc5bba34c5a9276bc92bbb669cc35e4ca16c689af31b",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
-  "basis": "planner",
-  "at": "2026-11-12T00:00:55.896Z"
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:02Z",
+  "recited": {
+    "by": "agent:designer",
+    "at": "2026-11-12T00:36:27.109Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "director:focus.category.definition": 5,
+      "director:focus.segment.core": 3,
+      "director:identity.brand.essence": 4,
+      "director:identity.brand.personality": 3,
+      "director:identity.verbal.voice": 4,
+      "director:identity.visual.imagery": 4,
+      "director:identity.visual.style": 7
+    },
+    "reason": "CASCADE fc9d9cd80: the Director r9 inputs keep the visual meaning these candidates realise; candidate unchanged (clossys/workspace#46)"
+  }
 }

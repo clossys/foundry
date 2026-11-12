@@ -1,7 +1,29 @@
 {
   "candidate": "chart-line-v3.json",
   "sha256": "cc014db9e3cc8990e1e934f8e3d766c67c73db66a75bbb1712dfb1f0bf3c7896",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 planner-pin SPECIMEN-THEME, planner)",
+  "decidedBy": "owner:2026-11-03 planner-pin SPECIMEN-THEME",
   "basis": "planner",
-  "at": "2026-11-12T00:01:17.390Z"
+  "at": "2026-11-03T18:00:00Z",
+  "recited": {
+    "by": "agent:designer",
+    "at": "2026-11-12T00:36:29.166Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "director:focus.category.definition": 5,
+      "director:focus.segment.core": 3,
+      "director:identity.brand.essence": 4,
+      "director:identity.brand.personality": 3,
+      "director:identity.verbal.voice": 4,
+      "director:identity.visual.imagery": 4,
+      "director:identity.visual.style": 7,
+      "designer:themes.background": 1,
+      "designer:themes.border": 1,
+      "designer:themes.font-mono": 1,
+      "designer:themes.foreground": 1,
+      "designer:themes.muted": 1,
+      "designer:themes.muted-foreground": 1,
+      "designer:themes.radius": 1
+    },
+    "reason": "CASCADE fc9d9cd80: the Director r9 inputs keep the visual meaning these candidates realise; candidate unchanged (clossys/workspace#46)"
+  }
 }

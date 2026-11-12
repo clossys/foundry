@@ -7,6 +7,7 @@ import { buildGraph, graphJson } from "../pipeline/graph.js";
 import { PACKAGE_ROOT } from "../pipeline/options.js";
 import { pipelineStatus } from "../pipeline/status.js";
 import { appendRecord, buildRecord, invocationOf, readRuns, readSink, RUNS_DIR, sanitizeArgv, SINK_ENV, storeFile } from "../pipeline/trace.js";
+import { ownerWiringIssues } from "../pipeline/owner-wiring.js";
 import { buildWiring, wiringCitationIssues } from "../pipeline/wiring.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -18,7 +19,8 @@ export const PIPELINE_USAGE = "Usage: clossys pipeline status [--json] [--root <
   + "       clossys pipeline trace <step | check:<id>> -- <command> [args]\n"
   + "status prints each step's state from its latest run record (passed, failed, stale, never-run) with the record it cites, and the open decisions.\n"
   + "wiring prints what the pipeline page draws: the steps that exist and ran, the edges their runs read and wrote, the computed layout.\n"
-  + "check exits 1 when a status the pipeline page shows cites no run record, or a Studio section contract shows a status with no citation field.\n"
+  + "check exits 1 when a status the pipeline page shows cites no run record, a Studio section contract shows a status with no citation field,\n"
+  + "  or an owner option of clossys next --owner, run on a scratch copy of the records, exits non-zero, changes no record or leaves the gaps unchanged (owner.wiring).\n"
   + "graph prints the declared step graph {nodes, edges, untyped, layout, seats, roster, options, status}; --out writes it without live status (pipeline/graph.json).\n"
   + "trace runs a command (a script step or a check) with its file reads and writes observed and appends its run record to .clossys/runs.";
 
@@ -169,11 +171,15 @@ export async function runPipelineCli(argv: readonly string[], cwd: string): Prom
     const wiring = buildWiring(root, { runs });
     const page = wiringCitationIssues(root, wiring, runs);
     const contracts = uncitedStatusFields();
-    const issues = [...page.map(issue => `pipeline page: ${issue}`), ...contracts];
+    // owner.wiring: every emitted owner option, run on a scratch copy of the records, records what the gaps see.
+    const { runCli } = await import("./main.js");
+    const owner = await ownerWiringIssues(root, { run: runCli });
+    const issues = [...page.map(issue => `pipeline page: ${issue}`), ...contracts, ...owner.issues.map(issue => `${issue.rule}: ${issue.message}`)];
+    const ownerLine = `owner.wiring: ${owner.options} owner options (${owner.calls} calls) run on a scratch copy`;
     return {
-      exitCode: issues.length ? 1 : 0, root, output: { page, contracts },
-      message: issues.length ? [`pipeline check: ${issues.length} uncited statuses`, ...issues.map(issue => `  ${issue}`)].join("\n")
-        : `pipeline check: every status cites its run record (${wiring.nodes.length} steps, ${runs.length} records)`,
+      exitCode: issues.length ? 1 : 0, root, output: { page, contracts, owner },
+      message: issues.length ? [`pipeline check: ${issues.length} finding(s)`, ...issues.map(issue => `  ${issue}`), ownerLine].join("\n")
+        : `pipeline check: every status cites its run record (${wiring.nodes.length} steps, ${runs.length} records); ${ownerLine}, each live`,
     };
   }
   const status = pipelineStatus(root);

@@ -1,7 +1,31 @@
 {
   "candidate": "hero-v1.json",
   "sha256": "3ff5aa66988f7fae6831f7ac53e716402ec98f7b2c7b648dbb6165d9556ed3cc",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
-  "basis": "planner",
-  "at": "2026-11-12T00:01:55.672Z"
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:02Z",
+  "recited": {
+    "by": "agent:designer",
+    "at": "2026-11-12T00:36:30.297Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "designer:assets.image": 2,
+      "designer:assets.image-ratio": 3,
+      "director:focus.category.definition": 5,
+      "director:focus.segment.core": 3,
+      "director:identity.brand.essence": 4,
+      "director:identity.brand.personality": 3,
+      "director:identity.verbal.voice": 4,
+      "director:identity.visual.imagery": 4,
+      "director:identity.visual.style": 7,
+      "designer:themes.background": 1,
+      "designer:themes.border": 1,
+      "designer:themes.foreground": 1,
+      "designer:themes.muted": 1,
+      "designer:themes.muted-foreground": 1,
+      "designer:themes.primary": 1,
+      "designer:assets.pattern": 3
+    },
+    "reason": "CASCADE fc9d9cd80: the Director r9 inputs keep the visual meaning these candidates realise; candidate unchanged (clossys/workspace#46)"
+  }
 }

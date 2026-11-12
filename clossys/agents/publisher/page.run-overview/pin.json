@@ -3,5 +3,15 @@
   "sha256": "96c128f216a2c947e886ed0beab27c1fb9e4d40d96b82c73dd2b3610cfcf2098",
   "decidedBy": "agent:publisher",
   "basis": "agent",
-  "at": "2026-11-11T16:37:13.254Z"
+  "at": "2026-11-11T16:37:13.254Z",
+  "recited": {
+    "by": "agent:publisher",
+    "at": "2026-11-12T00:37:00.234Z",
+    "cites": {
+      "designer:frames.studio-shell": 21,
+      "designer:sections.producer.system-empty": 1,
+      "designer:sections.studio.page-header": 5
+    },
+    "reason": "CASCADE fc9d9cd80 re-pinned these Designer inputs with each candidate unchanged (clossys/workspace#46)"
+  }
 }

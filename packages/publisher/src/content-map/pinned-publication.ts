@@ -102,7 +102,10 @@ function pinned(records: PinnedPublicationSource, index: Map<string, Position>, 
     || [...slot.inputs, ...slot.uses].some(ref => !SLOT_ID.test(ref))) fail(slotPath, "Invalid slot identity, kind or IA position");
   keys(slot.ia, ["l1", "l2", "order"], slotPath);
   const pinPath = `${dir}/pin.json`, pin = parse(present(records.record(id, "pin.json"), pinPath), pinPath);
-  keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at"], pinPath);
+  keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at", "recited"], pinPath);
+  // A pointer-only re-cite (`clossys migrate recite`): the slot-model reader validates it and hands over the
+  // candidate bytes with refs re-addressed; here it only has to be the {by, at, cites} record.
+  if (pin.recited !== undefined && (!object(pin.recited) || !text(pin.recited.by) || !text(pin.recited.at) || !object(pin.recited.cites))) fail(pinPath, "Invalid pin recite");
   safeSegment(pin.candidate, CANDIDATE, pinPath);
   if (typeof pin.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(pin.sha256)
     || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/.test(pin.decidedBy)
@@ -111,7 +114,7 @@ function pinned(records: PinnedPublicationSource, index: Map<string, Position>, 
     || typeof pin.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(pin.at) || Number.isNaN(Date.parse(pin.at))) fail(pinPath, "Invalid pin");
   const path = `${dir}/candidates/${pin.candidate}`, raw = present(records.candidate(id, pin.candidate), path);
   if (raw.sha256 !== pin.sha256) fail(path, "Pinned candidate hash drift");
-  const value = parse(raw.bytes, path); candidate(value, kind, path);
+const value = parse(raw.bytes, path); candidate(value, kind, path);
   if (value.meta.slot !== undefined && value.meta.slot !== id) fail(path, "Conflicting candidate slot identity");
   return { slot, value };
 }

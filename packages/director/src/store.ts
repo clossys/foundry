@@ -4,7 +4,7 @@ import { loadCatalog, type StrategyCatalog } from "./catalog.js";
 import { ARCHETYPE_RECORD_ID, recordedArchetype } from "./archetype.js";
 import { parseFinding, RUN_CITATION_PATTERN } from "./format/finding.js";
 import { RECORD_ID_PATTERN } from "./format/ref.js";
-import { parseSlotPin, slotCandidateCell, slotCandidateVersion } from "./format/slot.js";
+import { parseSlotPin, recitedBytes, slotCandidateCell, slotCandidateVersion } from "./format/slot.js";
 import { validateTree } from "./format/tree.js";
 import type { StrategyModel, StrategyRootIssue, StrategyTree } from "./format/types.js";
 import { storeFault, type DirectorStoreReader } from "./store-io.js";
@@ -124,7 +124,7 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
     const path = `${id}/candidates/${pin.value.candidate}`;
     const bytes = read(model.root, path); if (bytes === undefined) continue;
     if (createHash("sha256").update(bytes).digest("hex") !== pin.value.sha256) { issue(path, "invalid-format", "Pinned candidate bytes disagree with pin.json sha256"); continue; }
-    try { model.cells.push({ ...slotCandidateCell({ id, version, updated: pin.value.at.slice(0, 10), path, bytes }), pin: { decidedBy: pin.value.decidedBy, basis: pin.value.basis } }); active[id] = version; }
+    try { model.cells.push({ ...slotCandidateCell({ id, version, updated: pin.value.at.slice(0, 10), path, bytes: recitedBytes(bytes, "director", pin.value.recited) }), pin: { decidedBy: pin.value.decidedBy, basis: pin.value.basis } }); active[id] = version; }
     catch (error) { issue(path, "invalid-format", error instanceof Error ? error.message : String(error)); }
   }
 

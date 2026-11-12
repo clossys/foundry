@@ -1,7 +1,22 @@
 {
   "candidate": "popover-v1.json",
   "sha256": "d23c921b4479bb2497d5e94896fff49dcec0998c02ad3f3651eb2cda35b4e1cd",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
-  "basis": "planner",
-  "at": "2026-11-12T00:01:07.951Z"
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:02Z",
+  "recited": {
+    "by": "agent:designer",
+    "at": "2026-11-12T00:36:24.711Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "director:focus.category.definition": 5,
+      "director:focus.segment.core": 3,
+      "director:identity.brand.essence": 4,
+      "director:identity.brand.personality": 3,
+      "director:identity.verbal.voice": 4,
+      "director:identity.visual.imagery": 4,
+      "director:identity.visual.style": 7
+    },
+    "reason": "CASCADE fc9d9cd80: the Director r9 inputs keep the visual meaning these candidates realise; candidate unchanged (clossys/workspace#46)"
+  }
 }

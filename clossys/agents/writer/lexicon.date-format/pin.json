@@ -1,7 +1,15 @@
 {
-  "candidate": "studio-v2.md",
-  "sha256": "71c58386da7ad31f8673d99e9fe469f7499ba41bbeabf7ad2e5713dd7023bd72",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, copy unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
-  "basis": "planner",
-  "at": "2026-11-12T00:08:28.762Z"
+  "candidate": "studio-v1.md",
+  "sha256": "8cd82d5acfce66a47f1d1a160815cb909a00494daa3d2584186f1ab17a022732",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:39Z",
+  "recited": {
+    "by": "agent:writer",
+    "at": "2026-11-12T00:36:32.491Z",
+    "cites": {
+      "director:focus.reach.geography": 2
+    },
+    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+  }
 }

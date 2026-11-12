@@ -158,6 +158,19 @@ export interface PinDoc {
    * who confirmed it, when, and the ledger reference holding their words. Only on a basis `agent` pin.
    */
   readonly confirmed?: PinConfirmation;
+  /**
+   * A pointer-only update in place (`clossys migrate recite`): the upstream versions this pin's candidate
+   * now cites (`<agent>:<slot>` to version), with who recited it and when. The candidate, basis and decider
+   * stay; readers see the candidate's refs re-addressed (Director recitedBytes). A meaning change is a new
+   * candidate instead.
+   */
+  readonly recited?: PinRecite;
+}
+export interface PinRecite {
+  readonly by: string;
+  readonly at: string;
+  readonly cites: Readonly<Record<string, number>>;
+  readonly reason?: string;
 }
 export interface PinConfirmation {
   /** owner or owner:<ref> (CONFIRMED_BY). */

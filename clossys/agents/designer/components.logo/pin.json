@@ -1,7 +1,35 @@
 {
   "candidate": "logo-v3.json",
   "sha256": "cc6830e46fce19e6e2c0a3c043bc6de147d2825d02134e214a8ce4fc832c5af6",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 one-brand clossys asterisk, picked)",
-  "basis": "planner",
-  "at": "2026-11-12T00:01:26.843Z"
+  "decidedBy": "owner:2026-11-03 one-brand clossys asterisk",
+  "basis": "picked",
+  "at": "2026-11-03T16:45:00.994Z",
+  "recited": {
+    "by": "agent:designer",
+    "at": "2026-11-12T00:36:29.084Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "designer:assets.lockup": 4,
+      "designer:assets.mark": 4,
+      "director:focus.category.definition": 5,
+      "director:focus.segment.core": 3,
+      "director:identity.brand.essence": 4,
+      "director:identity.brand.personality": 3,
+      "director:identity.verbal.voice": 4,
+      "director:identity.visual.imagery": 4,
+      "director:identity.visual.style": 7,
+      "designer:themes.accent-foreground": 1,
+      "designer:themes.card-foreground": 1,
+      "designer:themes.foreground": 1,
+      "designer:themes.muted-foreground": 1,
+      "designer:themes.popover-foreground": 1,
+      "designer:themes.primary": 1,
+      "designer:themes.primary-foreground": 1,
+      "designer:themes.secondary-foreground": 1,
+      "designer:themes.sidebar-accent-foreground": 1,
+      "designer:themes.sidebar-foreground": 1,
+      "designer:themes.sidebar-primary-foreground": 1
+    },
+    "reason": "CASCADE fc9d9cd80: the Director r9 inputs keep the visual meaning these candidates realise; candidate unchanged (clossys/workspace#46)"
+  }
 }

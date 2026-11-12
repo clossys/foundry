@@ -3,5 +3,14 @@
   "sha256": "3fa70f128306c001342ab10577feae08b6edc365a41fe63d296eb80cfa22b43c",
   "decidedBy": "agent:writer",
   "basis": "agent",
-  "at": "2026-11-12T00:07:35.648Z"
+  "at": "2026-11-12T00:07:35.648Z",
+  "recited": {
+    "by": "agent:writer",
+    "at": "2026-11-12T00:36:32.351Z",
+    "cites": {
+      "director:advantage.proposition.proof": 4,
+      "director:execution.measure.driver": 8
+    },
+    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+  }
 }

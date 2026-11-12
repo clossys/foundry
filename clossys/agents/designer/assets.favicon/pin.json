@@ -1,7 +1,22 @@
 {
   "candidate": "favicon-v2.json",
   "sha256": "4992311380c32d75f1f64fcaed3d903b76e5674d54b9bf6692536014b0fe1006",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 one-brand clossys asterisk, picked)",
-  "basis": "planner",
-  "at": "2026-11-12T00:00:38.341Z"
+  "decidedBy": "owner:2026-11-03 one-brand clossys asterisk",
+  "basis": "picked",
+  "at": "2026-11-03T16:31:15.144Z",
+  "recited": {
+    "by": "agent:designer",
+    "at": "2026-11-12T00:36:26.176Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "director:focus.category.definition": 5,
+      "director:focus.segment.core": 3,
+      "director:identity.brand.essence": 4,
+      "director:identity.brand.personality": 3,
+      "director:identity.verbal.voice": 4,
+      "director:identity.visual.imagery": 4,
+      "director:identity.visual.style": 7
+    },
+    "reason": "CASCADE fc9d9cd80: the Director r9 inputs keep the visual meaning these candidates realise; candidate unchanged (clossys/workspace#46)"
+  }
 }

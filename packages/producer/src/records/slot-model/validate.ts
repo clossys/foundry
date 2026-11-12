@@ -1,3 +1,4 @@
+import { parseSlotRecite } from "@clossys/director";
 import { parseFrontmatter } from "./frontmatter.js";
 import {
   AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, CONFIRMED_BY, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
@@ -114,7 +115,7 @@ export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[]
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "pin-invalid", path, message });
   if (!object(value)) { fail("expected an object"); return issues; }
-  for (const key of Object.keys(value)) if (!["candidate", "sha256", "decidedBy", "basis", "at", "confirmed"].includes(key)) fail(`unknown key ${key}`);
+  for (const key of Object.keys(value)) if (!["candidate", "sha256", "decidedBy", "basis", "at", "confirmed", "recited"].includes(key)) fail(`unknown key ${key}`);
   if (!nonEmpty(value.candidate) || !CANDIDATE_NAME.test(value.candidate)) fail("candidate must be a candidate file name");
   if (typeof value.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(value.sha256)) fail("sha256 must be 64 lowercase hex");
   if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) fail("decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>], agent:<seat> or migrated");
@@ -131,6 +132,10 @@ export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[]
       if (!nonEmpty(confirmed.ref)) fail("confirmed.ref must name where the owner's words are recorded");
       if (typeof confirmed.at !== "string" || Number.isNaN(Date.parse(confirmed.at)) || !/^\d{4}-\d{2}-\d{2}T/.test(confirmed.at)) fail("confirmed.at must be an ISO timestamp");
     }
+  }
+  if (value.recited !== undefined) {
+    const recited = parseSlotRecite(value.recited);
+    if (!recited.ok) fail(recited.message);
   }
   return issues;
 }

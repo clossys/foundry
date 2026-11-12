@@ -4,7 +4,8 @@
  * folder. Publisher opens no files; there is no second reader and no legacy fallback.
  */
 import { projectPinnedPublication, type PinnedPublication } from "@clossys/publisher/content-map";
-import { listSlots, readAgentFile, readCandidate, readSlotRecordText } from "../records/slots.js";
+import { recitedBytes } from "@clossys/director";
+import { listSlots, readAgentFile, readCandidate, readPin, readSlotRecordText } from "../records/slots.js";
 import { slotDir } from "../records/slot-model/index.js";
 import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
 
@@ -15,7 +16,8 @@ export async function readPinnedPublication(consumer: string, publicationId: str
     ia: () => readAgentFile(consumer, "publisher", "ia.json"),
     record: (id, file) => readSlotRecordText(slotDir(consumer, "publisher", id), file),
     candidate: (id, name) => {
-      try { return readCandidate(consumer, "publisher", id, name); }
+      // The pinned candidate as it now cites (a pointer-only re-cite re-addresses refs; the sha stays the raw one).
+      try { const read = readCandidate(consumer, "publisher", id, name), pin = readPin(consumer, "publisher", id); return pin?.candidate === name ? { ...read, bytes: recitedBytes(read.bytes, "publisher", pin.recited) } : read; }
       catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
     },
   }, publicationId);

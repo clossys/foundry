@@ -25,6 +25,15 @@ function workspace(): string {
   return root;
 }
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
+/**
+ * The copy with no Producer seat recorded: each seat slot's pin removed, as before the owner's Producer round 1
+ * recorded the 18 seats (these cases need the seats step open and a fixture model the seats do not name).
+ */
+function unseated(root: string): string {
+  const producer = join(root, "clossys", "agents", "producer");
+  for (const slot of readdirSync(producer)) if (existsSync(join(producer, slot, "pin.json"))) rmSync(join(producer, slot, "pin.json"));
+  return root;
+}
 
 const real = (id: string): Step => { const step = STEPS.find(each => each.id === id); if (!step) throw new Error(`no step ${id}`); return step; };
 /** A plumb step `fx.<name>` that runs `clossys check --<name>` (the exec below serves it). */
@@ -84,7 +93,7 @@ describe("clossys run", { timeout: 60_000 }, () => {
   });
 
   it("stops at the first open decide step and prints its packet", async () => {
-    const root = workspace();
+    const root = unseated(workspace());
     writeFileSync(join(root, INPUT), "one\n");
     const steps = [plumb("a"), real("seats"), plumb("after")];
     const result = runChain(root, { steps, exec: fixtureExec(root), dry: true });
@@ -107,7 +116,7 @@ describe("clossys run", { timeout: 60_000 }, () => {
 
 describe("clossys next", { timeout: 60_000 }, () => {
   it("lists the open owner packets as multiple choice, recommended first, each answer an exact verb", async () => {
-    const root = workspace();
+    const root = unseated(workspace());
     const result = await runNextCli(["--owner", "--json", "--root", root], root);
     const output = result.output as { count: number; packets: { step: string; options: { id: string; recommended: boolean; argv: string[] | null }[] }[] };
     expect(output.count).toBeGreaterThan(0);
@@ -125,7 +134,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
   });
 
   it("refuses a submission that fails its schema and records nothing", async () => {
-    const root = workspace();
+    const root = unseated(workspace());
     const slot = "assets.favicon";
     const dir = join(root, "clossys", "agents", "designer", slot, "candidates");
     const before = readdirSync(dir);
@@ -149,7 +158,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
   });
 
   it("records an accepted submission with its model, tier, basis and skill hash", async () => {
-    const root = workspace();
+    const root = unseated(workspace());
     const slot = "assets.favicon";
     const dir = join(root, "clossys", "agents", "designer", slot, "candidates");
     const source = join(root, "favicon.json");
@@ -170,7 +179,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
   });
 
   it("refuses a byte-identical candidate and a created candidate with no reason no seed fit", async () => {
-    const root = workspace();
+    const root = unseated(workspace());
     const slot = "assets.favicon";
     const dir = join(root, "clossys", "agents", "designer", slot, "candidates");
     const before = readdirSync(dir);

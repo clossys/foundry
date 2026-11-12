@@ -152,9 +152,33 @@ export function writeConfirm(consumer: string, agent: SlotAgent, id: string, can
     if (current.basis !== "agent") throw new Error(`confirm refused: ${agent}/${id} is pinned by ${current.decidedBy} (basis ${current.basis}), not an agent pick; the owner pins it with --basis picked`);
     if (current.candidate !== candidate) throw new Error(`confirm refused: ${agent}/${id} is agent-picked at ${current.candidate}, not ${candidate}`);
     if (readCandidate(consumer, agent, id, candidate).sha256 !== current.sha256) throw new Error(`confirm refused: ${candidate} no longer matches the agent pick's sha256`);
-    const pin: PinDoc = { candidate: current.candidate, sha256: current.sha256, decidedBy: current.decidedBy, basis: current.basis, at: current.at, confirmed: { by: input.by, ref: input.ref, at: input.at } };
+    const pin: PinDoc = { candidate: current.candidate, sha256: current.sha256, decidedBy: current.decidedBy, basis: current.basis, at: current.at, confirmed: { by: input.by, ref: input.ref, at: input.at }, ...(current.recited ? { recited: current.recited } : {}) };
     const issues = validatePin(pin);
     if (issues.length) throw new Error(`confirm refused: ${issues.map(issue => issue.message).join("; ")}`);
+    replaceFile(path, jsonBytes(pin));
+    return pin;
+  });
+}
+
+/**
+ * A pointer-only update in place (`clossys migrate recite`): the pin keeps its candidate, sha256, basis,
+ * decider, `at` and confirmation, and gains `recited` (the upstream versions its candidate now cites).
+ * `base`, when given, is the pin to keep instead of the current one (a re-pin that only moved citations is
+ * restored to the pin it replaced); its candidate must still match its sha256. No candidate is written.
+ */
+export function writeRecite(consumer: string, agent: SlotAgent, id: string, input: { recited: NonNullable<PinDoc["recited"]>; base?: PinDoc }): PinDoc {
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+    const path = pinFile(entry.dir);
+    if (!existsSync(path)) throw new Error(`recite refused: ${agent}/${id} has no pin`);
+    const current = input.base ?? JSON.parse(readFileSync(path, "utf8")) as PinDoc;
+    const currentIssues = validatePin(current);
+    if (currentIssues.length) throw new Error(`recite refused: the ${input.base ? "restored" : "current"} pin is invalid: ${currentIssues.map(issue => issue.message).join("; ")}`);
+    if (readCandidate(consumer, agent, id, current.candidate).sha256 !== current.sha256) throw new Error(`recite refused: ${current.candidate} no longer matches the pin's sha256`);
+    const { recited: _old, ...kept } = current;
+    const pin: PinDoc = { ...kept, recited: input.recited };
+    const issues = validatePin(pin);
+    if (issues.length) throw new Error(`recite refused: ${issues.map(issue => issue.message).join("; ")}`);
     replaceFile(path, jsonBytes(pin));
     return pin;
   });

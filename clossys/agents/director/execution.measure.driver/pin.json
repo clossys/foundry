@@ -1,7 +1,22 @@
 {
-  "candidate": "studio-drivers-v9.md",
-  "sha256": "6252c75b8ff5298a136ac2ff633c59f80a8a6b2aeb4872bce614589374e7017a",
+  "candidate": "studio-drivers-v8.md",
+  "sha256": "5072b774db997cf836b7bdcc075f7700d5ff142a0c9a6a5effeb7dcec33cee19",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:57:23.436Z"
+  "at": "2026-11-11T23:18:20.279Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:54.094Z"
+  },
+  "recited": {
+    "by": "agent:director",
+    "at": "2026-11-12T00:35:25.048Z",
+    "cites": {
+      "director:execution.measure.north-star": 4,
+      "director:capability.operation.delivery": 7,
+      "director:execution.priority.bet": 6
+    },
+    "reason": "owner r9: Delivery v7 keeps the pinned v4 meaning, only re-addressed (clossys/workspace#46 issuecomment-6810103642)"
+  }
 }

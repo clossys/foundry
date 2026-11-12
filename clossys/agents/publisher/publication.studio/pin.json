@@ -3,5 +3,34 @@
   "sha256": "9247415670e4b36fb56df39da206d4ad0908624e0b40dde508b2d5d40d99ae04",
   "decidedBy": "agent:publisher",
   "basis": "agent",
-  "at": "2026-11-11T16:37:16.040Z"
+  "at": "2026-11-11T16:37:16.040Z",
+  "recited": {
+    "by": "agent:publisher",
+    "at": "2026-11-12T00:37:00.237Z",
+    "cites": {
+      "publisher:page.build-overview": 7,
+      "publisher:page.designer-assets": 6,
+      "publisher:page.designer-components": 6,
+      "publisher:page.designer-frames": 6,
+      "publisher:page.designer-sections": 6,
+      "publisher:page.designer-themes": 6,
+      "publisher:page.director-advantage": 6,
+      "publisher:page.director-aspiration": 6,
+      "publisher:page.director-capability": 6,
+      "publisher:page.director-context": 6,
+      "publisher:page.director-execution": 6,
+      "publisher:page.director-focus": 6,
+      "publisher:page.director-identity": 6,
+      "publisher:page.home": 10,
+      "publisher:page.producer-pipeline": 8,
+      "publisher:page.publisher-studio": 6,
+      "publisher:page.run-overview": 6,
+      "publisher:page.writer-lexicon": 6,
+      "publisher:page.writer-narratives": 6,
+      "publisher:page.writer-passages": 6,
+      "publisher:page.writer-patterns": 6,
+      "publisher:page.writer-strings": 6
+    },
+    "reason": "CASCADE fc9d9cd80 re-pinned these Designer inputs with each candidate unchanged (clossys/workspace#46)"
+  }
 }

@@ -1,7 +1,16 @@
 {
-  "candidate": "studio-v2.md",
-  "sha256": "bd66b9002fd4c2064a1492d75a5f7dde8a1d392cce664e6abc4411086d9983d7",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, copy unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
-  "basis": "planner",
-  "at": "2026-11-12T00:08:34.000Z"
+  "candidate": "studio-v1.md",
+  "sha256": "4d7b71f39c34d22befd6e24f0ee5cbaf8c918314624cff18e483f4399cab1b25",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:39Z",
+  "recited": {
+    "by": "agent:writer",
+    "at": "2026-11-12T00:36:32.137Z",
+    "cites": {
+      "director:focus.segment.core": 3,
+      "director:identity.verbal.voice": 4
+    },
+    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+  }
 }
