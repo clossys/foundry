@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { after, test } = require('node:test');
 const { ROUTE_MARKER, readStudioPublication } = require('./check-studio-routes.cjs');
-const { textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, servedCheck, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
+const { readGates, applyGates, requestLedger, settle, gateReports, textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, servedCheck, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
 // Fixtures live in the OS temp directory (TMPDIR), never under the checkout (a write there dirties the tree), and are removed after the run.
@@ -254,4 +254,101 @@ test('a Studio that cannot start is a setup failure (ENV exit 2), and nothing is
   assert.equal(result.report.status, 'ENV');
   assert.match(result.report.diagnostics[0].message, /already serving/);
   assert.equal(checked, false);
+});
+
+// Fake Playwright requests: url(), frame().isDetached(), failure(), resourceType().
+function fakeRequest(url, { detached = false, failure } = {}) {
+  const request = { url: () => url, frame: () => ({ isDetached: () => detached }), failure: () => (failure ? { errorText: failure } : null), resourceType: () => 'document' };
+  return request;
+}
+function load(ledger, request, { status = 200, state } = {}) {
+  ledger.request(request);
+  if (state === 'pending') return request;
+  ledger.response({ request: () => request, status: () => status });
+  if (state === 'failed') ledger.failed(request); else ledger.finished(request);
+  return request;
+}
+test('the gate config sets only wording/visual rules to report, and an invalid gate fails setup', () => {
+  const gates = readGates();
+  assert.equal(gates['raw-cell-id'].mode, 'report');
+  assert.equal(gates['aborted-reload'].mode, 'report');
+  assert.match(gates['raw-cell-id'].reason, /Only wiring blocks/);
+  const write = config => { const file = path.join(directory('gates'), 'gates.json'); fs.writeFileSync(file, JSON.stringify(config)); return file; };
+  const base = { schema: 'clossys.studio-check-gates/1' };
+  for (const rule of ['request-failed', 'navigation-error', 'need', 'console-error', 'initial-data', 'uncovered-linked-route']) assert.throws(() => readGates(write({ ...base, gates: [{ rule, mode: 'report', reason: 'x' }] })), /wiring or unknown/);
+  assert.throws(() => readGates(write({ ...base, gates: [{ rule: 'raw-cell-id', mode: 'quiet', reason: 'x' }] })), /block or report/);
+  assert.throws(() => readGates(write({ ...base, gates: [{ rule: 'raw-cell-id', mode: 'report', reason: ' ' }] })), /needs a reason/);
+  assert.throws(() => readGates(write({ ...base, gates: [{ rule: 'raw-cell-id', mode: 'report', reason: 'x' }, { rule: 'raw-cell-id', mode: 'block', reason: 'x' }] })), /listed twice/);
+  assert.throws(() => readGates(write({ schema: 'other', gates: [] })), /schema/);
+  assert.throws(() => readGates(path.join(evidenceRoot, 'absent.json')), /ENOENT/);
+});
+test('a raw cell id is a report, never dropped; wiring findings keep blocking', () => {
+  const gates = readGates();
+  const findings = [...textFindings({ text: 'Open page.home now. NEED: evidence' }), { rule: 'request-failed', url: 'http://x/a' }, { rule: 'navigation-error', message: 'x' }];
+  const gated = applyGates(findings, gates);
+  assert.deepEqual(gated.reports, [{ rule: 'raw-cell-id', ids: ['page.home'] }]);
+  assert.deepEqual(gated.findings.map(finding => finding.rule), ['need', 'request-failed', 'navigation-error']);
+  // Block mode (or no config) keeps the finding blocking.
+  assert.deepEqual(applyGates(findings, { 'raw-cell-id': { mode: 'block' } }).findings.map(finding => finding.rule), ['need', 'raw-cell-id', 'request-failed', 'navigation-error']);
+  assert.deepEqual(applyGates(findings).reports, []);
+});
+test('an abort is a reload only when a later request for the same URL finished OK', () => {
+  const ledger = requestLedger();
+  load(ledger, fakeRequest('http://s/__specimen?a', { failure: 'net::ERR_ABORTED' }), { state: 'failed' });
+  load(ledger, fakeRequest('http://s/__specimen?a'));
+  // Mutation proof: an abort with no retry, a retry that never finished OK, and a retry that ran
+  // first all stay blocking request-failed; a non-abort failure is never a reload.
+  load(ledger, fakeRequest('http://s/__specimen?none', { failure: 'net::ERR_ABORTED' }), { state: 'failed' });
+  load(ledger, fakeRequest('http://s/__specimen?bad', { failure: 'net::ERR_ABORTED' }), { state: 'failed' });
+  load(ledger, fakeRequest('http://s/__specimen?bad'), { status: 500 });
+  load(ledger, fakeRequest('http://s/__specimen?early'));
+  load(ledger, fakeRequest('http://s/__specimen?early', { failure: 'net::ERR_ABORTED' }), { state: 'failed' });
+  load(ledger, fakeRequest('http://s/__specimen?refused', { failure: 'net::ERR_CONNECTION_REFUSED' }), { state: 'failed' });
+  load(ledger, fakeRequest('http://s/__specimen?refused'));
+  const findings = ledger.findings();
+  assert.deepEqual(findings.filter(finding => finding.rule === 'request-failed').map(finding => finding.url.split('?')[1]), ['none', 'bad', 'early', 'refused']);
+  assert.deepEqual(findings.find(finding => finding.rule === 'aborted-reload'), { rule: 'aborted-reload', count: 1, aborted: 1, orphaned: 0, urls: ['http://s/__specimen?a'] });
+  const gated = applyGates(findings, readGates());
+  assert.deepEqual(gated.findings.map(finding => finding.rule), ['request-failed', 'request-failed', 'request-failed', 'request-failed']);
+  assert.deepEqual(gated.reports.map(finding => finding.rule), ['aborted-reload']);
+});
+test('settle waits for reloads to finish, skips only orphans a finished reload superseded, and a live pending request still times out', async () => {
+  const page = { waitForTimeout: milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)), evaluate: async () => {} };
+  // A frame moved after its response: Playwright never reports the request finished.
+  const orphanLedger = requestLedger();
+  load(orphanLedger, fakeRequest('http://s/__specimen?o', { detached: true }), { state: 'pending' });
+  const reload = load(orphanLedger, fakeRequest('http://s/__specimen?o'), { state: 'pending' });
+  setTimeout(() => { orphanLedger.response({ request: () => reload, status: () => 200 }); orphanLedger.finished(reload); }, 100);
+  const started = Date.now();
+  await settle(page, orphanLedger, 2000);
+  assert.ok(Date.now() - started >= 100, 'settle waited for the reload to finish');
+  assert.deepEqual(orphanLedger.findings(), [{ rule: 'aborted-reload', count: 1, aborted: 0, orphaned: 1, urls: ['http://s/__specimen?o'] }]);
+  // An orphan with no finished reload, and a live pending request, never settle.
+  const stuck = requestLedger();
+  load(stuck, fakeRequest('http://s/__specimen?stuck', { detached: true }), { state: 'pending' });
+  await assert.rejects(settle(page, stuck, 500), /did not settle before timeout: http:\/\/s\/__specimen\?stuck/);
+  const live = requestLedger();
+  load(live, fakeRequest('http://s/__specimen?live'), { state: 'pending' });
+  load(live, fakeRequest('http://s/__specimen?live'));
+  await assert.rejects(settle(page, live, 500), /did not settle/);
+  // Untracked streams are never waited on.
+  const streams = requestLedger({ tracked: request => !request.url().includes('/api/events') });
+  load(streams, fakeRequest('http://s/api/events'), { state: 'pending' });
+  await settle(page, streams, 1000);
+});
+test('the run report lists every report-mode finding and the per-page reload cost as one later-polish item', () => {
+  const gates = readGates();
+  const checks = [
+    { route: '/a', viewport: 'desktop', theme: 'light', findings: [], reports: [{ rule: 'aborted-reload', count: 4, aborted: 4, orphaned: 0, urls: [] }, { rule: 'raw-cell-id', ids: ['page.home'] }] },
+    { route: '/a', viewport: 'mobile', theme: 'dark', findings: [], reports: [{ rule: 'aborted-reload', count: 6, aborted: 5, orphaned: 1, urls: [] }] },
+    { route: '/b', viewport: 'desktop', theme: 'light', findings: [], reports: [] },
+  ];
+  const summary = gateReports(checks, gates);
+  assert.deepEqual(summary.reportCounts, { 'aborted-reload': 2, 'raw-cell-id': 1 });
+  assert.deepEqual(summary.reports.find(finding => finding.rule === 'raw-cell-id'), { route: '/a', viewport: 'desktop', theme: 'light', owner: 'designer', rule: 'raw-cell-id', ids: ['page.home'] });
+  assert.equal(summary.laterPolish.length, 1);
+  assert.equal(summary.laterPolish[0].item, 'deferred-loading iframe part (option A)');
+  assert.deepEqual(summary.laterPolish[0].owners, ['designer', 'publisher']);
+  assert.deepEqual(summary.laterPolish[0].pages, [{ route: '/a', reloads: 6 }]);
+  assert.deepEqual(gateReports([checks[2]], gates).laterPolish, []);
 });

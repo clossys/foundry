@@ -18,6 +18,62 @@ const variants = Object.freeze([
   { name: 'mobile', viewport: { width: 390, height: 844 }, isMobile: true },
 ]);
 const REPORT_EXIT_CODES = Object.freeze({ PASS: 0, FAIL: 1, ENV: 2 });
+const GATES_FILE = path.join(__dirname, 'studio-check-gates.json');
+// Only wording/visual rules may report (Producer skill, "Only wiring blocks"); every other rule is wiring and blocks.
+const REPORTABLE_RULES = Object.freeze(['raw-cell-id', 'aborted-reload']);
+/** Read and validate the gate config. A missing or invalid gate fails setup in every mode. */
+function readGates(file = GATES_FILE) {
+  const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(config.schema, 'clossys.studio-check-gates/1', `${file}: schema must be clossys.studio-check-gates/1`);
+  assert.ok(Array.isArray(config.gates), `${file}: gates must be a list`);
+  const gates = {};
+  for (const gate of config.gates) {
+    assert.ok(REPORTABLE_RULES.includes(gate?.rule), `${file}: ${gate?.rule} is wiring or unknown; only ${REPORTABLE_RULES.join(', ')} have a gate mode`);
+    assert.ok(!gates[gate.rule], `${file}: ${gate.rule} is listed twice`);
+    assert.ok(['block', 'report'].includes(gate.mode), `${file}: ${gate.rule} mode must be block or report`);
+    assert.ok(typeof gate.reason === 'string' && gate.reason.trim(), `${file}: ${gate.rule} needs a reason`);
+    gates[gate.rule] = { mode: gate.mode, owner: gate.owner, reason: gate.reason };
+  }
+  return gates;
+}
+/** Split findings by gate mode: report-mode rules are listed, never failed. */
+function applyGates(findings, gates = {}) {
+  const blocking = [], reports = [];
+  for (const finding of findings) (gates[finding.rule]?.mode === 'report' ? reports : blocking).push(finding);
+  return { findings: blocking, reports };
+}
+const ABORTED = /^(?:net::ERR_ABORTED|NS_BINDING_ABORTED)$/;
+function frameDetached(request) { try { return Boolean(request.frame()?.isDetached()); } catch { return false; } }
+/**
+ * Every request a page makes, in order. An aborted request is a reload only when a later request
+ * for the same URL on this page finished OK; a request left pending in a detached frame (the frame
+ * was moved before Playwright saw it finish) is a reload on the same condition.
+ */
+function requestLedger({ tracked = () => true } = {}) {
+  const entries = [], byRequest = new Map();
+  const retried = entry => entries.some(later => later.seq > entry.seq && later.url === entry.url && later.state === 'ok');
+  const superseded = entry => entry.state === 'pending' && frameDetached(entry.request) && retried(entry);
+  return {
+    entries,
+    request(request) { const entry = { request, url: request.url(), seq: entries.length + 1, state: 'pending', tracked: tracked(request) }; entries.push(entry); byRequest.set(request, entry); },
+    response(response) { const entry = byRequest.get(response.request()); if (entry) entry.status = response.status(); },
+    finished(request) { const entry = byRequest.get(request); if (entry) entry.state = (entry.status ?? 200) < 400 ? 'ok' : 'error'; },
+    failed(request) { const entry = byRequest.get(request); if (entry) { entry.state = 'failed'; entry.error = request.failure()?.errorText; } },
+    /** Tracked requests the page is still waiting on; superseded orphans are not waited on. */
+    waiting() { return entries.filter(entry => entry.tracked && entry.state === 'pending' && !superseded(entry)); },
+    findings() {
+      const findings = [], reloads = [];
+      for (const entry of entries) {
+        if (entry.state === 'failed') {
+          if (ABORTED.test(entry.error ?? '') && retried(entry)) reloads.push({ url: entry.url, kind: 'aborted' });
+          else findings.push({ rule: 'request-failed', url: entry.url, message: entry.error });
+        } else if (superseded(entry)) reloads.push({ url: entry.url, kind: 'orphaned' });
+      }
+      if (reloads.length) findings.push({ rule: 'aborted-reload', count: reloads.length, aborted: reloads.filter(reload => reload.kind === 'aborted').length, orphaned: reloads.filter(reload => reload.kind === 'orphaned').length, urls: [...new Set(reloads.map(reload => reload.url))] });
+      return findings;
+    },
+  };
+}
 function failureReport(error, extra = {}) {
   return error?.report ?? { check: 'studio:check', status: 'FAIL', phase: 'setup', executed: false, checks: [], diagnostics: [{ rule: 'check-setup', message: error instanceof Error ? error.message : String(error) }], ...extra };
 }
@@ -275,27 +331,38 @@ function inspectPage() {
   for (const image of document.images) if (!image.complete || image.naturalWidth === 0) findings.push({ rule: 'missing-asset', src: image.getAttribute('src') });
   return { findings, text, leafTexts, headingCount: headings.length, links: [...document.querySelectorAll('a[href]')].map(element => element.href) };
 }
+/** Report-mode findings for their owners, plus the per-page reload cost as one later-polish item. */
+function gateReports(checks, gates) {
+  const reports = checks.flatMap(check => (check.reports ?? []).map(finding => ({ route: check.route, viewport: check.viewport, theme: check.theme, owner: gates[finding.rule]?.owner, ...finding })));
+  const reloads = new Map();
+  for (const finding of reports) if (finding.rule === 'aborted-reload') reloads.set(finding.route, Math.max(reloads.get(finding.route) ?? 0, finding.count));
+  const laterPolish = reloads.size ? [{ item: 'deferred-loading iframe part (option A)', owners: ['designer', 'publisher'], rule: 'aborted-reload', reason: 'Streamed segments moved by React abort and reload their iframes; a deferred-loading iframe part would load each frame once.', pages: [...reloads].map(([route, reloadsPerPage]) => ({ route, reloads: reloadsPerPage })).sort((a, b) => b.reloads - a.reloads) }] : [];
+  const counts = {};
+  for (const finding of reports) counts[finding.rule] = (counts[finding.rule] ?? 0) + 1;
+  return { gates, reportCounts: counts, laterPolish, reports };
+}
 function screenshotName(route, variant, theme) {
   const digest = createHash('sha256').update(route).digest('hex').slice(0, 10);
   return `${route.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 100) || 'home'}-${digest}-${variant}-${theme}.png`;
 }
-async function settle(page, pending, timeout) {
+async function settle(page, ledger, timeout) {
   const deadline = Date.now() + timeout;
   let quietSince = Date.now();
   while (Date.now() < deadline) {
-    if (pending.size) quietSince = Date.now();
+    if (ledger.waiting().length) quietSince = Date.now();
     else if (Date.now() - quietSince >= 350) {
       await page.evaluate(async () => { await document.fonts.ready; await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); });
       return;
     }
     await page.waitForTimeout(50);
   }
-  throw new Error('Page resource requests did not settle before timeout');
+  throw new Error(`Page resource requests did not settle before timeout: ${ledger.waiting().slice(0, 3).map(entry => entry.url).join(', ')}`);
 }
 async function runStudioCheck(options = {}) {
   const origin = new URL(options.origin ?? studioOrigin({})).origin;
   const plan = options.plan ?? await discoverRoutePlan(options);
   const timeout = options.timeout ?? 15000;
+  const gates = options.gates ?? readGates(options.gatesFile);
   const screenshotRoot = path.resolve(options.screenshotRoot ?? DEFAULT_SCREENSHOTS);
   fs.mkdirSync(screenshotRoot, { recursive: true });
   const ownedBrowser = !options.browser;
@@ -310,7 +377,7 @@ async function runStudioCheck(options = {}) {
       const context = await browser.newContext({ viewport: variant.viewport, ...emulation, colorScheme: theme });
       try {
         for (const route of coverage.routes) {
-          const page = await context.newPage(), errors = [], pending = new Set();
+          const page = await context.newPage(), errors = [];
           const resource = initialResource(plan, route), observed = {};
           const initialClientRequest = request => resource && ['fetch', 'xhr'].includes(request.resourceType())
             && request.method() === 'GET' && new URL(request.url()).origin === origin && new URL(request.url()).pathname === resource.path;
@@ -320,10 +387,11 @@ async function runStudioCheck(options = {}) {
           page.on('console', message => { if (message.type() === 'error') errors.push({ rule: 'console-error', message: message.text() }); });
           page.on('pageerror', error => errors.push({ rule: 'page-error', message: error.message }));
           page.on('response', response => { if (response.status() >= 400) errors.push({ rule: 'http-error', status: response.status(), url: response.url() }); });
-          const tracked = request => !['eventsource', 'websocket'].includes(request.resourceType()) && !/\/api\/events(?:\?|$)/.test(request.url());
-          page.on('request', request => { if (tracked(request)) pending.add(request); });
-          page.on('requestfinished', request => pending.delete(request));
-          page.on('requestfailed', request => { pending.delete(request); errors.push({ rule: 'request-failed', url: request.url(), message: request.failure()?.errorText }); });
+          const ledger = requestLedger({ tracked: request => !['eventsource', 'websocket'].includes(request.resourceType()) && !/\/api\/events(?:\?|$)/.test(request.url()) });
+          page.on('request', request => ledger.request(request));
+          page.on('response', response => ledger.response(response));
+          page.on('requestfinished', request => ledger.finished(request));
+          page.on('requestfailed', request => ledger.failed(request));
           let audit = { findings: [] };
           try {
             // Native color-scheme consumers and common class/data consumers receive the same mode.
@@ -331,7 +399,7 @@ async function runStudioCheck(options = {}) {
             const response = await page.goto(origin + route, { waitUntil: 'load', timeout });
             if (response?.status() !== 200) errors.push({ rule: 'route-status', status: response?.status() ?? null });
             if (page.url() !== origin + (plan.landings?.[route] ?? route)) errors.push({ rule: 'unexpected-redirect', url: page.url() });
-            await settle(page, pending, timeout);
+            await settle(page, ledger, timeout);
             if (resource) {
               try {
                 const loaded = await checkInitialData(page, resource, observed, timeout);
@@ -345,10 +413,14 @@ async function runStudioCheck(options = {}) {
                 try {
                   const before = await page.evaluate(() => document.documentElement.dataset.theme);
                   const next = before === 'dark' ? 'light' : 'dark';
+                  // Each toggle re-themes live iframes (their src carries the theme). Settle after each one, as after
+                  // navigation, so the check never aborts the loads its own toggle started.
                   await toggle.click();
                   await page.waitForFunction(next => document.documentElement.dataset.theme === next && localStorage.getItem('theme') === next, next, { timeout });
+                  await settle(page, ledger, timeout);
                   await toggle.click();
                   await page.waitForFunction(before => document.documentElement.dataset.theme === before, before, { timeout });
+                  await settle(page, ledger, timeout);
                 } catch (error) { errors.push({ rule: 'hydration-interaction', message: error.message }); }
               }
             }
@@ -363,14 +435,15 @@ async function runStudioCheck(options = {}) {
           const screenshot = screenshotName(route, variant.name, theme);
           try { await page.screenshot({ path: path.join(screenshotRoot, screenshot), fullPage: true, timeout }); }
           catch (error) { errors.push({ rule: 'screenshot-error', message: error.message }); }
-          const result = { route, viewport: variant.name, theme, screenshot, findings: [...audit.findings, ...errors] };
+          const gated = applyGates([...audit.findings, ...errors, ...ledger.findings()], gates);
+          const result = { route, viewport: variant.name, theme, screenshot, findings: gated.findings, reports: gated.reports };
           checks.push(result);
           if (result.findings.length) failures.push(result);
           await page.close();
         }
       } finally { await context.close(); }
     }
-    const report = { check: 'studio:check', status: failures.length ? 'FAIL' : 'PASS', phase: 'render', executed: true, origin, templates: plan.templates, routes: coverage.routes, checks };
+    const report = { check: 'studio:check', status: failures.length ? 'FAIL' : 'PASS', phase: 'render', executed: true, origin, templates: plan.templates, routes: coverage.routes, ...gateReports(checks, gates), checks };
     fs.writeFileSync(path.join(screenshotRoot, 'report.json'), JSON.stringify(report, null, 2) + '\n');
     if (failures.length) {
       const error = new Error(`studio:check failed in ${failures.length}/${checks.length} route/theme/viewport checks: ${[...new Set(failures.flatMap(check => check.findings.map(finding => finding.rule)))].join(', ')}`);
@@ -428,5 +501,5 @@ function parseArgs(args) {
   }
   return options;
 }
-module.exports = { textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, inspectPage, screenshotName, checkStudio, checkCommand, servedCheck, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
+module.exports = { readGates, applyGates, requestLedger, settle, gateReports, REPORTABLE_RULES, textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, inspectPage, screenshotName, checkStudio, checkCommand, servedCheck, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
 if (require.main === module) Promise.resolve().then(() => servedCheck(parseArgs(process.argv.slice(2)))).then(({ exitCode, report }) => { console.log(JSON.stringify(report, null, 2)); process.exitCode = exitCode; }).catch(error => { const report = failureReport(error); console.error(JSON.stringify(report, null, 2)); process.exitCode = REPORT_EXIT_CODES[report.status] ?? 1; });
