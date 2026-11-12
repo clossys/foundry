@@ -164,6 +164,21 @@ it("NATIVE reads a pin carrying a pointer-only re-cite and refuses a malformed o
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid pin recite/);
 });
 
+it("NATIVE reads an owner-confirmed agent pick and refuses a malformed or misplaced confirmation", async () => {
+  const f = await fixture(), pin = join(dir(f.path, `publication.${f.map.publicationId}`), "pin.json");
+  const confirmed = { by: "owner", ref: "https://github.com/clossys/workspace/issues/46#issuecomment-1", at: "2026-11-12T00:00:00Z" };
+  await edit(pin, value => { value.decidedBy = "agent:publisher"; value.basis = "agent"; value.confirmed = confirmed; });
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+  for (const bad of [{ ...confirmed, by: "agent:publisher" }, { ...confirmed, ref: "" }, { ...confirmed, at: "yesterday" }, { by: "owner", ref: confirmed.ref }]) {
+    await edit(pin, value => { value.confirmed = bad; });
+    await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid pin confirmation/);
+  }
+  await edit(pin, value => { value.confirmed = { ...confirmed, extra: true }; });
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Unknown key extra/);
+  await edit(pin, value => { value.decidedBy = "migrated"; value.basis = "bulk"; value.confirmed = confirmed; });
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/only on an agent pick/);
+});
+
 it("NATIVE hash-verification mutation control refuses tampered selected bytes", async () => {
   const f = await fixture();
   await edit(candidatePath(f.path, "page.designer"), value => { value.title = "Tampered"; });

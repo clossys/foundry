@@ -102,7 +102,17 @@ function pinned(records: PinnedPublicationSource, index: Map<string, Position>, 
     || [...slot.inputs, ...slot.uses].some(ref => !SLOT_ID.test(ref))) fail(slotPath, "Invalid slot identity, kind or IA position");
   keys(slot.ia, ["l1", "l2", "order"], slotPath);
   const pinPath = `${dir}/pin.json`, pin = parse(present(records.record(id, "pin.json"), pinPath), pinPath);
-  keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at", "recited"], pinPath);
+  keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at", "confirmed", "recited"], pinPath);
+  // The owner's confirmation of an agent pick (`clossys pin --confirm --ref`), same shape as the slot model's
+  // PinConfirmation: {by: owner[:<ref>], ref, at}, and only on a basis agent pin.
+  if (pin.confirmed !== undefined) {
+    const confirmed = pin.confirmed;
+    if (pin.basis !== "agent") fail(pinPath, "confirmed is only on an agent pick (basis agent)");
+    if (!object(confirmed)) fail(pinPath, "Invalid pin confirmation");
+    keys(confirmed, ["by", "ref", "at"], pinPath);
+    if (typeof confirmed.by !== "string" || !/^owner(?::\S.*)?$/.test(confirmed.by) || !text(confirmed.ref)
+      || typeof confirmed.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(confirmed.at) || Number.isNaN(Date.parse(confirmed.at))) fail(pinPath, "Invalid pin confirmation");
+  }
   // A pointer-only re-cite (`clossys migrate recite`): the slot-model reader validates it and hands over the
   // candidate bytes with refs re-addressed; here it only has to be the {by, at, cites} record.
   if (pin.recited !== undefined && (!object(pin.recited) || !text(pin.recited.by) || !text(pin.recited.at) || !object(pin.recited.cites))) fail(pinPath, "Invalid pin recite");
