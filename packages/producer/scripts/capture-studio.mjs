@@ -365,15 +365,71 @@ export function withTimeout(promise, ms, message, onTimeout) {
  * Run one capture job with a hard deadline per attempt. A failed or stuck attempt is retried once
  * on a fresh page target; a second failure becomes a failed shot, never a hang.
  */
-export async function captureWithRetry(attempt, { deadlineMs, attempts = 2, abandon } = {}) {
+export async function captureWithRetry(attempt, { deadlineMs, attempts = 2, abandon, settle } = {}) {
   const errors = [];
   for (let n = 1; n <= attempts; n++) {
     const state = {};
     try {
-      return await withTimeout(Promise.resolve().then(() => attempt(state, n)), deadlineMs, `attempt ${n} did not finish within ${deadlineMs}ms`, () => abandon?.(state));
-    } catch (error) { errors.push(error.message); }
+      const result = await withTimeout(Promise.resolve().then(() => attempt(state, n)), deadlineMs, `attempt ${n} did not finish within ${deadlineMs}ms`, () => abandon?.(state));
+      settle?.(state);
+      return result;
+    } catch (error) { settle?.(state, error); errors.push(error.message); }
   }
   return { findings: [{ type: "readiness-timeout", detail: `capture failed ${attempts} times: ${errors.join("; ")}`.slice(0, 500) }], counts: { consoleErrors: 0, failedRequests: 0 } };
+}
+
+/** Shots one browser takes before it is replaced: Chromium's compositor wedges browser-wide after a few dozen full-page captures. */
+export const BROWSER_SHOTS = 40;
+
+/**
+ * Hands out leases on a browser and replaces it before it wears out. A browser is retired after
+ * `recycleEvery` leases, or at once when an attempt on it fails (a wedged compositor never
+ * recovers: every later screenshot on it times out). Later leases go to a fresh browser, launched
+ * once however many workers ask; a retired browser is closed when its last lease is released.
+ */
+export function createBrowserPool(launch, { recycleEvery = BROWSER_SHOTS } = {}) {
+  let current;
+  let launching;
+  const closing = [];
+  const retire = entry => {
+    if (entry.retired) return;
+    entry.retired = true;
+    if (current === entry) current = undefined;
+    if (entry.active === 0) entry.close();
+  };
+  const fresh = async () => {
+    if (current && !current.retired) return current;
+    launching ??= Promise.resolve().then(launch).then(value => {
+      const entry = { value, active: 0, leases: 0, retired: false, closed: false };
+      entry.close = () => { if (!entry.closed) { entry.closed = true; closing.push(Promise.resolve().then(() => value.browser.close()).catch(() => {})); } };
+      current = entry;
+      return entry;
+    }).finally(() => { launching = undefined; });
+    return launching;
+  };
+  return {
+    async acquire() {
+      const entry = await fresh();
+      entry.active++;
+      if (++entry.leases >= recycleEvery) retire(entry);
+      let released = false;
+      return {
+        ...entry.value,
+        release(error) {
+          if (released) return;
+          released = true;
+          entry.active--;
+          if (error) retire(entry);
+          else if (entry.retired && entry.active === 0) entry.close();
+        },
+      };
+    },
+    async close() {
+      await launching?.catch(() => {});
+      if (current) { current.retired = true; current.close(); current = undefined; }
+      await Promise.all(closing);
+    },
+  };
 }
 
 // ---------------------------------------------------------------- producer server
@@ -591,12 +647,16 @@ export async function run(args) {
   const serverLog = [];
   const producer = await startProducer({ port: args.port, root: args.root, log: line => serverLog.push(line) });
   const profile = await mkdtemp(join(tmpdir(), "capture-studio-"));
-  let browser;
-  const shots = [];
-  try {
-    browser = await launchBrowser(executable, profile);
+  let launches = 0;
+  const pool = createBrowserPool(async () => {
+    // A browser locks its profile until it has exited, so each one gets its own.
+    const browser = await launchBrowser(executable, join(profile, `browser-${++launches}`));
     const contexts = {};
     for (const theme of THEMES) contexts[theme] = (await browser.send("Target.createBrowserContext", { disposeOnDetach: false })).browserContextId;
+    return { browser, contexts };
+  });
+  const shots = [];
+  try {
     let next = 0;
     const worker = async () => {
       while (next < jobs.length) {
@@ -604,10 +664,15 @@ export async function run(args) {
         let result;
         const started = Date.now();
         // Each attempt has a hard deadline (readiness budget plus the shot itself); a stuck attempt's
-        // target is closed, the job retried once on a fresh target, and a second failure is a failed shot.
-        result = await captureWithRetry(state => captureShot(browser, contexts[job.theme], producer.origin, job, args.out, state), {
+        // target is closed and its browser retired, the job retried once on a fresh browser, and a
+        // second failure is a failed shot.
+        result = await captureWithRetry(async state => {
+          state.lease = await pool.acquire();
+          return captureShot(state.lease.browser, state.lease.contexts[job.theme], producer.origin, job, args.out, state);
+        }, {
           deadlineMs: job.timeoutMs + CDP_CALL_TIMEOUT_MS,
-          abandon: state => { if (state.targetId) browser.send("Target.closeTarget", { targetId: state.targetId }, undefined, { timeoutMs: 5000 }).catch(() => {}); },
+          abandon: state => { if (state.targetId) state.lease?.browser.send("Target.closeTarget", { targetId: state.targetId }, undefined, { timeoutMs: 5000 }).catch(() => {}); },
+          settle: (state, error) => state.lease?.release(error),
         });
         const shot = { route: job.route, kind: job.kind, label: job.label, width: job.width, theme: job.theme, file: job.file, consoleErrors: result.counts.consoleErrors, failedRequests: result.counts.failedRequests, overflow: result.overflow ?? null, durationMs: Date.now() - started, findings: result.findings };
         if (args.baseline && result.png) {
@@ -624,7 +689,7 @@ export async function run(args) {
     };
     await Promise.all(Array.from({ length: Math.min(args.concurrency, jobs.length) }, worker));
   } finally {
-    await browser?.close();
+    await pool.close();
     await producer.stop();
     await writeFile(join(args.out, "producer.log"), serverLog.join(""));
   }

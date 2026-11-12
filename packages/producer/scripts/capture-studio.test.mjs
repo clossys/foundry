@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { deflateSync } from "node:zlib";
 import { JSDOM } from "jsdom";
-import { DEFAULT_MAP, FAILING, captureWithRetry, contactSheet, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, severityOf } from "./capture-studio.mjs";
+import { DEFAULT_MAP, FAILING, captureWithRetry, contactSheet, createBrowserPool, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, severityOf } from "./capture-studio.mjs";
 
 const FIXTURE = `<!doctype html><html><head><title>Studio</title></head><body>
 <h1>Market size</h1>
@@ -192,4 +192,51 @@ test("a capture attempt that fails once and then succeeds keeps the second resul
   const result = await captureWithRetry(async () => { if (++calls === 1) throw new Error("Target closed"); return { findings: [], counts: { consoleErrors: 0, failedRequests: 0 } }; }, { deadlineMs: 1000 });
   assert.equal(calls, 2);
   assert.deepEqual(result.findings, []);
+});
+
+const fakeLauncher = () => {
+  const browsers = [];
+  const launch = async () => {
+    const browser = { name: `b${browsers.length + 1}`, closed: false, close: async () => { browser.closed = true; } };
+    browsers.push(browser);
+    return { browser, contexts: {} };
+  };
+  return { browsers, launch };
+};
+const tick = () => new Promise(done => setImmediate(done));
+
+test("the browser pool replaces a browser after its shot budget and closes it once its last lease is released", async () => {
+  const { browsers, launch } = fakeLauncher();
+  const pool = createBrowserPool(launch, { recycleEvery: 2 });
+  const [a, b] = await Promise.all([pool.acquire(), pool.acquire()]);
+  assert.equal(browsers.length, 1, "concurrent first leases share one launch");
+  const c = await pool.acquire();
+  assert.equal(c.browser.name, "b2", "the third shot goes to a fresh browser");
+  a.release(); await tick();
+  assert.equal(browsers[0].closed, false, "an in-use browser is never closed under a worker");
+  b.release(); await tick();
+  assert.equal(browsers[0].closed, true);
+  c.release();
+  await pool.close();
+  assert.equal(browsers[1].closed, true);
+});
+
+test("a stuck attempt retires its wedged browser and the retry runs on a fresh one", async () => {
+  const { browsers, launch } = fakeLauncher();
+  const pool = createBrowserPool(launch, { recycleEvery: 100 });
+  const socket = silentSocket();
+  const client = createCdpClient(socket, { callTimeoutMs: 60_000 });
+  const used = [];
+  // The first browser never answers its screenshot, like the wedged compositor; the second does.
+  const result = await within(captureWithRetry(async state => {
+    state.lease = await pool.acquire();
+    used.push(state.lease.browser.name);
+    if (state.lease.browser.name === "b1") return client.send("Page.captureScreenshot", {}, "s1");
+    return { findings: [], counts: { consoleErrors: 0, failedRequests: 0 } };
+  }, { deadlineMs: 50, settle: (state, error) => state.lease?.release(error) }), 2000);
+  assert.deepEqual(used, ["b1", "b2"]);
+  assert.deepEqual(result.findings, []);
+  await tick();
+  assert.equal(browsers[0].closed, true, "the wedged browser is closed");
+  await pool.close();
 });
