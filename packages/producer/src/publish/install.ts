@@ -25,6 +25,7 @@ import {
   type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins, type InstallResult, type PageHostSelection, type ShadcnRunner,
 } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
+import { isHostPackage } from "../specimen/host-packages.js";
 import { dependencyPart, treeDependencyParts } from "../server/specimen-tree.js";
 import { hasSlotModel, readCandidate, readIa, readPin, readSlot } from "../records/slots.js";
 import { slotPositions, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
@@ -343,14 +344,19 @@ async function importedPackages(substrate: string): Promise<string[]> {
   return [...found].sort();
 }
 
-/** Union every item's npm dependencies, and every package an installed file imports, into the substrate package.json; run `npm install` when any declared package is missing. */
+/**
+ * Union every item's npm dependencies, and every package an installed file imports, into the substrate package.json; run `npm install` when any declared package is missing.
+ * Host packages (`@clossys/*`, host-packages.ts) are not on the npm registry: none is declared, and one an
+ * earlier scan declared as `latest` is dropped, since it made every later `npm install` there fail (404).
+ */
 export async function ensureSubstrateDependencies(substrate: string, items: Record<string, string>, npm: ShadcnRunner): Promise<InstallFinding | undefined> {
   const file = join(substrate, "package.json");
   const manifest = JSON.parse(await readFile(file, "utf8"));
-  let wanted = items;
+  let wanted = Object.fromEntries(Object.entries(items).filter(([name]) => !isHostPackage(name)));
   const dependencies: Record<string, string> = { ...manifest.dependencies };
-  for (const name of await importedPackages(substrate)) if (!Object.hasOwn(wanted, name)) wanted = { ...wanted, [name]: "latest" };
   let changed = false;
+  for (const [name, range] of Object.entries(dependencies)) if (isHostPackage(name) && range === "latest") { delete dependencies[name]; changed = true; }
+  for (const name of await importedPackages(substrate)) if (!isHostPackage(name) && !Object.hasOwn(wanted, name)) wanted = { ...wanted, [name]: "latest" };
   for (const [name, range] of Object.entries(wanted)) if (!Object.hasOwn(dependencies, name) && !Object.hasOwn(manifest.devDependencies ?? {}, name)) { dependencies[name] = range; changed = true; }
   if (changed) await writeFile(file, `${JSON.stringify({ ...manifest, dependencies: Object.fromEntries(Object.entries(dependencies).sort(([a], [b]) => a.localeCompare(b))) }, null, 2)}\n`);
   const declared = [...Object.keys(dependencies), ...Object.keys(manifest.devDependencies ?? {})];

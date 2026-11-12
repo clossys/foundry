@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type { InstallPins } from "@clossys/publisher/install";
 import { hasPinFile, hasSlotModel, listSlots, readCandidate, readSlot } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { hostPackageImports } from "./host-packages.js";
 
 /** One recorded candidate of a slot, by element and version (its file is `<element>-v<version>.json`). */
 export interface SlotOption { readonly element: string; readonly version: number }
@@ -14,6 +15,11 @@ export interface SlotInstallInputs {
    */
   readonly options: ReadonlyMap<string, readonly SlotOption[]>;
   readonly unpinned: InstallPins;
+  /**
+   * `<slot>/<element>@v<version>` -> the host packages that candidate's code imports (see
+   * host-packages.ts): the substrate cannot build it, so the specimen route never waits on a build for it.
+   */
+  readonly hostOnly: ReadonlyMap<string, readonly string[]>;
   /** Includes actual valid candidate bytes, not just names or declared pin hashes. */
   readonly fingerprint: string;
 }
@@ -24,6 +30,7 @@ export function slotInstallInputs(consumer: string): SlotInstallInputs | undefin
   if (!hasSlotModel(consumer)) return undefined;
   const pins: MutablePins = {}, unpinned: MutablePins = {};
   const options = new Map<string, SlotOption[]>();
+  const hostOnly = new Map<string, readonly string[]>();
   const evidence: unknown[] = [];
   for (const entry of listSlots(consumer, "designer")) {
     const fail = (reason: string): never => { throw new Error(`Specimen slot ${entry.id}: ${reason}`); };
@@ -51,6 +58,8 @@ export function slotInstallInputs(consumer: string): SlotInstallInputs | undefin
         || (item.meta?.element?.id !== undefined && item.meta.element.id !== element)
         || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== entry.id)) continue;
       valid.set(name, { element, version, sha256: candidate.sha256 });
+      const host = hostPackageImports(item);
+      if (host.length) hostOnly.set(`${entry.id}/${element}@v${version}`, host);
     }
     evidence.push([entry.id, doc, entry.pin, [...valid]]);
     if (entry.pin) {
@@ -69,5 +78,5 @@ export function slotInstallInputs(consumer: string): SlotInstallInputs | undefin
       }
     }
   }
-  return { pins, options, unpinned, fingerprint: fingerprint(evidence) };
+  return { pins, options, unpinned, hostOnly, fingerprint: fingerprint(evidence) };
 }

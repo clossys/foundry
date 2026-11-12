@@ -41,6 +41,12 @@ describe("installed specimen input projection", () => {
     expect(repinned.options.get("components.card")).toHaveLength(3);
   });
 
+  it("marks candidates whose code imports a host package as host-only, keyed by slot, element and version", () => {
+    candidate("card", 3, "components.card", 'import { Badge } from "@clossys/designer-ui/badge";\nimport x from "react";\nexport default function Card() { return Badge; }');
+    const inputs = slotInstallInputs(root)!;
+    expect([...inputs.hostOnly]).toEqual([["components.card/card@v3", ["@clossys/designer-ui"]]]);
+  });
+
   it("fingerprints actual candidate bytes stably even when versions do not change", () => {
     const first = slotInstallInputs(root)!;
     expect(slotInstallInputs(root)!.fingerprint).toBe(first.fingerprint);
