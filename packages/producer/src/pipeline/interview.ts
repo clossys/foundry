@@ -301,6 +301,7 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     }
   }
   const requested = new Set<string>();
+  const waiting = new Map<string, number>();
   for (const row of cited.values()) {
     const upstream = index.get(row.cell)!;
     const target = `${row.to}/${row.cell}`;
@@ -308,7 +309,10 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     if (upstream.state.state === "not-needed") { code = "request.input-not-needed"; why = `is not needed (${upstream.state.notNeeded.reason})`; }
     else if (!upstream.candidates.length) {
       // Only a drafted slot asks: an undrafted one waits on the upstream draft in chain order, which is no request.
-      row.need = row.need.filter(item => (index.get(slotOf(item))?.candidates.length ?? 0) > 0);
+      const drafted = row.need.filter(item => (index.get(slotOf(item))?.candidates.length ?? 0) > 0);
+      const pair = `${row.from}>${row.to}`;
+      if (drafted.length < row.need.length) waiting.set(pair, (waiting.get(pair) ?? 0) + row.need.length - drafted.length);
+      row.need = drafted;
       if (row.need.length) { code = "request.input-no-candidates"; why = "has no candidates"; }
     }
     else if (!upstream.pin) { code = "request.input-unpinned"; why = `has ${plural(upstream.candidates.length, "candidate")} and no pin`; }
@@ -362,7 +366,10 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   for (const [pair, count] of [...citations].sort()) {
     if (requested.has(pair)) continue;
     const [from, to] = pair.split(">") as [string, string];
-    notes.push(`no ${from} request to the ${to}: every one of the ${plural(count, "citation")} of ${to} slots in ${from} slot inputs is pinned${to === "director" ? ", free of TODO-OWNER lines and clear of blocking Director checks" : ""}, and none is not-needed`);
+    const waits = waiting.get(pair) ?? 0;
+    notes.push(waits
+      ? `no ${from} request to the ${to}: ${plural(waits, "citation")} of the ${count} name ${to} slots with no candidates yet, from ${from} slots not drafted either (chain order, not a request)`
+      : `no ${from} request to the ${to}: every one of the ${plural(count, "citation")} of ${to} slots in ${from} slot inputs is pinned${to === "director" ? ", free of TODO-OWNER lines and clear of blocking Director checks" : ""}, and none is not-needed`);
   }
   if (copy && !requested.has("publisher>writer")) notes.push(`no publisher request to the writer: all ${plural(keysChecked, "Writer key")} the pinned Publisher records name are held by the pinned Writer copy`);
   if (director.model && !(director.model.requests ?? []).some(request => request.status === "open" || request.status === "drafted")) notes.push("no open Director request record (agents/director requests)");

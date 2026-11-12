@@ -306,6 +306,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
     const pins = gapsOf(root).gaps.filter(gap => gap.code.startsWith("open.pin.") || gap.code === "open.writer.approve");
     expect(pins.length).toBeGreaterThan(400);
     for (const gap of pins) expect(gap.decider, gap.item).toBe("agent");
+    expect(gapsOf(root, { agent: "director" }).notes.filter(note => note.startsWith("no designer request")).join("\n")).toContain("not drafted either");
     // clossys pipeline check holds this workspace's questions to owner.argv and owner.policy.
     const check = await runPipeline(["pipeline", "check", ...at], root);
     expect((check.output as { asked: string[] }).asked, check.message).toEqual([]);
