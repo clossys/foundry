@@ -49,7 +49,7 @@ import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
 import { staleCitations } from "../records/stale-citations.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
-import { agentOfItem, candidatesOf, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, skillLine, skillOf, verbOf } from "./chain.js";
+import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, skillLine, skillOf, verbOf } from "./chain.js";
 import type { Context, InterviewAgent, Packet } from "./chain.js";
 import { ladderIssues } from "./candidate-ladder.js";
 import { isDecide } from "./define.js";
@@ -270,8 +270,11 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     const broken = readiness(consumer, agent, entry.id, index).blockedBy.filter(block => ["invalid-pin", "missing-candidate", "hash-drift", "invalid-candidate", "invalid-slot"].includes(block.reason));
     if (broken.length) gaps.push({ kind: "wiring", code: "citation.broken", agent, item: `${agent}/${entry.id}`, step: `${agent}.candidates`, decider: "agent", message: `inputs whose pin no longer clears: ${listed(broken.map(block => `${block.slot} (${block.reason})`))}` });
   }
+  // A plumb step whose chain command is a skip (`clossys run` shows it skipped and never runs it) raises
+  // no chain drift: "clossys run re-runs it" would be false. explain still shows its last record.
+  const chained = new Set(steps.filter(step => !isDecide(step) && !("skip" in chainCommand(step, root, packageRoot))).map(step => step.id));
   for (const row of explainChain(root, { steps, packageRoot }).rows) {
-    if (row.kind !== "plumb" || (row.last !== "failed" && row.last !== "stale")) continue;
+    if (row.kind !== "plumb" || !chained.has(row.step) || (row.last !== "failed" && row.last !== "stale")) continue;
     gaps.push({ kind: "wiring", code: `chain.${row.last}`, agent: isAgent(row.agent) ? row.agent : "producer", item: row.step, step: row.step, decider: "agent", message: `plumb step ${row.step}'s latest run ${row.last === "failed" ? "failed" : "is stale (an input changed since)"}; clossys run re-runs it` });
   }
   // A recorded candidate whose selection-ladder record does not hold (a created one with no reason no seed fit).

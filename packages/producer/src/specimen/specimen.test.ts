@@ -50,10 +50,13 @@ describe("health contract", () => {
 
 describe("clossys specimen", () => {
   it("prints usage and refuses missing inputs", async () => {
-    expect(await runCli(["specimen", "--help"])).toMatchObject({ exitCode: 0 });
-    expect(await runCli(["specimen", "snapshot", "--element", "x"])).toMatchObject({ exitCode: 2 });
-    expect(await runCli(["specimen", "snapshot", "--records", records, "--width", "50"])).toMatchObject({ exitCode: 2 });
-    expect(await runCli(["specimen", "snapshot", "--records", records, "--element", "nope", "--cache", join(tmpdir(), "unused-specimen-cache")])).toMatchObject({ exitCode: 1, message: "element nope not found" });
+    // A scratch cwd with no workspace above it: these refused runs must not land in the real run store.
+    const cwd = await mkdtemp(join(tmpdir(), "producer-specimen-cli-"));
+    temps.push(cwd);
+    expect(await runCli(["specimen", "--help"], cwd)).toMatchObject({ exitCode: 0 });
+    expect(await runCli(["specimen", "snapshot", "--element", "x"], cwd)).toMatchObject({ exitCode: 2 });
+    expect(await runCli(["specimen", "snapshot", "--records", records, "--width", "50"], cwd)).toMatchObject({ exitCode: 2 });
+    expect(await runCli(["specimen", "snapshot", "--records", records, "--element", "nope", "--cache", join(cwd, "unused-specimen-cache")], cwd)).toMatchObject({ exitCode: 1, message: "element nope not found" });
   });
 });
 

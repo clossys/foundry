@@ -128,6 +128,18 @@ describe("clossys run", { timeout: 60_000 }, () => {
     expect(gapsOf(root, { steps }).gaps.filter(gap => gap.code.startsWith("chain.")).map(gap => gap.item)).toEqual(["fx.a"]);
   });
 
+  it("raises no chain gap for a plumb step the chain skips, though explain shows its failed record", () => {
+    const root = workspace();
+    const skipped = { ...plumb("s"), chain: { skip: "fixture: run by hand" } } as Step;
+    const steps = [skipped];
+    appendRecord(root, buildRecord({ root, step: "fx.s", invocation: "check --s", argv: ["check", "--s"], start: new Date(), end: new Date(), exit: 1, observation: { reads: new Map(), writes: new Set() } }));
+    expect(runChain(root, { steps, exec: fixtureExec(root), dry: true }).rows.map(row => row.state)).toEqual(["skipped"]);
+    expect(explainChain(root, { steps }).rows).toMatchObject([{ step: "fx.s", last: "failed" }]);
+    expect(gapsOf(root, { steps }).gaps.filter(gap => gap.code.startsWith("chain."))).toEqual([]);
+    // Mutation: the same failed record on a step the chain runs is a chain.failed gap.
+    expect(gapsOf(root, { steps: [plumb("s")] }).gaps.filter(gap => gap.code.startsWith("chain.")).map(gap => gap.code)).toEqual(["chain.failed"]);
+  });
+
   it("stops cleanly, never red, at a plumb step whose first input matches no file", () => {
     const root = workspace();
     writeFileSync(join(root, INPUT), "one\n");
