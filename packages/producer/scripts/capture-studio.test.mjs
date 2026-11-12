@@ -1,9 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { deflateSync } from "node:zlib";
 import { JSDOM } from "jsdom";
-import { DEFAULT_MAP, FAILING, GATES_FILE, blocks, readGates, captureWithRetry, contactSheet, createBrowserPool, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, severityOf } from "./capture-studio.mjs";
+import { DEFAULT_MAP, FAILING, GATES_FILE, THEMES, WIDTHS, blocks, defaultServers, orderShots, planShards, runShards, shardTmpdir, summarize, readGates, seedShard, specimenCache, captureWithRetry, contactSheet, createBrowserPool, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, severityOf } from "./capture-studio.mjs";
 
 const FIXTURE = `<!doctype html><html><head><title>Studio</title></head><body>
 <h1>Market size</h1>
@@ -282,4 +285,96 @@ test("a gate on a wiring type, a duplicate, a bad mode or a missing reason fails
   assert.throws(() => readGates(config([{ type: "overflow", mode: "skip", reason: "x" }])), /block or report/);
   assert.throws(() => readGates(config([{ type: "overflow", mode: "report", reason: " " }])), /needs a reason/);
   assert.throws(() => readGates(JSON.stringify({ schema: "other", gates: [] })), /schema/);
+});
+
+// ---------------------------------------------------------------- shards
+
+const SHARD_ROUTES = enumerateRoutes({ routes: ["/", "/designer", "/writer", "/designer/themes", "/publisher"].map(path => ({ path, label: path })),
+  leaves: ["a.one", "b.two", "c.three", "d.four", "e.five", "f.six", "g.seven"].map(slug => ({ path: `/designer/themes/${slug}`, title: slug, page: "designer-themes", slug })) });
+const shardJobs = () => SHARD_ROUTES.flatMap(route => THEMES.flatMap(theme => WIDTHS.map(width => ({ ...route, route: route.path, width, theme, file: `shots/${route.path}-${width}-${theme}.png` }))));
+/** A deterministic fake shot: findings depend only on the job, never on which server took it or when. */
+function fakeShot(job) {
+  const n = [...`${job.route}${job.width}${job.theme}`].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  const findings = [];
+  if (n % 5 === 0) findings.push({ type: "overflow", detail: "scrollWidth 400 > clientWidth 375" });
+  if (n % 7 === 0) findings.push({ type: "console-error", detail: `boom ${job.route}` });
+  if (n % 11 === 0) findings.push({ type: "id-label", detail: "h2 shows a.b" });
+  return { route: job.route, kind: job.kind, label: job.label, width: job.width, theme: job.theme, file: job.file, consoleErrors: 0, failedRequests: 0, overflow: null, findings, severity: severityOf(findings) };
+}
+const GATES = { "id-label": { mode: "report", reason: "wording" }, overflow: { mode: "report", reason: "visual" } };
+const pause = ms => new Promise(next => setTimeout(next, ms));
+
+test("a capture sharded over K servers reports exactly what the serial capture reports, in the same order", async () => {
+  const serial = summarize(await runShards(planShards(shardJobs(), 1), { concurrency: 1, capture: async job => fakeShot(job) }), { gates: GATES, routes: SHARD_ROUTES });
+  // The serial report is worst first, then route, width, theme.
+  assert.deepEqual(serial.shots.map(shot => [shot.severity, shot.route, shot.width, shot.theme]), orderShots(serial.shots).map(shot => [shot.severity, shot.route, shot.width, shot.theme]));
+  assert.ok(serial.exitCode === 1 && serial.failingShots > 0 && serial.reportsByType.overflow > 0, "the fixture has failing and reported shots");
+  for (const servers of [2, 3, 5]) {
+    let seed = servers;
+    // Out-of-order completion: every shot waits a pseudo-random time, so shards finish interleaved.
+    const merged = summarize(await runShards(planShards(shardJobs(), servers), { concurrency: 4, capture: async job => { seed = (seed * 1103515245 + 12345) % 2 ** 31; await pause(seed % 7); return fakeShot(job); } }), { gates: GATES, routes: SHARD_ROUTES });
+    assert.deepEqual(merged, serial, `${servers} servers`);
+  }
+});
+
+test("the shard pool never runs more shots at once than --concurrency, keeps a route on one server and captures each shot once", async () => {
+  for (const [servers, concurrency] of [[1, 4], [3, 4], [3, 1], [4, 2]]) {
+    const inflight = Array(servers).fill(0);
+    let total = 0, peakTotal = 0;
+    const serverOf = new Map();
+    const shots = await runShards(planShards(shardJobs(), servers), { concurrency, capture: async (job, server) => {
+      inflight[server]++; total++;
+      peakTotal = Math.max(peakTotal, total);
+      assert.ok(total <= concurrency, `${total} shots in flight > ${concurrency}`);
+      assert.equal(serverOf.get(job.route) ?? server, server, `${job.route} stays on one server`);
+      serverOf.set(job.route, server);
+      await pause(1 + (job.width % 3));
+      inflight[server]--; total--;
+      return fakeShot(job);
+    } });
+    assert.equal(peakTotal, concurrency, "the bound is reached, not just respected");
+    assert.equal(shots.length, shardJobs().length);
+    assert.equal(new Set(shots.map(shot => shot.file)).size, shots.length);
+    assert.equal(new Set(serverOf.values()).size, Math.min(servers, concurrency), "every server a worker can reach takes routes");
+  }
+});
+
+test("planShards deals whole routes in contiguous runs; an idle server steals a whole route", async () => {
+  const queues = planShards(shardJobs(), 3);
+  assert.equal(queues.length, 3);
+  assert.deepEqual(queues.flat().map(group => group[0].route), SHARD_ROUTES.map(route => route.path));
+  for (const group of queues.flat()) assert.ok(group.length === 6 && group.every(job => job.route === group[0].route));
+  // Server 1's queue is empty: it takes route groups from the back of the others instead of idling.
+  const lopsided = [planShards(shardJobs(), 1)[0], []];
+  const ran = new Map();
+  await runShards(lopsided, { concurrency: 2, capture: async (job, server) => { await pause(1); ran.set(job.route, server); return fakeShot(job); } });
+  assert.ok([...ran.values()].includes(1));
+});
+
+test("--servers and CAPTURE_STUDIO_SERVERS pick the server count; the default leaves cores for browsers and builds", () => {
+  assert.equal(parseArgs(["--out", "/tmp/x", "--servers", "2"]).servers, 2);
+  assert.equal(parseArgs(["--out", "/tmp/x"], { CAPTURE_STUDIO_SERVERS: "1" }).servers, 1);
+  assert.throws(() => parseArgs(["--out", "/tmp/x", "--servers", "0"]), /--servers/);
+  assert.throws(() => parseArgs(["--out", "/tmp/x", "--port", "65535", "--servers", "2"]), /--port/);
+  assert.deepEqual([2, 4, 6, 8, 16].map(cpus => defaultServers(cpus)), [1, 1, 2, 3, 3]);
+  assert.equal(shardTmpdir(0, "/t"), undefined, "the first server shares the serial run's specimen cache");
+  assert.equal(shardTmpdir(2, "/t"), "/t/shard-2");
+});
+
+test("a shard starts from the serial run's specimen cache, never cold", async () => {
+  const { specimenSubstrate } = await import("../dist/server/specimen-substrate.js");
+  assert.equal(specimenCache("/some/root"), dirname(specimenSubstrate("/some/root")), "the cache the producer reads for that root");
+  const base = mkdtempSync(join(tmpdir(), "seed-shard-"));
+  const source = join(base, "serial"), target = join(base, "run", "shard-1", "cache");
+  assert.equal(seedShard(source, target), false, "a cold cache seeds nothing");
+  assert.equal(existsSync(target), false);
+  mkdirSync(join(source, "substrate", "node_modules", "font"), { recursive: true });
+  writeFileSync(join(source, "substrate", "node_modules", "font", "index.css"), "a");
+  mkdirSync(join(source, "dist-k1"));
+  writeFileSync(join(source, "dist-k1", "index.html"), "<p>");
+  writeFileSync(join(source, "site-k1.json"), "{}");
+  assert.equal(seedShard(source, target), true);
+  const tree = dir => readdirSync(dir, { recursive: true }).sort();
+  assert.deepEqual(tree(target), tree(source));
+  assert.equal(readFileSync(join(target, "substrate", "node_modules", "font", "index.css"), "utf8"), "a");
 });

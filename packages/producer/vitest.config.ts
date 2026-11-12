@@ -8,7 +8,8 @@ export default defineConfig({
     environment: "node",
     globalSetup: ["../../scripts/lib/vitest-build-package.mjs"],
     // Temp roots resolve symlinks so the symlinked-ancestor refusal stays strict (macOS /var).
-    setupFiles: ["../../scripts/lib/vitest-realpath-tmpdir.mjs"],
+    // The reaper fails a test file that leaves a Studio child fixture running, and kills it.
+    setupFiles: ["../../scripts/lib/vitest-realpath-tmpdir.mjs", "./src/server/__fixtures__/studio-child-reaper.ts"],
     include: ["src/**/*.test.ts"],
     testTimeout: 5_000,
     globals: false,

@@ -3,12 +3,15 @@
 // generated Studio map publishes at 375/768/1280 in light and dark, record mechanical findings
 // per shot, and exit 1 when any failing finding exists. A browser is never downloaded: the run
 // uses an already-installed Chromium/Chrome and reports BLOCKED (exit 2) when none exists.
+// --servers K (or CAPTURE_STUDIO_SERVERS; default min(3, (cpus-2)/2)) shards routes across K producers
+// sharing --concurrency shots in flight; the report and exit code equal the serial run's.
 
-import { spawn } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
-import { homedir, tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { availableParallelism, homedir, tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { inflateSync } from "node:zlib";
 
@@ -492,11 +495,11 @@ export function createBrowserPool(launch, { recycleEvery = BROWSER_SHOTS } = {})
 
 // ---------------------------------------------------------------- producer server
 
-async function startProducer({ port, root, log }) {
+async function startProducer({ port, root, log, env = {} }) {
   const cli = join(producerDir, "dist/cli/index.js");
   if (!existsSync(cli)) throw Object.assign(new Error("producer is not built: dist/cli/index.js is missing"), { env: true });
   if (!existsSync(join(producerDir, "dist/studio/manifest.json"))) throw Object.assign(new Error("Studio is not built: dist/studio/manifest.json is missing"), { env: true });
-  const child = spawn(process.execPath, [cli, "produce", "--port", String(port), "--no-open", "--root", root], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env } });
+  const child = spawn(process.execPath, [cli, "produce", "--port", String(port), "--no-open", "--root", root], { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, ...env } });
   const output = [];
   child.stdout.on("data", chunk => { output.push(String(chunk)); log?.(String(chunk)); });
   child.stderr.on("data", chunk => { output.push(String(chunk)); log?.(String(chunk)); });
@@ -638,6 +641,123 @@ async function captureShot(browser, contextId, origin, job, outDir, state = {}) 
   }
 }
 
+// ---------------------------------------------------------------- shards: K Studio servers, one queue
+
+/**
+ * Default Studio server count. One `clossys produce` serves requests on one thread (specimen
+ * installs, record reads, Studio API answers), so a full capture is bound by that one core; K
+ * servers over the same tree each take a share of the routes. Bounded so the browsers, Next
+ * children and specimen builds the servers start still have cores left.
+ */
+export function defaultServers(cpus = availableParallelism()) {
+  return Math.max(1, Math.min(3, Math.floor((cpus - 2) / 2)));
+}
+
+/** The specimen cache `clossys produce --root <root>` uses under `base` (src/server/specimen-substrate.ts). */
+export function specimenCache(root, base = tmpdir()) {
+  return join(base, "clossys-studio-specimens", createHash("sha256").update(root).update("\0").digest("hex").slice(0, 12));
+}
+
+/**
+ * Where shard `index` builds its specimens (its TMPDIR) inside this run's shard directory. Shard 0
+ * uses the process's own TMPDIR, the cache a serial run and `clossys produce` share; every other
+ * shard gets its own, so two servers never build into one substrate at once.
+ */
+export function shardTmpdir(index, runDir) {
+  return index === 0 ? undefined : join(runDir, `shard-${index}`);
+}
+
+/**
+ * Give a shard the serial run's specimen cache as it stands: the substrate (its installed font
+ * packages decide the page CSS) and every saved build manifest, cloned copy-on-write where the
+ * filesystem allows. A shard that starts cold renders different specimens than the serial run (and
+ * builds them under K-fold load), so a shard is only ever seeded from a warm cache.
+ */
+export function seedShard(source, target, copy = cloneTree) {
+  if (!existsSync(join(source, "substrate"))) return false;
+  mkdirSync(dirname(target), { recursive: true });
+  copy(source, target);
+  return true;
+}
+
+function cloneTree(source, target) {
+  const clone = process.platform === "darwin" ? ["-cR", source, target] : ["-R", "--reflink=auto", source, target];
+  if (spawnSync("cp", clone, { stdio: "ignore" }).status !== 0) cpSync(source, target, { recursive: true, verbatimSymlinks: true });
+}
+
+/**
+ * Split the job list into per-route groups (every shot of a route stays on one server, so a
+ * candidate's specimen builds once) and deal them to `servers` queues in contiguous, balanced runs.
+ */
+export function planShards(jobs, servers) {
+  const groups = [];
+  for (const job of jobs) {
+    const last = groups.at(-1);
+    if (last && last[0].route === job.route) last.push(job); else groups.push([job]);
+  }
+  const queues = Array.from({ length: Math.max(1, servers) }, () => []);
+  groups.forEach((group, index) => queues[Math.floor(index * queues.length / groups.length)].push(group));
+  return queues;
+}
+
+/**
+ * Run every job with `concurrency` shots in flight in all, the serial run's browser load: sharding
+ * adds Studio servers (the producer is the single-threaded bottleneck), not concurrent pages. Each
+ * free worker serves the server with the fewest shots in flight that still has work: the rest of
+ * its current route group, else its own queue's next group, else the last whole group of the
+ * longest other queue. `capture(job, server)` returns the shot; results come back in completion
+ * order (see orderShots).
+ */
+export async function runShards(queues, { concurrency, capture }) {
+  const shots = [];
+  const current = queues.map(() => []);
+  const inflight = queues.map(() => 0);
+  const refill = server => {
+    const own = queues[server].shift();
+    if (own) return (current[server] = [...own]).length > 0;
+    const donor = queues.reduce((best, queue, index) => index !== server && queue.length > (queues[best]?.length ?? 0) ? index : best, -1);
+    const stolen = donor >= 0 ? queues[donor].pop() : undefined;
+    return stolen ? (current[server] = [...stolen]).length > 0 : false;
+  };
+  const next = () => {
+    const order = queues.map((_, index) => index).sort((a, b) => inflight[a] - inflight[b] || a - b);
+    for (const server of order) if (current[server].length || refill(server)) return { server, job: current[server].shift() };
+    return undefined;
+  };
+  const worker = async () => {
+    for (let task = next(); task; task = next()) {
+      inflight[task.server]++;
+      try { shots.push(await capture(task.job, task.server)); } finally { inflight[task.server]--; }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.max(1, concurrency) }, worker));
+  return shots;
+}
+
+/** The report order: worst shot first, then route, width and theme (a total order: one shot per route, width and theme). */
+export const orderShots = shots => [...shots].sort((a, b) => b.severity - a.severity || a.route.localeCompare(b.route) || a.width - b.width || a.theme.localeCompare(b.theme));
+
+/** The run's summary over its shots, whatever order or server they were captured in. */
+export function summarize(captured, { gates, routes }) {
+  const shots = orderShots(captured);
+  const findingsByType = {};
+  for (const shot of shots) for (const finding of shot.findings) findingsByType[finding.type] = (findingsByType[finding.type] ?? 0) + 1;
+  const failing = shots.filter(shot => shot.findings.some(finding => blocks(finding, gates)));
+  const reportsByType = {};
+  for (const shot of shots) for (const finding of shot.findings) if (FAILING.includes(finding.type) && !blocks(finding, gates)) reportsByType[finding.type] = (reportsByType[finding.type] ?? 0) + 1;
+  return {
+    routeCount: routes.length,
+    pageRoutes: routes.filter(route => route.kind === "page").length,
+    leafRoutes: routes.filter(route => route.kind === "leaf").length,
+    shotCount: shots.length,
+    failingShots: failing.length,
+    reportsByType,
+    findingsByType,
+    exitCode: failing.length ? 1 : 0,
+    shots,
+  };
+}
+
 // ---------------------------------------------------------------- contact sheet
 
 const escapeHtml = value => String(value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
@@ -665,8 +785,8 @@ figcaption{margin-top:4px;color:var(--muted)}ul{margin:4px 0 0;padding-left:16px
 
 // ---------------------------------------------------------------- run
 
-export function parseArgs(argv) {
-  const args = { port: DEFAULT_PORT, map: DEFAULT_MAP, root: repoRoot, concurrency: 4, timeoutMs: 60_000, routes: undefined, scope: "all" };
+export function parseArgs(argv, env = process.env) {
+  const args = { port: DEFAULT_PORT, map: DEFAULT_MAP, root: repoRoot, concurrency: 4, servers: env.CAPTURE_STUDIO_SERVERS ? Number(env.CAPTURE_STUDIO_SERVERS) : defaultServers(), timeoutMs: 60_000, routes: undefined, scope: "all" };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     const value = () => { const next = argv[++i]; if (next === undefined) throw new Error(`${flag} needs a value`); return next; };
@@ -676,6 +796,7 @@ export function parseArgs(argv) {
     else if (flag === "--map") args.map = resolve(value());
     else if (flag === "--root") args.root = resolve(value());
     else if (flag === "--concurrency") args.concurrency = Math.max(1, Number(value()));
+    else if (flag === "--servers") args.servers = Number(value());
     else if (flag === "--timeout") args.timeoutMs = Number(value());
     else if (flag === "--only") args.routes = value().split(",");
     else if (flag === "--scope") args.scope = value();
@@ -684,7 +805,9 @@ export function parseArgs(argv) {
   // A check run with no --out writes to a fresh temporary directory (printed in the result).
   if (!args.out) args.out = join(tmpdir(), `capture-studio-${Date.now()}`);
   if (!["all", "pages", "leaves"].includes(args.scope)) throw new Error("--scope must be all, pages or leaves");
-  if (!Number.isInteger(args.port) || args.port < 1 || args.port > 65535) throw new Error("--port must be 1-65535");
+  if (!Number.isInteger(args.servers) || args.servers < 1 || args.servers > 16) throw new Error("--servers (or CAPTURE_STUDIO_SERVERS) must be 1-16");
+  // Server i listens on --port + i.
+  if (!Number.isInteger(args.port) || args.port < 1 || args.port + args.servers - 1 > 65535) throw new Error("--port must be 1-65535");
   return args;
 }
 
@@ -704,61 +827,71 @@ export async function run(args) {
   await mkdir(join(args.out, "shots"), { recursive: true });
   const jobs = [];
   for (const route of routes) for (const theme of THEMES) for (const width of WIDTHS) jobs.push({ ...route, route: route.path, width, theme, file: `shots/${fileName(route.path, width, theme)}`, timeoutMs: args.timeoutMs });
-  const serverLog = [];
-  const producer = await startProducer({ port: args.port, root: args.root, log: line => serverLog.push(line) });
+  let done = 0;
+  const cache = specimenCache(args.root);
+  // A cold specimen cache is built once, by one server, rather than K times at once.
+  // More servers than shots in flight would leave servers idle.
+  const servers = existsSync(join(cache, "substrate")) ? Math.min(args.servers ?? 1, args.concurrency, Math.max(1, routes.length)) : 1;
+  if (servers < (args.servers ?? 1) && routes.length > 1) process.stderr.write("capture-studio: specimen cache is cold; capturing on one server\n");
+  const runDir = servers > 1 ? await mkdtemp(join(tmpdir(), "capture-studio-shards-")) : undefined;
+  const serverLogs = Array.from({ length: servers }, () => []);
+  const producers = [];
   const profile = await mkdtemp(join(tmpdir(), "capture-studio-"));
-  let launches = 0;
-  const pool = createBrowserPool(async () => {
-    // A browser locks its profile until it has exited, so each one gets its own.
-    const browser = await launchBrowser(executable, join(profile, `browser-${++launches}`));
-    const contexts = {};
-    for (const theme of THEMES) contexts[theme] = (await browser.send("Target.createBrowserContext", { disposeOnDetach: false })).browserContextId;
-    return { browser, contexts };
-  });
-  const shots = [];
+  const pools = [];
+  let captured = [];
   try {
-    let next = 0;
-    const worker = async () => {
-      while (next < jobs.length) {
-        const job = jobs[next++];
-        let result;
-        const started = Date.now();
-        // Each attempt has a hard deadline (readiness budget plus the shot itself); a stuck attempt's
-        // target is closed and its browser retired, the job retried once on a fresh browser, and a
-        // second failure is a failed shot.
-        result = await captureWithRetry(async state => {
-          state.lease = await pool.acquire();
-          return captureShot(state.lease.browser, state.lease.contexts[job.theme], producer.origin, job, args.out, state);
-        }, {
-          deadlineMs: job.timeoutMs + CDP_CALL_TIMEOUT_MS,
-          abandon: state => { if (state.targetId) state.lease?.browser.send("Target.closeTarget", { targetId: state.targetId }, undefined, { timeoutMs: 5000 }).catch(() => {}); },
-          settle: (state, error) => state.lease?.release(error),
-        });
-        const shot = { route: job.route, kind: job.kind, label: job.label, width: job.width, theme: job.theme, file: job.file, consoleErrors: result.counts.consoleErrors, failedRequests: result.counts.failedRequests, overflow: result.overflow ?? null, durationMs: Date.now() - started, findings: result.findings };
-        if (args.baseline && result.png) {
-          try {
-            const before = decodePng(await readFile(join(args.baseline, job.file)));
-            shot.diff = diffRatio(before, decodePng(result.png));
-            shot.diffFlag = shot.diff > DIFF_LIMIT;
-          } catch (error) { shot.diffError = error.code === "ENOENT" ? "no baseline shot" : error.message; }
-        }
-        shot.severity = severityOf(shot.findings);
-        shots.push(shot);
-        if (shots.length % 50 === 0) process.stderr.write(`capture-studio: ${shots.length}/${jobs.length}\n`);
+    // Every server serves the same tree; each other than the first builds in its own TMPDIR, seeded with a clone of the first's specimen cache.
+    const started = await Promise.allSettled(Array.from({ length: servers }, (_, index) => {
+      const tmp = shardTmpdir(index, runDir);
+      if (tmp) seedShard(cache, specimenCache(args.root, tmp));
+      return (tmp ? mkdir(tmp, { recursive: true }) : Promise.resolve()).then(() =>
+        startProducer({ port: args.port + index, root: args.root, log: line => serverLogs[index].push(line), env: tmp ? { TMPDIR: tmp } : {} }));
+    }));
+    for (const result of started) if (result.status === "fulfilled") producers.push(result.value);
+    const failed = started.find(result => result.status === "rejected");
+    if (failed) throw failed.reason;
+    let launches = 0;
+    for (let index = 0; index < servers; index++) pools.push(createBrowserPool(async () => {
+      // A browser locks its profile until it has exited, so each one gets its own.
+      const browser = await launchBrowser(executable, join(profile, `browser-${++launches}`));
+      const contexts = {};
+      for (const theme of THEMES) contexts[theme] = (await browser.send("Target.createBrowserContext", { disposeOnDetach: false })).browserContextId;
+      return { browser, contexts };
+    }));
+    captured = await runShards(planShards(jobs, servers), { concurrency: args.concurrency, capture: async (job, server) => {
+      const started = Date.now();
+      // Each attempt has a hard deadline (readiness budget plus the shot itself); a stuck attempt's
+      // target is closed and its browser retired, the job retried once on a fresh browser, and a
+      // second failure is a failed shot.
+      const result = await captureWithRetry(async state => {
+        state.lease = await pools[server].acquire();
+        return captureShot(state.lease.browser, state.lease.contexts[job.theme], producers[server].origin, job, args.out, state);
+      }, {
+        deadlineMs: job.timeoutMs + CDP_CALL_TIMEOUT_MS,
+        abandon: state => { if (state.targetId) state.lease?.browser.send("Target.closeTarget", { targetId: state.targetId }, undefined, { timeoutMs: 5000 }).catch(() => {}); },
+        settle: (state, error) => state.lease?.release(error),
+      });
+      const shot = { route: job.route, kind: job.kind, label: job.label, width: job.width, theme: job.theme, file: job.file, consoleErrors: result.counts.consoleErrors, failedRequests: result.counts.failedRequests, overflow: result.overflow ?? null, durationMs: Date.now() - started, findings: result.findings };
+      if (args.baseline && result.png) {
+        try {
+          const before = decodePng(await readFile(join(args.baseline, job.file)));
+          shot.diff = diffRatio(before, decodePng(result.png));
+          shot.diffFlag = shot.diff > DIFF_LIMIT;
+        } catch (error) { shot.diffError = error.code === "ENOENT" ? "no baseline shot" : error.message; }
       }
-    };
-    await Promise.all(Array.from({ length: Math.min(args.concurrency, jobs.length) }, worker));
+      shot.severity = severityOf(shot.findings);
+      if ((++done) % 50 === 0) process.stderr.write(`capture-studio: ${done}/${jobs.length}\n`);
+      return shot;
+    } });
   } finally {
-    await pool.close();
-    await producer.stop();
-    await writeFile(join(args.out, "producer.log"), serverLog.join(""));
+    await Promise.all(pools.map(pool => pool.close()));
+    await Promise.all(producers.map(producer => producer.stop()));
+    // This run's shard clones are scratch it made itself; the serial cache is never touched.
+    if (runDir) rmSync(runDir, { recursive: true, force: true });
+    await writeFile(join(args.out, "producer.log"), servers === 1 ? serverLogs[0].join("") : serverLogs.map((log, index) => `--- server ${index + 1}/${servers} (port ${args.port + index})\n${log.join("")}`).join("\n"));
   }
-  shots.sort((a, b) => b.severity - a.severity || a.route.localeCompare(b.route) || a.width - b.width || a.theme.localeCompare(b.theme));
-  const findingsByType = {};
-  for (const shot of shots) for (const finding of shot.findings) findingsByType[finding.type] = (findingsByType[finding.type] ?? 0) + 1;
-  const failing = shots.filter(shot => shot.findings.some(finding => blocks(finding, gates)));
-  const reportsByType = {};
-  for (const shot of shots) for (const finding of shot.findings) if (FAILING.includes(finding.type) && !blocks(finding, gates)) reportsByType[finding.type] = (reportsByType[finding.type] ?? 0) + 1;
+  const summary = summarize(captured, { gates, routes });
+  const { shots, failingShots, findingsByType, reportsByType } = summary;
   const manifest = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
@@ -767,21 +900,21 @@ export async function run(args) {
     widths: WIDTHS, themes: THEMES,
     scope: args.scope,
     enumeratedRoutes: enumerated,
-    routeCount: routes.length,
-    pageRoutes: routes.filter(route => route.kind === "page").length,
-    leafRoutes: routes.filter(route => route.kind === "leaf").length,
-    shotCount: shots.length,
-    failingShots: failing.length,
+    routeCount: summary.routeCount,
+    pageRoutes: summary.pageRoutes,
+    leafRoutes: summary.leafRoutes,
+    shotCount: summary.shotCount,
+    failingShots,
     reportsByType,
     gates,
     findingsByType,
     diff: args.baseline ? { baseline: args.baseline, limit: DIFF_LIMIT, flagged: shots.filter(shot => shot.diffFlag).length } : undefined,
-    exitCode: failing.length ? 1 : 0,
+    exitCode: summary.exitCode,
     shots,
   };
   await writeFile(join(args.out, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFile(join(args.out, "contact-sheet.html"), contactSheet(manifest));
-  return { exitCode: manifest.exitCode, status: failing.length ? "FAIL" : "PASS", routeCount: manifest.routeCount, shotCount: manifest.shotCount, failingShots: failing.length, findingsByType, reportsByType, diff: manifest.diff, out: args.out };
+  return { exitCode: manifest.exitCode, status: failingShots ? "FAIL" : "PASS", routeCount: manifest.routeCount, shotCount: manifest.shotCount, failingShots, findingsByType, reportsByType, diff: manifest.diff, out: args.out };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
