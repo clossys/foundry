@@ -11,6 +11,8 @@ const { studioOrigin, specimensReady } = require('./studio-origin.mjs');
 
 const studioRoot = path.resolve(__dirname, '..');
 const repositoryRoot = path.resolve(studioRoot, '../../..');
+// Evidence goes to the ignored cache, never the checkout: a run that leaves files in the tree dirties every later step's record.
+const DEFAULT_SCREENSHOTS = path.join(repositoryRoot, 'node_modules/.cache/clossys/studio-check/p0');
 const variants = Object.freeze([
   { name: 'desktop', viewport: { width: 1440, height: 1000 }, isMobile: false },
   { name: 'mobile', viewport: { width: 390, height: 844 }, isMobile: true },
@@ -252,7 +254,7 @@ async function runStudioCheck(options = {}) {
   const origin = new URL(options.origin ?? studioOrigin({})).origin;
   const plan = options.plan ?? await discoverRoutePlan(options);
   const timeout = options.timeout ?? 15000;
-  const screenshotRoot = path.resolve(options.screenshotRoot ?? path.join(repositoryRoot, 'visual-pass/p0'));
+  const screenshotRoot = path.resolve(options.screenshotRoot ?? DEFAULT_SCREENSHOTS);
   fs.mkdirSync(screenshotRoot, { recursive: true });
   const ownedBrowser = !options.browser;
   const browser = options.browser ?? await launchStudioBrowser(options);
@@ -340,7 +342,7 @@ async function checkStudio(options = {}) {
   catch (error) {
     const report = failureReport(error);
     // Persist setup/environment failures too: an absent browser is never a visual pass.
-    const output = path.resolve(options.screenshotRoot ?? path.join(repositoryRoot, 'visual-pass/p0'));
+    const output = path.resolve(options.screenshotRoot ?? DEFAULT_SCREENSHOTS);
     fs.mkdirSync(output, { recursive: true });
     fs.writeFileSync(path.join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n');
     if (error?.report) throw error;
