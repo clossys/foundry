@@ -40,3 +40,17 @@ test('verified process gates let the real render decide readiness; a missing mod
   assert.equal(absent.ready, false);
   await assert.rejects(composeStudio([], { run, selectionApi: { studioSelection: async () => { throw new Error('Cannot find actual-renderer'); } } }), /Cannot find actual-renderer/);
 });
+
+// COLD: a slot-model selection has no compiled catalog runtime, so `runtimeUrl` alone left every
+// slot-model workspace unready forever. Its readiness is its pins: all resolved, at least one.
+test('a slot-model selection is ready when every pinned leaf resolves, and not when one is unavailable or none is pinned', async () => {
+  const run = () => ({ status: 0, stdout: JSON.stringify(passing) });
+  const compose = selection => composeStudio([], { run, selectionApi: { studioSelection: async () => selection } });
+  const resolved = { leaf: 'components.button', source: 'consumer', fill: 'button@v1', hash: 'sha256:x' };
+  assert.equal((await compose({ model: 'slots', hash: 'h', leaves: [resolved], gateReports: [] })).ready, true);
+  const drifted = await compose({ model: 'slots', hash: 'h', leaves: [resolved, { leaf: 'components.card', source: 'unavailable', message: 'drifted' }], gateReports: [] });
+  assert.equal(drifted.ready, false);
+  assert.deepEqual(drifted.unavailable, ['components.card']);
+  assert.equal((await compose({ model: 'slots', hash: 'h', leaves: [], gateReports: [] })).ready, false);
+  assert.equal((await compose({ hash: 'h', leaves: [resolved], gateReports: [] })).ready, false);
+});

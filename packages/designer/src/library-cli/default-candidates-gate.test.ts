@@ -192,4 +192,17 @@ describe("default candidates gate", () => {
     expect(new Set(result.report.checkedReads.map(row => row.slot))).toEqual(new Set(["themes.spacing", "assets.example", "components.button", "sections.example"]));
     expect(result.report.counts.registeredSurfaces).toBe(3);
   });
+  it("counts a seated derive rule as its leaf's default candidate, as the planner seats it, and only in that source", () => {
+    const input = fixture(), icon = structuredClone(input.catalog.components.slots[0]!);
+    icon.id = "components.icon";
+    input.catalog.components.slots = [...input.catalog.components.slots, icon];
+    input.buildCatalog.slots = [...input.buildCatalog.slots, icon];
+    mutableDescriptor(input).composes = ["components.icon"];
+    const rule = { id: "derive:icon@1", kind: "derive", slot: "components.icon", inputs: [], template: { source: "foundry", reads: { themes: ["themes.spacing.default"] }, composes: [] } };
+    input.catalog.components.rules = [rule] as unknown as typeof input.catalog.components.rules;
+    input.defaultSources = { ...input.defaultSources, "components.icon": "foundry" };
+    expect(checkDefaultCandidates(input).report.missing).toEqual([]);
+    input.defaultSources = { ...input.defaultSources, "components.icon": "shadcn@aria" };
+    expect(checkDefaultCandidates(input).report.missing.map(row => row.slot)).toEqual(["components.icon"]);
+  });
 });

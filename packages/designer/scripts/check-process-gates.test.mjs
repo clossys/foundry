@@ -12,10 +12,14 @@ const repository = path.resolve(directory, "../../..");
 const scratch = path.join(repository, "coverage/tmp/p0-gate-process/runner-tests");
 fs.mkdirSync(scratch, { recursive: true });
 const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
-function fixture(statuses, candidateStatus = 0) {
+const shipped = JSON.parse(fs.readFileSync(path.join(directory, "process-gates.json"), "utf8"));
+// Aggregation fixtures block on every gate unless a test passes its own modes.
+const blocking = { ...shipped, gates: shipped.gates.map(({ requires, whenAbsent, ...row }) => ({ ...row, mode: "block" })) };
+function fixture(statuses, candidateStatus = 0, config = blocking) {
   const root = fs.mkdtempSync(path.join(scratch, "integration-")), scripts = path.join(root, "packages/designer/scripts");
   fs.mkdirSync(scripts, { recursive: true });
   fs.copyFileSync(path.join(directory, "check-process-gates.mjs"), path.join(scripts, "check-process-gates.mjs"));
+  if (config) fs.writeFileSync(path.join(scripts, "process-gates.json"), JSON.stringify(config));
   ["check-one-leaf-source.mjs", "check-fill-source-imports.mjs", "check-rendered-class-rules.mjs"].forEach((name, index) => {
     if (statuses[index] === null) return;
     fs.writeFileSync(path.join(scripts, name), `import fs from 'node:fs';fs.writeFileSync(${JSON.stringify(path.join(root, `gate-${index}-ran`))},'ran');console.log(JSON.stringify({gate:'fixture-${index}',inputHead:${JSON.stringify(head)},violations:[],unverified:[]}));process.exitCode=${statuses[index]};\n`);
@@ -137,4 +141,44 @@ test('Studio preserves missing legacy check diagnostics and fails closed', () =>
   assert.equal(report.gates[0].exitStatus, 2);
   assert.equal(report.gates[0].blocking, undefined);
   assert.deepEqual(report.gates[0].unverified, ['Missing process gate script']);
+});
+
+const withModes = modes => ({ ...blocking, gates: blocking.gates.map(row => ({ ...row, ...(modes[row.gate] ?? {}) })) });
+test("a report-mode gate's violations are listed under reports and do not fail the run", () => {
+  const { run } = fixture([1, 0, 1], 0, withModes({ "PROC-1": { mode: "report" }, "PROC-3": { mode: "report" } })), child = run(), report = JSON.parse(child.stdout);
+  assert.equal(child.status, 0, child.stdout);
+  assert.deepEqual(report.reports.map(row => row.gate), ["PROC-1", "PROC-3"]);
+  assert.ok(report.reports.every(row => row.reason));
+});
+test("a block-mode gate's violations still fail beside report-mode gates", () => {
+  const { run } = fixture([1, 1, 0], 0, withModes({ "PROC-1": { mode: "report" } }));
+  assert.equal(run().status, 1);
+});
+test("a broken report-mode gate fails in every mode", () => {
+  assert.equal(fixture([2, 0, 0], 0, withModes({ "PROC-1": { mode: "report" } })).run().status, 2);
+  assert.equal(fixture([null, 0, 0], 0, withModes({ "PROC-1": { mode: "report" } })).run().status, 2);
+});
+test("a gate whose native inputs are all absent is not applicable and does not run; any input runs it", () => {
+  const modes = withModes({ "PROC-2": { requires: ["site", "library", "contract"], whenAbsent: "No emitted library at this caller." } });
+  const absent = fixture([0, 2, 0], 0, modes), child = absent.run(), report = JSON.parse(child.stdout);
+  assert.equal(child.status, 0, child.stdout);
+  assert.equal(report.gates[1].state, "not-applicable");
+  assert.equal(report.gates[1].reason, "No emitted library at this caller.");
+  assert.equal(fs.existsSync(path.join(absent.root, "gate-1-ran")), false);
+  const partial = fixture([0, 2, 0], 0, modes);
+  assert.equal(partial.run(["--site", "site"]).status, 2);
+  assert.equal(fs.existsSync(path.join(partial.root, "gate-1-ran")), true);
+});
+test("a missing or malformed gate config fails closed before any gate runs", () => {
+  const missing = fixture([0, 0, 0], 0, null);
+  assert.equal(missing.run().status, 2);
+  assert.equal(fs.existsSync(path.join(missing.root, "gate-0-ran")), false);
+  assert.equal(fixture([0, 0, 0], 0, withModes({ "PROC-1": { reason: "" } })).run().status, 2);
+  assert.equal(fixture([0, 0, 0], 0, withModes({ "PROC-1": { mode: "warn" } })).run().status, 2);
+  assert.equal(fixture([0, 0, 0], 0, { ...blocking, gates: blocking.gates.slice(1) }).run().status, 2);
+});
+test("the shipped config gives every report-mode gate a reason and blocks on the wiring gates", () => {
+  const modes = Object.fromEntries(shipped.gates.map(row => [row.gate, row.mode]));
+  assert.deepEqual(modes, { "PROC-1": "report", "PROC-2": "block", "PROC-3": "report", "default-candidates": "block" });
+  assert.ok(shipped.gates.every(row => row.reason.length > 40));
 });

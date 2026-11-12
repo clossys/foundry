@@ -176,3 +176,18 @@ test("one verified stock file exporting a part family is one source; a modified 
   write("packages/designer/src/catalog/fills/shadcn@aria/components.example.json", fill);
   assert.deepEqual(duplicates(), ["components.example"], "a hand-written family is two sources");
 });
+
+test("a retired leaf (catalog/retired.json) needs no source and its leftover roster and fill rows are ignored", () => {
+  const { root, write } = fixture();
+  const slots = JSON.parse(fs.readFileSync(path.join(root, "packages/designer/src/catalog/slots/components.json"), "utf8"));
+  write("packages/designer/src/catalog/slots/components.json", [...slots, { id: "components.gone", layer: "components" }]);
+  const roster = JSON.parse(fs.readFileSync(path.join(root, "packages/designer/src/catalog/rules/source-roster.json"), "utf8"));
+  roster.components.push({ leaves: ["components.gone"], offers: [{ source: "foundry", leaves: ["components.gone"] }] });
+  write("packages/designer/src/catalog/rules/source-roster.json", roster);
+  write("packages/designer/src/catalog/fills/foundry/components.gone.json", { $extensions: { "com.clossys.fill": { id: "foundry/components.gone", slot: "components.gone", source: "foundry", mode: "implementation" } }, components: { gone: { slot: "components.gone", source: "foundry", impl: { kind: "package", module: "@example/designer/components", export: "Missing" } } } });
+  assert.deepEqual([...new Set(checkOneLeafSource(root).violations.map(row => row.leaf))], ["components.gone"]);
+  write("packages/designer/src/catalog/retired.json", [{ id: "components.gone", retiredAt: "2026-11-11", decidedBy: "owner:fixture", reason: "fixture" }]);
+  const report = checkOneLeafSource(root);
+  assert.equal(report.ok, true, JSON.stringify(report.violations));
+  assert.equal(report.scope.leaves.includes("components.gone"), false);
+});

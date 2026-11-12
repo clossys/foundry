@@ -176,7 +176,7 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
           else {
             for (const source of measurement.sourceFiles) {
               if (!record(source) || typeof source.path !== "string" || typeof source.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(source.sha256)) fail(`${meta.id}: malformed source evidence`);
-              else if (input.sourceHash(source.path) !== source.sha256) fail(`${meta.id}: missing or stale source evidence: ${source.path}`);
+              else if (input.sourceHash(source.path) !== source.sha256) fail(`${meta.id}: missing or stale source evidence: ${source.path} (the Designer importer regenerates it: node packages/designer/scripts/generate-surface-consumption.mjs --write)`);
             }
             readArrays(meta.slot, meta.id, measurement.scannedReads, true);
             links(meta.slot, meta.id, measurement.scannedComposes, true);
@@ -214,6 +214,10 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
     readArrays(rule.slot, rule.id, rule.template.reads, true);
     links(rule.slot, rule.id, rule.inputs, true);
     links(rule.slot, rule.id, rule.template.composes);
+    // The planner's seat rule (component-defaults.ts): an opt-in derive rule seats its leaf where the
+    // leaf's default source names the rule's source, so it is that leaf's default candidate, its reads
+    // checked above like any surface's.
+    if (rule.kind === "derive" && typeof rule.template.source === "string" && input.defaultSources[rule.slot] === rule.template.source) addCandidate(rule.slot, { id: rule.id, source: rule.template.source, eligible: true, reasons: [] });
   }
   for (const row of input.surfaceCoverage ?? []) if (!row || typeof row.slot !== "string" || !["candidate", "subset", "unavailable"].includes(row.status)) fail("malformed native surface coverage evidence");
   for (const slot of slots.values()) if (surfaceLayers.has(slot.layer) && !surfaces.has(slot.id)) {

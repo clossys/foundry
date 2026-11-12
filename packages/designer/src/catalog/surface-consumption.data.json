@@ -4806,12 +4806,16 @@
           "sha256": "f5ba36adeb1462a29cfcf8edd3f7456756756449d73fdbb91948ce1ac4939104"
         },
         {
+          "path": "packages/designer/src/runtime/absent-peer.ts",
+          "sha256": "1da7688cd478f99a721e0d0668d9df4a1d4ec22e334f1cd01203cdcc0df87f17"
+        },
+        {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
           "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
         },
         {
           "path": "packages/designer/src/runtime/stock-link-button.tsx",
-          "sha256": "add91687706703a8c3999ddbcba7df3c061c9ae4ea3a1bc50b2490ccb9472d80"
+          "sha256": "dbd9a375c078056fada73ec9b9c9b928fbb6dbc4e95afd73201d9e15213622cc"
         },
         {
           "path": "packages/publisher/src/content/copy-provenance.ts",
@@ -4939,7 +4943,7 @@
           "code": "DF2",
           "evidence": "unresolved dynamic import; runtime source is not inferred",
           "file": "packages/designer/src/runtime/stock-link-button.tsx",
-          "line": 3
+          "line": 4
         },
         {
           "code": "DF5",

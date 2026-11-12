@@ -74,19 +74,19 @@ describe("native default candidate input integration", () => {
   });
   it("retains the explicit rich-text policy when its existing native candidate is removed", () => {
     const input = nativeInput(), original = input.catalog.components.fills, baseline = checkDefaultCandidates(input), slot = "components.rich-text";
-    expect(input.defaultSources[slot]).toBe("shadcn@aria");
+    expect(input.defaultSources[slot]).toBe("foundry"); // owner D6 2026-11-11
     expect(baseline.report.missing.some(row => row.slot === slot)).toBe(false);
     const defaults = original.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].source === input.defaultSources[slot]);
     expect(defaults).toHaveLength(1);
     expect(Object.values(defaults[0]!.components)[0]!.impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "RichText" });
-    const otherSources = original.filter(doc => doc.$extensions["com.clossys.fill"].source !== "shadcn@aria");
+    const otherSources = original.filter(doc => doc.$extensions["com.clossys.fill"].source !== "foundry");
     expect(otherSources.length).toBeGreaterThan(0);
     input.catalog.components.fills = original.filter(doc => !defaults.includes(doc));
-    expect(input.catalog.components.fills.filter(doc => doc.$extensions["com.clossys.fill"].source !== "shadcn@aria")).toEqual(otherSources);
-    expect(input.defaultSources[slot]).toBe("shadcn@aria");
+    expect(input.catalog.components.fills.filter(doc => doc.$extensions["com.clossys.fill"].source !== "foundry")).toEqual(otherSources);
+    expect(input.defaultSources[slot]).toBe("foundry"); // owner D6 2026-11-11
     const deleted = checkDefaultCandidates(input);
     expect(deleted.exitCode).not.toBe(0);
-    expect(deleted.report.missing.find(row => row.slot === slot)).toMatchObject({ source: "shadcn@aria", reasons: ["no implementation candidate in the default source"] });
+    expect(deleted.report.missing.find(row => row.slot === slot)).toMatchObject({ source: "foundry", reasons: ["no implementation candidate in the default source"] });
     expect(deleted.report.missing).toHaveLength(baseline.report.missing.length + 1);
     input.catalog.components.fills = original;
     expect(checkDefaultCandidates(input)).toEqual(baseline);

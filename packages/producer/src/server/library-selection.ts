@@ -4,13 +4,15 @@
  * schema is only read when the consumer has no Designer slot model.
  */
 import { join } from "node:path";
-import { listSlots, readCandidate } from "../records/slots.js";
+import { hasPinFile, listSlots, readCandidate } from "../records/slots.js";
 import { hasAgentSlots } from "./slot-gallery.js";
 import { themeHash, type StudioTheme } from "./theme-default.js";
 
 export interface LibrarySelection {
+  /** A slot-model selection composes from the pins; it has no compiled catalog runtime. */
+  model: "slots";
   hash: string;
-  leaves: { leaf: string; source: "consumer"; fill: string; hash?: string }[];
+  leaves: ({ leaf: string; source: "consumer"; fill: string; hash?: string } | { leaf: string; source: "unavailable"; message: string })[];
   gateReports: never[];
 }
 
@@ -35,11 +37,17 @@ function pinnedItems(library: string): Map<string, { item: Record<string, any>; 
   return items;
 }
 
-/** One leaf per pinned slot, provenance `consumer`, hashed from the pins it reads. */
+/**
+ * One leaf per pinned slot, provenance `consumer`, hashed from the pins it reads. A slot with a pin
+ * file whose candidate is missing, drifted or not a registry item is an `unavailable` leaf, never skipped.
+ */
 export function librarySelection(library: string): LibrarySelection {
-  const leaves = [...pinnedItems(library)].sort(([a], [b]) => a.localeCompare(b))
-    .map(([leaf, pin]) => ({ leaf, source: "consumer" as const, fill: `${pin.item.name}@v${pin.version}`, hash: `sha256:${pin.sha256}` }));
-  return { hash: themeHash(JSON.stringify(leaves)), leaves, gateReports: [] };
+  const items = pinnedItems(library);
+  const resolved = [...items].map(([leaf, pin]) => ({ leaf, source: "consumer" as const, fill: `${pin.item.name}@v${pin.version}`, hash: `sha256:${pin.sha256}` }));
+  const unresolved = listSlots(library, "designer").filter(entry => !items.has(entry.id) && hasPinFile(entry.dir))
+    .map(entry => ({ leaf: entry.id, source: "unavailable" as const, message: "pinned candidate is missing, drifted from its pin or not a registry item" }));
+  const leaves = [...resolved, ...unresolved].sort((a, b) => a.leaf.localeCompare(b.leaf));
+  return { model: "slots", hash: themeHash(JSON.stringify(resolved.sort((a, b) => a.leaf.localeCompare(b.leaf)))), leaves, gateReports: [] };
 }
 
 const CSS_NAME = /^[a-z][a-z0-9-]*$/;

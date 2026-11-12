@@ -13,6 +13,7 @@ const value = node => node && ts.isStringLiteralLike(node) ? node.text : undefin
 const sourcePath = file => file.replace(/\/dist\//, "/src/").replace(/\.[cm]?js$/, ".ts");
 
 /** Inventory declaration identities, never source labels or public barrel names. */
+function optionalRead(file) { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : undefined; }
 export function checkOneLeafSource(repository, layers = allLayers) {
   if (!layers.length || layers.some(layer => !allLayers.includes(layer))) throw new Error("Invalid inventory layers");
   const root = path.resolve(repository), directory = path.join(root, "packages/designer"), catalog = path.join(directory, "src/catalog");
@@ -21,6 +22,9 @@ export function checkOneLeafSource(repository, layers = allLayers) {
   const add = (rule, leaf, detail, file) => findings.push({ rule, leaf, detail, ...(file ? { file: relative(file) } : {}) });
   const read = file => JSON.parse(fs.readFileSync(file, "utf8"));
   const roster = read(path.join(catalog, "rules/source-roster.json"));
+  // Retired leaves (catalog/retired.json, written by retire-leaf.mjs on an owner decision) are out of
+  // the catalog: they need no source and their leftover roster or fill rows are not this gate's input.
+  const retired = new Set((optionalRead(path.join(catalog, "retired.json")) ?? []).map(row => row.id));
   // A pinned-upstream source entry is stock only when its preview-runtime bytes
   // are the deterministic preview of the default profile output, and that output
   // has both the fill's sha256 receipt and a generated stock AST proof.
@@ -42,10 +46,12 @@ export function checkOneLeafSource(repository, layers = allLayers) {
     const slots = read(path.join(catalog, `slots/${layer}.json`));
     if (!Array.isArray(slots) || !slots.length || !Array.isArray(roster[layer]) || !roster[layer].length) throw new Error(`Missing or empty ${layer} catalog/roster input`);
     for (const slot of slots) {
+      if (retired.has(slot.id)) continue;
       if (typeof slot.id !== "string" || !slot.id.startsWith(`${layer}.`) || leaves.has(slot.id)) throw new Error(`Invalid or duplicate catalog id ${slot.id}`);
       leaves.set(slot.id, { leaf: slot.id, implementations: new Map(), descriptors: [], offers: [] });
     }
     for (const row of roster[layer]) for (const leaf of row.leaves ?? []) {
+      if (retired.has(leaf)) continue;
       if (!leaves.has(leaf)) { add("unknown-roster-leaf", leaf, "Roster leaf is absent from catalog"); continue; }
       for (const offer of row.offers ?? []) if (offer.leaves?.includes(leaf)) leaves.get(leaf).offers.push(offer.source);
     }
@@ -183,6 +189,7 @@ export function checkOneLeafSource(repository, layers = allLayers) {
   for (const file of fillFiles) {
     const doc = read(file), meta = doc.$extensions?.["com.clossys.fill"];
     if (!meta || !layers.some(layer => meta.slot?.startsWith(`${layer}.`)) || meta.mode !== "implementation") continue;
+    if (retired.has(meta.slot)) continue;
     if (!leaves.has(meta.slot)) { add("unknown-fill-leaf", meta.slot, meta.id, file); continue; }
     // Never-offered upstream references are still inspected for valid inputs,
     // but do not manufacture a selectable native implementation.

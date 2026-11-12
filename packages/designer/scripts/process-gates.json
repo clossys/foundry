@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.process-gates/1",
+  "summary": "The Designer process gates and how each one counts. block: a violation (exit 1) fails the run. report: a violation is listed under reports and does not fail the run. In every mode a missing, stale or invalid gate (exit 2) still fails the run. requires: the gate's native inputs; a caller that passes none of them gets a not-applicable row with the reason, and a caller that passes some of them gets the gate's own verdict.",
+  "gates": [
+    {
+      "gate": "PROC-1",
+      "script": "check-one-leaf-source.mjs",
+      "mode": "report",
+      "reason": "Inventories the legacy catalog source tree (packages/designer/src and catalog fills) for one implementation per leaf. A slot-model workspace composes from its pinned candidate files, not from this inventory. Its open findings are legacy debt: duplicate legacy implementations, parked chart fills and leaves with no fill yet. They are reported to the Designer. Retired leaves are excluded at the source (catalog/retired.json)."
+    },
+    {
+      "gate": "PROC-2",
+      "script": "check-fill-source-imports.mjs",
+      "mode": "block",
+      "requires": ["site", "library", "contract"],
+      "whenAbsent": "Checks a consumer's emitted library (resolved.json, component-index.ts and its dogfood contract). A caller with no emitted library, such as Studio composition, has nothing for it to check. The emitted-library caller passes --site, --library and --contract and is blocked on violations.",
+      "reason": "Wiring: an emitted library must import only its selected fill sources."
+    },
+    {
+      "gate": "PROC-3",
+      "script": "check-rendered-class-rules.mjs",
+      "mode": "report",
+      "reason": "Encodes visual class rules. Owner, 2026-10-30 (P0 shadcn reset): invented render gates are reports. Owner, 2026-11-06: checks, not looks. Its findings go to the Designer's visual pass."
+    },
+    {
+      "gate": "default-candidates",
+      "script": "check-default-candidates.mjs",
+      "mode": "block",
+      "reason": "Wiring: every registered slot has an eligible candidate in its default source, and every candidate's cited source evidence is current."
+    }
+  ]
+}

@@ -28,7 +28,11 @@ export async function composeStudio(args = process.argv.slice(2), ports = {}) {
   // The compiled module must exist. An absent build, module or executable remains an actual error.
   const selectionApi = ports.selectionApi ?? await import('../dist/server/selection.js');
   const selection = await selectionApi.studioSelection(root);
-  return { check: 'studio:compose', ready: Boolean(selection.runtimeUrl), processExit: 0, processReport, selection };
+  // A catalog selection is ready when it compiled a runtime. A slot-model selection composes from the
+  // pins: it is ready when it has pinned leaves and every pinned leaf resolved to its candidate.
+  const unavailable = (selection.leaves ?? []).filter(leaf => leaf.source !== 'consumer').map(leaf => leaf.leaf);
+  const ready = selection.model === 'slots' ? !selection.message && selection.leaves.length > 0 && !unavailable.length : Boolean(selection.runtimeUrl);
+  return { check: 'studio:compose', ready, processExit: 0, processReport, ...(unavailable.length ? { unavailable } : {}), selection };
 }
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   composeStudio().then(report => { console.log(JSON.stringify(report, null, 2)); process.exitCode = report.ready ? 0 : 1; }).catch(error => { console.error(JSON.stringify({ check: 'studio:compose', ready: false, error: error.message })); process.exitCode = 1; });

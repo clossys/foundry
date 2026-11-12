@@ -20,7 +20,7 @@ export interface StudioSelectionLeaf {
   hash?: string;
   message?: string;
 }
-export interface StudioSelection { hash: string; runtimeUrl?: string; profileUrl?: string; css?: string; cssHash?: string; leaves: StudioSelectionLeaf[]; message?: string; gateReports?: StudioGateReport[] }
+export interface StudioSelection { model?: "slots"; hash: string; runtimeUrl?: string; profileUrl?: string; css?: string; cssHash?: string; leaves: StudioSelectionLeaf[]; message?: string; gateReports?: StudioGateReport[] }
 const runtimes = new Map<string, string>();
 const profiles = new Map<string, CompositeResolved>();
 const pending = new Map<string, Promise<StudioSelection>>();

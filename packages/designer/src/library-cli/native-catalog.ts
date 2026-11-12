@@ -5,7 +5,8 @@ import { foundrySurfaceCatalog } from "./surface-catalog.js";
 
 /** Explicit source decisions take precedence over roster availability. */
 const sourceDecisions: Readonly<Record<string, string | undefined>> = {
-  "components.rich-text": "shadcn@aria",
+  // Owner D6 (2026-11-11): rich-text is relabelled to its real source, the Foundry fill on Tiptap.
+  "components.rich-text": "foundry",
   "components.semantic-content": "foundry",
   // H3-A01..A12 (backdrop-graphic dropped by owner 2026-11-02): asset policy is independent of candidate availability.
   "assets.icon-check": "lucide",
