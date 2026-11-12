@@ -83,6 +83,21 @@ export function npmRunner(env: NodeJS.ProcessEnv = process.env): ShadcnRunner {
 }
 
 /**
+ * The substrate's package.json carries no `"type": "module"`. Registry items are written for a
+ * Next app, whose bundler honours `__esModule` on a default import of a CommonJS module; in a
+ * `"type": "module"` package Vite 8 (Rolldown, like esbuild) applies Node interop instead, so
+ * `import Image from "next/image"` yields the CommonJS exports object and React throws #130
+ * ("element type is invalid ... got: object"). A substrate written with that field loses it.
+ */
+async function dropModuleType(file: string): Promise<void> {
+  if (!existsSync(file)) return;
+  const manifest = JSON.parse(await readFile(file, "utf8"));
+  if (manifest.type !== "module") return;
+  delete manifest.type;
+  await writeFile(file, `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
+/**
  * The publishing substrate: a minimal Vite + Tailwind v4 shadcn project, written once. Its
  * `main.tsx` mounts a generated page module (`clossys/pages/<id>.tsx`; `?page=<id>`, and
  * `?theme=dark` for the dark mode). Every installed item's npm dependencies are unioned into its
@@ -94,11 +109,13 @@ export async function ensureSubstrate(dir: string): Promise<void> {
   const flavor = shadcnComponentsJsonText({ css: "app.css" }), flavorPath = join(dir, "components.json");
   if (existsSync(flavorPath)) {
     if (await readFile(flavorPath, "utf8") !== flavor) await writeFile(flavorPath, flavor);
+    await dropModuleType(join(dir, "package.json"));
     return;
   }
   const write = (name: string, value: unknown) => writeFile(join(dir, name), typeof value === "string" ? value : `${JSON.stringify(value, null, 2)}\n`);
   await write("package.json", {
-    name: "publishing-substrate", private: true, type: "module",
+    // No `"type": "module"`, as in a Next app: see `dropModuleType`.
+    name: "publishing-substrate", private: true,
     scripts: { dev: "vite", build: "vite build" },
     dependencies: { react: "^19.2.0", "react-dom": "^19.2.0" },
     devDependencies: { vite: "^8.3.4", tailwindcss: "^4.3.3", "@tailwindcss/vite": "^4.3.3", "tw-animate-css": "^1.4.0" },
