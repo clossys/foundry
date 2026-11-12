@@ -189,6 +189,8 @@ export interface PassOptions {
   readonly records: readonly InstallPageRecord[]; readonly copy: Record<string, string>;
   /** The pinned Writer copy (`pinnedWriterCopy` of the library), scanned once per site, never per pass or candidate. */
   readonly pinnedCopy: Readonly<Record<string, string>>;
+  /** Candidates the substrate cannot build (their code imports a host package): refused before any install. */
+  readonly hostOnly?: ReadonlyMap<string, readonly string[]>;
   readonly build: SpecimenBuild;
 }
 
@@ -199,6 +201,11 @@ export function renderFailedFinding(key: string, code: number, output: string): 
   const lines = output.trim().split("\n");
   const shown = lines.length > FAILURE_HEAD + FAILURE_TAIL ? [...lines.slice(0, FAILURE_HEAD), `[${lines.length - FAILURE_HEAD - FAILURE_TAIL} lines omitted]`, ...lines.slice(-FAILURE_TAIL)] : lines;
   return { code: "render-failed", detail: `specimen build ${key} exited ${code}:\n${shown.join("\n")}` };
+}
+
+/** A candidate the substrate never builds: a slot finding, so the pass (and its layer) still builds and is reused. */
+export function hostOnlyFinding(slot: string, pin: { element: string; version: number }, packages: readonly string[]): InstallFinding {
+  return { code: "invalid-page", slot, detail: `${slot}/${pin.element}@v${pin.version} imports host package ${packages.join(", ")}, which the specimen substrate cannot install; the host specimen mount renders it` };
 }
 
 async function buildPass(options: PassOptions): Promise<PassResult> {
@@ -219,6 +226,10 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
   // Theme items first: every other page installs them through `include`.
   for (const slot of [...options.slots].sort((a, b) => Number(!a.startsWith("themes.")) - Number(!b.startsWith("themes.")) || a.localeCompare(b))) {
     const pin = pins[slot]!, page = specimenPageId(slot, pin.element, pin.version);
+    // Installing it would add an uninstallable host package to the shared substrate's package.json
+    // and fail every later npm install there; the host specimen mount renders it instead.
+    const host = options.hostOnly?.get(pageKey(slot, pin.element, pin.version));
+    if (host) { findings.push(hostOnlyFinding(slot, pin, host)); continue; }
     if (slot.startsWith("themes.")) {
       // The pinned candidate itself, through the same slot reader every other page installs from.
       const record = await source.read(`${slot}/${pin.element}`, pin.version).catch(() => undefined);
@@ -287,6 +298,8 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
 export interface SiteInputs {
   readonly root: string; readonly library: string; readonly key: string; readonly substrate: string; readonly base: string;
   readonly pins: InstallPins; readonly unpinned: InstallPins; readonly options: ReadonlyMap<string, readonly { element: string; version: number }[]>;
+  /** Candidates whose code imports a host package (`<slot>/<element>@v<version>` -> packages): never built in the substrate. */
+  readonly hostOnly: ReadonlyMap<string, readonly string[]>;
   readonly records: readonly InstallPageRecord[]; readonly recordFindings: readonly InstallFinding[]; readonly copy: Record<string, string>;
   readonly pinnedCopy: Readonly<Record<string, string>>;
 }
@@ -300,7 +313,7 @@ async function siteInputs(root: string, library: string): Promise<SiteInputs | u
   const { records, findings: recordFindings } = await pageRecords(root, inputs.pins);
   const key = hash(SPECIMEN_FORMAT, await specimenDocument(), root, inputs.fingerprint, JSON.stringify(copy), JSON.stringify(records), JSON.stringify(recordFindings)).slice(0, 16);
   const substrate = specimenSubstrate(root);
-  return { root, library, key, substrate, base: dirname(substrate), pins: inputs.pins, unpinned: inputs.unpinned, options: inputs.options, records, recordFindings, copy, pinnedCopy };
+  return { root, library, key, substrate, base: dirname(substrate), pins: inputs.pins, unpinned: inputs.unpinned, options: inputs.options, hostOnly: inputs.hostOnly, records, recordFindings, copy, pinnedCopy };
 }
 
 /** A finding that says the pass itself did not build (vite, or the substrate's npm install), not one slot. */
@@ -347,7 +360,7 @@ export async function buildSite(inputs: SiteInputs, steps: SiteBuildSteps = SITE
     if (!result) {
       if (!prepared) { await steps.prepare(substrate); prepared = true; }
       const slots = Object.keys(pins).filter(slot => layerOf(slot) === layer);
-      const passed = await steps.pass({ library, substrate, pins, slots, records, copy, pinnedCopy, build: layerBuild });
+      const passed = await steps.pass({ library, substrate, pins, slots, records, copy, pinnedCopy, hostOnly: inputs.hostOnly, build: layerBuild });
       result = { builds: passed.built ? [layerBuild] : [], pages: passed.built ? passed.pages : new Map(), findings: passed.findings };
       await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key: layerBuild.key, layer, builds: result.builds, pages: Object.fromEntries(result.pages), findings: result.findings }, null, 2)}\n`);
     }
@@ -370,7 +383,7 @@ async function buildOption(inputs: SiteInputs, slot: string, option: { element: 
   if (saved) return { ...(saved.builds[0] ? { build: saved.builds[0] } : {}), ...(saved.pages.get(pageKey(slot, option.element, option.version)) ? { page: saved.pages.get(pageKey(slot, option.element, option.version))! } : {}), findings: saved.findings };
   await ensureSubstrate(substrate);
   const build = { key, dist: join(base, `dist-${key}`) };
-  const result = await buildPass({ library, substrate, pins: { ...unpinned, ...pins, [slot]: option }, slots: [slot], records, copy, pinnedCopy, build });
+  const result = await buildPass({ library, substrate, pins: { ...unpinned, ...pins, [slot]: option }, slots: [slot], records, copy, pinnedCopy, hostOnly: inputs.hostOnly, build });
   const builds = result.built ? [build] : [];
   await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(result.built ? result.pages : []), findings: result.findings }, null, 2)}\n`);
   const page = result.built ? result.pages.get(pageKey(slot, option.element, option.version)) : undefined;
@@ -440,8 +453,13 @@ export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | u
       if (pathname === "/__specimen") {
         const params = new URL(request.url ?? "", "http://studio.invalid").searchParams;
         const [slot, element] = (params.get("element") ?? "").split("/");
-        const site = await ready, given = await inputs;
+        const given = await inputs;
         const version = params.get("v");
+        // A candidate the substrate never builds (its code imports a host package) falls through to the
+        // host specimen mount at once: it must not wait on the pinned site's build or the option queue.
+        const named = version === null ? given?.pins[slot ?? ""] : { element, version: Number(version) };
+        if (given && slot && element && named && named.element === element && given.hostOnly.has(pageKey(slot, element, named.version))) return false;
+        const site = await ready;
         if (!site || !slot || !element) return false;
         // Without `v` the pinned candidate answers. With `v` the named candidate answers: the pin from
         // the pinned build, any other recorded candidate from its own preview build.

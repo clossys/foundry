@@ -11,7 +11,7 @@ import { pageModule } from '../publish/install.js';
 import { resolveSampleCopy } from './specimen-state.js';
 import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';
 import { createServer, request } from 'node:http';
-import { installedSpecimenRoutes, specimenSiteCsp } from './installed-specimens.js';
+import { hostOnlyFinding, installedSpecimenRoutes, specimenSiteCsp, type SiteInputs } from './installed-specimens.js';
 import { SPECIMEN_FRAME_CSP } from './specimen-frame.js';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
@@ -140,5 +140,35 @@ describe('specimen route policies', () => {
       expect(policy, `${origin} ${build}`).toContain("script-src 'none';");
       expect(policy).not.toContain(origin!.length > 7 ? origin! : 'http://');
     }
+  });
+});
+
+describe('host-only candidates', () => {
+  // A candidate whose code imports a host package (`@clossys/designer-ui`) is never built in the
+  // substrate; its frame request must fall through to the host mount at once instead of staying
+  // pending on the pinned site's build (the Studio capture readiness timeout on Producer sections).
+  const inputs = { pins: { 'sections.producer.flow': { element: 'flow', version: 14 } }, options: new Map(), unpinned: {},
+    hostOnly: new Map([['sections.producer.flow/flow@v14', ['@clossys/designer-ui']], ['sections.producer.flow/flow@v1', ['@clossys/designer-ui']]]) } as unknown as SiteInputs;
+  const never = new Promise<undefined>(() => {});
+  const answer = (handled: Promise<boolean>) => Promise.race([handled, new Promise<'pending'>(accept => setTimeout(() => accept('pending'), 200))]);
+  const call = (url: string) => installedSpecimenRoutes(never, Promise.resolve(inputs)).handle({ url } as never, {} as never, '/__specimen');
+
+  it('hands a named host-only candidate to the host mount without waiting on the pinned build', async () => {
+    expect(await answer(call('/__specimen?element=sections.producer.flow%2Fflow&v=1&width=1280'))).toBe(false);
+    expect(await answer(call('/__specimen?element=sections.producer.flow%2Fflow&v=14&theme=dark'))).toBe(false);
+  });
+
+  it('hands the pinned host-only candidate (no version) to the host mount without waiting', async () => {
+    expect(await answer(call('/__specimen?element=sections.producer.flow%2Fflow&width=375'))).toBe(false);
+  });
+
+  it('still waits on the pinned build for a candidate the substrate builds', async () => {
+    expect(await answer(call('/__specimen?element=components.button%2Fbutton&v=2'))).toBe('pending');
+  });
+
+  it('records the refusal as a slot finding rather than an install failure', () => {
+    const finding = hostOnlyFinding('sections.producer.flow', { element: 'flow', version: 14 }, ['@clossys/designer-ui']);
+    expect(finding).toMatchObject({ code: 'invalid-page', slot: 'sections.producer.flow' });
+    expect(finding.detail).toContain('@clossys/designer-ui');
   });
 });
