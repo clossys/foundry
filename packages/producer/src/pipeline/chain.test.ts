@@ -92,6 +92,18 @@ describe("clossys run", { timeout: 60_000 }, () => {
     expect(record!.record.exit).toBe(1);
   });
 
+  it("stops cleanly, never red, at a plumb step whose first input matches no file", () => {
+    const root = workspace();
+    writeFileSync(join(root, INPUT), "one\n");
+    const empty = { ...real("director.store"), inputs: [{ glob: "clossys/agents/nobody/*/pin.json", schema: "pin" }] } as Step;
+    const exec = fixtureExec(root);
+    const result = runChain(root, { steps: [plumb("a"), empty, plumb("c")], exec });
+    expect(result.rows.map(row => row.state)).toEqual(["ran", "open", "not-reached"]);
+    expect(result.failed).toBeNull();
+    expect(result.stop).toMatchObject({ step: "director.store", decider: "owner", packet: { record: "clossys next --owner --agent director" } });
+    expect(exec.calls).toEqual(["a"]);
+  });
+
   it("stops at the first open decide step and prints its packet", async () => {
     const root = unseated(workspace());
     writeFileSync(join(root, INPUT), "one\n");

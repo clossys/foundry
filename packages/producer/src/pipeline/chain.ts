@@ -415,6 +415,17 @@ export function runChain(root: string, options: ChainOptions = {}): ChainResult 
       return row("open", `${items.length} open (${items.slice(0, 3).join(", ")}${items.length > 3 ? ", ..." : ""}); decided by ${packet.decider}; clossys next`);
     }
     if ("skip" in command!) return row("skipped", command!.skip);
+    // A plumb step whose first workspace input matches no file has nothing to work on yet: an empty
+    // consumer stops cleanly at that agent's owner interview, never red at the step's own check.
+    const first = step.inputs[0]?.glob;
+    if (first && !/^(arg:|pkg:)/.test(first) && !first.includes("**") && matches(root, first).length === 0) {
+      const agent = step.agent ?? "producer";
+      const ask = `clossys next --owner --agent ${agent}`;
+      const packet: Packet = { ...packetOf(step, step.id, 1, context, { packageRoot }), decider: "owner",
+        question: `${step.id} has no input yet (${first} matches no file): the ${agent} interview (${agent === "director" ? "archetype and content" : "its owner questions"}) records it first.`, record: ask };
+      stop = { step: step.id, open: 1, decider: "owner", packet };
+      return row("open", `no input yet (${first} matches no file); decided by owner; ${ask}`);
+    }
     const shown = `clossys ${command!.argv.join(" ")}`;
     if (seen.last === "passed") return row("fresh", `${shown}: inputs unchanged since its last run`);
     if (options.dry) return row("would-run", `${shown} (${seen.last}${seen.changed.length ? `: ${seen.changed.slice(0, 3).join(", ")}` : ""})`);

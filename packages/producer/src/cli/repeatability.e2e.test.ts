@@ -1,9 +1,9 @@
 /**
  * Repeatability, end to end through the built CLI, from an empty folder: `clossys config --init`, then every
  * open `clossys next --owner` question and `clossys next` packet answered with its recommended option (each
- * placeholder filled from __fixtures__/repeatability/answers.json), then `clossys run` to its end or a named
- * stop, then `clossys run` again. The second run must change nothing: the same files with the same bytes and
- * mtimes, and the same stop. Verbs only: the test writes no record itself.
+ * placeholder filled from __fixtures__/repeatability/answers.json), then `clossys run`, which stops cleanly at
+ * the Director archetype and content interview (director.store), then `clossys run` again. The second run must
+ * change nothing: the same files with the same bytes and mtimes, and the same stop. Verbs only: the test writes no record itself.
  *
  * The seat interview must seat every decide step the chain defines (one `clossys seat <step>` call each). A
  * seat interview that asks no seat question fails here on that count; it is not worked around.
@@ -87,15 +87,18 @@ describe("a fresh consumer, run twice (repeatability)", () => {
     expect([...new Set(seated)].sort()).toEqual(decideSteps);
   });
 
-  it("runs to its end or a named stop, and a second run changes nothing", () => {
+  it("stops at the Director interview, and a second run changes nothing", () => {
     first = runVerb(["run"], root);
     afterFirst = snapshot(root);
     second = runVerb(["run"], root);
     afterSecond = snapshot(root);
+    // An empty consumer stops cleanly at its first owner decide step, the Director archetype and content
+    // interview at director.store (no Director cell is pinned yet), never red at the step's own check.
     for (const run of [first, second]) {
-      expect(run.status === 0 || run.status === 1).toBe(true);
-      const named = run.value.failed?.step ?? run.value.stop?.step ?? (run.status === 0 ? "end" : undefined);
-      expect(named).toEqual(expect.any(String));
+      expect(run.status).toBe(0);
+      expect(run.value.failed ?? null).toBeNull();
+      expect(run.value.stop).toMatchObject({ step: "director.store", decider: "owner", packet: { record: "clossys next --owner --agent director" } });
+      expect(run.value.stop.packet.question).toContain("archetype and content");
     }
     expect(second.status).toBe(first.status);
     expect(second.value.failed ?? null).toEqual(first.value.failed ?? null);
