@@ -3,10 +3,5 @@
   "sha256": "bd8f14799d402e2023b41e3a832a8451d265288636cc8cfd17c7ece2ececbe54",
   "decidedBy": "agent:publisher",
   "basis": "agent",
-  "at": "2026-11-12T09:17:09.902Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "owner standing instruction 2026-11-12 (Clossys team session, slot-1): take the recommended option and log it",
-    "at": "2026-11-12T09:49:30.120Z"
-  }
+  "at": "2026-11-12T09:17:09.902Z"
 }
