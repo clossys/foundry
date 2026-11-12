@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v3.md",
-  "sha256": "fc39de64e06371a52085e5e762eecae1a577385bb9717e4327120c6353db50af",
-  "decidedBy": "planner:W3",
+  "candidate": "studio-v4.md",
+  "sha256": "c70f3b172673acc7a1f85f6da711563d744ec3e55075e64dbd319f7a5c73c191",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, copy unchanged (was planner:W3, planner)",
   "basis": "planner",
-  "at": "2026-11-11T02:03:12.120Z"
+  "at": "2026-11-12T00:09:12.044Z"
 }

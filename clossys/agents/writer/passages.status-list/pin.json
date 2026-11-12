@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v1.md",
-  "sha256": "142ff3ef7f4948779a9942126f9693d7a40d4d22d9d8d5b795a78f40de037e0c",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "studio-v4.md",
+  "sha256": "96849077a6b172d53ac91aeb8eb8b32d22967dfcae25ad36cd361fb15903ac2a",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, copy unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
+  "basis": "planner",
+  "at": "2026-11-12T00:08:55.107Z"
 }
