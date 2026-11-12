@@ -1,7 +1,7 @@
 {
   "candidate": "audit-log-v3.json",
   "sha256": "9fd47ab8d77b3e9d3f6fd9a32908edc5c9f6dc769124d8ea0cb5c0a000bf1215",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:54:56.524Z"
+  "at": "2026-11-12T00:01:49.667Z"
 }

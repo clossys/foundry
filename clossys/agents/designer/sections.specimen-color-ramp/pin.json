@@ -1,7 +1,7 @@
 {
   "candidate": "specimen-color-ramp-v3.json",
   "sha256": "fa283363e57187c0924f76d512bf5b9bdcef520f9aa086203f537542d58facea",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:55:01.365Z"
+  "at": "2026-11-12T00:02:04.245Z"
 }

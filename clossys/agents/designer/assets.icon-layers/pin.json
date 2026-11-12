@@ -1,7 +1,7 @@
 {
   "candidate": "icon-layers-v1.json",
   "sha256": "9cf895760d55a564b90d7ed7a100ecaf0e8a1af09f0f926ef6b705c619d22b28",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
+  "basis": "planner",
+  "at": "2026-11-12T00:00:47.768Z"
 }

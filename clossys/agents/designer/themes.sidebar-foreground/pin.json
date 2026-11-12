@@ -1,7 +1,7 @@
 {
   "candidate": "sidebar-foreground-v1.json",
   "sha256": "77c3fd7e77b197dea0da76a833944f460025b18b65eba4610df18bc33064993f",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
+  "basis": "planner",
+  "at": "2026-11-12T00:01:16.520Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "specimen-spacing-ladder-v3.json",
   "sha256": "18bfd5e8efd775d7b7c85923409e1af2228fc6cb3a0e3da7043753f5778ef006",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:55:04.760Z"
+  "at": "2026-11-12T00:02:08.120Z"
 }

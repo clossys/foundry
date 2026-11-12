@@ -1,7 +1,7 @@
 {
   "candidate": "semantic-content-v2.json",
   "sha256": "cd7ecb17969d2a40d2d41fdc717dbd939286fb09754faadfed68697f7a98f265",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (COMPOSE-SLOTS)",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 planner pins that pass the gate (COMPOSE-SLOTS), planner)",
   "basis": "planner",
-  "at": "2026-11-03T21:45:00Z"
+  "at": "2026-11-12T00:01:32.411Z"
 }

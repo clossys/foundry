@@ -1,7 +1,7 @@
 {
   "candidate": "sheet-v3.json",
   "sha256": "2f779e8e99bfe342e678e02feba0ccdd6986006d2c378ef0adaf413928c330d2",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:54:55.432Z"
+  "at": "2026-11-12T00:01:46.213Z"
 }

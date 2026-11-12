@@ -1,7 +1,7 @@
 {
   "candidate": "mark-v4.json",
   "sha256": "235de802ff04413ffcbadb021c5799eb6145ded4f241ec6bd40056abc881a8b1",
-  "decidedBy": "planner:INTEGRATE",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:INTEGRATE, planner)",
   "basis": "planner",
-  "at": "2026-11-05T16:05:28.309Z"
+  "at": "2026-11-12T00:00:58.474Z"
 }

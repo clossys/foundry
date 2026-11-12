@@ -1,7 +1,7 @@
 {
   "candidate": "band-v3.json",
   "sha256": "5497d1aa6f0e30a5b076aafe264889e360bf3b26dfadeceb7b4b5ae8e98e8594",
-  "decidedBy": "planner:R2F-39",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-39, planner)",
   "basis": "planner",
-  "at": "2026-11-10T12:00:00.607Z"
+  "at": "2026-11-12T00:01:50.096Z"
 }

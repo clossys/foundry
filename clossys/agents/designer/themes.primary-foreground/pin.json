@@ -1,7 +1,7 @@
 {
   "candidate": "primary-foreground-v1.json",
   "sha256": "569a7cac6f40a676adbcbb8920fca2201d534dd440c6f42ec628fd35cc059a03",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
+  "basis": "planner",
+  "at": "2026-11-12T00:01:01.493Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "icon-time-v1.json",
   "sha256": "2fa291197d4872f321f29d135b00bde908eff89edc912334efe17ef17e28dcbd",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
+  "basis": "planner",
+  "at": "2026-11-12T00:00:55.464Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "app-shell-v1.json",
   "sha256": "48c3efd20c691ef8f2b06526f5d017a07f956476fb8131f579f37a45f02969e0",
-  "decidedBy": "planner:R2F-39",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-39, planner)",
   "basis": "planner",
-  "at": "2026-11-10T11:59:55.955Z"
+  "at": "2026-11-12T00:01:44.058Z"
 }

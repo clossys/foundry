@@ -1,7 +1,7 @@
 {
   "candidate": "chart-line-v3.json",
   "sha256": "cc014db9e3cc8990e1e934f8e3d766c67c73db66a75bbb1712dfb1f0bf3c7896",
-  "decidedBy": "owner:2026-11-03 planner-pin SPECIMEN-THEME",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 planner-pin SPECIMEN-THEME, planner)",
   "basis": "planner",
-  "at": "2026-11-03T18:00:00Z"
+  "at": "2026-11-12T00:01:17.390Z"
 }

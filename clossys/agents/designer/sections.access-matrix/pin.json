@@ -1,7 +1,7 @@
 {
   "candidate": "access-matrix-v3.json",
   "sha256": "6e52a0153646ec98cfa800bd56aa8f8503472bac46b78b9aa35a3da504260ec7",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:54:55.795Z"
+  "at": "2026-11-12T00:01:48.364Z"
 }

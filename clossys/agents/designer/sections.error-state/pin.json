@@ -1,7 +1,7 @@
 {
   "candidate": "error-state-v3.json",
   "sha256": "31f1b3ddafd1e088de54a5a9edab5714be4f9d43029aa3e1ecbcba74c0c1df22",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:54:58.740Z"
+  "at": "2026-11-12T00:01:53.520Z"
 }

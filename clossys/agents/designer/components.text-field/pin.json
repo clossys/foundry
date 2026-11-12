@@ -1,7 +1,7 @@
 {
   "candidate": "text-field-v3.json",
   "sha256": "8a18220abf0a05d5ac272d240b55241c3a795d826f983a0cb204b928575128bf",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-DEPS)",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 planner pins that pass the gate (SECTION-DEPS), planner)",
   "basis": "planner",
-  "at": "2026-11-03T15:57:07.598Z"
+  "at": "2026-11-12T00:01:41.007Z"
 }

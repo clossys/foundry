@@ -1,7 +1,7 @@
 {
   "candidate": "input-v1.json",
   "sha256": "f6349ed46f8c857e1b1866d6fc6f54589d81c84b9b603e55663d3f4cbb9b8f18",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
+  "basis": "planner",
+  "at": "2026-11-12T00:01:07.092Z"
 }

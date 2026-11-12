@@ -1,7 +1,7 @@
 {
   "candidate": "grid-list-v2.json",
   "sha256": "eb92e69c5c43b8ae2b46103526600194f65004937663c4d48300d6ea8b3303be",
-  "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 planner-pin COMPONENT-FIXTURES, planner)",
   "basis": "planner",
-  "at": "2026-11-03T12:00:00Z"
+  "at": "2026-11-12T00:01:25.131Z"
 }

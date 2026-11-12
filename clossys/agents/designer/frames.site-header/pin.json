@@ -1,7 +1,7 @@
 {
   "candidate": "site-header-v5.json",
   "sha256": "147e2a93e07f7ffbca6c1944a396e4e2c6dea763d24314b6e9ea29eebb451eab",
-  "decidedBy": "planner:COPY-SLOT-CONTRACT",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:COPY-SLOT-CONTRACT, planner)",
   "basis": "planner",
-  "at": "2026-11-05T18:27:00Z"
+  "at": "2026-11-12T00:01:47.067Z"
 }

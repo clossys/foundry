@@ -1,7 +1,7 @@
 {
   "candidate": "producer-pipeline-legend-v3.json",
   "sha256": "799312f4ec7c8eec2590a9434ea7ceb4f366f039eb3a5eeeceba2338a0bcd1da",
-  "decidedBy": "planner:R2F-39",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-39, planner)",
   "basis": "planner",
-  "at": "2026-11-10T12:00:05.765Z"
+  "at": "2026-11-12T00:02:00.394Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "features-v2.json",
   "sha256": "f0631481abadfc866aec2ab0c795da54ba3e0e184845a14f207395f3db4be422",
-  "decidedBy": "planner:R2F-39",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-39, planner)",
   "basis": "planner",
-  "at": "2026-11-10T12:00:02.017Z"
+  "at": "2026-11-12T00:01:54.374Z"
 }

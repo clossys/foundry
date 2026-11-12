@@ -1,7 +1,7 @@
 {
   "candidate": "comparison-v1.json",
   "sha256": "85a67fbef7f008922f4c0f81f001a9a9bec7284260187e49d8a24ba9f1c3fff4",
-  "decidedBy": "planner:R2F-39",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-39, planner)",
   "basis": "planner",
-  "at": "2026-11-10T11:59:58.575Z"
+  "at": "2026-11-12T00:01:51.382Z"
 }

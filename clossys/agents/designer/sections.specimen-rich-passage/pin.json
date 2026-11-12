@@ -1,7 +1,7 @@
 {
   "candidate": "specimen-rich-passage-v3.json",
   "sha256": "e3bab80f82c78401342c4bc78d0e16670b094f2c293d60f4ebca34c97a9a9fcd",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:55:04.003Z"
+  "at": "2026-11-12T00:02:07.263Z"
 }

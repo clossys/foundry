@@ -1,7 +1,7 @@
 {
   "candidate": "resource-list-v3.json",
   "sha256": "6b54d2f3638ce0b2f50cdac43cde209bd5be01ba2411c3b55d23cb7c3ce8e53f",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:55:00.613Z"
+  "at": "2026-11-12T00:02:01.675Z"
 }

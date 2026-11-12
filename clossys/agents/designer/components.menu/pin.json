@@ -1,7 +1,7 @@
 {
   "candidate": "menu-v2.json",
   "sha256": "8f0950b730609bb64d59493e6dc4c76a802a60f6c9c395efe92633e374104b03",
-  "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 planner-pin COMPONENT-FIXTURES, planner)",
   "basis": "planner",
-  "at": "2026-11-03T12:00:00Z"
+  "at": "2026-11-12T00:01:27.271Z"
 }

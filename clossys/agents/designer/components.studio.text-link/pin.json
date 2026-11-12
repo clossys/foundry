@@ -1,7 +1,7 @@
 {
   "candidate": "text-link-v3.json",
   "sha256": "658510f99ca0421cf9c92c6520763629666d77a933c8fa86a3db23d07399bfb6",
-  "decidedBy": "planner:R2F-03",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-03, planner)",
   "basis": "planner",
-  "at": "2026-11-06T17:16:55.882Z"
+  "at": "2026-11-12T00:01:38.861Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "toast-v1.json",
   "sha256": "11a3c0b17f843abe998018fe418cd759d17109804d62944d54c3e23aa857371d",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
+  "basis": "planner",
+  "at": "2026-11-12T00:01:41.435Z"
 }

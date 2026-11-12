@@ -1,7 +1,7 @@
 {
   "candidate": "icon-danger-v1.json",
   "sha256": "5c16465e32c136ac19f03e75ea747bf7c12732a86f14308ca5f5d30324d6bc69",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
+  "basis": "planner",
+  "at": "2026-11-12T00:00:42.354Z"
 }

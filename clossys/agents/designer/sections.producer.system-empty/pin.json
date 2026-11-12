@@ -1,7 +1,7 @@
 {
   "candidate": "producer-system-empty-v1.json",
   "sha256": "158b602a8116c220e2a08d7361e3125d3cb3e493e2c87935a2b8d0ce1584e686",
-  "decidedBy": "planner:R2F-39",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-39, planner)",
   "basis": "planner",
-  "at": "2026-11-10T12:00:06.276Z"
+  "at": "2026-11-12T00:02:00.820Z"
 }

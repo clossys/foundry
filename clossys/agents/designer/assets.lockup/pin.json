@@ -1,7 +1,7 @@
 {
   "candidate": "lockup-v4.json",
   "sha256": "4964ef422182a9ad58f45301512abb777c5f326cbe16a122e9c37921113a5c0b",
-  "decidedBy": "planner:INTEGRATE",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:INTEGRATE, planner)",
   "basis": "planner",
-  "at": "2026-11-05T16:05:29.144Z"
+  "at": "2026-11-12T00:00:58.043Z"
 }

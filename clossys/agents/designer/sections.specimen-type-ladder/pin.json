@@ -1,7 +1,7 @@
 {
   "candidate": "specimen-type-ladder-v3.json",
   "sha256": "b9824bb6b70fc51561c72c23a61568f57bddc11103bd251f3488b7a92a4728b9",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:55:05.518Z"
+  "at": "2026-11-12T00:02:08.982Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "image-ratio-v3.json",
   "sha256": "491173ede4a78697e0b45a533bc56ef6d959a31cf335d99eecf430fc38f2a7c7",
-  "decidedBy": "planner:SPECIMEN-RENDER",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:SPECIMEN-RENDER, planner)",
   "basis": "planner",
-  "at": "2026-11-05T17:12:37.956Z"
+  "at": "2026-11-12T00:00:57.616Z"
 }

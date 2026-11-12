@@ -1,7 +1,7 @@
 {
   "candidate": "checkbox-v2.json",
   "sha256": "83a688340ecfe97af57b6f052306b3aec6d1514d03d5060204b2116e4caba7dd",
-  "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 planner-pin COMPONENT-FIXTURES, planner)",
   "basis": "planner",
-  "at": "2026-11-03T12:00:00Z"
+  "at": "2026-11-12T00:01:17.820Z"
 }

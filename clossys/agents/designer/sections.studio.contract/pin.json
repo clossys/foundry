@@ -1,7 +1,7 @@
 {
   "candidate": "studio-contract-v6.json",
   "sha256": "fd6365d9bd3549bba1d01705cc838d6c07cee3ee0b94dd36253f7e965c663bde",
-  "decidedBy": "planner:DS-COMPLETE",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DS-COMPLETE, planner)",
   "basis": "planner",
-  "at": "2026-11-05T06:09:17.908Z"
+  "at": "2026-11-12T00:02:11.134Z"
 }

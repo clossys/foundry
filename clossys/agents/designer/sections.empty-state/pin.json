@@ -1,7 +1,7 @@
 {
   "candidate": "empty-state-v3.json",
   "sha256": "2481c08cca65829ec2e0d0695178c8cf30e466d8965bb4c59ff070b055fafaea",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:54:58.367Z"
+  "at": "2026-11-12T00:01:53.094Z"
 }

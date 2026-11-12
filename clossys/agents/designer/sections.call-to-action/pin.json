@@ -1,7 +1,7 @@
 {
   "candidate": "call-to-action-v5.json",
   "sha256": "a09de6c0fbde40ef446c56f9e4b957a8dd6f1cacbf5dc1f1d41feabc243c2db4",
-  "decidedBy": "planner:COPY-SLOT-CONTRACT",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:COPY-SLOT-CONTRACT, planner)",
   "basis": "planner",
-  "at": "2026-11-05T18:27:00Z"
+  "at": "2026-11-12T00:01:50.524Z"
 }

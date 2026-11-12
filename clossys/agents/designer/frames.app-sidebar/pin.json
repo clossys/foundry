@@ -1,7 +1,7 @@
 {
   "candidate": "app-sidebar-v1.json",
   "sha256": "03807b88a954c35fd32c45f3082a169d5ca2038d2617683cc52c4efbf4cacb1d",
-  "decidedBy": "planner:R2F-39",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-39, planner)",
   "basis": "planner",
-  "at": "2026-11-10T11:59:56.602Z"
+  "at": "2026-11-12T00:01:44.485Z"
 }

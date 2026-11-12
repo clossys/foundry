@@ -1,7 +1,7 @@
 {
   "candidate": "node-header-v1.json",
   "sha256": "9a0df091ab886037fa10a833e327f0e67ab911d218e366d577de5c41f7a52dfb",
-  "decidedBy": "planner:CANVAS-PARTS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:CANVAS-PARTS, planner)",
   "basis": "planner",
-  "at": "2026-11-04T02:24:45.143Z"
+  "at": "2026-11-12T00:01:23.830Z"
 }

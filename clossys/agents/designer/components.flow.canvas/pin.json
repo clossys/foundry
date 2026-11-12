@@ -1,7 +1,7 @@
 {
   "candidate": "canvas-v4.json",
   "sha256": "63808ff83484f6846fec46432aa1cac7325f204c8f90dce60558b6d28433e099",
-  "decidedBy": "planner:PIPELINE-CANVAS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:PIPELINE-CANVAS, planner)",
   "basis": "planner",
-  "at": "2026-11-04T06:44:25.236Z"
+  "at": "2026-11-12T00:01:22.547Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "specimen-copy-in-context-v3.json",
   "sha256": "0459ae03f1f7714ebbd78350d217af773958fd154c46d0e82317a58cb929e906",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:55:01.741Z"
+  "at": "2026-11-12T00:02:04.683Z"
 }

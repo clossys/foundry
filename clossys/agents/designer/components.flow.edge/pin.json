@@ -1,7 +1,7 @@
 {
   "candidate": "edge-v2.json",
   "sha256": "68301c78d9c3e6da76ef61cc8cc296d36d5f7ba8c8d648d55590db1fb928456d",
-  "decidedBy": "planner:CANVAS-PARTS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:CANVAS-PARTS, planner)",
   "basis": "planner",
-  "at": "2026-11-04T02:43:56.055Z"
+  "at": "2026-11-12T00:01:22.972Z"
 }

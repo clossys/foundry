@@ -1,7 +1,7 @@
 {
   "candidate": "studio-references-v6.json",
   "sha256": "09b9178c559d983a8c57c59f8975cd1b63456f8c1745f313705a4cc68d8b177f",
-  "decidedBy": "planner:DS-COMPLETE",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DS-COMPLETE, planner)",
   "basis": "planner",
-  "at": "2026-11-05T06:09:24.041Z"
+  "at": "2026-11-12T00:02:14.565Z"
 }

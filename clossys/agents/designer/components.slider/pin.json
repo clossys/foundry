@@ -1,7 +1,7 @@
 {
   "candidate": "slider-v2.json",
   "sha256": "9b431bcdc65e246befeab39e9179b63feee1f3125198250d1407a9a615c579af",
-  "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 planner-pin COMPONENT-FIXTURES, planner)",
   "basis": "planner",
-  "at": "2026-11-03T12:00:00Z"
+  "at": "2026-11-12T00:01:34.568Z"
 }

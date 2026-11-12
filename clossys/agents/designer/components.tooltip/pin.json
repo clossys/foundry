@@ -1,7 +1,7 @@
 {
   "candidate": "tooltip-v2.json",
   "sha256": "5c102a20d1aa2de5b07e88938cf3a688907b553cb41e50d5d83961dfcc1e3d65",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (INTEGRATE-SPECIMENS)",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 planner pins that pass the gate (INTEGRATE-SPECIMENS), planner)",
   "basis": "planner",
-  "at": "2026-11-03T18:00:00Z"
+  "at": "2026-11-12T00:01:43.148Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "specimen-radius-ladder-v3.json",
   "sha256": "541bde857c39263194c5f4d2251c7d9f9d7b5d7b35ce0bd8bc4b60fc1139509b",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
   "basis": "planner",
-  "at": "2026-11-05T02:55:03.628Z"
+  "at": "2026-11-12T00:02:06.829Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "card-v3.json",
   "sha256": "f60194f7c4a1c801963749222e806f21b35da1040b49552c31b314c1ef002fe9",
-  "decidedBy": "planner:DS-COMPLETE",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DS-COMPLETE, planner)",
   "basis": "planner",
-  "at": "2026-11-05T11:46:37.767Z"
+  "at": "2026-11-12T00:01:08.806Z"
 }

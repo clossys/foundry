@@ -1,7 +1,7 @@
 {
   "candidate": "tabs-v3.json",
   "sha256": "5fc5502fc84fa3811a4e5f769236aedd81dc5d9c3525b905dd3f9f033a9ee8f3",
-  "decidedBy": "planner:DS-COMPLETE",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DS-COMPLETE, planner)",
   "basis": "planner",
-  "at": "2026-11-05T11:46:38.863Z"
+  "at": "2026-11-12T00:01:40.148Z"
 }
