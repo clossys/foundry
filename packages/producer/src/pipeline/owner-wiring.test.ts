@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { flatConsumer } from "../cli/__fixtures__/flat-consumer.js";
@@ -52,8 +53,19 @@ describe("owner.wiring (clossys pipeline check)", () => {
 
   it("runs each option where the slot model can read it: no symbolic link above the scratch copy", async () => {
     const seen: [string, string][] = [];
-    // The scratch copy is removed after each option: resolve it while the option runs.
-    await ownerWiringIssues(root, { run: async (argv, cwd) => { seen.push([cwd, realpathSync(cwd)]); return runCli(argv, cwd); }, agents: ["writer"], interviewOf: firstOnly(interviewOf) });
+    // The test setup resolves TMPDIR; the live OS temp folder can sit under a link (macOS /var), so link it here.
+    const real = mkdtempSync(join(tmpdir(), "owner-wiring-real-")), linked = `${real}-link`;
+    symlinkSync(real, linked);
+    const saved = process.env.TMPDIR;
+    process.env.TMPDIR = linked;
+    try {
+      // The scratch copy is removed after each option: resolve it while the option runs.
+      await ownerWiringIssues(root, { run: async (argv, cwd) => { seen.push([cwd, realpathSync(cwd)]); return runCli(argv, cwd); }, agents: ["writer"], interviewOf: firstOnly(interviewOf) });
+    } finally {
+      if (saved === undefined) delete process.env.TMPDIR; else process.env.TMPDIR = saved;
+      rmSync(linked); rmSync(real, { recursive: true, force: true });
+    }
+    expect(tmpdir()).not.toBe(linked);
     expect(seen.length).toBeGreaterThan(0);
     for (const [cwd, real] of seen) expect(real).toBe(cwd);
   }, 300_000);
