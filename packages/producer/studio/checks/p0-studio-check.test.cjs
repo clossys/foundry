@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { after, test } = require('node:test');
 const { ROUTE_MARKER, readStudioPublication } = require('./check-studio-routes.cjs');
-const { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
+const { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, servedCheck, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
 // Fixtures live in the OS temp directory (TMPDIR), never under the checkout (a write there dirties the tree), and are removed after the run.
@@ -173,4 +173,34 @@ test('studio check reports a blocked Chrome launch as ENV exit 2 with the blocke
   assert.equal(result.exitCode, 2);
   assert.equal(result.report.diagnostics[1].rule, 'blocked-no-browser');
   assert.match(result.report.diagnostics[1].message, /^BLOCKED no browser/);
+});
+
+test('the command serves the Studio it checks and stops it after, pass or fail', async () => {
+  const events = [];
+  const start = async () => { events.push('start'); return { origin: 'http://127.0.0.1:4503', stop: async () => { events.push('stop'); } }; };
+  const ready = async origin => { events.push(`ready ${origin}`); };
+  const served = await servedCheck({ screenshotRoot: 'x' }, { env: {}, start, ready, check: async options => { events.push(`check ${options.origin}`); return { exitCode: 0, report: {} }; } });
+  assert.equal(served.exitCode, 0);
+  assert.deepEqual(events, ['start', 'ready http://127.0.0.1:4503', 'check http://127.0.0.1:4503', 'stop']);
+  events.length = 0;
+  await assert.rejects(servedCheck({}, { env: {}, start, ready, check: async () => { throw new Error('route failed'); } }), /route failed/);
+  assert.deepEqual(events, ['start', 'ready http://127.0.0.1:4503', 'stop']);
+});
+
+test('an origin given by flag or $STUDIO_ORIGIN is used as is, with no Studio started', async () => {
+  const start = async () => { throw new Error('must not start'); };
+  const seen = [];
+  const check = async options => { seen.push(options.origin); return { exitCode: 0, report: {} }; };
+  await servedCheck({ origin: 'http://localhost:4999' }, { env: {}, start, check });
+  await servedCheck({}, { env: { STUDIO_ORIGIN: 'http://localhost:4888/x' }, start, check });
+  assert.deepEqual(seen, ['http://localhost:4999', 'http://localhost:4888']);
+});
+
+test('a Studio that cannot start is a setup failure (ENV exit 2), and nothing is checked', async () => {
+  let checked = false;
+  const result = await servedCheck({}, { env: {}, start: async () => { throw new Error('port 4503 is already serving'); }, check: async () => { checked = true; return { exitCode: 0 }; } });
+  assert.equal(result.exitCode, 2);
+  assert.equal(result.report.status, 'ENV');
+  assert.match(result.report.diagnostics[0].message, /already serving/);
+  assert.equal(checked, false);
 });

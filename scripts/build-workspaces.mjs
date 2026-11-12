@@ -91,6 +91,15 @@ export function buildOrder(workspaces) {
   return order.map((dir) => byDir.get(dir));
 }
 
+/**
+ * Workspaces whose `bin` the build makes linkable. `npm install` links a workspace bin only when its
+ * target exists, and most targets are build output (the producer's `clossys` is dist/cli/index.js),
+ * so on a fresh clone they are missing until they are linked after the build.
+ */
+export function binsToLink(order) {
+  return order.filter((workspace) => workspace.manifest.scripts?.build && workspace.manifest.bin && Object.keys(workspace.manifest.bin).length).map((workspace) => workspace.manifest.name);
+}
+
 function main() {
   const args = process.argv.slice(2);
   if (args.some((arg) => arg !== "--print")) {
@@ -117,6 +126,15 @@ function main() {
     const result = spawnSync(npm, ["run", "build", `--workspace=${workspace.manifest.name}`], { cwd: root, stdio: "inherit" });
     if (result.status !== 0) {
       console.error(`build-workspaces: ${workspace.dir} build failed (${result.status ?? result.signal})`);
+      process.exit(result.status || 1);
+    }
+  }
+  const link = binsToLink(order);
+  if (link.length) {
+    // --ignore-scripts: this only links the built bins into node_modules/.bin; it runs no install script.
+    const result = spawnSync(npm, ["rebuild", "--ignore-scripts", ...link], { cwd: root, stdio: "inherit" });
+    if (result.status !== 0) {
+      console.error(`build-workspaces: linking the built bins failed (${result.status ?? result.signal})`);
       process.exit(result.status || 1);
     }
   }

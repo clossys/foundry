@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildOrder, listWorkspaces } from "./build-workspaces.mjs";
+import { binsToLink, buildOrder, listWorkspaces } from "./build-workspaces.mjs";
 
 const ws = (dir, name, dependencies = {}, extra = {}) => ({ dir, manifest: { name, dependencies, ...extra } });
 
@@ -43,4 +43,15 @@ test("workspace patterns expand dir/* and literal nested paths", () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("every built workspace with a bin is linked after the build, and only those", () => {
+  const ws = (name, manifest) => ({ dir: `packages/${name}`, manifest: { name, ...manifest } });
+  const order = [
+    ws("producer", { scripts: { build: "tsc" }, bin: { clossys: "dist/cli/index.js" } }),
+    ws("plain", { scripts: { build: "tsc" } }),
+    ws("scripted", { bin: { tool: "scripts/tool.mjs" } }),
+    ws("empty", { scripts: { build: "tsc" }, bin: {} }),
+  ];
+  assert.deepEqual(binsToLink(order), ["producer"]);
 });

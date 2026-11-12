@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const { launchChrome } = require('./chrome-launch.cjs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
+const { studioOrigin, specimensReady } = require('./studio-origin.mjs');
 
 const studioRoot = path.resolve(__dirname, '..');
 const repositoryRoot = path.resolve(studioRoot, '../../..');
@@ -248,7 +249,7 @@ async function settle(page, pending, timeout) {
   throw new Error('Page resource requests did not settle before timeout');
 }
 async function runStudioCheck(options = {}) {
-  const origin = new URL(options.origin ?? 'http://127.0.0.1:4300').origin;
+  const origin = new URL(options.origin ?? studioOrigin({})).origin;
   const plan = options.plan ?? await discoverRoutePlan(options);
   const timeout = options.timeout ?? 15000;
   const screenshotRoot = path.resolve(options.screenshotRoot ?? path.join(repositoryRoot, 'visual-pass/p0'));
@@ -351,6 +352,27 @@ async function checkCommand(options = {}) {
   try { return { exitCode: 0, report: await checkStudio(options) }; }
   catch (error) { const report = failureReport(error); return { exitCode: REPORT_EXIT_CODES[report.status] ?? 1, report }; }
 }
+/**
+ * The command serves the Studio it checks, the one way every rendered check does
+ * (studio/checks/studio-origin.mjs): --origin or $STUDIO_ORIGIN as given, otherwise check:studio's
+ * startStudio (built from the current source, on the single preview port), stopped afterwards. A
+ * Studio that cannot start is a setup failure (ENV exit 2), never a pass and never a skipped route.
+ */
+async function servedCheck(options = {}, { env = process.env, start, ready, check = checkCommand } = {}) {
+  if (options.origin) return check(options);
+  if (env.STUDIO_ORIGIN) return check({ ...options, origin: studioOrigin(env) });
+  let studio;
+  try {
+    studio = await (start ?? (await import('../../scripts/check-studio.mjs')).startStudio)({ log: line => console.error(line) });
+    await (ready ?? specimensReady)(studio.origin);
+  } catch (error) {
+    await studio?.stop();
+    const report = failureReport(error, { status: 'ENV' });
+    return { exitCode: REPORT_EXIT_CODES.ENV, report };
+  }
+  try { return await check({ ...options, origin: studio.origin }); }
+  finally { await studio.stop(); }
+}
 function parseArgs(args) {
   const options = {};
   const flags = new Map([['--origin', 'origin'], ['--screenshots', 'screenshotRoot'], ['--studio-root', 'studioRoot'], ['--repository-root', 'repositoryRoot']]);
@@ -361,5 +383,5 @@ function parseArgs(args) {
   }
   return options;
 }
-module.exports = { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, inspectPage, screenshotName, checkStudio, checkCommand, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
-if (require.main === module) Promise.resolve().then(() => checkCommand(parseArgs(process.argv.slice(2)))).then(({ exitCode, report }) => { console.log(JSON.stringify(report, null, 2)); process.exitCode = exitCode; }).catch(error => { const report = failureReport(error); console.error(JSON.stringify(report, null, 2)); process.exitCode = REPORT_EXIT_CODES[report.status] ?? 1; });
+module.exports = { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, inspectPage, screenshotName, checkStudio, checkCommand, servedCheck, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
+if (require.main === module) Promise.resolve().then(() => servedCheck(parseArgs(process.argv.slice(2)))).then(({ exitCode, report }) => { console.log(JSON.stringify(report, null, 2)); process.exitCode = exitCode; }).catch(error => { const report = failureReport(error); console.error(JSON.stringify(report, null, 2)); process.exitCode = REPORT_EXIT_CODES[report.status] ?? 1; });
