@@ -26,9 +26,9 @@ const CITE_KEY = /^(director|designer|writer|publisher):([a-z0-9][a-z0-9.-]*)$/;
 
 /** The structural shape of a pin's `recited` field, or a message. */
 export function parseSlotRecite(value: unknown): { ok: true; value: SlotRecite } | { ok: false; message: string } {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return { ok: false, message: "recited must be {by, at, cites, reason?}" };
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return { ok: false, message: "recited must be {by, at, cites, proof?, reason?}" };
   const recite = value as Record<string, unknown>;
-  for (const key of Object.keys(recite)) if (!["by", "at", "cites", "reason"].includes(key)) return { ok: false, message: `recited has unknown key ${key}` };
+  for (const key of Object.keys(recite)) if (!["by", "at", "cites", "proof", "reason"].includes(key)) return { ok: false, message: `recited has unknown key ${key}` };
   if (typeof recite.by !== "string" || !/^(?:agent:[a-z][a-z0-9.-]*|planner(?::.+)?)$/.test(recite.by)) return { ok: false, message: "recited.by must be agent:<seat> or planner[:<ref>]" };
   if (typeof recite.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(recite.at) || !Number.isFinite(Date.parse(recite.at))) return { ok: false, message: "recited.at must be an ISO timestamp" };
   if (typeof recite.cites !== "object" || recite.cites === null || Array.isArray(recite.cites) || !Object.keys(recite.cites).length) return { ok: false, message: "recited.cites must map <agent>:<slot> to a version" };
@@ -36,8 +36,15 @@ export function parseSlotRecite(value: unknown): { ok: true; value: SlotRecite }
     if (!CITE_KEY.test(key)) return { ok: false, message: `recited.cites key ${key} is not <agent>:<slot>` };
     if (!Number.isInteger(version) || (version as number) < 1) return { ok: false, message: `recited.cites ${key} must be a version >= 1` };
   }
+  if (recite.proof !== undefined) {
+    if (typeof recite.proof !== "object" || recite.proof === null || Array.isArray(recite.proof)) return { ok: false, message: "recited.proof must map <agent>:<slot> to sha256:<hex>" };
+    for (const [key, hash] of Object.entries(recite.proof)) {
+      if (!(key in (recite.cites as Record<string, number>))) return { ok: false, message: `recited.proof key ${key} is not cited` };
+      if (typeof hash !== "string" || !/^sha256:[0-9a-f]{64}$/.test(hash)) return { ok: false, message: `recited.proof ${key} must be sha256:<64 hex>` };
+    }
+  }
   if (recite.reason !== undefined && (typeof recite.reason !== "string" || !recite.reason.trim())) return { ok: false, message: "recited.reason must be a non-empty string" };
-  return { ok: true, value: { by: recite.by, at: recite.at, cites: { ...(recite.cites as Record<string, number>) }, ...(recite.reason ? { reason: recite.reason as string } : {}) } };
+  return { ok: true, value: { by: recite.by, at: recite.at, cites: { ...(recite.cites as Record<string, number>) }, ...(recite.proof ? { proof: { ...(recite.proof as Record<string, string>) } } : {}), ...(recite.reason ? { reason: recite.reason as string } : {}) } };
 }
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

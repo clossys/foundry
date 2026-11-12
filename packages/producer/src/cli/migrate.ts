@@ -14,8 +14,10 @@ export const MIGRATE_USAGE = "Usage: clossys migrate copy-keys|inputs [--check] 
   + "copy-keys renames camelCase copy ids in Designer and Writer slot.json and Writer candidates to the catalog's kebab-case ids; record text is unchanged.\n"
   + "inputs declares Designer and Writer slot.json inputs from the read graph (the Designer brief, slot-contract theme and asset reads, pinned Writer source refs); inputs are only added.\n"
   + "director-refs re-cites each pinned Writer candidate that cites a Director cell older than its pin: when that cell's Direction is byte-identical between the two versions it writes the next Writer candidate with the same copy and the refs at the pinned version, then picks it (--by, default agent:writer); a changed Direction is refused for the Writer skill to re-draft.\n"
-  + "       clossys migrate recite [<agent>/<slot>... | --agent <id>] --by agent:<seat> [--reason <text>] [--restore <git rev>] [--check] [--root <dir>] [--json]\n"
-  + "recite is a pointer-only update in place: each pinned slot whose cited upstream pins moved records the versions it now cites (pin.recited), keeping its candidate, basis and decider; no candidate is written. A moved ref to a Director cell whose Direction is byte-identical is proved; any other move needs --reason (where the words that the meaning holds are). --restore <rev> keeps the slot's pin at <rev> instead of a later non-owner re-pin whose candidate is only a re-cite of it.\n"
+  + "       clossys migrate recite [<agent>/<slot>... | --agent <id>] --by agent:<seat> [--restore <git rev>] [--check] [--root <dir>] [--json]\n"
+  + "       clossys migrate recite --cascade [--agent <id>] [--check] [--root <dir>] [--json]\n"
+  + "recite is a pointer-only update in place: each pinned slot whose cited upstream pins moved records the versions it now cites (pin.recited, with the sha256 of what each cited version means in recited.proof), keeping its candidate, basis and decider; no candidate is written. A citation is proved only when the cited meaning hashes the same (a Director cell's Direction, any other candidate's content); an unproved one is refused for the agent's skill to re-draft. --restore <rev> keeps the slot's pin at <rev> instead of a later non-owner re-pin whose candidate is only a re-cite of it.\n"
+  + "--cascade is the runner's step after each pin stage (recite.direct, recite.design): it recites every proved citer as agent:producer and reports a meaning change as changed (exit 0), which opens <agent>.candidates for that slot.\n"
   + "--check reports pending changes and exits 1 when any remain.";
 
 export async function runMigrateCli(argv: readonly string[], cwd: string): Promise<CliResult> {
@@ -88,7 +90,7 @@ async function migrateDirectorRefs(consumer: string, dir: string, check: boolean
 
 async function migrateRecite(rest: readonly string[], cwd: string): Promise<CliResult> {
   const items: string[] = [];
-  let check = false, root: string | undefined, by: string | undefined, reason: string | undefined, restore: string | undefined, agent: string | undefined;
+  let check = false, cascade = false, root: string | undefined, by: string | undefined, restore: string | undefined, agent: string | undefined;
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index]!, value = rest[index + 1];
     const takes = value !== undefined && !value.startsWith("--");
@@ -96,23 +98,25 @@ async function migrateRecite(rest: readonly string[], cwd: string): Promise<CliR
     else if (arg === "--json") continue;
     else if (arg === "--root" && takes) { root = value; index++; }
     else if (arg === "--by" && takes) { by = value; index++; }
-    else if (arg === "--reason" && takes) { reason = value; index++; }
+    else if (arg === "--cascade") cascade = true;
     else if (arg === "--restore" && takes) { restore = value; index++; }
     else if (arg === "--agent" && takes) { agent = value; index++; }
     else if (!arg.startsWith("--") && /^[a-z]+\/[a-z0-9][a-z0-9.-]*$/.test(arg)) items.push(arg);
     else return { exitCode: 2, message: `Unknown argument: ${arg}\n${MIGRATE_USAGE}` };
   }
+  if (cascade && (by || items.length || restore)) return { exitCode: 2, message: `--cascade takes no slots, --by or --restore: the runner recites as agent:producer\n${MIGRATE_USAGE}` };
+  if (cascade) by = "agent:producer";
   if (!by || !/^agent:[a-z][a-z0-9.-]*$/.test(by)) return { exitCode: 2, message: `recite needs --by agent:<seat> (the citing agent records it)\n${MIGRATE_USAGE}` };
   if (agent !== undefined && !(SLOT_AGENTS as readonly string[]).includes(agent)) return { exitCode: 2, message: `--agent must be one of ${SLOT_AGENTS.join(", ")}\n${MIGRATE_USAGE}` };
   if (agent && items.length) return { exitCode: 2, message: `pass slots or --agent, not both\n${MIGRATE_USAGE}` };
   if (restore !== undefined && !/^[A-Za-z0-9._/^~-]+$/.test(restore)) return { exitCode: 2, message: `--restore must be a git revision\n${MIGRATE_USAGE}` };
   const dir = discoverRoot(resolve(cwd, root ?? "."));
   let rows;
-  try { rows = await recite(resolve(dir, "clossys"), { items, ...(agent ? { agent: agent as SlotAgent } : {}), by, ...(reason ? { reason } : {}), ...(restore ? { restore } : {}), check, root: dir }); }
+  try { rows = await recite(resolve(dir, "clossys"), { items, ...(agent ? { agent: agent as SlotAgent } : {}), by, ...(restore ? { restore } : {}), ...(cascade ? { cascade } : {}), check, root: dir }); }
   catch (error) { return { exitCode: 1, message: error instanceof Error ? error.message : String(error), root: dir, check }; }
   const count = (outcome: string) => rows.filter(row => row.outcome === outcome).length;
   const lines = [
-    `migrate recite: ${count("restored")} restored, ${count("recited")} recited in place${check ? " (pending)" : ""}, ${count("current")} current, ${count("refused")} refused`,
+    `migrate recite: ${count("restored")} restored, ${count("recited")} recited in place${check ? " (pending)" : ""}, ${count("current")} current, ${count("changed")} changed (candidate work), ${count("refused")} refused`,
     ...rows.filter(row => row.outcome !== "current").map(row => `${row.outcome} ${row.item}: ${row.detail}`),
   ];
   const pending = count("restored") + count("recited");

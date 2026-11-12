@@ -23,6 +23,7 @@ import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
 import type { SeatReport } from "./seats.js";
 import { readJson, slotCounts, writerKeysUnapproved } from "./status.js";
+import { staleCitations, type StaleCitation } from "../records/stale-citations.js";
 import type { PipelineStatus } from "./status.js";
 import { STEPS } from "./steps/index.js";
 import { appendRecord, buildRecord, invocationOf, readStore, storeFile } from "./trace.js";
@@ -105,8 +106,19 @@ function iaSlots(root: string, agent: string): string[] {
   return (ia?.nodes ?? []).flatMap(node => (node.children ?? []).flatMap(child => (child.slots ?? []).filter((slot): slot is string => typeof slot === "string")));
 }
 
-const undecided = (context: Context, agent: string): string[] =>
-  (context.agents[agent]?.bySlot ?? []).filter(row => !row.pinned && !row.notNeeded).map(row => `${agent}/${row.slot}`);
+/** Stale citations (records/stale-citations.ts), read once per context. */
+const staleMemo = new WeakMap<Context, StaleCitation[]>();
+const staleOf = (context: Context, agent: string): StaleCitation[] => {
+  // A slot tree that does not read is the interview's and the checks' finding (slot.check), not a stale citation.
+  if (!staleMemo.has(context)) { let rows: StaleCitation[] = []; try { rows = existsSync(join(context.root, "clossys", "agents")) ? staleCitations(join(context.root, "clossys")) : []; } catch { rows = []; } staleMemo.set(context, rows); }
+  return staleMemo.get(context)!.filter(row => row.agent === agent);
+};
+
+/** Unpinned slots, then pinned slots whose meaning changed upstream and whose newer candidate waits on a pick. */
+const undecided = (context: Context, agent: string): string[] => [
+  ...(context.agents[agent]?.bySlot ?? []).filter(row => !row.pinned && !row.notNeeded).map(row => `${agent}/${row.slot}`),
+  ...staleOf(context, agent).filter(row => row.drafted).map(row => `${agent}/${row.slot}`),
+];
 
 /** The open items of one decide step (slot `agent/slot`, seat step id, or the step id itself); empty when decided. */
 export function openItems(step: Step, context: Context): string[] {
@@ -122,7 +134,12 @@ export function openItems(step: Step, context: Context): string[] {
   }
   if (counter?.startsWith("slots-without-candidates:")) {
     const agent = counter.slice("slots-without-candidates:".length);
-    return (context.agents[agent]?.bySlot ?? []).filter(row => row.candidates === 0).map(row => `${agent}/${row.slot}`);
+    // A slot with no candidate yet, then a pinned slot whose cited meaning changed upstream (the runner's
+    // recite step already re-cited every unchanged one) until its agent drafts a newer candidate.
+    return [
+      ...(context.agents[agent]?.bySlot ?? []).filter(row => row.candidates === 0).map(row => `${agent}/${row.slot}`),
+      ...staleOf(context, agent).filter(row => !row.drafted).map(row => `${agent}/${row.slot}`),
+    ];
   }
   if (counter?.startsWith("slots-undecided:")) return undecided(context, counter.slice("slots-undecided:".length));
   if (counter === "writer-keys-unapproved") return [...writerKeysUnapproved(root).keys()].map(slot => `writer/${slot}`);

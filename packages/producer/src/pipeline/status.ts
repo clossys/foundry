@@ -5,6 +5,7 @@ import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
 import { isModelDir, listModelDir, modelExists, readModelText } from "../records/slots.js";
 import { FOLDER_KIND } from "../records/slot-model/types.js";
+import { staleCitations, type StaleCitation } from "../records/stale-citations.js";
 import { errorMessage, isAbsent } from "../errors.js";
 import type { SeatReport } from "./seats.js";
 import { buildGraph } from "./graph.js";
@@ -128,8 +129,15 @@ export function writerKeysUnapproved(root: string): ReadonlyMap<string, readonly
   return unapproved;
 }
 
+/** Stale citations per agent (records/stale-citations.ts): drafted ones wait on the pick, the rest on candidates. */
+function staleCount(root: string, agent: string, drafted: boolean): number {
+  let rows: StaleCitation[] = [];
+  try { rows = modelExists(join(root, "clossys", "agents")) ? staleCitations(join(root, "clossys")) : []; } catch { rows = []; }
+  return rows.filter(row => row.agent === agent && row.drafted === drafted).length;
+}
+
 function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["agents"], seats: Record<string, SeatReport>): number {
-  if (counter.startsWith("slots-undecided:")) return agents[counter.slice("slots-undecided:".length)]?.open ?? 0;
+  if (counter.startsWith("slots-undecided:")) { const agent = counter.slice("slots-undecided:".length); return (agents[agent]?.open ?? 0) + staleCount(root, agent, true); }
   if (counter === "writer-keys-unapproved") return [...writerKeysUnapproved(root).values()].reduce((sum, keys) => sum + keys.length, 0);
   if (counter === "seats-open") return Object.values(seats).filter(seat => seat.state !== "assigned").length;
   if (counter === "slots-without-slot-json") {
@@ -139,7 +147,7 @@ function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["a
     return listModelDir(dir).filter(agent => (FOLDER_KIND as Readonly<Record<string, string>>)[agent] !== "seat").reduce((sum, agent) => sum + iaSlots(root, agent).filter(slot => !modelExists(join(dir, agent, slot, "slot.json"))).length, 0);
   }
   const agent = counter.slice("slots-without-candidates:".length);
-  return (agents[agent]?.bySlot ?? []).filter(row => row.candidates === 0).length;
+  return (agents[agent]?.bySlot ?? []).filter(row => row.candidates === 0).length + staleCount(root, agent, false);
 }
 
 export function pipelineStatus(root: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): PipelineStatus {

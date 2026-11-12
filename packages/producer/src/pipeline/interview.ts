@@ -46,7 +46,7 @@ import type { SlotAgent } from "../records/slot-model/types.js";
 import { directorStoreReader, listSlots, readCandidate, readiness, readSlot, slotIndex } from "../records/slots.js";
 import type { SlotEntry } from "../records/slots.js";
 import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
-import { candidateVersion } from "../records/pinned.js";
+import { staleCitations } from "../records/stale-citations.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
 import { candidatesOf, contextOf, explainChain, openItems, packetOf, skillLine, skillOf, verbOf } from "./chain.js";
@@ -268,17 +268,11 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   const index = slotIndex(consumer);
   const entries = new Map<SlotAgent, SlotEntry[]>();
   for (const agent of SLOT_AGENTS) entries.set(agent, listSlots(consumer, agent));
+  for (const row of staleCitations(consumer)) gaps.push({ kind: "wiring", code: "citation.stale", agent: row.agent, item: `${row.agent}/${row.slot}`, step: row.drafted ? `pick.${row.agent}` : `${row.agent}.candidates`, decider: "agent",
+    message: `pinned ${row.pinnedAt.slice(0, 10)}; ${plural(row.inputs.length, "input")} pinned since: ${listed(row.inputs)}${row.drafted ? "; a newer candidate waits on its pick" : ""}` });
   for (const [agent, list] of entries) for (const entry of list) {
     if (!entry.pin || agent === "director") continue;
-    const stale: string[] = [];
-    for (const input of readSlot(consumer, agent, entry.id).inputs) {
-      const upstream = index.get(input);
-      // A pointer-only recite (pin.recited) vouches for the upstream version it names, whenever that was pinned.
-      const recited = entry.pin.recited?.cites[`${upstream?.agent}:${input}`];
-      if (upstream?.pin && upstream.pin.at > entry.pin.at && recited !== candidateVersion(upstream.pin.candidate)) stale.push(`${upstream.agent}/${input}`);
-    }
     const broken = readiness(consumer, agent, entry.id, index).blockedBy.filter(block => ["invalid-pin", "missing-candidate", "hash-drift", "invalid-candidate", "invalid-slot"].includes(block.reason));
-    if (stale.length) gaps.push({ kind: "wiring", code: "citation.stale", agent, item: `${agent}/${entry.id}`, step: `${agent}.candidates`, decider: "agent", message: `pinned ${entry.pin.at.slice(0, 10)}; ${plural(stale.length, "input")} pinned since: ${listed(stale)}` });
     if (broken.length) gaps.push({ kind: "wiring", code: "citation.broken", agent, item: `${agent}/${entry.id}`, step: `${agent}.candidates`, decider: "agent", message: `inputs whose pin no longer clears: ${listed(broken.map(block => `${block.slot} (${block.reason})`))}` });
   }
   for (const row of explainChain(root, { steps, packageRoot }).rows) {

@@ -170,6 +170,9 @@ export interface PinRecite {
   readonly by: string;
   readonly at: string;
   readonly cites: Readonly<Record<string, number>>;
+  /** `<agent>:<slot>` to `sha256:<hex>` of what the cited version means (recite.ts meaningHash). */
+  readonly proof?: Readonly<Record<string, string>>;
+  /** Older records only: recite proves meaning by hash, never by a reason. */
   readonly reason?: string;
 }
 export interface PinConfirmation {

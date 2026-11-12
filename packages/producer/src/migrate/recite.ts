@@ -5,12 +5,15 @@
  * question is raised. Readers see the candidate's refs re-addressed (Director `recitedBytes`), and
  * `clossys gaps` counts a recited input as current.
  *
- * Meaning is proved, not assumed: every ref in the candidate that moves (`director:<cell>@N` to the
- * pinned M) must cite a Director cell whose `## Direction` is byte-identical between N and M, and an
- * input the candidate cites without a version (a slot.json input pinned after it) is the citing
- * agent's judgement. Either unproved case needs `--reason` (where the owner's or agent's words say the
- * meaning holds); otherwise it is refused, and a real meaning change goes to the agent's skill as a
- * new candidate.
+ * Meaning is proved by hash, never by a reason string (meaningHash): a Director cell means its
+ * `## Direction` section (and its Direction line numbers must not move); any other candidate means its
+ * bytes with the frontmatter `note:` line and every ref's version set aside. A moved ref (`<agent>:<slot>@N`
+ * to the pinned M) is proved when N and M hash the same. An input the candidate cites without a version
+ * (a slot.json input pinned after it) is proved against the meaning the record last cited: `recited.proof`,
+ * the version `recited.cites` names, or the upstream pin in force at this pin's `at` (its git history).
+ * Each recite records `recited.proof` so the next one compares hashes. An unproved citation is a meaning
+ * change: refused here, and under `--cascade` (what `clossys run` calls after a pin step) reported
+ * `changed`, which opens `<agent>.candidates` for that slot (records/stale-citations.ts).
  *
  * `--restore <rev>` undoes a re-pin that only moved citations: the slot's owner decision at `<rev>` (an
  * owner pin or a confirmed agent pick) is kept instead of the current pin when the current pin is not an
@@ -22,16 +25,17 @@ import { execFileSync } from "node:child_process";
 import { relative } from "node:path";
 import { recitedBytes } from "@clossys/director";
 import { agentModule } from "../server/cells.js";
+import { sha256Hex } from "../records/hash.js";
 import { candidateVersion } from "../records/pinned.js";
-import { CANDIDATE_NAME, SLOT_AGENTS, validatePin, type PinDoc, type PinRecite, type SlotAgent } from "../records/slot-model/index.js";
+import { SLOT_AGENTS, validatePin, type PinDoc, type PinRecite, type SlotAgent } from "../records/slot-model/index.js";
 import { listSlots, readCandidate, readSlot, slotIndex, type SlotEntry } from "../records/slots.js";
 import { writeRecite } from "../records/slot-write.js";
 import { directionSection } from "./director-refs.js";
 
 export interface ReciteRow {
   readonly item: string;
-  /** recited | restored | current | refused */
-  readonly outcome: "recited" | "restored" | "current" | "refused";
+  /** recited | restored | current | refused; changed (a meaning change, `--cascade` only: candidate work) */
+  readonly outcome: "recited" | "restored" | "current" | "refused" | "changed";
   readonly detail: string;
   readonly pin?: PinDoc;
 }
@@ -39,8 +43,9 @@ export interface ReciteOptions {
   readonly items?: readonly string[];
   readonly agent?: SlotAgent;
   readonly by: string;
-  readonly reason?: string;
   readonly restore?: string;
+  /** The runner's cascade: a meaning change is reported `changed` (candidate work), not refused. */
+  readonly cascade?: boolean;
   readonly check?: boolean;
   /** The consumer root (`clossys/`'s parent): where `--restore` reads git. */
   readonly root: string;
@@ -50,6 +55,12 @@ const REF = /(?<![a-z0-9.:-])(?:(director|designer|writer|publisher):)?([a-z0-9]
 const withoutNote = (bytes: string) => bytes.replace(/^note: .*\n/m, "");
 /** An owner decision: an owner decider or basis, or an agent pick the owner confirmed. */
 const ownerDecision = (pin: PinDoc) => /^owner(?::|$)/.test(pin.decidedBy) || pin.basis === "picked" || pin.basis === "bulk" || pin.confirmed !== undefined;
+
+/** What one upstream candidate means, as a hash: a Director cell's Direction; any other candidate's bytes, note and ref versions aside. */
+export function meaningHash(agent: SlotAgent, bytes: string): string {
+  const meaning = agent === "director" ? directionSection(bytes) : withoutNote(bytes).replace(REF, (_ref, cited: string | undefined, slot: string) => `${cited ? `${cited}:` : ""}${slot}@`);
+  return `sha256:${sha256Hex(meaning)}`;
+}
 
 /** The versioned refs a candidate's bytes carry: `<agent>:<slot>` to each cited version. */
 function textRefs(bytes: string, agent: SlotAgent, index: ReadonlyMap<string, SlotEntry>): Map<string, Set<number>> {
@@ -76,6 +87,18 @@ function pinAt(root: string, entry: SlotEntry, rev: string): PinDoc | string {
   return issues.length ? `the pin at ${rev} is invalid: ${issues[0]!.message}` : value as PinDoc;
 }
 
+/** The upstream pin in force at `at`: the newest pin in the slot's git history whose own `at` is not later. */
+function pinInForce(root: string, entry: SlotEntry, at: string, histories: Map<string, PinDoc[]>): PinDoc | undefined {
+  const path = relative(root, `${entry.dir}/pin.json`);
+  if (!histories.has(`${root}\0${path}`)) {
+    let revs: string[] = [];
+    try { revs = execFileSync("git", ["-C", root, "log", "--format=%H", "--", path], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).split("\n").filter(Boolean); }
+    catch { revs = []; }
+    histories.set(`${root}\0${path}`, revs.flatMap(rev => { const pin = pinAt(root, entry, rev); return typeof pin === "string" ? [] : [pin]; }));
+  }
+  return histories.get(`${root}\0${path}`)!.find(pin => pin.at <= at);
+}
+
 /** Plan (and unless `check`, write) the recite of each targeted pinned slot. */
 export async function recite(consumer: string, options: ReciteOptions): Promise<ReciteRow[]> {
   const index = slotIndex(consumer);
@@ -90,6 +113,12 @@ export async function recite(consumer: string, options: ReciteOptions): Promise<
     }
   } else for (const agent of options.agent ? [options.agent] : SLOT_AGENTS) targets.push(...listSlots(consumer, agent));
 
+  const meanings = new Map<string, string>(), histories = new Map<string, PinDoc[]>();
+  const meaningOf = (upstream: SlotEntry, name: string): string => {
+    const key = `${upstream.agent}/${upstream.id}/${name}`;
+    if (!meanings.has(key)) meanings.set(key, meaningHash(upstream.agent, readCandidate(consumer, upstream.agent, upstream.id, name).bytes));
+    return meanings.get(key)!;
+  };
   const rows: ReciteRow[] = [];
   for (const entry of targets) {
     const item = `${entry.agent}/${entry.id}`;
@@ -108,8 +137,9 @@ export async function recite(consumer: string, options: ReciteOptions): Promise<
     try { bytes = readCandidate(consumer, entry.agent, entry.id, base.candidate).bytes; }
     catch { refuse(`candidate ${base.candidate} is missing`); continue; }
 
-    // What the record cites now: every versioned ref in its bytes and every slot.json input, at the upstream pin.
-    const cites: Record<string, number> = {};
+    // What the record cites now: every versioned ref in its bytes and every slot.json input, at the upstream
+    // pin, with the hash of what each cited version means.
+    const cites: Record<string, number> = {}, proof: Record<string, string> = {};
     const changes: string[] = [], unproved: string[] = [];
     let blocked: string | undefined;
     for (const [key, versions] of textRefs(bytes, entry.agent, index)) {
@@ -117,18 +147,19 @@ export async function recite(consumer: string, options: ReciteOptions): Promise<
       if (!upstream.pin) { blocked = `${key} is not pinned`; break; }
       const to = candidateVersion(upstream.pin.candidate);
       cites[key] = to;
+      proof[key] = meaningOf(upstream, upstream.pin.candidate);
       if (base.recited?.cites[key] === to) continue;
       for (const from of versions) {
         if (from === to) continue;
         changes.push(`${key}@${from} -> @${to}`);
-        if (upstream.agent !== "director") { unproved.push(`${key}@${from} -> @${to}`); continue; }
-        const name = `${CANDIDATE_NAME.exec(upstream.pin.candidate)![1]!}-v${from}.md`;
-        if (!upstream.candidates.includes(name)) { blocked = `${key}@${from} has no candidate ${name}`; break; }
+        const name = upstream.candidates.find(each => candidateVersion(each) === from);
+        if (!name) { blocked = `${key}@${from} has no candidate`; break; }
+        if (meaningOf(upstream, name) !== proof[key]) { unproved.push(`${key}@${from} -> @${to} (${upstream.agent === "director" ? "Direction" : "content"} changed)`); continue; }
+        if (upstream.agent !== "director") continue;
         const before = readCandidate(consumer, upstream.agent, upstream.id, name).bytes;
         const after = readCandidate(consumer, upstream.agent, upstream.id, upstream.pin.candidate).bytes;
         const lines = (text: string, version: number) => (director.slotCandidateCell({ id: upstream.id, version, updated: "", path: name, bytes: text }) as { direction: { line: number }[] }).direction.map(bullet => bullet.line).join(",");
-        if (directionSection(before) !== directionSection(after)) unproved.push(`${key}@${from} -> @${to} (Direction changed)`);
-        else if (lines(before, from) !== lines(after, to)) unproved.push(`${key}@${from} -> @${to} (Direction lines moved)`);
+        if (lines(before, from) !== lines(after, to)) unproved.push(`${key}@${from} -> @${to} (Direction lines moved)`);
       }
       if (blocked) break;
     }
@@ -140,16 +171,28 @@ export async function recite(consumer: string, options: ReciteOptions): Promise<
       if (key in cites) continue;
       const to = candidateVersion(upstream.pin.candidate);
       cites[key] = to;
-      if (upstream.pin.at > base.at && base.recited?.cites[key] !== to) { changes.push(`${key}@${to}`); unproved.push(`${key} (an unversioned input pinned after this pin)`); }
+      proof[key] = meaningOf(upstream, upstream.pin.candidate);
+      if (!(upstream.pin.at > base.at && base.recited?.cites[key] !== to)) continue;
+      changes.push(`${key}@${to}`);
+      // The meaning this record last cited: its recorded proof, the version it last recited, or the upstream pin in force when it was pinned.
+      const last = base.recited?.cites[key];
+      const lastName = last !== undefined ? upstream.candidates.find(each => candidateVersion(each) === last) : pinInForce(options.root, upstream, base.at, histories)?.candidate;
+      const prior = base.recited?.proof?.[key] ?? (lastName && upstream.candidates.includes(lastName) ? meaningOf(upstream, lastName) : undefined);
+      if (prior === undefined) unproved.push(`${key}@${to} (no recorded meaning to compare: an unversioned input pinned after this pin)`);
+      else if (prior !== proof[key]) unproved.push(`${key}@${to} (${upstream.agent === "director" ? "Direction" : "content"} changed)`);
     }
     if (!restored && !changes.length) { rows.push({ item, outcome: "current", detail: "every citation is current" }); continue; }
-    if (unproved.length && !options.reason) { refuse(`meaning not proved for ${unproved.join("; ")}: pass --reason naming where the words that it holds are, or re-draft a new candidate`); continue; }
+    if (unproved.length) {
+      const detail = `meaning changed for ${unproved.join("; ")}: the ${entry.agent} skill drafts a new candidate`;
+      if (options.cascade) rows.push({ item, outcome: "changed", detail }); else refuse(detail);
+      continue;
+    }
     if (restored) {
       // The re-pin being undone moved citations only: its candidate is the restored one with refs re-addressed.
       const current = readCandidate(consumer, entry.agent, entry.id, entry.pin.candidate).bytes;
       if (withoutNote(recitedBytes(bytes, entry.agent, { cites })) !== withoutNote(recitedBytes(current, entry.agent, { cites }))) { refuse(`the current pin's ${entry.pin.candidate} is more than a re-cite of ${base.candidate}; it is kept`); continue; }
     }
-    const recited: PinRecite = { by: options.by, at: new Date().toISOString(), cites, ...(options.reason ? { reason: options.reason } : {}) };
+    const recited: PinRecite = { by: options.by, at: new Date().toISOString(), cites, proof };
     const detail = `${restored ? `restored ${base.candidate} (${base.decidedBy}, ${base.basis}) over ${entry.pin.candidate} (${entry.pin.decidedBy.split(" ")[0]}); ` : ""}cites ${Object.entries(cites).map(([key, version]) => `${key}@${version}`).join(", ")}`;
     if (options.check) { rows.push({ item, outcome: restored ? "restored" : "recited", detail }); continue; }
     const pin = writeRecite(consumer, entry.agent, entry.id, { recited, ...(restored ? { base } : {}) });

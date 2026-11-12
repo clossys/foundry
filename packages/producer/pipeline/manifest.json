@@ -235,6 +235,8 @@
         "producer"
       ],
       "steps": [
+        "recite.direct",
+        "recite.design",
         "compile",
         "options",
         "specimen",

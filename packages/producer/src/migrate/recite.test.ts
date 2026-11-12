@@ -1,11 +1,17 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { flatConsumer } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { readPin } from "../records/slots.js";
 import { writeCandidate } from "../records/slot-write.js";
+import { staleCitations } from "../records/stale-citations.js";
+import { contextOf, openItems } from "../pipeline/chain.js";
+import { STEPS } from "../pipeline/steps/index.js";
+import { meaningHash } from "./recite.js";
+
+const candidatesStep = STEPS.find(step => step.id === "writer.candidates")!;
 
 const CELL = "identity.naming.architecture";
 const SLOT = "strings.navigation";
@@ -44,7 +50,7 @@ describe("clossys migrate recite", () => {
     expect(again.message).toContain("1 current");
   }, 120_000);
 
-  it("refuses a moved ref whose Direction changed unless --reason says the meaning holds", async () => {
+  it("refuses a moved ref whose Direction changed: a reason string proves nothing", async () => {
     const { root, consumer } = await bumped(bytes => bytes.replace("## Direction\n- Model:", "## Direction\n- Model: Re-stated."));
     const before = readFileSync(join(consumer, "agents", "writer", SLOT, "pin.json"), "utf8");
     const refused = await runCli(["migrate", "recite", `writer/${SLOT}`, "--by", "agent:writer", "--root", root], root);
@@ -52,9 +58,71 @@ describe("clossys migrate recite", () => {
     expect(refused.message).toContain("Direction changed");
     expect(readFileSync(join(consumer, "agents", "writer", SLOT, "pin.json"), "utf8")).toBe(before);
     const reasoned = await runCli(["migrate", "recite", `writer/${SLOT}`, "--by", "agent:writer", "--reason", "owner words: ledger 1", "--root", root], root);
-    expect(reasoned.exitCode, reasoned.message).toBe(0);
-    expect(readPin(consumer, "writer", SLOT)!.recited?.reason).toBe("owner words: ledger 1");
+    expect(reasoned.exitCode).toBe(2);
+    expect(readFileSync(join(consumer, "agents", "writer", SLOT, "pin.json"), "utf8")).toBe(before);
   }, 120_000);
+
+  it("--cascade (the runner's recite step) recites an unchanged Direction with its hash, and opens writer.candidates only for a changed one", async () => {
+    const same = await bumped(unchanged);
+    const before = readPin(same.consumer, "writer", SLOT)!;
+    const ran = await runCli(["migrate", "recite", "--cascade", "--root", same.root], same.root);
+    expect(ran.exitCode, ran.message).toBe(0);
+    expect(ran.message).toContain(`recited writer/${SLOT}`);
+    const pin = readPin(same.consumer, "writer", SLOT)!;
+    const director = readPin(same.consumer, "director", CELL)!;
+    const directorBytes = readFileSync(join(candidates(same.consumer, "director", CELL), director.candidate), "utf8");
+    expect(pin).toMatchObject({ candidate: before.candidate, decidedBy: before.decidedBy, basis: before.basis, at: before.at });
+    expect(pin.recited).toMatchObject({ by: "agent:producer", cites: expect.objectContaining({ [`director:${CELL}`]: same.to }), proof: expect.objectContaining({ [`director:${CELL}`]: meaningHash("director", directorBytes) }) });
+    expect(pin.recited!.reason).toBeUndefined();
+    expect(openItems(candidatesStep, contextOf(same.root, STEPS))).not.toContain(`writer/${SLOT}`);
+    expect(staleCitations(same.consumer).map(row => `${row.agent}/${row.slot}`)).not.toContain(`writer/${SLOT}`);
+
+    const changed = await bumped(bytes => bytes.replace("## Direction\n- Model:", "## Direction\n- Model: Re-stated."));
+    const held = readFileSync(join(changed.consumer, "agents", "writer", SLOT, "pin.json"), "utf8");
+    const cascade = await runCli(["migrate", "recite", "--cascade", "--root", changed.root], changed.root);
+    expect(cascade.exitCode, cascade.message).toBe(0);
+    expect(cascade.message).toMatch(new RegExp(`changed writer/${SLOT.replace(".", "\\.")}: meaning changed for director:${CELL.replaceAll(".", "\\.")}@\\d+ -> @\\d+ \\(Direction changed\\)`));
+    expect(readFileSync(join(changed.consumer, "agents", "writer", SLOT, "pin.json"), "utf8")).toBe(held);
+    expect(openItems(candidatesStep, contextOf(changed.root, STEPS))).toContain(`writer/${SLOT}`);
+    // Once the Writer drafts a newer candidate the slot waits on its pick, not its candidates.
+    const stem = before.candidate.replace(/-v\d+\.md$/, "");
+    writeCandidate(changed.consumer, "writer", SLOT, stem, readFileSync(join(candidates(changed.consumer, "writer", SLOT), before.candidate), "utf8"));
+    const context = contextOf(changed.root, STEPS);
+    expect(openItems(candidatesStep, context)).not.toContain(`writer/${SLOT}`);
+    expect(openItems(STEPS.find(step => step.id === "pick.writer")!, { ...context, seats: { ...context.seats, "pick.writer": { ...context.seats["pick.writer"]!, llm: "claude-opus-5-5" } } } as typeof context)).toContain(`writer/${SLOT}`);
+  }, 240_000);
+
+  it("--cascade proves an unversioned slot.json input against the pin in force when the citer was pinned (git history)", async () => {
+    const VOICE = "identity.verbal.voice";
+    const root = flatConsumer(["director", "designer"]);
+    const consumer = join(root, "clossys");
+    const git = (...args: string[]) => execFileSync("git", ["-C", root, "-c", "user.email=t@example.invalid", "-c", "user.name=t", ...args], { encoding: "utf8" });
+    const citer = "sections.chat";
+    // The citer as pinned after the Director cell's pin and never recited: only git history says what it cited.
+    const citerPin = join(consumer, "agents", "designer", citer, "pin.json");
+    const { recited: _recited, ...pinned } = JSON.parse(readFileSync(citerPin, "utf8"));
+    const inputs = (JSON.parse(readFileSync(join(consumer, "agents", "designer", citer, "slot.json"), "utf8")) as { inputs: string[] }).inputs;
+    const latest = Math.max(...inputs.flatMap(input => ["director", "designer"].map(agent => join(consumer, "agents", agent, input, "pin.json")).filter(file => existsSync(file))).map(file => JSON.parse(readFileSync(file, "utf8")) as { at: string }).map(pin => Date.parse(pin!.at)));
+    writeFileSync(citerPin, `${JSON.stringify({ ...pinned, at: new Date(latest + 60_000).toISOString() }, null, 2)}\n`);
+    git("init", "-q"); git("add", "-A"); git("commit", "-qm", "fixture");
+    const name = readPin(consumer, "director", VOICE)!.candidate;
+    const repick = async (edit: (bytes: string) => string) => {
+      const written = writeCandidate(consumer, "director", VOICE, name.replace(/-v\d+\.md$/, ""), edit(readFileSync(join(candidates(consumer, "director", VOICE), name), "utf8")));
+      const pin = await runCli(["pin", `director/${VOICE}`, written.name, "--by", "owner:fixture", "--basis", "picked", "--root", root], root);
+      expect(pin.exitCode, pin.message).toBe(0);
+    };
+    await repick(unchanged);
+    const ran = await runCli(["migrate", "recite", "--cascade", "--agent", "designer", "--root", root], root);
+    expect(ran.exitCode, ran.message).toBe(0);
+    expect(readPin(consumer, "designer", citer)!.recited?.proof?.[`director:${VOICE}`], ran.message.split("\n").filter(line => line.includes(citer) || line.startsWith("migrate")).join("\n")).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(staleCitations(consumer).filter(row => row.agent === "designer")).toEqual([]);
+    git("add", "-A"); git("commit", "-qm", "recited");
+    await repick(bytes => bytes.replace(/(## Direction\n- [^\n]*)/, "$1 Re-stated."));
+    const moved = await runCli(["migrate", "recite", "--cascade", "--agent", "designer", "--root", root], root);
+    expect(moved.exitCode, moved.message).toBe(0);
+    expect(moved.message).toContain(`changed designer/${citer}: meaning changed for director:${VOICE}`);
+    expect(staleCitations(consumer).map(row => `${row.agent}/${row.slot}`)).toContain(`designer/${citer}`);
+  }, 240_000);
 
   it("--restore puts back the owner pin a planner re-cite replaced, and keeps a re-pin that changed copy", async () => {
     const { root, consumer, from, to } = await bumped(unchanged);

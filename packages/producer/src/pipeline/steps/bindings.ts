@@ -44,6 +44,8 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "publish.page": { entry: "src/cli/publish.ts#runPublishCheck" },
   "specimen": { entry: "src/cli/specimen.ts#runSpecimenCli", parser: "src/cli/specimen.ts" },
   "migrate": { entry: "src/cli/migrate.ts#runMigrateCli", parser: "src/cli/migrate.ts" },
+  "recite.direct": { entry: "src/cli/migrate.ts#runMigrateCli", parser: "src/cli/migrate.ts" },
+  "recite.design": { entry: "src/cli/migrate.ts#runMigrateCli", parser: "src/cli/migrate.ts" },
   "pipeline": { entry: "src/cli/pipeline.ts#runPipelineCli", parser: "src/cli/pipeline.ts" },
   // Traced script steps: `clossys pipeline trace <id> -- <command>` records their run.
   "derive.uses": { script: "scripts/check-generated-derived.mjs" },
