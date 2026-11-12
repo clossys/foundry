@@ -1,16 +1,12 @@
 {
-  "candidate": "studio-v4.md",
-  "sha256": "e861e385dcf318290c1b51e74063fe937ef91d99299ab7dc783825818a05008a",
-  "decidedBy": "owner:2026-11-03 STUDIO-TEMPLATE-FIX go",
-  "basis": "bulk",
-  "at": "2026-11-03T15:00:00Z",
-  "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:33.130Z",
-    "cites": {
-      "director:advantage.proposition.promise": 4,
-      "director:focus.segment.core": 3
-    },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+  "candidate": "studio-v7.md",
+  "sha256": "78b505afadf0d9de563ee39d0fd8caf2945625d0f6fb8dc1e476403f29084ebc",
+  "decidedBy": "agent:writer",
+  "basis": "agent",
+  "at": "2026-11-12T01:41:28.767Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
+    "at": "2026-11-12T01:41:29.168Z"
   }
 }
