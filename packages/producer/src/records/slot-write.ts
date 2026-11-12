@@ -13,7 +13,7 @@ import {
   CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
-import { directorStoreReader, listSlots, readCandidate, readSlot } from "./slots.js";
+import { directorStoreReader, forgetSlotReads, listSlots, readCandidate, readSlot } from "./slots.js";
 
 // ---------------------------------------------------------------------------
 // Locks and atomic replacement, shared by slot decisions and the Director store.
@@ -59,13 +59,16 @@ export function withDirLock<T>(lock: string, busy: string, action: () => T): T {
     rmSync(aside, { recursive: true, force: true });
     try { acquire(); } catch { throw new Error(busy); }
   }
-  try { return action(); } finally { rmSync(lock, { recursive: true, force: true }); }
+  // A writer in a process whose reader keeps answers (the record memo) never reads its own old answers.
+  forgetSlotReads();
+  try { return action(); } finally { rmSync(lock, { recursive: true, force: true }); forgetSlotReads(); }
 }
 /** Replace `path` by renaming a fully written sibling over it: a reader sees the old bytes or the new, never a torn file. */
 function replaceFile(path: string, bytes: string): void {
   const staged = join(dirname(path), `.${randomUUID()}.tmp`);
   writeFileSync(staged, bytes, { flag: "wx" });
   try { renameSync(staged, path); } catch (error) { rmSync(staged, { force: true }); throw error; }
+  finally { forgetSlotReads(); }
 }
 /** One decision write per slot at a time. */
 const SLOT_LOCK = ".slot-write.lock";
@@ -105,6 +108,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
   mkdirSync(directory, { recursive: true });
   if (options.canonical && realpathSync(directory) !== resolve(directory)) throw new Error("candidate refused: candidate directory leaves its canonical path");
   writeFileSync(join(directory, file), bytes, { flag: "wx" });
+  forgetSlotReads();
   return { name: file, sha256: readCandidate(consumer, agent, id, file).sha256 };
 }
 
