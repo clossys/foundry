@@ -3,5 +3,10 @@
   "sha256": "1c71ddec5f0f1fddb00a3a839fabb07379a06af3251173033e768f2cd1fe7644",
   "decidedBy": "agent:writer",
   "basis": "agent",
-  "at": "2026-11-12T00:07:36.064Z"
+  "at": "2026-11-12T00:07:36.064Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
+    "at": "2026-11-12T01:19:43.574Z"
+  }
 }

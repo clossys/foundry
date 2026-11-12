@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v7.md",
-  "sha256": "6fa7d34f96de11a345e5552b73805693dd87c332100ab78679995cfb68451988",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, copy unchanged (was planner:G15-GITCMS-HARDEN, planner)",
-  "basis": "planner",
-  "at": "2026-11-12T00:09:49.332Z"
+  "candidate": "studio-v8.md",
+  "sha256": "96b63767846c7c41fcfc75afb3ba7d67ee420ce2ee01d75fe03d8e0deb92f1d7",
+  "decidedBy": "owner:https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
+  "basis": "picked",
+  "at": "2026-11-12T01:19:37.470Z"
 }
