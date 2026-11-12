@@ -26,7 +26,7 @@ import { readJson, slotCounts, writerKeysUnapproved } from "./status.js";
 import { staleCitations, type StaleCitation } from "../records/stale-citations.js";
 import type { PipelineStatus } from "./status.js";
 import { STEPS } from "./steps/index.js";
-import { appendRecord, buildRecord, invocationOf, readStore, storeFile } from "./trace.js";
+import { appendRecord, buildRecord, invocationOf, readStore, STEP_ENV, storeFile } from "./trace.js";
 import type { StoredRun } from "./trace.js";
 import { runState } from "./wiring.js";
 import type { RunState } from "./wiring.js";
@@ -37,10 +37,15 @@ export const CHAIN_SCHEMA = "clossys.chain-run/1";
 export const EXPLAIN_SCHEMA = "clossys.chain-explain/1";
 
 /** Runs one plumb step's command; returns its exit code. Tests inject their own. */
-export type Exec = (argv: readonly string[], cwd: string) => number;
+export type Exec = (argv: readonly string[], cwd: string, step?: string) => number;
 const CLI = fileURLToPath(new URL("../cli/index.js", import.meta.url));
-/** The built CLI in a child process, its output on stderr so the chain's own output stays parseable. */
-export const execCli: Exec = (argv, cwd) => spawnSync(process.execPath, [CLI, ...argv], { cwd, stdio: ["ignore", 2, 2], env: process.env }).status ?? 2;
+/**
+ * The built CLI in a child process, its output on stderr so the chain's own output stays parseable.
+ * The child is told which step it runs (STEP_ENV): several steps share one verb (migrate copy-keys,
+ * recite.direct and recite.design all run `clossys migrate`), and the record must land in the store
+ * of the step the chain reads back, or that step stays stale however often it runs.
+ */
+export const execCli: Exec = (argv, cwd, step) => spawnSync(process.execPath, [CLI, ...argv], { cwd, stdio: ["ignore", 2, 2], env: step ? { ...process.env, [STEP_ENV]: step } : process.env }).status ?? 2;
 
 const sha = (bytes: string | Buffer) => createHash("sha256").update(bytes).digest("hex");
 const words = (command: string) => command.trim().split(/\s+/);
@@ -500,7 +505,7 @@ export function runChain(root: string, options: ChainOptions = {}): ChainResult 
     if (options.dry) return row("would-run", `${shown} (${seen.last}${seen.changed.length ? `: ${seen.changed.slice(0, 3).join(", ")}` : ""})`);
     const before = readStore(root, storeFile(step.id)).length;
     const start = new Date();
-    const exit = exec(command!.argv, command!.cwd);
+    const exit = exec(command!.argv, command!.cwd, step.id);
     ranAt = index;
     const after = readStore(root, storeFile(step.id));
     let store: string | null = after.length > before || (after.length && after.at(-1)!.record.start >= start.toISOString()) ? after.at(-1)!.store : null;

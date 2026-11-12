@@ -7,7 +7,7 @@ import type { Step } from "./define.js";
 import { HANDLERS, MODULE_HANDLERS } from "./handlers.js";
 import type { StepContext } from "./handlers.js";
 import { STEPS } from "./steps/index.js";
-import { appendRecord, buildRecord, invocationOf, observe, sanitizeArgv, tracingEnabled } from "./trace.js";
+import { appendRecord, buildRecord, invocationOf, observe, sanitizeArgv, STEP_ENV, tracingEnabled } from "./trace.js";
 
 /**
  * The CLI runs a step only by looking it up here: the verb (and its mode flags) selects one
@@ -23,6 +23,22 @@ export function selectStep(verb: string, args: CliArgs, steps: readonly Step[] =
     .filter(step => step.command.cli?.verb === verb && !step.command.cli.parser)
     .filter(step => flagged(step).every(flag => Boolean((args as unknown as Record<string, unknown>)[flagKey(flag)])))
     .sort((a, b) => flagged(b).length - flagged(a).length)[0];
+}
+
+/**
+ * Which of the steps sharing an own-parser verb a run is: the step the parent chain named (STEP_ENV),
+ * else the one whose target the argument names (`clossys pin designer/<slot>`), else the one whose
+ * declared run has the same subcommand (`clossys migrate copy-keys` is step migrate, not
+ * recite.direct), else the first. The record goes to that step's store, so this decides freshness.
+ */
+export function ownerStep(owners: readonly Step[], argv: readonly string[], named?: string): Step | undefined {
+  const chosen = named ? owners.find(step => step.id === named) : undefined;
+  if (chosen) return chosen;
+  const targeted = owners.find(step => step.command.cli?.target !== undefined && argv.slice(1).some(arg => arg.startsWith(`${step.command.cli!.target}/`)));
+  if (targeted) return targeted;
+  const sub = argv[1];
+  const declared = (step: Step) => { const run = step.chain ?? step.run; return typeof run === "string" ? run.trim().split(/\s+/) : []; };
+  return (sub && !sub.startsWith("-") ? owners.find(step => { const words = declared(step); return words[1] === argv[0] && words[2] === sub; }) : undefined) ?? owners[0];
 }
 
 const pendingRefusal = (step: Step): CliResult => ({
@@ -72,9 +88,12 @@ function runRoot(argv: readonly string[], cwd: string): string | null {
  */
 export async function runPipeline(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
   const resolved: Resolved = {};
+  // The step a parent chain runs this process as; read once, and not passed to any process this one starts.
+  const named = process.env[STEP_ENV];
+  delete process.env[STEP_ENV];
   // A bare `clossys next --submit <file>` submits to the first open candidates slot (cli/next.ts).
   if (argv[0] === "next" && argv.includes("--submit")) argv = (await import("../cli/next.js")).submitTarget(argv, cwd, steps);
-  if (!tracingEnabled()) return run(argv, cwd, steps, resolved);
+  if (!tracingEnabled()) return run(argv, cwd, steps, resolved, named);
   const start = new Date();
   const watch = observe();
   let recorded = false;
@@ -95,7 +114,7 @@ export async function runPipeline(argv: readonly string[], cwd: string, steps: r
   const onExit = (code: number) => record(code);
   process.once("exit", onExit);
   try {
-    const result = await run(argv, cwd, steps, resolved);
+    const result = await run(argv, cwd, steps, resolved, named);
     record(result.exitCode, result);
     return result;
   } catch (error) {
@@ -107,7 +126,7 @@ export async function runPipeline(argv: readonly string[], cwd: string, steps: r
   }
 }
 
-async function run(argv: readonly string[], cwd: string, steps: readonly Step[], resolved: Resolved): Promise<CliResult> {
+async function run(argv: readonly string[], cwd: string, steps: readonly Step[], resolved: Resolved, named?: string): Promise<CliResult> {
   try {
     const head = argv[0];
     // The chain orchestrators are not steps: they run (and record through) the steps they walk.
@@ -118,7 +137,7 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     // A verb with its own parser (specimen, migrate, pipeline) gets its argv untouched.
     // A verb with a target per step (`clossys pin <agent>/<slot>`) runs the step whose agent the argument names.
     const owners = steps.filter(step => step.command.cli?.parser !== undefined && step.command.cli.verb === head);
-    const own = owners.find(step => step.command.cli?.target !== undefined && argv.slice(1).some(arg => arg.startsWith(`${step.command.cli!.target}/`))) ?? owners[0];
+    const own = ownerStep(owners, argv, named);
     if (own) return await dispatch(resolved.step = own, { argv: argv.slice(1), cwd, root: () => discoverRoot(cwd) }, steps);
     // A declared verb the shared parser does not know yet belongs to a pending step.
     const declared = head && !(VERBS as readonly string[]).includes(head) ? steps.find(step => step.command.cli?.verb === head) : undefined;

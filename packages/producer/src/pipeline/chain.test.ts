@@ -10,11 +10,11 @@ import { gapsOf, interviewIssues, interviewOf, INTERVIEW_AGENTS } from "./interv
 import type { Exec } from "./chain.js";
 import type { Step } from "./define.js";
 import { PACKAGE_ROOT } from "./options.js";
-import { runPipeline } from "./runner.js";
+import { ownerStep, runPipeline } from "./runner.js";
 import { STEPS } from "./steps/index.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { directorIa } from "../records/slot-model/foundry-ia.js";
-import { appendRecord, buildRecord, readStore, storeFile } from "./trace.js";
+import { appendRecord, buildRecord, readStore, STEP_ENV, storeFile } from "./trace.js";
 
 /** The foundry consumer this package ships beside: a real slot model to copy. */
 const FOUNDRY = join(PACKAGE_ROOT, "..", "..", "clossys");
@@ -95,6 +95,35 @@ describe("clossys run", { timeout: 60_000 }, () => {
     const result = runChain(root, { steps, exec: writes });
     expect(result.rows.map(row => row.state)).toEqual(["ran", "ran"]);
     expect(result.stale.map(entry => entry.step)).toEqual(["fx.a", "fx.b"]);
+  });
+
+  it("records a shared-verb step in its own store, so migrate is fresh after it ran", async () => {
+    // migrate, recite.direct and recite.design all run `clossys migrate`: the run must be recorded as
+    // the step it is, or the chain reads back an old record and calls the step stale forever.
+    const migrators = STEPS.filter(step => step.command.cli?.verb === "migrate" && step.command.cli.parser !== undefined);
+    expect(migrators.map(step => step.id)).toEqual(expect.arrayContaining(["migrate", "recite.direct", "recite.design"]));
+    expect(ownerStep(migrators, ["migrate", "copy-keys"])!.id).toBe("migrate");
+    expect(ownerStep(migrators, ["migrate", "recite", "--cascade"])!.id).toBe("recite.direct");
+    expect(ownerStep(migrators, ["migrate", "recite", "--cascade"], "recite.design")!.id).toBe("recite.design");
+    expect(ownerStep(migrators, ["migrate", "copy-keys"], "not-a-migrator")!.id).toBe("migrate");
+    const root = workspace();
+    const steps = [real("migrate")];
+    expect(runChain(root, { steps, dry: true }).rows[0]!.state).toBe("would-run");
+    process.env[STEP_ENV] = "migrate";
+    expect((await runPipeline(["migrate", "copy-keys", "--root", root], root)).exitCode).toBe(0);
+    expect(process.env[STEP_ENV]).toBeUndefined();
+    expect(readStore(root, storeFile("migrate")).map(entry => entry.record.invocation)).toEqual(["migrate copy-keys"]);
+    expect(readStore(root, storeFile("recite.direct"))).toEqual([]);
+    expect(runChain(root, { steps, dry: true }).rows[0]).toMatchObject({ state: "fresh", last: "passed" });
+  });
+
+  it("tells the command it runs which step it is", () => {
+    const root = workspace();
+    writeFileSync(join(root, INPUT), "one\n");
+    const seen: (string | undefined)[] = [];
+    const base = fixtureExec(root);
+    runChain(root, { steps: [plumb("a")], exec: ((argv, cwd, step) => { seen.push(step); return base(argv, cwd); }) as Exec });
+    expect(seen).toEqual(["fx.a"]);
   });
 
   it("stops red at a broken plumb step with a failed run record", () => {

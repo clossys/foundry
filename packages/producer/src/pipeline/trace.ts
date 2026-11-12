@@ -45,6 +45,8 @@ export const RUNS_DIR = ".clossys/runs";
 export const RUNS_KEPT = 3;
 /** Set to `0` to run without recording (the record is then simply absent: the step shows never run). */
 export const TRACE_ENV = "CLOSSYS_TRACE";
+/** The step id a parent (the chain) runs this process as, when its verb is shared by several steps. */
+export const STEP_ENV = "CLOSSYS_STEP";
 /** A child process traced by a parent appends its observations here (trace-preload.js). */
 export const SINK_ENV = "CLOSSYS_TRACE_SINK";
 
