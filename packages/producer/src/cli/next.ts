@@ -102,7 +102,7 @@ function describe(packet: Packet): string {
     `next: ${packet.step} (${packet.kind}), ${packet.open} open; decided by ${packet.decider}`,
     `  item      ${packet.item}`,
     `  question  ${packet.question}`,
-    `  skill     ${packet.skill.path}${packet.skill.sha256 ? ` (${packet.skill.sha256.slice(0, 12)})` : " (missing)"}`,
+    `  skill     ${packet.skill.path}${packet.skill.sha256 ? ` (${packet.skill.sha256.slice(0, 12)}), read ${packet.skill.file}` : " (missing)"}`,
     ...(packet.inputs.brief ? [`  brief     ${packet.inputs.brief}`] : []),
     ...(packet.inputs.options ? [`  options   ${packet.inputs.options.count}${packet.inputs.options.varyOn ? `, vary on ${packet.inputs.options.varyOn}` : ""}`] : []),
     ...(packet.inputs.files.length ? [`  reads     ${packet.inputs.files.join(", ")}`] : []),

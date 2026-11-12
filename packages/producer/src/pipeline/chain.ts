@@ -177,7 +177,8 @@ export interface Packet {
   readonly open: number;
   readonly question: string;
   /** The decide step's skill (its contract path) and the sha256 of its bytes now. */
-  readonly skill: { readonly path: string; readonly sha256: string | null };
+  /** `path` is the contract's skill id (what `--skill` names); `file` is where it is on disk, to read. */
+  readonly skill: { readonly path: string; readonly file: string | null; readonly sha256: string | null };
   readonly inputs: {
     readonly brief: string | null;
     readonly contract: unknown;
@@ -197,11 +198,12 @@ export function skillFile(step: Step, packageRoot = PACKAGE_ROOT): string | null
   if (!step.command.skill || !step.package) return null;
   return join(packageDir(step, packageRoot), "actions", step.id, "skill.md");
 }
-export function skillOf(step: Step, packageRoot = PACKAGE_ROOT): { path: string; sha256: string | null } {
+export function skillOf(step: Step, packageRoot = PACKAGE_ROOT): { path: string; file: string | null; sha256: string | null } {
   const file = skillFile(step, packageRoot);
   let digest: string | null = null;
   try { digest = file ? sha(readFileSync(file)) : null; } catch { digest = null; }
-  return { path: step.command.skill ?? "", sha256: digest };
+  // The id is Foundry-relative; a consumer reads the installed package's file, so the packet carries both.
+  return { path: step.command.skill ?? "", file: digest ? file : null, sha256: digest };
 }
 /** The skill's first prose line: the question the step answers. */
 export function skillLine(step: Step, packageRoot: string): string {

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { flatConsumer } from "../cli/__fixtures__/flat-consumer.js";
@@ -48,6 +48,14 @@ describe("owner.wiring (clossys pipeline check)", () => {
     expect(result.options).toBe(policy!.options.length);
     // The workspace itself is untouched: the same questions are still asked.
     expect(interviewOf(root, { agent: "writer" }).rounds.flat().map(question => question.id)).toEqual(view.rounds.flat().map(question => question.id));
+  }, 300_000);
+
+  it("runs each option where the slot model can read it: no symbolic link above the scratch copy", async () => {
+    const seen: [string, string][] = [];
+    // The scratch copy is removed after each option: resolve it while the option runs.
+    await ownerWiringIssues(root, { run: async (argv, cwd) => { seen.push([cwd, realpathSync(cwd)]); return runCli(argv, cwd); }, agents: ["writer"], interviewOf: firstOnly(interviewOf) });
+    expect(seen.length).toBeGreaterThan(0);
+    for (const [cwd, real] of seen) expect(real).toBe(cwd);
   }, 300_000);
 
   it("fails a dead argv: an option that only prints a brief records nothing", async () => {

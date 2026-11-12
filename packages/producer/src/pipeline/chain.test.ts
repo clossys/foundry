@@ -127,6 +127,9 @@ describe("clossys run", { timeout: 60_000 }, () => {
     expect(result.stop).toMatchObject({ step: "seats" });
     expect(result.stop!.packet.skill.path).toBe("packages/producer/actions/seats/skill.md");
     expect(result.stop!.packet.skill.sha256).toMatch(/^[0-9a-f]{64}$/);
+    // The file to read is on disk wherever the package is installed; its bytes are the hashed ones.
+    const skillBytes = readFileSync(result.stop!.packet.skill.file!);
+    expect(createHash("sha256").update(skillBytes).digest("hex")).toBe(result.stop!.packet.skill.sha256);
     const cli = await runRunCli(["--dry", "--root", root], root, steps, { exec: fixtureExec(root) });
     expect(cli.exitCode).toBe(0);
     expect(cli.message).toContain("run: stopped at seats");

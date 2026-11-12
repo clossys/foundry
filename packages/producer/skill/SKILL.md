@@ -27,8 +27,9 @@ that is the first gap to report.
 ## Answer the open decide step
 
 - `clossys next --json` prints the packet: the compiled brief, the slot contract, the options, the
-  output path and schema, the checks, the decider (from the seat), the step's `skill.md` with its
-  hash, and the command that records the answer. Read the packet's skill before deciding.
+  output path and schema, the checks, the decider (from the seat), the step's skill with its hash
+  (`skill.file`, the file on disk; `skill.path`, the id `--skill` names), and the command that
+  records the answer. Read `skill.file` before deciding.
 - An agent candidate is recorded with `clossys next <agent>/<slot> --submit <file> --model <id>
   --tier <tier> --basis <basis> --skill <packet skill path> --rung <rung> [--seed <id>]
   [--reason <text>]`. A submission whose skill is not the contract's, whose model or tier is not

@@ -12,7 +12,7 @@
  * Read-only on the workspace: the scratch copy lives under the OS temp folder and is removed after each option.
  */
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { RULES_FILE } from "../cli/owner.js";
@@ -74,7 +74,8 @@ export async function ownerWiringIssues(root: string, options: OwnerWiringOption
   const gaps = options.gapsOf ?? gapsOf;
   const issues: OwnerWiringIssue[] = [];
   let count = 0, calls = 0;
-  const base = mkdtempSync(join(tmpdir(), "clossys-owner-wiring-"));
+  // The real path: the slot model follows no symbolic link, and the OS temp folder can sit under one (macOS /var).
+  const base = mkdtempSync(join(realpathSync(tmpdir()), "clossys-owner-wiring-"));
   try {
     for (const agent of options.agents ?? INTERVIEW_AGENTS) {
       const questions = interview(root, { agent }).rounds.flat();
