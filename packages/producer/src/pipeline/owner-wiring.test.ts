@@ -18,8 +18,23 @@ const rewritten = (change: (calls: readonly (readonly string[])[]) => string[][]
 /** Only the first question, so each case runs a handful of calls. */
 const firstOnly = (view: (root: string, options: { agent: InterviewAgent }) => Pick<Interview, "rounds">) => (root: string, options: { agent: InterviewAgent }) => ({ rounds: view(root, options).rounds.slice(0, 1).map(round => round.slice(0, 1)) });
 
+/**
+ * A scratch copy of the repository's records whose Writer agent picks are unconfirmed again, so the
+ * Writer has an open policy question however many the live records have settled. The tests only
+ * need open options, not the live owner state.
+ */
+function openConsumer(): string {
+  const root = flatConsumer(["director", "designer", "writer"]), consumer = join(root, "clossys");
+  for (const entry of listSlots(consumer, "writer")) if (entry.pin?.basis === "agent") {
+    const file = join(entry.dir, "pin.json"), pin = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+    delete pin.confirmed;
+    writeFileSync(file, `${JSON.stringify(pin, null, 2)}\n`);
+  }
+  return root;
+}
+
 describe("owner.wiring (clossys pipeline check)", () => {
-  const root = flatConsumer(["director", "designer", "writer"]);
+  const root = openConsumer();
 
   it("runs the writer's policy question on a scratch copy: every option exits 0, changes its records and the gaps", async () => {
     const view = interviewOf(root, { agent: "writer" });
@@ -55,7 +70,7 @@ describe("owner.wiring (clossys pipeline check)", () => {
   }, 300_000);
 
   it("fails an answer that records a Writer key a second pinned slot already owns", async () => {
-    const dup = flatConsumer(["director", "designer", "writer"]), consumer = join(dup, "clossys");
+    const dup = openConsumer(), consumer = join(dup, "clossys");
     const strings = listSlots(consumer, "writer").filter(entry => entry.pin && entry.id.startsWith("strings."));
     const [owner, other] = strings;
     const read = (slot: typeof owner) => readFileSync(join(consumer, "agents", "writer", slot!.id, "candidates", slot!.pin!.candidate), "utf8");
