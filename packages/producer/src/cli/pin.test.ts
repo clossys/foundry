@@ -240,7 +240,7 @@ describe("clossys pin --confirm (the owner confirms an agent pick)", () => {
   it("refuses a --ref that cites no ledger comment, and the record check fails a confirmation written without one", async () => {
     expect((await pick(`designer/${ID}`, "example-v1", "--by", "agent:director", "--at", "2026-11-11T10:00:00.000Z")).exitCode).toBe(0);
     const before = readFileSync(join(slotDir, "pin.json"), "utf8");
-    for (const ref of ["owner standing instruction 2026-11-12: take the recommended option", "clossys/workspace#46", "2026-11-12 launch prompt"]) {
+    for (const ref of ["owner standing instruction 2026-11-12: take the recommended option", "clossys/workspace#46", "clossys/workspace#46 issuecomment-", "2026-11-12 launch prompt"]) {
       const result = await pin(`designer/${ID}`, "example-v1", "--confirm", "--ref", ref);
       expect(result.exitCode, ref).toBe(2);
       expect(result.message).toContain("must cite the ledger comment");
