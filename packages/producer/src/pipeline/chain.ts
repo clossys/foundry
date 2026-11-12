@@ -534,7 +534,11 @@ export interface ExplainRow {
   readonly kind: Step["kind"];
   /** code for plumb; the seat's holder (or the contract's decider while the seat is open) for decide steps. */
   readonly decider: string;
-  /** The latest run record's state across the step's invocations; never-run when it has none. */
+  /**
+   * The run state `clossys run` acts on: for a plumb step with a chain command, its latest record for
+   * that chain invocation (ad-hoc invocations of the same step never count); for a decide step or a
+   * plumb step the chain skips, its latest record across all invocations. never-run when it has none.
+   */
   readonly last: RunState;
   readonly open: number;
 }
@@ -544,14 +548,21 @@ export interface Explain {
   readonly counts: Readonly<Record<Step["kind"], number>>;
 }
 
+/** The latest record's state across all of one step's invocations, or never-run. */
+function latestState(root: string, step: Step): RunState {
+  const latest = readStore(root, storeFile(step.id)).at(-1);
+  return latest ? runState(root, latest.record).state : "never-run";
+}
+
 /** The whole graph as one table: what `clossys run --explain` prints and `/api/pipeline/explain` serves. */
 export function explainChain(root: string, options: { steps?: readonly Step[]; packageRoot?: string } = {}): Explain {
   const steps = options.steps ?? STEPS;
   const context = contextOf(root, steps);
+  const packageRoot = options.packageRoot ?? PACKAGE_ROOT;
   const rows = steps.map(step => {
-    const records = readStore(root, storeFile(step.id));
-    const latest = records.at(-1);
-    const last: RunState = latest ? runState(root, latest.record).state : "never-run";
+    const command = isDecide(step) ? null : chainCommand(step, root, packageRoot);
+    // Agree with runChain: a plumb step's chain drift is its chain invocation's latest record.
+    const last: RunState = command && !("skip" in command) ? lastOf(root, step, command).last : latestState(root, step);
     const seat = context.seats[step.id];
     const decider = isDecide(step) ? (seat?.state === "assigned" ? deciderOf(step, seat) : `${step.decider ?? "owner"} (seat ${seat?.state ?? "none"})`) : "code";
     return { step: step.id, agent: step.agent ?? "", kind: step.kind, decider, last, open: openItems(step, context).length };

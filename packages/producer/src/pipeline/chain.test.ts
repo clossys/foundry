@@ -109,6 +109,25 @@ describe("clossys run", { timeout: 60_000 }, () => {
     expect(record!.record.exit).toBe(1);
   });
 
+  it("judges a plumb step by its chain invocation: an ad-hoc failed record after a passing run raises no chain gap", () => {
+    const root = workspace();
+    writeFileSync(join(root, INPUT), "one\n");
+    const steps = [plumb("a")];
+    const exec = fixtureExec(root);
+    expect(runChain(root, { steps, exec }).rows.map(row => row.state)).toEqual(["ran"]);
+    // An ad-hoc invocation of the same step (another flag set) appends a failed record after the chain's.
+    const adhoc = ["check", "--a", "--strict"];
+    appendRecord(root, buildRecord({ root, step: "fx.a", invocation: adhoc.join(" "), argv: adhoc, start: new Date(), end: new Date(), exit: 1, observation: { reads: new Map(), writes: new Set() } }));
+    expect(readStore(root, storeFile("fx.a")).at(-1)!.record.exit).toBe(1);
+    expect(runChain(root, { steps, exec, dry: true }).rows.map(row => row.state)).toEqual(["fresh"]);
+    expect(explainChain(root, { steps }).rows).toMatchObject([{ step: "fx.a", last: "passed" }]);
+    expect(gapsOf(root, { steps }).gaps.filter(gap => gap.code.startsWith("chain."))).toEqual([]);
+    // Mutation: a failed record of the chain invocation itself is a chain.failed gap.
+    appendRecord(root, buildRecord({ root, step: "fx.a", invocation: "check --a", argv: ["check", "--a"], start: new Date(), end: new Date(), exit: 1, observation: { reads: new Map(), writes: new Set() } }));
+    expect(explainChain(root, { steps }).rows).toMatchObject([{ step: "fx.a", last: "failed" }]);
+    expect(gapsOf(root, { steps }).gaps.filter(gap => gap.code.startsWith("chain.")).map(gap => gap.item)).toEqual(["fx.a"]);
+  });
+
   it("stops cleanly, never red, at a plumb step whose first input matches no file", () => {
     const root = workspace();
     writeFileSync(join(root, INPUT), "one\n");
