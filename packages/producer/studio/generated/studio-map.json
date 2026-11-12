@@ -43040,7 +43040,7 @@
     {
       "slot": "sections.studio.slot-groups",
       "element": "studio-slot-groups",
-      "version": 12
+      "version": 13
     },
     {
       "slot": "sections.producer.system-empty",
@@ -43055,12 +43055,12 @@
     {
       "slot": "sections.studio.specimen",
       "element": "studio-specimen",
-      "version": 13
+      "version": 14
     },
     {
       "slot": "sections.studio.options",
       "element": "studio-options",
-      "version": 8
+      "version": 9
     },
     {
       "slot": "sections.studio.checks",

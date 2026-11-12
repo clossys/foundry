@@ -1,32 +1,7 @@
 {
-  "candidate": "page-v6.json",
-  "sha256": "4dd312ca853fe75ee162ec1f1124a3401152552122f94bd23bbefacf9fd6aa01",
+  "candidate": "page-v7.json",
+  "sha256": "5411b8ee8a4d6a2fcd5b1f050dc559518f791f7c427b43e99f37a88c14f7946b",
   "decidedBy": "agent:publisher",
   "basis": "agent",
-  "at": "2026-11-11T16:37:06.822Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
-    "at": "2026-11-12T01:19:48.081Z"
-  },
-  "recited": {
-    "by": "agent:publisher",
-    "at": "2026-11-12T00:37:00.204Z",
-    "cites": {
-      "designer:frames.studio-shell": 21,
-      "designer:sections.module.checks": 6,
-      "designer:sections.module.outline": 7,
-      "designer:sections.studio.checks": 6,
-      "designer:sections.studio.contract": 6,
-      "designer:sections.studio.history": 6,
-      "designer:sections.studio.leaf-header": 8,
-      "designer:sections.studio.options": 8,
-      "designer:sections.studio.page-header": 5,
-      "designer:sections.studio.page-tabs": 6,
-      "designer:sections.studio.references": 6,
-      "designer:sections.studio.slot-groups": 12,
-      "designer:sections.studio.specimen": 13
-    },
-    "reason": "CASCADE fc9d9cd80 re-pinned these Designer inputs with each candidate unchanged (clossys/workspace#46)"
-  }
+  "at": "2026-11-12T09:17:12.014Z"
 }

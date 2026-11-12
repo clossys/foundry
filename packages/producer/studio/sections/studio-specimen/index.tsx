@@ -37,7 +37,11 @@ export interface SpecimenTable {
 export type SpecimenInput = { name: string; title: string; description: string } & (
   | { kind: 'viewports'; specimens: readonly ViewportSpecimen[]; empty: string;
     /** A gallery card's text while its frame loads, and for a frame whose specimen failed to render. */
-    loading?: string; unavailable?: string }
+    loading?: string; unavailable?: string;
+    /** True until Studio has mounted and resolved its theme (the server render and hydration): the frames
+     * are left out until then, so no document is fetched for the server's default theme and none is torn
+     * down by streaming or hydration. */
+    deferred?: boolean }
   | { kind: 'record'; tables?: readonly SpecimenTable[]; rows?: readonly { key: string; label: string; text: string; href?: string }[];
     /** The rows table's accessible label and column headings (Writer copy). */
     rowsCopy: { label: string; key: string; content: string };
@@ -70,13 +74,16 @@ export function specimenSource(src: string, viewport: SpecimenViewport): string 
  * Every viewport in one vertical run, widest first, each a headed row of its light and dark frames
  * side by side where there is room; each frame is the page at its own CSS width in a stock scroll area.
  * A single view-only viewport, as a gallery card shows it, is the frame alone at the card's width.
+ * Each frame is keyed by its source (stock block-viewer keys its iframe the same way), so a theme or
+ * version change mounts a fresh frame instead of leaving the previous document in place; while
+ * `deferred` the layout renders without its frames.
  */
-function Viewports({ name, specimens, empty }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string }) {
+function Viewports({ specimens, empty, deferred }: { specimens: readonly ViewportSpecimen[]; empty: string; deferred?: boolean }) {
   if (!specimens.length) return <CardContent><Badge variant="outline" data-preview-status="empty">{empty}</Badge></CardContent>;
   const rows = [...specimens].sort((a, b) => b.viewport - a.viewport);
   const card = rows.length === 1 && rows[0]!.interactive === false && !rows[0]!.dark ? rows[0]! : undefined;
   if (card) return <CardContent data-specimen-viewport={card.viewport}>
-    <iframe key={`${name}:${card.viewport}:card`} src={specimenSource(card.light, card.viewport)} title={card.title} loading="lazy" inert width="100%" height={CARD_FRAME_HEIGHT} />
+    {!deferred && <iframe key={specimenSource(card.light, card.viewport)} src={specimenSource(card.light, card.viewport)} title={card.title} loading="lazy" inert width="100%" height={CARD_FRAME_HEIGHT} />}
   </CardContent>;
   return <CardContent>
     {rows.map(row => <CardContent key={row.viewport} data-specimen-viewport={row.viewport}>
@@ -84,10 +91,10 @@ function Viewports({ name, specimens, empty }: { name: string; specimens: readon
       <FieldGroup>
         <Field orientation="responsive">
           <ScrollArea>
-            <iframe key={`${name}:${row.viewport}:light`} src={specimenSource(row.light, row.viewport)} title={row.title} loading="lazy" inert={row.interactive === false} width={row.viewport} height={FRAME_HEIGHT[row.viewport]} />
+            {!deferred && <iframe key={specimenSource(row.light, row.viewport)} src={specimenSource(row.light, row.viewport)} title={row.title} loading="lazy" inert={row.interactive === false} width={row.viewport} height={FRAME_HEIGHT[row.viewport]} />}
           </ScrollArea>
           {row.dark && <ScrollArea>
-            <iframe key={`${name}:${row.viewport}:dark`} src={specimenSource(row.dark, row.viewport)} title={row.darkTitle ?? row.title} loading="lazy" inert={row.interactive === false} width={row.viewport} height={FRAME_HEIGHT[row.viewport]} />
+            {!deferred && <iframe key={specimenSource(row.dark, row.viewport)} src={specimenSource(row.dark, row.viewport)} title={row.darkTitle ?? row.title} loading="lazy" inert={row.interactive === false} width={row.viewport} height={FRAME_HEIGHT[row.viewport]} />}
           </ScrollArea>}
         </Field>
       </FieldGroup>
@@ -116,7 +123,7 @@ function RecordTable({ name, table, titled }: { name: string; table: SpecimenTab
 
 /** The specimen body without its card: what the leaf produces. */
 export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
-  if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} />;
+  if (specimen.kind === 'viewports') return <Viewports specimens={specimen.specimens} empty={specimen.empty} deferred={specimen.deferred} />;
   if (specimen.lead?.length) return <CardContent data-specimen-lead>
     {specimen.lead.map((text, index) => <CardDescription key={index}>{text}</CardDescription>)}
   </CardContent>;

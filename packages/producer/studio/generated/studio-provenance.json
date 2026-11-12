@@ -46,8 +46,8 @@
   },
   "sections.studio.slot-groups": {
     "data-clossys-slot": "sections.studio.slot-groups",
-    "data-clossys-candidate": "studio-slot-groups-v12.json",
-    "data-clossys-hash": "sha256:1747f7d6a8e6aad4f3db93d99da6cca72f216367f7515f774899afcf13c88bb7"
+    "data-clossys-candidate": "studio-slot-groups-v13.json",
+    "data-clossys-hash": "sha256:c6ea161d0b6ae17968c49b1cc422bdfe47933b6113b057ab96da99d9a19b6e4d"
   },
   "sections.producer.system-empty": {
     "data-clossys-slot": "sections.producer.system-empty",
@@ -61,13 +61,13 @@
   },
   "sections.studio.specimen": {
     "data-clossys-slot": "sections.studio.specimen",
-    "data-clossys-candidate": "studio-specimen-v13.json",
-    "data-clossys-hash": "sha256:0f866e66fdf3c6da39b420de89615fd8ab5c0852ee3803d94104b74c820ea076"
+    "data-clossys-candidate": "studio-specimen-v14.json",
+    "data-clossys-hash": "sha256:2d6f1164ceb49e67fe84302451d5e65ee39594fd170ea3a13f81966dd73e0574"
   },
   "sections.studio.options": {
     "data-clossys-slot": "sections.studio.options",
-    "data-clossys-candidate": "studio-options-v8.json",
-    "data-clossys-hash": "sha256:663dd26539ad2f342767df20995dd301d16325545839f1208bdb5425a6f3ec48"
+    "data-clossys-candidate": "studio-options-v9.json",
+    "data-clossys-hash": "sha256:c6c83425ce71d7a7adfd438a9b0fcf8a0910707a451cd845c2af51a1792b2374"
   },
   "sections.studio.checks": {
     "data-clossys-slot": "sections.studio.checks",

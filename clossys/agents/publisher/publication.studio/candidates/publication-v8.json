@@ -1,0 +1,156 @@
+{
+  "schema": "clossys.publication/1",
+  "format": "web.page.responsive",
+  "entryOrder": [
+    "home",
+    "producer-pipeline",
+    "director",
+    "director-context",
+    "director-aspiration",
+    "director-focus",
+    "director-advantage",
+    "director-identity",
+    "director-capability",
+    "director-execution",
+    "designer",
+    "designer-themes",
+    "designer-assets",
+    "designer-components",
+    "designer-sections",
+    "designer-frames",
+    "writer",
+    "writer-lexicon",
+    "writer-strings",
+    "writer-patterns",
+    "writer-passages",
+    "writer-narratives",
+    "publisher",
+    "publisher-studio",
+    "build-overview",
+    "run-overview"
+  ],
+  "routePack": {
+    "packId": "studio",
+    "homeRouteId": "home",
+    "root": {
+      "kind": "local-origin",
+      "note": "Producer serves Studio on this machine, so the root is the origin it runs on."
+    }
+  },
+  "meta": {
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "publisher:ia.json",
+        "owner:P1-P7-2026-11-11",
+        "planner:STUDIO-FRAMES-2026-11-12"
+      ]
+    },
+    "tree": {
+      "id": "studio",
+      "name": "studio.nav.studio",
+      "children": [
+        {
+          "id": "studio.pages",
+          "name": "studio.nav.studio.pages",
+          "cells": [
+            "page.home",
+            "page.producer-pipeline",
+            "page.build-overview",
+            "page.run-overview"
+          ]
+        },
+        {
+          "id": "director",
+          "name": "studio.nav.director",
+          "entry": {
+            "path": "/director",
+            "kind": "group",
+            "source": {
+              "planItemId": "studio.director"
+            },
+            "pin": {
+              "nav": true
+            },
+            "icon": "assets.icon-guide"
+          },
+          "children": [],
+          "cells": [
+            "page.director-context",
+            "page.director-aspiration",
+            "page.director-focus",
+            "page.director-advantage",
+            "page.director-identity",
+            "page.director-capability",
+            "page.director-execution"
+          ]
+        },
+        {
+          "id": "designer",
+          "name": "studio.nav.designer",
+          "entry": {
+            "path": "/designer",
+            "kind": "group",
+            "source": {
+              "planItemId": "studio.designer"
+            },
+            "pin": {
+              "nav": true
+            },
+            "icon": "assets.icon-layers"
+          },
+          "children": [],
+          "cells": [
+            "page.designer-themes",
+            "page.designer-assets",
+            "page.designer-components",
+            "page.designer-sections",
+            "page.designer-frames"
+          ]
+        },
+        {
+          "id": "writer",
+          "name": "studio.nav.writer",
+          "entry": {
+            "path": "/writer",
+            "kind": "group",
+            "source": {
+              "planItemId": "studio.writer"
+            },
+            "pin": {
+              "nav": true
+            },
+            "icon": "assets.icon-document"
+          },
+          "children": [],
+          "cells": [
+            "page.writer-lexicon",
+            "page.writer-strings",
+            "page.writer-patterns",
+            "page.writer-passages",
+            "page.writer-narratives"
+          ]
+        },
+        {
+          "id": "publisher",
+          "name": "studio.nav.publisher",
+          "entry": {
+            "path": "/publisher",
+            "kind": "group",
+            "source": {
+              "planItemId": "studio.publisher"
+            },
+            "pin": {
+              "nav": true
+            },
+            "icon": "assets.icon-website"
+          },
+          "children": [],
+          "cells": [
+            "page.publisher-studio"
+          ]
+        }
+      ]
+    }
+  }
+}

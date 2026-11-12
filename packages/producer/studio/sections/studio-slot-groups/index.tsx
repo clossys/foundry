@@ -13,7 +13,9 @@ export interface SlotCitation {
  * lead lines, its status, or a note when it has none. The detail page's specimen renders the full record.
  */
 export type SlotPreview = { name: string } & (
-  | { kind: 'viewports'; specimens: readonly { viewport: 375 | 768 | 1280; light: string; title: string }[]; empty: string }
+  | { kind: 'viewports'; specimens: readonly { viewport: 375 | 768 | 1280; light: string; title: string }[]; empty: string;
+    /** True until Studio has mounted and resolved its theme (the server render and hydration): the card renders without its frame until then. */
+    deferred?: boolean }
   | { kind: 'record'; lead?: readonly string[]; status?: { label: string; tone: SlotTone; description: string };
     /** The run record or check result the status comes from; null when none ran (the status then reads as not run). */
     citation: SlotCitation | null; empty: string }
@@ -78,7 +80,8 @@ function CardPreview({ preview }: { preview: SlotPreview }) {
     // Fixed square host (shadcn carousel-example's card content); the specimen frame scales its page to the
     // host width and, by data-specimen-fit, shrinks the host to the scaled content height under that square.
     return <CardContent className="flex aspect-square items-center justify-center p-6" data-specimen-fit="content" data-specimen-viewport={frame.viewport}>
-      <iframe key={`${preview.name}:${frame.viewport}:card`} src={cardSource(frame.light)} title={frame.title} loading="lazy" inert width="100%" height="100%" />
+      {/* Keyed by its source (as stock block-viewer keys its iframe), so a theme change mounts a fresh frame. */}
+      {!preview.deferred && <iframe key={cardSource(frame.light)} src={cardSource(frame.light)} title={frame.title} loading="lazy" inert width="100%" height="100%" />}
     </CardContent>;
   }
   if (preview.lead?.length) return <CardContent data-specimen-lead>

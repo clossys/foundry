@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-specimen-v13.json",
-  "sha256": "0f866e66fdf3c6da39b420de89615fd8ab5c0852ee3803d94104b74c820ea076",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:WS-HON, planner)",
+  "candidate": "studio-specimen-v14.json",
+  "sha256": "2d6f1164ceb49e67fe84302451d5e65ee39594fd170ea3a13f81966dd73e0574",
+  "decidedBy": "planner:STUDIO-FRAMES",
   "basis": "planner",
-  "at": "2026-11-12T00:02:15.428Z"
+  "at": "2026-11-12T09:14:58.340Z"
 }

@@ -14,8 +14,11 @@ export interface OptionCopy { frameTitle: string; stringsLabel: string }
 
 export interface OptionRow { version: number; pinned: boolean; label: string; reason: string; preview: OptionPreview }
 
-/** The `options` input of `sections.studio.options`: the pinned or active version first, then every newer unpinned version or draft. */
-export interface OptionsInput { name: string; description: string; copy: OptionsCopy; rows: readonly (OptionRow & { copy: OptionCopy })[] }
+/**
+ * The `options` input of `sections.studio.options`: the pinned or active version first, then every newer unpinned version or draft.
+ * `deferred` is true until Studio has mounted and resolved its theme; framed versions render without their frame until then.
+ */
+export interface OptionsInput { name: string; description: string; copy: OptionsCopy; rows: readonly (OptionRow & { copy: OptionCopy })[]; deferred?: boolean }
 
 const CHANGE_TONE = { added: 'secondary', changed: 'secondary', removed: 'destructive', same: 'ghost' } as const;
 /** A viewport's frame height in CSS px: a phone, a tablet and a laptop screen. */
@@ -34,9 +37,10 @@ function frameSource(src: string, viewport: 375 | 768 | 1280): string {
   return src;
 }
 
-function Preview({ name, row, copy }: { name: string; row: OptionRow & { copy: OptionCopy }; copy: OptionsCopy }) {
+/** A framed version is keyed by its source (as stock block-viewer keys its iframe), so a theme change mounts a fresh frame. */
+function Preview({ row, copy, deferred }: { row: OptionRow & { copy: OptionCopy }; copy: OptionsCopy; deferred?: boolean }) {
   if (row.preview.kind === 'frame') return <ScrollArea data-specimen-viewport={row.preview.viewport}>
-    <iframe key={`${name}:${row.version}`} src={frameSource(row.preview.src, row.preview.viewport)} title={row.copy.frameTitle} loading="lazy" width={row.preview.viewport} height={FRAME_HEIGHT[row.preview.viewport]} />
+    {!deferred && <iframe key={frameSource(row.preview.src, row.preview.viewport)} src={frameSource(row.preview.src, row.preview.viewport)} title={row.copy.frameTitle} loading="lazy" width={row.preview.viewport} height={FRAME_HEIGHT[row.preview.viewport]} />}
   </ScrollArea>;
   if (row.preview.kind === 'note') return <CardDescription>{row.preview.text}</CardDescription>;
   return <Table aria-label={row.copy.stringsLabel}>
@@ -67,7 +71,7 @@ export default function OptionsSection({ options, ...provenance }: { options: Op
       <FieldGroup>
         <Field orientation="responsive">
           {options.rows.map(row => <Field key={row.version} data-option-version={row.version}>
-            <Preview name={options.name} row={row} copy={options.copy} />
+            <Preview row={row} copy={options.copy} deferred={options.deferred} />
             <FieldDescription>
               <Badge variant={row.pinned ? 'secondary' : 'outline'}>{row.label}</Badge>
               {row.reason}

@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-slot-groups-v12.json",
-  "sha256": "1747f7d6a8e6aad4f3db93d99da6cca72f216367f7515f774899afcf13c88bb7",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:WS-HON, planner)",
+  "candidate": "studio-slot-groups-v13.json",
+  "sha256": "c6ea161d0b6ae17968c49b1cc422bdfe47933b6113b057ab96da99d9a19b6e4d",
+  "decidedBy": "planner:STUDIO-FRAMES",
   "basis": "planner",
-  "at": "2026-11-12T00:02:14.998Z"
+  "at": "2026-11-12T09:14:59.479Z"
 }
