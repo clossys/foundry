@@ -12,6 +12,7 @@ import { PACKAGE_ROOT } from "./options.js";
 import { runPipeline } from "./runner.js";
 import { STEPS } from "./steps/index.js";
 import { checkSlotModel } from "../records/slot-check.js";
+import { directorIa } from "../records/slot-model/foundry-ia.js";
 import { appendRecord, buildRecord, readStore, storeFile } from "./trace.js";
 
 /** The foundry consumer this package ships beside: a real slot model to copy. */
@@ -282,6 +283,12 @@ describe("clossys next", { timeout: 60_000 }, () => {
       const [ours, foundry] = [read(consumer), read(FOUNDRY)];
       expect({ kind: ours.kind, contract: ours.contract, inputs: ours.inputs }).toEqual({ kind: foundry.kind, contract: foundry.contract, inputs: foundry.inputs });
     }
+    // A Director brief's feeds become inputs of each placed slot it feeds.
+    const placedIds = new Map<string, string>();
+    for (const agent of ["director", "designer", "writer"]) for (const id of readdirSync(join(consumer, "agents", agent))) if (existsSync(join(consumer, "agents", agent, id, "slot.json"))) placedIds.set(id, agent);
+    const fed = [...directorIa().slots.values()].flatMap(brief => brief.feeds.filter(id => placedIds.has(id) && id !== brief.id).map(id => [brief.id, id] as const));
+    expect(fed.length).toBeGreaterThan(0);
+    for (const [brief, id] of fed) expect((JSON.parse(readFileSync(join(consumer, "agents", placedIds.get(id)!, id, "slot.json"), "utf8")) as { inputs: string[] }).inputs, `${id} reads ${brief}`).toContain(brief);
     // A Foundry IA takes slots only under the groups it lists.
     writeFileSync(join(root, "contract.json"), "{}\n");
     expect((await runPipeline(["ia", "designer/assets.fixture-mark", "--under", "nowhere/at-all", "--contract", join(root, "contract.json"), ...at], root)).message).toContain("has no nowhere/at-all");
