@@ -37,8 +37,8 @@ import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 import { isAbsent } from "../errors.js";
 
-/** Bumped when the generated specimen pages change shape. */
-const SPECIMEN_FORMAT = "studio-specimens/9";
+/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`). */
+const SPECIMEN_FORMAT = "studio-specimens/10";
 const SITE_PREFIX = "/__specimen-site/";
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
