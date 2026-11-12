@@ -353,11 +353,123 @@ export function readPin(consumer: string, agent: SlotAgent, id: string): PinDoc 
   });
 }
 
+/**
+ * Git access for pin history. Studio asks for the history of every slot page it serves (a
+ * capture run serves thousands), so each answer is memoised per repository HEAD: committed
+ * history cannot change while HEAD stays the same commit. HEAD is resolved from the git
+ * directory's files without spawning git; when it cannot be resolved that way (an unborn
+ * branch, a ref format this reader does not know) nothing is memoised and git runs as before.
+ * The working-tree fallback (no committed pin yet) is never memoised, so live-save stays fresh.
+ */
+export type GitRunner = (args: readonly string[], options: { readonly cwd: string; readonly input?: string }) => Buffer;
+const spawnGit: GitRunner = (args, { cwd, input }) => execFileSync("git", args, {
+  cwd, maxBuffer: 256 * 1024 * 1024, ...(input === undefined ? { stdio: ["ignore", "pipe", "pipe"] } : { input, stdio: ["pipe", "pipe", "pipe"] }),
+});
+let runGit: GitRunner = spawnGit;
+/** Replaces the git runner (tests count spawns through it); no argument restores git. Clears the memo. */
+export function setGitRunner(runner?: GitRunner): void { runGit = runner ?? spawnGit; resetPinHistoryCache(); }
+/** Drops every memoised git answer. */
+export function resetPinHistoryCache(): void { topLevels.clear(); histories.clear(); }
+
+interface PinRead { readonly commit: string; readonly at: string; readonly bytes: string | undefined }
+const topLevels = new Map<string, string>();
+const histories = new Map<string, { head: string; reads: Map<string, readonly PinRead[]> }>();
+
 /** The git top level holding `cwd`, or undefined outside a git checkout (or without git); other git failures surface. */
 function gitTopLevel(cwd: string): string | undefined {
-  try { return execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim(); }
+  const known = topLevels.get(cwd);
+  if (known !== undefined && gitHead(known) !== undefined) return known;
+  topLevels.delete(cwd);
+  let top: string;
+  try { top = runGit(["rev-parse", "--show-toplevel"], { cwd }).toString("utf8").trim(); }
   catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT" || /not a git repository/.test(String((error as { stderr?: unknown }).stderr ?? ""))) return undefined;
+    throw error;
+  }
+  if (gitHead(top) !== undefined) topLevels.set(cwd, top);
+  return top;
+}
+
+function readText(path: string): string | undefined {
+  try { return readFileSync(path, "utf8"); } catch { return undefined; }
+}
+const SHA = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
+/** The commit HEAD names in the checkout at `top`, read from git's own files; undefined when not resolvable that way. */
+function gitHead(top: string): string | undefined {
+  const dotGit = join(top, ".git");
+  let gitDir = dotGit;
+  try {
+    if (!statSync(dotGit).isDirectory()) {
+      const pointer = /^gitdir: (.+)$/m.exec(readText(dotGit) ?? "")?.[1]?.trim();
+      if (!pointer) return undefined;
+      gitDir = resolve(top, pointer);
+    }
+  } catch { return undefined; }
+  const common = readText(join(gitDir, "commondir"))?.trim();
+  const commonDir = common ? resolve(gitDir, common) : gitDir;
+  let head = readText(join(gitDir, "HEAD"))?.trim();
+  for (let depth = 0; head?.startsWith("ref: ") && depth < 5; depth++) {
+    const ref = head.slice(5).trim();
+    if (!ref.startsWith("refs/") && ref !== "HEAD") return undefined;
+    const loose = readText(join(ref.startsWith("refs/") ? commonDir : gitDir, ref)) ?? (ref.startsWith("refs/") ? undefined : readText(join(commonDir, ref)));
+    if (loose !== undefined) { head = loose.trim(); continue; }
+    const packed = readText(join(commonDir, "packed-refs"))?.split("\n").find(line => line.endsWith(` ${ref}`));
+    head = packed?.split(" ")[0];
+  }
+  return head && SHA.test(head) ? head : undefined;
+}
+
+/** Each commit touching the pin at `rel` (newest first) with the pin's bytes there; undefined bytes = deleted then. */
+function pinReads(top: string, rel: string): readonly PinRead[] {
+  const head = gitHead(top);
+  const cache = head === undefined ? undefined : histories.get(top)?.head === head ? histories.get(top)! : { head, reads: new Map<string, readonly PinRead[]>() };
+  if (cache && head !== undefined) histories.set(top, cache);
+  const hit = cache?.reads.get(rel);
+  if (hit) return hit;
+  // --follow keeps history across slot-folder moves (the flat layout, or any
+  // future regroup); each commit is read at the path the file had then.
+  const log = runGit(["log", "--follow", "--format=%x00%H", "--name-only", "--", rel], { cwd: top }).toString("utf8");
+  const commits = log.split("\0").filter(Boolean).map(chunk => {
+    const [commit = "", ...paths] = chunk.split("\n").map(line => line.trim()).filter(Boolean);
+    return { commit, path: paths[0] ?? rel };
+  });
+  const reads = readBlobs(top, commits.map(({ commit, path: at }) => ({ commit, at })));
+  // Only an answer for the HEAD read before the log is memoised; a commit landing mid-read is seen next time.
+  if (cache && gitHead(top) === head) cache.reads.set(rel, reads);
+  return reads;
+}
+
+/** Reads every `commit:path` in one `git cat-file --batch`: the raw blob bytes `git show` printed, or undefined where missing. */
+function readBlobs(top: string, wanted: readonly { commit: string; at: string }[]): PinRead[] {
+  if (!wanted.length) return [];
+  if (wanted.some(({ commit, at }) => !SHA.test(commit) || /[\n\r]/.test(at))) return wanted.map(entry => showBlob(top, entry));
+  const out = runGit(["cat-file", "--batch"], { cwd: top, input: wanted.map(({ commit, at }) => `${commit}:${at}\n`).join("") });
+  const reads: PinRead[] = [];
+  let offset = 0;
+  for (const entry of wanted) {
+    const eol = out.indexOf(0x0a, offset);
+    if (eol < 0) throw new Error(`git cat-file --batch: truncated output at ${entry.commit}:${entry.at}`);
+    const header = out.subarray(offset, eol).toString("utf8");
+    offset = eol + 1;
+    const found = /^([0-9a-f]+) (\S+) (\d+)$/.exec(header);
+    if (!found) {
+      // Deleted in this commit: an unpin, not a pin event. Any other answer surfaces.
+      if (header === `${entry.commit}:${entry.at} missing`) { reads.push({ ...entry, bytes: undefined }); continue; }
+      throw new Error(`git cat-file --batch: unexpected answer for ${entry.commit}:${entry.at}: ${header}`);
+    }
+    const size = Number(found[3]);
+    const bytes = out.subarray(offset, offset + size);
+    offset += size + 1;
+    // Anything but a blob is read exactly as before.
+    reads.push(found[2] === "blob" ? { ...entry, bytes: bytes.toString("utf8") } : showBlob(top, entry));
+  }
+  return reads;
+}
+function showBlob(top: string, { commit, at }: { commit: string; at: string }): PinRead {
+  try { return { commit, at, bytes: runGit(["show", `${commit}:${at}`], { cwd: top }).toString("utf8") }; }
+  catch (error) {
+    // Deleted in this commit: an unpin, not a pin event. Any other git failure surfaces.
+    if (/does not exist in|exists on disk, but not in/.test(String((error as { stderr?: unknown }).stderr ?? ""))) return { commit, at, bytes: undefined };
     throw error;
   }
 }
@@ -369,21 +481,7 @@ export function pinHistory(consumer: string, agent: SlotAgent, id: string): PinE
     const top = gitTopLevel(consumer);
     if (top !== undefined) {
       const rel = relative(top, path).split(sep).join("/");
-      // --follow keeps history across slot-folder moves (the flat layout, or any
-      // future regroup); each commit is read at the path the file had then.
-      const log = execFileSync("git", ["log", "--follow", "--format=%x00%H", "--name-only", "--", rel], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-      const commits = log.split("\0").filter(Boolean).map(chunk => {
-        const [commit = "", ...paths] = chunk.split("\n").map(line => line.trim()).filter(Boolean);
-        return { commit, path: paths[0] ?? rel };
-      });
-      const read = commits.map(({ commit, path: at }) => {
-        try { return { commit, at, bytes: execFileSync("git", ["show", `${commit}:${at}`], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }) }; }
-        catch (error) {
-          // Deleted in this commit: an unpin, not a pin event. Any other git failure surfaces.
-          if (/does not exist in|exists on disk, but not in/.test(String((error as { stderr?: unknown }).stderr ?? ""))) return { commit, at, bytes: undefined };
-          throw error;
-        }
-      });
+      const read = pinReads(top, rel);
       const events: PinEvent[] = [];
       for (const [index, entry] of read.entries()) {
         if (entry.bytes === undefined) continue;
