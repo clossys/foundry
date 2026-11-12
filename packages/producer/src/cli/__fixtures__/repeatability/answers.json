@@ -1,0 +1,12 @@
+{
+  "comment": "The owner's answers for repeatability.e2e.test.ts: each placeholder a recommended option leaves open, filled. A files entry is a path beside this file (answer.md: the owner's own words for the evidence question).",
+  "fill": {
+    "<model:low>": "fixture-model-low",
+    "<model:mid>": "fixture-model-mid",
+    "<model:high>": "fixture-model-high",
+    "<id>": "owner-brief"
+  },
+  "files": {
+    "<answer.md>": "answer.md"
+  }
+}
