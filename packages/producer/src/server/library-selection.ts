@@ -4,7 +4,7 @@
  * schema is only read when the consumer has no Designer slot model.
  */
 import { join } from "node:path";
-import { hasPinFile, listSlots, readCandidate } from "../records/slots.js";
+import { hasPinFile, listSlots, readCandidate, withSlotReadScope } from "../records/slots.js";
 import { hasAgentSlots } from "./slot-gallery.js";
 import { themeHash, type StudioTheme } from "./theme-default.js";
 
@@ -24,6 +24,10 @@ export function libraryWorkspace(root: string): string | undefined {
 
 /** A pinned candidate's registry item, only while its bytes still match the pin. */
 function pinnedItems(library: string): Map<string, { item: Record<string, any>; version: number; sha256: string }> {
+  // One read scope for the whole pass: the record memo's folder check runs once, not once per pin.
+  return withSlotReadScope(() => pinnedItemsIn(library));
+}
+function pinnedItemsIn(library: string): Map<string, { item: Record<string, any>; version: number; sha256: string }> {
   const items = new Map<string, { item: Record<string, any>; version: number; sha256: string }>();
   for (const entry of listSlots(library, "designer")) {
     if (!entry.pin || !entry.candidates.includes(entry.pin.candidate)) continue;
@@ -42,6 +46,9 @@ function pinnedItems(library: string): Map<string, { item: Record<string, any>; 
  * file whose candidate is missing, drifted or not a registry item is an `unavailable` leaf, never skipped.
  */
 export function librarySelection(library: string): LibrarySelection {
+  return withSlotReadScope(() => librarySelectionIn(library));
+}
+function librarySelectionIn(library: string): LibrarySelection {
   const items = pinnedItems(library);
   const resolved = [...items].map(([leaf, pin]) => ({ leaf, source: "consumer" as const, fill: `${pin.item.name}@v${pin.version}`, hash: `sha256:${pin.sha256}` }));
   const unresolved = listSlots(library, "designer").filter(entry => !items.has(entry.id) && hasPinFile(entry.dir))

@@ -58,6 +58,89 @@ function scopedChecked(): Set<string> | undefined {
   return scope.checked;
 }
 
+/**
+ * The watched-tree memo (R2F-C6). Studio asks this reader for the same records on every request
+ * (theme, library selection, census, slot detail: a capture run spent most of the server's busy
+ * time re-reading, re-listing and re-hashing unchanged slot folders). While the Producer server's
+ * one watcher watches `<consumer>/agents` (`watchSlotModel` with `memo: true`), each filesystem
+ * answer this reader gets for a path below that folder — lstat, stat, existence, file bytes and
+ * their sha256, directory listings, or the error a read failed with — is kept and given again
+ * until the watcher reports any change under the folder; then every kept answer is dropped. So a
+ * request on an unchanged tree reads nothing, and a live-save is read fresh by the request its
+ * change event triggers, exactly as the server's render memo is cleared. A failed or closed watcher
+ * drops and disarms its memo. Paths above the watched folder are never kept: the symlink walk over
+ * them stays per read scope. Once per read scope (or per read outside one) the watched folder's own
+ * identity is re-checked, so a folder swapped in place without an event is never served from the
+ * old one's answers. Only the server arms it, and the slot writer (slot-write.ts) drops every kept
+ * answer when it writes, so an in-process write is never answered from before it.
+ */
+type Answer = { readonly ok: true; readonly value: unknown } | { readonly ok: false; readonly error: unknown };
+interface TreeMemo { readonly root: string; readonly prefix: string; identity: string; readonly answers: Map<string, Answer> }
+const memos = new Map<string, TreeMemo>();
+const memoChecks = new WeakMap<ReadScope, Set<TreeMemo>>();
+
+function rootIdentity(root: string): string | undefined {
+  try { const stat = lstatSync(root); return stat.isDirectory() && !stat.isSymbolicLink() ? `${stat.dev}:${stat.ino}` : undefined; }
+  catch { return undefined; }
+}
+/** Arms the memo for one watched agents folder (the caller holds a watcher on it); returns its disarm. */
+function armTreeMemo(root: string): { clear: () => void; disarm: () => void } {
+  const identity = rootIdentity(root);
+  const memo: TreeMemo = { root, prefix: root.endsWith(sep) ? root : root + sep, identity: identity ?? "", answers: new Map() };
+  if (identity !== undefined) memos.set(root, memo);
+  return {
+    clear: () => memo.answers.clear(),
+    disarm: () => { memo.answers.clear(); if (memos.get(root) === memo) memos.delete(root); },
+  };
+}
+/** Drops every kept answer of every armed memo (tests, and any caller that changed records in process). */
+export function forgetSlotReads(): void { for (const memo of memos.values()) memo.answers.clear(); }
+
+function memoFor(path: string): TreeMemo | undefined {
+  if (!memos.size) return undefined;
+  const target = isAbsolute(path) ? path : resolve(path);
+  for (const memo of memos.values()) {
+    if (!target.startsWith(memo.prefix)) continue;
+    // The watched folder itself is re-checked once per scope; a swapped folder starts empty.
+    const current = scope;
+    let checked = current ? memoChecks.get(current) : undefined;
+    if (!checked?.has(memo)) {
+      const identity = rootIdentity(memo.root);
+      if (identity !== memo.identity) { memo.answers.clear(); if (identity === undefined) return undefined; memo.identity = identity; }
+      if (current) { if (!checked) memoChecks.set(current, checked = new Set()); checked.add(memo); }
+    }
+    return memo;
+  }
+  return undefined;
+}
+function kept<T>(op: string, path: string, read: () => T): T {
+  const memo = memoFor(path);
+  if (!memo) return read();
+  const key = `${op}\0${path}`;
+  let answer = memo.answers.get(key);
+  if (!answer) {
+    try { answer = { ok: true, value: read() }; } catch (error) { answer = { ok: false, error }; }
+    memo.answers.set(key, answer);
+  }
+  if (!answer.ok) throw answer.error;
+  return answer.value as T;
+}
+const fsLstat = (path: string): Stats => kept("lstat", path, () => lstatSync(path));
+const fsStat = (path: string): Stats => kept("stat", path, () => statSync(path));
+const fsStatOrUndefined = (path: string): Stats | undefined => { try { return fsStat(path); } catch (error) { if (isAbsent(error)) return undefined; throw error; } };
+const fsExists = (path: string): boolean => kept("exists", path, () => existsSync(path));
+const fsText = (path: string): string => kept("text", path, () => readFileSync(path, "utf8"));
+/** A copy each time: callers may change the buffer. */
+const fsBuffer = (path: string): Buffer => Buffer.from(kept("buffer", path, () => readFileSync(path)));
+/** A copy each time: callers sort listings in place. */
+const fsList = (path: string): string[] => kept("list", path, () => readdirSync(path)).slice();
+/** The sha256 of `bytes`, the text just read from `path`; kept with the very bytes it hashed. */
+function fsTextSha(path: string, bytes: string): string {
+  if (!memoFor(path)) return sha256Hex(bytes);
+  const hit = kept("sha", path, () => ({ bytes, sha: sha256Hex(bytes) }));
+  return hit.bytes === bytes ? hit.sha : sha256Hex(bytes);
+}
+
 function assertModelPath(path: string): void {
   const checked = scopedChecked();
   const proven: string[] = [];
@@ -66,7 +149,7 @@ function assertModelPath(path: string): void {
     // A proven directory's ancestors were proven with it.
     if (checked?.has(cursor)) break;
     try {
-      const stat = lstatSync(cursor);
+      const stat = fsLstat(cursor);
       if (stat.isSymbolicLink()) throw new Error("Symbolic links are not followed in the slot model");
       if (stat.isDirectory()) proven.push(cursor);
     }
@@ -80,15 +163,15 @@ function assertModelPath(path: string): void {
 }
 function readBytes(path: string): string {
   assertModelPath(path);
-  if (!lstatSync(path).isFile()) throw new Error("Expected a regular slot-model file");
-  return readFileSync(path, "utf8");
+  if (!fsLstat(path).isFile()) throw new Error("Expected a regular slot-model file");
+  return fsText(path);
 }
 const readJson = (path: string): any => JSON.parse(readBytes(path));
-const isDir = (path: string) => { try { const stat = lstatSync(path); return stat.isDirectory() && !stat.isSymbolicLink(); } catch { return false; } };
+const isDir = (path: string) => { try { const stat = fsLstat(path); return stat.isDirectory() && !stat.isSymbolicLink(); } catch { return false; } };
 
 /** True once any agent folder carries an ia.json (the flag-free switch). */
 export function hasSlotModel(consumer: string): boolean {
-  return SLOT_AGENTS.some(agent => existsSync(iaPath(consumer, agent)));
+  return SLOT_AGENTS.some(agent => fsExists(iaPath(consumer, agent)));
 }
 
 /**
@@ -109,7 +192,7 @@ function deepFreeze<T>(value: T): T {
 function loadIa(consumer: string, agent: ModelAgent): IaCacheEntry | null {
   const path = iaPath(consumer, agent);
   assertModelPath(path);
-  if (!existsSync(path)) { iaCache.delete(path); return null; }
+  if (!fsExists(path)) { iaCache.delete(path); return null; }
   const bytes = readBytes(path);
   const cached = iaCache.get(path);
   if (cached?.bytes === bytes) return cached;
@@ -136,7 +219,7 @@ function candidateNamesAt(dir: string): string[] {
   const root = candidatesDir(dir);
   assertModelPath(root);
   if (!isDir(root)) return [];
-  return readdirSync(root).filter(name => CANDIDATE_NAME.test(name))
+  return fsList(root).filter(name => CANDIDATE_NAME.test(name))
     .sort((a, b) => versionOf(a) - versionOf(b) || (a < b ? -1 : a > b ? 1 : 0));
 }
 
@@ -192,10 +275,10 @@ function seatTextAt(consumer: string, step: string): string | undefined {
   const dir = seatDir(consumer, step);
   const retired = retiredSeatFile(dir);
   assertModelPath(retired);
-  if (existsSync(retired)) throw new Error(`Seat ${step}: seat.json is retired; a seat is a candidate file plus pin.json`);
+  if (fsExists(retired)) throw new Error(`Seat ${step}: seat.json is retired; a seat is a candidate file plus pin.json`);
   const path = pinFile(dir);
   assertModelPath(path);
-  if (!existsSync(path)) return undefined;
+  if (!fsExists(path)) return undefined;
   let value: unknown;
   try { value = JSON.parse(readBytes(path)); } catch { throw new Error(`Seat ${step}: pin.json is not JSON`); }
   const issues = validatePin(value, path);
@@ -203,9 +286,9 @@ function seatTextAt(consumer: string, step: string): string | undefined {
   const pin = value as PinDoc;
   const file = join(candidatesDir(dir), pin.candidate);
   assertModelPath(file);
-  if (!existsSync(file)) throw new Error(`Seat ${step}: pinned candidate ${pin.candidate} does not exist`);
+  if (!fsExists(file)) throw new Error(`Seat ${step}: pinned candidate ${pin.candidate} does not exist`);
   const bytes = readBytes(file);
-  if (sha256Hex(bytes) !== pin.sha256) throw new Error(`Seat ${step}: pin sha256 differs from ${pin.candidate}`);
+  if (fsTextSha(file, bytes) !== pin.sha256) throw new Error(`Seat ${step}: pin sha256 differs from ${pin.candidate}`);
   return bytes;
 }
 
@@ -243,7 +326,7 @@ export function readSlotEntry(consumer: string, agent: SlotAgent, id: string): S
 function readNotNeeded(dir: string): NotNeeded | "invalid" | { readonly unreadable: string } | undefined {
   const path = slotFile(dir);
   assertModelPath(path);
-  if (!existsSync(path)) return undefined;
+  if (!fsExists(path)) return undefined;
   let value: unknown;
   try { value = readJson(path); } catch (error) { return { unreadable: error instanceof Error ? error.message : String(error) }; }
   if (!value || typeof value !== "object" || !Object.hasOwn(value, "notNeeded")) return undefined;
@@ -257,7 +340,7 @@ function readNotNeeded(dir: string): NotNeeded | "invalid" | { readonly unreadab
  * rejection as an error and `check-slot-state` fails on it.
  */
 function decideSlotState(dir: string, pin: PinDoc | null): SlotStateResult {
-  const pinPresent = existsSync(pinFile(dir));
+  const pinPresent = fsExists(pinFile(dir));
   const notNeeded = readNotNeeded(dir);
   if (notNeeded === "invalid") return { state: "rejected", reason: "invalid-slot", message: "slot.json notNeeded must be {reason, since, decidedBy}." };
   if (notNeeded && "unreadable" in notNeeded) return { state: "rejected", reason: "invalid-slot", message: `slot.json is not readable JSON: ${notNeeded.unreadable}` };
@@ -323,7 +406,7 @@ export function candidateStamp(consumer: string, agent: SlotAgent, id: string, n
     if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);
     const path = join(candidatesDir(locate(consumer, agent, id).dir), name);
     assertModelPath(path);
-    const stat = lstatSync(path, { bigint: true });
+    const stat = kept("lstat-bigint", path, () => lstatSync(path, { bigint: true }));
     return `${stat.ino}:${stat.size}:${stat.mtimeNs}:${stat.ctimeNs}`;
   });
 }
@@ -331,15 +414,16 @@ export function candidateStamp(consumer: string, agent: SlotAgent, id: string, n
 export function readCandidate(consumer: string, agent: SlotAgent, id: string, name: string): Candidate {
   return withSlotReadScope(() => {
     if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);
-    const bytes = readBytes(join(candidatesDir(locate(consumer, agent, id).dir), name));
-    return { name, bytes, sha256: sha256Hex(bytes) };
+    const path = join(candidatesDir(locate(consumer, agent, id).dir), name);
+    const bytes = readBytes(path);
+    return { name, bytes, sha256: fsTextSha(path, bytes) };
   });
 }
 
 function readPinAt(dir: string): PinDoc | null {
   const path = pinFile(dir);
   assertModelPath(path);
-  if (!existsSync(path)) return null;
+  if (!fsExists(path)) return null;
   const parsed = parseJson(readBytes(path));
   // A present pin.json that does not parse or validate is no pin: decideSlotState rejects the
   // slot as invalid-pin and the model check reports it; it never clears an input or acts as an
@@ -532,7 +616,7 @@ function scanUsedBy(consumer: string, slot: string, read: (agent: SlotAgent, id:
   const out: { agent: SlotAgent; id: string }[] = [];
   for (const agent of SLOT_AGENTS) for (const entry of listSlots(consumer, agent)) {
     const path = slotFile(entry.dir);
-    if (!existsSync(path)) continue;
+    if (!fsExists(path)) continue;
     if (read(agent, entry.id)?.uses.includes(slot)) out.push({ agent, id: entry.id });
   }
   return out;
@@ -550,7 +634,7 @@ export function slotIndex(consumer: string): Map<string, SlotEntry> {
 /** Only a valid pin over the current, valid candidate bytes clears an input. */
 function inputBlocker(entry: SlotEntry): BlockReason | undefined {
   const path = pinFile(entry.dir);
-  if (!existsSync(path)) return "unpinned";
+  if (!fsExists(path)) return "unpinned";
   let pin: PinDoc;
   try {
     const value = readJson(path);
@@ -559,8 +643,9 @@ function inputBlocker(entry: SlotEntry): BlockReason | undefined {
   } catch { return "invalid-pin"; }
   let candidate: Candidate;
   try {
-    const bytes = readBytes(join(candidatesDir(entry.dir), pin.candidate));
-    candidate = { name: pin.candidate, bytes, sha256: sha256Hex(bytes) };
+    const path = join(candidatesDir(entry.dir), pin.candidate);
+    const bytes = readBytes(path);
+    candidate = { name: pin.candidate, bytes, sha256: fsTextSha(path, bytes) };
   }
   catch { return "missing-candidate"; }
   if (candidate.sha256 !== pin.sha256) return "hash-drift";
@@ -617,36 +702,36 @@ function modelScoped(path: string): string {
 /** A model file read: scoped, no alias anywhere (the file included), a regular file. */
 function modelFile(path: string): string {
   const target = modelScoped(path);
-  if (!lstatSync(target).isFile()) throw new Error("Expected a regular slot-model file");
+  if (!fsLstat(target).isFile()) throw new Error("Expected a regular slot-model file");
   return target;
 }
 
 /** True when `<dir>/agents` is a directory (a consumer root, or a workspace's `clossys/`). */
 export function hasModelRoot(dir: string): boolean {
-  return statSync(agentsDir(dir), { throwIfNoEntry: false })?.isDirectory() === true;
+  return fsStatOrUndefined(agentsDir(dir))?.isDirectory() === true;
 }
 /** True when this agent's ia.json exists (the agent is on the slot model). */
 export function hasAgentModel(consumer: string, agent: SlotAgent): boolean {
-  return existsSync(iaPath(consumer, agent));
+  return fsExists(iaPath(consumer, agent));
 }
 /** True when the slot folder holds a pin.json entry, valid or not (a dangling alias counts). */
 export function hasPinFile(dir: string): boolean {
-  try { lstatSync(pinFile(dir)); return true; }
+  try { fsLstat(pinFile(dir)); return true; }
   catch (error) { if (["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) return false; throw error; }
 }
 /** `mtime:size` of a slot's pin.json, or `-` when there is none: a cache key, never a decision. */
 export function pinStamp(dir: string): string {
-  try { const stat = statSync(pinFile(dir)); return `${stat.mtimeMs}:${stat.size}`; } catch (error) { if (isAbsent(error)) return "-"; throw error; }
+  try { const stat = fsStat(pinFile(dir)); return `${stat.mtimeMs}:${stat.size}`; } catch (error) { if (isAbsent(error)) return "-"; throw error; }
 }
 /** Whether a model path exists, without following its last component. */
 export function modelPresence(path: string): "present" | "missing" | "error" {
-  try { lstatSync(modelScoped(path)); return "present"; }
+  try { fsLstat(modelScoped(path)); return "present"; }
   catch (error) { return (error as NodeJS.ErrnoException).code === "ENOENT" ? "missing" : "error"; }
 }
 /** Whether a model path exists, without following its last component (an alias counts; reads refuse it). */
 export function modelExists(path: string): boolean {
   const target = modelScoped(path);
-  try { lstatSync(target); return true; }
+  try { fsLstat(target); return true; }
   catch (error) { if (["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) return false; throw error; }
 }
 /** A real (non-alias) directory under the model; false for a path outside a model agent. */
@@ -656,20 +741,20 @@ export function isModelDir(path: string): boolean {
   return isDir(target);
 }
 /** The names in a real model directory (unsorted, as the OS returns them); [] when absent or not a directory. */
-export function listModelDir(path: string): string[] { return isModelDir(path) ? readdirSync(path) : []; }
+export function listModelDir(path: string): string[] { return isModelDir(path) ? fsList(path) : []; }
 /**
  * The raw text of a model file, unvalidated: for status counts,
  * migrations and the model check, which report malformed files themselves. Never selection authority.
  */
-export function readModelText(path: string): string { return readFileSync(modelFile(path), "utf8"); }
+export function readModelText(path: string): string { return fsText(modelFile(path)); }
 /** The raw bytes of a model file (exact hashing), as `readModelText`. */
-export function readModelBytes(path: string): Buffer { return readFileSync(modelFile(path)); }
+export function readModelBytes(path: string): Buffer { return fsBuffer(modelFile(path)); }
 
 /** The raw text of a slot folder's own record (slot.json or pin.json); aliases refused; undefined when absent. */
 export function readSlotRecordText(dir: string, file: "slot.json" | "pin.json"): string | undefined {
   const path = file === "pin.json" ? pinFile(dir) : slotFile(dir);
   assertModelPath(path);
-  if (!existsSync(path)) return undefined;
+  if (!fsExists(path)) return undefined;
   return readBytes(path);
 }
 /**
@@ -680,7 +765,7 @@ export function readAgentFile(consumer: string, agent: SlotAgent, name: string):
   if (!/^[a-z0-9][a-z0-9.-]*$/.test(name) || name.includes("..")) throw new Error(`invalid agent file ${name}`);
   const path = join(agentDir(consumer, agent), name);
   assertModelPath(path);
-  if (!existsSync(path)) return undefined;
+  if (!fsExists(path)) return undefined;
   return readBytes(path);
 }
 /**
@@ -693,11 +778,11 @@ export function readAgentFolder(consumer: string, agent: SlotAgent, folder: stri
   assertModelPath(dir);
   const files: Record<string, string> = {};
   let names: string[] = [];
-  try { names = readdirSync(dir); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+  try { names = fsList(dir); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
   for (const name of names.sort()) {
     const path = join(dir, name);
-    if (lstatSync(path).isSymbolicLink()) throw new Error("Symbolic links are not followed in the slot model");
-    if (lstatSync(path).isFile()) files[name] = readFileSync(path, "utf8");
+    if (fsLstat(path).isSymbolicLink()) throw new Error("Symbolic links are not followed in the slot model");
+    if (fsLstat(path).isFile()) files[name] = fsText(path);
   }
   return files;
 }
@@ -734,8 +819,11 @@ export function assertModelTree(consumer: string): void {
 /**
  * One recursive watcher on `<consumer>/agents`, also when it is absent (the nearest existing
  * ancestor is watched). `onChange` gets the changed path's segments relative to `agents/`.
+ * With `memo`, the watcher also arms the watched-tree memo for that folder (only when the folder
+ * itself is watched): every event below it, or a watcher error, drops the kept answers before
+ * `onChange` runs, and closing the watcher disarms it.
  */
-export async function watchSlotModel(consumer: string, onChange: (segments: string[] | null) => void): Promise<() => void> {
+export async function watchSlotModel(consumer: string, onChange: (segments: string[] | null) => void, options: { readonly memo?: boolean } = {}): Promise<() => void> {
   const target = agentsDir(resolve(consumer));
   let watched = target;
   for (;;) {
@@ -749,14 +837,20 @@ export async function watchSlotModel(consumer: string, onChange: (segments: stri
     }
   }
   let closed = false;
+  let memo: ReturnType<typeof armTreeMemo> | undefined;
   const watcher: FSWatcher = watch(watched, { recursive: true }, (_type, filename) => {
-    if (closed || filename === null) return;
+    if (closed) return;
+    // An event that names no file may be any change: the memo cannot keep anything past it.
+    memo?.clear();
+    if (filename === null) return;
     const rel = relative(target, resolve(watched, String(filename)));
     if (rel === ".." || rel.startsWith(`..${sep}`)) return;
     onChange(rel.split(sep));
   });
-  watcher.on("error", () => { if (!closed) onChange(null); });
-  return () => { closed = true; watcher.close(); };
+  // Armed only once the watcher exists, so no change can fall between them.
+  if (options.memo && watched === target) memo = armTreeMemo(target);
+  watcher.on("error", () => { memo?.disarm(); memo = undefined; if (!closed) onChange(null); });
+  return () => { closed = true; memo?.disarm(); memo = undefined; watcher.close(); };
 }
 
 // ---------------------------------------------------------------------------

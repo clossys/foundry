@@ -284,6 +284,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (!aborter.signal.aborted) failure = "Studio child stopped unexpectedly";
       void close();
     });
+    // With the record memo: unchanged slot folders are read once, not on every request.
     stopWatch = await watchCells(options.root, event => {
       renders.clear();
       if (event.agent === null || event.agent === "writer") writer.refresh();
@@ -291,7 +292,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         if (stream.writableLength > 64 * 1024) stream.destroy();
         else stream.write(`event: change\ndata: ${JSON.stringify(event)}\n\n`);
       }
-    });
+    }, { memo: true });
     if (aborter.signal.aborted || child.process.exitCode !== null || child.process.signalCode !== null) {
       stopWatch(); throw new Error("Studio child stopped during startup");
     }
