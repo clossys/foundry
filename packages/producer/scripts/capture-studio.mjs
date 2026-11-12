@@ -298,30 +298,82 @@ async function launchBrowser(executable, profileDir) {
   });
   const socket = new WebSocket(wsUrl);
   await new Promise((ok, fail) => { socket.onopen = ok; socket.onerror = () => fail(new Error("DevTools socket failed")); });
+  const client = createCdpClient(socket);
+  const close = async () => {
+    try { await client.send("Browser.close", {}, undefined, { timeoutMs: 5000 }); } catch { /* already closing */ }
+    socket.close();
+    if (child.exitCode === null) await new Promise(done => { child.once("exit", done); setTimeout(() => { child.kill("SIGKILL"); }, 5000).unref(); });
+  };
+  return { ...client, close };
+}
+
+/** Default bound on one DevTools call: no call may wait forever for an answer that never comes. */
+export const CDP_CALL_TIMEOUT_MS = 30_000;
+
+/**
+ * A DevTools Protocol client over an open socket ({ send(text), onmessage, onclose }).
+ * Every call is bounded: a call with no answer within its timeout rejects and is forgotten, a
+ * call to a session that detaches rejects at once, and a closed socket rejects everything pending.
+ * A frame target that auto-attaches paused under a session nobody listens to any more (its page
+ * finished or was abandoned) is resumed here: a paused frame stalls every page sharing its renderer.
+ */
+export function createCdpClient(socket, { callTimeoutMs = CDP_CALL_TIMEOUT_MS } = {}) {
   let id = 0;
   const pending = new Map();
   const listeners = new Map();
+  const settle = (messageId, error, result) => {
+    const entry = pending.get(messageId);
+    if (!entry) return;
+    pending.delete(messageId);
+    clearTimeout(entry.timer);
+    if (error) entry.reject(error); else entry.resolve(result);
+  };
+  const rejectSession = (sessionId, why) => {
+    for (const [messageId, entry] of pending) if (entry.sessionId === sessionId) settle(messageId, new Error(`${entry.method}: ${why}`));
+  };
+  const send = (method, params = {}, sessionId, { timeoutMs = callTimeoutMs } = {}) => new Promise((resolveCall, rejectCall) => {
+    const messageId = ++id;
+    const timer = setTimeout(() => settle(messageId, new Error(`${method}: no answer within ${timeoutMs}ms`)), timeoutMs);
+    timer.unref?.();
+    pending.set(messageId, { resolve: resolveCall, reject: rejectCall, method, sessionId, timer });
+    try { socket.send(JSON.stringify({ id: messageId, method, params, ...(sessionId ? { sessionId } : {}) })); }
+    catch (error) { settle(messageId, new Error(`${method}: ${error.message}`)); }
+  });
   socket.onmessage = message => {
     const data = JSON.parse(message.data);
     if (data.id !== undefined) {
       const entry = pending.get(data.id);
-      pending.delete(data.id);
-      if (data.error) entry?.reject(new Error(`${entry.method}: ${data.error.message}`)); else entry?.resolve(data.result);
+      settle(data.id, data.error && new Error(`${entry?.method}: ${data.error.message}`), data.result);
       return;
     }
-    listeners.get(data.sessionId ?? "")?.(data.method, data.params);
+    if (data.method === "Target.detachedFromTarget") rejectSession(data.params.sessionId, "target detached");
+    const listener = listeners.get(data.sessionId ?? "");
+    if (listener) listener(data.method, data.params);
+    else if (data.method === "Target.attachedToTarget" && data.params?.waitingForDebugger) send("Runtime.runIfWaitingForDebugger", {}, data.params.sessionId).catch(() => {});
   };
-  const send = (method, params = {}, sessionId) => new Promise((ok, fail) => {
-    const messageId = ++id;
-    pending.set(messageId, { resolve: ok, reject: fail, method });
-    socket.send(JSON.stringify({ id: messageId, method, params, ...(sessionId ? { sessionId } : {}) }));
-  });
-  const close = async () => {
-    try { await send("Browser.close"); } catch { /* already closing */ }
-    socket.close();
-    if (child.exitCode === null) await new Promise(done => { child.once("exit", done); setTimeout(() => { child.kill("SIGKILL"); }, 5000).unref(); });
-  };
-  return { send, on: (sessionId, fn) => listeners.set(sessionId, fn), off: sessionId => listeners.delete(sessionId), close };
+  socket.onclose = () => { for (const messageId of [...pending.keys()]) settle(messageId, new Error(`${pending.get(messageId).method}: DevTools socket closed`)); };
+  return { send, on: (sessionId, fn) => listeners.set(sessionId, fn), off: sessionId => listeners.delete(sessionId), pendingCount: () => pending.size };
+}
+
+/** Reject when `promise` has not settled within `ms`; `onTimeout` runs first (e.g. to close the stuck target). */
+export function withTimeout(promise, ms, message, onTimeout) {
+  let timer;
+  return Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => { onTimeout?.(); reject(new Error(message)); }, ms); timer.unref?.(); })]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * Run one capture job with a hard deadline per attempt. A failed or stuck attempt is retried once
+ * on a fresh page target; a second failure becomes a failed shot, never a hang.
+ */
+export async function captureWithRetry(attempt, { deadlineMs, attempts = 2, abandon } = {}) {
+  const errors = [];
+  for (let n = 1; n <= attempts; n++) {
+    const state = {};
+    try {
+      return await withTimeout(Promise.resolve().then(() => attempt(state, n)), deadlineMs, `attempt ${n} did not finish within ${deadlineMs}ms`, () => abandon?.(state));
+    } catch (error) { errors.push(error.message); }
+  }
+  return { findings: [{ type: "readiness-timeout", detail: `capture failed ${attempts} times: ${errors.join("; ")}`.slice(0, 500) }], counts: { consoleErrors: 0, failedRequests: 0 } };
 }
 
 // ---------------------------------------------------------------- producer server
@@ -361,8 +413,11 @@ async function startProducer({ port, root, log }) {
 
 const IDLE_MS = 500;
 
-async function captureShot(browser, contextId, origin, job, outDir) {
+const PROBE_TIMEOUT_MS = 5_000;
+
+async function captureShot(browser, contextId, origin, job, outDir, state = {}) {
   const { targetId } = await browser.send("Target.createTarget", { url: "about:blank", browserContextId: contextId });
+  state.targetId = targetId;
   const { sessionId } = await browser.send("Target.attachToTarget", { targetId, flatten: true });
   const send = (method, params) => browser.send(method, params, sessionId);
   const consoleErrors = [];
@@ -389,14 +444,18 @@ async function captureShot(browser, contextId, origin, job, outDir) {
     children.set(child, { url: info?.url ?? "", type: info?.type ?? "", targetId: info?.targetId ?? "" });
     browser.on(child, listener);
     const sendChild = (method, params) => browser.send(method, params, child);
-    try {
-      await Promise.all([sendChild("Runtime.enable"), sendChild("Log.enable"), sendChild("Network.enable"), sendChild("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: true })]);
-    } catch (error) { unobserved(child, "attach")(error); }
-    finally { await sendChild("Runtime.runIfWaitingForDebugger").catch(unobserved(child, "resume")); }
+    // The resume goes out with the enables, not after them: a paused frame may hold an enable's
+    // answer until it runs, and a frame left paused blocks its whole renderer process, so every
+    // page sharing it (other shots' theme specimens included) stops answering at 0% CPU.
+    const enables = Promise.all([sendChild("Runtime.enable"), sendChild("Log.enable"), sendChild("Network.enable"), sendChild("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: true })])
+      .catch(unobserved(child, "attach"));
+    const resume = sendChild("Runtime.runIfWaitingForDebugger").then(() => { const known = children.get(child); if (known) known.resumed = true; }, unobserved(child, "resume"));
+    await Promise.all([enables, resume]);
   };
   const paintProbe = `(${framePaint.toString()})()`;
-  const probeChildren = async () => (await Promise.all([...children].filter(([, info]) => info.type === "iframe").map(([child, info]) =>
-    browser.send("Runtime.evaluate", { expression: paintProbe, returnByValue: true }, child).then(result => result.result?.value && { ...result.result.value, targetId: info.targetId }, () => undefined)))).filter(Boolean);
+  // Only resumed frames are probed (an evaluate in a paused frame never answers), each bounded.
+  const probeChildren = async () => (await Promise.all([...children].filter(([, info]) => info.type === "iframe" && info.resumed).map(([child, info]) =>
+    browser.send("Runtime.evaluate", { expression: paintProbe, returnByValue: true }, child, { timeoutMs: PROBE_TIMEOUT_MS }).then(result => result.result?.value && { ...result.result.value, targetId: info.targetId }, () => undefined)))).filter(Boolean);
   // An isolated frame's target id is its frame id: a frame whose own document is complete has finished its navigation.
   const retireNavigations = painted => {
     for (const frame of painted) if (frame.readyState === "complete" && frame.targetId) retireFrame(frame.targetId);
@@ -424,6 +483,8 @@ async function captureShot(browser, contextId, origin, job, outDir) {
   browser.on(sessionId, listener);
   try {
     await Promise.all([send("Page.enable"), send("Runtime.enable"), send("Log.enable"), send("Network.enable"), send("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: true })]);
+    // Every shot's tab behaves as focused, so a background tab still produces the frame a screenshot waits for.
+    await send("Emulation.setFocusEmulationEnabled", { enabled: true });
     await send("Emulation.setDeviceMetricsOverride", { width: job.width, height: 900, deviceScaleFactor: 1, mobile: job.width < 768 });
     await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: job.theme }, { name: "prefers-reduced-motion", value: "reduce" }] });
     loaded = false;
@@ -542,8 +603,12 @@ export async function run(args) {
         const job = jobs[next++];
         let result;
         const started = Date.now();
-        try { result = await captureShot(browser, contexts[job.theme], producer.origin, job, args.out); }
-        catch (error) { result = { findings: [{ type: "readiness-timeout", detail: `capture failed: ${error.message}` }], counts: { consoleErrors: 0, failedRequests: 0 } }; }
+        // Each attempt has a hard deadline (readiness budget plus the shot itself); a stuck attempt's
+        // target is closed, the job retried once on a fresh target, and a second failure is a failed shot.
+        result = await captureWithRetry(state => captureShot(browser, contexts[job.theme], producer.origin, job, args.out, state), {
+          deadlineMs: job.timeoutMs + CDP_CALL_TIMEOUT_MS,
+          abandon: state => { if (state.targetId) browser.send("Target.closeTarget", { targetId: state.targetId }, undefined, { timeoutMs: 5000 }).catch(() => {}); },
+        });
         const shot = { route: job.route, kind: job.kind, label: job.label, width: job.width, theme: job.theme, file: job.file, consoleErrors: result.counts.consoleErrors, failedRequests: result.counts.failedRequests, overflow: result.overflow ?? null, durationMs: Date.now() - started, findings: result.findings };
         if (args.baseline && result.png) {
           try {

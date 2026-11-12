@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { deflateSync } from "node:zlib";
 import { JSDOM } from "jsdom";
-import { DEFAULT_MAP, FAILING, contactSheet, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, severityOf } from "./capture-studio.mjs";
+import { DEFAULT_MAP, FAILING, captureWithRetry, contactSheet, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, severityOf } from "./capture-studio.mjs";
 
 const FIXTURE = `<!doctype html><html><head><title>Studio</title></head><body>
 <h1>Market size</h1>
@@ -136,4 +136,60 @@ test("a cross-origin frame takes the paint its own target reported, so a blank o
   assert.equal(isSettled(merged), false, "a frame target still loading is not settled");
   const findings = detectFindings(merged, {});
   assert.deepEqual(findings.map(f => [f.type, f.detail]), [["empty-specimen", "frame /__specimen?blank painted nothing"]]);
+});
+
+// A DevTools socket that records what is sent and never answers.
+const silentSocket = () => ({ sent: [], send(text) { this.sent.push(JSON.parse(text)); }, onmessage: null, onclose: null });
+const within = (promise, ms) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error(`still pending after ${ms}ms`)), ms))]);
+
+test("a DevTools call nobody answers rejects at its timeout instead of hanging", async () => {
+  const socket = silentSocket();
+  const client = createCdpClient(socket, { callTimeoutMs: 50 });
+  const started = Date.now();
+  await assert.rejects(within(client.send("Page.captureScreenshot", {}, "s1"), 2000), /Page\.captureScreenshot: no answer within 50ms/);
+  assert.ok(Date.now() - started < 1000);
+  assert.equal(client.pendingCount(), 0, "the stuck call is forgotten");
+});
+
+test("a detached session and a closed socket reject their pending calls; a late answer is ignored", async () => {
+  const socket = silentSocket();
+  const client = createCdpClient(socket, { callTimeoutMs: 10_000 });
+  const onDetached = client.send("Runtime.evaluate", {}, "child");
+  const other = client.send("Page.getLayoutMetrics", {}, "page");
+  socket.onmessage({ data: JSON.stringify({ method: "Target.detachedFromTarget", params: { sessionId: "child" } }) });
+  await assert.rejects(onDetached, /Runtime\.evaluate: target detached/);
+  socket.onclose();
+  await assert.rejects(other, /DevTools socket closed/);
+  socket.onmessage({ data: JSON.stringify({ id: 2, result: {} }) });
+  assert.equal(client.pendingCount(), 0);
+});
+
+test("a frame that attaches paused under a session nobody listens to is resumed", () => {
+  const socket = silentSocket();
+  createCdpClient(socket, { callTimeoutMs: 50 });
+  socket.onmessage({ data: JSON.stringify({ method: "Target.attachedToTarget", sessionId: "gone", params: { sessionId: "orphan", waitingForDebugger: true, targetInfo: { type: "iframe" } } }) });
+  assert.deepEqual(socket.sent.map(m => [m.method, m.sessionId]), [["Runtime.runIfWaitingForDebugger", "orphan"]]);
+});
+
+test("a stuck capture attempt is abandoned at its deadline, retried once, then reported as a failed shot", async () => {
+  const socket = silentSocket();
+  const client = createCdpClient(socket, { callTimeoutMs: 60_000 });
+  const attempts = [];
+  const abandoned = [];
+  // Each attempt awaits a DevTools call that never answers, like the stalled /designer/themes shots.
+  const result = await within(captureWithRetry((state, n) => { attempts.push(n); state.targetId = `t${n}`; return client.send("Page.captureScreenshot", {}, `s${n}`); },
+    { deadlineMs: 50, abandon: state => abandoned.push(state.targetId) }), 2000);
+  assert.deepEqual(attempts, [1, 2]);
+  assert.deepEqual(abandoned, ["t1", "t2"]);
+  assert.equal(result.findings.length, 1);
+  assert.equal(result.findings[0].type, "readiness-timeout");
+  assert.match(result.findings[0].detail, /capture failed 2 times: attempt 1 did not finish within 50ms; attempt 2/);
+  assert.ok(FAILING.includes(result.findings[0].type));
+});
+
+test("a capture attempt that fails once and then succeeds keeps the second result", async () => {
+  let calls = 0;
+  const result = await captureWithRetry(async () => { if (++calls === 1) throw new Error("Target closed"); return { findings: [], counts: { consoleErrors: 0, failedRequests: 0 } }; }, { deadlineMs: 1000 });
+  assert.equal(calls, 2);
+  assert.deepEqual(result.findings, []);
 });
