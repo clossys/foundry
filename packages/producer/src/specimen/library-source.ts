@@ -308,6 +308,34 @@ export function specimenPreviewIssue(root: string, slot: string, name: string, b
   catch (error) { return error instanceof Error ? error.message : String(error); }
 }
 
+/** Relative module specifiers in one source file: static imports, re-exports, side-effect and dynamic imports. */
+const RELATIVE_IMPORT = /(?:\bfrom\s*|\bimport\s*\(?\s*)(["'])(\.{1,2}\/[^"'\n]*)\1/g;
+const RESOLVE_SUFFIXES = ["", ".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"];
+
+/**
+ * Why one element candidate's own code cannot be bundled on its own, or undefined when it can: a
+ * relative import must name one of the candidate's own files, resolved the way the specimen build
+ * resolves it (Publisher `relativeTarget`: the importer's directory joined with the specifier,
+ * then the same suffixes). A candidate whose code imports a module it does not ship (a historical
+ * version that imported files of the app it was cut from) has no specimen the route can build.
+ */
+export function candidateImportIssue(bytes: string): string | undefined {
+  let item: CandidateItem;
+  try { item = JSON.parse(bytes) as CandidateItem; } catch { return undefined; }
+  const files = (item.files ?? []).filter((file): file is { path: string; content?: string } => typeof file.path === "string");
+  const own = new Set(files.map(file => posix.normalize(file.path)));
+  const missing: string[] = [];
+  for (const file of files) {
+    if (!CODE_FILE.test(file.path) || typeof file.content !== "string") continue;
+    for (const match of file.content.matchAll(RELATIVE_IMPORT)) {
+      const specifier = match[2]!;
+      const base = posix.normalize(posix.join(posix.dirname(posix.normalize(file.path)), specifier));
+      if (!RESOLVE_SUFFIXES.some(suffix => own.has(base + suffix))) missing.push(`${specifier} from ${file.path}`);
+    }
+  }
+  return missing.length ? `its code imports modules it does not ship: ${[...new Set(missing)].join(", ")}` : undefined;
+}
+
 /** The pinned item a `$element` input mounts, or why it cannot be mounted. */
 function slotInput(root: string, slot: string, writerSource: () => Readonly<Record<string, string>>): SlotInput | string {
   const entry = readSlotEntry(root, "designer", slot);

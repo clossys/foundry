@@ -389,4 +389,38 @@ describe('slot details', () => {
     expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.specimen).toBeUndefined();
     expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.issues).toContainEqual({ copy: 'studio.check-candidate-identity' });
   });
+
+  it('lists a preview whose code imports modules it does not ship without a frame, and keeps framing the pin either way', () => {
+    const { root } = fixture();
+    const designer = join(root, 'clossys/agents/designer');
+    const dir = join(designer, 'frames.example');
+    mkdirSync(join(dir, 'candidates'), { recursive: true });
+    const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#C2-import-closure', extensions: [],
+      nodes: [{ id: 'frames.test', label: 'Frames', children: [{ id: 'test-records', label: 'Test records', slots: ['frames.example'] }] }] };
+    writeFileSync(join(designer, 'ia.json'), JSON.stringify(ia));
+    writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id: 'frames.example', agent: 'designer',
+      ia: slotPositions('designer', ia).get('frames.example'), kind: 'element', contract: {}, inputs: [], uses: [] }));
+    const write = (version: number, files: { path: string; content: string }[]) => {
+      const bytes = JSON.stringify({ name: 'shell', type: 'registry:block', files: files.map(file => ({ ...file, type: 'registry:file' })),
+        meta: { slot: 'frames.example', source: { kind: 'original', ref: [] } } });
+      writeFileSync(join(dir, `candidates/shell-v${version}.json`), bytes);
+      return createHash('sha256').update(bytes).digest('hex');
+    };
+    // v1 was cut from an app and imports that app's files; v2 ships every module it imports.
+    const escaping = write(1, [{ path: 'index.tsx', content: 'import { Providers } from "../../components/Providers";\nimport "./side";\nexport default function Shell() { return null; }' },
+      { path: 'side.tsx', content: 'export {};' }]);
+    const own = write(2, [{ path: 'index.tsx', content: 'import { Side } from "./parts/side";\nexport default function Shell() { return Side; }' },
+      { path: 'parts/side/index.tsx', content: 'export const Side = null;' }]);
+    const pin = (candidate: string, sha256: string) => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate, sha256,
+      decidedBy: 'agent:designer', basis: 'agent', at: '2026-01-01T00:00:00Z' }));
+    pin('shell-v2.json', own);
+    const detail = slotDetail(root, 'designer', 'frames.example')!;
+    expect(detail.candidates.map(candidate => [candidate.name, candidate.specimen, candidate.preview]))
+      .toEqual([['shell-v1.json', undefined, true], ['shell-v2.json', 'frames.example/shell', false]]);
+    // Studio frames only what the route can build: the historical preview gets no iframe (rows list the pin first).
+    expect(slotDetailInputs(detail, links, 'dark').options!.rows.map(row => [row.version, row.preview.kind])).toEqual([[2, 'frame'], [1, 'strings']]);
+    // The rule never hides a pin: a pinned candidate that imports a module it does not ship still frames, so capture still fails it.
+    pin('shell-v1.json', escaping);
+    expect(slotDetail(root, 'designer', 'frames.example')!.candidates[0]!.specimen).toBe('frames.example/shell');
+  });
 });

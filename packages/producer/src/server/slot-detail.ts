@@ -6,7 +6,7 @@ import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCard
 import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced, type BlockReason } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent, type SlotModelIssue } from "../records/slot-model/index.js";
 import { parseJson } from "../errors.js";
-import { specimenPreviewIssue } from "../specimen/library-source.js";
+import { candidateImportIssue, specimenPreviewIssue } from "../specimen/library-source.js";
 import { pinnedWriterCopy } from "./specimen-tree.js";
 
 export interface DetailCandidate {
@@ -107,7 +107,11 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
     // A pinned candidate whose bytes drifted from its pin renders nothing: the pin check flags it.
     const renders = placed && !issues.length && (entry.pin?.candidate !== name || validPin);
     // A candidate whose preview inputs the specimen build refuses has no specimen to frame (the route answers 404 for it).
-    const specimen = renders && agent === "designer" && doc.kind === "element" && name.endsWith(".json") && !specimenPreviewIssue(consumer, id, name, candidate.bytes, writer) ? `${id}/${element}` : undefined;
+    // A preview (not the valid pin) whose code imports modules it does not ship cannot be bundled on its
+    // own either: it is listed without a frame. The pin always frames, so a pin that cannot build still fails capture.
+    const specimen = renders && agent === "designer" && doc.kind === "element" && name.endsWith(".json")
+      && !specimenPreviewIssue(consumer, id, name, candidate.bytes, writer)
+      && (validPin || !candidateImportIssue(candidate.bytes)) ? `${id}/${element}` : undefined;
     const record = renders && ((agent === "director" && doc.kind === "brief") || (agent === "writer" && doc.kind === "strings")) ? recordSpecimenInput(consumer, agent, id, name) : undefined;
     return { name, version, sha256: candidate.sha256,
       pinned: entry.pin?.candidate === name, content, source,
