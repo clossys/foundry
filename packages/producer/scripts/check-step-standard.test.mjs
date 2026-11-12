@@ -136,14 +136,34 @@ proves("skill.ladder", f => {
 });
 // The interview module, wrapped: one owner option loses its argv, or one request loses its addressee.
 const interview = (f, body) => ["--interview", f.module("interview.mjs", `import * as REAL from ${JSON.stringify(pathToFileURL(join(DIST, "interview.js")).href)};\nexport const interviewIssues = REAL.interviewIssues;\n${body}\n`)];
-proves("owner.argv", f => interview(f, `export function gapsOf(root, options) { return REAL.gapsOf(root, options); }
+/**
+ * A workspace with open owner options, independent of the live records: a copy of this repository's
+ * clossys/ with one Writer pin removed, so the Writer asks its approve and pin questions.
+ */
+const INTERVIEW_LIB = await import(pathToFileURL(join(DIST, "interview.js")).href);
+function openWorkspace(f) {
+  const workspace = join(f.root, "workspace");
+  cpSync(join(REPO, "clossys"), join(workspace, "clossys"), { recursive: true });
+  rmSync(join(workspace, "clossys", "agents", "writer", "strings.descriptions", "pin.json"));
+  const open = INTERVIEW_LIB.interviewOf(workspace, { agent: "writer" }).rounds.flat().filter(question => question.options.length);
+  assert.ok(open.length, "the owner.argv fixture workspace has no open Writer owner option");
+  return ["--workspace", workspace];
+}
+proves("owner.argv", f => [...openWorkspace(f), ...interview(f, `export function gapsOf(root, options) { return REAL.gapsOf(root, options); }
 export function interviewOf(root, options) {
   const view = REAL.interviewOf(root, options);
-  // Any agent with an owner question: the live producer interview is empty once its seats are recorded.
   if (!view.rounds.length) return view;
   const [first, ...rest] = view.rounds[0];
   return { ...view, rounds: [[{ ...first, options: first.options.map((option, index) => index ? option : { ...option, calls: [] }) }, ...rest], ...view.rounds.slice(1)] };
-}`));
+}`)]);
+// The unmutated interview passes owner.argv on the same open workspace, so the proof above is the mutation's doing.
+test("owner.argv: the open fixture workspace passes unmutated", () => {
+  const f = fixture();
+  try {
+    const result = run("--packages", f.packages, ...openWorkspace(f));
+    assert.ok(!result.rules.has("owner.argv"), result.failures.filter(row => row.rule === "owner.argv").map(row => row.message).join("\n"));
+  } finally { f.done(); }
+});
 proves("request.addressee", f => interview(f, `export function interviewOf(root, options) { return REAL.interviewOf(root, options); }
 export function gapsOf(root, options) {
   const view = REAL.gapsOf(root, options);
