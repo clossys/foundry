@@ -109,6 +109,7 @@ function describe(packet: Packet): string {
     `  writes    ${packet.output.path} (schema ${packet.output.schema})`,
     `  checks    ${packet.checks.join(", ") || "none"}`,
     `  record    ${packet.record}`,
+    ...(packet.ask ? [`  ask       ${packet.ask.argv.join(" ")} (the ${packet.ask.agent} round; its skill ${packet.ask.skill})`] : []),
   ];
   for (const option of packet.options ?? []) lines.push(`  ${option.id}) ${option.label}${option.recommended ? " [recommended]" : ""}${option.argv ? `\n       ${option.argv.map(word => /\s/.test(word) ? JSON.stringify(word) : word).join(" ")}` : ""}`);
   return lines.join("\n");

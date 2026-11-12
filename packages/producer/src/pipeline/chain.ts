@@ -157,6 +157,17 @@ export function openItems(step: Step, context: Context): string[] {
 }
 
 // ---------------------------------------------------------------- packets
+export const INTERVIEW_AGENTS = ["producer", "director", "designer", "writer", "publisher"] as const;
+export type InterviewAgent = typeof INTERVIEW_AGENTS[number];
+const isInterviewAgent = (value: string): value is InterviewAgent => (INTERVIEW_AGENTS as readonly string[]).includes(value);
+/** The agent whose interview round asks an open owner item: a slot's agent, evidence the Director's, the rest the Producer's. */
+export function agentOfItem(step: Step, item: string): InterviewAgent {
+  const prefix = item.slice(0, item.indexOf("/"));
+  if (item.includes("/") && isInterviewAgent(prefix)) return prefix;
+  if (step.id === "evidence") return "director";
+  if (step.id === "seats") return "producer";
+  return step.agent && isInterviewAgent(step.agent) ? step.agent : "producer";
+}
 export interface PacketOption {
   readonly id: string;
   /** One line. */
@@ -194,6 +205,8 @@ export interface Packet {
   readonly record: string;
   /** Owner packets: 2 to 4 answers, the recommended one first, then the free-text answer. */
   readonly options?: readonly PacketOption[];
+  /** Owner packets: the agent whose interview round asks this item, the argv that prints that round, and its skill file. */
+  readonly ask?: { readonly agent: InterviewAgent; readonly argv: readonly string[]; readonly skill: string };
 }
 
 /** The decide step's skill file on disk (packages/<pkg>/actions/<id>/skill.md beside this package). */
@@ -231,12 +244,31 @@ export const candidatesOf = (root: string, item: string): string[] => {
 };
 const version = (name: string) => Number(/-v(\d+)\.[a-z]+$/.exec(name)?.[1] ?? 0);
 
-/** Fill `<model:tier>` placeholders from `--model <tier>=<id>` answers. */
+/** What the answerer fills for each placeholder an owner option's argv carries (the one table; `filled` refuses any other). */
+export const PLACEHOLDER_MEANING: Readonly<Record<string, string>> = {
+  "<id>": "a record id for the answer (owner-<topic>-<date>)",
+  "<answer.md>": "a file with the owner's words, verbatim",
+  "<source>": "where the finding was observed (a URL or a document path)",
+  "<finding.md>": "a file with the finding, as observed",
+  "<R-ID>": "the rule id (R-<number>)",
+  "<quote>": "the owner's rule, in their words",
+  "<why>": "the owner's reason, in their words",
+  "<contract.json>": "a file with the slot's contract (the slot.json contract object)",
+  "<clossys.config.ts>": "the path of the config file to start from",
+};
+/** Fill `<model:tier>` placeholders from `--model <tier>=<id>` answers; name every other placeholder in `fill`. */
 function filled(argv: string[], models: Readonly<Record<string, string>>): { argv: string[]; fill: Record<string, string> } {
   const fill: Record<string, string> = {};
   const out = argv.map(word => {
     const match = /^<model:(low|mid|high)>$/.exec(word);
-    if (!match) return word;
+    if (!match) {
+      if (/^<[^<>\s]+>$/.test(word)) {
+        const meaning = PLACEHOLDER_MEANING[word];
+        if (!meaning) throw new Error(`owner option placeholder ${word} has no meaning in PLACEHOLDER_MEANING`);
+        fill[word] = meaning;
+      }
+      return word;
+    }
     const id = models[match[1]!];
     if (id) return id;
     fill[word] = `the model id your account policy maps to the ${match[1]} tier`;
@@ -286,7 +318,7 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
     add("Start from a config file you already have.", ["clossys", "config", "--init", "--from", "<clossys.config.ts>"]);
   } else if (step.id === "rules") {
     add("Start an empty rule registry; add each owner rule with clossys rule as you state it.", ["clossys", "rule", "--init"]);
-    add("Record one owner rule now, unenforced until a check enforces it.", ["clossys", "rule", "<R-ID>", "--quote", "<your words>", "--date", new Date().toISOString().slice(0, 10), "--status", "unenforced"]);
+    add("Record one owner rule now, unenforced until a check enforces it.", ["clossys", "rule", "<R-ID>", "--quote", "<quote>", "--date", new Date().toISOString().slice(0, 10), "--status", "unenforced"]);
   } else if (step.id === "writer.approve") {
     const names = candidatesOf(root, item).filter(name => name.endsWith(".md"));
     const keys = writerKeysUnapproved(root).get(item.slice("writer/".length)) ?? [];
@@ -351,7 +383,9 @@ export function packetOf(step: Step, item: string, open: number, context: Contex
     checks: step.packet?.checks ?? step.checks,
     record,
   };
-  return step.decider === "owner" ? { ...packet, options: ownerOptions(step, item, context, packageRoot, options.models ?? {}) } : packet;
+  if (step.decider !== "owner") return packet;
+  const asker = agentOfItem(step, item);
+  return { ...packet, options: ownerOptions(step, item, context, packageRoot, options.models ?? {}), ask: { agent: asker, argv: ["clossys", "next", "--owner", "--agent", asker, "--json"], skill: join(asker === "producer" ? packageRoot : join(packageRoot, "..", asker), "skill", "SKILL.md") } };
 }
 
 /** Every open decide step's packets, in pipeline order (one per open item). */

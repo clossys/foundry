@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { runNextCli } from "../cli/next.js";
 import { runRunCli } from "../cli/run.js";
 import { explainChain, nextPacket, openPackets, runChain } from "./chain.js";
+import { gapsOf, interviewIssues, interviewOf, INTERVIEW_AGENTS } from "./interview.js";
 import type { Exec } from "./chain.js";
 import type { Step } from "./define.js";
 import { PACKAGE_ROOT } from "./options.js";
@@ -292,7 +293,29 @@ describe("clossys next", { timeout: 60_000 }, () => {
     // A Foundry IA takes slots only under the groups it lists.
     writeFileSync(join(root, "contract.json"), "{}\n");
     expect((await runPipeline(["ia", "designer/assets.fixture-mark", "--under", "nowhere/at-all", "--contract", join(root, "contract.json"), ...at], root)).message).toContain("has no nowhere/at-all");
-  }, 120_000);
+    // Every owner packet names what each placeholder is, and the round and skill that ask it.
+    const owned = openPackets(root, { owner: true });
+    expect(owned.map(packet => packet.step)).toContain("evidence");
+    for (const packet of owned) {
+      for (const option of packet.options ?? []) for (const word of option.argv ?? []) if (/^<[^<>\s]+>$/.test(word)) expect(option.fill, `${packet.step} ${packet.item} ${option.id}`).toHaveProperty([word]);
+      expect(existsSync(packet.ask!.skill), packet.ask!.skill).toBe(true);
+      expect(packet.ask!.argv).toEqual(["clossys", "next", "--owner", "--agent", packet.ask!.agent, "--json"]);
+    }
+    expect(owned.find(packet => packet.step === "evidence")!.ask!.agent).toBe("director");
+    // A slot with no candidate is its agent's to draft: no owner question asks it, and every agent's questions hold the rules.
+    const pins = gapsOf(root).gaps.filter(gap => gap.code.startsWith("open.pin.") || gap.code === "open.writer.approve");
+    expect(pins.length).toBeGreaterThan(400);
+    for (const gap of pins) expect(gap.decider, gap.item).toBe("agent");
+    // clossys pipeline check holds this workspace's questions to owner.argv and owner.policy.
+    const check = await runPipeline(["pipeline", "check", ...at], root);
+    expect((check.output as { asked: string[] }).asked, check.message).toEqual([]);
+    expect(check.exitCode, check.message).toBe(0);
+    for (const agent of INTERVIEW_AGENTS) {
+      const interview = interviewOf(root, { agent });
+      expect(interview.rounds.flat().flatMap(question => question.items).filter(item => pins.some(gap => gap.item === item)), agent).toEqual([]);
+      expect(interviewIssues(interview, gapsOf(root, { agent })), agent).toEqual([]);
+    }
+  }, 180_000);
 
   it("starts a workspace IA with clossys ia --start, and --under grows its groups as slots are placed", async () => {
     const root = realpathSync(mkdtempSync(join(tmpdir(), "chain-start-")));

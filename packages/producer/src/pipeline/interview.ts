@@ -49,8 +49,8 @@ import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
 import { staleCitations } from "../records/stale-citations.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
-import { candidatesOf, contextOf, explainChain, openItems, packetOf, skillLine, skillOf, verbOf } from "./chain.js";
-import type { Context, Packet } from "./chain.js";
+import { agentOfItem, candidatesOf, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, skillLine, skillOf, verbOf } from "./chain.js";
+import type { Context, InterviewAgent, Packet } from "./chain.js";
 import { ladderIssues } from "./candidate-ladder.js";
 import { isDecide } from "./define.js";
 import type { Step } from "./define.js";
@@ -63,8 +63,8 @@ import { readRuns } from "./trace.js";
 
 export const GAPS_SCHEMA = "clossys.gaps/1";
 export const INTERVIEW_SCHEMA = "clossys.next-owner/2";
-export const INTERVIEW_AGENTS = ["producer", "director", "designer", "writer", "publisher"] as const;
-export type InterviewAgent = typeof INTERVIEW_AGENTS[number];
+export { agentOfItem, INTERVIEW_AGENTS } from "./chain.js";
+export type { InterviewAgent } from "./chain.js";
 export const GAP_KINDS = ["coverage", "wiring", "request"] as const;
 export type GapKind = typeof GAP_KINDS[number];
 /** At most this many questions per round. */
@@ -164,13 +164,6 @@ const prefixOf = (item: string) => item.slice(0, item.indexOf("/"));
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 const listed = (items: readonly string[], max = 4) => `${items.slice(0, max).join(", ")}${items.length > max ? `, +${items.length - max}` : ""}`;
 
-/** The agent an open decide item belongs to: a slot's agent, evidence to the Director, the rest to the Producer. */
-export function agentOfItem(step: Step, item: string): InterviewAgent {
-  if (item.includes("/") && isAgent(prefixOf(item))) return prefixOf(item) as InterviewAgent;
-  if (step.id === "evidence") return "director";
-  if (step.id === "seats") return "producer";
-  return step.agent && isAgent(step.agent) ? step.agent : "producer";
-}
 
 // ---------------------------------------------------------------- the Director, read once
 interface DirectorView {
@@ -236,10 +229,12 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     for (const item of openItems(step, context)) {
       const seat = step.id === "seats" ? context.seats[item] : undefined;
       const held = seat && seat.state === "partial" && seat.llm === "open" && seat.human !== "open" ? "human only by an earlier answer: the seat stays listed open until an llm part is added" : undefined;
+      // An owner choice among candidates waits while the slot has none: its agent drafts first, so nothing is asked.
+      const drafts = step.decider === "owner" && (step.id.startsWith("pin.") || step.id === "writer.approve") && item.includes("/") && !candidatesOf(root, item).length;
       gaps.push({
         kind: "coverage", code: `open.${step.id}`, agent: agentOfItem(step, item), item, step: step.id,
-        message: step.id === "seats" ? `seat ${item} is ${seat?.state ?? "unassigned"}` : `${item}: ${step.summary.replace(/\.$/, "")}`,
-        decider: step.decider === "owner" ? "owner" : "agent", ...(held ? { held } : {}),
+        message: step.id === "seats" ? `seat ${item} is ${seat?.state ?? "unassigned"}` : drafts ? `${item}: no candidate yet; the ${prefixOf(item)} drafts one (${prefixOf(item)}.candidates) before the owner chooses` : `${item}: ${step.summary.replace(/\.$/, "")}`,
+        decider: step.decider === "owner" && !drafts ? "owner" : "agent", ...(held ? { held } : {}),
       });
     }
   }
@@ -311,7 +306,11 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     const target = `${row.to}/${row.cell}`;
     let code: string | null = null, why = "";
     if (upstream.state.state === "not-needed") { code = "request.input-not-needed"; why = `is not needed (${upstream.state.notNeeded.reason})`; }
-    else if (!upstream.candidates.length) { code = "request.input-no-candidates"; why = "has no candidates"; }
+    else if (!upstream.candidates.length) {
+      // Only a drafted slot asks: an undrafted one waits on the upstream draft in chain order, which is no request.
+      row.need = row.need.filter(item => (index.get(slotOf(item))?.candidates.length ?? 0) > 0);
+      if (row.need.length) { code = "request.input-no-candidates"; why = "has no candidates"; }
+    }
     else if (!upstream.pin) { code = "request.input-unpinned"; why = `has ${plural(upstream.candidates.length, "candidate")} and no pin`; }
     else if (row.to === "director" && director.unclear.has(row.cell)) { code = "request.input-unclear"; why = `is unclear: ${director.unclear.get(row.cell)}`; }
     if (!code) continue;
@@ -399,7 +398,7 @@ const optionsFrom = (rows: readonly { label: string; calls: string[][] }[], mode
       fill[whole] = `the model id your account policy maps to the ${tier} tier (clossys seat --policy records it in ${SEAT_POLICY_FILE})`;
       return whole;
     })));
-    for (const argv of calls) for (const word of argv) { const match = PLACEHOLDER.exec(word); if (match) fill[match[1]!] ??= `fill ${match[1]} in your own words`; }
+    for (const argv of calls) for (const word of argv) { const match = PLACEHOLDER.exec(word); if (match) fill[match[1]!] ??= PLACEHOLDER_MEANING[match[1]!] ?? `fill ${match[1]} in your own words`; }
     return { id: String.fromCharCode(97 + index), label: row.label, recommended: index === 0, calls, fill };
   });
 
@@ -492,7 +491,7 @@ function packetQuestions(packets: readonly Packet[]): Built[] {
     }));
     // Never a lone answer, and never one that records nothing (a brief is not an answer): a slot can be set aside.
     if (rows.length < 2 && first.item.includes("/")) rows.push(notNeeded(group.map(packet => packet.item)));
-    const agent = isAgent(prefixOf(first.item)) ? prefixOf(first.item) as InterviewAgent : first.step === "evidence" ? "director" : "producer";
+    const agent = first.ask!.agent;
     return {
       id: many ? `${first.step}:${group.length}` : `${first.step}:${first.item}`, agent, step: first.step, header: first.step.slice(0, 12),
       question: many ? `${first.question.replace(first.item, `each of ${plural(group.length, "item")}`)} (${listed(group.map(packet => packet.item))})` : first.question,

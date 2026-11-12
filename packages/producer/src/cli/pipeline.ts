@@ -8,6 +8,7 @@ import { PACKAGE_ROOT } from "../pipeline/options.js";
 import { pipelineStatus } from "../pipeline/status.js";
 import { appendRecord, buildRecord, invocationOf, readRuns, readSink, RUNS_DIR, sanitizeArgv, SINK_ENV, storeFile } from "../pipeline/trace.js";
 import { ownerWiringIssues } from "../pipeline/owner-wiring.js";
+import { gapsOf, interviewIssues, interviewOf, INTERVIEW_AGENTS } from "../pipeline/interview.js";
 import { buildWiring, wiringCitationIssues } from "../pipeline/wiring.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -174,10 +175,12 @@ export async function runPipelineCli(argv: readonly string[], cwd: string): Prom
     // owner.wiring: every emitted owner option, run on a scratch copy of the records, records what the gaps see.
     const { runCli } = await import("./main.js");
     const owner = await ownerWiringIssues(root, { run: runCli });
-    const issues = [...page.map(issue => `pipeline page: ${issue}`), ...contracts, ...owner.issues.map(issue => `${issue.rule}: ${issue.message}`)];
+    // owner.argv, owner.policy, request.addressee: this workspace's own questions, not only Foundry's (check:step-standard).
+    const asked = INTERVIEW_AGENTS.flatMap(agent => interviewIssues(interviewOf(root, { agent }), gapsOf(root, { agent })).map(issue => `${issue.rule}: ${agent}: ${issue.message}`));
+    const issues = [...page.map(issue => `pipeline page: ${issue}`), ...contracts, ...asked, ...owner.issues.map(issue => `${issue.rule}: ${issue.message}`)];
     const ownerLine = `owner.wiring: ${owner.options} owner options (${owner.calls} calls) run on a scratch copy`;
     return {
-      exitCode: issues.length ? 1 : 0, root, output: { page, contracts, owner },
+      exitCode: issues.length ? 1 : 0, root, output: { page, contracts, asked, owner },
       message: issues.length ? [`pipeline check: ${issues.length} finding(s)`, ...issues.map(issue => `  ${issue}`), ownerLine].join("\n")
         : `pipeline check: every status cites its run record (${wiring.nodes.length} steps, ${runs.length} records); ${ownerLine}, each live`,
     };

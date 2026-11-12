@@ -19,6 +19,8 @@ that is the first gap to report.
   step with open work. `clossys run` runs each stale plumb step (its last run record's inputs
   changed), skips fresh ones, stops red at a failed step and stops at the first open decide step.
   It makes no model calls. `--from <step>` and `--until <step>` bound the walk.
+- When it stops at an owner decide step, the packet's `ask` names the agent whose round asks it
+  (`ask.argv`) and that agent's skill (`ask.skill`): read the skill and run its Interview.
 - `clossys run --explain` prints the graph: step, agent, kind (plumb, decide:creative,
   decide:judgment), decider and last run state.
 - After a pin or pick, run `clossys run --dry` again: the steps that read the changed record show
@@ -55,8 +57,9 @@ Each rule is stated once, here or in the one place named, and the named check or
   inputs, outputs, command, `checks` and `pass`; `clossys run` runs a step's own command only when
   an input it read last time changed, and re-measures nothing a later step could not have changed
   (`check:step-standard`, rules `snapshot.stale` and `steps.drift`).
-- **Owner questions are policy-level**: the Interview below (`check:step-standard` rules
-  `owner.argv` and `owner.policy`; `clossys pipeline check` rule `owner.wiring`).
+- **Owner questions are policy-level**: the Interview below (rules `owner.argv` and
+  `owner.policy`, held by `clossys pipeline check` on the workspace and `check:step-standard` on
+  Foundry; `clossys pipeline check` rule `owner.wiring`).
 - **The selection ladder** is stated in each `<agent>.candidates` step skill, the skill the
   packet hands over (`check:step-standard` rule `skill.ladder`). A submission whose
   ladder record does not hold is refused, and `clossys gaps` lists a recorded one as a `ladder` gap;
@@ -103,7 +106,9 @@ cites it and runs it for its own agent id; `<id>` below is that id, `producer` h
 - **Record through the verbs**: run every argv in the chosen option's `calls`, exactly, filling only
   the words its `fill` names from the owner's answer. A free-text answer is recorded through
   `freeText.verb` with the owner's words as its arguments; when it carries `freeText.calls`, run
-  each in order, filling its `fill` words. `<model:tier>` words come from
+  each in order, filling its `fill` words. A `fill` word that asks for the owner's words (an answer
+  file, a quote, a reason) is the owner's to give, never written for them: that question stays open
+  and the run stops there. `<model:tier>` words come from
   `clossys/seat-policy.json`, written by `clossys seat --policy --model <tier>=<id>` (or
   `--human-only`); while it is missing its question is asked first. Never guess a model id; never
   edit a record by hand.

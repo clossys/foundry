@@ -62,7 +62,7 @@ export function formatChain(result: ChainResult): string {
   const rows = [["#", "step", "kind", "state", "detail"], ...result.rows.map((row, index) => [String(index + 1), row.step, row.kind, row.state, row.detail])];
   const lines = [table(rows), ""];
   if (result.failed) lines.push(`run: stopped red at ${result.failed.step} (exit ${result.failed.exit})${result.failed.store ? `; failed record ${result.failed.store}` : ""}`);
-  else if (result.stop) lines.push(`run: stopped at ${result.stop.step}: ${result.stop.open} open, decided by ${result.stop.decider}`, `  next: ${result.stop.packet.question}`, `  record with: ${result.stop.packet.record}`, "  clossys next --json prints the full packet");
+  else if (result.stop) lines.push(`run: stopped at ${result.stop.step}: ${result.stop.open} open, decided by ${result.stop.decider}`, `  next: ${result.stop.packet.question}`, `  record with: ${result.stop.packet.record}`, ...(result.stop.packet.ask ? [`  ask the owner: ${result.stop.packet.ask.argv.join(" ")} (the ${result.stop.packet.ask.agent} round; read ${result.stop.packet.ask.skill})`] : []), "  clossys next --json prints the full packet");
   else lines.push(`run: ${result.dry ? "nothing open; the steps marked would-run run without --dry" : "the chain ran to its end"}`);
   if (result.stale.length) {
     lines.push(`stale (an input changed since the last run): ${result.stale.length}`);
