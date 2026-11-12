@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "888e5b1eb77a15bfee4ad724288330990672ac0c53b9e871e657ee860949268c",
+  "revision": "567164f4c6d63fb28da3a8e8b6598d403ba2288795075dc3145a6238d759b534",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2024,6 +2024,12 @@
       "status": "draft"
     },
     {
+      "id": "studio.pipeline.node.recite.direct",
+      "text": "Re-cite Director pins",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
       "id": "studio.pipeline.node.pin.designer",
       "text": "Pin Designer cells",
       "context": "lib/pipeline-flow.ts",
@@ -2032,6 +2038,12 @@
     {
       "id": "studio.pipeline.node.pin.writer",
       "text": "Pin Writer cells",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.recite.design",
+      "text": "Re-cite Designer and Writer pins",
       "context": "lib/pipeline-flow.ts",
       "status": "draft"
     },
