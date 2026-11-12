@@ -45,6 +45,31 @@ type Values = Readonly<Record<string, string | number | boolean>>;
  */
 const cache = new Map<string, { key: string; stamp: string; copy: WriterCopy }>();
 
+/**
+ * Every Writer key that more than one pinned `strings.*` slot records (source locale), with the slots that
+ * record it, sorted. One slot owns a key: `writerCopy` refuses a duplicate, and `owner.wiring` uses this to fail
+ * an owner option whose answer would create one. Unreadable or drifted candidates are left to `writerCopy`.
+ */
+export function writerCopyDuplicates(consumer: string): { id: string; slots: string[] }[] {
+  const holders = new Map<string, string[]>();
+  for (const entry of listSlots(consumer, "writer").filter(entry => entry.pin && entry.id.startsWith("strings."))) {
+    let bytes: string;
+    try { bytes = readCandidate(consumer, "writer", entry.id, entry.pin!.candidate).bytes; } catch { continue; }
+    const parsed = parseFrontmatter(bytes);
+    if (!parsed.ok) continue;
+    const locales = parsed.value.fields.locales as readonly string[];
+    let rows: ReturnType<typeof parseWriterSlotBody>;
+    try { rows = parseWriterSlotBody(parsed.value.body, locales); } catch { continue; }
+    for (const row of rows) {
+      if (row.locale !== locales[0] || typeof row.record.text !== "string") continue;
+      const slots = holders.get(row.record.id) ?? [];
+      if (!slots.includes(entry.id)) slots.push(entry.id);
+      holders.set(row.record.id, slots);
+    }
+  }
+  return [...holders].filter(([, slots]) => slots.length > 1).map(([id, slots]) => ({ id, slots: slots.sort() })).sort((a, b) => a.id.localeCompare(b.id));
+}
+
 /** The pinned Writer copy of one consumer (`<root>/clossys`). */
 export function writerCopy(consumer: string): WriterCopy {
   const pinned = listSlots(consumer, "writer").filter(entry => entry.pin && entry.id.startsWith("strings."));

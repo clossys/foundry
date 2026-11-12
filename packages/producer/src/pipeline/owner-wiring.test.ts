@@ -1,7 +1,10 @@
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { flatConsumer } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { listSlots } from "../records/slots.js";
+import { writerCopyDuplicates } from "../records/writer-copy.js";
 import { interviewOf, type Interview, type InterviewAgent } from "./interview.js";
 import { ownerWiringIssues } from "./owner-wiring.js";
 
@@ -49,5 +52,24 @@ describe("owner.wiring (clossys pipeline check)", () => {
     const unseen = rewritten(() => [["clossys", "pin", `writer/${settled.id}`, settled.pin!.candidate, "--basis", "picked"]]);
     const result = await ownerWiringIssues(root, { run: runCli, agents: ["writer"], interviewOf: firstOnly(unseen) });
     expect(result.issues.map(issue => issue.message).join("\n")).toContain("writer writer.policy a: the answer ran, but clossys gaps --agent writer reports the same gaps");
+  }, 300_000);
+
+  it("fails an answer that records a Writer key a second pinned slot already owns", async () => {
+    const dup = flatConsumer(["director", "designer", "writer"]), consumer = join(dup, "clossys");
+    const strings = listSlots(consumer, "writer").filter(entry => entry.pin && entry.id.startsWith("strings."));
+    const [owner, other] = strings;
+    const read = (slot: typeof owner) => readFileSync(join(consumer, "agents", "writer", slot!.id, "candidates", slot!.pin!.candidate), "utf8");
+    // The other slot's first record, appended to the owner slot's pinned bytes as a new candidate of that slot.
+    const record = /^### .*\n<!-- .* -->\n.*\n/m.exec(read(other))![0];
+    const key = JSON.parse(/<!-- (.*) -->/.exec(record)![1]!).id as string;
+    const names = readdirSync(join(consumer, "agents", "writer", owner!.id, "candidates"));
+    const prefix = owner!.pin!.candidate.replace(/-v\d+\.md$/, "");
+    const next = Math.max(...names.filter(name => name.startsWith(`${prefix}-v`)).map(name => Number(/-v(\d+)\.md$/.exec(name)![1]))) + 1;
+    const name = `${prefix}-v${next}.md`;
+    writeFileSync(join(consumer, "agents", "writer", owner!.id, "candidates", name), `${read(owner).replace(/\n*$/, "\n\n")}${record}`);
+    expect(writerCopyDuplicates(consumer).map(row => row.id)).not.toContain(key);
+    const duplicating = rewritten(() => [["clossys", "pin", `writer/${owner!.id}`, name, "--basis", "picked"]]);
+    const result = await ownerWiringIssues(dup, { run: runCli, agents: ["writer"], interviewOf: firstOnly(duplicating) });
+    expect(result.issues.map(issue => issue.message)).toContainEqual(expect.stringMatching(new RegExp(`^writer \\S+ a: the answer records Writer key ${key.replace(/\./g, "\\.")} in ${[owner!.id, other!.id].sort().join(" and ").replace(/\./g, "\\.")}; one Writer slot owns a key$`)));
   }, 300_000);
 });

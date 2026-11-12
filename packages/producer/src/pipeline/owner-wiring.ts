@@ -5,7 +5,8 @@
  *   - exit 0 on every call;
  *   - change the record each call targets (its slot folder when the call names `<agent>/<slot>`, otherwise
  *     something under `clossys/`);
- *   - change what `clossys gaps --agent <id>` reports for the asking agent.
+ *   - change what `clossys gaps --agent <id>` reports for the asking agent;
+ *   - leave no Writer key recorded by two pinned `strings.*` slots that was not already (one slot owns a key).
  * An argv that only prints a brief, names a verb that does not record, or targets the wrong record fails.
  * Read-only on the workspace: the scratch copy lives under the OS temp folder and is removed after each option.
  */
@@ -13,6 +14,7 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { writerCopyDuplicates } from "../records/writer-copy.js";
 import { gapsOf, interviewOf, INTERVIEW_AGENTS, type Gaps, type Interview, type InterviewAgent, type QuestionOption } from "./interview.js";
 
 export type RunCall = (argv: readonly string[], cwd: string) => Promise<{ exitCode: number; message?: string }>;
@@ -79,6 +81,7 @@ export async function ownerWiringIssues(root: string, options: OwnerWiringOption
           try {
             for (const name of COPIED) if (existsSync(join(root, name))) cpSync(join(root, name), join(scratch, name), { recursive: true });
             const before = gapsKey(gaps(scratch, { agent }));
+            const held = new Set(writerCopyDuplicates(join(scratch, "clossys")).map(row => row.id));
             let failed = false;
             for (const argv of filled(option, scratch)) {
               calls++;
@@ -88,6 +91,9 @@ export async function ownerWiringIssues(root: string, options: OwnerWiringOption
               const result = argv[0] === "clossys" ? await options.run(argv.slice(1), scratch) : { exitCode: 127, message: "not a clossys argv" };
               if (result.exitCode !== 0) { issues.push({ rule: "owner.wiring", message: `${label}: ${argv.join(" ")} exited ${result.exitCode}${result.message ? ` (${result.message.split("\n")[0]})` : ""}` }); failed = true; break; }
               if (digest(where) === was) { issues.push({ rule: "owner.wiring", message: `${label}: ${argv.join(" ")} exited 0 but changed no record${target ? ` in ${target[0]}` : " under clossys/"}` }); failed = true; break; }
+            }
+            if (!failed) for (const row of writerCopyDuplicates(join(scratch, "clossys"))) if (!held.has(row.id)) {
+              issues.push({ rule: "owner.wiring", message: `${label}: the answer records Writer key ${row.id} in ${row.slots.join(" and ")}; one Writer slot owns a key` }); failed = true;
             }
             if (!failed && gapsKey(gaps(scratch, { agent })) === before) issues.push({ rule: "owner.wiring", message: `${label}: the answer ran, but clossys gaps --agent ${agent} reports the same gaps` });
           } finally { rmSync(scratch, { recursive: true, force: true }); }
