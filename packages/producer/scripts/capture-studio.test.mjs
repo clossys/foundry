@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { deflateSync } from "node:zlib";
 import { JSDOM } from "jsdom";
-import { DEFAULT_MAP, FAILING, captureWithRetry, contactSheet, createBrowserPool, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, severityOf } from "./capture-studio.mjs";
+import { DEFAULT_MAP, FAILING, GATES_FILE, blocks, readGates, captureWithRetry, contactSheet, createBrowserPool, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, severityOf } from "./capture-studio.mjs";
 
 const FIXTURE = `<!doctype html><html><head><title>Studio</title></head><body>
 <h1>Market size</h1>
@@ -239,4 +239,47 @@ test("a stuck attempt retires its wedged browser and the retry runs on a fresh o
   await tick();
   assert.equal(browsers[0].closed, true, "the wedged browser is closed");
   await pool.close();
+});
+
+test("a recycled browser is closed even when its last lease ends in a failure", async () => {
+  const { browsers, launch } = fakeLauncher();
+  const pool = createBrowserPool(launch, { recycleEvery: 2 });
+  const a = await pool.acquire();
+  const b = await pool.acquire(); // the shot budget is spent: b1 is retired while a and b still hold it
+  a.release();
+  b.release(new Error("Page.captureScreenshot: no answer within 30000ms"));
+  await tick();
+  assert.equal(browsers[0].closed, true, "the retired browser's last (failed) lease closes it");
+  await pool.close();
+});
+
+test("closing the pool closes every browser it launched, recycled ones with leases still out included", async () => {
+  const { browsers, launch } = fakeLauncher();
+  const pool = createBrowserPool(launch, { recycleEvery: 1 });
+  await pool.acquire(); // b1, retired at once and never released (a lost lease)
+  await pool.acquire(); // b2, same
+  const c = await pool.acquire();
+  c.release();
+  await pool.close();
+  assert.deepEqual(browsers.map(b => b.closed), [true, true, true]);
+});
+
+test("the shipped gate config makes id-label and overflow reports, and every wiring type still blocks", async () => {
+  const gates = readGates(await readFile(GATES_FILE, "utf8"));
+  assert.equal(gates["id-label"].mode, "report");
+  assert.equal(gates.overflow.mode, "report");
+  assert.match(gates["id-label"].reason, /Only wiring blocks/);
+  assert.equal(blocks({ type: "id-label" }, gates), false);
+  assert.equal(blocks({ type: "overflow" }, gates), false);
+  for (const type of ["console-error", "failed-request", "unresolved-copy", "empty-specimen", "readiness-timeout", "probe-error"]) assert.equal(blocks({ type }, gates), true, `${type} blocks`);
+  assert.equal(blocks({ type: "id-label" }, {}), true, "with no gate a failing type blocks");
+});
+
+test("a gate on a wiring type, a duplicate, a bad mode or a missing reason fails setup", () => {
+  const config = gates => JSON.stringify({ schema: "clossys.capture-studio-gates/1", gates });
+  assert.throws(() => readGates(config([{ type: "empty-specimen", mode: "report", reason: "x" }])), /wiring or unknown/);
+  assert.throws(() => readGates(config([{ type: "overflow", mode: "report", reason: "x" }, { type: "overflow", mode: "block", reason: "y" }])), /listed twice/);
+  assert.throws(() => readGates(config([{ type: "overflow", mode: "skip", reason: "x" }])), /block or report/);
+  assert.throws(() => readGates(config([{ type: "overflow", mode: "report", reason: " " }])), /needs a reason/);
+  assert.throws(() => readGates(JSON.stringify({ schema: "other", gates: [] })), /schema/);
 });

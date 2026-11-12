@@ -21,6 +21,29 @@ export const DEFAULT_PORT = 4620;
 export const DIFF_LIMIT = 0.02;
 /** Failing finding types, in severity order (first is worst). */
 export const FAILING = Object.freeze(["console-error", "failed-request", "unresolved-copy", "empty-specimen", "id-label", "overflow", "readiness-timeout", "probe-error"]);
+/** The gate config: which wording/visual finding types report instead of failing. */
+export const GATES_FILE = fileURLToPath(new URL("./capture-studio-gates.json", import.meta.url));
+// Only wording/visual types may report (Producer skill, "Only wiring blocks"); every other type is wiring and blocks.
+export const REPORTABLE = Object.freeze(["id-label", "overflow"]);
+
+/** Read and validate the gate config; a missing or invalid gate throws (the run fails at setup). */
+export function readGates(text) {
+  const config = JSON.parse(text);
+  if (config?.schema !== "clossys.capture-studio-gates/1") throw new Error("capture gates: schema must be clossys.capture-studio-gates/1");
+  if (!Array.isArray(config.gates)) throw new Error("capture gates: gates must be a list");
+  const gates = {};
+  for (const gate of config.gates) {
+    if (!REPORTABLE.includes(gate?.type)) throw new Error(`capture gates: ${gate?.type} is wiring or unknown; only ${REPORTABLE.join(", ")} have a gate mode`);
+    if (gates[gate.type]) throw new Error(`capture gates: ${gate.type} is listed twice`);
+    if (!["block", "report"].includes(gate.mode)) throw new Error(`capture gates: ${gate.type} mode must be block or report`);
+    if (typeof gate.reason !== "string" || !gate.reason.trim()) throw new Error(`capture gates: ${gate.type} needs a reason`);
+    gates[gate.type] = { mode: gate.mode, owner: gate.owner, reason: gate.reason };
+  }
+  return gates;
+}
+
+/** A finding fails its shot when its type is failing and its gate (if any) does not make it a report. */
+export const blocks = (finding, gates = {}) => FAILING.includes(finding.type) && gates[finding.type]?.mode !== "report";
 const UNRESOLVED = "Studio copy is unresolved";
 
 // ---------------------------------------------------------------- route enumeration
@@ -284,27 +307,57 @@ export function findBrowser(env = process.env) {
   return candidates.find(path => existsSync(path));
 }
 
+/** Browser processes this run started and has not seen exit; each leads its own process group. */
+const liveBrowsers = new Set();
+const killGroup = (child, signal) => { try { process.kill(-child.pid, signal); } catch { try { child.kill(signal); } catch { /* gone */ } } };
+const exited = (child, ms) => child.exitCode !== null || child.signalCode !== null ? Promise.resolve(true)
+  : new Promise(done => { const timer = setTimeout(() => done(false), ms); child.once("exit", () => { clearTimeout(timer); done(true); }); });
+
+/** Kill every browser this run started (renderer and GPU helpers too): the last word before exit. */
+export function killBrowsers() {
+  for (const child of liveBrowsers) killGroup(child, "SIGKILL");
+  liveBrowsers.clear();
+}
+
+const LAUNCH_TIMEOUT_MS = 30_000;
+
 async function launchBrowser(executable, profileDir) {
-  const child = spawn(executable, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profileDir}`, "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--hide-scrollbars", "--mute-audio", "--disable-background-networking", "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
-  const wsUrl = await new Promise((resolveUrl, reject) => {
-    let buffer = "";
-    child.stderr.on("data", chunk => {
-      buffer += chunk;
-      const match = /DevTools listening on (ws:\/\/\S+)/.exec(buffer);
-      if (match) resolveUrl(match[1]);
-    });
-    child.once("exit", code => reject(new Error(`browser exited before DevTools was ready (code ${code})`)));
-    child.once("error", reject);
-  });
-  const socket = new WebSocket(wsUrl);
-  await new Promise((ok, fail) => { socket.onopen = ok; socket.onerror = () => fail(new Error("DevTools socket failed")); });
-  const client = createCdpClient(socket);
+  // detached: the browser leads its own process group, so closing it can take its helpers with it.
+  const child = spawn(executable, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profileDir}`, "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--hide-scrollbars", "--mute-audio", "--disable-background-networking", "about:blank"], { stdio: ["ignore", "ignore", "pipe"], detached: true });
+  liveBrowsers.add(child);
+  child.once("exit", () => liveBrowsers.delete(child));
   const close = async () => {
-    try { await client.send("Browser.close", {}, undefined, { timeoutMs: 5000 }); } catch { /* already closing */ }
-    socket.close();
-    if (child.exitCode === null) await new Promise(done => { child.once("exit", done); setTimeout(() => { child.kill("SIGKILL"); }, 5000).unref(); });
+    if (await exited(child, 0)) return;
+    killGroup(child, "SIGTERM");
+    if (!(await exited(child, 5000))) { killGroup(child, "SIGKILL"); await exited(child, 2000); }
   };
-  return { ...client, close };
+  try {
+    const wsUrl = await withTimeout(new Promise((resolveUrl, reject) => {
+      let buffer = "";
+      child.stderr.on("data", chunk => {
+        if (buffer === undefined) return;
+        buffer += chunk;
+        const match = /DevTools listening on (ws:\/\/\S+)/.exec(buffer);
+        if (match) { buffer = undefined; resolveUrl(match[1]); }
+      });
+      child.once("exit", code => reject(new Error(`browser exited before DevTools was ready (code ${code})`)));
+      child.once("error", reject);
+    }), LAUNCH_TIMEOUT_MS, `browser did not open DevTools within ${LAUNCH_TIMEOUT_MS}ms`);
+    const socket = new WebSocket(wsUrl);
+    await withTimeout(new Promise((ok, fail) => { socket.onopen = ok; socket.onerror = () => fail(new Error("DevTools socket failed")); }), LAUNCH_TIMEOUT_MS, "DevTools socket did not open");
+    const client = createCdpClient(socket);
+    return {
+      ...client,
+      async close() {
+        try { await client.send("Browser.close", {}, undefined, { timeoutMs: 5000 }); } catch { /* already closing */ }
+        socket.close();
+        await close();
+      },
+    };
+  } catch (error) {
+    await close();
+    throw error;
+  }
 }
 
 /** Default bound on one DevTools call: no call may wait forever for an answer that never comes. */
@@ -390,6 +443,7 @@ export const BROWSER_SHOTS = 40;
 export function createBrowserPool(launch, { recycleEvery = BROWSER_SHOTS } = {}) {
   let current;
   let launching;
+  const entries = [];
   const closing = [];
   const retire = entry => {
     if (entry.retired) return;
@@ -402,6 +456,7 @@ export function createBrowserPool(launch, { recycleEvery = BROWSER_SHOTS } = {})
     launching ??= Promise.resolve().then(launch).then(value => {
       const entry = { value, active: 0, leases: 0, retired: false, closed: false };
       entry.close = () => { if (!entry.closed) { entry.closed = true; closing.push(Promise.resolve().then(() => value.browser.close()).catch(() => {})); } };
+      entries.push(entry);
       current = entry;
       return entry;
     }).finally(() => { launching = undefined; });
@@ -420,13 +475,16 @@ export function createBrowserPool(launch, { recycleEvery = BROWSER_SHOTS } = {})
           released = true;
           entry.active--;
           if (error) retire(entry);
-          else if (entry.retired && entry.active === 0) entry.close();
+          // Checked after retire, which returns early for an entry recycling already retired.
+          if (entry.retired && entry.active === 0) entry.close();
         },
       };
     },
     async close() {
       await launching?.catch(() => {});
-      if (current) { current.retired = true; current.close(); current = undefined; }
+      current = undefined;
+      // Every browser this pool launched, including recycled ones a lost lease still holds open.
+      for (const entry of entries) { entry.retired = true; entry.close(); }
       await Promise.all(closing);
     },
   };
@@ -633,6 +691,8 @@ export function parseArgs(argv) {
 const fileName = (path, width, theme) => `${(path === "/" ? "home" : path.slice(1).replace(/[^a-zA-Z0-9.-]+/g, "_"))}__${width}-${theme}.png`;
 
 export async function run(args) {
+  // The gate config is read first: a missing or invalid gate fails the run before any capture.
+  const gates = readGates(await readFile(args.gates ?? GATES_FILE, "utf8"));
   const map = JSON.parse(await readFile(args.map, "utf8"));
   let routes = enumerateRoutes(map);
   const enumerated = routes.length;
@@ -696,7 +756,9 @@ export async function run(args) {
   shots.sort((a, b) => b.severity - a.severity || a.route.localeCompare(b.route) || a.width - b.width || a.theme.localeCompare(b.theme));
   const findingsByType = {};
   for (const shot of shots) for (const finding of shot.findings) findingsByType[finding.type] = (findingsByType[finding.type] ?? 0) + 1;
-  const failing = shots.filter(shot => shot.findings.some(finding => FAILING.includes(finding.type)));
+  const failing = shots.filter(shot => shot.findings.some(finding => blocks(finding, gates)));
+  const reportsByType = {};
+  for (const shot of shots) for (const finding of shot.findings) if (FAILING.includes(finding.type) && !blocks(finding, gates)) reportsByType[finding.type] = (reportsByType[finding.type] ?? 0) + 1;
   const manifest = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
@@ -710,6 +772,8 @@ export async function run(args) {
     leafRoutes: routes.filter(route => route.kind === "leaf").length,
     shotCount: shots.length,
     failingShots: failing.length,
+    reportsByType,
+    gates,
     findingsByType,
     diff: args.baseline ? { baseline: args.baseline, limit: DIFF_LIMIT, flagged: shots.filter(shot => shot.diffFlag).length } : undefined,
     exitCode: failing.length ? 1 : 0,
@@ -717,7 +781,7 @@ export async function run(args) {
   };
   await writeFile(join(args.out, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFile(join(args.out, "contact-sheet.html"), contactSheet(manifest));
-  return { exitCode: manifest.exitCode, status: failing.length ? "FAIL" : "PASS", routeCount: manifest.routeCount, shotCount: manifest.shotCount, failingShots: failing.length, findingsByType, diff: manifest.diff, out: args.out };
+  return { exitCode: manifest.exitCode, status: failing.length ? "FAIL" : "PASS", routeCount: manifest.routeCount, shotCount: manifest.shotCount, failingShots: failing.length, findingsByType, reportsByType, diff: manifest.diff, out: args.out };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -727,5 +791,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }).catch(error => {
     console.error(JSON.stringify({ status: error.env ? "BLOCKED" : "ERROR", message: error.message }, null, 2));
     process.exitCode = 2;
+  }).finally(() => {
+    // The summary is written: nothing left may keep the process alive.
+    killBrowsers();
+    // Pipes are asynchronous on macOS: exit only once the summary has been flushed.
+    process.stderr.write("", () => process.stdout.write("", () => process.exit()));
   });
 }
