@@ -191,7 +191,7 @@ describe("status citations", () => {
     const check = await runPipelineCli(["check", "--root", root], root);
     const output = check.output as { page: string[]; contracts: string[] };
     expect(output.page).toEqual([]);
-    expect(check.exitCode).toBe(output.contracts.length ? 1 : 0);
+    expect(check.exitCode, check.message).toBe(output.contracts.length ? 1 : 0);
   });
 
   it("writes no record into a workspace that does not ignore the store", async () => {

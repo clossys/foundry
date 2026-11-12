@@ -51,7 +51,7 @@ export const SEAT_USAGE = "Usage: clossys seat <step> --by <who> (--model <id> -
   + "  --policy: writes clossys/seat-policy.json, the model id of each seat tier the seat answers fill (never guessed).";
 export const RULE_USAGE = "Usage: clossys rule --init [--root <dir>]\n"
   + "       clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]\n"
-  + "  adds (or with --replace, replaces) one owner rule row in scripts/rules/registry.json.";
+  + "  adds (or with --replace, replaces) one owner rule row in scripts/rules/registry.json, starting the registry when it has none.";
 export const APPROVE_USAGE = "Usage: clossys approve writer/<slot> <candidate-id> [--by owner[:<ref>]] [--at <iso>] [--root <dir>]\n"
   + "  the owner approves a Writer candidate's copy: it is pinned (basis picked) and its keys are approved.";
 
@@ -345,10 +345,10 @@ export async function runRuleCli(argv: readonly string[], cwd: string): Promise<
   if (flags.help) return { exitCode: 0, message: RULE_USAGE };
   const root = rootOf(cwd, flags);
   const file = join(root, ...RULES_FILE.split("/"));
+  const empty = { schema: "foundry.rule-registry/1", about: "Owner rules as code: each rule names the checks that enforce it and a violation fixture each check must fail on.", rules: [], exemptions: [] };
   if (flags.bare.has("--init")) {
     if (flags.positional.length) throw new CliUsageError(`rule --init takes no rule id\n${RULE_USAGE}`);
     if (existsSync(file)) return { exitCode: 0, root, message: `rule: ${RULES_FILE} exists; nothing written` };
-    const empty = { schema: "foundry.rule-registry/1", about: "Owner rules as code: each rule names the checks that enforce it and a violation fixture each check must fail on.", rules: [], exemptions: [] };
     replaceFile(file, jsonBytes(empty));
     return { exitCode: 0, root, message: `rule: wrote an empty ${RULES_FILE}` };
   }
@@ -361,8 +361,8 @@ export async function runRuleCli(argv: readonly string[], cwd: string): Promise<
   if (!(RULE_STATUSES as readonly string[]).includes(status)) return refuse("rule", `--status must be ${RULE_STATUSES.join(", ")}`);
   const checks = flags.values.get("--check") ?? [], fixture = one(flags, "--fixture"), runs = flags.values.get("--fixture-run") ?? [];
   if (status === "enforced" && (!checks.length || !fixture || !runs.length)) return refuse("rule", "an enforced rule names its --check(s), its violation --fixture and the --fixture-run command(s) that fail on it");
-  if (!existsSync(file)) return refuse("rule", `${RULES_FILE} does not exist (clossys rule --init)`);
-  const registry = readJsonFile(file) as { rules: { id: string }[] } & Record<string, unknown>;
+  // The first rule the owner states starts the registry (the same empty one rule --init writes).
+  const registry = (existsSync(file) ? readJsonFile(file) : empty) as { rules: { id: string }[] } & Record<string, unknown>;
   const row: Record<string, unknown> = {
     id, owner_words: { quote, date }, status,
     ...(checks.length ? { checks } : {}), ...(fixture ? { fixture } : {}), ...(runs.length ? { fixture_runs: runs } : {}),
