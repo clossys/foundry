@@ -51,7 +51,14 @@ describe("strict share, end to end (mutation)", () => {
       expect(mutated.status).toBe(1);
       expect(mutated.value.exitCode).toBe(1);
       expect(verb.findings(mutated.value).filter(hit)).toHaveLength(1);
-      expect(verb.findings(mutated.value).length).toBeGreaterThan(verb.findings(baseline.value).length);
+      // Compare findings as sets, not counts: an unpinned slot drops out of its verb's pinned checks, so the findings
+      // about that slot's own pinned content can go away as the strict finding arrives (a red baseline can keep the
+      // same count). Every baseline finding about any other slot stays, and the mutated run has one the baseline lacks.
+      const key = (f: Finding) => `${verb.code(f)} ${verb.where(f)} ${JSON.stringify(f)}`;
+      const about = (f: Finding) => (verb.where(f) ?? "").includes(id);
+      const before = new Set(verb.findings(baseline.value).map(key)), after = new Set(verb.findings(mutated.value).map(key));
+      expect(verb.findings(baseline.value).filter(f => !about(f) && !after.has(key(f))).map(key)).toEqual([]);
+      expect([...after].filter(each => !before.has(each)).length).toBeGreaterThan(0);
     }, 600_000);
   }
 });
