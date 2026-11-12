@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "1078b7786fdbd5aa54919ef2f455f48044986a4a20bf8ecae533fee0d8f6028c",
+  "revision": "888e5b1eb77a15bfee4ad724288330990672ac0c53b9e871e657ee860949268c",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -3350,6 +3350,18 @@
       "status": "draft"
     },
     {
+      "id": "studio.checks-all-pass",
+      "text": "All {count} checks pass.",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-findings",
+      "text": "{failing} of {count} checks report a finding.",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
       "id": "studio.count.candidates",
       "text": "{count, plural, one {# candidate} other {# candidates}}",
       "context": "studio.count.candidates",
@@ -3935,18 +3947,6 @@
       "id": "studio.references-description",
       "text": "Links to the other agents' leaves, in both directions, and where each version came from.",
       "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
-      "status": "draft"
-    },
-    {
-      "id": "studio.checks-all-pass",
-      "text": "All {count} checks pass.",
-      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
-      "status": "draft"
-    },
-    {
-      "id": "studio.checks-findings",
-      "text": "{failing} of {count} checks report a finding.",
-      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
       "status": "draft"
     },
     {
