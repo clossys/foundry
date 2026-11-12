@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -645,6 +645,16 @@ describe("ref-verbatim baseline (shrink only)", () => {
     const result = spawnSync(process.execPath, command, { encoding: "utf8" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("release requires an empty ref-verbatim baseline");
+  });
+
+  it("with no --report writes its report to the workspace's ignored cache, never a reports/ folder in the checkout", () => {
+    const workspace = realpathSync(mkdtempSync(join(tmpdir(), "ref-verbatim-ws-")));
+    const root = join(workspace, "clossys");
+    renameSync(consumer([]), root);
+    const result = spawnSync(process.execPath, [join(pkg, "scripts/check-ref-verbatim.mjs"), "--root", "clossys", "--pinned"], { cwd: workspace, encoding: "utf8" });
+    expect(result.status, result.stderr).toBe(0);
+    expect(existsSync(join(workspace, "reports"))).toBe(false);
+    expect(JSON.parse(readFileSync(join(workspace, "node_modules/.cache/clossys/ref-verbatim/ref-verbatim.json"), "utf8")).mode).toBe("pinned");
   });
 
   it("classifies every remaining baseline row as an explicit reference NEED, without an exemption", () => {

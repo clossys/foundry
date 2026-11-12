@@ -1418,7 +1418,9 @@ function main(argv) {
     report.findings.push({ element: `${row.slot}/${row.element}@v${row.version}`, code: "REF-BASELINE", detail: "release requires an empty ref-verbatim baseline; resolve and remove this row" });
   }
   report.summary = summary(report.elements);
-  const reportPath = resolve(value("--report") ?? join("reports", "ref-verbatim.json"));
+  // With no --report the evidence goes to the workspace's ignored cache (beside the consumer's clossys/),
+  // never the checkout: a report left in the tree reads dirty to every later receipt (PROC-5).
+  const reportPath = resolve(value("--report") ?? join(dirname(resolve(root)), "node_modules", ".cache", "clossys", "ref-verbatim", "ref-verbatim.json"));
   mkdirSync(dirname(reportPath), { recursive: true });
   writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
   if (argv.includes("--json")) console.log(JSON.stringify(report.summary));
