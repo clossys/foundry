@@ -22,7 +22,9 @@ export type RefVerbatimCode =
   | "REF-COMP-USES"
   | "REF-NPM-VERSION"
   | "REF-NPM-CODE"
-  | "REF-NPM-ASSET";
+  | "REF-NPM-ASSET"
+  | "REF-NPM-DEP"
+  | "REF-NPM-CLASS";
 
 export type RefVerbatimPosition = { readonly line: number; readonly column: number };
 export type RefVerbatimRange = { readonly start: RefVerbatimPosition; readonly end: RefVerbatimPosition };
@@ -49,7 +51,7 @@ export type RefVerbatimFile = {
   readonly file: string;
   readonly status: "pass" | "fail" | "skipped";
   readonly reference?: string;
-  readonly mapping?: "recorded" | "inferred" | "composition";
+  readonly mapping?: "recorded" | "inferred" | "composition" | "npm" | "npm-asset" | "npm-contract";
   readonly hunks?: readonly RefVerbatimHunk[];
   readonly codes?: readonly string[];
 };
@@ -134,6 +136,13 @@ export declare function refVerbatimReport(
 export type AdaptationKind = "import-paths" | "token-mapping" | "data-binding" | "data-fit" | "slot-bound-copy" | "slot-bound-identity";
 export declare const ADAPTATION_KINDS: readonly AdaptationKind[];
 export declare function adaptationHash(hunk: RefVerbatimHunk, reference: string, candidate: string): string;
+
+/** The reference manifest's npm `packages` row an npm source's one ref names, if any (a class-contract reference). */
+export declare function npmPackageRow(manifest: unknown, refs: unknown): { readonly id: string; readonly package: string; readonly version: string; readonly integrity: string; readonly source: string; readonly classes: { readonly base: string; readonly modifiers: readonly string[] } } | undefined;
+/** Elements an npm class-contract wrapper may render. */
+export declare const NPM_CONTRACT_ELEMENTS: readonly string[];
+/** Variants an npm contract class may carry. */
+export declare const NPM_CONTRACT_VARIANTS: readonly string[];
 
 export declare function checkRegistryItem(root: string, slot: string, candidate: any, options?: RefVerbatimOptions): RefVerbatimElement;
 

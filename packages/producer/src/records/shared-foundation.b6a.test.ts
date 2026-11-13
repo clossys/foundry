@@ -54,3 +54,23 @@ it("retains native manifest schema and semantic hash validation", () => {
   expect(validateReferencesManifest({ ...manifest, unexpected: true }).ok).toBe(false);
   expect(validateReferencesManifest({ ...manifest, items: [{ ...item, dir: "stock/other@1.0.0" }] }).ok).toBe(false);
 });
+
+it("accepts an npm class-contract package row only when the vendored item proves it (R2F-TYPO)", () => {
+  const row = {
+    id: "npm/example@1.0.0", kind: "npm", package: "example", version: "1.0.0",
+    integrity: `sha512-${"A".repeat(86)}==`, license: "MIT", source: "stock/example@1.0.0",
+    classes: { base: "prose", baseFrom: "a.ts", modifiers: ["invert"], modifiersFrom: "z.ts" },
+    slots: ["sections.article"],
+  } as const;
+  expect(validateReferencesManifest({ ...manifest, packages: [row] })).toMatchObject({ ok: true });
+  const bad = (change: Record<string, unknown>) => validateReferencesManifest({ ...manifest, packages: [{ ...row, ...change }] }).ok;
+  expect(bad({ extra: true })).toBe(false);
+  expect(bad({ version: "^1.0.0", id: "npm/example@^1.0.0" })).toBe(false);
+  expect(bad({ id: "npm/other@1.0.0" })).toBe(false);
+  expect(bad({ integrity: "sha1-abc" })).toBe(false);
+  expect(bad({ source: "stock/missing@1.0.0" })).toBe(false);
+  expect(bad({ version: "2.0.0", id: "npm/example@2.0.0" })).toBe(false);
+  expect(bad({ license: "ISC" })).toBe(false);
+  expect(bad({ classes: { ...row.classes, baseFrom: "missing.js" } })).toBe(false);
+  expect(validateReferencesManifest({ ...manifest, packages: [row, row] }).ok).toBe(false);
+});

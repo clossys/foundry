@@ -66,6 +66,8 @@ export const CODES = [
   "REF-NPM-VERSION",
   "REF-NPM-CODE",
   "REF-NPM-ASSET",
+  "REF-NPM-DEP",
+  "REF-NPM-CLASS",
 ];
 
 /**
@@ -868,7 +870,11 @@ export function checkElement(root, target, options = {}) {
  */
 export function checkRegistryItem(root, slot, candidate, options = {}) {
   if (candidate.meta?.source?.kind === "composition") return checkComposition(root, slot, candidate, options);
-  if (candidate.meta?.source?.kind === "npm") return withSelfCitation(checkNpmItem(root, slot, candidate, options), candidate.meta?.source?.ref);
+  if (candidate.meta?.source?.kind === "npm") {
+    // An npm ref the reference manifest records as a package row is a class-contract wrapper; every other npm ref keeps the re-export rule.
+    const row = npmPackageRow(defaults(options).manifest, candidate.meta?.source?.ref);
+    return withSelfCitation(row ? checkNpmContractItem(root, slot, candidate, row, options) : checkNpmItem(root, slot, candidate, options), candidate.meta?.source?.ref);
+  }
   return withSelfCitation(checkLineageItem(root, slot, candidate, options), candidate.meta?.source?.ref);
 }
 
@@ -1028,6 +1034,215 @@ function checkNpmItem(root, slot, candidate, options = {}) {
   return { key, slot, element, version: 1, status: findings.length ? "fail" : "pass", files, findings, hash, ref: refs[0], npm: pkg ? { package: pkg, version, names } : undefined };
 }
 
+// ---- npm class-contract reference -------------------------------------------
+
+/**
+ * The reference manifest's `packages` row an npm source cites: its one ref equals the row id
+ * (`npm/<package>@<exact version>`). No row, no class contract: the re-export rule applies.
+ */
+export function npmPackageRow(manifest, refs) {
+  if (!Array.isArray(refs) || refs.length !== 1 || typeof refs[0] !== "string") return undefined;
+  const rows = Array.isArray(manifest?.packages) ? manifest.packages : [];
+  return rows.find(row => row && typeof row === "object" && row.kind === "npm" && row.id === refs[0]);
+}
+
+/** The package-lock.json entry (version, integrity) of one hoisted package. */
+function lockedEntry(root, pkg, explicit) {
+  const path = lockfileFor(root, explicit);
+  const entry = path ? json(path).packages?.[`node_modules/${pkg}`] : undefined;
+  return entry && typeof entry === "object" ? entry : undefined;
+}
+
+/** Elements a class-contract wrapper may render: block containers for flowing content. */
+export const NPM_CONTRACT_ELEMENTS = Object.freeze(["article", "section", "div", "main", "aside"]);
+/** Variants a contract class may carry: the dark scheme and the breakpoints. */
+export const NPM_CONTRACT_VARIANTS = Object.freeze(["dark", "sm", "md", "lg", "xl", "2xl"]);
+
+const propertyKey = (ts, name) => (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name) ? name.text : undefined);
+
+/**
+ * The class contract the vendored source declares, read from its syntax, never run:
+ * - base: the string default of the `className` option the plugin destructures (`{ className = 'prose' }`);
+ * - modifiers: the keys of the object `module.exports` is assigned, `...spread` identifiers resolved to
+ *   their object-literal declaration, minus `DEFAULT` (the base class itself).
+ * Any shape it cannot read statically is undefined, so the row cannot be proved.
+ */
+function vendoredContract(ts, baseText, modifiersText, baseFile, modifiersFile) {
+  const parse = (text, file) => ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const bases = [];
+  const visitBase = node => {
+    if (ts.isBindingElement(node) && !node.propertyName && ts.isIdentifier(node.name) && node.name.text === "className" && node.initializer && ts.isStringLiteralLike(node.initializer)) bases.push(node.initializer.text);
+    ts.forEachChild(node, visitBase);
+  };
+  visitBase(parse(baseText, baseFile));
+  const styles = parse(modifiersText, modifiersFile);
+  const objects = new Map();
+  let exported;
+  for (const st of styles.statements) {
+    if (ts.isVariableStatement(st)) for (const d of st.declarationList.declarations) if (ts.isIdentifier(d.name) && d.initializer && ts.isObjectLiteralExpression(d.initializer)) objects.set(d.name.text, d.initializer);
+    if (ts.isExpressionStatement(st) && ts.isBinaryExpression(st.expression) && st.expression.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+      const left = st.expression.left;
+      if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.expression) && left.expression.text === "module" && left.name.text === "exports" && ts.isObjectLiteralExpression(st.expression.right)) exported = exported === undefined ? st.expression.right : null;
+    }
+  }
+  if (new Set(bases).size !== 1 || !exported) return undefined;
+  const keys = [];
+  const collect = (object, seen) => {
+    for (const p of object.properties) {
+      if (ts.isSpreadAssignment(p)) {
+        const target = ts.isIdentifier(p.expression) ? objects.get(p.expression.text) : undefined;
+        if (!target || seen.has(target)) return false;
+        if (!collect(target, new Set([...seen, target]))) return false;
+      } else if (ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) {
+        const key = propertyKey(ts, p.name);
+        if (key === undefined) return false;
+        keys.push(key);
+      } else return false;
+    }
+    return true;
+  };
+  if (!collect(exported, new Set([exported])) || !keys.includes("DEFAULT")) return undefined;
+  return { base: bases[0], modifiers: [...new Set(keys.filter(key => key !== "DEFAULT"))].sort() };
+}
+
+/**
+ * An npm class-contract source: the candidate is a thin element wrapper styled only by an npm
+ * package's own classes, e.g. a Tailwind plugin's `prose`. The reference manifest's `packages` row
+ * (id `npm/<package>@<exact version>`) is the trusted record; every claim in it is proved here:
+ * - the row's source item is vendored with matching hashes, its version is the row's, and the class
+ *   contract the row records (base + modifiers) is exactly the one that source declares (REF-NOT-VENDORED);
+ * - package-lock.json resolves that exact version with the row's integrity, and the installed package's
+ *   files are byte-identical to the vendored source (REF-NPM-VERSION);
+ * - the candidate declares the dependency `<package>@<version>` and meta.element.deps.npm pins the same
+ *   version (REF-NPM-DEP);
+ * - it records no refVerbatim (REF-ADAPTATION) and ships code only (REF-NPM-ASSET);
+ * - each code file holds at most `import type ... from "react"` and exported named functions whose one
+ *   statement returns one self-closing NPM_CONTRACT_ELEMENTS element carrying exactly a spread of the
+ *   function's one parameter and a string-literal className (REF-NPM-CODE);
+ * - every className token is a contract class (the base, or `<base>-<modifier>`), optionally behind
+ *   NPM_CONTRACT_VARIANTS, and the unprefixed base is present (REF-NPM-CLASS).
+ */
+function checkNpmContractItem(root, slot, candidate, row, options = {}) {
+  const opts = defaults(options);
+  const element = candidate.name ?? "unknown";
+  const key = `${slot}/${element}@v1`;
+  const findings = [];
+  const files = [];
+  const fail = (code, detail, extra = {}) => findings.push({ element: key, code, detail, ...extra });
+  const payload = Object.fromEntries((candidate.files ?? []).map(file => [file.path, file.content]));
+  if (Object.values(payload).some(content => typeof content !== "string")) throw new Error("registry candidate must carry every payload file's content");
+  const hash = treeHash(Object.entries(payload).map(([path, content]) => ({ path, sha256: sha256(content) })));
+  const ts = loadTypeScript();
+  const pkg = row.package;
+  const version = row.version;
+
+  // The row: an exact package version whose vendored source declares the recorded contract.
+  const match = NPM_REF.exec(row.id ?? "");
+  const item = (opts.manifest.items ?? []).find(entry => entry.dir === row.source);
+  let sources;
+  if (!match || match[1] !== pkg || match[2] !== version) fail("REF-NOT-VENDORED", `package row ${row.id} does not name ${pkg}@${version}`);
+  else if (!item || item.version !== version) fail("REF-NOT-VENDORED", `package row ${row.id}: source ${row.source} is not a vendored item of version ${version}`);
+  else {
+    sources = new Map();
+    for (const file of item.files ?? []) {
+      const path = join(opts.referencesDir, item.dir, file.path);
+      const bytes = existsSync(path) ? readFileSync(path) : undefined;
+      if (!bytes || sha256(bytes) !== file.sha256) { fail("REF-NOT-VENDORED", `${item.dir}/${file.path} is missing or differs from the manifest`); sources = undefined; break; }
+      sources.set(file.path, bytes);
+    }
+    const classes = row.classes ?? {};
+    const derived = sources && sources.has(classes.baseFrom) && sources.has(classes.modifiersFrom)
+      ? vendoredContract(ts, sources.get(classes.baseFrom).toString("utf8"), sources.get(classes.modifiersFrom).toString("utf8"), classes.baseFrom, classes.modifiersFrom)
+      : undefined;
+    const recorded = Array.isArray(classes.modifiers) ? [...classes.modifiers].sort() : undefined;
+    if (sources && (!derived || derived.base !== classes.base || JSON.stringify(derived.modifiers) !== JSON.stringify(recorded))) {
+      fail("REF-NOT-VENDORED", `package row ${row.id}: the recorded class contract is not the one ${row.source} declares${derived ? ` (base ${derived.base}; modifiers ${derived.modifiers.join(", ")})` : ""}`);
+    }
+  }
+
+  // The lockfile resolves the row exactly, and the install is the vendored source.
+  const locked = lockedEntry(root, pkg, opts.lockfile);
+  if (!locked) fail("REF-NPM-VERSION", `${pkg} is not resolved in package-lock.json`);
+  else if (locked.version !== version) fail("REF-NPM-VERSION", `${pkg}@${version} differs from the version package-lock.json resolves (${locked.version})`);
+  else if (locked.integrity !== row.integrity) fail("REF-NPM-VERSION", `${pkg}@${version}: package-lock.json integrity differs from the reference row's`);
+  else if (sources) {
+    const installed = installedPackageDir(root, pkg, version, opts.lockfile);
+    if (!installed) fail("REF-NPM-VERSION", `${pkg}@${version} is not installed, so it cannot be compared to the vendored source`);
+    else for (const [path, bytes] of sources) {
+      const target = resolve(installed, path);
+      if (!target.startsWith(`${installed}/`) || !existsSync(target) || sha256(readFileSync(target)) !== sha256(bytes)) fail("REF-NPM-VERSION", `${pkg}@${version}/${path} is not the vendored ${row.source}/${path}`);
+    }
+  }
+
+  // The candidate depends on the package at that version.
+  const declared = Array.isArray(candidate.dependencies) ? candidate.dependencies : [];
+  if (!declared.includes(`${pkg}@${version}`)) fail("REF-NPM-DEP", `the candidate does not declare the dependency ${pkg}@${version}`);
+  if (candidate.meta?.element?.deps?.npm?.[pkg] !== version) fail("REF-NPM-DEP", `meta.element.deps.npm does not pin ${pkg} to ${version}`);
+  if (candidate.meta?.refVerbatim !== undefined) fail("REF-ADAPTATION", "an npm class-contract candidate records no refVerbatim mappings or adaptations");
+
+  const contract = new Set([row.classes?.base, ...(Array.isArray(row.classes?.modifiers) ? row.classes.modifiers.map(m => `${row.classes.base}-${m}`) : [])].filter(Boolean));
+  const variants = new Set(NPM_CONTRACT_VARIANTS);
+  const tags = new Set(NPM_CONTRACT_ELEMENTS);
+  const code = Object.entries(payload).filter(([path]) => isCode(path)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  const other = Object.keys(payload).filter(path => !isCode(path)).sort();
+  for (const file of other) {
+    fail("REF-NPM-ASSET", `${file}: an npm class-contract candidate ships only its wrapper code; the package installs as a dependency`, { file });
+    files.push({ file, mapping: "npm-asset", hunks: [], codes: ["REF-NPM-ASSET"], status: "fail" });
+  }
+  if (!code.length) fail("REF-NPM-CODE", "an npm class-contract candidate ships at least one wrapper file");
+  const names = [];
+  for (const [file, text] of code) {
+    const before = findings.length;
+    const parsed = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, scriptKind(ts, file));
+    const at = node => parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1;
+    const bad = (node, why) => fail("REF-NPM-CODE", `${file}:${at(node)}: ${why}; a class-contract candidate holds only exported element wrappers`, { file });
+    if (parsed.parseDiagnostics?.length) fail("REF-NORMALIZE", `${file} does not parse`, { file });
+    let wrappers = 0;
+    for (const st of parsed.statements) {
+      if (ts.isImportDeclaration(st)) {
+        const clause = st.importClause;
+        const typeOnly = !!clause && (clause.isTypeOnly || (!clause.name && clause.namedBindings && ts.isNamedImports(clause.namedBindings) && clause.namedBindings.elements.every(e => e.isTypeOnly)));
+        if (!typeOnly || !ts.isStringLiteral(st.moduleSpecifier) || st.moduleSpecifier.text !== "react") bad(st, "only `import type ... from \"react\"` is allowed");
+        continue;
+      }
+      const exported = ts.isFunctionDeclaration(st) && st.name && st.modifiers?.length === 1 && st.modifiers[0].kind === ts.SyntaxKind.ExportKeyword;
+      if (!exported || st.asteriskToken || st.typeParameters?.length) { bad(st, `${syntaxName(ts, st.kind)} is not an exported named function`); continue; }
+      const param = st.parameters.length === 1 && ts.isIdentifier(st.parameters[0].name) && !st.parameters[0].dotDotDotToken && !st.parameters[0].initializer ? st.parameters[0].name.text : undefined;
+      if (!param) { bad(st, `${st.name.text} does not take one plain props parameter`); continue; }
+      const body = st.body?.statements ?? [];
+      let returned = body.length === 1 && ts.isReturnStatement(body[0]) ? body[0].expression : undefined;
+      while (returned && ts.isParenthesizedExpression(returned)) returned = returned.expression;
+      if (!returned || !ts.isJsxSelfClosingElement(returned) || !ts.isIdentifier(returned.tagName) || !tags.has(returned.tagName.text)) {
+        bad(st, `${st.name.text} does not return one self-closing ${NPM_CONTRACT_ELEMENTS.join("/")} element`);
+        continue;
+      }
+      const attrs = returned.attributes.properties;
+      const spreads = attrs.filter(a => ts.isJsxSpreadAttribute(a));
+      const classAttrs = attrs.filter(a => ts.isJsxAttribute(a) && ts.isIdentifier(a.name) && a.name.text === "className");
+      if (attrs.length !== 2 || spreads.length !== 1 || !ts.isIdentifier(spreads[0].expression) || spreads[0].expression.text !== param || classAttrs.length !== 1) {
+        bad(returned, `<${returned.tagName.text}> carries attributes other than {...${param}} and className`);
+        continue;
+      }
+      const value = classAttrs[0].initializer;
+      if (!value || !ts.isStringLiteral(value)) { bad(classAttrs[0], "className is not a string literal"); continue; }
+      const tokens = value.text.split(/\s+/).filter(Boolean);
+      const outside = tokens.filter(token => {
+        const parts = token.split(":");
+        const cls = parts.pop();
+        return !contract.has(cls) || parts.some(v => !variants.has(v));
+      });
+      if (outside.length) fail("REF-NPM-CLASS", `${file}:${at(value)}: ${outside.join(" ")} ${outside.length === 1 ? "is" : "are"} not ${pkg}@${version} contract classes (${row.classes?.base}, ${row.classes?.base}-<modifier>, behind ${NPM_CONTRACT_VARIANTS.join("/")} only)`, { file });
+      else if (!tokens.includes(row.classes?.base)) fail("REF-NPM-CLASS", `${file}:${at(value)}: className lacks the base contract class ${row.classes?.base}`, { file });
+      wrappers += 1;
+      names.push(st.name.text);
+    }
+    if (!wrappers && findings.length === before) fail("REF-NPM-CODE", `${file} exports no element wrapper`, { file });
+    const codes = [...new Set(findings.slice(before).map(f => f.code))];
+    files.push({ file, mapping: "npm-contract", hunks: [], codes, status: codes.length ? "fail" : "pass" });
+  }
+  return { key, slot, element, version: 1, status: findings.length ? "fail" : "pass", files, findings, hash, ref: row.id, contract: { package: pkg, version, names } };
+}
+
 // ---- self-citation ----------------------------------------------------------
 
 /** A lineage reference into Foundry's own package folders (or the `foundry` registry) is no proof: it cites the code it is meant to check. */
@@ -1067,6 +1282,8 @@ function stockPart(root, slot, record, options) {
     // An npm part is stock when its pin passes the npm rule: its code files are the package's own named re-exports.
     const checked = checkRegistryItem(root, slot, item, { ...options, strict: true, slotDoc: undefined });
     if (checked.status !== "pass") return { error: `fails ref-verbatim itself (${[...new Set(checked.findings.map(f => f.code))].join(", ")})` };
+    // A class-contract wrapper is authored markup over a package's classes, not the package's own code.
+    if (checked.contract) return { error: "is an npm class-contract wrapper, not a stock part" };
     const codeFiles = (item.files ?? []).filter(file => isCode(file.path));
     return { item, vendored: codeFiles.map(file => file.path), codeFiles, npm: checked.npm };
   }

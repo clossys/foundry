@@ -67,6 +67,28 @@ describe("check-references", () => {
     }
   });
 
+  it("records npm package references against a vendored item of the same version (mutation)", () => {
+    assert.deepEqual(manifest.packages.map((row) => row.id), ["npm/@tailwindcss/typography@0.5.20"]);
+    const mutate = (patch) => {
+      const root = copy();
+      const doc = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
+      doc.packages = [{ ...doc.packages[0], ...patch }];
+      writeFileSync(join(root, "manifest.json"), JSON.stringify(doc));
+      return run(root);
+    };
+    for (const [patch, message] of [
+      [{ source: "tailwindcss-typography/typography@0.5.19" }, /is not a vendored item/],
+      [{ version: "0.5.19", id: "npm/@tailwindcss/typography@0.5.19" }, /source version 0\.5\.20 differs/],
+      [{ id: "npm/@tailwindcss/typography@^0.5.20" }, /id must be/],
+      [{ integrity: "sha1-abc" }, /integrity must be/],
+      [{ classes: { base: "prose", modifiers: [], baseFrom: "src/missing.js", modifiersFrom: "src/styles.js" } }, /classes\.baseFrom/],
+    ]) {
+      const result = mutate(patch);
+      assert.equal(result.status, 1, JSON.stringify(patch));
+      assert.match(result.stderr, message);
+    }
+  });
+
   it("fails when one byte of a reference file is edited (mutation)", () => {
     const root = copy();
     const target = join(root, extracted.dir, extractedFile.path);

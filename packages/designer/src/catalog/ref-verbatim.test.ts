@@ -64,7 +64,7 @@ describe("ref-verbatim allowed-hunk grammar", () => {
   it("declares five allowed kinds and four hunk failure codes", () => {
     expect(ALLOWED).toEqual(["H-IMPORT", "H-TOKEN", "H-DATA", "H-PROPS", "H-LINK"]);
     expect(HUNK_CODES).toEqual(["REF-HUNK-CLASS", "REF-HUNK-STRUCTURE", "REF-HUNK-LOGIC", "REF-HUNK-TEXT"]);
-    expect(CODES).toHaveLength(22);
+    expect(CODES).toHaveLength(24);
     expect(CODES).toEqual(expect.arrayContaining(["REF-SELF-CITE", "REF-COMP-PART", "REF-COMP-IMPORT", "REF-COMP-UNUSED", "REF-COMP-MARKUP", "REF-COMP-USES", "REF-NPM-VERSION", "REF-NPM-CODE", "REF-NPM-ASSET"]));
     expect(CODES).toEqual(expect.arrayContaining(HUNK_CODES));
   });
@@ -940,5 +940,103 @@ describe("composition lineage (W6)", () => {
     const drifted = locked(setup());
     writeSlot(drifted, "components.flow.canvas", npmItem(CANVAS, "12.11.0"));
     expect(check(drifted, composed(FLOW, [part("card"), canvasPart]), ["components.card", "components.flow.canvas"])).toContain("REF-COMP-PART");
+  });
+});
+
+describe("npm class-contract reference (R2F-TYPO)", () => {
+  // A manifest `packages` row records an npm package, its exact version and lockfile integrity, and the
+  // class contract derived from its vendored source. A candidate citing that row is a thin element wrapper:
+  // it depends on the package and its only styling is the package's own classes.
+  const REF = "npm/@tailwindcss/typography@0.5.20";
+  const lockfile = resolve(pkg, "../../package-lock.json");
+  const PROSE = 'import type { ComponentProps } from "react"\n\nexport function Article(props: ComponentProps<"article">) {\n  return <article className="prose prose-neutral dark:prose-invert" {...props} />\n}\n';
+  const deps = { npm: { "@tailwindcss/typography": "0.5.20" }, registry: [] };
+  const proseItem = (content = PROSE, patch: Record<string, unknown> = {}, top: Record<string, unknown> = {}) => ({
+    name: "article", type: "registry:component", dependencies: ["@tailwindcss/typography@0.5.20"],
+    files: [{ path: "article.tsx", content }],
+    meta: { source: { kind: "npm", ref: [REF], license: "MIT" }, element: { deps }, ...patch },
+    ...top,
+  });
+  const row = () => structuredClone(manifest.packages.find((r: { id: string }) => r.id === REF));
+  const check = (item: unknown, options: Record<string, unknown> = {}) =>
+    codes(checkRegistryItem(consumer([]), "sections.article", item, { strict: true, lockfile, ...options }).findings);
+
+  it("records the package as a trusted reference row with the contract its vendored source declares", () => {
+    const recorded = row();
+    expect(recorded).toMatchObject({ kind: "npm", package: "@tailwindcss/typography", version: "0.5.20", source: "tailwindcss-typography/typography@0.5.20" });
+    expect(recorded.classes.base).toBe("prose");
+    expect(recorded.classes.modifiers).toEqual(expect.arrayContaining(["sm", "lg", "2xl", "neutral", "invert"]));
+    expect(manifest.skipped.map((s: { ref: string }) => s.ref)).not.toContain("@tailwindcss/typography");
+  });
+  it("passes a thin wrapper that depends on the locked package and uses only its classes", () => {
+    expect(check(proseItem())).toEqual([]);
+    for (const tag of ["section", "div", "main", "aside"]) {
+      expect(check(proseItem(PROSE.replaceAll('"article"', `"${tag}"`).replace("<article", `<${tag}`))), tag).toEqual([]);
+    }
+    expect(check(proseItem(PROSE.replace("prose prose-neutral dark:prose-invert", "prose md:prose-lg")))).toEqual([]);
+  });
+  it("fails an authored candidate that does not declare the package dependency", () => {
+    expect(check(proseItem(PROSE, {}, { dependencies: [] }))).toEqual(["REF-NPM-DEP"]);
+    expect(check(proseItem(PROSE, {}, { dependencies: ["@tailwindcss/typography@0.5.19"] }))).toEqual(["REF-NPM-DEP"]);
+    expect(check(proseItem(PROSE, { element: { deps: { npm: {}, registry: [] } } }))).toEqual(["REF-NPM-DEP"]);
+    expect(check(proseItem(PROSE, { element: undefined }))).toEqual(["REF-NPM-DEP"]);
+  });
+  it("fails a wrapper candidate when the manifest records no package row: the re-export rule applies unchanged", () => {
+    const bare = { ...manifest, packages: [] };
+    expect(check(proseItem(), { manifest: bare })).toEqual(["REF-NPM-CODE"]);
+  });
+  it("fails any class outside the package contract", () => {
+    for (const classes of ["prose max-w-none", "prose prose-headings:text-primary", "prose prose-foo", "prose-neutral", "prose hover:prose-invert", "prose !prose-invert", "prose  prose-lg extra"]) {
+      expect(check(proseItem(PROSE.replace("prose prose-neutral dark:prose-invert", classes))), classes).toEqual(["REF-NPM-CLASS"]);
+    }
+  });
+  it("fails arbitrary authored code: anything beyond one exported element wrapper", () => {
+    const variants = [
+      PROSE.replace('import type { ComponentProps } from "react"', 'import { useState } from "react"'),
+      PROSE.replace('import type { ComponentProps } from "react"', 'import type { ComponentProps } from "react"\nimport { cn } from "@/lib/utils"'),
+      `${PROSE}export const tint = "var(--ring)"\n`,
+      PROSE.replace("  return", '  console.log("x")\n  return'),
+      PROSE.replace(" {...props} />", " {...props} style={{ color: \"red\" }} />"),
+      PROSE.replace('className="prose prose-neutral dark:prose-invert"', 'className={"prose"}'),
+      PROSE.replace(" {...props} />", " />"),
+      PROSE.replace("{...props} />", "{...props}><h2>Title</h2></article>"),
+      PROSE.replace("<article", "<span"),
+      PROSE.replace("export function", "export default function"),
+      PROSE.replace("export function Article(props", "export function Article({ ...props }"),
+    ];
+    for (const text of variants) expect(check(proseItem(text)), text).toEqual(["REF-NPM-CODE"]);
+    expect(check({ ...proseItem(), files: [] })).toEqual(["REF-NPM-CODE"]);
+  });
+  it("fails shipping the plugin source or any other payload beside the wrapper", () => {
+    const plugin = read("references/tailwindcss-typography/typography@0.5.20/src/index.js");
+    expect(check({ ...proseItem(), files: [...proseItem().files, { path: "lib/typography/index.js", content: plugin }] })).toEqual(["REF-NPM-CODE"]);
+    expect(check({ ...proseItem(), files: [...proseItem().files, { path: "LICENCE.md", content: "MIT" }] })).toEqual(["REF-NPM-ASSET"]);
+    expect(check(proseItem(PROSE, { refVerbatim: { files: {} } }))).toEqual(["REF-ADAPTATION"]);
+  });
+  it("fails when the lockfile does not resolve the recorded version and integrity", () => {
+    const root = consumer([]);
+    const lock = (entry: Record<string, unknown>) => {
+      const path = join(root, `lock-${Object.keys(entry).length}-${String(entry.version)}.json`);
+      writeFileSync(path, JSON.stringify({ lockfileVersion: 3, packages: { "node_modules/@tailwindcss/typography": entry } }));
+      return path;
+    };
+    const integrity = row().integrity;
+    expect(check(proseItem(), { lockfile: lock({ version: "0.5.19", integrity }) })).toContain("REF-NPM-VERSION");
+    expect(check(proseItem(), { lockfile: lock({ version: "0.5.20", integrity: "sha512-tampered" }) })).toContain("REF-NPM-VERSION");
+  });
+  it("fails a manifest row whose recorded contract is not the one its vendored source declares", () => {
+    const widened = row();
+    widened.classes.modifiers.push("headings");
+    expect(check(proseItem(), { manifest: { ...manifest, packages: [widened] } })).toEqual(["REF-NOT-VENDORED"]);
+    const unsourced = { ...row(), source: "tailwindcss-typography/typography@0.5.19" };
+    expect(check(proseItem(), { manifest: { ...manifest, packages: [unsourced] } })).toEqual(["REF-NOT-VENDORED"]);
+    const otherBase = row();
+    otherBase.classes.base = "markdown";
+    expect(check(proseItem(PROSE.replace("prose prose-neutral dark:prose-invert", "markdown")), { manifest: { ...manifest, packages: [otherBase] } })).toEqual(["REF-NOT-VENDORED"]);
+  });
+  it("adds two codes and leaves the re-export rule for packages without a row", () => {
+    expect(CODES).toEqual(expect.arrayContaining(["REF-NPM-DEP", "REF-NPM-CLASS"]));
+    // A re-export candidate citing the class-contract package is not a wrapper: it fails the contract rule, never passes it.
+    expect(check(proseItem('export { default } from "@tailwindcss/typography"\n'))).toEqual(["REF-NPM-CODE"]);
   });
 });

@@ -123,6 +123,34 @@ async function ensureFlavorUtils(dir: string): Promise<void> {
 }
 
 /**
+ * The Tailwind plugin npm class-contract candidates style with (`prose`, check-ref-verbatim), at the
+ * exact version the Designer's reference manifest records. The substrate's stylesheet loads it and its
+ * package.json declares it; a substrate written before it gains both.
+ */
+export const SUBSTRATE_TYPOGRAPHY = Object.freeze({ name: "@tailwindcss/typography", version: "0.5.20", line: '@plugin "@tailwindcss/typography";' });
+
+async function ensureTypographyPlugin(dir: string): Promise<void> {
+  const cssFile = join(dir, "app.css");
+  if (existsSync(cssFile)) {
+    const css = await readFile(cssFile, "utf8");
+    if (!css.split("\n").includes(SUBSTRATE_TYPOGRAPHY.line)) {
+      const lines = css.split("\n");
+      // After the leading @import lines: an @import after other statements is not resolved.
+      let at = 0;
+      while (lines[at]?.startsWith("@import ")) at += 1;
+      lines.splice(at, 0, SUBSTRATE_TYPOGRAPHY.line);
+      await writeFile(cssFile, lines.join("\n"));
+    }
+  }
+  const manifestFile = join(dir, "package.json");
+  if (!existsSync(manifestFile)) return;
+  const manifest = JSON.parse(await readFile(manifestFile, "utf8"));
+  if (Object.hasOwn(manifest.dependencies ?? {}, SUBSTRATE_TYPOGRAPHY.name) || Object.hasOwn(manifest.devDependencies ?? {}, SUBSTRATE_TYPOGRAPHY.name)) return;
+  const devDependencies: Record<string, string> = { ...manifest.devDependencies, [SUBSTRATE_TYPOGRAPHY.name]: SUBSTRATE_TYPOGRAPHY.version };
+  await writeFile(manifestFile, `${JSON.stringify({ ...manifest, devDependencies: Object.fromEntries(Object.entries(devDependencies).sort(([a], [b]) => a.localeCompare(b))) }, null, 2)}\n`);
+}
+
+/**
  * The publishing substrate: a minimal Vite + Tailwind v4 shadcn project, written once. Its
  * `main.tsx` mounts a generated page module (`clossys/pages/<id>.tsx`; `?page=<id>`, and
  * `?theme=dark` for the dark mode). Every installed item's npm dependencies are unioned into its
@@ -136,6 +164,7 @@ export async function ensureSubstrate(dir: string): Promise<void> {
     if (await readFile(flavorPath, "utf8") !== flavor) await writeFile(flavorPath, flavor);
     await dropModuleType(join(dir, "package.json"));
     await ensureFlavorUtils(dir);
+    await ensureTypographyPlugin(dir);
     return;
   }
   const write = (name: string, value: unknown) => writeFile(join(dir, name), typeof value === "string" ? value : `${JSON.stringify(value, null, 2)}\n`);
@@ -144,12 +173,12 @@ export async function ensureSubstrate(dir: string): Promise<void> {
     name: "publishing-substrate", private: true,
     scripts: { dev: "vite", build: "vite build" },
     dependencies: { react: "^19.2.0", "react-dom": "^19.2.0" },
-    devDependencies: { vite: "^8.3.4", tailwindcss: "^4.3.3", "@tailwindcss/vite": "^4.3.3", "tw-animate-css": "^1.4.0" },
+    devDependencies: { "@tailwindcss/typography": SUBSTRATE_TYPOGRAPHY.version, "@tailwindcss/vite": "^4.3.3", tailwindcss: "^4.3.3", "tw-animate-css": "^1.4.0", vite: "^8.3.4" },
   });
   await write("tsconfig.json", { compilerOptions: { baseUrl: ".", paths: { "@/*": ["./*"] }, jsx: "react-jsx", module: "esnext", moduleResolution: "bundler", target: "es2022", skipLibCheck: true } });
   // The base layer shadcn init writes, in plain variables so it holds before any theme item is installed.
   await write("app.css", [
-    '@import "tailwindcss";', '@import "tw-animate-css";', "", "@custom-variant dark (&:is(.dark *));", "",
+    '@import "tailwindcss";', '@import "tw-animate-css";', SUBSTRATE_TYPOGRAPHY.line, "", "@custom-variant dark (&:is(.dark *));", "",
     "@layer base {", "  * { border-color: var(--border, currentColor); }",
     "  body { background-color: var(--background, Canvas); color: var(--foreground, CanvasText); }", "}", "",
   ].join("\n"));
@@ -182,6 +211,7 @@ export async function ensureSubstrate(dir: string): Promise<void> {
     "",
   ].join("\n"));
   await ensureFlavorUtils(dir);
+  await ensureTypographyPlugin(dir);
   // Last, so a substrate interrupted mid-write is written again.
   await writeFile(flavorPath, flavor);
 }

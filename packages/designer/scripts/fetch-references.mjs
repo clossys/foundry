@@ -365,6 +365,8 @@ const manifest = {
   ),
   licenses: allLicenses,
   items: allItems,
+  // npm package references (check-ref-verbatim's class-contract rows): carried from the sources as recorded.
+  packages: sources.packages ?? [],
   skipped: allSkipped,
 };
 

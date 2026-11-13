@@ -34,7 +34,5 @@
     "identity.visual.imagery",
     "identity.visual.style"
   ],
-  "uses": [
-    "components.flow.base-node"
-  ]
+  "uses": []
 }

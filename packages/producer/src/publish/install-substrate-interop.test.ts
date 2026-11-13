@@ -67,6 +67,24 @@ describe("publishing substrate CommonJS interop", () => {
     expect(readFileSync(join(dir, "lib", "utils.ts"), "utf8")).toBe("export { cn } from \"./installed\"\n");
   });
 
+  it("loads @tailwindcss/typography at the reference version, and gives an older substrate the plugin once", async () => {
+    const dir = temp();
+    await ensureSubstrate(dir);
+    const css = () => readFileSync(join(dir, "app.css"), "utf8");
+    const pkgJson = () => JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+    expect(css().split("\n").slice(0, 3)).toEqual(['@import "tailwindcss";', '@import "tw-animate-css";', '@plugin "@tailwindcss/typography";']);
+    expect(pkgJson().devDependencies["@tailwindcss/typography"]).toBe("0.5.20");
+    const manifest = pkgJson();
+    delete manifest.devDependencies["@tailwindcss/typography"];
+    writeFileSync(join(dir, "package.json"), JSON.stringify(manifest));
+    writeFileSync(join(dir, "app.css"), css().replace('@plugin "@tailwindcss/typography";\n', ""));
+    await ensureSubstrate(dir);
+    await ensureSubstrate(dir);
+    expect(css().split("\n").filter(line => line === '@plugin "@tailwindcss/typography";')).toHaveLength(1);
+    expect(css().indexOf("@plugin")).toBeGreaterThan(css().lastIndexOf("@import"));
+    expect(pkgJson().devDependencies["@tailwindcss/typography"]).toBe("0.5.20");
+  });
+
   it("a default import of next/image built in the substrate is a component React can render (no #130)", async () => {
     const dir = temp();
     await ensureSubstrate(dir);
