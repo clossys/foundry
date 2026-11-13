@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v3.md",
-  "sha256": "89b1dc5d3d6d464fb914e5e1c1b94dcd80b757d60294a3dd58e8328000ad5836",
-  "decidedBy": "owner:https://github.com/clossys/workspace/issues/46#issuecomment-6842596596",
+  "candidate": "studio-recite-v1.md",
+  "sha256": "ff3e897cd4d5038536b0983ae39b75c12d0ffebb3ba8d708cfa3b61fd33e9c98",
+  "decidedBy": "owner:https://github.com/clossys/workspace/issues/46#issuecomment-6845217118",
   "basis": "picked",
-  "at": "2026-11-13T03:08:19.099Z"
+  "at": "2026-11-13T05:42:07.353Z"
 }
