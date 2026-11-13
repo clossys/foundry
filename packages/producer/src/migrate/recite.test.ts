@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { flatConsumer } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { readPin } from "../records/slots.js";
-import { writeCandidate } from "../records/slot-write.js";
+import { writeCandidate, writeRecite } from "../records/slot-write.js";
 import { staleCitations } from "../records/stale-citations.js";
 import { contextOf, openItems } from "../pipeline/chain.js";
 import { STEPS } from "../pipeline/steps/index.js";
@@ -90,6 +90,41 @@ describe("clossys migrate recite", () => {
     const context = contextOf(changed.root, STEPS);
     expect(openItems(candidatesStep, context)).not.toContain(`writer/${SLOT}`);
     expect(openItems(STEPS.find(step => step.id === "pick.writer")!, { ...context, seats: { ...context.seats, "pick.writer": { ...context.seats["pick.writer"]!, llm: "claude-opus-5-5" } } } as typeof context)).toContain(`writer/${SLOT}`);
+  }, 240_000);
+
+  it("--cascade measures a re-pin from the version last recited, not the version the record's text names", async () => {
+    // The Writer text cites an older version; the Director then moved to @to with a different Direction, and the record was
+    // recited at @to (its proof is @to's meaning). A later re-pin is compared with @to, never with @from.
+    const { root, consumer, to } = await bumped(bytes => bytes.replace("## Direction\n- Model:", "## Direction\n- Model: Re-stated."));
+    const key = `director:${CELL}`;
+    const pinned = readPin(consumer, "director", CELL)!;
+    const atTo = readFileSync(join(candidates(consumer, "director", CELL), pinned.candidate), "utf8");
+    writeRecite(consumer, "writer", SLOT, { recited: { by: "agent:writer", at: new Date().toISOString(), cites: { [key]: to }, proof: { [key]: meaningHash("director", atTo) } } });
+    const repin = async (edit: (bytes: string) => string) => {
+      const written = writeCandidate(consumer, "director", CELL, pinned.candidate.replace(/-v\d+\.md$/, ""), edit(atTo));
+      const pin = await runCli(["pin", `director/${CELL}`, written.name, "--by", "owner:fixture", "--basis", "picked", "--root", root], root);
+      expect(pin.exitCode, pin.message).toBe(0);
+      return Number(/-v(\d+)\.md$/.exec(written.name)![1]);
+    };
+    const text = readFileSync(join(candidates(consumer, "writer", SLOT), readPin(consumer, "writer", SLOT)!.candidate), "utf8");
+    expect(text).toContain(`${key}@`);
+    expect(text).not.toContain(`${key}@${to}`);
+
+    const same = await repin(unchanged);
+    const ran = await runCli(["migrate", "recite", "--cascade", "--root", root], root);
+    expect(ran.exitCode, ran.message).toBe(0);
+    expect(ran.message).toContain(`recited writer/${SLOT}`);
+    expect(ran.message).not.toContain(`changed writer/${SLOT}`);
+    expect(readPin(consumer, "writer", SLOT)!.recited?.cites[key]).toBe(same);
+    expect(staleCitations(consumer).map(row => `${row.agent}/${row.slot}`)).not.toContain(`writer/${SLOT}`);
+
+    const held = readFileSync(join(consumer, "agents", "writer", SLOT, "pin.json"), "utf8");
+    await repin(bytes => bytes.replace("## Direction\n- Model:", "## Direction\n- Model: Re-stated again."));
+    const moved = await runCli(["migrate", "recite", "--cascade", "--root", root], root);
+    expect(moved.exitCode, moved.message).toBe(0);
+    expect(moved.message).toContain(`changed writer/${SLOT}: meaning changed for ${key}@${same} -> @`);
+    expect(readFileSync(join(consumer, "agents", "writer", SLOT, "pin.json"), "utf8")).toBe(held);
+    expect(staleCitations(consumer).map(row => `${row.agent}/${row.slot}`)).toContain(`writer/${SLOT}`);
   }, 240_000);
 
   it("--cascade proves an unversioned slot.json input against the pin in force when the citer was pinned (git history)", async () => {

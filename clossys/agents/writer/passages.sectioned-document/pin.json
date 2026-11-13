@@ -5,11 +5,13 @@
   "basis": "bulk",
   "at": "2026-11-03T08:58:39Z",
   "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:34.125Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:03.729Z",
     "cites": {
-      "director:identity.verbal.voice": 4
+      "director:identity.verbal.voice": 6
     },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+    "proof": {
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013"
+    }
   }
 }

@@ -5,12 +5,15 @@
   "basis": "bulk",
   "at": "2026-11-03T08:58:39Z",
   "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:32.547Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:01.887Z",
     "cites": {
-      "director:advantage.model.pricing": 5,
+      "director:advantage.model.pricing": 6,
       "director:focus.reach.geography": 2
     },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+    "proof": {
+      "director:advantage.model.pricing": "sha256:2b012735b895a776f023790a3a74145916d51b067a95093fa38544d068cbd2ca",
+      "director:focus.reach.geography": "sha256:e2ce236be58f6d88a5e522ce17522b06dacaca45ecef3022ddeb783994ec1a38"
+    }
   }
 }

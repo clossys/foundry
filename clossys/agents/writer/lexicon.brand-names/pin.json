@@ -8,5 +8,17 @@
     "by": "owner",
     "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
     "at": "2026-11-12T01:19:38.388Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:13.879Z",
+    "cites": {
+      "director:identity.naming.architecture": 6,
+      "director:identity.naming.name": 5
+    },
+    "proof": {
+      "director:identity.naming.architecture": "sha256:193e19225ff0a078b76e1c68a47b7ef576f97b84bf494cf4ec60fbebe01062cd",
+      "director:identity.naming.name": "sha256:056b3f10e9ea77e7545cd808f375995779ee595bfc0f6bb5844728bf20e0e098"
+    }
   }
 }

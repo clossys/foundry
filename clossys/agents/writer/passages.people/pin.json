@@ -10,13 +10,17 @@
     "at": "2026-11-12T01:19:40.821Z"
   },
   "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:34.292Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:14.825Z",
     "cites": {
-      "director:advantage.proposition.proof": 4,
-      "director:identity.verbal.voice": 4,
+      "director:advantage.proposition.proof": 6,
+      "director:identity.verbal.voice": 6,
       "director:capability.team.role": 5
     },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+    "proof": {
+      "director:advantage.proposition.proof": "sha256:e85d6d8a3ec86a30510f76d8136c8a2b1442c4083a996570e0533ee30c685e29",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
+      "director:capability.team.role": "sha256:c4cdf35c811a507a6e3d7093a375ee97d24c42112e289cfd89b88edb3956642a"
+    }
   }
 }

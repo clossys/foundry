@@ -3,5 +3,17 @@
   "sha256": "c70f3b172673acc7a1f85f6da711563d744ec3e55075e64dbd319f7a5c73c191",
   "decidedBy": "planner:CASCADE re-cite at Director r9, copy unchanged (was planner:W3, planner)",
   "basis": "planner",
-  "at": "2026-11-12T00:09:12.044Z"
+  "at": "2026-11-12T00:09:12.044Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:14.511Z",
+    "cites": {
+      "director:aspiration.purpose.mission": 5,
+      "director:identity.naming.name": 5
+    },
+    "proof": {
+      "director:aspiration.purpose.mission": "sha256:b3fc9f31d141e5826ce22d11db4e8d358bd2219dde257119c3705c929aa7c733",
+      "director:identity.naming.name": "sha256:056b3f10e9ea77e7545cd808f375995779ee595bfc0f6bb5844728bf20e0e098"
+    }
+  }
 }

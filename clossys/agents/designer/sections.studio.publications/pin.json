@@ -5,18 +5,27 @@
   "basis": "planner",
   "at": "2026-11-03T12:00:00Z",
   "recited": {
-    "by": "agent:designer",
-    "at": "2026-11-12T00:36:31.162Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:10.624Z",
     "cites": {
       "director:advantage.proposition.promise": 4,
-      "director:focus.category.definition": 5,
+      "director:focus.category.definition": 7,
       "director:focus.segment.core": 3,
-      "director:identity.brand.essence": 4,
-      "director:identity.brand.personality": 3,
-      "director:identity.verbal.voice": 4,
+      "director:identity.brand.essence": 6,
+      "director:identity.brand.personality": 5,
+      "director:identity.verbal.voice": 6,
       "director:identity.visual.imagery": 4,
-      "director:identity.visual.style": 7
+      "director:identity.visual.style": 9
     },
-    "reason": "CASCADE fc9d9cd80: the Director r9 inputs keep the visual meaning these candidates realise; candidate unchanged (clossys/workspace#46)"
+    "proof": {
+      "director:advantage.proposition.promise": "sha256:3fe044e620b9e4c56919066eae4b9418d46a6671bbf0a29a6fb6f247bcce9e3a",
+      "director:focus.category.definition": "sha256:ec4d8412872247e6d756aabc0af1b69fcbef72549c355f01f952fa30f1b0f834",
+      "director:focus.segment.core": "sha256:ca76c0b03fe84f1615c91cf10b301b8ad6b95ef58f9162d46aacf4cd153c7b92",
+      "director:identity.brand.essence": "sha256:21f6219f338ebd90f557610f65c6f3c710cc3c524a0c918788f56a36d76231eb",
+      "director:identity.brand.personality": "sha256:b623ac395493d9154d0f61fdc705f6bb1098d1afba65da20c5d046629b2f40b9",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
+      "director:identity.visual.imagery": "sha256:884c4c8d26564bda85ecaaba5a59853a1db032490feca2b7f01f6ec2851c9eb1",
+      "director:identity.visual.style": "sha256:826860e265f470cc98adb36bff91937f9c417040cbd863831b40edc7edccc964"
+    }
   }
 }

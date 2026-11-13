@@ -1,12 +1,22 @@
 {
-  "candidate": "studio-agent-naming-v5.md",
-  "sha256": "9f29b113ead5636b820518d76e432f786b7510605368c6133121928bbbb2ccba",
+  "candidate": "studio-agent-naming-v6.md",
+  "sha256": "297701dd34d7d6b31922ef4b472b8b3cb5943c6eea01b824321862b4cac852eb",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:18:24.008Z",
+  "at": "2026-11-13T01:43:29.055Z",
   "confirmed": {
     "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:18:48.925Z"
+    "ref": "clossys/workspace#46 issuecomment-6841911551",
+    "at": "2026-11-13T02:23:40.303Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.103Z",
+    "cites": {
+      "director:identity.naming.name": 5
+    },
+    "proof": {
+      "director:identity.naming.name": "sha256:056b3f10e9ea77e7545cd808f375995779ee595bfc0f6bb5844728bf20e0e098"
+    }
   }
 }

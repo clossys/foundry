@@ -1,21 +1,24 @@
 {
-  "candidate": "studio-allocation-v10.md",
-  "sha256": "5ba8e95ae9326335bfac5e7e53bf879b7a08ccfa990814a6710c11fef0a5c451",
+  "candidate": "studio-allocation-v12.md",
+  "sha256": "1a293f2724e3ff9383886a4c6ea14d2724a189930d968426dd6ddfc33450c222",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:24:46.612Z",
+  "at": "2026-11-13T01:43:11.576Z",
   "confirmed": {
     "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:26:04.854Z"
+    "ref": "clossys/workspace#46 issuecomment-6841911551",
+    "at": "2026-11-13T02:23:42.690Z"
   },
   "recited": {
-    "by": "agent:director",
-    "at": "2026-11-12T00:35:24.954Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.192Z",
     "cites": {
-      "director:execution.priority.bet": 6,
-      "director:capability.operation.delivery": 7
+      "director:execution.priority.bet": 10,
+      "director:capability.operation.delivery": 8
     },
-    "reason": "owner r9: Delivery v7 keeps the pinned v4 meaning, only re-addressed (clossys/workspace#46 issuecomment-6810103642)"
+    "proof": {
+      "director:execution.priority.bet": "sha256:0f4b101eca664a50ee75b185802f5eb1307637dfa677cf8ca1a5bed6efa66823",
+      "director:capability.operation.delivery": "sha256:db71e66d9bf7184965ce8ee65a656d0db7e254b91f685c7e6087713a6bcdfbb8"
+    }
   }
 }

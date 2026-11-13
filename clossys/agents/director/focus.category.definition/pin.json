@@ -1,7 +1,17 @@
 {
-  "candidate": "studio-category-v5.md",
-  "sha256": "2c98255cf988680e8dd1272702803c0249660d19ab52831aa03c67db283007fb",
-  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
+  "candidate": "studio-category-v7.md",
+  "sha256": "5d25ee233027c3497121b92805d0b90aa243dd48953dc270a9b58c485cb28fa6",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6841911551 (OWNER WORDS 2026-11-12 R2F-L2 Director round, option a)",
   "basis": "picked",
-  "at": "2026-11-11T22:38:17.861Z"
+  "at": "2026-11-13T02:23:32.426Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.020Z",
+    "cites": {
+      "director:advantage.proposition.proof": 6
+    },
+    "proof": {
+      "director:advantage.proposition.proof": "sha256:e85d6d8a3ec86a30510f76d8136c8a2b1442c4083a996570e0533ee30c685e29"
+    }
+  }
 }

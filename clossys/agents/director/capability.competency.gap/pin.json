@@ -1,12 +1,24 @@
 {
-  "candidate": "studio-competency-gap-v8.md",
-  "sha256": "7270c4d17585dbe8874724ca5c8bcdcc9fb9e451b9d035bee380504c20218d2a",
+  "candidate": "studio-competency-gap-v9.md",
+  "sha256": "83e512432d7df1c74691f25701b599d4231c126b7bf5679b45b255c23c2e5af7",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:18:15.416Z",
+  "at": "2026-11-13T01:43:07.236Z",
   "confirmed": {
     "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:18:50.035Z"
+    "ref": "clossys/workspace#46 issuecomment-6841911551",
+    "at": "2026-11-13T02:23:40.872Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.174Z",
+    "cites": {
+      "director:execution.priority.bet": 10,
+      "director:focus.offer.excluded": 5
+    },
+    "proof": {
+      "director:execution.priority.bet": "sha256:0f4b101eca664a50ee75b185802f5eb1307637dfa677cf8ca1a5bed6efa66823",
+      "director:focus.offer.excluded": "sha256:13b915708a25249f2a7c434f0e7e155dd92e28a1296c44771bd7a48d6dc8deed"
+    }
   }
 }

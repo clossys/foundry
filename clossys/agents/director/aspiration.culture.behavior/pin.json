@@ -10,12 +10,15 @@
     "at": "2026-11-11T23:18:46.345Z"
   },
   "recited": {
-    "by": "agent:director",
-    "at": "2026-11-12T00:35:24.422Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:00.863Z",
     "cites": {
-      "director:focus.offer.excluded": 3,
-      "director:capability.operation.delivery": 7
+      "director:focus.offer.excluded": 5,
+      "director:capability.operation.delivery": 8
     },
-    "reason": "owner r9: Delivery v7 keeps the pinned v4 meaning, only re-addressed (clossys/workspace#46 issuecomment-6810103642)"
+    "proof": {
+      "director:focus.offer.excluded": "sha256:13b915708a25249f2a7c434f0e7e155dd92e28a1296c44771bd7a48d6dc8deed",
+      "director:capability.operation.delivery": "sha256:db71e66d9bf7184965ce8ee65a656d0db7e254b91f685c7e6087713a6bcdfbb8"
+    }
   }
 }
