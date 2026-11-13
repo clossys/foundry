@@ -129,18 +129,32 @@ async function ensureFlavorUtils(dir: string): Promise<void> {
  */
 export const SUBSTRATE_TYPOGRAPHY = Object.freeze({ name: "@tailwindcss/typography", version: "0.5.20", line: '@plugin "@tailwindcss/typography";' });
 
+/**
+ * `css` with the typography `@plugin` line inserted where Tailwind reads it and no @import is
+ * disturbed: after the last top-level `@import` statement (a multi-line one ends at its `;`), since an
+ * @import after any other statement is not resolved; with no @import, after a leading `@charset` (which
+ * must stay first), else as the first line.
+ */
+function withTypographyPlugin(css: string): string {
+  const lines = css.split("\n");
+  let at = -1;
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!/^@import[\s"'(]/.test(lines[i]!)) continue;
+    let end = i;
+    while (end < lines.length - 1 && !lines[end]!.includes(";")) end += 1;
+    at = end + 1;
+    i = end;
+  }
+  if (at < 0) at = /^@charset\s/.test(lines[0] ?? "") ? 1 : 0;
+  lines.splice(at, 0, SUBSTRATE_TYPOGRAPHY.line);
+  return lines.join("\n");
+}
+
 async function ensureTypographyPlugin(dir: string): Promise<void> {
   const cssFile = join(dir, "app.css");
   if (existsSync(cssFile)) {
     const css = await readFile(cssFile, "utf8");
-    if (!css.split("\n").includes(SUBSTRATE_TYPOGRAPHY.line)) {
-      const lines = css.split("\n");
-      // After the leading @import lines: an @import after other statements is not resolved.
-      let at = 0;
-      while (lines[at]?.startsWith("@import ")) at += 1;
-      lines.splice(at, 0, SUBSTRATE_TYPOGRAPHY.line);
-      await writeFile(cssFile, lines.join("\n"));
-    }
+    if (!css.split("\n").includes(SUBSTRATE_TYPOGRAPHY.line)) await writeFile(cssFile, withTypographyPlugin(css));
   }
   const manifestFile = join(dir, "package.json");
   if (!existsSync(manifestFile)) return;

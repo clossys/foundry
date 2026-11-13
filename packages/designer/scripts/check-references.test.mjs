@@ -82,6 +82,10 @@ describe("check-references", () => {
       [{ id: "npm/@tailwindcss/typography@^0.5.20" }, /id must be/],
       [{ integrity: "sha1-abc" }, /integrity must be/],
       [{ classes: { base: "prose", modifiers: [], baseFrom: "src/missing.js", modifiersFrom: "src/styles.js" } }, /classes\.baseFrom/],
+      [{ slots: undefined }, /slots must be/],
+      [{ slots: [] }, /slots must be/],
+      [{ slots: ["sections.article", "sections.article"] }, /slots must be/],
+      [{ slots: ["../app"] }, /slots must be/],
     ]) {
       const result = mutate(patch);
       assert.equal(result.status, 1, JSON.stringify(patch));

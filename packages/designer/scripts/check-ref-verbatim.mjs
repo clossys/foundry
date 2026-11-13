@@ -28,6 +28,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, posix, resolve } from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { configFromComponents, mapImport, normalizeReference } from "./ref-verbatim/normalize.mjs";
 import { replayDataFit } from "./ref-verbatim/data-fit.mjs";
@@ -1053,8 +1054,39 @@ function lockedEntry(root, pkg, explicit) {
   return entry && typeof entry === "object" ? entry : undefined;
 }
 
-/** Elements a class-contract wrapper may render: block containers for flowing content. */
-export const NPM_CONTRACT_ELEMENTS = Object.freeze(["article", "section", "div", "main", "aside"]);
+/**
+ * Elements a class-contract wrapper may render: block containers for flowing content. Never a page
+ * landmark (`main`, `aside`, `header`): frames own those (ref-verbatim/ds-only.mjs DS_FRAME_LANDMARKS).
+ */
+export const NPM_CONTRACT_ELEMENTS = Object.freeze(["article", "section", "div"]);
+/**
+ * The registry types a class-contract wrapper may be, each with the one folder shadcn installs it to
+ * (publisher installedPath): every wrapper file carries the item's own type and installs at
+ * `<folder>/<file name>`, its default path, so no file reaches app/, a route or another item's path.
+ */
+export const NPM_CONTRACT_FILE_DIRS = Object.freeze({ "registry:ui": "components/ui", "registry:component": "components" });
+/** The registry-item fields a class-contract candidate may carry: no css, cssVars, tailwind, font, envVars or docs. */
+export const NPM_CONTRACT_ITEM_KEYS = Object.freeze(["name", "type", "title", "description", "dependencies", "registryDependencies", "files", "meta"]);
+/**
+ * Comment syntax: a class-contract file carries no comment at all. Comments are where compilers read
+ * file-level directives (`@jsx`, `@jsxImportSource`, `@jsxRuntime`, `@jsxFrag`, `/// <reference>`,
+ * `@ts-nocheck`, bundler magic comments), and each tool's pragma grammar differs; a wrapper needs none,
+ * so the closed rule is byte-level: no `//`, `/*`, HTML-like `<!--`/`-->` or hashbang anywhere in the text.
+ */
+const NPM_CONTRACT_COMMENT = /\/\/|\/\*|<!--|-->|^#!/;
+/** A wrapper file's path: one plain file name, so it can name no folder, `..`, `~` or app path. */
+const NPM_CONTRACT_FILE_NAME = /^[A-Za-z0-9][A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)+$/;
+
+/** The package-relative file Node loads for `pkg` from the folder that holds its node_modules (exports, else main). */
+function packageEntry(installed, pkg) {
+  const suffix = `/node_modules/${pkg}`;
+  if (!installed.endsWith(suffix)) return undefined;
+  try {
+    const resolved = createRequire(join(installed.slice(0, -suffix.length), "noop.js")).resolve(pkg);
+    const base = realpathSync(installed);
+    return resolved.startsWith(`${base}/`) ? resolved.slice(base.length + 1) : undefined;
+  } catch { return undefined; }
+}
 /** Variants a contract class may carry: the dark scheme and the breakpoints. */
 export const NPM_CONTRACT_VARIANTS = Object.freeze(["dark", "sm", "md", "lg", "xl", "2xl"]);
 
@@ -1109,16 +1141,23 @@ function vendoredContract(ts, baseText, modifiersText, baseFile, modifiersFile) 
  * An npm class-contract source: the candidate is a thin element wrapper styled only by an npm
  * package's own classes, e.g. a Tailwind plugin's `prose`. The reference manifest's `packages` row
  * (id `npm/<package>@<exact version>`) is the trusted record; every claim in it is proved here:
+ * - the row lists the slot among its `slots` (REF-NO-SOURCE);
  * - the row's source item is vendored with matching hashes, its version is the row's, and the class
- *   contract the row records (base + modifiers) is exactly the one that source declares (REF-NOT-VENDORED);
- * - package-lock.json resolves that exact version with the row's integrity, and the installed package's
- *   files are byte-identical to the vendored source (REF-NPM-VERSION);
- * - the candidate declares the dependency `<package>@<version>` and meta.element.deps.npm pins the same
- *   version (REF-NPM-DEP);
- * - it records no refVerbatim (REF-ADAPTATION) and ships code only (REF-NPM-ASSET);
- * - each code file holds at most `import type ... from "react"` and exported named functions whose one
- *   statement returns one self-closing NPM_CONTRACT_ELEMENTS element carrying exactly a spread of the
- *   function's one parameter and a string-literal className (REF-NPM-CODE);
+ *   contract the row records (base + modifiers) is exactly the one that source declares; the candidate's
+ *   meta.source.license is the row's licence (REF-NOT-VENDORED);
+ * - package-lock.json resolves that exact version with the row's integrity, the installed package's
+ *   files are byte-identical to the vendored source, and `classes.baseFrom` is the file the installed
+ *   package resolves to as its entry (REF-NPM-VERSION);
+ * - its only dependency is the package: `dependencies` is exactly [`<package>@<version>`], meta.element.deps
+ *   holds exactly npm {<package>: <version>}, and registryDependencies and deps.registry are empty or absent (REF-NPM-DEP);
+ * - it records no refVerbatim (REF-ADAPTATION), ships code only and carries no registry-item field beyond
+ *   NPM_CONTRACT_ITEM_KEYS (REF-NPM-ASSET);
+ * - it is a NPM_CONTRACT_FILE_DIRS type, and every file is a plain file name of that same type whose target,
+ *   if any, is its default `<folder>/<file name>` (REF-NPM-CODE);
+ * - each code file carries no comment (NPM_CONTRACT_COMMENT: no pragma can redirect its compilation) and
+ *   no `import("...")` type, and holds at most `import type { ... } from "react"` and exported named functions
+ *   whose one statement returns one self-closing NPM_CONTRACT_ELEMENTS element carrying exactly a spread of
+ *   the function's one parameter and a string-literal className (REF-NPM-CODE);
  * - every className token is a contract class (the base, or `<base>-<modifier>`), optionally behind
  *   NPM_CONTRACT_VARIANTS, and the unprefixed base is present (REF-NPM-CLASS).
  */
@@ -1135,6 +1174,10 @@ function checkNpmContractItem(root, slot, candidate, row, options = {}) {
   const ts = loadTypeScript();
   const pkg = row.package;
   const version = row.version;
+
+  // The row covers this slot and is the licence the candidate cites.
+  if (!Array.isArray(row.slots) || !row.slots.includes(slot)) fail("REF-NO-SOURCE", `package row ${row.id} does not cover ${slot}; it covers ${Array.isArray(row.slots) && row.slots.length ? row.slots.join(", ") : "no slot"}`);
+  if (typeof row.license !== "string" || candidate.meta?.source?.license !== row.license) fail("REF-NOT-VENDORED", `meta.source.license ${candidate.meta?.source?.license ?? "(none)"} is not package row ${row.id}'s licence ${row.license ?? "(none)"}`);
 
   // The row: an exact package version whose vendored source declares the recorded contract.
   const match = NPM_REF.exec(row.id ?? "");
@@ -1168,17 +1211,47 @@ function checkNpmContractItem(root, slot, candidate, row, options = {}) {
   else if (sources) {
     const installed = installedPackageDir(root, pkg, version, opts.lockfile);
     if (!installed) fail("REF-NPM-VERSION", `${pkg}@${version} is not installed, so it cannot be compared to the vendored source`);
-    else for (const [path, bytes] of sources) {
-      const target = resolve(installed, path);
-      if (!target.startsWith(`${installed}/`) || !existsSync(target) || sha256(readFileSync(target)) !== sha256(bytes)) fail("REF-NPM-VERSION", `${pkg}@${version}/${path} is not the vendored ${row.source}/${path}`);
+    else {
+      for (const [path, bytes] of sources) {
+        const target = resolve(installed, path);
+        if (!target.startsWith(`${installed}/`) || !existsSync(target) || sha256(readFileSync(target)) !== sha256(bytes)) fail("REF-NPM-VERSION", `${pkg}@${version}/${path} is not the vendored ${row.source}/${path}`);
+      }
+      // The contract's base is read from the file the package loads as: its entry as Node resolves it (exports, else main).
+      const entry = packageEntry(installed, pkg);
+      if (entry !== row.classes?.baseFrom) fail("REF-NPM-VERSION", `package row ${row.id}: classes.baseFrom ${row.classes?.baseFrom} is not ${pkg}@${version}'s entry (${entry ?? "unresolved"})`);
     }
   }
 
-  // The candidate depends on the package at that version.
-  const declared = Array.isArray(candidate.dependencies) ? candidate.dependencies : [];
-  if (!declared.includes(`${pkg}@${version}`)) fail("REF-NPM-DEP", `the candidate does not declare the dependency ${pkg}@${version}`);
-  if (candidate.meta?.element?.deps?.npm?.[pkg] !== version) fail("REF-NPM-DEP", `meta.element.deps.npm does not pin ${pkg} to ${version}`);
+  // The package is the candidate's one dependency, at that version.
+  const dependency = `${pkg}@${version}`;
+  const declared = candidate.dependencies;
+  if (!Array.isArray(declared) || declared.length !== 1 || declared[0] !== dependency) fail("REF-NPM-DEP", `dependencies must be exactly ["${dependency}"] (found ${JSON.stringify(declared ?? null)})`);
+  const emptyList = value => value === undefined || (Array.isArray(value) && value.length === 0);
+  if (!emptyList(candidate.registryDependencies)) fail("REF-NPM-DEP", `an npm class-contract candidate has no registryDependencies (found ${JSON.stringify(candidate.registryDependencies)})`);
+  const deps = candidate.meta?.element?.deps;
+  const npmDeps = deps && typeof deps === "object" ? deps.npm : undefined;
+  if (!npmDeps || typeof npmDeps !== "object" || Array.isArray(npmDeps) || Object.keys(npmDeps).length !== 1 || !Object.hasOwn(npmDeps, pkg) || npmDeps[pkg] !== version) fail("REF-NPM-DEP", `meta.element.deps.npm must be exactly {"${pkg}": "${version}"} (found ${JSON.stringify(npmDeps ?? null)})`);
+  if (deps && typeof deps === "object") {
+    if (!emptyList(deps.registry)) fail("REF-NPM-DEP", `meta.element.deps.registry must be empty (found ${JSON.stringify(deps.registry)})`);
+    const extra = Object.keys(deps).filter(field => field !== "npm" && field !== "registry");
+    if (extra.length) fail("REF-NPM-DEP", `meta.element.deps carries ${extra.join(", ")}; an npm class-contract candidate depends on its package only`);
+  }
   if (candidate.meta?.refVerbatim !== undefined) fail("REF-ADAPTATION", "an npm class-contract candidate records no refVerbatim mappings or adaptations");
+  const fields = Object.keys(candidate).filter(field => !NPM_CONTRACT_ITEM_KEYS.includes(field)).sort();
+  if (fields.length) fail("REF-NPM-ASSET", `the candidate carries ${fields.join(", ")}; an npm class-contract candidate ships only its wrapper files`);
+
+  // Every file is a plain file name of the item's own type, installed at that type's default path.
+  const folder = Object.hasOwn(NPM_CONTRACT_FILE_DIRS, candidate.type) ? NPM_CONTRACT_FILE_DIRS[candidate.type] : undefined;
+  if (!folder) fail("REF-NPM-CODE", `item type ${candidate.type ?? "(none)"} is not ${Object.keys(NPM_CONTRACT_FILE_DIRS).join(" or ")}`);
+  const seen = new Set();
+  for (const entry of candidate.files ?? []) {
+    const path = entry?.path;
+    if (typeof path !== "string" || !NPM_CONTRACT_FILE_NAME.test(path)) { fail("REF-NPM-CODE", `${String(path)}: a wrapper file path is a plain file name (no folder, "..", "~" or app path)`, { file: String(path) }); continue; }
+    if (seen.has(path)) fail("REF-NPM-CODE", `${path}: listed twice`, { file: path });
+    seen.add(path);
+    if (folder && entry.type !== candidate.type) fail("REF-NPM-CODE", `${path}: type ${entry.type ?? "(none)"} is not the item's ${candidate.type}`, { file: path });
+    if (folder && entry.target !== undefined && entry.target !== `${folder}/${path}`) fail("REF-NPM-CODE", `${path}: target ${JSON.stringify(entry.target)} is not its own component path ${folder}/${path}`, { file: path });
+  }
 
   const contract = new Set([row.classes?.base, ...(Array.isArray(row.classes?.modifiers) ? row.classes.modifiers.map(m => `${row.classes.base}-${m}`) : [])].filter(Boolean));
   const variants = new Set(NPM_CONTRACT_VARIANTS);
@@ -1197,11 +1270,20 @@ function checkNpmContractItem(root, slot, candidate, row, options = {}) {
     const at = node => parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1;
     const bad = (node, why) => fail("REF-NPM-CODE", `${file}:${at(node)}: ${why}; a class-contract candidate holds only exported element wrappers`, { file });
     if (parsed.parseDiagnostics?.length) fail("REF-NORMALIZE", `${file} does not parse`, { file });
+    // No comment anywhere: a pragma (`@jsxImportSource`, `@jsx`, `@jsxRuntime`, `@jsxFrag`, ...) would redirect compilation.
+    const comment = NPM_CONTRACT_COMMENT.exec(text);
+    if (comment) fail("REF-NPM-CODE", `${file}:${text.slice(0, comment.index).split("\n").length}: carries a comment (${comment[0]}); a class-contract file has none, so no pragma can redirect its compilation`, { file });
+    // No module reference hides in a type: `import("...")` types name another package.
+    const importTypes = [];
+    const visitTypes = node => { if (ts.isImportTypeNode(node)) importTypes.push(node); ts.forEachChild(node, visitTypes); };
+    visitTypes(parsed);
+    for (const node of importTypes) bad(node, "an import(...) type references another module");
     let wrappers = 0;
     for (const st of parsed.statements) {
       if (ts.isImportDeclaration(st)) {
         const clause = st.importClause;
-        const typeOnly = !!clause && (clause.isTypeOnly || (!clause.name && clause.namedBindings && ts.isNamedImports(clause.namedBindings) && clause.namedBindings.elements.every(e => e.isTypeOnly)));
+        const named = clause?.namedBindings && ts.isNamedImports(clause.namedBindings) ? clause.namedBindings.elements : undefined;
+        const typeOnly = !!clause && (clause.isTypeOnly ? !named || named.length > 0 : !clause.name && !!named && named.length > 0 && named.every(e => e.isTypeOnly));
         if (!typeOnly || !ts.isStringLiteral(st.moduleSpecifier) || st.moduleSpecifier.text !== "react") bad(st, "only `import type ... from \"react\"` is allowed");
         continue;
       }

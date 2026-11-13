@@ -138,9 +138,13 @@ export declare const ADAPTATION_KINDS: readonly AdaptationKind[];
 export declare function adaptationHash(hunk: RefVerbatimHunk, reference: string, candidate: string): string;
 
 /** The reference manifest's npm `packages` row an npm source's one ref names, if any (a class-contract reference). */
-export declare function npmPackageRow(manifest: unknown, refs: unknown): { readonly id: string; readonly package: string; readonly version: string; readonly integrity: string; readonly source: string; readonly classes: { readonly base: string; readonly modifiers: readonly string[] } } | undefined;
-/** Elements an npm class-contract wrapper may render. */
+export declare function npmPackageRow(manifest: unknown, refs: unknown): { readonly id: string; readonly package: string; readonly version: string; readonly integrity: string; readonly license: string; readonly source: string; readonly classes: { readonly base: string; readonly modifiers: readonly string[] }; readonly slots: readonly string[] } | undefined;
+/** Elements an npm class-contract wrapper may render (no page landmark: frames own those). */
 export declare const NPM_CONTRACT_ELEMENTS: readonly string[];
+/** The registry types an npm class-contract wrapper may be, each with the folder its files install to. */
+export declare const NPM_CONTRACT_FILE_DIRS: Readonly<Record<"registry:ui" | "registry:component", string>>;
+/** The registry-item fields an npm class-contract candidate may carry. */
+export declare const NPM_CONTRACT_ITEM_KEYS: readonly string[];
 /** Variants an npm contract class may carry. */
 export declare const NPM_CONTRACT_VARIANTS: readonly string[];
 

@@ -162,6 +162,8 @@ export function checkReferences(root) {
       for (const field of ["baseFrom", "modifiersFrom"]) if (!paths.has(row.classes?.[field])) add(where, `classes.${field} must name a file of ${row.source}`);
     }
     if (typeof row.classes?.base !== "string" || !Array.isArray(row.classes?.modifiers) || row.classes.modifiers.some((m) => typeof m !== "string")) add(where, "classes needs a base and a modifiers list");
+    // The slots a class-contract candidate may cite the row from (check-ref-verbatim fails any other slot).
+    if (!Array.isArray(row.slots) || !row.slots.length || row.slots.some((slot) => typeof slot !== "string" || !/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(slot)) || new Set(row.slots).size !== row.slots.length) add(where, "slots must be a non-empty list of distinct slot ids");
   }
 
   for (const entry of walk(root)) {
