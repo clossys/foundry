@@ -8,7 +8,8 @@ import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import type { BoundPage } from '@clossys/publisher/install';
 import { pageModule } from '../publish/install.js';
-import { resolveSampleCopy } from './specimen-state.js';
+import { resolveSampleCopy, specimenStateOf } from './specimen-state.js';
+import { createRequire } from 'node:module';
 import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';
 import { createServer, request } from 'node:http';
 import { hostOnlyFinding, installedSpecimenRoutes, specimenSiteCsp, type SiteInputs } from './installed-specimens.js';
@@ -90,6 +91,57 @@ describe('specimen element trees', () => {
       const tree = fixtureChildren(item.meta.preview.fixtures);
       expect.soft(tree, slot).toBeDefined();
       expect.soft(specimenTreeIssues(tree, moduleExports(file.content), copy), slot).toEqual([]);
+    }
+  });
+});
+
+/**
+ * One pinned item's page module with no declared export, rendered to static markup inside its
+ * slot's declared provider (as componentPage mounts it), or bare with `bare`.
+ */
+async function renderMounted(slot: string, file: string, source: string, bare = false): Promise<string> {
+  const substrate = mkdtempSync(join(tmpdir(), 'specimen-mount-'));
+  try {
+    mkdirSync(join(substrate, dirname(file)), { recursive: true });
+    mkdirSync(join(substrate, 'clossys/pages'), { recursive: true });
+    writeFileSync(join(substrate, file), source);
+    const frame = { slot, key: slot, role: 'frame', id: `${slot}/item`, version: 1, entry: { file }, props: {}, copy: {}, text: {}, assets: {} } as const;
+    const page = { schema: 'clossys.bound-page/1', id: 'specimen-mount', frame, sections: [], parts: [] } as unknown as BoundPage;
+    const entry = join(substrate, 'clossys/pages/specimen.tsx');
+    writeFileSync(entry, pageModule(page, substrate, { host: false }));
+    const external = ['react', 'react/jsx-runtime', 'react-dom', '@xyflow/react'];
+    const out = await build({ entryPoints: [entry], bundle: true, write: false, format: 'cjs', platform: 'node', jsx: 'automatic', external, logLevel: 'silent' });
+    const module = { exports: {} as Record<string, any> };
+    const requireHere = createRequire(import.meta.url);
+    new Function('require', 'module', 'exports', out.outputFiles[0]!.text)((id: string) => { if (external.includes(id)) return id === 'react' ? React : requireHere(id); throw new Error(id); }, module, module.exports);
+    const state = specimenStateOf(slot);
+    const item = React.createElement(module.exports.default);
+    if (bare || state?.state !== 'provider') return renderToStaticMarkup(item);
+    const provider = requireHere(state.provider.module)[state.provider.export];
+    return renderToStaticMarkup(React.createElement(provider, null, item));
+  } finally { rmSync(substrate, { recursive: true, force: true }); }
+}
+
+describe('a specimen with no declared export', () => {
+  it('mounts the first component export, a memo or forwardRef among them, never a hook', async () => {
+    const source = [
+      'import { createElement, memo } from "react";',
+      'export const Canvas = memo(() => createElement("div", { "data-part": "canvas" }));',
+      'export function useCanvas() { return { zoom: 1 }; }',
+      '',
+    ].join('\n');
+    expect(await renderMounted('components.sample', 'lib/canvas.ts', source)).toBe('<div data-part="canvas"></div>');
+  });
+
+  it('every pinned React Flow part mounts inside ReactFlowProvider and renders', async () => {
+    for (const slot of ['components.flow.canvas', 'components.flow.base-handle']) {
+      const pin = JSON.parse(readFileSync(join(designer, slot, 'pin.json'), 'utf8'));
+      const item = JSON.parse(readFileSync(join(designer, slot, 'candidates', pin.candidate), 'utf8'));
+      const code = item.files.find((row: { path: string }) => /\.[jt]sx?$/.test(row.path));
+      // The part's own `@/` imports are stubbed: only the flow store dependency is under test.
+      const source = code.content.replace(/import \{ cn \} from "@\/lib\/utils";\n/, 'const cn = (...names: unknown[]) => names.filter(Boolean).join(" ");\n');
+      await expect(renderMounted(slot, `components/${code.path}`, source, true), slot).rejects.toThrow(/ReactFlowProvider/);
+      expect(await renderMounted(slot, `components/${code.path}`, source), slot).toMatch(/react-flow__/);
     }
   });
 });

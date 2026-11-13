@@ -6,11 +6,11 @@
  * `<Image>` throws React error #130 ("element type is invalid ... got: object") in Studio.
  * This builds such an import with the substrate's own package.json and renders it.
  */
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it } from "vitest";
@@ -37,6 +37,34 @@ describe("publishing substrate CommonJS interop", () => {
     const after = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
     expect(after.type).toBeUndefined();
     expect(after.dependencies.next).toBe("latest");
+  });
+
+  // reactflow's base-node, base-handle, labeled-handle and node-status import `cn` from
+  // `@/lib/utils` and list no registry dependency for it, as every shadcn-init project has it.
+  // Without it /designer/components/flow failed to build, or (with @tailwindcss/typography's
+  // src/utils.js installed at lib/utils.js) threw "(0 , cn) is not a function".
+  const stockUtils = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../../designer/references/shadcn-aria/utils@4.23.0/utils.json"), "utf8"));
+
+  it("writes the flavor's lib/utils.ts, the stock aria-nova utils item, and declares the cn package", async () => {
+    const dir = temp();
+    await ensureSubstrate(dir);
+    expect(readFileSync(join(dir, "lib", "utils.ts"), "utf8")).toBe(stockUtils.files[0].content);
+    expect(Object.keys(JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).dependencies)).toEqual(expect.arrayContaining(stockUtils.dependencies));
+  });
+
+  it("gives a substrate written without lib/utils.ts the module and the cn package, keeping an installed one", async () => {
+    const dir = temp();
+    await ensureSubstrate(dir);
+    const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+    delete manifest.dependencies.cn;
+    writeFileSync(join(dir, "package.json"), JSON.stringify(manifest));
+    unlinkSync(join(dir, "lib", "utils.ts"));
+    await ensureSubstrate(dir);
+    expect(readFileSync(join(dir, "lib", "utils.ts"), "utf8")).toBe(stockUtils.files[0].content);
+    expect(JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).dependencies.cn).toBeDefined();
+    writeFileSync(join(dir, "lib", "utils.ts"), "export { cn } from \"./installed\"\n");
+    await ensureSubstrate(dir);
+    expect(readFileSync(join(dir, "lib", "utils.ts"), "utf8")).toBe("export { cn } from \"./installed\"\n");
   });
 
   it("a default import of next/image built in the substrate is a component React can render (no #130)", async () => {

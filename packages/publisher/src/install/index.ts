@@ -19,7 +19,7 @@
  * its own key (`sectionInstances`) and its own copy binding.
  */
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
@@ -393,6 +393,49 @@ export interface InstallResult {
   readonly findings: readonly InstallFinding[];
 }
 
+/**
+ * A slot installed at another version leaves the substrate as that version alone would: a file
+ * the previous version wrote, which the new one does not ship and no other installed item
+ * claims, is removed while it still holds the recorded bytes (a file changed since is left, as
+ * a hash-mismatch). Kept, a replaced file still resolves: sections.article v1 put the
+ * typography plugin's utils.js at lib/utils.js, which shadows the flavor's lib/utils.ts.
+ */
+async function dropReplaced(substrate: string, slotId: string, previous: ManifestEntry, items: Readonly<Record<string, ManifestEntry>>, findings: InstallFinding[]): Promise<void> {
+  // Every installed item's files, this slot's new version among them.
+  const kept = new Set(Object.values(items).flatMap(entry => Object.keys(entry.files)));
+  const changed: string[] = [];
+  for (const [path, hash] of Object.entries(previous.files)) {
+    if (kept.has(path)) continue;
+    const now = await fileHash(substrate, path);
+    if (now === undefined) continue;
+    if (now !== hash) { changed.push(path); continue; }
+    await unlink(resolve(substrate, path));
+  }
+  if (changed.length) findings.push({ code: "hash-mismatch", slot: slotId, detail: `${previous.id}@v${previous.version}: replaced ${changed.join(", ")} changed since install and were left in place` });
+}
+
+/**
+ * Bring a shared substrate to `pins` before anything builds in it: every installed slot pinned
+ * at another version drops its replaced files (as `dropReplaced`) and its manifest entry, so its
+ * next install starts clean. Installs run per page, and a substrate builds several bundles in
+ * turn; without this a bundle built before the slot reinstalls still resolves the old files.
+ */
+export async function reconcileInstalled(substrate: string, pins: InstallPins): Promise<InstallFinding[]> {
+  const root = resolve(substrate);
+  const manifest = await readManifest(root);
+  const items: Record<string, ManifestEntry> = { ...manifest.items };
+  const findings: InstallFinding[] = [];
+  const stale = Object.entries(items).filter(([slot, entry]) => {
+    const pin = pins[slot];
+    return pin !== undefined && (entry.id !== `${slot}/${pin.element}` || entry.version !== pin.version);
+  });
+  if (!stale.length) return findings;
+  for (const [slot] of stale) delete items[slot];
+  for (const [slot, entry] of stale) await dropReplaced(root, slot, entry, items, findings);
+  await writeFile(join(root, INSTALL_MANIFEST), `${JSON.stringify({ schema: MANIFEST_SCHEMA, items }, null, 2)}\n`);
+  return findings;
+}
+
 /** Install a page's pinned registry items into the substrate. Idempotent; verified by hash. */
 export async function installPage(options: InstallOptions): Promise<InstallResult> {
   const substrate = resolve(options.substrate);
@@ -427,6 +470,7 @@ export async function installPage(options: InstallOptions): Promise<InstallResul
       }
       if (missing.length) { findings.push({ code: "install-failed", slot: slot.slot, detail: `shadcn add ${id}@v${version} did not write ${missing.join(", ")}` }); continue; }
       items[slot.slot] = { id, version, itemHash: slot.itemHash, files: hashes };
+      if (previous) await dropReplaced(substrate, slot.slot, previous, items, findings);
       installed.push({ slot: slot.slot, id, version, status: "installed", files: slot.files });
     }
   } finally {

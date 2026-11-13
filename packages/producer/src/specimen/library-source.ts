@@ -468,7 +468,7 @@ function withSlotState(slot: string, item: { files?: { path?: unknown; type?: un
     `import * as Item from ${JSON.stringify(target.startsWith(".") ? target : `./${target}`)};`,
     // The item's own exports stay reachable for a fixture element tree.
     `export * from ${JSON.stringify(target.startsWith(".") ? target : `./${target}`)};`,
-    "const pick = (name) => (name && Item[name]) || Item.default || Object.values(Item).find(value => typeof value === \"function\" || (!!value && typeof value === \"object\" && \"$$typeof\" in value));",
+    "const pick = (name) => (name && Item[name]) || Item.default || Object.entries(Item).find(([key, value]) => /^[A-Z]/.test(key) && (typeof value === \"function\" || (!!value && typeof value === \"object\" && \"$$typeof\" in value)))?.[1];",
     "export function SpecimenState(props) {",
     `  const Root = pick(${JSON.stringify(exported ?? "")});`,
     ...(open ? [`  useEffect(() => { openSpecimen(${JSON.stringify(open.sample)}, { duration: Infinity }); }, []);`] : []),

@@ -6,15 +6,17 @@
  * stub, so the test makes no outside network request.
  */
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { directoryRecordSource, recordStoreSource } from "../specimen/source.js";
-import { bindPage, installAndBind, installPage, isBlocking, resolvePage, substrateDependencies, type BoundPage, type ResolvedSlot, type InstallPageRecord, type InstallPins, type ShadcnRunner } from "./index.js";
+import { installedPath } from "../specimen/installed-path.js";
+import { bindPage, installAndBind, installPage, isBlocking, reconcileInstalled, resolvePage, substrateDependencies, type BoundPage, type ResolvedSlot, type InstallPageRecord, type InstallPins, type ShadcnRunner } from "./index.js";
 
 const fixtures = join(import.meta.dirname, "__fixtures__");
 const json = async (name: string) => JSON.parse(await readFile(join(fixtures, name), "utf8"));
@@ -254,5 +256,80 @@ describe("slot-id registry dependencies", () => {
   it("leaves an unpinned slot-shaped name to shadcn", async () => {
     const { slots } = await resolvePage(stripPage, { "sections.strip": { element: "strip", version: 1 } }, libSource);
     expect(JSON.parse(slots[0]!.item).registryDependencies).toEqual(["components.badge", "separator"]);
+  });
+});
+
+describe("a slot installed at another version", () => {
+  // shadcn add, as far as these items need it: each file written at its installed path.
+  const writeRunner: ShadcnRunner = async (args, { cwd }) => {
+    const item = JSON.parse(await readFile(args[1]!, "utf8"));
+    for (const file of item.files) {
+      const path = join(cwd, installedPath(file)!);
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path, file.content);
+    }
+    return { code: 0, stdout: "", stderr: "" };
+  };
+  const typography = (target?: string) => ({ path: "utils.js", type: "registry:lib", ...(target ? { target } : {}), content: "module.exports = { isObject() {} }\n" });
+  const items: Record<string, unknown> = {
+    // sections.article v1 installed the typography plugin's utils.js at lib/utils.js; v2 under lib/typography.
+    "sections.article/article@1": { name: "article", type: "registry:lib", files: [typography()] },
+    "sections.article/article@2": { name: "article", type: "registry:lib", files: [typography("lib/typography/utils.js")] },
+    "sections.document/document@1": { name: "document", type: "registry:lib", files: [typography()] },
+  };
+  const libSource = recordStoreSource({
+    async load(id, version) {
+      const value = items[`${id}@${version}`];
+      return value ? { id, version, kind: "visual", files: [{ path: "item.json", content: JSON.stringify(value) }], preview: {}, contentHash: "" } : undefined;
+    },
+  });
+  const articlePage: InstallPageRecord = { id: "p", frame: "sections.article", sections: [] };
+  const documentPage: InstallPageRecord = { id: "d", frame: "sections.document", sections: [] };
+  const v1: InstallPins = { "sections.article": { element: "article", version: 1 }, "sections.document": { element: "document", version: 1 } };
+  const v2: InstallPins = { ...v1, "sections.article": { element: "article", version: 2 } };
+
+  it("removes a file the previous version wrote that the new one no longer ships", async () => {
+    const dir = await substrate();
+    await installPage({ page: articlePage, pins: v1, source: libSource, substrate: dir, runner: writeRunner });
+    expect(existsSync(join(dir, "lib", "utils.js"))).toBe(true);
+    const again = await installPage({ page: articlePage, pins: v2, source: libSource, substrate: dir, runner: writeRunner });
+    expect(again.findings).toEqual([]);
+    expect(existsSync(join(dir, "lib", "typography", "utils.js"))).toBe(true);
+    expect(existsSync(join(dir, "lib", "utils.js"))).toBe(false);
+    const manifest = JSON.parse(await readFile(join(dir, ".clossys", "install.json"), "utf8"));
+    expect(Object.keys(manifest.items["sections.article"].files)).toEqual(["lib/typography/utils.js"]);
+  });
+
+  it("keeps a replaced file another installed item claims, or one changed since install", async () => {
+    const dir = await substrate();
+    await installPage({ page: articlePage, pins: v1, source: libSource, substrate: dir, runner: writeRunner });
+    await installPage({ page: documentPage, pins: v1, source: libSource, substrate: dir, runner: writeRunner });
+    expect((await installPage({ page: articlePage, pins: v2, source: libSource, substrate: dir, runner: writeRunner })).findings).toEqual([]);
+    expect(existsSync(join(dir, "lib", "utils.js"))).toBe(true);
+
+    const other = await substrate();
+    await installPage({ page: articlePage, pins: v1, source: libSource, substrate: other, runner: writeRunner });
+    await writeFile(join(other, "lib", "utils.js"), "export const edited = true;\n");
+    const again = await installPage({ page: articlePage, pins: v2, source: libSource, substrate: other, runner: writeRunner });
+    expect(again.findings).toEqual([expect.objectContaining({ code: "hash-mismatch", slot: "sections.article" })]);
+    expect(await readFile(join(other, "lib", "utils.js"), "utf8")).toBe("export const edited = true;\n");
+  });
+
+  it("reconciles a substrate to new pins before any page reinstalls, leaving current and unpinned slots", async () => {
+    const dir = await substrate();
+    await installPage({ page: articlePage, pins: v1, source: libSource, substrate: dir, runner: writeRunner });
+    await mkdir(join(dir, "lib", "extra"), { recursive: true });
+    await writeFile(join(dir, "lib", "extra", "keep.js"), "export {}\n");
+    const before = JSON.parse(await readFile(join(dir, ".clossys", "install.json"), "utf8"));
+    await writeFile(join(dir, ".clossys", "install.json"), JSON.stringify({ ...before, items: { ...before.items, "sections.extra": { id: "sections.extra/extra", version: 1, itemHash: "", files: { "lib/extra/keep.js": "x" } } } }));
+    // Current pins: nothing to do.
+    expect(await reconcileInstalled(dir, { ...v1, "sections.extra": { element: "extra", version: 1 } })).toEqual([]);
+    expect(existsSync(join(dir, "lib", "utils.js"))).toBe(true);
+    // sections.article moves to v2 and sections.extra has no pin: only the article entry and its file go.
+    expect(await reconcileInstalled(dir, v2)).toEqual([]);
+    expect(existsSync(join(dir, "lib", "utils.js"))).toBe(false);
+    expect(existsSync(join(dir, "lib", "extra", "keep.js"))).toBe(true);
+    const manifest = JSON.parse(await readFile(join(dir, ".clossys", "install.json"), "utf8"));
+    expect(Object.keys(manifest.items).sort()).toEqual(["sections.extra"]);
   });
 });

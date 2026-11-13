@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { DESIGNER_SHADCN_FLAVOR, shadcnComponentsJson, shadcnComponentsJsonText } from "./flavor.mjs";
+import { DESIGNER_SHADCN_FLAVOR, DESIGNER_SHADCN_UTILS, shadcnComponentsJson, shadcnComponentsJsonText } from "./flavor.mjs";
 import * as entry from "../check-ref-verbatim.mjs";
 
 const designer = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -28,4 +28,12 @@ test("only tailwind.css varies; a bad stylesheet path is refused", () => {
 
 test("the shipped ref-verbatim entry exports the writer", () => {
   assert.equal(entry.shadcnComponentsJsonText, shadcnComponentsJsonText);
+});
+
+test("the flavor's utils module is the stock aria-nova utils item, at the utils alias", () => {
+  const stock = JSON.parse(readFileSync(join(designer, "references", "shadcn-aria", "utils@4.23.0", "utils.json"), "utf8"));
+  assert.equal(DESIGNER_SHADCN_UTILS.content, stock.files[0].content);
+  assert.deepEqual(Object.keys(DESIGNER_SHADCN_UTILS.dependencies), stock.dependencies);
+  assert.equal(`@/${DESIGNER_SHADCN_UTILS.path.replace(/\.ts$/, "")}`, DESIGNER_SHADCN_FLAVOR.aliases.utils);
+  assert.equal(readFileSync(join(designer, "ui", "src", "lib", "utils.ts"), "utf8"), DESIGNER_SHADCN_UTILS.content);
 });

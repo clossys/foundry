@@ -19,7 +19,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire, isBuiltin } from "node:module";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { shadcnComponentsJsonText } from "@clossys/designer/shadcn-flavor";
+import { DESIGNER_SHADCN_UTILS, shadcnComponentsJsonText } from "@clossys/designer/shadcn-flavor";
 import {
   installAndBind, isBlocking, needComponentSelection, PAGE_HOST_EXPORT, pageHostModule, relativeSpecifier, substrateDependencies,
   type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins, type InstallResult, type PageHostSelection, type ShadcnRunner,
@@ -99,6 +99,29 @@ async function dropModuleType(file: string): Promise<void> {
 }
 
 /**
+ * The flavor's `utils` alias module (`lib/utils.ts`), as `shadcn init` writes it, and the `cn`
+ * package it imports. Items import `cn` from `@/lib/utils` without listing it as a registry
+ * dependency, so a substrate without it fails to build (`Could not load lib/utils`), or
+ * resolves that import to whatever else an item put at `lib/utils`. A substrate written before
+ * the module existed gains it.
+ */
+async function ensureFlavorUtils(dir: string): Promise<void> {
+  const file = join(dir, DESIGNER_SHADCN_UTILS.path);
+  if (!existsSync(file)) {
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, DESIGNER_SHADCN_UTILS.content);
+  }
+  const manifestFile = join(dir, "package.json");
+  if (!existsSync(manifestFile)) return;
+  const manifest = JSON.parse(await readFile(manifestFile, "utf8"));
+  const dependencies: Record<string, string> = { ...manifest.dependencies };
+  const missing = Object.entries(DESIGNER_SHADCN_UTILS.dependencies).filter(([name]) => !Object.hasOwn(dependencies, name));
+  if (!missing.length) return;
+  for (const [name, range] of missing) dependencies[name] = range;
+  await writeFile(manifestFile, `${JSON.stringify({ ...manifest, dependencies: Object.fromEntries(Object.entries(dependencies).sort(([a], [b]) => a.localeCompare(b))) }, null, 2)}\n`);
+}
+
+/**
  * The publishing substrate: a minimal Vite + Tailwind v4 shadcn project, written once. Its
  * `main.tsx` mounts a generated page module (`clossys/pages/<id>.tsx`; `?page=<id>`, and
  * `?theme=dark` for the dark mode). Every installed item's npm dependencies are unioned into its
@@ -111,6 +134,7 @@ export async function ensureSubstrate(dir: string): Promise<void> {
   if (existsSync(flavorPath)) {
     if (await readFile(flavorPath, "utf8") !== flavor) await writeFile(flavorPath, flavor);
     await dropModuleType(join(dir, "package.json"));
+    await ensureFlavorUtils(dir);
     return;
   }
   const write = (name: string, value: unknown) => writeFile(join(dir, name), typeof value === "string" ? value : `${JSON.stringify(value, null, 2)}\n`);
@@ -156,6 +180,7 @@ export async function ensureSubstrate(dir: string): Promise<void> {
     'root.render(page ? createElement(page.default as any) : createElement("p", null, `No installed page ${id ?? ""}`));',
     "",
   ].join("\n"));
+  await ensureFlavorUtils(dir);
   // Last, so a substrate interrupted mid-write is written again.
   await writeFile(flavorPath, flavor);
 }
@@ -231,7 +256,8 @@ export function pageModule(page: BoundPage, substrate: string, options: { readon
     "function mount(name: string, keyed = false): ReactNode {",
     "  const slot = slots[name], mod = modules[name];",
     "  if (!slot || !mod) throw new Error(`clossys page: no bound slot ${name}`);",
-    '  const component = slot.export ? mod[slot.export] : mod.default ?? Object.values(mod).find(value => typeof value === "function");',
+    // With no declared export: the default, else the first component export (a capitalised function, memo or forwardRef), never a hook.
+    '  const component = slot.export ? mod[slot.export] : mod.default ?? Object.entries(mod).find(([name, value]) => /^[A-Z]/.test(name) && (typeof value === "function" || (!!value && typeof value === "object" && "$$typeof" in value)))?.[1];',
     '  if (typeof component !== "function" && typeof component !== "object") throw new Error(`clossys page: ${slot.id} exports no component ${slot.export ?? ""}`);',
     "  const props = resolve(slot.props, mod) as Record<string, unknown>;",
     "  if (slot.copyKeys) {",
