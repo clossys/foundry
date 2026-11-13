@@ -14,7 +14,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it } from "vitest";
-import { ensureSubstrate, SUBSTRATE_VITE_CONFIG } from "./install.js";
+import type { BoundPage } from "@clossys/publisher/install";
+import { ensureSubstrate, renderBoundPage, SUBSTRATE_HOST_FILE, SUBSTRATE_VITE_CONFIG } from "./install.js";
+import { placeholderImages, SPECIMEN_IMAGE_PLACEHOLDER } from "../server/specimen-images.js";
 
 const requireHere = createRequire(import.meta.url);
 const temps: string[] = [];
@@ -168,5 +170,67 @@ describe("publishing substrate CommonJS interop", () => {
     } as any);
     const { Probe } = await import(pathToFileURL(join(dir, "probe-out", "probe.mjs")).href);
     expect(renderToStaticMarkup(createElement(Probe))).toBe('<div class="p-4"></div>');
+  }, 120_000);
+
+  // The stock shadcn examples (item-example, aspect-ratio-example, message-example) hard-code
+  // remote images (`https://avatar.vercel.sh/Project`). Only a Studio specimen build swaps them for
+  // the inline placeholder its CSP (`img-src <site> data:`) allows; a consumer site keeps them.
+  const AVATAR = "https://avatar.vercel.sh/Project";
+  const avatarProbe = 'import Image from "next/image"\n\nexport function Probe() {\n  return <Image src="' + AVATAR + '" alt="Project" width={40} height={40} />\n}\n';
+
+  async function buildProbe(dir: string, source: string): Promise<string> {
+    mkdirSync(join(dir, "probe"), { recursive: true });
+    writeFileSync(join(dir, "probe", "entry.tsx"), source);
+    const { build } = await import("vite");
+    await build({
+      root: dir, configFile: join(dir, "vite.config.ts"), logLevel: "silent",
+      build: {
+        outDir: join(dir, "probe-out"), emptyOutDir: true,
+        lib: { entry: join(dir, "probe", "entry.tsx"), formats: ["es"], fileName: () => "probe.mjs" },
+        rolldownOptions: { external: [/^react(-dom)?(\/.*)?$/] },
+      },
+    } as any);
+    return join(dir, "probe-out");
+  }
+
+  it("a Studio specimen build swaps a placeholder host's image for the inline placeholder: no remote host is left", async () => {
+    const dir = temp();
+    await ensureSubstrate(dir);
+    substrateModules(dir);
+    const out = await buildProbe(dir, avatarProbe);
+    // What buildPass runs on every built specimen dist.
+    await placeholderImages(out);
+    const { Probe } = await import(pathToFileURL(join(out, "probe.mjs")).href);
+    const markup = renderToStaticMarkup(createElement(Probe));
+    expect(SPECIMEN_IMAGE_PLACEHOLDER).toMatch(/^data:image\/svg\+xml;base64,[A-Za-z0-9+/=]+$/);
+    expect(markup).toContain(`src="${SPECIMEN_IMAGE_PLACEHOLDER}"`);
+    expect(markup).not.toContain("avatar.vercel.sh");
+    expect(readFileSync(join(out, "probe.mjs"), "utf8")).not.toContain("avatar.vercel.sh");
+  }, 120_000);
+
+  /** A substrate with a host stub and one page whose frame is `probe/item.tsx`'s Probe: what the site's static render bundles. */
+  async function renderProbePage(source: string): Promise<string> {
+    const dir = temp();
+    await ensureSubstrate(dir);
+    substrateModules(dir);
+    mkdirSync(join(dir, "probe"));
+    writeFileSync(join(dir, "probe", "item.tsx"), source);
+    mkdirSync(join(dir, "clossys"), { recursive: true });
+    writeFileSync(join(dir, SUBSTRATE_HOST_FILE), "import type { ReactNode } from \"react\";\nexport function PageHost({ children }: { children?: ReactNode }) { return <>{children}</>; }\n");
+    const frame = { slot: "sections.probe", key: "sections.probe", role: "frame", id: "probe", version: 1, entry: { file: "probe/item.tsx", export: "Probe" }, props: {}, copy: {}, text: {}, assets: {} };
+    const page = { schema: "clossys.bound-page/1", id: "probe", frame, sections: [], parts: [] } as unknown as BoundPage;
+    return renderBoundPage(page, dir);
+  }
+
+  it("a real site's static per-route HTML keeps a placeholder host's image as the item wrote it", async () => {
+    const html = await renderProbePage(avatarProbe);
+    expect(html).toContain(`src="${AVATAR}"`);
+    expect(html).not.toContain("data:image/svg+xml");
+  }, 120_000);
+
+  it("the static per-route HTML builds next/image unoptimized, as the client bundle does (no /_next/image)", async () => {
+    const html = await renderProbePage('import Image from "next/image"\n\nexport function Probe() {\n  return <Image src="/photo.png" alt="Photo" width={40} height={40} />\n}\n');
+    expect(html).not.toContain("/_next/image");
+    expect(html).toContain('src="/photo.png"');
   }, 120_000);
 });

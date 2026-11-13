@@ -27,6 +27,7 @@ import { mkdir, readFile, realpath, rm, stat, writeFile } from "node:fs/promises
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { dirname, extname, join, relative, resolve, sep, isAbsolute } from "node:path";
 import { specimenSubstrate } from "./specimen-substrate.js";
+import { placeholderImages } from "./specimen-images.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 import { installedCode, itemSpecimenState, resolveSampleCopy, SLOT_SPECIMEN_STATES, type SpecimenState } from "./specimen-state.js";
 import { fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "./specimen-tree.js";
@@ -38,8 +39,8 @@ import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 import { isAbsent } from "../errors.js";
 
-/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds; 12: records without the slot state module, which component pages apply; 13: records without the generated parts and inputs modules, which the page module mounts; 14: the substrate Vite config builds next/image unoptimized, so images keep their own URL, and resolves `@/lib/utils` to the flavor module alone). */
-const SPECIMEN_FORMAT = "studio-specimens/14";
+/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds; 12: records without the slot state module, which component pages apply; 13: records without the generated parts and inputs modules, which the page module mounts; 14: the substrate Vite config builds next/image unoptimized, so images keep their own URL, and resolves `@/lib/utils` to the flavor module alone; 15: a built pass swaps placeholder-host images for the inline placeholder, specimen-images.ts). */
+const SPECIMEN_FORMAT = "studio-specimens/15";
 const SITE_PREFIX = "/__specimen-site/";
 /** The specimen frame route; the only path a specimen-site page may frame (specimenSiteCsp). */
 const SPECIMEN_FRAME_ROUTE = "/__specimen";
@@ -324,6 +325,8 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
   const built = await run(process.execPath, [vite, "build", "--base", `${SITE_PREFIX}${build.key}/`, "--outDir", build.dist, "--emptyOutDir", "--logLevel", "error"], substrate, options.signal);
   options.signal?.throwIfAborted();
   if (built.code !== 0) { findings.push(renderFailedFinding(build.key, built.code, built.output)); return { pages: new Map(), findings, built: false }; }
+  // The specimen CSP allows `data:` images, not the remote ones stock examples hard-code.
+  await placeholderImages(build.dist);
   return { pages, findings, built: true };
 }
 

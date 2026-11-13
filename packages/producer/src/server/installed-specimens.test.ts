@@ -17,6 +17,7 @@ import { slotInstallInputs } from '../specimen/slot-install-inputs.js';
 import { SPECIMEN_INPUTS_FILE, SPECIMEN_PARTS_FILE, SPECIMEN_STATE_FILE } from '../specimen/library-source.js';
 import { componentSpecimenPage, hostOnlyFinding, installedRecordSource, installedSpecimenRoutes, specimenSiteCsp, type SiteInputs } from './installed-specimens.js';
 import { SPECIMEN_FRAME_CSP, SPECIMEN_FRAME_SCRIPT_HASH } from './specimen-frame.js';
+import { placeholderImageText, SPECIMEN_IMAGE_PLACEHOLDER } from './specimen-images.js';
 import { PREVIEW_PAGE_CSP, specimenHostCsp } from './publication.js';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
@@ -394,5 +395,17 @@ describe('host-only candidates', () => {
     const finding = hostOnlyFinding('sections.producer.flow', { element: 'flow', version: 14 }, ['@clossys/designer-ui']);
     expect(finding).toMatchObject({ code: 'invalid-page', slot: 'sections.producer.flow' });
     expect(finding.detail).toContain('@clossys/designer-ui');
+  });
+});
+
+describe('specimen placeholder images', () => {
+  it('swaps every placeholder-host image, keeps github.com pages and other hosts, and never runs past its string', () => {
+    const swapped = placeholderImageText([
+      '"https://avatar.vercel.sh/Project"', "'https://images.unsplash.com/photo-1?w=900&auto=format'", '`https://avatars.githubusercontent.com/u/1?v=4`',
+      'src:"https://github.com/shadcn.png"', 'href:"https://github.com/shadcn-ui/ui"', 'href:"https://ui.shadcn.com/docs"', 'url(https://avatar.vercel.sh/x)',
+    ].join(','));
+    const P = SPECIMEN_IMAGE_PLACEHOLDER;
+    expect(swapped).toBe([`"${P}"`, `'${P}'`, `\`${P}\``, `src:"${P}"`, 'href:"https://github.com/shadcn-ui/ui"', 'href:"https://ui.shadcn.com/docs"', `url(${P})`].join(','));
+    expect(SPECIMEN_IMAGE_PLACEHOLDER).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 });

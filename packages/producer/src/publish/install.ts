@@ -145,6 +145,19 @@ export const NEXT_IMAGE_VITE_DEFINE = [
 ].join("\n");
 
 /**
+ * NEXT_IMAGE_VITE_DEFINE's define for the static per-route render (`renderBoundPage`), which
+ * bundles next/image with esbuild rather than Vite: the same unoptimized image config, read from
+ * the substrate's installed `next`, so the static HTML keeps each image's own URL as the client
+ * bundle does. Without Next there is nothing to configure.
+ */
+export function nextImageDefine(substrate: string): Record<string, string> {
+  try {
+    const { imageConfigDefault } = createRequire(join(substrate, "package.json"))("next/dist/shared/lib/image-config.js") as { imageConfigDefault?: object };
+    return imageConfigDefault ? { "process.env.__NEXT_IMAGE_OPTS": JSON.stringify({ ...imageConfigDefault, unoptimized: true }) } : {};
+  } catch { return {}; }
+}
+
+/**
  * The substrate's `resolve.alias`, `here` being the expression for the substrate directory. The
  * flavor's utils alias (`@/lib/utils`, components.json `aliases.utils`) resolves to exactly the
  * module the flavor writes (DESIGNER_SHADCN_UTILS, `lib/utils.ts`), ahead of the `@` prefix
@@ -480,6 +493,7 @@ export async function renderBoundPage(page: BoundPage, substrate: string): Promi
   await writeFile(file, pageModule(page, substrate));
   const result = await esbuild.build({
     entryPoints: [file], absWorkingDir: substrate, bundle: true, write: false, format: "esm", platform: "node", jsx: "automatic", logLevel: "silent",
+    define: nextImageDefine(substrate),
     // The host imports Publisher and Designer; a substrate outside the workspace resolves them from here.
     nodePaths: hostNodePaths(),
     plugins: [{ name: "host-react", setup(build) { build.onResolve({ filter: /^react(-dom)?(\/.*)?$/ }, args => ({ path: requireHere.resolve(args.path), external: true })); } }],
