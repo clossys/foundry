@@ -151,6 +151,41 @@ describe("canonical specimen records through the common slot reader", () => {
     expect(await libraryRecordStore([root]).load("sample-card", 2)).toMatchObject({ version: 2 });
   });
 
+  it("previews a candidate with no meta.preview through the slot's fixture: the pinned candidate's, else the newest one's", async () => {
+    const slot = card(), item = JSON.parse(readFileSync(candidate(), "utf8"));
+    const pinned = item.meta.preview;
+    const { preview: _none, ...bare } = item.meta;
+    const write = (version: number, meta: unknown) => writeFileSync(join(candidatesDir(slot.dir), `sample-card-v${version}.json`), jsonBytes({ ...item, meta }));
+    write(2, bare);
+    const newer = { ...pinned, width: 720, entry: item.files[0].path };
+    write(3, { ...bare, preview: newer });
+    write(4, bare);
+    const { inputs: _inputs, ...declared } = pinned;
+    // The pinned v1 is the slot's fixture, though v3 is a newer fixture-bearing candidate.
+    for (const version of [2, 4]) {
+      const preview = (await libraryRecordStore([root]).load("sample-card", version))!.preview;
+      expect(preview).toEqual({ ...declared, copy: WRITER_COPY, fixtureFrom: "components.card/sample-card-v1.json" });
+    }
+    // A candidate's own fixture wins and names no source.
+    expect((await libraryRecordStore([root]).load("sample-card", 3))!.preview).not.toHaveProperty("fixtureFrom");
+    expect((await libraryRecordStore([root]).load("sample-card", 3))!.preview).toMatchObject({ width: 720 });
+    // A pinned candidate with no preview of its own keeps its own (empty) preview: a pin's specimen never borrows.
+    const v4 = join(candidatesDir(slot.dir), "sample-card-v4.json");
+    writeFileSync(pinFile(slot.dir), jsonBytes({ ...slot.pin, candidate: "sample-card-v4.json", sha256: sha256Hex(readFileSync(v4)) }));
+    expect((await libraryRecordStore([root]).load("sample-card"))!.preview).toEqual({ copy: {} });
+    // With no pin, the newest fixture-bearing candidate supplies it, the same on every load.
+    rmSync(pinFile(slot.dir));
+    const loads = await Promise.all([1, 2, 3].map(() => libraryRecordStore([root]).load("sample-card", 2)));
+    for (const row of loads) expect(row!.preview).toEqual({ ...declared, width: 720, entry: item.files[0].path, copy: WRITER_COPY, fixtureFrom: "components.card/sample-card-v3.json" });
+    write(1, bare);
+    // A candidate of another module shape (the only fixture names a file it does not ship) keeps no fixture.
+    writeFileSync(join(candidatesDir(slot.dir), "sample-card-v5.json"), jsonBytes({ ...item, files: item.files.map((file: { path: string }) => ({ ...file, path: `other-${file.path}` })), meta: bare }));
+    expect((await libraryRecordStore([root]).load("sample-card", 5))!.preview).toEqual({ copy: {} });
+    // A slot with no fixture-bearing candidate previews exactly as before: no props, no source.
+    write(3, bare);
+    expect((await libraryRecordStore([root]).load("sample-card", 2))!.preview).toEqual({ copy: {} });
+  });
+
   it("does not fall back to a newer candidate when the pin is missing or invalid", async () => {
     const slot = card();
     rmSync(pinFile(slot.dir));

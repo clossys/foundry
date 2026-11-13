@@ -201,10 +201,12 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
       if (issues.length) throw new RecordError(`candidate ${slot}/${candidate.name}`, issues);
       const item = JSON.parse(read.bytes);
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element) || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== slot)) throw new Error(`candidate ${slot}/${candidate.name}: element identity differs from the candidate name or slot`);
-      const specimen = specimenInputs(root, `${slot}/${candidate.name}`, item, true, writer(root));
+      const fixture = slotFixture(root, entry, element, candidate.name, item);
+      const specimen = specimenInputs(root, `${slot}/${candidate.name}`, fixture.item, true, writer(root));
       const row: SpecimenElementVersion = {
         id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
-        files: [{ path: `${element}.json`, content: read.bytes }], preview: specimen.preview, contentHash: read.sha256,
+        files: [{ path: `${element}.json`, content: read.bytes }],
+        preview: fixture.from ? { ...specimen.preview, fixtureFrom: fixture.from } : specimen.preview, contentHash: read.sha256,
       };
       if (options.slotStates === false) return row;
       return withSlotState(slot, item, withSlotInputs(`${slot}/${candidate.name}`, specimen, withDependencyParts(row)));
@@ -214,6 +216,38 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
 }
 
 type CandidateItem = { type?: unknown; files?: { path?: unknown; type?: unknown; target?: unknown; content?: unknown }[]; meta?: { preview?: unknown; element?: { reads?: { copyKeys?: unknown } } } };
+
+/** Whether a fixture's named file is one of the item's files and, when it names an export, that file exports it. */
+function fixtureFits(item: CandidateItem, preview: Record<string, unknown>): boolean {
+  const fixtures = preview.fixtures && typeof preview.fixtures === "object" ? preview.fixtures as Record<string, unknown> : undefined;
+  const file = typeof fixtures?.file === "string" ? fixtures.file : typeof preview.entry === "string" ? preview.entry : undefined;
+  if (file === undefined) return true;
+  const source = item.files?.find(row => row.path === file)?.content;
+  if (typeof source !== "string") return false;
+  const exported = typeof fixtures?.export === "string" ? fixtures.export : typeof preview.export === "string" ? preview.export : undefined;
+  return exported === undefined || moduleExports(source).has(exported);
+}
+
+/**
+ * A preview fixture is the props contract of the slot, not of one candidate. An option (a candidate
+ * other than the pinned one) with no `meta.preview` of its own previews with the fixture of the nearest fixture-bearing candidate of
+ * the same slot and element: the pinned candidate when it carries one, else the newest version that
+ * does. A fixture applies only to a candidate that ships the file it names and exports the component
+ * it mounts; a candidate of another module shape (a replaced bundle) keeps no fixture. `from` names
+ * the supplying candidate (`<slot>/<candidate file>`). With no such candidate the item is unchanged.
+ * The pinned candidate always previews with its own preview, so a pin's specimen never changes here.
+ * The candidate's own bytes are never changed.
+ */
+function slotFixture(root: string, entry: SlotEntry, element: string, name: string, item: CandidateItem): { readonly item: CandidateItem; readonly from?: string } {
+  const pinned = entry.pin?.candidate;
+  if (item.meta?.preview !== undefined || name === pinned) return { item };
+  const order = versions(entry, element).sort((a, b) => Number(b.name === pinned) - Number(a.name === pinned) || b.version - a.version);
+  for (const donor of order) {
+    const preview = (JSON.parse(readCandidate(root, "designer", entry.id, donor.name).bytes) as CandidateItem).meta?.preview;
+    if (preview && typeof preview === "object" && !Array.isArray(preview) && fixtureFits(item, preview as Record<string, unknown>)) return { item: { ...item, meta: { ...item.meta, preview } }, from: `${entry.id}/${donor.name}` };
+  }
+  return { item };
+}
 
 /** One declared copy slot (`meta.element.reads.copyKeys` entry); a bare string there is a key the element reads through host data. */
 interface CopySlotEntry { readonly slot: string; readonly prop: string; readonly previewKey: string }
@@ -317,7 +351,11 @@ function specimenInputs(root: string, where: string, item: CandidateItem, mounti
  * candidate's specimen frame asks only for one the specimen route can serve.
  */
 export function specimenPreviewIssue(root: string, slot: string, name: string, bytes: string, writerSource: () => Readonly<Record<string, string>> = () => pinnedWriterCopy(root)): string | undefined {
-  try { specimenInputs(root, `${slot}/${name}`, JSON.parse(bytes) as CandidateItem, true, writerSource); return undefined; }
+  try {
+    const item = JSON.parse(bytes) as CandidateItem & { name?: unknown }, entry = readSlotEntry(root, "designer", slot);
+    const fixture = entry && typeof item.name === "string" ? slotFixture(root, entry, item.name, name, item) : { item };
+    specimenInputs(root, `${slot}/${name}`, fixture.item, true, writerSource); return undefined;
+  }
   catch (error) { return error instanceof Error ? error.message : String(error); }
 }
 
