@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "567164f4c6d63fb28da3a8e8b6598d403ba2288795075dc3145a6238d759b534",
+  "revision": "1abe4e5c69c55ea7fc2d4badaed8ece76ec1749848e8ff10bb9fbf8446c50bb5",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -3375,7 +3375,7 @@
     },
     {
       "id": "studio.count.candidates",
-      "text": "{count, plural, one {# candidate} other {# candidates}}",
+      "text": "Candidates: {count}",
       "context": "studio.count.candidates",
       "status": "draft"
     },
@@ -3393,13 +3393,13 @@
     },
     {
       "id": "studio.count.findings",
-      "text": "{count, plural, one {# finding} other {# findings}}",
+      "text": "Findings: {count}",
       "context": "studio.count.findings",
       "status": "draft"
     },
     {
       "id": "studio.error.slot-unreadable",
-      "text": "This slot could not be read. Run clossys check --slots to see why.",
+      "text": "This slot could not be read. Ask the owning agent to check it.",
       "context": "studio.error.slot-unreadable",
       "status": "draft"
     },
@@ -3411,7 +3411,7 @@
     },
     {
       "id": "studio.error.producer-offline",
-      "text": "Studio cannot reach Producer. Restart clossys produce and reload.",
+      "text": "Studio cannot reach Producer. Restart Producer and reload.",
       "context": "studio.error.producer-offline",
       "status": "draft"
     },
@@ -3519,7 +3519,7 @@
     },
     {
       "id": "studio.empty.no-pin",
-      "text": "No pin yet. The owner pins one candidate after review.",
+      "text": "No pin yet. You pin one candidate after review.",
       "context": "studio.empty.no-pin",
       "status": "draft"
     },
