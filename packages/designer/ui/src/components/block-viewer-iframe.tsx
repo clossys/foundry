@@ -1,6 +1,8 @@
 // Studio specimen window: a stock shadcn card (components.card) holding a projected specimen route in an
-// unstyled iframe at the card's width and a fixed CSS-pixel height.
-import { Card } from "@/components/ui/card"
+// unstyled iframe at the card's width and a fixed CSS-pixel height. In an opaque-origin document (a
+// served preview sandboxes specimens without allow-same-origin) every projected route refuses to be
+// framed (frame-ancestors 'self'), so the window renders a static card with its title instead.
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 
 type Viewport = 375 | 768 | 1280
 
@@ -32,9 +34,25 @@ export interface BlockViewerIframeProps {
   interactive?: boolean
 }
 
+/** True in a document whose origin is opaque, where a nested projected route is always refused. */
+export function isOpaqueOrigin(): boolean {
+  return typeof window !== "undefined" && window.origin === "null"
+}
+
 /** A projected specimen route in a stock card window. */
 export function BlockViewerIframe({ src, title, viewport, iframeKey, iframeHeight = 930, interactive = false }: BlockViewerIframeProps) {
   if (!Number.isFinite(iframeHeight) || iframeHeight <= 0 || iframeHeight > 10000) throw new Error("Invalid specimen height")
+  const opaque = isOpaqueOrigin()
+  if (opaque) {
+    specimenSource(src, viewport)
+    return (
+      <Card size="sm" data-specimen-viewport={viewport} data-specimen-static="">
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+        </CardHeader>
+      </Card>
+    )
+  }
   return (
     <Card size="sm" data-specimen-viewport={viewport}>
       <iframe key={iframeKey} src={specimenSource(src, viewport)} title={title} loading="lazy" inert={!interactive} width="100%" height={iframeHeight} />
