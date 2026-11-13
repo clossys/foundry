@@ -85,9 +85,19 @@ function suiteSlot(consumer: string, slot: string, name: string): SuiteSlot | nu
 }
 
 const key = (record: string, locale: string) => `${record}\u0000${locale}`;
+/** A narrative's block text, depth first, as the Writer suite reads it (`blockTexts` in its slot checks). */
+const blockTexts = (blocks: unknown): string[] => !Array.isArray(blocks) ? [] : blocks.flatMap(block =>
+  block && typeof block === "object" ? [...(typeof block.text === "string" ? [block.text] : []), ...blockTexts(block.children)] : []);
+/**
+ * A record's text: a string's `text`, or for a narrative (JSON block) record its title and block text,
+ * the same text the suite's findings are about. Undefined when the record holds no text.
+ */
 const textOf = (slot: SuiteSlot, record: string, locale: string): string | undefined => {
   const row = slot.rows.find(each => each.locale === locale && String(each.record.id) === record);
-  return typeof row?.record.text === "string" ? row.record.text : undefined;
+  if (!row) return undefined;
+  if (typeof row.record.text === "string") return row.record.text;
+  const texts = [...(typeof row.record.title === "string" ? [row.record.title] : []), ...blockTexts(row.record.blocks)];
+  return texts.length ? texts.join(" ") : undefined;
 };
 const wording = (finding: SuiteFinding) => WORDING_CHECKS.includes(finding.check) && finding.record !== undefined && finding.locale !== undefined;
 /** The owner already decided this slot's copy: picked for it alone, or an agent pick the owner confirmed. */
