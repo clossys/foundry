@@ -17,10 +17,16 @@ export type SpecimenState =
   | { readonly state: "visible" }
   | { readonly state: "provider"; readonly provider: { readonly module: string; readonly export: string } };
 
+const REACT_FLOW: SpecimenState = { state: "provider", provider: { module: "@xyflow/react", export: "ReactFlowProvider" } };
+
 export const SLOT_SPECIMEN_STATES: Readonly<Record<string, SpecimenState>> = {
   "components.toast": { state: "open", opener: { module: "sonner", export: "toast" }, sample: "Changes saved" },
   "components.skip-nav": { state: "visible" },
   "components.studio.sidebar-static-row": { state: "provider", provider: { module: "@/components/ui/sidebar", export: "SidebarProvider" } },
+  // React Flow parts read the flow store (`Handle`, `Background`), which throws outside `ReactFlowProvider`.
+  "components.flow.canvas": REACT_FLOW,
+  "components.flow.base-handle": REACT_FLOW,
+  "components.flow.labeled-handle": REACT_FLOW,
 };
 
 export function specimenStateOf(slot: string): SpecimenState | undefined {

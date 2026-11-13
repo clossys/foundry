@@ -30,15 +30,15 @@ import { specimenSubstrate } from "./specimen-substrate.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 import { resolveSampleCopy, specimenStateOf, type SpecimenState } from "./specimen-state.js";
 import { fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "./specimen-tree.js";
-import { bindPage, installPage, isBlocking, substrateDependencies, type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
+import { bindPage, installPage, isBlocking, reconcileInstalled, substrateDependencies, type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 import { isAbsent } from "../errors.js";
 
-/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`). */
-const SPECIMEN_FORMAT = "studio-specimens/10";
+/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds). */
+const SPECIMEN_FORMAT = "studio-specimens/11";
 const SITE_PREFIX = "/__specimen-site/";
 /** The specimen frame route; the only path a specimen-site page may frame (specimenSiteCsp). */
 const SPECIMEN_FRAME_ROUTE = "/__specimen";
@@ -345,8 +345,17 @@ export async function savedSite(manifest: string): Promise<{ builds: SpecimenBui
 const layerOf = (slot: string) => slot.split(".")[0]!;
 
 /** What a site build runs; tests replace the substrate and the pass. */
-export interface SiteBuildSteps { readonly prepare: (substrate: string) => Promise<unknown>; readonly pass: (options: PassOptions) => Promise<PassResult> }
-const SITE_STEPS: SiteBuildSteps = { prepare: ensureSubstrate, pass: buildPass };
+export interface SiteBuildSteps { readonly prepare: (substrate: string, pins: InstallPins) => Promise<readonly InstallFinding[] | void>; readonly pass: (options: PassOptions) => Promise<PassResult> }
+/**
+ * The substrate, brought to the pinned selection before any layer builds: a slot installed at
+ * another version leaves no file behind for an earlier layer's bundle to resolve (sections.article
+ * v1's lib/utils.js, built into the components layer ahead of the sections pass).
+ */
+async function prepareSubstrate(substrate: string, pins: InstallPins): Promise<readonly InstallFinding[]> {
+  await ensureSubstrate(substrate);
+  return reconcileInstalled(substrate, pins);
+}
+const SITE_STEPS: SiteBuildSteps = { prepare: prepareSubstrate, pass: buildPass };
 
 /**
  * The pinned selection, one build per layer (themes, assets, components, sections, frames), each
@@ -367,7 +376,7 @@ export async function buildSite(inputs: SiteInputs, steps: SiteBuildSteps = SITE
     let result = await savedSite(manifest);
     if (!result) {
       signal?.throwIfAborted();
-      if (!prepared) { await steps.prepare(substrate); prepared = true; }
+      if (!prepared) { findings.push(...(await steps.prepare(substrate, pins) ?? [])); prepared = true; }
       const slots = Object.keys(pins).filter(slot => layerOf(slot) === layer);
       const passed = await steps.pass({ library, substrate, pins, slots, records, copy, pinnedCopy, hostOnly: inputs.hostOnly, build: layerBuild, ...(signal ? { signal } : {}) });
       // A pass stopped by shutdown is never saved: its findings name the stop, not the selection.

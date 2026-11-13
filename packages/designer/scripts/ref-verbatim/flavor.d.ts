@@ -6,6 +6,8 @@ export type ShadcnComponentsJson = {
   iconLibrary: string; rtl: boolean; aliases: Record<string, string>;
   menuColor: string; menuAccent: string; registries: Record<string, unknown>;
 };
+/** The `utils` alias module shadcn init writes in this flavor (the stock aria-nova `utils` item) and the npm packages it imports. */
+export declare const DESIGNER_SHADCN_UTILS: Readonly<{ path: string; content: string; dependencies: Readonly<Record<string, string>> }>;
 /** A project's components.json: the Designer's flavor with `tailwind.css` set to that project's stylesheet. */
 export declare function shadcnComponentsJson(options: { css: string }): ShadcnComponentsJson;
 export declare function shadcnComponentsJsonText(options: { css: string }): string;

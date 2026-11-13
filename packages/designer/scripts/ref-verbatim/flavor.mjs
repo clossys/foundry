@@ -27,6 +27,18 @@ export const DESIGNER_SHADCN_FLAVOR = Object.freeze({
   registries: Object.freeze({}),
 });
 
+/**
+ * The `utils` alias module (`aliases.utils`) `shadcn init` writes in this flavor: the stock
+ * aria-nova `utils` item (references/shadcn-aria/utils@4.23.0), `cn` from the `cn` package.
+ * Partner items (reactflow's base-node, base-handle, labeled-handle, node-status) import `cn`
+ * from `@/lib/utils` and list no registry dependency for it: every project in this flavor has it.
+ */
+export const DESIGNER_SHADCN_UTILS = Object.freeze({
+  path: "lib/utils.ts",
+  content: 'export { cn } from "cn"\n',
+  dependencies: Object.freeze({ cn: "^0.5.2" }),
+});
+
 /** A project's components.json: the Designer's flavor, with `tailwind.css` set to that project's stylesheet. */
 export function shadcnComponentsJson({ css }) {
   if (typeof css !== "string" || !css || css.startsWith("/") || css.includes("\\")) {
