@@ -15,7 +15,7 @@ import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import type { BoundPage } from '@clossys/publisher/install';
 import { pageModule } from '../publish/install.js';
-import { commonJsEntry, itemSpecimenPage, SPECIMEN_NOT_RENDERABLE_KEY } from './installed-specimens.js';
+import { commonJsEntry, itemSpecimenPage, leafPageFiles, SPECIMEN_NOT_RENDERABLE_KEY } from './installed-specimens.js';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const designer = join(repo, 'clossys/agents/designer');
@@ -89,21 +89,42 @@ describe('a candidate whose entry module is not a component', () => {
   });
 });
 
+describe('the leaf page files of every layer', () => {
+  const base = { page: 'p', entry: { file: 'lib/typography/index.js' }, item: undefined, bound: () => 'BOUND', specifier: '../../lib/typography/index', text: 'T' } as const;
+
+  it('a CommonJS entry is one not-renderable page in a component slot too, with no bound page module', () => {
+    for (const slot of ['components.semantic-content', 'sections.article', 'frames.app']) {
+      const files = leafPageFiles({ ...base, slot, commonJs: true });
+      expect(Object.keys(files), slot).toEqual(['p.tsx']);
+      expect(files['p.tsx'], slot).toContain('state="not-renderable"');
+    }
+  });
+
+  it('a component entry keeps its bound page module and its page: the specimen state for a component, the export guard otherwise', () => {
+    const component = leafPageFiles({ ...base, slot: 'components.button', entry: { file: 'components/ui/button.tsx', export: 'Button' }, commonJs: false });
+    expect(Object.keys(component).sort()).toEqual(['p--item.tsx', 'p.tsx']);
+    expect(component['p--item.tsx']).toBe('BOUND');
+    expect(component['p.tsx']).toContain('<ComponentSpecimen state={"rest"}><Item /></ComponentSpecimen>');
+    const section = leafPageFiles({ ...base, slot: 'sections.article', entry: { file: 'components/article.tsx', export: 'Article' }, commonJs: false });
+    expect(section['p.tsx']).toContain('renderable ? <Item />');
+  });
+});
+
 describe('the recorded candidates', () => {
   /** Every sections candidate's entry file content: its first code file (the one the installer mounts when none is declared). */
-  const sections = readdirSync(designer).filter(slot => slot.startsWith('sections.') && existsSync(join(designer, slot, 'candidates'))).sort();
+  const sections = readdirSync(designer).filter(slot => (slot.startsWith('sections.') || slot.startsWith('components.')) && existsSync(join(designer, slot, 'candidates'))).sort();
   const entryOf = (slot: string, candidate: string) => {
     const item = JSON.parse(readFileSync(join(designer, slot, 'candidates', candidate), 'utf8')) as { files: { path: string; content?: string }[] };
     return item.files.find(file => /\.(?:[cm]?[jt]sx?)$/.test(file.path))?.content ?? '';
   };
 
-  it('the vendored typography plugin candidates are CommonJS entries', () => {
-    for (const [slot, candidate] of [['sections.article', 'article-v1.json'], ['sections.article', 'article-v2.json'], ['sections.sectioned-document', 'sectioned-document-v1.json'], ['sections.sectioned-document', 'sectioned-document-v2.json'], ['sections.legal-prose', 'legal-prose-v1.json']] as const) {
+  it('the vendored typography plugin candidates (sections and components) are CommonJS entries', () => {
+    for (const [slot, candidate] of [['sections.article', 'article-v1.json'], ['sections.article', 'article-v2.json'], ['sections.sectioned-document', 'sectioned-document-v1.json'], ['sections.sectioned-document', 'sectioned-document-v2.json'], ['sections.legal-prose', 'legal-prose-v1.json'], ['components.semantic-content', 'semantic-content-v2.json']] as const) {
       expect.soft(commonJsEntry(entryOf(slot, candidate)), `${slot}/${candidate}`).toBe(true);
     }
   });
 
-  it('no pinned sections candidate is a CommonJS entry', () => {
+  it('no pinned sections or components candidate is a CommonJS entry', () => {
     for (const slot of sections) {
       if (!existsSync(join(designer, slot, 'pin.json'))) continue;
       const pinned = JSON.parse(readFileSync(join(designer, slot, 'pin.json'), 'utf8')).candidate as string;

@@ -40,8 +40,8 @@ import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pa
 import { firstComponentSource } from "../publish/component-export.js";
 import { isAbsent } from "../errors.js";
 
-/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds; 12: records without the slot state module, which component pages apply; 13: records without the generated parts and inputs modules, which the page module mounts; 14: the substrate Vite config builds next/image unoptimized, so images keep their own URL, and resolves `@/lib/utils` to the flavor module alone; 15: a built pass swaps placeholder-host images for the inline placeholder, specimen-images.ts; 16: section and frame pages render the `not-renderable` state for an entry that is not a component, itemSpecimenPage). */
-const SPECIMEN_FORMAT = "studio-specimens/16";
+/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds; 12: records without the slot state module, which component pages apply; 13: records without the generated parts and inputs modules, which the page module mounts; 14: the substrate Vite config builds next/image unoptimized, so images keep their own URL, and resolves `@/lib/utils` to the flavor module alone; 15: a built pass swaps placeholder-host images for the inline placeholder, specimen-images.ts; 16: section and frame pages render the `not-renderable` state for an entry that is not a component, itemSpecimenPage; 17: component pages too, leafPageFiles). */
+const SPECIMEN_FORMAT = "studio-specimens/17";
 const SITE_PREFIX = "/__specimen-site/";
 /** The specimen frame route; the only path a specimen-site page may frame (specimenSiteCsp). */
 const SPECIMEN_FRAME_ROUTE = "/__specimen";
@@ -159,6 +159,25 @@ export function commonJsEntry(source: string): boolean {
 function pageSpecifier(from: string, file: string): string {
   const path = relative(from, file).split(sep).join("/").replace(/\.[cm]?[jt]sx?$/, "");
   return path.startsWith(".") ? path : `./${path}`;
+}
+
+/**
+ * The generated files (name in the pages directory -> source) of one non-theme leaf page `page`.
+ * An entry that is not a component (commonJsEntry, any layer: sections.article v1 and
+ * components.semantic-content v2 vendor the @tailwindcss/typography plugin source) is one
+ * `not-renderable` page and no bound page module. Otherwise `<page>--item.tsx` is the bound page
+ * module (`bound`) and `<page>.tsx` places it: a component in its specimen state
+ * (componentSpecimenPage), a section or frame through itemSpecimenPage's runtime export guard.
+ */
+export function leafPageFiles(options: { readonly page: string; readonly slot: string; readonly entry: { readonly file: string; readonly export?: string | undefined }; readonly commonJs: boolean; readonly item: unknown; readonly bound: () => string; readonly specifier: string; readonly text: string }): Record<string, string> {
+  const { page, slot, entry, commonJs, item, bound, specifier, text } = options;
+  const module = `./${page}--item`;
+  if (commonJs) return { [`${page}.tsx`]: itemSpecimenPage(module, entry, specifier, { commonJs, text }) };
+  return {
+    [`${page}--item.tsx`]: bound(),
+    // A component is a small part of a page: centre it on the page ground instead of pinning it to the top-left corner.
+    [`${page}.tsx`]: slot.startsWith("components.") ? componentSpecimenPage(module, slot, item, entry) : itemSpecimenPage(module, entry, specifier, { commonJs, text }),
+  };
 }
 
 /**
@@ -359,22 +378,14 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
       }
     }
     dependencies = { ...dependencies, ...substrateDependencies(result.slots) };
-    if (slot.startsWith("components.")) {
-      // A component is a small part of a page: centre it on the page ground instead of pinning it to the top-left corner.
-      await writeFile(join(pagesDir, `${page}--item.tsx`), pageModule(result.page, substrate, { host: false }));
-      const mounted = result.slots.find(row => row.slot === slot && row.mounted)?.record;
-      let item: unknown;
-      try { item = mounted ? JSON.parse(mounted.payload.raw) : undefined; } catch { item = undefined; }
-      await writeFile(join(pagesDir, `${page}.tsx`), componentSpecimenPage(`./${page}--item`, slot, item, result.page.frame.entry));
-    } else {
-      // A section or frame whose entry module is not a component (the vendored @tailwindcss/typography
-      // plugin source of sections.article v1) renders the `not-renderable` state instead of mounting it.
-      const entry = result.page.frame.entry;
-      const commonJs = commonJsEntry(await readFile(join(substrate, entry.file), "utf8").catch(() => ""));
-      if (commonJs && copy[SPECIMEN_NOT_RENDERABLE_KEY] === undefined) sampleText(copy, SPECIMEN_NOT_RENDERABLE_KEY, slot, findings);
-      if (!commonJs) await writeFile(join(pagesDir, `${page}--item.tsx`), pageModule(result.page, substrate, { host: false }));
-      await writeFile(join(pagesDir, `${page}.tsx`), itemSpecimenPage(`./${page}--item`, entry, pageSpecifier(pagesDir, join(substrate, entry.file)), { commonJs, text: copy[SPECIMEN_NOT_RENDERABLE_KEY] ?? missingCopy(SPECIMEN_NOT_RENDERABLE_KEY) }));
-    }
+    const entry = result.page.frame.entry;
+    const commonJs = commonJsEntry(await readFile(join(substrate, entry.file), "utf8").catch(() => ""));
+    if (commonJs && copy[SPECIMEN_NOT_RENDERABLE_KEY] === undefined) sampleText(copy, SPECIMEN_NOT_RENDERABLE_KEY, slot, findings);
+    const mounted = result.slots.find(row => row.slot === slot && row.mounted)?.record;
+    let item: unknown;
+    try { item = mounted ? JSON.parse(mounted.payload.raw) : undefined; } catch { item = undefined; }
+    const files = leafPageFiles({ page, slot, entry, commonJs, item, bound: () => pageModule(result.page!, substrate, { host: false }), specifier: pageSpecifier(pagesDir, join(substrate, entry.file)), text: copy[SPECIMEN_NOT_RENDERABLE_KEY] ?? missingCopy(SPECIMEN_NOT_RENDERABLE_KEY) });
+    for (const [name, content] of Object.entries(files)) await writeFile(join(pagesDir, name), content);
     pages.set(pageKey(slot, pin.element, pin.version), { page, element: pin.element, version: pin.version, build: build.key });
   }
   if (!pages.size) return { pages, findings, built: false };
