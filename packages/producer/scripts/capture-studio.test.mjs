@@ -430,9 +430,10 @@ test("a frame or build change, --full or an explicit filter shoots every selecte
   assert.equal(selectCapture({ routes: routes.slice(0, 1), inputs, last, explicit: true }).mode, "explicit");
   write("clossys/agents/designer/frames.shell/candidates/frames.shell-v2.json", "{}");
   const framed = routeScope.routeInputs({ repositoryRoot: root, map });
-  assert.deepEqual([selectCapture({ routes, inputs: framed, last }).reason, selectCapture({ routes, inputs: framed, last }).capture.length], ["frame changed", 7]);
+  const reframed = selectCapture({ routes, inputs: framed, last });
+  assert.deepEqual([reframed.mode, reframed.reason, reframed.capture.length, reframed.reuse.length], ["full", "frame changed", 7, 0]);
   write("packages/producer/studio/app/page.tsx", "export default () => 1;\n");
   const built = selectCapture({ routes, inputs: routeScope.routeInputs({ repositoryRoot: root, map }), last: greenState(framed, routes) });
-  assert.deepEqual([built.reason, built.capture.length, built.reuse.length], ["build changed", 7, 0]);
+  assert.deepEqual([built.mode, built.reason, built.capture.length, built.reuse.length], ["full", "build changed", 7, 0]);
   assert.equal(parseArgs(["--full", "--out", "/tmp/x"]).full, true);
 });
