@@ -7,14 +7,13 @@ import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import type { BoundPage } from '@clossys/publisher/install';
-import { installedPath } from '@clossys/publisher/specimen';
 import { pageModule } from '../publish/install.js';
 import { firstComponentSource } from '../publish/component-export.js';
-import { resolveSampleCopy, specimenStateOf } from './specimen-state.js';
+import { installedCode, resolveSampleCopy, SLOT_SPECIMEN_STATES, specimenStateOf, type SpecimenState } from './specimen-state.js';
 import { createRequire } from 'node:module';
 import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';
 import { createServer, request } from 'node:http';
-import { hostOnlyFinding, installedSpecimenRoutes, specimenSiteCsp, type SiteInputs } from './installed-specimens.js';
+import { componentSpecimenPage, hostOnlyFinding, installedSpecimenRoutes, specimenSiteCsp, type SiteInputs } from './installed-specimens.js';
 import { SPECIMEN_FRAME_CSP, SPECIMEN_FRAME_SCRIPT_HASH } from './specimen-frame.js';
 import { PREVIEW_PAGE_CSP, specimenHostCsp } from './publication.js';
 
@@ -98,31 +97,33 @@ describe('specimen element trees', () => {
 });
 
 /**
- * One item's page module rendered to static markup, mounted as componentPage mounts it: inside its
- * slot's declared provider, or bare with `bare`. `entry.export` unset takes the first component
- * export. `files` are the substrate: `@/<path>` resolves to a file there (`.tsx`, `.ts`), and an
- * `@/` module the substrate lacks is a stand-in whose parts render their children and whose
- * hooks return `false`, so only the item's own context dependency is under test.
+ * One item rendered to static markup through the generated specimen pages: its bound page module
+ * (pageModule) inside the component leaf page Studio writes for it (componentSpecimenPage, so in
+ * the state that candidate mounts in), or the page module alone with `bare`. `entry.export` unset
+ * takes the first component export. `files` are the substrate: `@/<path>` resolves to a file there
+ * (`.tsx`, `.ts`); an `@/` module the substrate lacks is a stand-in whose parts render their
+ * children and whose hooks return `false` (listed in `standIns`), so only the item's own context
+ * dependency is under test. `providerTag` is the start of the tag the slot's provider renders alone (its name and first
+ * attribute, `<div data-slot="sidebar-wrapper"`), whatever class a fixture gives it.
  */
-async function renderMounted(slot: string, entry: { readonly file: string; readonly export?: string }, files: Readonly<Record<string, string>>, options: { readonly props?: Record<string, unknown>; readonly bare?: boolean } = {}): Promise<string> {
+async function renderMounted(slot: string, entry: { readonly file: string; readonly export?: string }, files: Readonly<Record<string, string>>, options: { readonly props?: Record<string, unknown>; readonly bare?: boolean; readonly item?: unknown } = {}): Promise<{ markup: string; standIns: string[]; providerTag: string }> {
   const substrate = mkdtempSync(join(tmpdir(), 'specimen-mount-'));
   try {
     for (const [path, content] of Object.entries(files)) { mkdirSync(join(substrate, dirname(path)), { recursive: true }); writeFileSync(join(substrate, path), content); }
     mkdirSync(join(substrate, 'clossys/pages'), { recursive: true });
     const frame = { slot, key: slot, role: 'frame', id: `${slot}/item`, version: 1, entry, props: options.props ?? {}, copy: {}, text: {}, assets: {} } as const;
     const page = { schema: 'clossys.bound-page/1', id: 'specimen-mount', frame, sections: [], parts: [] } as unknown as BoundPage;
-    writeFileSync(join(substrate, 'clossys/pages/item.tsx'), pageModule(page, substrate, { host: false }));
-    // The provider comes from the same bundle as the item, so a substrate provider shares its context.
-    const state = options.bare ? undefined : specimenStateOf(slot);
-    const provider = state?.state === 'provider' ? state.provider : undefined;
+    writeFileSync(join(substrate, 'clossys/pages/item--item.tsx'), pageModule(page, substrate, { host: false }));
+    writeFileSync(join(substrate, 'clossys/pages/item.tsx'), options.bare ? 'export { default } from "./item--item";\n' : componentSpecimenPage('./item--item', slot, options.item, entry));
+    const state = specimenStateOf(slot), provider = state?.state === 'provider' ? state.provider : undefined;
     writeFileSync(join(substrate, 'clossys/pages/specimen.tsx'), [
-      'import { createElement } from "react";',
-      'import Item from "./item";',
-      ...(provider ? [`import { ${provider.export} as Provider } from ${JSON.stringify(provider.module)};`] : []),
-      `export default function Specimen() { return ${provider ? 'createElement(Provider, null, createElement(Item))' : 'createElement(Item)'}; }`,
+      'export { default } from "./item";',
+      ...(provider ? [`export { ${provider.export} as SlotProvider } from ${JSON.stringify(provider.module)};`] : []),
       '',
     ].join('\n'));
+    const standIns: string[] = [];
     const standIn = (importer: string, path: string): string => {
+      standIns.push(path);
       const names = [...readFileSync(importer, 'utf8').matchAll(/import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/g)].filter(match => match[2] === path)
         .flatMap(match => match[1]!.split(',').map(name => name.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]!).filter(Boolean));
       return ['import { createElement } from "react";', ...[...new Set(names)].map(name => /^use[A-Z]/.test(name)
@@ -140,19 +141,12 @@ async function renderMounted(slot: string, entry: { readonly file: string; reado
     const module = { exports: {} as Record<string, any> };
     const requireHere = createRequire(import.meta.url);
     new Function('require', 'module', 'exports', out.outputFiles[0]!.text)((id: string) => id === 'react' ? React : requireHere(id), module, module.exports);
-    return renderToStaticMarkup(React.createElement(module.exports.default));
+    const alone = module.exports.SlotProvider ? renderToStaticMarkup(React.createElement(module.exports.SlotProvider)) : '';
+    return { markup: renderToStaticMarkup(React.createElement(module.exports.default)), standIns, providerTag: /^<[a-z]+(?:\s+[\w-]+="[^"]*")?/.exec(alone)?.[0] ?? '' };
   } finally { rmSync(substrate, { recursive: true, force: true }); }
 }
 
 type RecordedItem = { readonly type?: string; readonly files: readonly { readonly path: string; readonly type?: string; readonly target?: string; readonly content: string }[]; readonly meta?: { readonly preview?: { readonly fixtures?: { readonly file?: string; readonly export?: string; readonly props?: Record<string, unknown> } } } };
-
-/** A recorded candidate's code files at their installed paths (as the shadcn CLI writes them). */
-function installedCode(item: RecordedItem): Record<string, string> {
-  return Object.fromEntries(item.files.filter(file => /\.[jt]sx?$/.test(file.path)).flatMap(file => {
-    const path = installedPath({ ...file, type: file.type ?? item.type });
-    return path ? [[path, file.content] as const] : [];
-  }));
-}
 
 /** Every component slot's recorded candidates (Studio previews each), the pinned one first. */
 const recordedComponents: ReadonlyMap<string, readonly { readonly candidate: string; readonly item: RecordedItem; readonly code: Readonly<Record<string, string>> }[]> = new Map(
@@ -161,7 +155,7 @@ const recordedComponents: ReadonlyMap<string, readonly { readonly candidate: str
     const candidates = readdirSync(join(designer, slot, 'candidates')).filter(name => name.endsWith('.json')).sort((x, y) => Number(y === pinned) - Number(x === pinned) || x.localeCompare(y));
     return [slot, candidates.map(candidate => {
       const item = JSON.parse(readFileSync(join(designer, slot, 'candidates', candidate), 'utf8')) as RecordedItem;
-      return { candidate, item, code: installedCode(item) };
+      return { candidate, item, code: Object.fromEntries(installedCode(item).map(file => [file.path, file.content])) };
     })] as const;
   }));
 
@@ -186,7 +180,7 @@ describe('a specimen with no declared export', () => {
       'export function useCanvas() { return { zoom: 1 }; }',
       '',
     ].join('\n');
-    expect(await renderMounted('components.sample', { file: 'lib/canvas.ts' }, { 'lib/canvas.ts': source })).toBe('<div data-part="canvas"></div>');
+    expect((await renderMounted('components.sample', { file: 'lib/canvas.ts' }, { 'lib/canvas.ts': source }, { bare: true })).markup).toBe('<div data-part="canvas"></div>');
   });
 
 });
@@ -214,9 +208,15 @@ describe('a component slot that reads a context', () => {
     expect(guarded).toEqual(expect.arrayContaining(['components.chart-area', 'components.chart-bar', 'components.chart-line', 'components.meter', 'components.progress-bar', 'components.navigation-tree', 'components.sidebar', 'components.studio.sidebar-static-row', 'components.flow.canvas', 'components.flow.base-handle', 'components.flow.labeled-handle']));
   });
 
-  it('mounts every candidate as Studio does and renders; a slot declares a provider only when a candidate throws without it', async () => {
-    for (const slot of guarded) {
+  it('every provider entry of the state table names a recorded component slot', () => {
+    for (const [slot, state] of Object.entries(SLOT_SPECIMEN_STATES)) if (state.state === 'provider') expect(recordedComponents.has(slot), slot).toBe(true);
+  });
+
+  it('mounts every candidate through its component page and renders: a provider exactly where the bare mount needs one, never nested', async () => {
+    const providerSlots = Object.entries(SLOT_SPECIMEN_STATES).filter(([, state]) => state.state === 'provider').map(([slot]) => slot);
+    for (const slot of [...new Set([...guarded, ...providerSlots])].sort()) {
       const throwsBare: string[] = [];
+      const provider = specimenStateOf(slot)?.state === 'provider' ? (specimenStateOf(slot) as Extract<SpecimenState, { state: 'provider' }>).provider : undefined;
       for (const [index, { candidate, item, code }] of recordedComponents.get(slot)!.entries()) {
         const own = Object.keys(code);
         if (!own.length) continue;
@@ -224,18 +224,31 @@ describe('a component slot that reads a context', () => {
         const file = (fixtures?.file && own.find(path => path.endsWith(`/${fixtures.file}`))) || own[0]!;
         const entry = fixtures?.export ? { file, export: fixtures.export } : { file };
         const files = { ...substrate, ...code, ...cnStub }, props = fixtures?.props ?? {};
-        const failure = (options: { bare?: boolean }) => renderMounted(slot, entry, files, { props, ...options }).then(markup => markup ? undefined : 'rendered nothing', (error: Error) => error.message);
-        const bare = await failure({ bare: true });
-        if (bare !== undefined && CONTEXT_ERROR.test(bare)) throwsBare.push(candidate);
-        if (specimenStateOf(slot)?.state !== 'provider') expect(bare ?? '', `${slot} ${candidate} reads a context its slot declares no provider for`).not.toMatch(CONTEXT_ERROR);
-        const mounted = await failure({});
+        const mount = (options: { bare?: boolean }) => renderMounted(slot, entry, files, { props, item, ...options }).then(result => ({ ...result, error: result.markup ? undefined : 'rendered nothing' }), (error: Error) => ({ markup: '', standIns: [] as string[], providerTag: '', error: error.message }));
+        const bare = await mount({ bare: true }), page = await mount({});
+        const context = bare.error !== undefined && CONTEXT_ERROR.test(bare.error);
+        if (context) throwsBare.push(candidate);
+        if (!provider) expect(bare.error ?? '', `${slot} ${candidate} reads a context its slot declares no provider for`).not.toMatch(CONTEXT_ERROR);
         // The pinned candidate renders; another recorded one never fails for want of its context.
-        if (index === 0) expect(mounted, `${slot} ${candidate}`).toBeUndefined();
-        else expect(mounted ?? '', `${slot} ${candidate}`).not.toMatch(CONTEXT_ERROR);
+        if (index === 0) expect(page.error, `${slot} ${candidate}`).toBeUndefined();
+        else expect(page.error ?? '', `${slot} ${candidate}`).not.toMatch(CONTEXT_ERROR);
+        if (!provider) continue;
+        // The provider is the substrate's own module (or a package), never a stand-in for it.
+        expect(page.standIns, `${slot} ${candidate} provider ${provider.module}`).not.toContain(provider.module);
+        // A provider that renders markup is counted: the page adds one exactly when the bare mount
+        // throws for it, so an entry that is the provider itself is never wrapped in a second copy.
+        const tag = page.providerTag || bare.providerTag;
+        if (tag && !page.error && (context || !bare.error)) {
+          const count = (markup: string) => markup.split(tag).length - 1;
+          expect(count(page.markup), `${slot} ${candidate} ${provider.export} wrappers`).toBe(count(bare.markup) + (context ? 1 : 0));
+          // The slot's provider takes the state's props (a sidebar wrapper sized to its content).
+          if (context && provider.props?.style) expect(page.markup, `${slot} ${candidate} provider props`).toContain('min-height:0');
+        }
       }
-      if (specimenStateOf(slot)?.state === 'provider') expect(throwsBare, `${slot} declares a provider no candidate needs`).not.toEqual([]);
+      if (provider) expect(throwsBare, `${slot} declares a provider no candidate needs`).not.toEqual([]);
     }
-  });
+    // Two esbuild bundles per recorded candidate of each context-bound slot.
+  }, 60_000);
 });
 
 describe('specimen route policies', () => {
