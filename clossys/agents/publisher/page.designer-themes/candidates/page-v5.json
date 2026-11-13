@@ -1,0 +1,223 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/designer/themes",
+  "title": "studio.page.designer-themes",
+  "frame": "frames.studio-shell",
+  "sections": [
+    "sections.studio.page-header",
+    "sections.studio.page-tabs",
+    "sections.studio.slot-groups"
+  ],
+  "copy": {},
+  "nav": {
+    "nav": true,
+    "group": "designer"
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "note": "STUDIO-ASSEMBLE-ONLY 2026-11-03: one parameterized record per agent top group; the content map expands it into one tab route per IA group and one leaf route per slot. STUDIO-TEMPLATE-FIX 2026-11-03: the record names its own group description. W2-COPY-THROUGH-WRITER 2026-11-03: module and action labels and the request-change prompt are Writer keys."
+      },
+      "blocks": {
+        "Actions": [],
+        "Route": {
+          "archetype": "workspace",
+          "body": "plain",
+          "data": {
+            "loader": "slot-groups",
+            "agent": "designer",
+            "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+            "description": "studio.group-designer-themes"
+          },
+          "expand": {
+            "agent": "designer",
+            "namespace": "themes"
+          },
+          "inputs": {
+            "sections.studio.page-header": "header",
+            "sections.studio.page-tabs": "tabs",
+            "sections.studio.slot-groups": "groups"
+          },
+          "manifest": {
+            "navigator": "outline",
+            "modules": [
+              {
+                "id": "outline",
+                "icon": "assets.icon-outline",
+                "label": "studio.outline-label",
+                "section": "sections.module.outline",
+                "source": "page.outline",
+                "shortcut": "o"
+              },
+              {
+                "id": "checks",
+                "icon": "assets.icon-checks",
+                "label": "studio.checks",
+                "section": "sections.module.checks",
+                "source": "page.checks",
+                "shortcut": "c"
+              }
+            ],
+            "actions": [],
+            "wiring": [
+              {
+                "do": "open outline",
+                "expect": "outline open"
+              },
+              {
+                "do": "open checks",
+                "expect": "checks open"
+              },
+              {
+                "do": "select outline",
+                "expect": "target in view and highlighted"
+              },
+              {
+                "do": "cmdk",
+                "expect": "every popover listed with its shortcut"
+              },
+              {
+                "do": "key o",
+                "expect": "outline open"
+              },
+              {
+                "do": "key escape",
+                "expect": "popover closed"
+              },
+              {
+                "do": "click outside",
+                "expect": "popover closed"
+              }
+            ]
+          },
+          "leaf": {
+            "param": "slug",
+            "body": "detail",
+            "data": {
+              "loader": "leaf",
+              "agent": "designer"
+            },
+            "sections": [
+              "sections.studio.leaf-header",
+              "sections.studio.specimen",
+              "sections.studio.options",
+              "sections.studio.checks",
+              "sections.studio.contract",
+              "sections.studio.history",
+              "sections.studio.references"
+            ],
+            "inputs": {
+              "sections.studio.leaf-header": "header",
+              "sections.studio.specimen": "specimen",
+              "sections.studio.options": "options",
+              "sections.studio.checks": "checks",
+              "sections.studio.contract": "contract",
+              "sections.studio.history": "history",
+              "sections.studio.references": "references"
+            },
+            "manifest": {
+              "navigator": "outline",
+              "modules": [
+                {
+                  "id": "outline",
+                  "icon": "assets.icon-outline",
+                  "label": "studio.outline-label",
+                  "section": "sections.module.outline",
+                  "source": "page.outline",
+                  "shortcut": "o"
+                },
+                {
+                  "id": "checks",
+                  "icon": "assets.icon-checks",
+                  "label": "studio.checks",
+                  "section": "sections.module.checks",
+                  "source": "page.checks",
+                  "shortcut": "c"
+                },
+                {
+                  "id": "versions",
+                  "icon": "assets.icon-versions",
+                  "label": "studio.versions-label",
+                  "section": "sections.module.outline",
+                  "source": "page.versions",
+                  "shortcut": "v"
+                }
+              ],
+              "actions": [
+                {
+                  "id": "request-change",
+                  "icon": "assets.icon-request",
+                  "label": "studio.request-change",
+                  "handler": {
+                    "kind": "copy-prompt",
+                    "prompt": "studio.request-change-prompt"
+                  },
+                  "shortcut": "r"
+                }
+              ],
+              "wiring": [
+                {
+                  "do": "open outline",
+                  "expect": "outline open"
+                },
+                {
+                  "do": "open checks",
+                  "expect": "checks open"
+                },
+                {
+                  "do": "open versions",
+                  "expect": "versions open"
+                },
+                {
+                  "do": "open request-change",
+                  "expect": "request-change open"
+                },
+                {
+                  "do": "select outline",
+                  "expect": "target in view and highlighted"
+                },
+                {
+                  "do": "select versions",
+                  "expect": "target in view and highlighted"
+                },
+                {
+                  "do": "copy request-change",
+                  "expect": "clipboard prompt"
+                },
+                {
+                  "do": "cmdk",
+                  "expect": "every popover listed with its shortcut"
+                },
+                {
+                  "do": "key o",
+                  "expect": "outline open"
+                },
+                {
+                  "do": "key escape",
+                  "expect": "popover closed"
+                },
+                {
+                  "do": "click outside",
+                  "expect": "popover closed"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "publication": "studio",
+      "entryId": "designer-themes",
+      "entryMeta": {
+        "pin": {
+          "nav": true,
+          "group": "designer"
+        }
+      }
+    }
+  }
+}

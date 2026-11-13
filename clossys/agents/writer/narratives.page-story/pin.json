@@ -1,0 +1,25 @@
+{
+  "candidate": "studio-v1.md",
+  "sha256": "0bde1f7bcb0a89b17e29f2acf2b0b346745a7e69cfdbf0046a63fe31155c53ca",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:39Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:05.748Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "director:advantage.proposition.proof": 6,
+      "director:focus.lifecycle.acquisition": 4,
+      "director:identity.verbal.narrative": 6,
+      "director:identity.naming.name": 5
+    },
+    "proof": {
+      "director:advantage.proposition.promise": "sha256:3fe044e620b9e4c56919066eae4b9418d46a6671bbf0a29a6fb6f247bcce9e3a",
+      "director:advantage.proposition.proof": "sha256:e85d6d8a3ec86a30510f76d8136c8a2b1442c4083a996570e0533ee30c685e29",
+      "director:focus.lifecycle.acquisition": "sha256:d7ac0175e90357f4e6211f3f158729061b6d9f0da41a9bdd5c5dcd1941ff9a64",
+      "director:identity.verbal.narrative": "sha256:207bc340516fce3d734696ebb40535613d2d13db1153cefabe6b99edad9f1aa4",
+      "director:identity.naming.name": "sha256:056b3f10e9ea77e7545cd808f375995779ee595bfc0f6bb5844728bf20e0e098"
+    }
+  }
+}

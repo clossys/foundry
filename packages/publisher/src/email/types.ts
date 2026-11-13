@@ -1,4 +1,5 @@
 import type { AssetLookup, CopyLookup, FlowLayoutSpec, LayoutSpec } from "../core/index.js";
+import type { DocumentLocaleOptions } from "../preview/render-document-locale.js";
 
 // ---------------------------------------------------------------------------
 // RenderWarning — the geometry loss report
@@ -32,7 +33,7 @@ export interface RenderWarning {
 // RenderEmailOptions / EmailRenderResult
 // ---------------------------------------------------------------------------
 
-export interface RenderEmailOptions {
+export interface RenderEmailOptions extends DocumentLocaleOptions {
   /** Canonical ordered slot declaration for a flowed email template. */
   flow?: FlowLayoutSpec;
   /**

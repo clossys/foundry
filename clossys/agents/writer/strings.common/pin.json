@@ -1,0 +1,24 @@
+{
+  "candidate": "studio-v22.md",
+  "sha256": "85b2b8fd027a57a51cb77c3960e2579efb348af62052e994d7bdbde1c5ba3b40",
+  "decidedBy": "agent:writer",
+  "basis": "agent",
+  "at": "2026-11-12T12:35:44.168Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6833872811",
+    "at": "2026-11-12T19:34:31.683Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:14.219Z",
+    "cites": {
+      "director:identity.brand.personality": 5,
+      "director:identity.verbal.voice": 6
+    },
+    "proof": {
+      "director:identity.brand.personality": "sha256:b623ac395493d9154d0f61fdc705f6bb1098d1afba65da20c5d046629b2f40b9",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "leaf": "layouts.stack",
+  "library": "foundry",
+  "origin": "authored",
+  "pin": {
+    "kind": "files",
+    "files": [
+      {
+        "path": "src/layouts/ids.ts",
+        "sha256": "bde2165cbde45266ce6ff6fbfad2a54bb2a1847c1f4e08f13efb827d4330c44f"
+      },
+      {
+        "path": "src/layouts/resolve.ts",
+        "sha256": "e6632965345c116aad03b89cd254977657d89caf762b3a972524c43c05ec607b"
+      },
+      {
+        "path": "src/layouts/slots/layouts.json",
+        "sha256": "426bea89fb7f046ddffdbab34d2265b928e664638c30682060b44a39320983e6"
+      },
+      {
+        "path": "src/web/layouts/Stack.tsx",
+        "sha256": "59069a1c0d9fb0484840f391ebafce067a6cad05730c62d31f66fd6c61d477f0"
+      },
+      {
+        "path": "src/web/layouts/preview/structure.tsx",
+        "sha256": "1a8372f23572539640783b4e052f0cbfe04b2ebe6e3e1305e295f9ba22a9d9e4"
+      }
+    ]
+  },
+  "configs": [
+    "stack.landing",
+    "stack.document",
+    "stack.focus",
+    "stack.index",
+    "stack.workspace"
+  ]
+}

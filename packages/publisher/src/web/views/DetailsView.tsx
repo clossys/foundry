@@ -1,9 +1,9 @@
 "use client";
 
 import type { HTMLAttributes, ReactNode } from "react";
-import { Banner, Skeleton, Tabs } from "@clossys/designer/atoms";
-import type { BannerProps } from "@clossys/designer/atoms";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { ALERT_TONE, Alert, SKELETON_SHAPE, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from "@clossys/designer/components";
+import type { AlertProps } from "@clossys/designer/components";
+import { cn } from "@clossys/designer/components/server";
 import { DetailView, EmptyState, Panel, RecordLedger, SectionHeader, Stat, StatusList } from "@clossys/designer/blocks";
 import type { DetailViewProps, EmptyStateProps, PanelProps, RecordLedgerProps, StatProps, StatusListProps } from "@clossys/designer/blocks";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
@@ -22,7 +22,7 @@ export type DetailsViewRegion = "main" | "aside";
 export type DetailsViewSectionState =
   | { kind: "loading"; label: string }
   | { kind: "empty"; props: EmptyStateProps }
-  | { kind: "error"; props: Omit<BannerProps, "variant"> };
+  | { kind: "error"; props: Omit<AlertProps, "variant" | "role" | "children"> & { children: ReactNode } };
 
 export interface DetailsViewSection {
   id: string;
@@ -87,9 +87,9 @@ function sectionContent(section: DetailsViewSection) {
     <section key={section.id} data-details-section={section.id} className="flex min-w-0 flex-col gap-md">
       <SectionHeader title={section.title} />
       {state === undefined ? sectionBlock(section.block)
-        : state.kind === "loading" ? <Skeleton aria-label={state.label} />
+        : state.kind === "loading" ? <Skeleton role="status" aria-busy aria-label={state.label} className={SKELETON_SHAPE.text} />
         : state.kind === "empty" ? <EmptyState {...state.props} />
-        : <Banner {...state.props} variant="danger" />}
+        : <Alert {...state.props} {...ALERT_TONE.danger} />}
     </section>
   );
 }
@@ -139,12 +139,12 @@ export function DetailsView({ empty, layout = "main-aside", banner, sections, ta
     assertSections(sections!);
   }
   return (
-    <div {...rest} className={mergeUiClasses("flex min-w-0 flex-col gap-xl", className)}>
+    <div {...rest} className={cn("flex min-w-0 flex-col gap-xl", className)}>
       {banner}
       {tabs === undefined ? sectionLayout(sections!, empty, layout) : (
         <Tabs selectedKey={tab} onSelectionChange={key => onTabChange!(String(key))}>
-          <Tabs.List aria-label={tabsLabel}>{tabs.map(entry => <Tabs.Tab key={entry.id} id={entry.id}>{entry.label}</Tabs.Tab>)}</Tabs.List>
-          {tabs.map(entry => <Tabs.Panel key={entry.id} id={entry.id}>{sectionLayout(entry.sections, empty, layout)}</Tabs.Panel>)}
+          <TabsList aria-label={tabsLabel}>{tabs.map(entry => <TabsTrigger key={entry.id} id={entry.id}>{entry.label}</TabsTrigger>)}</TabsList>
+          {tabs.map(entry => <TabsContent key={entry.id} id={entry.id}>{sectionLayout(entry.sections, empty, layout)}</TabsContent>)}
         </Tabs>
       )}
     </div>

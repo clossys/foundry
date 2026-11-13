@@ -18,6 +18,7 @@
  */
 
 import type { PrintMeta } from "../core/index.js";
+import type { DocumentLocaleOptions } from "../preview/render-document-locale.js";
 
 // ---------------------------------------------------------------------------
 // CopyResolver — the copyId seam, resolved the same way ./web resolves it
@@ -84,7 +85,7 @@ export interface CustomPageSize {
 // RenderPrintOptions / RenderPrintResult
 // ---------------------------------------------------------------------------
 
-export interface RenderPrintOptions {
+export interface RenderPrintOptions extends DocumentLocaleOptions {
   /** See {@link CopyResolver}. Omit when every binding in the document uses `value`, never `copyId` — every `copyId` binding is then treated as unresolved. */
   resolveCopyId?: CopyResolver;
   /** See {@link AssetResolver}. Omit when no binding in the document uses `assetId` — every `assetId` binding is then treated as unresolved, which is always fatal for this channel (see `renderPrintDocument.ts`). */

@@ -1,4 +1,4 @@
-import { Icon, type IconNode } from "@clossys/designer/atoms/server";
+import { Icon, type IconNode } from "@clossys/designer/components/server";
 import { AnatomyCallouts, ContentSection, Items, Matrix, MediaFigure, RecordLedger, Scene, Specimen, SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ItemData, ItemsProps, MatrixSide, SpecimenPanelItem, SpecimenPart } from "@clossys/designer/blocks/server";
 import { Briefcase, Building2, Calendar, Clock, FileCheck, FileText, Folder, Globe, Landmark, Layers, Lock, Receipt, Scale, Search, ShieldCheck, Users } from "@clossys/designer/icons";
@@ -51,7 +51,7 @@ function matrixSideId(sectionId: string, sideId: string): string {
 function renderFootnote(footnote: ResolvedSectionedViewContentSection["footnote"]): ReactNode {
   if (footnote === undefined) return undefined;
   if (footnote.link === undefined) return footnote.text;
-  return <>{footnote.text}{footnote.text === undefined ? null : " "}<a href={footnote.link.href} className="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{footnote.link.label}</a></>;
+  return <>{footnote.text}{footnote.text === undefined ? null : " "}<a href={footnote.link.href} className="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{footnote.link.label}</a></>;
 }
 function icon(name: ContentIconName | undefined): ReactNode { return name === undefined ? undefined : <Icon glyph={CONTENT_ICONS[name]} decorative size="md" />; }
 function partData(part: ResolvedSectionedViewSpecimenPart): SpecimenPart {
@@ -90,7 +90,7 @@ function renderMedia(media: ResolvedSectionedViewMedia, section: ResolvedSection
 function renderBlock(block: ResolvedSectionedViewContentBlock, section: ResolvedSectionedViewContentSection, ItemsBlock: (props: ItemsProps) => ReactNode): ReactNode {
   switch (block.type) {
     case "prose": return <><style>{"[data-content-section][data-prose] > [data-content-section-modules], [data-content-section][data-prose] > [data-content-section-text] > [data-content-section-modules] { gap: var(--spacing-lg, 16px); }"}</style>{block.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} data-prose-paragraph="" className={`text-body text-pretty ${SECTION_GROUND_CLASSES[section.ground].primary}`} style={{ maxWidth: "var(--ui-width-prose-max, 48rem)" }}>
-      {paragraph.map((span, spanIndex) => span.type === "text" ? span.text : <a key={spanIndex} href={span.href} className="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{span.text}</a>)}
+      {paragraph.map((span, spanIndex) => span.type === "text" ? span.text : <a key={spanIndex} href={span.href} className="text-inherit underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{span.text}</a>)}
     </p>)}</>;
     case "matrix": {
       const ids = new Map(block.sides.map(side => [side.id, matrixSideId(section.id, side.id)]));

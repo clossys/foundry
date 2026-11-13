@@ -1,0 +1,15 @@
+{
+  "candidate": "studio-v1.md",
+  "sha256": "5051fe7447702d7c0f865c1ebf2dd8be63c92468a2b71c9f9fdd75fedbe2cd68",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:39Z",
+  "recited": {
+    "by": "agent:writer",
+    "at": "2026-11-12T00:36:32.576Z",
+    "cites": {
+      "director:focus.reach.geography": 2
+    },
+    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+  }
+}

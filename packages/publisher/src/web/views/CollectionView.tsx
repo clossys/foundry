@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { cn } from "@clossys/designer/components/server";
 import { EmptyState, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { isSanctionedHref } from "../../internal/href.js";
@@ -106,7 +106,7 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
   }
 
   return (
-    <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
+    <div {...rest} className={cn("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader brand={brand} />
       <main className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl" style={{ maxWidth: "var(--ui-width-content-max, 72rem)" }}>
         <PageHeader id={focusTargetId} tabIndex={-1} title={heading} description={description} />

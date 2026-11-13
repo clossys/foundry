@@ -1,8 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { RenderError } from "../../internal/errors.js";
-import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
+import { PageColumn, PageLayout } from "../internal/PageLayout.js";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 
 /** Same semantic date and approved-copy shape as the document view. */
@@ -82,12 +81,12 @@ export function PageView({ title, subtitle, notes, effectiveDate, updated, resol
   const effectiveDateText = resolveOptionalCopy(effectiveDate?.text, "effectiveDate.text", resolveCopyId);
   const updatedText = resolveOptionalCopy(updated?.text, "updated.text", resolveCopyId);
   return (
-    <div {...rest} className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)} style={pageColumnStyle("prose", style)}>
+    <PageColumn {...rest} measure="prose" className={className} style={style}>
       <PageLayout title={title} subtitle={subtitle} notes={notes} surface="plate" alignment="start">
         {effectiveDateText === undefined ? null : <time dateTime={effectiveDate!.dateTime} className="text-body-s text-ink-secondary">{effectiveDateText}</time>}
         {updatedText === undefined ? null : <time dateTime={updated!.dateTime} className="text-body-s text-ink-secondary">{updatedText}</time>}
         {form ?? children}
       </PageLayout>
-    </div>
+    </PageColumn>
   );
 }

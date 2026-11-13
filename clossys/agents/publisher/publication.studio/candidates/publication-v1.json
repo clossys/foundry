@@ -1,0 +1,63 @@
+{
+  "schema": "clossys.publication/1",
+  "format": "web.page.responsive",
+  "entryOrder": [
+    "home",
+    "agents",
+    "director",
+    "designer",
+    "writer",
+    "publisher"
+  ],
+  "routePack": {
+    "packId": "studio",
+    "homeRouteId": "home",
+    "root": {
+      "kind": "local-origin",
+      "note": "Producer serves Studio on this machine, so the root is the origin it runs on."
+    }
+  },
+  "meta": {
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "publisher:tree.json"
+      ]
+    },
+    "tree": {
+      "id": "studio",
+      "name": "Studio",
+      "children": [
+        {
+          "id": "studio.pages",
+          "name": "Pages",
+          "cells": [
+            "page.home"
+          ]
+        },
+        {
+          "id": "agents",
+          "name": "Agents",
+          "entry": {
+            "path": "/agents",
+            "kind": "group",
+            "source": {
+              "planItemId": "studio.agents"
+            },
+            "pin": {
+              "nav": true
+            },
+            "icon": "assets.icon-team"
+          },
+          "children": [],
+          "cells": [
+            "page.director",
+            "page.designer",
+            "page.writer",
+            "page.publisher"
+          ]
+        }
+      ]
+    }
+  }
+}

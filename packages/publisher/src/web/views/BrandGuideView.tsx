@@ -78,7 +78,7 @@ function FactList({ entries, emptyLabel }: { entries: readonly BrandGuideFact[];
 
 /**
  * Public brand guide. Fixture copy ships with the package; the host cites
- * Strategist facts beside the tokens. With `embedded`, the same sections
+ * Director facts beside the tokens. With `embedded`, the same sections
  * render inside another page, as Publisher's pack review does.
  */
 export function BrandGuideView({

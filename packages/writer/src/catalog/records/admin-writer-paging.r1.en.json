@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "records": [
+    {
+      "id": "st.88wbh5rn5a",
+      "leaf": "strings.common",
+      "context": "strings.admin.pagination.page",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Page {page, number, integer} of {pages, number, integer}",
+      "args": [
+        {
+          "name": "page",
+          "type": "number"
+        },
+        {
+          "name": "pages",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.96qkp2bzpm",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.pagination.previousPageLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Previous page"
+    },
+    {
+      "id": "st.efsb6h9dmb",
+      "leaf": "strings.common",
+      "context": "publisher.lane.Record",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Record pages",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.kb8ve83tjp",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.pagination.nextPageLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Next page"
+    }
+  ],
+  "bindings": [
+    {
+      "cellId": "admin.writer.route.pagination",
+      "recordId": "st.efsb6h9dmb",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.previousPage",
+      "recordId": "st.96qkp2bzpm",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.nextPage",
+      "recordId": "st.kb8ve83tjp",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.pageSummary",
+      "recordId": "st.88wbh5rn5a",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    }
+  ],
+  "externalRecords": []
+}

@@ -1,0 +1,25 @@
+{
+  "legalEntity": {
+    "name": "Lumenfold Labs Inc.",
+    "incorporated": true,
+    "jurisdiction": "Delaware"
+  },
+  "brand": {
+    "name": "Lumenfold",
+    "wordmark": "LUMENFOLD"
+  },
+  "domains": [
+    "lumenfold.example",
+    "www.lumenfold.example"
+  ],
+  "canonicalOrigin": "https://lumenfold.example",
+  "contactEmail": "hello@lumenfold.example",
+  "additionalEmails": [
+    "privacy@lumenfold.example"
+  ],
+  "taglines": [
+    {
+      "copyId": "brand.tagline-retired"
+    }
+  ]
+}

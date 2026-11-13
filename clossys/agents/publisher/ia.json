@@ -1,0 +1,78 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "consumer#agents/publisher/tree.json",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "studio",
+      "label": "Studio",
+      "children": [
+        {
+          "id": "studio.pages",
+          "label": "Pages",
+          "slots": [
+            "page.home"
+          ]
+        },
+        {
+          "id": "director",
+          "label": "Director",
+          "slots": [
+            "page.director-context",
+            "page.director-aspiration",
+            "page.director-focus",
+            "page.director-advantage",
+            "page.director-identity",
+            "page.director-capability",
+            "page.director-execution"
+          ]
+        },
+        {
+          "id": "designer",
+          "label": "Designer",
+          "slots": [
+            "page.designer-themes",
+            "page.designer-assets",
+            "page.designer-components",
+            "page.designer-sections",
+            "page.designer-frames"
+          ]
+        },
+        {
+          "id": "writer",
+          "label": "Writer",
+          "slots": [
+            "page.writer-lexicon",
+            "page.writer-strings",
+            "page.writer-patterns",
+            "page.writer-passages",
+            "page.writer-narratives"
+          ]
+        },
+        {
+          "id": "publisher",
+          "label": "Publisher",
+          "slots": [
+            "page.publisher-studio"
+          ]
+        },
+        {
+          "id": "systems",
+          "label": "Systems",
+          "slots": [
+            "page.producer-pipeline",
+            "page.build-overview",
+            "page.run-overview"
+          ]
+        },
+        {
+          "id": "publication",
+          "label": "Publication",
+          "slots": [
+            "publication.studio"
+          ]
+        }
+      ]
+    }
+  ]
+}

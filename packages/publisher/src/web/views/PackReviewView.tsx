@@ -1,7 +1,7 @@
 import { siteHeaderPresentation } from "../internal/viewChromeGround.js";
 import { useId } from "react";
 import type { ReactNode } from "react";
-import { Badge, type BadgeVariant } from "@clossys/designer/atoms/server";
+import { BADGE_TONE, Badge, type BadgeTone } from "@clossys/designer/components/server";
 import { DetailView, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
@@ -144,7 +144,7 @@ const DEFAULT_WIDTHS: readonly number[] = [390, 1024, 1440];
 /** Tall enough to show a page's first screens without a scroll bar of its own in most layouts. */
 const FRAME_HEIGHT = 640;
 
-const STATUS_VARIANT: Readonly<Record<PackReviewStatus, BadgeVariant>> = {
+const STATUS_VARIANT: Readonly<Record<PackReviewStatus, BadgeTone>> = {
   draft: "neutral",
   delegated: "warning",
   approved: "success",
@@ -280,8 +280,7 @@ export function PackReviewView({
     <div className="flex min-h-dvh flex-col">
       <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main
-        className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
-        style={{ maxWidth: "var(--ui-width-form-max, none)" }}
+        className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl max-w-[var(--ui-width-form-max,none)]"
       >
         <PageHeader title={heading} description={description} />
 
@@ -372,14 +371,14 @@ export function PackReviewView({
                 <li key={page.id} className="flex flex-col gap-xs">
                   <span className="flex items-center gap-xs text-body">
                     <a href={page.href}>{page.id}</a>
-                    <Badge variant={STATUS_VARIANT[page.status]}>{labels.statuses[page.status]}</Badge>
+                    <Badge {...BADGE_TONE[STATUS_VARIANT[page.status]]}>{labels.statuses[page.status]}</Badge>
                   </span>
                   {page.states.length > 0 ? (
                     <ul className="flex flex-wrap gap-sm ps-lg text-body-s">
                       {page.states.map((state) => (
                         <li key={state.id} className="flex items-center gap-xs">
                           <a href={state.href}>{state.id}</a>
-                          <Badge variant={STATUS_VARIANT[page.status]}>{labels.statuses[page.status]}</Badge>
+                          <Badge {...BADGE_TONE[STATUS_VARIANT[page.status]]}>{labels.statuses[page.status]}</Badge>
                         </li>
                       ))}
                     </ul>
@@ -400,7 +399,7 @@ export function PackReviewView({
             <ul className="flex flex-col gap-sm">
               {exports.map((entry) => (
                 <li key={entry.id} className="flex flex-wrap items-center gap-xs text-body-s">
-                  <Badge variant={STATUS_VARIANT[entry.status]}>{labels.statuses[entry.status]}</Badge>
+                  <Badge {...BADGE_TONE[STATUS_VARIANT[entry.status]]}>{labels.statuses[entry.status]}</Badge>
                   <span className="text-ink-primary">
                     {entry.href === undefined ? labels.kinds[entry.kind] : <a href={entry.href}>{labels.kinds[entry.kind]}</a>}
                   </span>
@@ -430,7 +429,7 @@ export function PackReviewView({
                         <span>{frame.state}</span>
                       </>
                     )}
-                    <Badge variant={STATUS_VARIANT[frame.status]}>{labels.statuses[frame.status]}</Badge>
+                    <Badge {...BADGE_TONE[STATUS_VARIANT[frame.status]]}>{labels.statuses[frame.status]}</Badge>
                   </p>
                   <div className="flex gap-lg">
                     {sheetWidths.map((width) => (

@@ -1,0 +1,91 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.notices",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.respond",
+    "l2": "respond-messages",
+    "order": 123
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.notices",
+    "passageSchema": "passages.notices",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notices[].title",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notices[].body",
+          "kind": "rich",
+          "required": false,
+          "maxLength": {
+            "en": 2400
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notices[].action.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notices[].dismiss-label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice",
+    "execution.risk.mitigation"
+  ],
+  "uses": []
+}

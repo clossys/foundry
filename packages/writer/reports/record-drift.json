@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "ok": true,
+  "scope": "Real catalog/records JSON; native locale completeness per bundle. Test fixtures are not translation promises.",
+  "approvalEvaluated": false,
+  "translationCurrencyEvaluated": false,
+  "inputs": [
+    {
+      "path": "admin-chat.r1.en.json",
+      "sha256": "1d64be02194d47d5c03034b2ec33e320616ddacd5f9a082ada83d90e20e299fd"
+    },
+    {
+      "path": "admin-meta.r1.en.json",
+      "sha256": "6eebfe08f02ee3c62ae823252e5175f52e914e5efe3b61f663309142f007b7c5"
+    },
+    {
+      "path": "admin-pages.r1.en.json",
+      "sha256": "7c4608b66c937a05cd2c424d1eabf610621409733e485e345ffbd346151448e4"
+    },
+    {
+      "path": "admin-studio.r1.en.json",
+      "sha256": "828bc84627fb6d514df0528f7c9157eee4a6eaf9ebdc818e2bd5067b096abd75"
+    },
+    {
+      "path": "admin-voice.r1.en.json",
+      "sha256": "128e9d020ef04664f8a501c969f7315be9680825d9c578d77ae5996165ee569e"
+    },
+    {
+      "path": "admin-writer-paging.r1.en.json",
+      "sha256": "6df0a5989fc555c2b6ac18cb3a460ef66aca92cee82ac0daeea1599339ffda2e"
+    },
+    {
+      "path": "admin-writer.r1.en.json",
+      "sha256": "e56ae49597d46c7a7072adcf9059a3f9b50dbef177a393f346ef7b43e9c022f2"
+    },
+    {
+      "path": "common-labels.r1.en.json",
+      "sha256": "b6ab82971317c7e13420d820ba842f28d3dc883a06775fdfe7951de8fc035c37"
+    },
+    {
+      "path": "pending/sections-upgrade.r1.en.json",
+      "sha256": "767957a12a214f1ec84836fc207bb6f682020bf164ab2d824ebff3ac8b118c54"
+    },
+    {
+      "path": "section-defaults.r1.en.json",
+      "sha256": "da9510db0a19628cb2bd5ae735564e059b7f2753677a42ab695fadd2114a7cb1"
+    },
+    {
+      "path": "sign-in.json",
+      "sha256": "804bb767b0f5505b4af2aada8f4ffe31d4df121c2b613af5b1797f5adfb17959"
+    },
+    {
+      "path": "site.en.json",
+      "sha256": "21fc7067a280f2de6605c1a86fd7b27b6146129d52170a3d2b33b78d4bef358b"
+    }
+  ],
+  "bundles": [
+    {
+      "path": "admin-chat.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 121
+    },
+    {
+      "path": "admin-meta.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 291
+    },
+    {
+      "path": "admin-pages.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 124
+    },
+    {
+      "path": "admin-studio.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 396
+    },
+    {
+      "path": "admin-voice.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 129
+    },
+    {
+      "path": "admin-writer-paging.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 4
+    },
+    {
+      "path": "admin-writer.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 12
+    },
+    {
+      "path": "common-labels.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 171
+    },
+    {
+      "path": "pending/sections-upgrade.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 7
+    },
+    {
+      "path": "section-defaults.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 97
+    },
+    {
+      "path": "sign-in.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "ar",
+        "en"
+      ],
+      "records": 76
+    },
+    {
+      "path": "site.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 61
+    }
+  ],
+  "records": 1489,
+  "locales": [
+    "ar",
+    "en"
+  ],
+  "findings": []
+}

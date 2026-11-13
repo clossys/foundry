@@ -2,8 +2,8 @@ import { useFocusRequest, type FrontDoorResolver } from "../frontDoorFormSupport
 import { useEffect, useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { FrontDoorKey, FrontDoorNouns } from "@clossys/writer";
-import { Button, TextField } from "@clossys/designer/atoms";
-import { Form } from "@clossys/designer/blocks";
+import { Button, TextField } from "@clossys/designer/components";
+import { Form, SectionHeader } from "@clossys/designer/blocks";
 import { RenderError } from "../../../internal/errors.js";
 
 /** Why a sign-in step did not go through. The set is closed. */
@@ -363,7 +363,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
             </>
           }
         >
-          <p className="text-body text-ink-secondary">{codeDescription}</p>
+          <SectionHeader density="standard" description={codeDescription} />
           <TextField
             id={`${fieldId}-code`}
             name="code"
@@ -399,7 +399,7 @@ export function createSignInForm(resolveCopy: FrontDoorResolver) {
           </>
         }
       >
-        <p className="text-body text-ink-secondary">{passwordDescription}</p>
+        <SectionHeader density="standard" description={passwordDescription} />
         <TextField
           id={`${fieldId}-password`}
           name="password"

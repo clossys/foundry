@@ -4,10 +4,12 @@ import { resolve } from "node:path";
 import { isDirectInvocation } from "../verified-publication-rate-cli.js";
 import { SiteInstantiateRefusal, SiteInstantiateUnavailable, instantiateSite } from "./instantiate.js";
 
-const USAGE = `Usage: publisher-site-instantiate --root <repo> --pins <file.json> [--site-dir apps/site]
+const USAGE = `Usage: publisher-site-instantiate --root <repo> --pins <file.json> [--site-dir apps/site] [--standalone]
 
 Copies the site template into <repo>/<site-dir> with exact @clossys/* pins and makes the
-root package.json workspaces cover it. <file.json> is a JSON object
+root package.json workspaces cover it. --standalone copies a standalone project without
+reading or updating the root manifest, workspace configuration or lockfiles; package-manager
+installation and lockfile qualification remain the consumer's responsibility. <file.json> is a JSON object
 { "@clossys/<pkg>": "<exact semver>" } taken from the approved plan; this command never reads a plan.
 Exit codes: 0 = done, 1 = refused (nothing written), 2 = could not run.`;
 
@@ -17,22 +19,30 @@ interface Parsed {
   root: string;
   pins: string;
   siteDir: string | undefined;
+  standalone: boolean;
 }
 
 function parseArgs(argv: readonly string[]): Parsed {
   const values = new Map<string, string>();
-  for (let index = 0; index < argv.length; index += 2) {
+  let standalone = false;
+  for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index] as string;
+    if (flag === "--standalone") {
+      if (standalone) throw new UsageError("repeated-argument");
+      standalone = true;
+      continue;
+    }
     const value = argv[index + 1];
     if (flag !== "--root" && flag !== "--pins" && flag !== "--site-dir") throw new UsageError("unknown-argument");
     if (value === undefined || value.startsWith("--")) throw new UsageError("missing-value");
     if (values.has(flag)) throw new UsageError("repeated-argument");
     values.set(flag, value);
+    index += 1;
   }
   const root = values.get("--root");
   const pins = values.get("--pins");
   if (root === undefined || pins === undefined) throw new UsageError("missing-required-argument");
-  return { root, pins, siteDir: values.get("--site-dir") };
+  return { root, pins, siteDir: values.get("--site-dir"), standalone };
 }
 
 function fail(prefix: string, rule: string): void {
@@ -65,6 +75,7 @@ export function main(argv: readonly string[], env: { templateDir?: string } = {}
     const result = instantiateSite({
       root: parsed.root,
       pins,
+      standalone: parsed.standalone,
       ...(parsed.siteDir === undefined ? {} : { siteDir: parsed.siteDir }),
       ...(env.templateDir === undefined ? {} : { templateDir: env.templateDir }),
     });

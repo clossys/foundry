@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "narratives.legal-document",
+  "agent": "writer",
+  "ia": {
+    "l0": "narratives",
+    "l1": "narratives.documents",
+    "l2": "documents-docs",
+    "order": 132
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "narrative",
+    "source": "writer",
+    "structure": "passage-sequence"
+  },
+  "inputs": [
+    "focus.reach.geography",
+    "identity.verbal.voice",
+    "advantage.proposition.proof"
+  ],
+  "uses": []
+}

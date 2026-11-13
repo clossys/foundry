@@ -1,0 +1,19 @@
+{
+  "candidate": "studio-v1.md",
+  "sha256": "8933bd86659f5fdd4a934f523511dca227e6e261735753a767b0294a8b898dcb",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:39Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:03.285Z",
+    "cites": {
+      "director:advantage.model.pricing": 6,
+      "director:focus.offer.included": 5
+    },
+    "proof": {
+      "director:advantage.model.pricing": "sha256:2b012735b895a776f023790a3a74145916d51b067a95093fa38544d068cbd2ca",
+      "director:focus.offer.included": "sha256:ce08fbf7f90b36db36ef467eb02a7a28d58e72a4802e28560ac2cb345f0a508b"
+    }
+  }
+}

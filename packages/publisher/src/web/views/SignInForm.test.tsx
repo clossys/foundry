@@ -12,10 +12,16 @@ import { SignInForm } from "./SignInForm.js";
 import { SignInForm as BrowserSignInForm } from "../client.js";
 import type { SignInFailure, SignInResult } from "./SignInForm.js";
 
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" beside its control; these are the form-level alerts.
+const formAlerts = () => screen.queryAllByRole("alert").filter(alert => alert.getAttribute("data-slot") !== "field-error");
+const formAlert = () => { const alerts = formAlerts(); expect(alerts).toHaveLength(1); return alerts[0]!; };
+const findFormAlerts = () => waitFor(() => { const alerts = formAlerts(); expect(alerts.length).toBeGreaterThan(0); return alerts; });
+const findFormAlert = () => waitFor(formAlert);
+
 // Pass-through, except one id a test names reads as incomplete, so a test can prove an id is resolved on every render.
 const incomplete = vi.hoisted(() => ({ id: null as string | null }));
-vi.mock("@clossys/writer", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@clossys/writer")>();
+vi.mock("@clossys/writer/front-door/strict", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@clossys/writer/front-door/strict")>();
   return {
     ...actual,
     resolveFrontDoorCopy: (...args: Parameters<typeof actual.resolveFrontDoorCopy>) =>
@@ -88,7 +94,7 @@ async function reachCodeStep(user: ReturnType<typeof userEvent.setup>) {
 
 const MODULE_SPECIFIER =
   /^\s*(?:import\b[^;]*?|export\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*from\s*)["']([^"']+)["']/gm;
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer|\.{1,2}\/.+)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+|@clossys\/writer(?:\/front-door\/strict)?|\.{1,2}\/.+)$/;
 
 describe("SignInForm :: steps", () => {
   it("stretches every step and keeps secondary actions before the primary in DOM and focus order", async () => {
@@ -184,7 +190,7 @@ describe("SignInForm :: steps", () => {
     const specifiers = [...source.matchAll(MODULE_SPECIFIER)].map((match) => match[1] as string);
     expect(specifiers.length).toBeGreaterThan(0);
     for (const specifier of specifiers) expect(specifier).toMatch(ALLOWED_IMPORT);
-    expect(specifiers).toContain("@clossys/writer");
+    expect(specifiers).toContain("@clossys/writer/front-door/strict");
     expect(source).not.toMatch(/\bwindow\b|\bfetch\s*\(|document\.cookie|location\./);
   });
 });
@@ -206,7 +212,7 @@ describe("SignInForm :: errors and pending", () => {
 
     expect(await screen.findAllByText(defaultText("password.notice"))).toHaveLength(1);
     expect(field).toHaveAttribute("aria-invalid", "true");
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
   });
 
   it.each(ALERT_FAILURES)("shows %s in one alert and not on the field", async (status, id) => {
@@ -216,7 +222,7 @@ describe("SignInForm :: errors and pending", () => {
     await user.type(field, "secret");
     await user.click(screen.getByRole("button", { name: defaultText("password.primary") }));
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText(id, NOUNS));
     expect(field).not.toHaveAttribute("aria-invalid", "true");
@@ -233,7 +239,7 @@ describe("SignInForm :: errors and pending", () => {
     await user.type(screen.getByLabelText(defaultText("password.label")), "secret");
     await user.click(screen.getByRole("button", { name: defaultText("password.primary") }));
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
   });
@@ -247,11 +253,11 @@ describe("SignInForm :: errors and pending", () => {
 
     expect(await screen.findAllByText(defaultText("identifier-not-found.notice"))).toHaveLength(1);
     expect(field).toHaveAttribute("aria-invalid", "true");
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
 
     identify.mockResolvedValueOnce({ status: "rateLimited" });
     await user.click(screen.getByRole("button", { name: defaultText("sign-in.primary") }));
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("rate-limited.notice"));
     expect(screen.queryByText(defaultText("identifier-not-found.notice"))).toBeNull();
@@ -284,7 +290,7 @@ describe("SignInForm :: errors and pending", () => {
     await user.click(password);
     await user.tab();
     expect(screen.queryByText(defaultText("password-required.notice"))).toBeNull();
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(handlers.verify).not.toHaveBeenCalled();
   });
 
@@ -292,7 +298,7 @@ describe("SignInForm :: errors and pending", () => {
     const { handlers, user } = setup();
     await user.click(screen.getByRole("button", { name: defaultText("sign-in.primary") }));
     expect(screen.getAllByText(defaultText("identifier-required.notice"))).toHaveLength(1);
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(handlers.identify).not.toHaveBeenCalled();
 
     await user.type(screen.getByLabelText(defaultText("sign-in.label")), IDENTIFIER);
@@ -302,7 +308,7 @@ describe("SignInForm :: errors and pending", () => {
 
     await user.click(screen.getByRole("button", { name: defaultText("password.primary") }));
     expect(screen.getAllByText(defaultText("password-required.notice"))).toHaveLength(1);
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(handlers.verify).not.toHaveBeenCalled();
   });
 
@@ -374,7 +380,7 @@ describe("SignInForm :: code step", () => {
 
     expect(await screen.findAllByText(defaultText("code.notice"))).toHaveLength(1);
     expect(field).toHaveAttribute("aria-invalid", "true");
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
 
     await user.type(field, "1");
     expect(screen.queryByText(defaultText("code.notice"))).toBeNull();
@@ -388,7 +394,7 @@ describe("SignInForm :: code step", () => {
 
     expect(screen.getAllByText(defaultText("code-required.notice"))).toHaveLength(1);
     expect(field).toHaveAttribute("aria-invalid", "true");
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(handlers.verifyCode).not.toHaveBeenCalled();
   });
 
@@ -398,7 +404,7 @@ describe("SignInForm :: code step", () => {
     await user.type(screen.getByLabelText(defaultText("password.label")), "correct horse");
     await user.click(screen.getByRole("button", { name: defaultText("password.primary") }));
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
     expect(screen.getByLabelText(defaultText("password.label"))).toBeInTheDocument();
@@ -411,7 +417,7 @@ describe("SignInForm :: code step", () => {
     await user.type(screen.getByLabelText(defaultText("sign-in.label")), IDENTIFIER);
     await user.click(screen.getByRole("button", { name: defaultText("sign-in.primary") }));
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
     expect(screen.getByLabelText(defaultText("sign-in.label"))).toHaveValue(IDENTIFIER);
@@ -435,7 +441,7 @@ describe("SignInForm :: code step", () => {
     await user.type(field, CODE);
     await user.click(screen.getByRole("button", { name: defaultText("code.primary") }));
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
     expect(field).toHaveValue(CODE);
@@ -503,7 +509,7 @@ describe("SignInForm :: code step", () => {
     await waitFor(() => expect(resend).not.toHaveAttribute("aria-disabled", "true"));
     expect(field).toHaveValue("");
     expect(screen.queryByText(defaultText("code.notice"))).toBeNull();
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(screen.getByRole("form", { name: defaultText("code.title") })).toBeInTheDocument();
   });
 
@@ -524,7 +530,7 @@ describe("SignInForm :: code step", () => {
     await user.type(field, CODE);
     await user.click(screen.getByRole("button", { name: defaultText("code.secondary") }));
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText(id, NOUNS));
     expect(screen.getByRole("form", { name: defaultText("code.title") })).toBeInTheDocument();
@@ -574,7 +580,7 @@ describe("SignInForm :: unavailable", () => {
   it("shows the unavailable notice from the first render, disables the field and submission, keeps the form, and calls nothing", async () => {
     const { handlers, container } = setup({ unavailable: true });
 
-    const alerts = screen.getAllByRole("alert");
+    const alerts = formAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
     expect(screen.getByRole("form", { name: defaultText("sign-in.title") })).toBeInTheDocument();
@@ -587,7 +593,7 @@ describe("SignInForm :: unavailable", () => {
     await Promise.resolve();
     expect(handlers.identify).not.toHaveBeenCalled();
     expect(screen.queryByText(defaultText("identifier-required.notice"))).toBeNull();
-    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(formAlerts()).toHaveLength(1);
   });
 
   it("disables the code step's submit and resend when unavailable turns on mid-flow", async () => {
@@ -603,7 +609,7 @@ describe("SignInForm :: unavailable", () => {
     await user.type(await reachCodeStep(user), "123456");
     rerender(<SignInForm {...handlers} nouns={NOUNS} unavailable />);
 
-    expect(screen.getByRole("alert")).toHaveTextContent(defaultText("unavailable.notice"));
+    expect(formAlert()).toHaveTextContent(defaultText("unavailable.notice"));
     expect(screen.getByRole("button", { name: defaultText("code.primary") })).toBeDisabled();
     expect(screen.getByRole("button", { name: defaultText("code.secondary") })).toBeDisabled();
     expect(screen.getByRole("button", { name: defaultText("password.secondary") })).toBeDisabled();
@@ -683,7 +689,7 @@ describe("restricted sign-in copy", () => {
     render(<RestrictedSignInForm nouns={{ surface: "Acme Console" }} access={access} identify={async () => ({ status: "locked" })} verify={vi.fn()} onSignedIn={vi.fn()} />);
     await user.type(screen.getByRole("textbox", { name: "Email" }), "visitor@example.test");
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(defaultText("rate-limited.notice"));
+    expect(await findFormAlert()).toHaveTextContent(defaultText("rate-limited.notice"));
     expect(screen.queryByText(defaultText("locked.notice"))).not.toBeInTheDocument();
   });
   it("keeps the locked notice on an open surface", async () => {
@@ -691,10 +697,34 @@ describe("restricted sign-in copy", () => {
     render(<SignInForm nouns={{ surface: "Acme Console" }} access="open" identify={async () => ({ status: "locked" })} verify={vi.fn()} onSignedIn={vi.fn()} />);
     await user.type(screen.getByRole("textbox", { name: "Email" }), "visitor@example.test");
     await user.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(defaultText("locked.notice"));
+    expect(await findFormAlert()).toHaveTextContent(defaultText("locked.notice"));
   });
   it("refuses an unknown access value without echoing it", () => {
     expect(() => render(<SignInForm nouns={{ surface: "Acme Console" }} access={"untrusted-value" as never} identify={vi.fn()} verify={vi.fn()} onSignedIn={vi.fn()} />))
       .toThrow("SignInForm access must be open, staff-only or invite-only.");
+  });
+});
+
+describe("SignInForm :: Foundry step descriptions", () => {
+  /** A step description is the lone copy of a Foundry SectionHeader block, never a hand-styled paragraph among the fields. */
+  function expectSectionHeaderDescription(line: HTMLElement) {
+    expect(line.tagName).toBe("P");
+    expect(line).toHaveClass("text-body", "text-ink-secondary");
+    const block = line.parentElement as HTMLElement;
+    expect(block.tagName).toBe("DIV");
+    expect(block.children).toHaveLength(1);
+    expect(block).toHaveClass("flex", "flex-col", "gap-xs");
+  }
+
+  it("renders the password step's signed-in-as line through SectionHeader", async () => {
+    const { user } = setup();
+    await reachPasswordStep(user);
+    expectSectionHeaderDescription(screen.getByText(defaultText("password.description", { identifier: IDENTIFIER })));
+  });
+
+  it("renders the code step's description through SectionHeader", async () => {
+    const { user } = setupCodeStep();
+    await reachCodeStep(user);
+    expectSectionHeaderDescription(screen.getByText(defaultText("code.description", { identifier: IDENTIFIER })));
   });
 });

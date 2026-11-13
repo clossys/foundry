@@ -1,0 +1,43 @@
+{
+  "schema": "clossys.action/1",
+  "id": "writer.check",
+  "agent": "writer",
+  "kind": "plumb",
+  "stage": "publish.check",
+  "summary": "Check Writer traceability (read-only).",
+  "run": "clossys write --check",
+  "inputs": [
+    {
+      "glob": "clossys/agents/writer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    },
+    {
+      "glob": "clossys/agents/director/*/pin.json",
+      "schema": "pin"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys write --check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": []
+}

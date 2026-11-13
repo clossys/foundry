@@ -1,0 +1,51 @@
+{
+  "schema": "clossys.action/1",
+  "id": "publish.install",
+  "agent": "publisher",
+  "kind": "plumb",
+  "stage": "publish.publish",
+  "summary": "Install pinned pages, a routed site or Next routes into a consumer app.",
+  "run": "clossys publish --install",
+  "chain": {
+    "skip": "installs into a caller-chosen page or site (--page or --site); run it with its target once the chain passes"
+  },
+  "inputs": [
+    {
+      "glob": "clossys/agents/publisher/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "arg:--out",
+      "schema": "site-install"
+    },
+    {
+      "glob": "arg:--next",
+      "schema": "site-install"
+    }
+  ],
+  "pass": {
+    "command": "clossys publish",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": []
+}

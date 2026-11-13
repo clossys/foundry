@@ -5,8 +5,6 @@ import { describe, expect, it } from "vitest";
 import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
 import { CATALOG_FIXTURES, catalogCopyResolver } from "../../preview/catalog/index.js";
 import { buildCatalogFunctionPages } from "../../preview/render-content-catalog.js";
 
@@ -130,7 +128,7 @@ describe("canonical prose recipe", () => {
       expect(root.querySelectorAll("#reading p[data-prose-paragraph] span")).toHaveLength(0);
     }
     const landing = { ...resolved, sections: [{ id: "hero", kind: "hero" as const, ground: "inverse" as const, heading: "Start here" }, ...resolved.sections] };
-    expect(renderToStaticMarkup(<LandingView document={landing} peek={false} />)).toBe(renderToStaticMarkup(<ServerLandingView document={landing} peek={false} />));
+    expect(renderToStaticMarkup(<SectionedView document={landing} />)).toBe(renderToStaticMarkup(<ServerSectionedView document={landing} />));
     expect(resolved.resolutions).toBe(resolutions);
     expect(JSON.stringify(resolved)).toBe(before);
   });

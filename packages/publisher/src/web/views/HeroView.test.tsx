@@ -461,12 +461,12 @@ describe("HeroView source guard", () => {
     const designerImports = [...source.matchAll(/from\s+["'](@clossys\/designer[^"']*)["']/g)].map((m) => m[1]);
     expect(designerImports.length).toBeGreaterThan(0);
     for (const specifier of designerImports) {
-      expect(["@clossys/designer/shell/server", "@clossys/designer/atoms/server", "@clossys/designer/blocks/server"]).toContain(specifier);
+      expect(["@clossys/designer/shell/server", "@clossys/designer/components/server", "@clossys/designer/blocks/server"]).toContain(specifier);
     }
   });
 
   it("uses no arbitrary-value class", () => {
-    expect(source).not.toMatch(/(?:class(?:Name)?\s*=|mergeUiClasses\(|cx\()[^\n]*\[[^\]\n]+\]/);
+    expect(source).not.toMatch(/(?:class(?:Name)?\s*=|cn\(|cx\()[^\n]*\[[^\]\n]+\]/);
     for (const [, literal] of source.matchAll(/"([^"\n]*)"/g)) {
       if (/\b[a-z-]+-\[/.test(literal ?? "")) throw new Error(`arbitrary-value class in ${literal}`);
     }

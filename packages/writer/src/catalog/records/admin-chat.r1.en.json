@@ -1,0 +1,2012 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "records": [
+    {
+      "id": "st.gh4z1t77jp",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.agent",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Agent"
+    },
+    {
+      "id": "st.f97wcawb6j",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.model",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Model"
+    },
+    {
+      "id": "st.2tj91va7fv",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.newChat",
+      "status": "draft",
+      "origin": "authored",
+      "text": "New chat"
+    },
+    {
+      "id": "st.sd4wwmy78y",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.history",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Chat history"
+    },
+    {
+      "id": "st.r21bjtv0v8",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.today",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Today"
+    },
+    {
+      "id": "st.kwg7y64493",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.earlier",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Earlier"
+    },
+    {
+      "id": "st.053kzvtn2n",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.menu",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Conversation options"
+    },
+    {
+      "id": "st.qp6t594cnn",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.rename",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Rename conversation"
+    },
+    {
+      "id": "st.mdnsjsv7px",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.export",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Export conversation"
+    },
+    {
+      "id": "st.3307vs96n4",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.renameTitle",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Conversation name"
+    },
+    {
+      "id": "st.vbxykev388",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.renamePlaceholder",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Enter a conversation name"
+    },
+    {
+      "id": "st.da8vkcwhas",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.saveName",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Save name"
+    },
+    {
+      "id": "st.v5d23h8wgv",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.cancel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Cancel"
+    },
+    {
+      "id": "st.9bc9yd5kj7",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.deleteTitle",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Delete this conversation?"
+    },
+    {
+      "id": "st.t9g5yd00wk",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.deleteDescription",
+      "status": "draft",
+      "origin": "authored",
+      "text": "This conversation will be deleted."
+    },
+    {
+      "id": "st.enpvfghanr",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.historyEmpty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No previous conversations"
+    },
+    {
+      "id": "st.bkkd5d63r6",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.untitled",
+      "status": "draft",
+      "origin": "authored",
+      "text": "New conversation"
+    },
+    {
+      "id": "st.3rzjxf85sq",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.conversation.log",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Conversation messages"
+    },
+    {
+      "id": "st.xrvgr6p58x",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.conversation.user",
+      "status": "draft",
+      "origin": "authored",
+      "text": "You"
+    },
+    {
+      "id": "st.sb5bppdkt9",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.conversation.assistant",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Assistant"
+    },
+    {
+      "id": "st.wberbetb2b",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.conversation.jump",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Jump to latest"
+    },
+    {
+      "id": "st.t1y82nqbbb",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.conversation.empty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Start a conversation"
+    },
+    {
+      "id": "st.sstz2ydrh2",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.conversation.greeting",
+      "status": "draft",
+      "origin": "authored",
+      "text": "What would you like to work on?"
+    },
+    {
+      "id": "st.9ksgj8nb0z",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.conversation.suggestions",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Starter prompts"
+    },
+    {
+      "id": "st.ea7yrzhwxw",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.chat.starter.review",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Review this page and suggest improvements."
+    },
+    {
+      "id": "st.11syb1wpkb",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.chat.starter.explain",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Explain the current selection."
+    },
+    {
+      "id": "st.xwq70fx4m6",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.chat.starter.draft",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Help me draft clear copy for this page."
+    },
+    {
+      "id": "st.gszk5yz4x7",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.chat.starter.plan",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Turn this idea into a practical plan."
+    },
+    {
+      "id": "st.t71aa6apr3",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.actions",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Message actions"
+    },
+    {
+      "id": "st.4595ddrg2m",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.copy",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Copy message"
+    },
+    {
+      "id": "st.fe5e3nqwgz",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.copied",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Message copied"
+    },
+    {
+      "id": "st.xjb3p6k1p5",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.regenerate",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Regenerate response"
+    },
+    {
+      "id": "st.07qhyc7e3v",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.edit",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Edit message"
+    },
+    {
+      "id": "st.yjv6kxfq75",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.saveEdit",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Save changes"
+    },
+    {
+      "id": "st.g1swnab2x1",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.cancelEdit",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Cancel editing"
+    },
+    {
+      "id": "st.7wn44evfba",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.helpful",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Helpful response"
+    },
+    {
+      "id": "st.5tq01vj19c",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.unhelpful",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Unhelpful response"
+    },
+    {
+      "id": "st.dcjrhzcc25",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.previousBranch",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Previous response"
+    },
+    {
+      "id": "st.a8xxaexg1d",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.nextBranch",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Next response"
+    },
+    {
+      "id": "st.4cphjgccca",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.branches",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Response versions"
+    },
+    {
+      "id": "st.707q3pd7kh",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.message.timestamp",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Message time"
+    },
+    {
+      "id": "st.sdhdywdrcz",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.code.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Code block"
+    },
+    {
+      "id": "st.m3kz564zjf",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.code.copy",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Copy code"
+    },
+    {
+      "id": "st.eg6faz5z7e",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.code.copied",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Code copied"
+    },
+    {
+      "id": "st.dar2mdrrhs",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.code.wrap",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Wrap code"
+    },
+    {
+      "id": "st.pwf0wr7axx",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.code.unwrap",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Turn off code wrapping"
+    },
+    {
+      "id": "st.b1he8ky3g3",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.code.plainText",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Plain text"
+    },
+    {
+      "id": "st.vxn5qzsk7c",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.reasoning.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Reasoning"
+    },
+    {
+      "id": "st.7dcchs93yz",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.reasoning.running",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Thinking…"
+    },
+    {
+      "id": "st.2zgt8hjare",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.reasoning.show",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Show reasoning"
+    },
+    {
+      "id": "st.p5tz3edqme",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.reasoning.hide",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Hide reasoning"
+    },
+    {
+      "id": "st.byk2a3qd4b",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.tool.running",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Running"
+    },
+    {
+      "id": "st.a12kexzy38",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.tool.input",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Input"
+    },
+    {
+      "id": "st.hmg11kczb6",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.tool.output",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Output"
+    },
+    {
+      "id": "st.byqq6gake9",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.tool.showInput",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Show tool input"
+    },
+    {
+      "id": "st.7a3mbqqbee",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.tool.hideInput",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Hide tool input"
+    },
+    {
+      "id": "st.e9xena1vek",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.tool.showOutput",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Show tool output"
+    },
+    {
+      "id": "st.8pz9c1yc95",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.tool.hideOutput",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Hide tool output"
+    },
+    {
+      "id": "st.1yfbz1g4pn",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.sources.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sources"
+    },
+    {
+      "id": "st.fpyfh8k48f",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.sources.open",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Open source"
+    },
+    {
+      "id": "st.30c6qbq44n",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.sources.preview",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Source preview"
+    },
+    {
+      "id": "st.g90g9krftc",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.sources.domain",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Domain"
+    },
+    {
+      "id": "st.qeqwv2gabn",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.sources.snippet",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Excerpt"
+    },
+    {
+      "id": "st.rhqf72r8qz",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.sources.empty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No sources provided"
+    },
+    {
+      "id": "st.5n5hey1w60",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.attachment.attach",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Attach files"
+    },
+    {
+      "id": "st.kezjc4xpm5",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.attachment.drop",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Drop files here"
+    },
+    {
+      "id": "st.2dav7e4nk0",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.attachment.choose",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Choose files"
+    },
+    {
+      "id": "st.wpxc6yagxf",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.attachment.list",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Attachments"
+    },
+    {
+      "id": "st.n0a1y25v7a",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.attachment.imageGrid",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Attached images"
+    },
+    {
+      "id": "st.hhzy7n3668",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.attachment.uploading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Uploading attachment…"
+    },
+    {
+      "id": "st.d1qpghdmn8",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.attachment.failed",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Attachment could not be added."
+    },
+    {
+      "id": "st.gjjwf9vke3",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.attachment.unsupported",
+      "status": "draft",
+      "origin": "authored",
+      "text": "This file type is not supported."
+    },
+    {
+      "id": "st.5t9rdbqswc",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.questionnaire.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Follow-up questions"
+    },
+    {
+      "id": "st.kjcz89vbfz",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.questionnaire.single",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Choose one option"
+    },
+    {
+      "id": "st.j7g90ah64t",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.questionnaire.multiple",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Choose all that apply"
+    },
+    {
+      "id": "st.jdqpr8evcm",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.questionnaire.select",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Select an option"
+    },
+    {
+      "id": "st.g61tk5892z",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.questionnaire.submit",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Submit answers"
+    },
+    {
+      "id": "st.eqvwhsy18t",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.questionnaire.required",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Choose an answer to continue."
+    },
+    {
+      "id": "st.qszv0v2b4v",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.questionnaire.submitted",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Answers submitted"
+    },
+    {
+      "id": "st.zn94762d7d",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.context.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Page context"
+    },
+    {
+      "id": "st.fc3agfvrnf",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.composer.placeholder",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Write a message…"
+    },
+    {
+      "id": "st.fvpd1gry17",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.composer.toolbar",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Message tools"
+    },
+    {
+      "id": "st.qc8egzsk8v",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.composer.mention",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Mention a page or agent"
+    },
+    {
+      "id": "st.93jvw5n8s5",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.composer.mentionPlaceholder",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Find a page or agent"
+    },
+    {
+      "id": "st.75psc3pavc",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.composer.agents",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Agents"
+    },
+    {
+      "id": "st.1myj4hwsvc",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.composer.mentionEmpty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No matching pages or agents"
+    },
+    {
+      "id": "st.kwep5pc442",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.composer.stop",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Stop response"
+    },
+    {
+      "id": "st.5zv56qmysm",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.composer.hint",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Enter to send · Shift+Enter for newline"
+    },
+    {
+      "id": "st.zaqfzbmprx",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.state.loading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Loading conversation…"
+    },
+    {
+      "id": "st.xfpr8ffe76",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.state.streaming",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Assistant is responding…"
+    },
+    {
+      "id": "st.ky9m3xpq8k",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.state.error",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Response interrupted."
+    },
+    {
+      "id": "st.bf77hw24ag",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.state.retry",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Retry"
+    },
+    {
+      "id": "st.7bmb2jtcpv",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.state.offline",
+      "status": "draft",
+      "origin": "authored",
+      "text": "You are offline. Reconnect to send a message."
+    },
+    {
+      "id": "st.ahrsjgqccq",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.state.disabled",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Chat is unavailable right now."
+    },
+    {
+      "id": "st.mdaksbkgs3",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.state.stopped",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Response stopped."
+    },
+    {
+      "id": "st.26sw8e7zt1",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.state.historyError",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Conversation history could not be loaded."
+    },
+    {
+      "id": "st.sgbt09323e",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.state.exportError",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Conversation could not be exported."
+    },
+    {
+      "id": "st.jdv9rgjw7d",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.panel.resize",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Resize chat panel"
+    },
+    {
+      "id": "st.9tbnpnwhaf",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.threadTitle",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Conversation: {title}",
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.3hftd9ejjq",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.selectedAgent",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Agent: {agent}",
+      "args": [
+        {
+          "name": "agent",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.npdws60yyw",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.header.selectedModel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Model: {model}",
+      "args": [
+        {
+          "name": "model",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.8nvjahs54d",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.conversation.day",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{date}",
+      "args": [
+        {
+          "name": "date",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.1m200w3v04",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.chat.message.sentAt",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sent at {time}",
+      "args": [
+        {
+          "name": "time",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.g717jncmy7",
+      "leaf": "strings.counters",
+      "context": "admin.writer.chat.message.branch",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{current, number, integer} / {total, number, integer}",
+      "args": [
+        {
+          "name": "current",
+          "type": "number"
+        },
+        {
+          "name": "total",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.jsbzanetae",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.code.language",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Language: {language}",
+      "args": [
+        {
+          "name": "language",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.a5mhqk53cd",
+      "leaf": "strings.statuses",
+      "context": "admin.writer.chat.reasoning.duration",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Thought for {seconds, number}s",
+      "args": [
+        {
+          "name": "seconds",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.6frah9h52s",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.tool.name",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Tool: {name}",
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.7bdt440vp7",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.sources.citation",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Source {number, number, integer}",
+      "args": [
+        {
+          "name": "number",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.6mhaxh5fe8",
+      "leaf": "strings.counters",
+      "context": "admin.writer.chat.sources.number",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{number, number, integer}",
+      "args": [
+        {
+          "name": "number",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.h71bmnef23",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.sources.previewTitle",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Source: {title}",
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.jcpcfm4z47",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.chat.sources.previewDomain",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{domain}",
+      "args": [
+        {
+          "name": "domain",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.0mecxe27jq",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.chat.sources.previewSnippet",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{snippet}",
+      "args": [
+        {
+          "name": "snippet",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.e355fsx4m3",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.attachment.size",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{size}",
+      "args": [
+        {
+          "name": "size",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.nt98c5wt0a",
+      "leaf": "strings.actions",
+      "context": "admin.writer.chat.attachment.remove",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Remove {name}",
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.57kn288j86",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.chat.attachment.thumbnail",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Preview of {name}",
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.4m8qep0xns",
+      "leaf": "strings.counters",
+      "context": "admin.writer.chat.attachment.limit",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Attachments: {count, number, integer} / {limit, number, integer}",
+      "args": [
+        {
+          "name": "count",
+          "type": "number"
+        },
+        {
+          "name": "limit",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.n72hgzb9x6",
+      "leaf": "strings.errors",
+      "context": "admin.writer.chat.attachment.tooLarge",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Choose a file smaller than {limit}.",
+      "args": [
+        {
+          "name": "limit",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.58gey4b10p",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.chat.context.using",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Using: {context}",
+      "args": [
+        {
+          "name": "context",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.j5th2bqar4",
+      "leaf": "strings.actions",
+      "context": "admin.writer.chat.context.remove",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Remove context: {context}",
+      "args": [
+        {
+          "name": "context",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.pc3hymk9cg",
+      "leaf": "strings.counters",
+      "context": "admin.writer.chat.composer.characterLimit",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Characters: {count, number, integer} / {limit, number, integer}",
+      "args": [
+        {
+          "name": "count",
+          "type": "number"
+        },
+        {
+          "name": "limit",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.sxfs9db1fb",
+      "leaf": "strings.errors",
+      "context": "admin.writer.chat.composer.limitExceeded",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Shorten your message to {limit, number, integer} characters.",
+      "args": [
+        {
+          "name": "limit",
+          "type": "number"
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "cellId": "admin.writer.chat.header.title",
+      "recordId": "st.91bq2h08er",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.agent",
+      "recordId": "st.gh4z1t77jp",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.model",
+      "recordId": "st.f97wcawb6j",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.newChat",
+      "recordId": "st.2tj91va7fv",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.history",
+      "recordId": "st.sd4wwmy78y",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.today",
+      "recordId": "st.r21bjtv0v8",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.earlier",
+      "recordId": "st.kwg7y64493",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.menu",
+      "recordId": "st.053kzvtn2n",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.rename",
+      "recordId": "st.qp6t594cnn",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.delete",
+      "recordId": "st.f6e42xqhnn",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.export",
+      "recordId": "st.mdnsjsv7px",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.renameTitle",
+      "recordId": "st.3307vs96n4",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.renamePlaceholder",
+      "recordId": "st.vbxykev388",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.saveName",
+      "recordId": "st.da8vkcwhas",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.cancel",
+      "recordId": "st.v5d23h8wgv",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.deleteTitle",
+      "recordId": "st.9bc9yd5kj7",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.deleteDescription",
+      "recordId": "st.t9g5yd00wk",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.confirmDelete",
+      "recordId": "st.f6e42xqhnn",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.historyEmpty",
+      "recordId": "st.enpvfghanr",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.untitled",
+      "recordId": "st.bkkd5d63r6",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.conversation.log",
+      "recordId": "st.3rzjxf85sq",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.conversation.user",
+      "recordId": "st.xrvgr6p58x",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.conversation.assistant",
+      "recordId": "st.sb5bppdkt9",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.conversation.jump",
+      "recordId": "st.wberbetb2b",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.conversation.empty",
+      "recordId": "st.t1y82nqbbb",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.conversation.greeting",
+      "recordId": "st.sstz2ydrh2",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.conversation.suggestions",
+      "recordId": "st.9ksgj8nb0z",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.starter.review",
+      "recordId": "st.ea7yrzhwxw",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.starter.explain",
+      "recordId": "st.11syb1wpkb",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.starter.draft",
+      "recordId": "st.xwq70fx4m6",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.starter.plan",
+      "recordId": "st.gszk5yz4x7",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.actions",
+      "recordId": "st.t71aa6apr3",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.copy",
+      "recordId": "st.4595ddrg2m",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.copied",
+      "recordId": "st.fe5e3nqwgz",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.copyUnavailable",
+      "recordId": "st.6pe6jzsykm",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.regenerate",
+      "recordId": "st.xjb3p6k1p5",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.edit",
+      "recordId": "st.07qhyc7e3v",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.saveEdit",
+      "recordId": "st.yjv6kxfq75",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.cancelEdit",
+      "recordId": "st.g1swnab2x1",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.helpful",
+      "recordId": "st.7wn44evfba",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.unhelpful",
+      "recordId": "st.5tq01vj19c",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.previousBranch",
+      "recordId": "st.dcjrhzcc25",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.nextBranch",
+      "recordId": "st.a8xxaexg1d",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.branches",
+      "recordId": "st.4cphjgccca",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.timestamp",
+      "recordId": "st.707q3pd7kh",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.code.label",
+      "recordId": "st.sdhdywdrcz",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.code.copy",
+      "recordId": "st.m3kz564zjf",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.code.copied",
+      "recordId": "st.eg6faz5z7e",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.code.copyUnavailable",
+      "recordId": "st.6pe6jzsykm",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.code.wrap",
+      "recordId": "st.dar2mdrrhs",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.code.unwrap",
+      "recordId": "st.pwf0wr7axx",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.code.plainText",
+      "recordId": "st.b1he8ky3g3",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.reasoning.label",
+      "recordId": "st.vxn5qzsk7c",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.reasoning.running",
+      "recordId": "st.7dcchs93yz",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.reasoning.show",
+      "recordId": "st.2zgt8hjare",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.reasoning.hide",
+      "recordId": "st.p5tz3edqme",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.running",
+      "recordId": "st.byk2a3qd4b",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.done",
+      "recordId": "st.980dfmqs1t",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.error",
+      "recordId": "st.wxwxj7g97v",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.input",
+      "recordId": "st.a12kexzy38",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.output",
+      "recordId": "st.hmg11kczb6",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.showInput",
+      "recordId": "st.byqq6gake9",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.hideInput",
+      "recordId": "st.7a3mbqqbee",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.showOutput",
+      "recordId": "st.e9xena1vek",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.hideOutput",
+      "recordId": "st.8pz9c1yc95",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.label",
+      "recordId": "st.1yfbz1g4pn",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.open",
+      "recordId": "st.fpyfh8k48f",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.preview",
+      "recordId": "st.30c6qbq44n",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.title",
+      "recordId": "st.5v29qje8fy",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.domain",
+      "recordId": "st.g90g9krftc",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.snippet",
+      "recordId": "st.qeqwv2gabn",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.empty",
+      "recordId": "st.rhqf72r8qz",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.attach",
+      "recordId": "st.5n5hey1w60",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.drop",
+      "recordId": "st.kezjc4xpm5",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.choose",
+      "recordId": "st.2dav7e4nk0",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.list",
+      "recordId": "st.wpxc6yagxf",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.imageGrid",
+      "recordId": "st.n0a1y25v7a",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.uploading",
+      "recordId": "st.hhzy7n3668",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.failed",
+      "recordId": "st.d1qpghdmn8",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.unsupported",
+      "recordId": "st.gjjwf9vke3",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.questionnaire.label",
+      "recordId": "st.5t9rdbqswc",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.questionnaire.single",
+      "recordId": "st.kjcz89vbfz",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.questionnaire.multiple",
+      "recordId": "st.j7g90ah64t",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.questionnaire.select",
+      "recordId": "st.jdqpr8evcm",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.questionnaire.submit",
+      "recordId": "st.g61tk5892z",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.questionnaire.required",
+      "recordId": "st.eqvwhsy18t",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.questionnaire.submitted",
+      "recordId": "st.qszv0v2b4v",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.context.label",
+      "recordId": "st.zn94762d7d",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.label",
+      "recordId": "st.ega0nrxc5v",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.placeholder",
+      "recordId": "st.fc3agfvrnf",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.toolbar",
+      "recordId": "st.fvpd1gry17",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.mention",
+      "recordId": "st.qc8egzsk8v",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.mentionPlaceholder",
+      "recordId": "st.93jvw5n8s5",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.pages",
+      "recordId": "st.bgkzpf1ec0",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.agents",
+      "recordId": "st.75psc3pavc",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.mentionEmpty",
+      "recordId": "st.1myj4hwsvc",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.send",
+      "recordId": "st.7raxswq7j0",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.stop",
+      "recordId": "st.kwep5pc442",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.hint",
+      "recordId": "st.5zv56qmysm",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.state.loading",
+      "recordId": "st.zaqfzbmprx",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.state.streaming",
+      "recordId": "st.xfpr8ffe76",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.state.error",
+      "recordId": "st.ky9m3xpq8k",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.state.retry",
+      "recordId": "st.bf77hw24ag",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.state.offline",
+      "recordId": "st.7bmb2jtcpv",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.state.disabled",
+      "recordId": "st.ahrsjgqccq",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.state.stopped",
+      "recordId": "st.mdaksbkgs3",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.state.historyError",
+      "recordId": "st.26sw8e7zt1",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.state.exportError",
+      "recordId": "st.sgbt09323e",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.panel.open",
+      "recordId": "st.6ffbzs93mg",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.panel.close",
+      "recordId": "st.cqt0021fwj",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.panel.resize",
+      "recordId": "st.jdv9rgjw7d",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.account.signIn",
+      "recordId": "st.ktgn3jyg1d",
+      "target": "AccountMenu",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.threadTitle",
+      "recordId": "st.9tbnpnwhaf",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.selectedAgent",
+      "recordId": "st.3hftd9ejjq",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.header.selectedModel",
+      "recordId": "st.npdws60yyw",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.conversation.day",
+      "recordId": "st.8nvjahs54d",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.sentAt",
+      "recordId": "st.1m200w3v04",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.message.branch",
+      "recordId": "st.g717jncmy7",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.code.language",
+      "recordId": "st.jsbzanetae",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.reasoning.duration",
+      "recordId": "st.a5mhqk53cd",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.tool.name",
+      "recordId": "st.6frah9h52s",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.citation",
+      "recordId": "st.7bdt440vp7",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.number",
+      "recordId": "st.6mhaxh5fe8",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.previewTitle",
+      "recordId": "st.h71bmnef23",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.previewDomain",
+      "recordId": "st.jcpcfm4z47",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.sources.previewSnippet",
+      "recordId": "st.0mecxe27jq",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.name",
+      "recordId": "st.tx9f8j9jnf",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.size",
+      "recordId": "st.e355fsx4m3",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.remove",
+      "recordId": "st.nt98c5wt0a",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.thumbnail",
+      "recordId": "st.57kn288j86",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.limit",
+      "recordId": "st.4m8qep0xns",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.attachment.tooLarge",
+      "recordId": "st.n72hgzb9x6",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.context.using",
+      "recordId": "st.58gey4b10p",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.context.remove",
+      "recordId": "st.j5th2bqar4",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.characterLimit",
+      "recordId": "st.pc3hymk9cg",
+      "target": "Chat",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.chat.composer.limitExceeded",
+      "recordId": "st.sxfs9db1fb",
+      "target": "Chat",
+      "kind": "CopyRef"
+    }
+  ],
+  "externalRecords": [
+    {
+      "recordId": "st.5v29qje8fy",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.title"
+    },
+    {
+      "recordId": "st.6ffbzs93mg",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.panel.open"
+    },
+    {
+      "recordId": "st.6pe6jzsykm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.message.copyUnavailable"
+    },
+    {
+      "recordId": "st.7raxswq7j0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.composer.send"
+    },
+    {
+      "recordId": "st.91bq2h08er",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.collect-conversation"
+    },
+    {
+      "recordId": "st.980dfmqs1t",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.tool.done"
+    },
+    {
+      "recordId": "st.bgkzpf1ec0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.cqt0021fwj",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.panel.close"
+    },
+    {
+      "recordId": "st.ega0nrxc5v",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.composer.label"
+    },
+    {
+      "recordId": "st.f6e42xqhnn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.header.delete"
+    },
+    {
+      "recordId": "st.ktgn3jyg1d",
+      "source": "sign-in.json",
+      "sourceContext": "admin.writer.chat.account.signIn"
+    },
+    {
+      "recordId": "st.tx9f8j9jnf",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.attachment.name"
+    },
+    {
+      "recordId": "st.wxwxj7g97v",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.error"
+    }
+  ]
+}

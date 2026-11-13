@@ -359,7 +359,7 @@ describe("golden: MarketingView", () => {
         '<div class="flex flex-col gap-lg">' +
         '<div class="flex flex-col border-t border-line-base">' +
         '<div class="group/faq block border-b border-line-base" data-rac="">' +
-        '<button id="react-aria-_R_6eH1_" class="flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent summary-marker-none text-ink-primary" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
+        '<button id="react-aria-_R_6eH1_" class="flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary summary-marker-none text-ink-primary" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
         "<span>Placeholder question A?</span>" +
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 disclosure-icon-motion" style="width:var(--ui-icon-md, var(--spacing-xl, 24px));height:var(--ui-icon-md, var(--spacing-xl, 24px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>' +
         "</button>" +
@@ -689,9 +689,14 @@ describe("golden: SectionedView content-section", () => {
     expect(section.getAttribute("data-layout")).toBe("split-end");
     expect(section.hasAttribute("data-content-section-faq")).toBe(false);
     expect(section.querySelector("[data-content-section-text] h2")?.textContent).toBe("Heading questions");
-    const rows = section.querySelectorAll("[data-content-section-modules] details > summary");
-    expect([...rows].map((summary) => summary.textContent)).toEqual(["Placeholder question q1?", "Placeholder question q2?", "Placeholder question q3?", "Placeholder question q4?"]);
-    expect(section.querySelectorAll("[data-content-section-modules] details")).toHaveLength(4);
+    // Each disclosed item is a stock accordion item: a collapsed trigger button that controls its own panel.
+    const rows = [...section.querySelectorAll<HTMLButtonElement>('[data-content-section-modules] [data-slot="accordion-item"] button[data-slot="accordion-trigger"]')];
+    expect(rows.map((trigger) => trigger.textContent)).toEqual(["Placeholder question q1?", "Placeholder question q2?", "Placeholder question q3?", "Placeholder question q4?"]);
+    expect(section.querySelectorAll('[data-content-section-modules] [data-slot="accordion-item"]')).toHaveLength(4);
+    for (const trigger of rows) {
+      expect(trigger.getAttribute("aria-expanded")).toBe("false");
+      expect(section.querySelector(`[id="${trigger.getAttribute("aria-controls")}"]`)?.getAttribute("data-slot")).toBe("accordion-content");
+    }
   });
 
   it("resolves an omitted second set-piece action to quiet with a decorative trailing chevron", () => {
@@ -702,10 +707,8 @@ describe("golden: SectionedView content-section", () => {
       actions: [{ id: "lead", label: copy("golden.chapter.lead", "Read the guide"), href: "/guide" }, { id: "more", label: copy("golden.chapter.more", "See details"), href: "/details" }],
     }));
     const [lead, more] = [...band(root, "chapter").querySelectorAll<HTMLElement>("[data-section-intro-actions] > a")];
-    expect(lead?.className).toBe(OUTLINE_MD);
-    expect(lead?.getAttribute("data-action-emphasis")).toBe("secondary");
-    expect(more?.getAttribute("data-action-emphasis")).toBe("quiet");
-    expect(more?.className.split(" ")).toEqual(expect.arrayContaining(["quiet-action", "text-body", "text-control-quiet"]));
+    expect(stockButton(lead)).toEqual({ slot: "button", variant: "outline", emphasis: "secondary" });
+    expect(stockButton(more)).toEqual({ slot: "button", variant: "link", emphasis: "quiet" });
     expect(more?.lastElementChild?.getAttribute("aria-hidden")).toBe("true");
   });
 
@@ -714,21 +717,18 @@ describe("golden: SectionedView content-section", () => {
     const section = band(root, "dark");
     expect(section.className.split(" ")).toContain("bg-surface-inverse");
     const go = section.querySelector<HTMLElement>('a[href="/go"]');
-    expect(go?.className.split(" ")).toEqual(expect.arrayContaining(["text-body", "bg-control-tonal-inverse", "text-ink-on-inverse"]));
-    expect(go?.getAttribute("data-action-emphasis")).toBe("tertiary");
-    // The outline takes its ink from the row, which carries the inverse ground's primary ink.
-    expect(go?.parentElement?.className.split(" ")).toContain("text-ink-on-inverse");
+    // The stock button has no ground option: the lone action is the tertiary step as the stock secondary variant.
+    expect(stockButton(go)).toEqual({ slot: "button", variant: "secondary", emphasis: "tertiary" });
   });
 
   it("renders every in-section action as a full-size button: primary filled, secondary outline, the same size", () => {
     const { root } = renderContent(contentBand("pair", { actions: [{ id: "a", label: copy("golden.pair.a", "Start a record"), href: "/a", emphasis: "primary" }, { id: "b", label: copy("golden.pair.b", "See an example"), href: "/b", emphasis: "secondary" }] }));
     const [primary, secondary] = [...band(root, "pair").querySelectorAll<HTMLElement>("[data-section-intro-actions] > a")];
-    expect(primary?.className).toBe(PRIMARY_MD);
-    expect(primary?.getAttribute("data-action-emphasis")).toBe("primary");
-    expect(secondary?.className).toBe(OUTLINE_MD);
-    expect(secondary?.getAttribute("data-action-emphasis")).toBe("secondary");
-    const sizeOf = (className: string) => className.split(" ").filter((token) => /^(px|py|text-body|rounded)-/.test(token) || token === "text-body-l");
-    expect(sizeOf(secondary!.className)).toEqual(sizeOf(primary!.className));
+    expect(stockButton(primary)).toEqual({ slot: "button", variant: "default", emphasis: "primary" });
+    expect(stockButton(secondary)).toEqual({ slot: "button", variant: "outline", emphasis: "secondary" });
+    // One stock size for the whole pair.
+    expect(secondary?.getAttribute("data-size")).toBeTruthy();
+    expect(secondary?.getAttribute("data-size")).toBe(primary?.getAttribute("data-size"));
     expect(band(root, "pair").querySelectorAll("a.underline")).toHaveLength(0);
   });
 
@@ -781,11 +781,8 @@ describe("golden: SectionedView content-section", () => {
   });
 });
 
-/** Designer `buttonLinkClassName` at `md`, as an in-section action renders it. */
-const PRIMARY_MD =
-  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-accent text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const OUTLINE_MD =
-  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+/** An in-section action is the stock button: its slot, stock variant and the ladder step it renders. */
+const stockButton = (element: Element | null | undefined) => ({ slot: element?.getAttribute("data-slot"), variant: element?.getAttribute("data-variant"), emphasis: element?.getAttribute("data-action-emphasis") });
 
 /**
  * Captured from this renderer; Designer `ContentSection` stacked anatomy. A
@@ -803,9 +800,9 @@ const INTRO_BAND_HTML =
   "<p class=\"text-body-l text-pretty text-ink-secondary mt-xl\">Placeholder intro." +
   "</p>" +
   "<div data-section-intro-actions=\"\" class=\"flex flex-wrap items-center gap-x-lg gap-y-sm text-ink-primary mt-2xl\">" +
-  "<a href=\"/start\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-accent text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" data-action-emphasis=\"primary\">Start a record" +
+  "<a href=\"/start\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-primary text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary\" data-action-emphasis=\"primary\">Start a record" +
   "</a>" +
-  "<a href=\"/more\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" data-action-emphasis=\"secondary\">Read the guide" +
+  "<a href=\"/more\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary\" data-action-emphasis=\"secondary\">Read the guide" +
   "</a>" +
   "</div>" +
   "</div>" +

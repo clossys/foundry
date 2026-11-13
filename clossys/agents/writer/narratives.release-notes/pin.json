@@ -1,0 +1,26 @@
+{
+  "candidate": "studio-v5.md",
+  "sha256": "ee60be54f73e2350d8eb59e6b6c905639451c4f42ba949872f2367d563305c0f",
+  "decidedBy": "agent:writer",
+  "basis": "agent",
+  "at": "2026-11-12T00:07:36.485Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
+    "at": "2026-11-12T01:19:43.961Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:15.485Z",
+    "cites": {
+      "director:advantage.proposition.proof": 6,
+      "director:identity.verbal.voice": 6,
+      "director:execution.roadmap.release": 6
+    },
+    "proof": {
+      "director:advantage.proposition.proof": "sha256:e85d6d8a3ec86a30510f76d8136c8a2b1442c4083a996570e0533ee30c685e29",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
+      "director:execution.roadmap.release": "sha256:97cac18100039bc2e9d3fc179ab05c6daa56243c33897357a7e9b7cc26849d24"
+    }
+  }
+}

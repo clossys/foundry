@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "scope": ["Synthetic shared-label owner"],
+  "records": [
+    { "id": "st.0000000003", "leaf": "strings.common", "context": "example.common.cancel", "status": "draft", "origin": "foundry-default", "text": "Cancel" }
+  ],
+  "bindings": [],
+  "externalRecords": []
+}

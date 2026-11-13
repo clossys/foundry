@@ -1,0 +1,15 @@
+{
+  "schema": "clossys.action-exceptions/1",
+  "exceptions": [
+    {
+      "item": "bin:writer-check",
+      "reason": "Writer's own copy check; Studio section copy binding through Writer slots makes it a step.",
+      "unit": "W3"
+    },
+    {
+      "item": "bin:writer-rate-check",
+      "reason": "Approved-copy coverage rate tool; whether it is a pipeline step is an owner decision.",
+      "unit": "W7"
+    }
+  ]
+}

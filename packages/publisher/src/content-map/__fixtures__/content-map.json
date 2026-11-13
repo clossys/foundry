@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "publicationId": "example.admin",
+  "format": "web.page.responsive",
+  "entries": [
+    { "id": "agents", "order": 0, "title": "Agents", "slug": "agents", "kind": "group", "pin": { "nav": true }, "source": { "planItemId": "app.agents" } },
+    {
+      "id": "designer", "parentId": "agents", "order": 0, "title": "Designer", "path": "/agents/designer", "kind": "page",
+      "pin": { "nav": true, "group": "agents" }, "source": { "planItemId": "app.designer" },
+      "manifest": { "l0": [
+        { "id": "library", "label": "Library", "count": 1, "estimate": 80, "section": { "slot": "main", "index": 0 }, "l1": [
+          { "id": "surfaces", "label": "Surfaces", "count": 1, "estimate": 80, "section": { "slot": "main", "index": 0, "children": [0] }, "l2": [
+            { "id": "frames", "label": "Frames", "count": 1, "estimate": 80, "section": { "slot": "main", "index": 0, "children": [0, 0] } }
+          ] }
+        ] }
+      ] },
+      "constructs": { "main": [
+        { "section": "sections.section-header", "config": "level-1", "content": {}, "children": [
+          { "section": "sections.section-header", "config": "level-2", "content": {}, "children": [
+            { "section": "sections.data-table", "content": { "items": { "kind": "records", "ref": "designer.frames" } } }
+          ] }
+        ] }
+      ] }
+    },
+    {
+      "id": "writer", "parentId": "agents", "order": 1, "title": "Writer", "path": "/agents/writer", "kind": "page",
+      "pin": { "nav": true, "group": "agents" }, "source": { "planItemId": "app.writer" },
+      "manifest": { "l0": [
+        { "id": "strings", "label": "Strings", "count": 1, "estimate": 80, "section": { "slot": "main", "index": 0 }, "l1": [] }
+      ] },
+      "constructs": { "main": [{ "section": "sections.data-table", "content": { "items": { "kind": "records", "ref": "writer.strings" } } }] }
+    },
+    {
+      "id": "publisher", "parentId": "agents", "order": 2, "title": "Publisher", "path": "/agents/publisher", "kind": "page",
+      "pin": { "nav": true, "group": "agents" }, "source": { "planItemId": "app.publisher" },
+      "manifest": { "l0": [
+        { "id": "publications", "label": "Publications", "count": 1, "estimate": 80, "section": { "slot": "main", "index": 0 }, "l1": [] }
+      ] },
+      "constructs": { "main": [{ "section": "sections.data-table", "content": { "items": { "kind": "records", "ref": "publisher.publications" } } }] }
+    }
+  ],
+  "actions": [{ "id": "refresh", "label": "Refresh records", "group": "Records", "intent": "records.refresh" }]
+}

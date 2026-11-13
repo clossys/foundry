@@ -9,8 +9,8 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ts from "typescript";
 import type { CopyResolver } from "@clossys/writer";
-import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "../frame/index.js";
-import type { SiteFrameConfig } from "../frame/index.js";
+import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "@clossys/designer/frames";
+import type { SiteFrameConfig } from "@clossys/designer/frames";
 import { CardlessPageLayout, PageLayout } from "../internal/PageLayout.js";
 import * as web from "../index.js";
 import * as client from "../client.js";
@@ -29,9 +29,12 @@ const shell: SiteFrameConfig = {
 };
 
 describe("PageView", () => {
-  it("preserves the exact pre-change PageLayout and cardless default HTML used by existing views", () => {
+  it("keeps the PageLayout header, stock card and notes order and the exact cardless default HTML used by existing views", () => {
     const props = { title: "Example title", subtitle: "Example subtitle", notes: "Example notes" };
-    expect(renderToStaticMarkup(<PageLayout {...props}><p>Example body</p></PageLayout>)).toBe('<div class="flex flex-col items-center gap-xs text-center"><h1 class="text-h1 font-display text-ink-primary">Example title</h1><p class="text-body text-ink-secondary">Example subtitle</p></div><div class="rounded-control bg-surface-raised p-lg flex flex-col gap-lg text-start" style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))"><p>Example body</p></div><div class="flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary">Example notes</div>');
+    const host = document.createElement("div"); host.innerHTML = renderToStaticMarkup(<PageLayout {...props}><p>Example body</p></PageLayout>);
+    const [header, card, notes] = [...host.children] as HTMLElement[];
+    expect(host.children).toHaveLength(3); expect(header).toHaveTextContent("Example titleExample subtitle"); expect(notes).toHaveTextContent("Example notes");
+    expect(card).toHaveAttribute("data-slot", "card"); expect(card!.innerHTML).toBe("<p>Example body</p>"); expect(card).toHaveClass("flex", "flex-col", "gap-lg", "text-start");
     expect(renderToStaticMarkup(<CardlessPageLayout {...props} action={<a href="/example">Example action</a>} />)).toBe('<div class="flex flex-col items-center gap-xs text-center"><h1 class="text-h1 font-display text-ink-primary">Example title</h1><p class="text-body text-ink-secondary">Example subtitle</p></div><div class="flex flex-col items-center gap-sm"><a href="/example">Example action</a></div><div class="flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary">Example notes</div>');
   });
 
@@ -41,7 +44,7 @@ describe("PageView", () => {
     const subtitle = screen.getByText("<i>Supporting text</i>");
     const notes = screen.getByText("<em>Notes</em>");
     const body = screen.getByText("Page content");
-    const card = container.querySelector('[data-variant="plate"]')!;
+    const card = container.querySelector('[data-slot="card"]')!;
     expect(card).not.toBeNull();
     expect(heading.parentElement).toHaveClass("items-start", "text-start");
     expect(notes).toHaveClass("items-start", "text-start");
@@ -55,7 +58,7 @@ describe("PageView", () => {
 
   it.each(["light", "dark"])("uses a flat bordered token plate without elevation in %s", theme => {
     const { container } = render(<div data-theme={theme}><PageView title="Details"><p>Page content</p></PageView></div>);
-    const card = container.querySelector<HTMLElement>('[data-variant="plate"]')!;
+    const card = container.querySelector<HTMLElement>('[data-slot="card"]')!;
     expect(card).not.toBeNull();
     expect(card).toHaveClass("border", "border-line-panel", "bg-surface-sunken");
     expect(card.style.boxShadow).toBe("");
@@ -68,7 +71,7 @@ describe("PageView", () => {
     const onSubmit = vi.fn(event => event.preventDefault());
     const { container } = render(<PageView title="Profile" form={<form aria-label="Profile details" onSubmit={onSubmit}><button type="submit">Save profile</button></form>} />);
     const form = screen.getByRole("form", { name: "Profile details" });
-    expect(container.querySelector('[data-variant="plate"]')).toContainElement(form);
+    expect(container.querySelector('[data-slot="card"]')).toContainElement(form);
     fireEvent.submit(form);
     expect(onSubmit).toHaveBeenCalledOnce();
   });
@@ -81,7 +84,7 @@ describe("PageView", () => {
     const { container } = render(<PageView title="Policy" effectiveDate={{ dateTime: "2026-10-01", text: ref("Effective October 1") }} updated={{ dateTime: "2026-10-20", text: ref("Updated October 20") }} resolveCopyId={resolveCopy}><p>Policy content</p></PageView>);
     const dates = [...container.querySelectorAll("time")];
     expect(dates.map(date => [date.dateTime, date.textContent])).toEqual([["2026-10-01", "Effective October 1"], ["2026-10-20", "Updated October 20"]]);
-    expect(container.querySelector('[data-variant="plate"]')).toContainElement(dates[0]!);
+    expect(container.querySelector('[data-slot="card"]')).toContainElement(dates[0]!);
     for (const dateTime of ["", "not-a-date", "2026-02-30"]) {
       expect(() => renderToStaticMarkup(<PageView title="Policy" effectiveDate={{ dateTime, text: ref("Effective date") }} resolveCopyId={resolveCopy}><p>Policy</p></PageView>)).toThrow(/real ISO date/);
     }

@@ -41,7 +41,7 @@ const PUBLISHER_DIR = join(REPO_ROOT, "packages", "publisher");
 const DESIGNER_DIR = join(REPO_ROOT, "packages", "designer");
 const WRITER_DIR = join(REPO_ROOT, "packages", "writer");
 const MESSENGER_DIR = join(REPO_ROOT, "packages", "messenger");
-const STRATEGIST_DIR = join(REPO_ROOT, "packages", "strategist");
+const DIRECTOR_DIR = join(REPO_ROOT, "packages", "director");
 const TEMPLATE_DIR = join(PUBLISHER_DIR, "templates", "site");
 const FIXTURES = join(PUBLISHER_DIR, "test-fixtures", "site-template-guards");
 
@@ -132,7 +132,7 @@ function rangeCovers(rangeText: unknown, installedText: string | undefined): Ran
 }
 
 const DEPENDENCY_SECTIONS = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"] as const;
-const REQUIRED_SIBLINGS = ["@clossys/designer", "@clossys/messenger", "@clossys/publisher", "@clossys/strategist", "@clossys/writer"] as const;
+const REQUIRED_SIBLINGS = ["@clossys/designer", "@clossys/messenger", "@clossys/publisher", "@clossys/director", "@clossys/writer"] as const;
 const REQUIRED_FRAMEWORK = ["next", "react", "react-dom"] as const;
 
 /**
@@ -199,12 +199,12 @@ function siblingVersionsOnDisk(): Record<string, string> {
   const designer = readManifestVersion(DESIGNER_DIR);
   const messenger = readManifestVersion(MESSENGER_DIR);
   const publisher = readManifestVersion(PUBLISHER_DIR);
-  const strategist = readManifestVersion(STRATEGIST_DIR);
+  const director = readManifestVersion(DIRECTOR_DIR);
   const writer = readManifestVersion(WRITER_DIR);
   if (designer !== undefined) out["@clossys/designer"] = designer;
   if (messenger !== undefined) out["@clossys/messenger"] = messenger;
   if (publisher !== undefined) out["@clossys/publisher"] = publisher;
-  if (strategist !== undefined) out["@clossys/strategist"] = strategist;
+  if (director !== undefined) out["@clossys/director"] = director;
   if (writer !== undefined) out["@clossys/writer"] = writer;
   return out;
 }
@@ -229,7 +229,7 @@ function currentManifest(onDisk: Record<string, string>, locked: Record<string, 
       "@clossys/designer": `^${onDisk["@clossys/designer"]}`,
       "@clossys/messenger": `^${onDisk["@clossys/messenger"]}`,
       "@clossys/publisher": `~${onDisk["@clossys/publisher"]}`,
-      "@clossys/strategist": `^${onDisk["@clossys/strategist"]}`,
+      "@clossys/director": `^${onDisk["@clossys/director"]}`,
       "@clossys/writer": `^${onDisk["@clossys/writer"]}`,
       next: `^${locked["next"]}`,
       react: `^${locked["react"]}`,
@@ -245,9 +245,9 @@ describe("guard 1: template dependency ranges", () => {
   it("has every version input the guard needs (a guard with no inputs proves nothing)", () => {
     expect(Object.keys(onDisk).sort()).toEqual([
       "@clossys/designer",
+      "@clossys/director",
       "@clossys/messenger",
       "@clossys/publisher",
-      "@clossys/strategist",
       "@clossys/writer",
     ]);
     expect(Object.keys(locked).sort()).toEqual(["next", "react", "react-dom"]);
@@ -735,7 +735,7 @@ describe("guard 2: custom properties", () => {
       refDirs: [
         TEMPLATE_DIR,
         join(PUBLISHER_DIR, "src", "web", "views"),
-        join(DESIGNER_DIR, "src", "atoms"),
+        join(DESIGNER_DIR, "src", "components"),
         join(DESIGNER_DIR, "src", "blocks"),
         join(DESIGNER_DIR, "src", "shell"),
       ],

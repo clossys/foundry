@@ -1,0 +1,134 @@
+[
+  {
+    "id": "narratives.page-story",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.screen",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.site-chrome",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.app-chrome",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.article",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.guide",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.release-notes",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.legal-document",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.deck-script",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.email",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.notification",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "narratives.video-script",
+    "layer": "narratives",
+    "contract": {
+      "kind": "narrative",
+      "source": "writer",
+      "structure": "passage-sequence"
+    },
+    "requires": [],
+    "status": "draft"
+  }
+]

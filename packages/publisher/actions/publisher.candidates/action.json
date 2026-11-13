@@ -1,0 +1,79 @@
+{
+  "schema": "clossys.action/1",
+  "id": "publisher.candidates",
+  "agent": "publisher",
+  "kind": "decide:creative",
+  "stage": "publish.make",
+  "summary": "Create Publisher candidates: one immutable file per option, per L3 slot.",
+  "run": "clossys next publisher/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
+  "inputs": [
+    {
+      "glob": "clossys/agents/designer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    },
+    {
+      "glob": "clossys/agents/writer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/slot.json",
+      "schema": "slot"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    }
+  ],
+  "pass": {
+    "command": "clossys check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": [
+    "skill/SKILL.md"
+  ],
+  "decider": "agent",
+  "packet": {
+    "inputs": [
+      "clossys/agents/designer/*/pin.json",
+      "clossys/agents/designer/*/candidates/*",
+      "clossys/agents/writer/*/pin.json",
+      "clossys/agents/writer/*/candidates/*",
+      "clossys/agents/publisher/*/slot.json"
+    ],
+    "write": [
+      {
+        "glob": "clossys/agents/publisher/*/candidates/*",
+        "schema": "candidate-publisher"
+      }
+    ],
+    "checks": [
+      "workspace"
+    ]
+  },
+  "skill": "skill.md",
+  "open": "slots-without-candidates:publisher"
+}

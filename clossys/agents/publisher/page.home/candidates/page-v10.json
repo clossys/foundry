@@ -1,0 +1,149 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/",
+  "title": "studio.page.home",
+  "frame": "frames.studio-shell",
+  "sections": [
+    "sections.studio.page-header",
+    "sections.module.checks",
+    "sections.studio.home",
+    "sections.producer.team-strip",
+    "sections.producer.pipeline-legend",
+    "sections.producer.pipeline-flow"
+  ],
+  "copy": {
+    "meta-title": "page.home#meta-title",
+    "meta-description": "page.home#meta-description"
+  },
+  "nav": {
+    "nav": true
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "icon": "assets.icon-home",
+        "note": "STUDIO-ASSEMBLE-ONLY 2026-11-03: one parameterized record per agent top group; the content map expands it into one tab route per IA group and one leaf route per slot. W2-COPY-THROUGH-WRITER 2026-11-03: module and action labels and the request-change prompt are Writer keys. C5-HOME 2026-11-11 (owner P3/P4): Home leads with the decisions waiting for the owner (sections.module.checks over the open needs Studio loads), then the agents' work (sections.studio.home), then the pipeline moved off its own menu page (team strip, legend, flow from the Producer wiring); its own archetype workspace-home declares that order."
+      },
+      "blocks": {
+        "Actions": [
+          {
+            "id": "needs",
+            "label": "studio.needs",
+            "icon": "assets.icon-needs",
+            "defaultOpen": false,
+            "module": {
+              "section": "sections.task-list",
+              "source": "home.open-requests"
+            }
+          }
+        ],
+        "Route": {
+          "archetype": "workspace-home",
+          "body": "plain",
+          "data": {
+            "loader": "home",
+            "description": "studio.your-agents-and-what-they-have-written"
+          },
+          "inputs": {
+            "sections.studio.page-header": "header",
+            "sections.module.checks": "checks",
+            "sections.studio.home": "home",
+            "sections.producer.team-strip": "team",
+            "sections.producer.pipeline-legend": "legend",
+            "sections.producer.pipeline-flow": "flow"
+          },
+          "manifest": {
+            "navigator": "outline",
+            "modules": [
+              {
+                "id": "outline",
+                "icon": "assets.icon-outline",
+                "label": "studio.outline-label",
+                "section": "sections.module.outline",
+                "source": "page.outline",
+                "shortcut": "o"
+              },
+              {
+                "id": "checks",
+                "icon": "assets.icon-checks",
+                "label": "studio.checks",
+                "section": "sections.module.checks",
+                "source": "page.checks",
+                "shortcut": "c"
+              }
+            ],
+            "actions": [],
+            "wiring": [
+              {
+                "do": "open outline",
+                "expect": "outline open"
+              },
+              {
+                "do": "open checks",
+                "expect": "checks open"
+              },
+              {
+                "do": "select outline",
+                "expect": "target in view and highlighted"
+              },
+              {
+                "do": "cmdk",
+                "expect": "every popover listed with its shortcut"
+              },
+              {
+                "do": "key o",
+                "expect": "outline open"
+              },
+              {
+                "do": "key escape",
+                "expect": "popover closed"
+              },
+              {
+                "do": "click outside",
+                "expect": "popover closed"
+              }
+            ]
+          },
+          "slots": [
+            {
+              "section": "sections.studio.page-header",
+              "config": "page.home"
+            },
+            {
+              "section": "sections.module.checks",
+              "config": "page.home"
+            },
+            {
+              "section": "sections.studio.home",
+              "config": "page.home"
+            },
+            {
+              "section": "sections.producer.team-strip",
+              "config": "page.home"
+            },
+            {
+              "section": "sections.producer.pipeline-legend",
+              "config": "page.home"
+            },
+            {
+              "section": "sections.producer.pipeline-flow",
+              "config": "page.home"
+            }
+          ]
+        }
+      },
+      "publication": "studio",
+      "entryId": "home",
+      "entryMeta": {
+        "pin": {
+          "nav": true
+        }
+      }
+    }
+  }
+}

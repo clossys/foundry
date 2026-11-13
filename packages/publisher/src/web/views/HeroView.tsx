@@ -1,6 +1,6 @@
 import { siteHeaderPresentation } from "../internal/viewChromeGround.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { cn } from "@clossys/designer/components/server";
 import { Hero, SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { SiteFooterLegalProps } from "@clossys/designer/shell/server";
@@ -98,7 +98,7 @@ export function HeroView({
   return (
     <div
       {...rest}
-      className={mergeUiClasses("relative flex min-h-dvh flex-col", ink.surface, ink.primary, className)}
+      className={cn("relative flex min-h-dvh flex-col", ink.surface, ink.primary, className)}
       style={style}
     >
       {backdrop ? (

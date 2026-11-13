@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { cn } from "@clossys/designer/components/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { PAGE_COLUMN_CLASSES, PageLayout, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
+import { PAGE_COLUMN_CLASSES, PageColumn, PageLayout, hasContent } from "../internal/PageLayout.js";
 import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
@@ -78,7 +78,7 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
   /**
    * Consumer-owned fields and controls. CaptureView does not submit,
    * validate, or inspect this content; a consumer may compose Designer's
-   * Form/FieldGroup blocks or its own form implementation here.
+   * Form block and field parts or its own form implementation here.
    */
   form?: ReactNode;
   /**
@@ -189,25 +189,21 @@ export function CaptureView({
   if (!legacyChrome) {
     assertViewContentRoot("CaptureView", rest);
     return (
-      <div
-        {...rest}
-        className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)}
-        style={pageColumnStyle("prose", style)}
-      >
+      <PageColumn {...rest} measure="prose" className={className} style={style}>
         {content}
-      </div>
+      </PageColumn>
     );
   }
 
   const chromeGround = ground ?? "base";
   return (
-    <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
+    <div {...rest} className={cn("flex min-h-dvh flex-col", className)} style={style}>
       {header !== undefined ? (
         header
       ) : (
         <SiteHeader {...siteHeaderPresentation(chromeGround)} brand={brand} nav={nav} actions={<>{headerSecondaryAction}{headerAction}</>} />
       )}
-      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
+      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={`${PAGE_COLUMN_CLASSES} max-w-[var(--ui-width-prose-max,none)]`}>
         {content}
       </main>
       {footer !== undefined ? footer : <SiteFooter ground={chromeGround} secondary={footerSecondary} />}

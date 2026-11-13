@@ -1,0 +1,8 @@
+{
+  "fixtures": {
+    "children": "Continue"
+  },
+  "container": "canvas",
+  "theme": "neutral",
+  "width": 320
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.band",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.parts",
+    "l2": "parts-structure",
+    "order": 73
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.band",
+    "passageSchema": "passages.band",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": []
+    }
+  },
+  "inputs": [
+    "identity.visual.imagery"
+  ],
+  "uses": []
+}

@@ -1,0 +1,69 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.messaging-kit",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.identity",
+    "l2": "identity-messaging-kit",
+    "order": 72
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "pitch-one-liner",
+          "required": true,
+          "maxChars": 160,
+          "maxWords": 28
+        },
+        {
+          "id": "pitch-elevator",
+          "required": true,
+          "maxChars": 600,
+          "maxWords": 110
+        },
+        {
+          "id": "pitch-paragraph",
+          "required": true,
+          "maxChars": 1200,
+          "maxWords": 220
+        },
+        {
+          "id": "boilerplate-short",
+          "required": true,
+          "maxChars": 600,
+          "maxWords": 110
+        },
+        {
+          "id": "boilerplate-medium",
+          "required": true,
+          "maxChars": 1200,
+          "maxWords": 220
+        },
+        {
+          "id": "boilerplate-long",
+          "required": true,
+          "maxChars": 2400,
+          "maxWords": 440
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "aspiration.purpose.mission",
+    "identity.brand.essence",
+    "identity.verbal.narrative",
+    "focus.category.definition",
+    "identity.naming.architecture"
+  ],
+  "uses": [],
+  "options": 3,
+  "varyOn": "tone"
+}

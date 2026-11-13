@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.sentence-length",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.voice",
+    "l2": "voice-rhythm",
+    "order": 5
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "voice-rule",
+    "valueType": "word-range"
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

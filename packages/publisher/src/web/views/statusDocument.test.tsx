@@ -4,8 +4,8 @@ import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { SITE_MAIN_ID } from "../frame/types.js";
-import type { SiteShellInput } from "../frame/types.js";
+import { SITE_MAIN_ID } from "@clossys/designer/frames";
+import type { SiteShellInput } from "@clossys/designer/frames";
 import { GlobalErrorDocument } from "./GlobalErrorDocument.js";
 import type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps } from "./GlobalErrorDocument.js";
 import { NotFoundDocument } from "./NotFoundDocument.js";
@@ -45,12 +45,13 @@ const shell: SiteShellInput = {
 
 const head = {
   lang: "en",
+  localeManifest: { locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }] },
   documentTitle: { page: "Something went wrong", brand: "Example Studio" },
   icon: { href: "/icon.svg", type: "image/svg+xml" },
 };
 
-const globalError: GlobalErrorDocumentFramedProps = { ...head, shell, resolveCopy, resolveAsset, status: "500", action: <button type="button" className="bg-accent">Try again</button> };
-const notFound: NotFoundDocumentProps = { ...head, shell, resolveCopy, resolveAsset, status: "404", action: <a href="/" className="bg-accent">Back to home</a> };
+const globalError: GlobalErrorDocumentFramedProps = { ...head, shell, resolveCopy, resolveAsset, status: "500", action: <button type="button" className="bg-primary">Try again</button> };
+const notFound: NotFoundDocumentProps = { ...head, shell, resolveCopy, resolveAsset, status: "404", action: <a href="/" className="bg-primary">Back to home</a> };
 const legacy: GlobalErrorDocumentErrorViewProps = { ...head, status: 500, title: "Something went wrong", description: "Try again later." };
 
 const documents: ReadonlyArray<{ name: string; render: (stylesheets?: readonly string[]) => ReactElement }> = [

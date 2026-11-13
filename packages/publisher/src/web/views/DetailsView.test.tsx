@@ -4,17 +4,20 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { act } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render as renderBare, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderToStaticMarkup, renderToString } from "react-dom/server";
+import { renderToStaticMarkup as renderToStaticMarkupBare, renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Banner } from "@clossys/designer/atoms";
+import { ALERT_TONE, Alert } from "@clossys/designer/components";
 import { DetailsView, type DetailsViewProps, type DetailsViewSection } from "./DetailsView.js";
 import { IndexView } from "./IndexView.js";
-import { AppFrame } from "../frame/AppFrame.js";
+import { AppFrame } from "@clossys/designer/frames";
 import * as web from "../index.js";
 import * as client from "../client.js";
 import * as server from "../server.js";
+import { ShellCopyTestHost, hostedRender, hostedMarkup } from "../__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
+const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
 afterEach(cleanup);
 const sections: readonly DetailsViewSection[] = [
@@ -119,7 +122,7 @@ describe("DetailsView", () => {
   });
 
   it("starts with the optional content notice before tabs and sections", () => {
-    const { container } = render(<DetailsView {...tabbed()} banner={<Banner variant="warning">Archived record</Banner>} />);
+    const { container } = render(<DetailsView {...tabbed()} banner={<Alert {...ALERT_TONE.warning}>Archived record</Alert>} />);
     const banner = screen.getByRole("status");
     const tablist = screen.getByRole("tablist", { name: "Record sections" });
     const firstSection = screen.getByRole("heading", { name: "Identity", level: 2 });
@@ -217,12 +220,12 @@ describe("DetailsView", () => {
       account: { signedOutLabel: "Signed out", sections: [] },
       commands: { heading: "Commands", triggerLabel: "Find a command", searchLabel: "Search commands", closeLabel: "Close commands", emptyMessage: "No matching commands", groups: [] },
     };
-    const tree = (tab = "overview") => <AppFrame {...frame}>{kind === "index" ? <IndexView
+    const tree = (tab = "overview") => <ShellCopyTestHost><AppFrame {...frame}>{kind === "index" ? <IndexView
       rows={[row]} rowKey={entry => entry.id}
       columns={[{ id: "name", header: "Name", isRowHeader: true, cell: entry => entry.name }]}
       collectionLabel="Record collection" empty={{ title: "No records" }}
       rowRoute={{ href: entry => "/records/" + entry.id, onNavigate }}
-    /> : <DetailsView {...tabbed({ tab, onTabChange })} />}</AppFrame>;
+    /> : <DetailsView {...tabbed({ tab, onTabChange })} />}</AppFrame></ShellCopyTestHost>;
     const host = document.createElement("div");
     host.innerHTML = renderToString(tree()); document.body.append(host);
     const main = within(host).getByRole("main");
@@ -284,6 +287,6 @@ describe("DetailsView", () => {
     expect(source).toMatch(/<Tabs\b/);
     expect(source).not.toMatch(/\b(?:PageHeader|Breadcrumb)\b/);
     expect(source).toMatch(/<Skeleton\b/);
-    expect(source).toMatch(/<Banner\b/);
+    expect(source).toMatch(/<Alert\b/);
   });
 });

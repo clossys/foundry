@@ -1,0 +1,138 @@
+import { fileURLToPath } from "node:url";
+import { createServer, request } from "node:http";
+import { describe, expect, it } from "vitest";
+import {
+  adaptPreview, createSpecimenHandler, directoryRecordSource, parseSpecimenQuery, specimenCsp, parseThemeParam, renderSpecimen, resolveFixtures,
+  specimenKindOf, specimenReporterScript, specimenUrl, textCopy, themeCss, validSpecimenId, createSpecimenBuilder,
+} from "./index.js";
+
+const records = fileURLToPath(new URL("./__fixtures__/records/", import.meta.url));
+const source = directoryRecordSource({ roots: [records], defaultTheme: "neutral" });
+
+describe("specimen query", () => {
+  it("accepts the four parameters and rejects bad values", () => {
+    expect(parseSpecimenQuery(new URLSearchParams("element=sample-card&v=1&theme=neutral:dark&width=480")))
+      .toEqual({ ok: true, query: { element: "sample-card", version: 1, theme: "neutral:dark", width: 480 } });
+    for (const bad of ["element=../x", "element=a&v=0", "element=a&width=50", "element=a&width=9000", "element=a&theme=a;b"]) {
+      expect(parseSpecimenQuery(new URLSearchParams(bad)).ok).toBe(false);
+    }
+    expect(specimenUrl("http://127.0.0.1:1/", { element: "a/b", version: 2, width: 320 })).toBe("http://127.0.0.1:1/__specimen?element=a%2Fb&v=2&width=320");
+  });
+
+  it("parses theme requests", () => {
+    expect(parseThemeParam("light")).toEqual({ mode: "light" });
+    expect(parseThemeParam("dark")).toEqual({ mode: "dark" });
+    expect(parseThemeParam("neutral")).toEqual({ id: "neutral", mode: "light" });
+    expect(parseThemeParam("neutral:dark")).toEqual({ id: "neutral", mode: "dark" });
+    expect(validSpecimenId("slot/element")).toBe(true);
+    expect(validSpecimenId("slot/../element")).toBe(false);
+  });
+});
+
+describe("record adapter", () => {
+  it("maps fuller-schema kinds onto specimen kinds", () => {
+    expect(specimenKindOf({ kind: "component" })).toBe("visual");
+    expect(specimenKindOf({ kind: "copy" })).toBe("text");
+    expect(specimenKindOf({ kind: "table" })).toBe("data");
+    expect(specimenKindOf({ kind: "logo" })).toBe("media");
+    expect(specimenKindOf({ kind: "route" })).toBe("flow");
+    expect(() => specimenKindOf({ id: "x", kind: "nope" })).toThrow(/unknown kind/);
+  });
+
+  it("tolerates nested container, defaults and limits", () => {
+    expect(adaptPreview({ container: { kind: "page" }, defaults: { width: 640, theme: "t" }, props: { a: 1 }, copy: { k: { text: "x", limits: { maxChars: 4 } } } }))
+      .toEqual({ container: "page", width: 640, theme: "t", fixtures: { a: 1 }, copy: { k: { text: "x", maxChars: 4 } } });
+  });
+
+  it("reads records by id and version, highest version by default", async () => {
+    const card = await source.read("sample-card");
+    expect(card).toMatchObject({ id: "sample-card", version: 1, kind: "visual", payload: { path: "sample-card.json" } });
+    expect(card!.payload.files).toHaveLength(1);
+    expect(card!.contentHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(await source.read("sample-card", 2)).toBeUndefined();
+    expect(await source.read("missing")).toBeUndefined();
+    const hero = await source.read("hero-copy");
+    expect(hero!.kind).toBe("text");
+    expect(hero!.preview.copy!["hero.title"]).toEqual({ text: "Ship a calmer release, every week.", role: "display", maxChars: 48, maxLines: 2 });
+  });
+
+  it("reads the theme by shadcn var names", async () => {
+    const theme = await source.theme();
+    expect(theme!.light.primary).toBe("oklch(0.205 0 0)");
+    const css = themeCss(theme);
+    expect(css).toContain("--primary:oklch(0.205 0 0)");
+    expect(css).toContain(".dark{");
+    expect(css).not.toMatch(/tokens\./);
+  });
+});
+
+describe("rendering", () => {
+  it("resolves $copy fixtures", () => {
+    expect(resolveFixtures({ a: { $copy: "k" }, b: [{ $copy: "z" }], c: 1 }, { k: { text: "hi" } })).toEqual({ a: "hi", b: ["[missing copy z]"], c: 1 });
+  });
+
+  it("falls back to markdown paragraphs for text copy", () => {
+    const rows = textCopy({ id: "x", version: 1, kind: "text", preview: {}, contentHash: "", payload: { path: "x.md", files: [], raw: "---\na: b\n---\n# T\n\nOne\nline.\n\nTwo" } });
+    expect(rows).toEqual([["paragraph-1", { text: "One line.", role: "body" }], ["paragraph-2", { text: "Two", role: "body" }]]);
+  });
+
+  it("renders text at its limits and marks overflow", async () => {
+    const page = await renderSpecimen({ source, builder: createSpecimenBuilder(), query: { element: "hero-copy" }, nonce: "n" });
+    expect(page.status).toBe(200);
+    expect(page.html).toContain('data-copy-key="hero.title" data-role="display" data-chars="34" data-max-chars="48" data-max-lines="2"');
+    expect(page.html).toContain('<script nonce="n">');
+    expect(page.html).not.toContain("data-over");
+  });
+
+  it("reports a data record it cannot draw and a missing record", async () => {
+    const builder = createSpecimenBuilder();
+    const table = await renderSpecimen({ source, builder, query: { element: "sample-table" }, nonce: "n" });
+    expect(table.html).toContain('data-specimen-unavailable="data"');
+    expect(table.html).not.toContain("no renderer yet");
+    expect(table.html).toContain("no data renderer for this payload");
+    const missing = await renderSpecimen({ source, builder, query: { element: "nope" }, nonce: "n" });
+    expect(missing.status).toBe(404);
+    expect(missing.html).toContain("element nope not found");
+  });
+
+  it("escapes reporter config for inline script", () => {
+    const script = specimenReporterScript({ element: "</script><x>", elementVersion: 1, kind: "visual", theme: "t", width: null, preErrors: [{ source: "build", message: " " }] });
+    expect(script).not.toContain("</script>");
+    expect(script).not.toContain(" ");
+  });
+});
+
+describe("specimen page policy", () => {
+  it("runs script only from its own bundles and nonce, fetches nothing and cannot navigate the top window", async () => {
+    const origin = "http://127.0.0.1:4621";
+    expect(specimenCsp("n0nce", origin)).toBe(`sandbox allow-scripts allow-same-origin; default-src 'none'; script-src ${origin}/__specimen/assets/ 'nonce-n0nce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' data: blob:; frame-src ${origin}/__specimen; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self' http://127.0.0.1:* http://localhost:*`);
+    // It frames exactly one path, the specimen route (block-viewer-iframe previews a specimen in an iframe):
+    // one host-source with a path and no trailing slash, never 'self', a wildcard, a scheme or a second source.
+    const frameSrc = specimenCsp("n0nce", origin).split("; ").filter(part => part.startsWith("frame-src "));
+    expect(frameSrc).toEqual([`frame-src ${origin}/__specimen`]);
+    expect(frameSrc[0]).not.toMatch(/'self'|\*|\s(?:https?|data|blob):(?:\s|$)|\/$/);
+    expect(specimenCsp("n0nce", origin)).not.toMatch(/child-src|'unsafe-eval'/);
+    // Without a usable origin the script source falls back to 'self', never wider, and nothing can be framed.
+    for (const bad of [undefined, "*", "http://a b", "javascript:alert(1)"]) {
+      expect(specimenCsp("n", bad)).toContain("; script-src 'self' 'nonce-n'; ");
+      expect(specimenCsp("n", bad)).toContain("; frame-src 'none'; ");
+    }
+    const handle = createSpecimenHandler({ source, builder: { build: async () => { throw new Error("no build"); }, asset: async () => undefined } as never });
+    const server = createServer((req, res) => { void handle(req, res).then(handled => { if (!handled) res.writeHead(404).end(); }); });
+    await new Promise<void>(accept => server.listen(0, "127.0.0.1", accept));
+    const port = (server.address() as { port: number }).port;
+    try {
+      const csp = await new Promise<string>((accept, reject) => {
+        const req = request({ hostname: "127.0.0.1", port, path: "/__specimen?element=example.button" }, response => { response.resume(); response.on("end", () => accept(String(response.headers["content-security-policy"]))); });
+        req.on("error", reject); req.end();
+      });
+      expect(csp).toMatch(new RegExp(`^sandbox allow-scripts allow-same-origin; default-src 'none'; script-src http://127\\.0\\.0\\.1:${port}/__specimen/assets/ 'nonce-[A-Za-z0-9+/=]+'; `));
+      expect(csp).toContain("connect-src 'none'");
+      expect(csp).toContain(`; frame-src http://127.0.0.1:${port}/__specimen; `);
+      // The sent frame-src is that one path source: never 'self' or a wildcard.
+      expect(csp.split("; ").filter(part => part.startsWith("frame-src "))).toEqual([`frame-src http://127.0.0.1:${port}/__specimen`]);
+      expect(csp.split("; ").find(part => part.startsWith("frame-src "))).not.toMatch(/'self'|\*/);
+      expect(csp).not.toMatch(/allow-top-navigation|allow-popups|allow-forms/);
+    } finally { await new Promise(accept => server.close(accept)); }
+  });
+});

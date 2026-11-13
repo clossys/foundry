@@ -1,0 +1,16 @@
+{
+  "entries": [
+    {
+      "id": "brand.tagline",
+      "text": "Light work for heavy weeks.",
+      "status": "approved",
+      "surface": "hero"
+    },
+    {
+      "id": "brand.tagline-alt",
+      "text": "Fold the week into something lighter.",
+      "status": "draft",
+      "surface": "hero"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { SITE_MAIN_ID } from "../frame/types.js";
+import { SITE_MAIN_ID } from "@clossys/designer/frames";
 
 /** Landmark roles that belong to the page frame, never to a view's content root. */
 const FRAME_LANDMARK_ROLES = new Set(["main", "banner", "contentinfo", "navigation"]);

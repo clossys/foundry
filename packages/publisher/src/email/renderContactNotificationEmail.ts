@@ -1,4 +1,6 @@
 import { escapeHtml } from "./internal/escapeHtml.js";
+import { resolveDocumentLocale } from "../preview/render-document-locale.js";
+import type { DocumentLocaleOptions } from "../preview/render-document-locale.js";
 
 /**
  * Contact notification email renderer.
@@ -47,7 +49,7 @@ export interface ContactNotificationLabels {
   readonly message?: string;
 }
 
-export interface RenderContactNotificationEmailOptions {
+export interface RenderContactNotificationEmailOptions extends DocumentLocaleOptions {
   readonly labels?: ContactNotificationLabels;
 }
 
@@ -121,6 +123,7 @@ export function renderContactNotificationEmail(
 ): ContactNotificationEmail {
   if (typeof input !== "object" || input === null || Array.isArray(input)) fail("input", "must be an object");
   const labels = resolveLabels(options);
+  const { locale, dir } = resolveDocumentLocale(options);
 
   const topic = requireString("topic", readOwn(input, "topic"), CONTROL_SINGLE_LINE);
   const name = requireString("name", readOwn(input, "name"), CONTROL_SINGLE_LINE);
@@ -138,7 +141,7 @@ export function renderContactNotificationEmail(
 
   const html = [
     "<!DOCTYPE html>",
-    '<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>',
+    `<html lang="${escapeHtml(locale)}" dir="${dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>`,
     '<body style="margin:0;padding:16px;">',
     '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tbody>',
     ...rows,

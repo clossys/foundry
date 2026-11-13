@@ -1,0 +1,10 @@
+[
+  {
+    "schemaVersion": 1,
+    "layer": "strings",
+    "baseSignedHead": "0b06a262bc9447787b9e79393125f1369bfb3470",
+    "status": "owner-signed",
+    "ownerSignoffComment": "owner sign-off 2026-10-29",
+    "addedLeafIds": ["strings.common"]
+  }
+]

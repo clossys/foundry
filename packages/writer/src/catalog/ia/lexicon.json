@@ -1,0 +1,158 @@
+{
+  "layer": "lexicon",
+  "nodes": [
+    {
+      "id": "voice",
+      "label": "Voice",
+      "children": [
+        {
+          "id": "voice-tone",
+          "label": "Tone",
+          "leaves": [
+            "lexicon.formality",
+            "lexicon.warmth",
+            "lexicon.energy"
+          ]
+        },
+        {
+          "id": "voice-person-and-mood",
+          "label": "Person and mood",
+          "leaves": [
+            "lexicon.person",
+            "lexicon.mood"
+          ]
+        },
+        {
+          "id": "voice-rhythm",
+          "label": "Rhythm",
+          "leaves": [
+            "lexicon.sentence-length",
+            "lexicon.reading-level"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "terminology",
+      "label": "Terminology",
+      "children": [
+        {
+          "id": "terminology-brand-names",
+          "label": "Brand names",
+          "leaves": [
+            "lexicon.brand-names"
+          ]
+        },
+        {
+          "id": "terminology-glossary",
+          "label": "Glossary",
+          "leaves": [
+            "lexicon.preferred-terms"
+          ]
+        },
+        {
+          "id": "terminology-avoid-list",
+          "label": "Avoid list",
+          "leaves": [
+            "lexicon.avoid-terms",
+            "lexicon.avoid-patterns"
+          ]
+        },
+        {
+          "id": "terminology-spelling",
+          "label": "Spelling",
+          "leaves": [
+            "lexicon.spelling-variant"
+          ]
+        },
+        {
+          "id": "terminology-pronunciation",
+          "label": "Pronunciation",
+          "leaves": [
+            "lexicon.pronunciation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "claims",
+      "label": "Claims",
+      "children": [
+        {
+          "id": "claims-product-facts",
+          "label": "Product facts",
+          "leaves": [
+            "lexicon.product-claims"
+          ]
+        },
+        {
+          "id": "claims-metrics",
+          "label": "Metrics",
+          "leaves": [
+            "lexicon.metric-claims"
+          ]
+        },
+        {
+          "id": "claims-legal-and-compliance",
+          "label": "Legal and compliance",
+          "leaves": [
+            "lexicon.compliance-statements"
+          ]
+        },
+        {
+          "id": "claims-comparisons",
+          "label": "Comparisons",
+          "leaves": [
+            "lexicon.comparison-claims"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "formats",
+      "label": "Formats",
+      "children": [
+        {
+          "id": "formats-numbers-and-plurals",
+          "label": "Numbers and plurals",
+          "leaves": [
+            "lexicon.number-format",
+            "lexicon.plural-rules"
+          ]
+        },
+        {
+          "id": "formats-dates-and-times",
+          "label": "Dates and times",
+          "leaves": [
+            "lexicon.date-format",
+            "lexicon.time-format"
+          ]
+        },
+        {
+          "id": "formats-currency-and-units",
+          "label": "Currency and units",
+          "leaves": [
+            "lexicon.currency-format",
+            "lexicon.unit-format"
+          ]
+        },
+        {
+          "id": "formats-punctuation-and-capitalization",
+          "label": "Punctuation and capitalization",
+          "leaves": [
+            "lexicon.capitalization",
+            "lexicon.punctuation"
+          ]
+        },
+        {
+          "id": "formats-direction-and-expansion",
+          "label": "Direction and expansion",
+          "leaves": [
+            "lexicon.direction",
+            "lexicon.expansion-budget"
+          ]
+        }
+      ]
+    }
+  ]
+}

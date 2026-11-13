@@ -1,0 +1,7 @@
+{
+  "id": "neutral",
+  "version": 1,
+  "kind": "theme",
+  "payload": "theme.json",
+  "reason": "fixture: stock shadcn neutral theme"
+}

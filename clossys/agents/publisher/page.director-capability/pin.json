@@ -1,0 +1,12 @@
+{
+  "candidate": "page-v7.json",
+  "sha256": "bd8f14799d402e2023b41e3a832a8451d265288636cc8cfd17c7ece2ececbe54",
+  "decidedBy": "agent:publisher",
+  "basis": "agent",
+  "at": "2026-11-12T09:17:09.902Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6833872811",
+    "at": "2026-11-12T19:34:38.169Z"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.preferred-terms",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.terminology",
+    "l2": "terminology-glossary",
+    "order": 8
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "term",
+    "valueType": "term-list"
+  },
+  "inputs": [
+    "focus.category.definition",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

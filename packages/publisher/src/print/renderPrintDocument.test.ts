@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ComposeDocument } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";
 import { renderPrintDocument } from "./renderPrintDocument.js";
+import type { RenderPrintOptions } from "./types.js";
 
 function baseDoc(overrides: Partial<ComposeDocument> = {}): ComposeDocument {
   return {
@@ -37,6 +38,52 @@ function thrown(fn: () => unknown): RenderError {
   }
   throw new Error("expected renderPrintDocument to throw a RenderError, but it did not throw at all");
 }
+
+describe("renderPrintDocument — document locale", () => {
+  const manifest: NonNullable<RenderPrintOptions["manifest"]> = {
+    defaultLocale: "en",
+    locales: [
+      { tag: "en", dir: "ltr", state: "active" },
+      { tag: "ar", dir: "rtl", state: "active" },
+      { tag: "ar-XB", dir: "rtl", state: "pseudo" },
+    ],
+  };
+
+  it("defaults existing callers to English with left-to-right direction", () => {
+    expect(renderPrintDocument(baseDoc()).html).toContain('<html lang="en" dir="ltr">');
+  });
+
+  it.each([
+    ["en", "ltr"],
+    ["ar", "rtl"],
+    ["ar-XB", "rtl"],
+  ])("renders declared %s language and %s direction", (locale, dir) => {
+    expect(renderPrintDocument(baseDoc(), { locale, manifest }).html)
+      .toContain(`<html lang="${locale}" dir="${dir}">`);
+  });
+
+  it("canonicalizes the requested locale through Writer", () => {
+    expect(renderPrintDocument(baseDoc(), { locale: "AR-xb", manifest }).html)
+      .toContain('<html lang="ar-XB" dir="rtl">');
+  });
+
+  it("uses the manifest default when no locale is requested", () => {
+    expect(renderPrintDocument(baseDoc(), { manifest: { ...manifest, defaultLocale: "ar" } }).html)
+      .toContain('<html lang="ar" dir="rtl">');
+  });
+
+  it.each(["ar", "ar-XB"])("refuses %s without a caller manifest declaration", (locale) => {
+    expect(() => renderPrintDocument(baseDoc(), { locale }))
+      .toThrow("Expected exactly one declared locale direction");
+  });
+
+  it("refuses a locale omitted from the caller manifest", () => {
+    expect(() => renderPrintDocument(baseDoc(), {
+      locale: "ar",
+      manifest: { defaultLocale: "en", locales: [manifest.locales[0]!] },
+    })).toThrow("Expected exactly one declared locale direction");
+  });
+});
 
 describe("renderPrintDocument — refusal paths", () => {
   it('REFUSES a document whose channel is not "print"', () => {

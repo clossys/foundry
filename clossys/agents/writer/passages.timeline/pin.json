@@ -1,0 +1,30 @@
+{
+  "candidate": "studio-v3.md",
+  "sha256": "1bf6325baf7ebb9aacca27ce9aacb84003825430e6b6668802ece417f64c249d",
+  "decidedBy": "agent:writer",
+  "basis": "agent",
+  "at": "2026-11-12T00:07:41.141Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
+    "at": "2026-11-12T01:19:41.599Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:15.002Z",
+    "cites": {
+      "director:execution.roadmap.milestone": 7,
+      "director:identity.verbal.voice": 6,
+      "director:execution.roadmap.release": 6,
+      "director:execution.measure.driver": 8,
+      "director:execution.measure.north-star": 6
+    },
+    "proof": {
+      "director:execution.roadmap.milestone": "sha256:02b28eb3148709af2e8ff02d9aec987298dc39e6c0500272b688094a98e7a309",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
+      "director:execution.roadmap.release": "sha256:97cac18100039bc2e9d3fc179ab05c6daa56243c33897357a7e9b7cc26849d24",
+      "director:execution.measure.driver": "sha256:0c27d3f3f7a747bc68cbd778c6030beff0c0bbf8d86640aa66736f7ecdbb2e38",
+      "director:execution.measure.north-star": "sha256:3871bc0c2481012c71c8062f189a86067f9f3fc45e1ba4491101ee331965718e"
+    }
+  }
+}

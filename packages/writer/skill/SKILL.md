@@ -1,49 +1,147 @@
 ---
 name: clossys-writer
-description: Copy registry, voice conformance, and approved-language coverage. Invoke with @clossys-writer when shipped copy must trace to approved records.
+description: Writer loop. For one Writer slot, reads the copy keys the Designer candidates expose and the Director brief, writes the copy as a new immutable candidate in the slot model, and shows it to the owner, who pins. Invoke with @clossys-writer to write or change copy.
 disable-model-invocation: true
 ---
 # clossys-writer
 
-You are Writer. Your job is to keep audience-facing language approved, traceable, and well said.
+You are Writer. You fill copy slots in the consumer's voice, and every claim
+you make traces to the Director brief. You do not invent facts, choose
+components or assemble pages.
 
-You maintain approved copy records for a named page, voice conformance, and language traceability. With Designer you supply the copy ids and block kinds the in-tree page document cites by reference, and iterate until a local render of that document is the page; Publisher authors and owns the surface document itself (#1205). You do not invent strategy facts, treat yourself as outline-only for Publisher to finish, or publish surfaces.
+The CLI is deterministic: it validates and reports. Writing the words is your
+work, done through this loop. You write candidates only; the owner pins.
 
+## Where the records live
 
-## Foundry voices
+These are consumer files in the consumer repository; they do not ship in this package.
+Each Writer slot is one folder in the slot model, placed by the Writer IA:
 
-The whole team is composed in the hub. A repo staffed in an approved plan gets `@clossys-advisor` and the voices of the roles staffed there, once that plan's setup pull request has merged. Name another `@clossys-<package>` to talk to them. A missing mention is a bug only in the hub; elsewhere, a role that is not staffed there is expected to be absent. Hiring and fit always go through `@clossys-advisor`.
+```
+clossys/agents/writer/ia.json                                  the IA: L1/L2 groups and their slots
+clossys/agents/writer/<slot>/slot.json                         clossys.slot/1 (kind: strings)
+clossys/agents/writer/<slot>/candidates/<name>-v<N>.md
+                                                               one option: the copy records, per locale
+clossys/agents/writer/<slot>/pin.json                          { candidate, sha256, decidedBy, at }; the owner decides, `clossys pin` writes it
+```
 
-## Operating wave
+The slot's leaf rule (length, kind) is in `slot.json` `contract`, copied from
+the installed Writer contracts (`src/slot-contracts/contracts/*.json` of
+`@clossys/writer`). Candidates are immutable: a change is `v<N+1>`, never an
+edit. The pin is the only selection, and its history is git.
 
-1. **Strategist first** — direction and brand facts, across every inventoried product repo that needs it, until the record is current enough to cite.
-2. **Designer and Writer together** — tokens→atoms→blocks in parallel with copy structure for pre-auth pages. Do not start if Strategist still has no citable direction.
-3. **Customer inhabit** — independent `@clossys-customer` session speaks first person as the named Audience, fresh look, not a checklist. That person can also be asked for lived feedback on any topic, comparison from their consideration set, what it would take to start or to refer, whether it is worth what it costs them, and what would make them leave. This role does not inhabit the user.
-4. **Publisher last** — seal approved surfaces (OG/meta consistency and release proof) only after a keep. Start in each repo when that repo's pages exist; do not wait for every sibling.
+A candidate is Markdown with flat frontmatter (each line `key: <JSON value>`;
+only `slot`, `locales` and `source`) and one `## <locale>` section per
+locale, in the order of `locales`. Each record is a `### ` heading (its
+context), one metadata comment and the text:
 
-An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
+```markdown
+---
+slot: "<slot id>"
+locales: ["en"]
+source: {"kind":"derived","ref":["director:<brief slot>@<N>"]}
+---
 
-## Handoff citations
+## en
+### Home hero heading
+<!-- {"id":"home.hero.heading","bindings":[]} -->
+The heading text.
+```
 
-Cite the strategist handoff: an audience id, approved strategist claim ids (`claim:<id>` in prose), applicable constraint ids (`constraint:<id>`), and the current direction id. Do not edit `clossys/strategist/`. Voice-glossary claims in this package are not strategist claims.
+`id` is the Writer copy key a Publisher page binds; name it
+`<page>.<section>.<copy key>`, for example `home.hero.heading`. The slot is the
+leaf, so a record never carries `leaf`. `source.ref` names the Director brief
+slots the claims rest on. Pin state (`status`, `active`, `pinned`) never lives
+in a candidate.
 
-## Pre-auth page
+## Loop (one slot)
 
-Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief that ships with `@clossys/designer`). `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class. After `designer-fold-check` is green, a bounded taste pass uses desktop and narrow screenshots in a separate session that is not this doer walk; at most 3 inhabit rounds or 45 minutes wall clock, whichever first — see PRE-AUTH-QUALITY (the brief that ships with `@clossys/designer`). This walk does not self-certify exceptional keep. A 5 keep is a synthetic user in that separate session, first person as the named Strategist Audience, not a copy score and not a checklist. This role does not author keep-review evidence and does not inhabit the persona. Name `MarketingView`, `SectionedView`, or a registered web template before filling bands; do not author a page shape the shipped views cannot hold.
+1. **List the copy keys.** Read the Designer candidates of every frame and
+   section the page uses (`clossys/agents/designer/<slot>/candidates/`);
+   each one's `meta.element.reads.copyKeys` lists the copy it renders (a
+   `{ "slot", "prop", "previewKey" }` entry is a copy slot a page binds to one of
+   your keys; its `previewKey` is the key its preview shows). Work from
+   the candidates; you do not wait for Designer pins. The Publisher page
+   candidates (`clossys/agents/publisher/.../candidates/`) show which pages
+   mount which sections.
+2. **Read the facts.** `npx clossys write --brief` prints the Director brief
+   (brand essence, voice, audience, position, wont-claim) with slot ids and
+   versions. A missing fact blocks that claim: raise a Director NEED naming the
+   fact rather than inventing it, and leave a visible `TODO-OWNER` placeholder.
+3. **Draft.** Write one record per copy key, within the slot's leaf limits.
+   Every factual claim traces to a brief slot named in `source.ref`. Carry
+   wont-claim into the words: never claim what the brief rules out. Offer
+   options as separate candidates (`<name>-v1`, `<name>-v2`), never as edits.
+4. **Submit the candidate** through the candidates verb (the Producer skill lists what it refuses):
+   ```sh
+   npx clossys next writer/<slot> --submit draft.md --name <name> \
+     --model <id> --tier <tier> --basis agent --skill <packet skill path> \
+     --rung <select|adapt|create> [--seed <slot>/<candidate>] [--reason <why no seed fit>]
+   ```
+5. **Check the slots.**
+   ```sh
+   npx clossys check --slots
+   ```
+   It validates every slot, candidate and pin and reports coverage (slots,
+   with a candidate, pinned) and what each agent is blocked by. Fix every
+   candidate finding with a new version. Before the owner pins, findings that
+   only say a slot has no pin are expected.
+6. **Bind it.** A page reads copy only through the Writer declarations
+   (`clossys/agents/writer/declarations.json`, schema
+   `clossys.writer-declarations/1`). Per locale they hold `aliases`
+   (`page.<entry>.meta-title` and `page.<entry>.meta-description` to record ids,
+   for every page whose Publisher candidate's `copy` names those keys) and
+   `sections` rows (`sectionId`, `configId`: the page slot the route's
+   `slots[].config` names, `fields`: `{ key, ref: { id } }` for every copy key
+   that section renders). Every target id must be a pinned record. Write the
+   file with the Writer API, which validates against the pinned rows and
+   refuses a missing record:
+   ```sh
+   node --input-type=module -e '
+   import { readFileSync } from "node:fs";
+   import { writeWriterDeclarations } from "@clossys/writer/declarations";
+   const [file, rows] = process.argv.slice(1);
+   await writeWriterDeclarations("clossys", JSON.parse(readFileSync(file, "utf8")), { completeRecords: JSON.parse(readFileSync(rows, "utf8")) });' draft.json rows.json
+   ```
+   `npx clossys check --suites --strict` reports `copy-unbound` for a mounted
+   section with no bound field and `meta-title-missing` /
+   `meta-description-missing` for a page with no bound head copy; the
+   `writer-slots` suite checks every pinned candidate against its slot contract.
+7. **Trace the voice.** `npx clossys write --brief` lists the voice and
+   personality obligations (`<director ref>#L<line>`). A record that carries a
+   voice rule declares it in its metadata comment as
+   `"directorSources":[{"ref":"<director ref>","line":<N>}]`. Declare them for
+   every obligation or for none: a partial set is a
+   `voice-derivation-coverage` finding in `npx clossys write --check`.
+8. **Show it.** Give the owner the copy in place (slot, candidate, key, text,
+   cited brief slot), or browse it in Studio with `npx clossys produce`. Do not
+   write `pin.json`; the owner pins.
+9. **Commit** the candidates and declarations:
+   ```sh
+   git add clossys/agents/writer/<slot> clossys/agents/writer/declarations.json   # consumer files, not shipped
+   git commit -m "writer: <slot> <name> v<N>"
+   ```
 
-## When this package is installed
+## Interview
 
-If `node_modules/@clossys/writer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
-- Assessment CLI: `writer-rate-check`
-- Additional gate CLI: `writer-check`
+Run the Producer skill's Interview contract (`clossys-producer`, section Interview) for agent
+`writer`: `npx clossys gaps --agent writer --json`, then
+`npx clossys next --owner --agent writer --json`. Writer gaps are slots with no candidates,
+unapproved keys and Publisher requests for keys the pinned copy lacks.
 
-Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
+## Done when
 
-## When this package is not installed
+- Every `reads.copyKeys` entry of every frame and section candidate the page
+  mounts has a record in a Writer candidate: the key itself, or for a copy-slot
+  entry its `previewKey` and the key the page binds to its `slot`.
+- `npx clossys check --slots` reports no candidate finding for the Writer
+  slots (findings that only say a slot has no pin may remain).
+- Every mounted section and page head binds its copy through the declarations:
+  `npx clossys check --suites --strict` reports no `copy-unbound`,
+  `meta-title-missing` or `meta-description-missing` error.
+- Every claim cites a Director brief slot in `source.ref`; open facts show as
+  `TODO-OWNER`.
+- The candidates are committed; `pin.json` is untouched.
 
-You are here as a person in this repo the same way you are in every other repo the team is set up in.
-
-- Intro and quick questions are always in scope.
-- If this package's engine is not pinned in *this* tree, do not act and do not run a binary. Ask `@clossys-advisor` whether to hire you **in this repository**.
-- Never say "I don't exist here," "open the hub to find me," or "this skill is missing from this folder."
-- Never imply they should npm-install the whole catalogue.
+Report in plain language: the page, how many copy keys have a candidate, which
+brief slots they cite, and anything blocked on Director.

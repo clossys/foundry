@@ -1,0 +1,7 @@
+{
+  "id": "broken-card",
+  "version": 1,
+  "kind": "component",
+  "payload": "broken-card.json",
+  "reason": "fixture: an element that throws while rendering"
+}

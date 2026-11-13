@@ -1,0 +1,19 @@
+{
+  "candidate": "studio-v1.md",
+  "sha256": "30d112e1512080f99db7d12fa01c7f52ee627abb742f3402be8263011701b4d5",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:58:39Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:01.839Z",
+    "cites": {
+      "director:advantage.proposition.proof": 6,
+      "director:context.competition.alternative": 5
+    },
+    "proof": {
+      "director:advantage.proposition.proof": "sha256:e85d6d8a3ec86a30510f76d8136c8a2b1442c4083a996570e0533ee30c685e29",
+      "director:context.competition.alternative": "sha256:eed0389cb2a1593c63555d7748f7239b97759fce7fa7517e1a22caee07549f0e"
+    }
+  }
+}

@@ -6,12 +6,12 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 import type { ReactElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup as renderToStaticMarkupBare } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render as renderBare, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
-import type { IconNode } from "@clossys/designer/atoms/server";
+import type { IconNode } from "@clossys/designer/components/server";
 import { CONTRAST_PAIRS, contrastRatio, parseBrandDeclarations } from "@clossys/designer/tokens";
 import { ThemeProvider, ThemeToggle } from "@clossys/designer/theme";
 import { AuthView } from "../views/AuthView.js";
@@ -20,11 +20,14 @@ import { CaptureView } from "../views/CaptureView.js";
 import { DocumentView } from "../views/DocumentView.js";
 import { ErrorView } from "../views/ErrorView.js";
 import { StatusView } from "../views/StatusView.js";
-import { LandingView } from "#publisher-web-views";
+import { Hero } from "@clossys/designer/blocks/server";
 import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
-import { resolveShell } from "./internal/resolveShell.js";
-import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SiteFooterContractError } from "./site-frame-contract.js";
+import { resolveShell } from "../../../../designer/dist/frames/site-frame/internal/resolveShell.js";
+import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SiteFooterContractError } from "../../../../designer/dist/frames/site-frame/site-frame-contract.js";
+import { hostedRender, hostedMarkup } from "../__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
+const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
 afterEach(cleanup);
 
@@ -186,7 +189,7 @@ describe("SiteFrame", () => {
     expect(brand).toHaveTextContent("Example");
     // The header logomark is the resolved asset painted in the accent token by default.
     expect(brand.querySelector("img")).toBeNull();
-    expect(brand.querySelector("[data-brand-mark]")).toHaveClass("bg-accent");
+    expect(brand.querySelector("[data-brand-mark]")).toHaveClass("bg-primary");
     expect(renderToStaticMarkup(frame(siteShellFor(CONFIG, "site"), <p>content</p>))).toContain("mask-image:url(&quot;/brand/mark.svg&quot;)");
     const nav = container.querySelector('header nav[aria-label="Primary"]') as HTMLElement;
     expect([...nav.querySelectorAll(".nav-disclosure-panel > ul:first-child a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
@@ -589,7 +592,7 @@ describe("siteShellFor", () => {
     expect(environment).toHaveClass("site-header-environment-ghost");
     expect(header.querySelectorAll(".site-header-environment-ghost")).toHaveLength(1);
     expect(environment).toHaveClass("hover:bg-surface-sunken");
-    expect(environment).not.toHaveClass("bg-accent");
+    expect(environment).not.toHaveClass("bg-primary");
     expect(environment.querySelector("svg")).not.toBeNull();
     const currents = [...container.querySelectorAll('header a[aria-current="true"]')];
     expect(currents).toHaveLength(1);
@@ -659,20 +662,17 @@ function moduleSpecifiers(source: string): string[] {
   return [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["'`]([^"'`]+)["'`]/g)].map((match) => match[1] as string);
 }
 
+const SITE_FRAME_SOURCE = join(import.meta.dirname, "../../../../designer/src/frames/site-frame");
 const FRAME_ALLOWED_IMPORT = /^(react|@clossys\/designer\/[a-z-]+\/server|@clossys\/writer|\.{1,2}\/[A-Za-z./-]+\.js)$/;
 const FRAME_CLIENT_MODULES = [
-  "AppFrame.specimen.tsx", "AppFrame.tsx", "NavDisclosure.boundary.client.tsx",
+  "NavDisclosure.boundary.client.tsx",
   "NavDisclosure.client.tsx", "SkipLink.client.tsx",
 ];
 // AppFrame is an explicit web/client composition; SiteFrame's server rules stay unchanged.
 const FRAME_IMPORT_EXCEPTIONS: Readonly<Record<string, readonly string[]>> = {
   "NavDisclosure.client.tsx": ["@clossys/designer/shell"],
-  "NavDisclosure.boundary.client.tsx": ["#publisher-frame-navigation"],
-  "SiteFrame.tsx": ["#publisher-web-views"],
-  "AppFrame.tsx": ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/icons", "@clossys/designer/blocks", "@clossys/designer/theme"],
-  "AppFrame.specimen.tsx": ["@clossys/designer/atoms", "@clossys/designer/blocks"],
-  "app-frame-types.ts": ["@clossys/designer/blocks", "@clossys/designer/theme"],
-  "app-frame-layout.ts": ["@clossys/designer/tokens"],
+  "NavDisclosure.boundary.client.tsx": ["#designer-frame-navigation"],
+  "SiteFrame.tsx": ["@clossys/designer/frames"],
 };
 
 function allowedFrameImport(name: string, specifier: string): boolean {
@@ -681,7 +681,7 @@ function allowedFrameImport(name: string, specifier: string): boolean {
 
 function frameSources(): Array<[string, string]> {
   const files: Array<[string, string]> = [];
-  for (const directory of [import.meta.dirname, join(import.meta.dirname, "internal")]) {
+  for (const directory of [SITE_FRAME_SOURCE, join(SITE_FRAME_SOURCE, "internal")]) {
     for (const name of readdirSync(directory)) {
       if (!/\.tsx?$/.test(name) || /\.(test|check)\.tsx?$/.test(name)) continue;
       files.push([name, readFileSync(join(directory, name), "utf8")]);
@@ -699,7 +699,7 @@ describe("module boundaries", () => {
       if (FRAME_CLIENT_MODULES.includes(name)) expect(source.startsWith('"use client";')).toBe(true);
       else expect(source).not.toMatch(/["']use client["']/);
     }
-    const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
+    const frameSource = readFileSync(join(SITE_FRAME_SOURCE, "SiteFrame.tsx"), "utf8");
     expect(frameSource).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
   });
 
@@ -714,17 +714,17 @@ describe("module boundaries", () => {
 
   it("refuses AppFrame interactive imports in SiteFrame, unnamed modules and its pure helpers", () => {
     for (const name of ["SiteFrame.tsx", "UnlistedFrame.tsx", "AppFrame.other.tsx", "app-frame-contract.ts", "AppFrameBrand.tsx"]) {
-      for (const specifier of ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/blocks", "@clossys/designer/theme", "@clossys/designer/tokens"]) {
+      for (const specifier of ["react-aria-components", "@clossys/designer/components", "@clossys/designer/blocks", "@clossys/designer/theme", "@clossys/designer/tokens"]) {
         expect(allowedFrameImport(name, specifier), `${name}: ${specifier}`).toBe(false);
       }
     }
     expect(allowedFrameImport("AppFrame.specimen.tsx", "@clossys/designer/theme")).toBe(false);
-    expect(allowedFrameImport("app-frame-layout.ts", "@clossys/designer/atoms")).toBe(false);
+    expect(allowedFrameImport("app-frame-layout.ts", "@clossys/designer/components")).toBe(false);
     expect(allowedFrameImport("AppFrame.tsx", "unlisted-dependency")).toBe(false);
   });
 
   it("keeps AppFrame's shared contract imports type-only", () => {
-    const source = ts.createSourceFile("app-frame-types.ts", readFileSync(join(import.meta.dirname, "app-frame-types.ts"), "utf8"), ts.ScriptTarget.Latest, true);
+    const source = ts.createSourceFile("app-frame-types.ts", readFileSync(join(import.meta.dirname, "../../../../designer/src/frames/app-frame-types.ts"), "utf8"), ts.ScriptTarget.Latest, true);
     for (const statement of source.statements) {
       if (ts.isImportDeclaration(statement)) expect(statement.importClause?.isTypeOnly).toBe(true);
       if (ts.isExportDeclaration(statement) && statement.moduleSpecifier) expect(statement.isTypeOnly).toBe(true);
@@ -1077,7 +1077,7 @@ describe("SiteFrame chrome parity", () => {
 
 
 function overlayHero() {
-  return <LandingView document={{ id: "home", resolutions: [resolveCopy(ref("brand.label"))!], sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: "Welcome" }] }} fit="frame" landmark="none" />;
+  return <Hero id="hero" ground="inverse" heading="Welcome" />;
 }
 
 it("keeps overlay legal links keyboard reachable and pointer operable", async () => {
@@ -1449,7 +1449,7 @@ it.each(["light", "dark"] as const)("keeps inverse environment-only links readab
       expect(link).toHaveClass("text-ink-on-inverse", "hover:text-ink-on-inverse", "focus-visible:text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse");
       expect(link).not.toHaveClass("text-ink-primary");
       expect(link).not.toHaveClass("hover:bg-surface-sunken");
-      expect(link).not.toHaveClass("focus-visible:outline-accent");
+      expect(link).not.toHaveClass("focus-visible:outline-primary");
       expect(link.querySelector("svg")).toHaveAttribute("stroke", "currentColor");
       expect(link.querySelector<SVGElement>("svg")!.style.color).toBe("");
       expect(link.querySelector("span")).toHaveTextContent(kind === "front-door" ? "App" : kind === "admin" ? "Admin" : "Demo");

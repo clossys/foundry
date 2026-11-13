@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { readdirSync, readFileSync } from "node:fs";
-import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedConsentCopy, ResolvedCopyField } from "../../consent-copy/types.js";
@@ -1036,11 +1035,23 @@ describe("CONSENT-1 card composition", () => {
     expect(presentation === "card" ? screen.getByRole("button", { name: "Accept" }) : page).toHaveFocus();
   });
 
-  it("retains the immutable-base mounted banner HTML when explicitly selected", () => {
+  it("retains the mounted banner composition when explicitly selected", () => {
     render(<ConsentExperience copy={COPY} createLifecycle={() => fakeLifecycle({ promptAutomatically: true })} presentation="banner" policyLink={{ href: "/privacy" }} {...NOTICE_REVIEW_OFF} />);
-    const html = banner()!.outerHTML.replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
-    const hash = createHash("sha256").update(html).digest("hex");
-    expect(hash).toBe("93eb912deb9a13355a2127d64b39039a278020624a9c96b605ed1a8eb36f9de3");
+    const notice = banner()!;
+    expect(notice).toHaveAttribute("data-consent-banner");
+    expect(notice).not.toHaveClass("consent-card");
+    expect(notice).toHaveAccessibleName("Notice title");
+    const heading = within(notice).getByRole("heading", { level: 2, name: "Notice title" });
+    expect(notice.getAttribute("aria-labelledby")).toBe(heading.id);
+    expect(heading.nextElementSibling).toHaveTextContent("Prompt lead sentence.");
+    const link = within(notice).getByRole("link", { name: "Policy" });
+    expect(link).toHaveAttribute("href", "/privacy");
+    expect(link).toHaveAttribute("data-slot", "button");
+    expect(link).toHaveAttribute("data-variant", "link");
+    expect(within(notice).getByRole("status")).toHaveAttribute("aria-live", "polite");
+    const actions = within(notice).getAllByRole("button");
+    expect(actions.map(action => [action.textContent, action.getAttribute("type"), action.getAttribute("data-slot")])).toEqual([["Accept", "button", "button"], ["Reject", "button", "button"]]);
+    expect(Boolean(link.compareDocumentPosition(actions[0]!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
   });
 
   const sentence = "We use analytics to see which pages are read. It stays off unless you allow it. Details are in our privacy policy.";
@@ -1055,8 +1066,9 @@ describe("CONSENT-1 card composition", () => {
     expect(link.parentElement).toHaveTextContent(sentence);
     expect(link.parentElement!.textContent).toBe(sentence);
     // The signed-off reference link: body-small, primary ink, muted rest underline, never split.
-    expect(link).toHaveClass("text-body-s", "text-ink-primary", "underline", "decoration-ink-muted", "hover:decoration-current", "whitespace-nowrap");
-    expect(link).not.toHaveClass("decoration-transparent", "text-ink-link");
+    expect(link).toHaveClass("text-(length:--text-body-s)", "text-ink-primary", "underline", "decoration-ink-muted", "hover:decoration-current", "whitespace-nowrap");
+    // The stock LinkButton merge keeps this size and ink over its own defaults.
+    expect(link).not.toHaveClass("decoration-transparent", "text-ink-link", "text-(length:--text-sm)", "text-(--color-accent-text)");
   });
 
   it("keeps the present label as plain text for an unsanctioned href, without creating an anchor", () => {

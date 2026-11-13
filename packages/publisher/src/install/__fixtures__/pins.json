@@ -1,0 +1,10 @@
+{
+  "frames.plain": {
+    "element": "plain-frame",
+    "version": 1
+  },
+  "sections.hero": {
+    "element": "simple-hero",
+    "version": 1
+  }
+}

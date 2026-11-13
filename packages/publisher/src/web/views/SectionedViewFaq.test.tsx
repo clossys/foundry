@@ -8,8 +8,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { previewCopyResolver, previewSectionedDocument } from "../../preview/fixture-documents.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 
@@ -49,11 +47,13 @@ function authored(count: number, layout?: "stacked" | "split"): SectionedViewDoc
   };
 }
 
-// Captured from the accepted FAQ recipe before adapter-only cleanup. Keep the
-// generated IDs: their bytes and accessibility references belong to this proof.
+// Keep the generated IDs: their bytes and accessibility references belong to this proof.
+// Re-pinned (planner:R2F-38P) when FAQ rows moved from the Foundry Disclosure (native
+// details/summary on the server entry) to the stock shadcn@aria disclosure in both entries,
+// so both entries now pin the same bytes.
 const FAQ_MARKUP_SHA256 = {
-  "sectioned-stacked": ["b7eeb935c83f79f7a4c628748325ff4dacf629674b735eebcf74521f3fca72f6", "f72069c29ece305ab4d69a80dd9dd444c68babe2309991a7e8af24392e151b58"],
-  "sectioned-split": ["03d015060f47406c2de6c13c04030aab2630b265735da8c67c20c79d9c5d45a5", "f5c76a0ed7e21d0dc5d49a35b1bd664bbefcea9040886a27fd2b92e4991f804b"],
+  "sectioned-stacked": ["6398506ac59a9d6883cb7c2ddb7e2c5656a8014f9a5c99fab5be58b8559096ea", "6398506ac59a9d6883cb7c2ddb7e2c5656a8014f9a5c99fab5be58b8559096ea"],
+  "sectioned-split": ["acfe9fb735cfaf23c06054960849b916d6c59db511beab93d2dbdda4c404b8ff", "acfe9fb735cfaf23c06054960849b916d6c59db511beab93d2dbdda4c404b8ff"],
   "landing-stacked": ["b2bcac8358dca7d9a7e6572e0b9368be58d4e5cf7416a14af83de5e4b4d96461", "13210d8e1ed0c1ec75cdfb69b77be17f4aa84b786dc71f59fc09055650f8f838"],
   "landing-split": ["cb98ac8fb507c7e93bbf84bb26f37e2b3c9f40cbd0f7caf886d8936d999c38a9", "e445d1ac0afb7d3d2ce4e5a6b29e470e1e2bb27df05a77538ad8a43479790117"],
 } as const;
@@ -65,6 +65,20 @@ function withoutSectionFrameInk(html: string): string {
     expect(root).toMatch(/[" ]text-ink-(?:primary|on-inverse)[ "]/);
   }
   return html.replace(/(data-designer-section-frame="" class="(?:[^" ]+ )*?)text-ink-(?:primary|on-inverse) ?/g, "$1");
+}
+
+// Both entries render the stock shadcn@aria disclosure (react-aria Disclosure):
+// a trigger button that names and controls a labelled, hidden-until-open panel.
+function stockDisclosures(root: ParentNode) {
+  return [...root.querySelectorAll<HTMLButtonElement>('button[slot="trigger"][aria-controls]')].map(trigger => {
+    const panel = root.querySelector<HTMLElement>(`[id="${trigger.getAttribute("aria-controls")}"]`)!;
+    expect(panel).not.toBeNull();
+    expect(panel.getAttribute("role")).toBe("group");
+    expect(panel.getAttribute("aria-labelledby")).toBe(trigger.id);
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(panel.hasAttribute("hidden")).toBe(true);
+    return { trigger, panel };
+  });
 }
 
 describe("published FAQ uses the Index disclosure recipe", () => {
@@ -81,23 +95,24 @@ describe("published FAQ uses the Index disclosure recipe", () => {
       })),
     });
     const resolved = resolveSectionedViewDocument(authored(4), htmlResolver);
-    for (const [View, selector] of [[SectionedView, "button"], [ServerSectionedView, "summary"]] as const) {
+    for (const View of [SectionedView, ServerSectionedView]) {
       const root = document.createElement("div");
       root.innerHTML = renderToStaticMarkup(<View document={resolved} />);
-      const row = root.querySelector("#questions [data-items] li")!;
-      const trigger = row.querySelector(selector)!;
+      const row = root.querySelector<HTMLElement>("#questions [data-items] li")!;
+      const [{ trigger, panel }] = stockDisclosures(row);
       expect(trigger.textContent).toBe(question);
-      expect(row.textContent).toContain(answer);
+      expect(panel.textContent).toContain(answer);
       expect(trigger.querySelector("a, button")).toBeNull();
-      expect(row.querySelectorAll("a, button")).toHaveLength(selector === "button" ? 1 : 0);
+      expect(panel.querySelector("a, button")).toBeNull();
+      expect(row.querySelectorAll("a, button")).toHaveLength(1);
       expect(root.innerHTML).toContain("&lt;button");
     }
   });
 
-  it("focuses the first disclosure with Tab and opens its answer with Enter", async () => {
+  it.each([["ordinary", SectionedView], ["server", ServerSectionedView]] as const)("focuses the first %s disclosure with Tab and opens its answer with Enter", async (_entry, View) => {
     const user = userEvent.setup();
     const resolved = resolveSectionedViewDocument(authored(4), resolver);
-    render(<SectionedView document={resolved} />);
+    render(<View document={resolved} />);
     const trigger = screen.getByRole("button", { name: copy["question-0"] });
     await user.tab();
     expect(trigger).toHaveFocus();
@@ -105,38 +120,18 @@ describe("published FAQ uses the Index disclosure recipe", () => {
     await user.keyboard("{Enter}");
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText(copy["answer-0"])).toBeVisible();
-  });
-
-  it("puts a final inverse FAQ on base before an inverse closing action in both landing entries", () => {
-    const faq = resolveSectionedViewDocument(authored(4), resolver);
-    const hero = resolveSectionedViewDocument({ id: "faq-intro", sections: [{ id: "intro", kind: "hero", ground: "base", heading: ref("heading") }] }, resolver);
-    expect(faq.sections[0]!.ground).toBe("inverse");
-    for (const View of [LandingView, ServerLandingView]) {
-      const root = document.createElement("div");
-      root.innerHTML = renderToStaticMarkup(<View document={hero} trailing={[faq]} callToAction={{
-        id: "close", heading: "Closing action", action: <a href="/go">Continue</a>,
-      }} />);
-      expect(root.querySelector("#questions")?.closest("[data-landing-ground]")?.getAttribute("data-landing-ground")).toBe("base");
-      expect(root.querySelector("#close")?.getAttribute("data-landing-ground")).toBe("inverse");
-    }
+    await user.keyboard("{Enter}");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
   it.each(["stacked", "split"] as const)("pins FAQ recipe markup bytes for %s in both views and entries", layout => {
     const resolved = resolveSectionedViewDocument(authored(4, layout), resolver);
     const hero = resolveSectionedViewDocument({ id: "faq-intro", sections: [{ id: "intro", kind: "hero", ground: "base", heading: ref("heading") }] }, resolver);
     const afterSection = { questions: <p>After the questions.</p> };
-    for (const [entry, [Sectioned, Landing]] of ([
-      [SectionedView, LandingView],
-      [ServerSectionedView, ServerLandingView],
-    ] as const).entries()) {
-      const markup = {
-        sectioned: renderToStaticMarkup(<Sectioned document={resolved} />, { identifierPrefix: "faq-proof-" }),
-        landing: renderToStaticMarkup(<Landing document={hero} trailing={[resolved]} afterSection={afterSection} />, { identifierPrefix: "faq-proof-" }),
-      };
-      for (const view of ["sectioned", "landing"] as const) {
-        const hash = createHash("sha256").update(withoutSectionFrameInk(markup[view])).digest("hex");
-        expect.soft(hash, `${view}-${layout} entry ${entry}: ${hash}`).toBe(FAQ_MARKUP_SHA256[`${view}-${layout}`][entry]);
-      }
+    for (const [entry, Sectioned] of [SectionedView, ServerSectionedView].entries()) {
+      const markup = renderToStaticMarkup(<Sectioned document={resolved} />, { identifierPrefix: "faq-proof-" });
+      const hash = createHash("sha256").update(withoutSectionFrameInk(markup)).digest("hex");
+      expect.soft(hash, `sectioned-${layout} entry ${entry}: ${hash}`).toBe(FAQ_MARKUP_SHA256[`sectioned-${layout}`][entry]);
     }
   });
 
@@ -152,7 +147,7 @@ describe("published FAQ uses the Index disclosure recipe", () => {
         ref("eyebrow").id, ref("heading").id, ref("description").id,
         ...Array.from({ length: count }).flatMap((_, index) => [ref(`question-${index}`).id, ref(`answer-${index}`).id]),
       ]);
-      for (const [View, server] of [[SectionedView, false], [ServerSectionedView, true]] as const) {
+      for (const View of [SectionedView, ServerSectionedView]) {
         const root = document.createElement("div");
         root.innerHTML = renderToStaticMarkup(<View document={resolved} />);
         const section = root.querySelector("#questions")!;
@@ -164,8 +159,9 @@ describe("published FAQ uses the Index disclosure recipe", () => {
         expect(list.getAttribute("data-columns")).toBe("1");
         expect(list.getAttribute("data-treatment")).toBe("rule");
         expect(list.querySelectorAll("li")).toHaveLength(count);
-        expect(list.querySelectorAll(server ? "summary" : "button")).toHaveLength(count);
-        expect(list.querySelectorAll(server ? "button" : "summary")).toHaveLength(0);
+        expect(stockDisclosures(list)).toHaveLength(count);
+        expect(list.querySelectorAll("button")).toHaveLength(count);
+        expect(list.querySelectorAll("details, summary")).toHaveLength(0);
         expect(section.querySelector("h2")?.textContent).toBe(copy.heading);
         expect(list.querySelectorAll("h3")).toHaveLength(count);
         for (let index = 0; index < count; index++) {
@@ -184,7 +180,8 @@ describe("published FAQ uses the Index disclosure recipe", () => {
     const root = document.createElement("div");
     root.innerHTML = renderToStaticMarkup(<ServerSectionedView document={resolved} />);
     expect(root.querySelector('#faq [data-items][data-arrangement=rows][data-columns="1"]')).not.toBeNull();
-    expect(root.querySelectorAll("#faq details")).toHaveLength(4);
+    expect(stockDisclosures(root.querySelector("#faq")!)).toHaveLength(4);
+    expect(root.querySelectorAll("#faq details")).toHaveLength(0);
     expect(root.querySelector("#faq")?.textContent).toContain("Because it is validated.");
   });
 

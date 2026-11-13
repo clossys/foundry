@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.pronunciation",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.terminology",
+    "l2": "terminology-pronunciation",
+    "order": 12
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "term",
+    "valueType": "pronunciation-map"
+  },
+  "inputs": [
+    "identity.naming.name"
+  ],
+  "uses": []
+}

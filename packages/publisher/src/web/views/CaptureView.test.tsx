@@ -56,7 +56,7 @@ describe("CaptureView", () => {
     expect(html).toContain('id="capture-errors" role="alert" tabindex="-1"');
     expect(html.indexOf("Please correct the form.")).toBeLessThan(html.indexOf('id="capture-form"'));
     expect(html).toContain('<h1 class="text-h1');
-    const cardAt = html.indexOf("rounded-control");
+    const cardAt = html.indexOf("data-slot=\"card\"");
     expect(cardAt).toBeGreaterThan(html.indexOf("<h1"));
     expect(cardAt).toBeLessThan(html.indexOf('id="capture-form"'));
   });
@@ -99,7 +99,8 @@ describe("CaptureView", () => {
     expect(hasRawLengthFallback(source)).toBe(false);
     const html = renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" />);
     const mainTag = html.slice(html.indexOf("<main"), html.indexOf(">", html.indexOf("<main")) + 1);
-    expect(mainTag).toContain("max-width:var(--ui-width-prose-max, none)");
+    expect(mainTag).toContain("max-w-[var(--ui-width-prose-max,none)]");
+    expect(mainTag).not.toContain("max-width:");
   });
 
   it("body structure: page header block, then the card holding the form and secondaryAction, then the notes below the card", () => {
@@ -117,7 +118,7 @@ describe("CaptureView", () => {
     const blocks = [...main.children] as HTMLElement[];
     expect(blocks).toHaveLength(3);
     expect(within(blocks[0] as HTMLElement).getByRole("heading", { level: 1, name: "Keep in touch" })).toBeInTheDocument();
-    const card = container.querySelector(".rounded-control") as HTMLElement;
+    const card = container.querySelector("[data-slot=\"card\"]") as HTMLElement;
     expect(blocks[1]).toContainElement(card);
     expect(card).toContainElement(screen.getByRole("form", { name: "Contact form" }));
     expect(card).toContainElement(screen.getByRole("link", { name: "Back to home" }));

@@ -1,0 +1,24 @@
+{
+  "candidate": "page-v8.json",
+  "sha256": "7936a4b8278d3fd0ca06d52ef2ce03ef667b290b39ceff1ba25f7d55fcc29a17",
+  "decidedBy": "agent:publisher",
+  "basis": "agent",
+  "at": "2026-11-11T16:37:12.280Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
+    "at": "2026-11-12T01:19:51.454Z"
+  },
+  "recited": {
+    "by": "agent:publisher",
+    "at": "2026-11-12T00:37:00.228Z",
+    "cites": {
+      "designer:frames.studio-shell": 21,
+      "designer:sections.producer.pipeline-flow": 14,
+      "designer:sections.producer.pipeline-legend": 3,
+      "designer:sections.producer.team-strip": 3,
+      "designer:sections.studio.page-header": 5
+    },
+    "reason": "CASCADE fc9d9cd80 re-pinned these Designer inputs with each candidate unchanged (clossys/workspace#46)"
+  }
+}

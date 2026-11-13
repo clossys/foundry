@@ -12,13 +12,21 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const nativeNpm = resolve(dirname(process.execPath), "../lib/node_modules/npm/bin/npm-cli.js");
 const digest = (bytes: Buffer) => "sha512-" + createHash("sha512").update(bytes).digest("base64");
 
-it("bundles real installed packed client/views and rejects an actual Writer-root import", async () => {
+it("bundles real installed packed client/views and rejects actual Writer-root and core-barrel imports", async () => {
   const fixture = realpathSync(mkdtempSync(join(tmpdir(), "publisher-browser-packed-")));
   const home = join(fixture, "home"), packs = join(fixture, "packs"), consumer = join(fixture, "consumer");
   for (const path of [home, packs, consumer]) mkdirSync(path);
   const userconfig = join(fixture, "user.npmrc"), globalconfig = join(fixture, "global.npmrc");
   writeFileSync(userconfig, ""); writeFileSync(globalconfig, "");
+  const networkEnv = Object.fromEntries([
+    "HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "NO_PROXY", "no_proxy", "ALL_PROXY", "all_proxy",
+    "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "REQUESTS_CA_BUNDLE",
+  ].flatMap(name => {
+    const value = process.env[name];
+    return value === undefined ? [] : [[name, value]];
+  }));
   const env = {
+    ...networkEnv,
     PATH: process.env.PATH!, HOME: home, TMPDIR: fixture,
     NPM_CONFIG_USERCONFIG: userconfig, NPM_CONFIG_GLOBALCONFIG: globalconfig,
     NPM_CONFIG_CACHE: join(fixture, "cache"), NPM_CONFIG_REGISTRY: "https://registry.npmjs.org",
@@ -62,6 +70,7 @@ it("bundles real installed packed client/views and rejects an actual Writer-root
       const result = await bundle(source);
       const inputs = Object.keys(result.metafile!.inputs);
       expect(inputs.length).toBeGreaterThan(0);
+      if (source === full) expect(inputs.some(path => path.endsWith("publisher/dist/internal/assets.js"))).toBe(true);
       const firstPartyInputs = inputs.filter(path => path.includes("node_modules/@clossys/"));
       expect(firstPartyInputs.length).toBeGreaterThan(0);
       for (const path of firstPartyInputs) {
@@ -88,7 +97,20 @@ it("bundles real installed packed client/views and rejects an actual Writer-root
     } finally { writeFileSync(installedClient, original); }
     expect(readFileSync(installedClient)).toEqual(original);
     await bundle(full);
-    console.info("packed-browser-proof", JSON.stringify({ artifacts: receipts, writerRootMutant: "Node closure refused", restored: true }));
+
+    const installedAssets = join(consumer, "node_modules/@clossys/publisher/dist/internal/assets.js");
+    const originalAssets = readFileSync(installedAssets);
+    expect(originalAssets.toString()).toContain('from "../core/resolve-assets.js"');
+    let coreBarrelFailure: unknown;
+    try {
+      writeFileSync(installedAssets, originalAssets.toString().replace('from "../core/resolve-assets.js"', 'from "../core/index.js"'));
+      try { await bundle(full); } catch (error) { coreBarrelFailure = error; }
+      expect(coreBarrelFailure).toBeDefined();
+      expect((coreBarrelFailure as { errors: { text: string }[] }).errors.some(error => /Could not resolve "node:/.test(error.text))).toBe(true);
+    } finally { writeFileSync(installedAssets, originalAssets); }
+    expect(readFileSync(installedAssets)).toEqual(originalAssets);
+    await bundle(full);
+    console.info("packed-browser-proof", JSON.stringify({ artifacts: receipts, writerRootMutant: "Node closure refused", coreBarrelMutant: "Node closure refused", restored: true }));
 
     // P-22: the consent assembly's browser closure reaches the client entry and
     // nothing of the preview, the Designer shell, Writer or copy resolution.

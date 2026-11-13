@@ -1,0 +1,63 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.section-header",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.parts",
+    "l2": "parts-structure",
+    "order": 74
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.section-header",
+    "passageSchema": "passages.section-header",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "heading",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

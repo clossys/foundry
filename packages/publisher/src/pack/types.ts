@@ -24,7 +24,7 @@ export interface PackItem {
   /** Stable id, e.g. "strategy-brief", "brand-kit", "materials-site". */
   id: string;
   layer: PackLayer;
-  /** The role that owns this item's content and judgments — Strategist, Designer, Writer, or Publisher itself for surfaces it assembles. */
+  /** The role that owns this item's content and judgments — Director, Designer, Writer, or Publisher itself for surfaces it assembles. */
   owner: string;
   visibility: PackVisibility;
   /** Ids of other pack items this one needs before it can be planned as ready. */

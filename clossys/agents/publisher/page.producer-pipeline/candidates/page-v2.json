@@ -1,0 +1,225 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/producer/pipeline",
+  "title": "Pipeline",
+  "frame": "frames.studio-shell",
+  "sections": [
+    "sections.studio.page-header",
+    "sections.studio.page-tabs",
+    "sections.producer.pipeline-header",
+    "sections.producer.pipeline-legend",
+    "sections.producer.pipeline-flow"
+  ],
+  "copy": {},
+  "nav": {
+    "nav": true,
+    "group": "producer"
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "note": "PIPELINE-CANVAS 2026-11-04: the read-only pipeline canvas with its one group tab. The pipeline loader reads packages/producer/pipeline/graph.json only (GET /api/pipeline); the flow renders its step and edge ids unchanged and opens a read-only step sheet. The record expands over the designer IA namespace sections.producer, whose single group (Pipeline) is the tab; the tab label is the Writer key studio.pipeline.title. The legend comes before the flow so it is in view at 1440x900 without scrolling. Copy is studio.pipeline.* Writer keys."
+      },
+      "blocks": {
+        "Actions": [],
+        "Route": {
+          "body": "plain",
+          "data": {
+            "loader": "pipeline",
+            "purpose": "studio.pipeline.description",
+            "description": "studio.pipeline.description"
+          },
+          "expand": {
+            "agent": "designer",
+            "namespace": "sections.producer"
+          },
+          "inputs": {
+            "sections.studio.page-header": "header",
+            "sections.studio.page-tabs": "tabs",
+            "sections.producer.pipeline-header": "header",
+            "sections.producer.pipeline-flow": "flow",
+            "sections.producer.pipeline-legend": "legend"
+          },
+          "manifest": {
+            "navigator": "outline",
+            "modules": [
+              {
+                "id": "outline",
+                "icon": "assets.icon-outline",
+                "label": "studio.outline-label",
+                "section": "sections.module.outline",
+                "source": "page.outline",
+                "shortcut": "o"
+              },
+              {
+                "id": "checks",
+                "icon": "assets.icon-checks",
+                "label": "studio.checks",
+                "section": "sections.module.checks",
+                "source": "page.checks",
+                "shortcut": "c"
+              }
+            ],
+            "actions": [],
+            "wiring": [
+              {
+                "do": "open outline",
+                "expect": "outline open"
+              },
+              {
+                "do": "open checks",
+                "expect": "checks open"
+              },
+              {
+                "do": "select outline",
+                "expect": "target in view and highlighted"
+              },
+              {
+                "do": "cmdk",
+                "expect": "every popover listed with its shortcut"
+              },
+              {
+                "do": "key o",
+                "expect": "outline open"
+              },
+              {
+                "do": "key escape",
+                "expect": "popover closed"
+              },
+              {
+                "do": "click outside",
+                "expect": "popover closed"
+              }
+            ]
+          },
+          "leaf": {
+            "param": "slug",
+            "body": "detail",
+            "data": {
+              "loader": "leaf",
+              "agent": "designer"
+            },
+            "sections": [
+              "sections.studio.leaf-header",
+              "sections.studio.specimen",
+              "sections.studio.options",
+              "sections.studio.checks",
+              "sections.studio.contract",
+              "sections.studio.history",
+              "sections.studio.references"
+            ],
+            "inputs": {
+              "sections.studio.leaf-header": "header",
+              "sections.studio.specimen": "specimen",
+              "sections.studio.options": "options",
+              "sections.studio.checks": "checks",
+              "sections.studio.contract": "contract",
+              "sections.studio.history": "history",
+              "sections.studio.references": "references"
+            },
+            "manifest": {
+              "navigator": "outline",
+              "modules": [
+                {
+                  "id": "outline",
+                  "icon": "assets.icon-outline",
+                  "label": "studio.outline-label",
+                  "section": "sections.module.outline",
+                  "source": "page.outline",
+                  "shortcut": "o"
+                },
+                {
+                  "id": "checks",
+                  "icon": "assets.icon-checks",
+                  "label": "studio.checks",
+                  "section": "sections.module.checks",
+                  "source": "page.checks",
+                  "shortcut": "c"
+                },
+                {
+                  "id": "versions",
+                  "icon": "assets.icon-versions",
+                  "label": "studio.versions-label",
+                  "section": "sections.module.outline",
+                  "source": "page.versions",
+                  "shortcut": "v"
+                }
+              ],
+              "actions": [
+                {
+                  "id": "request-change",
+                  "icon": "assets.icon-request",
+                  "label": "studio.request-change",
+                  "handler": {
+                    "kind": "copy-prompt",
+                    "prompt": "studio.request-change-prompt"
+                  },
+                  "shortcut": "r"
+                }
+              ],
+              "wiring": [
+                {
+                  "do": "open outline",
+                  "expect": "outline open"
+                },
+                {
+                  "do": "open checks",
+                  "expect": "checks open"
+                },
+                {
+                  "do": "open versions",
+                  "expect": "versions open"
+                },
+                {
+                  "do": "open request-change",
+                  "expect": "request-change open"
+                },
+                {
+                  "do": "select outline",
+                  "expect": "target in view and highlighted"
+                },
+                {
+                  "do": "select versions",
+                  "expect": "target in view and highlighted"
+                },
+                {
+                  "do": "copy request-change",
+                  "expect": "clipboard prompt"
+                },
+                {
+                  "do": "cmdk",
+                  "expect": "every popover listed with its shortcut"
+                },
+                {
+                  "do": "key o",
+                  "expect": "outline open"
+                },
+                {
+                  "do": "key escape",
+                  "expect": "popover closed"
+                },
+                {
+                  "do": "click outside",
+                  "expect": "popover closed"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "publication": "studio",
+      "entryId": "producer-pipeline",
+      "entryMeta": {
+        "pin": {
+          "nav": true,
+          "group": "producer"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "candidate": "studio-contract-v5.md",
+  "sha256": "4cb09172dac1afa6781eb44919186a555a9b667526fb5b1ebbbabf723ceff1cc",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
+  "at": "2026-11-03T08:51:28Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:14.149Z",
+    "cites": {
+      "director:identity.verbal.voice": 6
+    },
+    "proof": {
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013"
+    }
+  }
+}

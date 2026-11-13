@@ -1,0 +1,32 @@
+{
+  "candidate": "studio-v3.md",
+  "sha256": "9d3d9fef06589b1bb9b7493aec6a693ac0062ab47b8d2140aabff8106e8d64be",
+  "decidedBy": "agent:writer",
+  "basis": "agent",
+  "at": "2026-11-12T00:07:40.325Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
+    "at": "2026-11-12T01:19:40.004Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:14.672Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "director:focus.lifecycle.acquisition": 4,
+      "director:focus.segment.core": 3,
+      "director:identity.verbal.voice": 6,
+      "director:identity.naming.name": 5,
+      "director:context.company.constraint": 4
+    },
+    "proof": {
+      "director:advantage.proposition.promise": "sha256:3fe044e620b9e4c56919066eae4b9418d46a6671bbf0a29a6fb6f247bcce9e3a",
+      "director:focus.lifecycle.acquisition": "sha256:d7ac0175e90357f4e6211f3f158729061b6d9f0da41a9bdd5c5dcd1941ff9a64",
+      "director:focus.segment.core": "sha256:ca76c0b03fe84f1615c91cf10b301b8ad6b95ef58f9162d46aacf4cd153c7b92",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
+      "director:identity.naming.name": "sha256:056b3f10e9ea77e7545cd808f375995779ee595bfc0f6bb5844728bf20e0e098",
+      "director:context.company.constraint": "sha256:6689f572e5acc0b90d60f148ded517844c09a0189b67f5f9f9c561a00dcd70b9"
+    }
+  }
+}

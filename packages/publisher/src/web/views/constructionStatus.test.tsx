@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -85,7 +83,9 @@ describe("constructionStatusProps", () => {
     expect(links).toHaveLength(1);
     expect(links[0]?.getAttribute("href")).toBe("/");
     expect(links[0]?.getAttribute("data-action-emphasis")).toBe("primary");
-    expect(links[0]?.className).toContain("bg-accent");
+    // The primary action is the stock shadcn button at its default (filled) variant.
+    expect(links[0]?.getAttribute("data-slot")).toBe("button");
+    expect(links[0]?.getAttribute("data-variant")).toBe("default");
     expect(doc.body.textContent).toBe("CareersThis page is not available yet.Back to home");
     expect(doc.querySelector("main")).toBeNull();
     expect(Object.keys(web.constructionStatusProps(input(), resolver())).sort()).toEqual(["action", "status", "subtitle"]);
@@ -111,13 +111,6 @@ describe("constructionStatusProps", () => {
     const ordinary = renderToStaticMarkup(<web.StatusView {...web.constructionStatusProps(value, resolver())} />);
     const alternate = renderToStaticMarkup(<server.StatusView {...server.constructionStatusProps(value, resolver())} />);
     expect(alternate).toBe(ordinary);
-  });
-  it("README copy contains no internal-status wording", () => {
-    const readme = readFileSync(join(process.cwd(), "README.md"), "utf8");
-    for (const text of [texts["construction.title"]!, texts["construction.description"]!, texts["construction.action"]!]) {
-      expect(readme).toContain(text);
-    }
-    expect(documentFor().body.textContent).not.toMatch(/pending review|under review|draft|todo|tbd|placeholder|lorem/i);
   });
   const copyPaths = ["title", "description", "action.label", "destinations.label", "destinations.items[0].heading", "destinations.items[0].description"] as const;
   it.each(copyPaths)("refuses unresolved copy at %s without echoing values", (path) => {

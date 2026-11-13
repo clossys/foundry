@@ -1,3 +1,4 @@
+import { copyLocaleProvenance } from "../../content/copy-provenance.js";
 import { applyContentGrounds, planContentGrounds } from "../../core/content-ground.js";
 import { projectStatusListItems } from "../../core/status-list-catalog.js";
 import { assertClosedData, assertCanonicalContentSection } from "./SectionedViewCanonical.js";
@@ -5,7 +6,9 @@ import { resolveActionEmphasis } from "../../core/page-flow.js";
 import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT } from "../../core/content-contract.js";
 import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
 import { renderAction, renderRoleActions } from "./SectionedViewActions.js";
-import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
+import { applyLandingViewGrounds, LANDING_VIEW_CALL_TO_ACTION_GROUND, planLandingViewGrounds } from "./landingViewGrounds.js";
+import { SectionHeader, SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
+import type { CopyEntryStatus } from "@clossys/writer";
 import type { ReactNode } from "react";
 import type { ResolvedSectionedViewAction, ResolvedSectionedViewContentAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { isRenderAsset } from "../../internal/assets.js";
@@ -70,6 +73,49 @@ export interface SectionedViewProps {
   resolveAssetId?: AssetResolver;
   /** When `true`, applies each video asset's `reducedMotion` policy — see `renderWebDocument`. */
   prefersReducedMotion?: boolean;
+  /**
+   * Further resolved documents rendered after `document`, in order, inside the
+   * same section stack (for example a shared FAQ). Their heroes render at `h2`
+   * so the page keeps one `h1`; section ids must be unique across the page.
+   * @default []
+   */
+  trailing?: readonly ResolvedSectionedViewDocument[];
+  /**
+   * A closing band after every section: Designer `Hero` at `h2` on the
+   * `inverse` ground (`LANDING_VIEW_CALL_TO_ACTION_GROUND`) with one or two
+   * resolved actions on the emphasis ladder. All copy comes from this prop.
+   */
+  callToAction?: SectionedViewCallToAction;
+  /**
+   * How document-declared hero actions render: underlined text links, or the
+   * button emphasis ladder a landing page's opening hero takes.
+   * @default "link"
+   */
+  heroActions?: SectionedViewHeroActions;
+  /**
+   * The frame holds the page header in flow above this view. Overlay headers
+   * belong to the frame, so `"reserved"` is the only value; it is accepted so a
+   * page can state the contract it relies on.
+   * @default "reserved"
+   */
+  header?: "reserved";
+  /**
+   * Whether a scroll cue peeks the first band above the fold. The view draws
+   * no scroll cue (that is frame chrome), so `false` is the only value.
+   * @default false
+   */
+  peek?: false;
+}
+
+/** The closing band of a `SectionedView` page; resolved copy only. */
+export interface SectionedViewCallToAction {
+  /** Fragment id for the band, so a page can link to it. */
+  id?: string;
+  eyebrow?: string;
+  heading: string;
+  description?: string;
+  /** One or two resolved hero actions; exactly one effective primary. */
+  actions: readonly ResolvedSectionedViewAction[];
 }
 
 const GROUNDS: readonly SectionedViewGround[] = ["base", "sunken", "inverse"];
@@ -243,6 +289,9 @@ function assertContentSection(record: Record<string, unknown>, path: string): vo
   assertCanonicalContentSection(record, path);
 }
 
+// Lifecycle is recorded Writer provenance, not approval authority for this view.
+const COPY_RESOLUTION_STATUSES = { draft: true, approved: true, retired: true } satisfies Record<CopyEntryStatus, true>;
+
 /** Validates the direct resolved-model boundary before any Designer block receives props. */
 export function assertRenderableSectionedViewDocument(document: unknown): asserts document is ResolvedSectionedViewDocument {
   assertClosedData(document, "document");
@@ -253,9 +302,10 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.resolutions.length; index += 1) {
     if (!Object.hasOwn(candidate.resolutions, index)) throw new Error(`resolutions.${index} is a sparse provenance hole.`);
     const resolution = candidate.resolutions[index];
-    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "source", "entryId", "approval"]) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !validCopyRef(resolution.ref) || !validResolutionApproval(resolution.approval) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
+    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "servedLocale", "chain", "source", "entryId", "approval", "status"]) || (resolution.status !== undefined && (typeof resolution.status !== "string" || !Object.hasOwn(COPY_RESOLUTION_STATUSES, resolution.status))) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !validCopyRef(resolution.ref) || !validResolutionApproval(resolution.approval) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
       throw new Error(`resolutions.${index} must be complete CopyResolution provenance.`);
     }
+    copyLocaleProvenance(resolution, `resolutions.${index}`);
   }
   const sectionIds = new Set<string>();
   let heroCount = 0;
@@ -397,17 +447,53 @@ export function renderSectionedViewSections(document: unknown, blocks: Sectioned
 
 export function createSectionedView(blocks: SectionedViewBlockSet) {
   const { Hero, FeatureGrid, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection } = blocks;
-  return function SectionedView({ document, landmark = "main", resolveAssetId, prefersReducedMotion }: SectionedViewProps) {
-    try {
-      assertRenderableSectionedViewDocument(document);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "unknown invalid resolved model";
-      throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: ${message}`);
+  const viewBlocks: SectionedViewBlockSet = { Hero, FeatureGrid, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection };
+  const trailingBlocks: SectionedViewBlockSet = { ...viewBlocks, Hero: (props) => <Hero {...props} headingLevel={2} /> };
+  return function SectionedView({ document, landmark = "main", resolveAssetId, prefersReducedMotion, trailing = [], callToAction, heroActions = "link", header = "reserved", peek = false }: SectionedViewProps) {
+    const refuse = (detail: string): never => { throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: ${detail}`); };
+    for (const entry of [document, ...(Array.isArray(trailing) ? trailing : [])]) {
+      try {
+        assertRenderableSectionedViewDocument(entry);
+      } catch (error) {
+        refuse(error instanceof Error ? error.message : "unknown invalid resolved model");
+      }
     }
-    const [planned] = applyContentGrounds(planContentGrounds([document]), [document]);
-    const sections = renderSectionedViewSections(planned!, { Hero, FeatureGrid, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial, ContentSection },{ resolveAssetId, prefersReducedMotion }).map(({ node }) => node);
-    if (!LANDMARKS.includes(landmark)) {
-      throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: landmark must be one of ${LANDMARKS.join(", ")}.`);
+    if (!LANDMARKS.includes(landmark)) refuse(`landmark must be one of ${LANDMARKS.join(", ")}.`);
+    if (!Array.isArray(trailing)) refuse("trailing must be an array of resolved documents.");
+    if (header !== "reserved") refuse("header must be reserved; an overlay header belongs to the frame.");
+    if (peek !== false) refuse("peek must be false; a scroll cue belongs to the frame.");
+    if (heroActions !== "link" && heroActions !== "button") refuse("heroActions must be link or button.");
+    if (callToAction !== undefined) assertCallToAction(callToAction, refuse);
+    const options = { resolveAssetId, prefersReducedMotion, heroActions };
+    const extended = trailing.length > 0 || callToAction !== undefined;
+    const [planned, ...plannedTrailing] = extended
+      ? applyLandingViewGrounds(planLandingViewGrounds(document, trailing, { callToAction: callToAction === undefined ? undefined : { id: callToAction.id } }), [document, ...trailing])
+      : applyContentGrounds(planContentGrounds([document]), [document]);
+    const rendered = [
+      ...renderSectionedViewSections(planned!, viewBlocks, options),
+      ...plannedTrailing.flatMap((entry) => renderSectionedViewSections(entry, trailingBlocks, options)),
+    ];
+    const ids = new Set<string>();
+    for (const { section } of rendered) {
+      if (ids.has(section.id)) refuse(`section ${section.id} is rendered by more than one document.`);
+      ids.add(section.id);
+    }
+    if (callToAction?.id !== undefined && ids.has(callToAction.id)) refuse(`callToAction.id ${callToAction.id} is already a section id.`);
+    const sections = rendered.map(({ node }) => node);
+    if (callToAction !== undefined) {
+      const ground = LANDING_VIEW_CALL_TO_ACTION_GROUND;
+      sections.push(
+        <Hero
+          key={callToAction.id ?? "call-to-action"}
+          id={callToAction.id ?? "call-to-action"}
+          eyebrow={callToAction.eyebrow}
+          heading={callToAction.heading}
+          description={callToAction.description}
+          actions={renderRoleActions(callToAction.actions, true, "lg")}
+          headingLevel={2}
+          ground={ground}
+        />,
+      );
     }
     // No landmark role and no aria-label here: an accessible name on a plain
     // grouping element is not exposed, and the page that opted out of this
@@ -419,6 +505,25 @@ export function createSectionedView(blocks: SectionedViewBlockSet) {
       </main>
     );
   };
+}
+
+/** The close carries resolved copy and one or two sanctioned actions with one effective primary. */
+function assertCallToAction(close: SectionedViewCallToAction, refuse: (detail: string) => never): void {
+  const text = (value: unknown) => typeof value === "string" && value.trim() !== "";
+  if (close === null || typeof close !== "object" || Object.keys(close).some((key) => !["id", "eyebrow", "heading", "description", "actions"].includes(key))) refuse("callToAction may hold only id, eyebrow, heading, description and actions.");
+  if (!text(close.heading)) refuse("callToAction.heading must be resolved copy.");
+  for (const key of ["id", "eyebrow", "description"] as const) if (close[key] !== undefined && !text(close[key])) refuse(`callToAction.${key} must be a non-blank string.`);
+  if (!Array.isArray(close.actions) || close.actions.length < 1 || close.actions.length > 2) refuse("callToAction.actions must hold one or two resolved actions.");
+  const ids = new Set<string>();
+  let primaries = 0;
+  close.actions.forEach((action, index) => {
+    if (action === null || typeof action !== "object" || Object.keys(action).some((key) => !["id", "label", "href", "emphasis"].includes(key))) refuse("each callToAction action may hold only id, label, href and emphasis.");
+    if (!text(action.id) || ids.has(action.id) || !text(action.label) || !isSanctionedHref(action.href)) refuse("each callToAction action needs a unique id, resolved label and sanctioned href.");
+    if (action.emphasis !== undefined && !["primary", "secondary", "quiet"].includes(action.emphasis)) refuse("callToAction action emphasis must be primary, secondary or quiet.");
+    ids.add(action.id);
+    if (resolveRoleActionEmphasis(action.emphasis, index) === "primary") primaries += 1;
+  });
+  if (primaries !== 1) refuse("callToAction.actions must have exactly one effective primary.");
 }
 
 /**
@@ -449,11 +554,11 @@ const TEXT_LINK_ACTION_STYLE = { minHeight: "var(--ui-layout-tap-target, 44px)" 
  * ground-aware ladder. Explicit emphasis is rendered as authored.
  */
 function renderContentActions(section: ResolvedSectionedViewContentSection): ReactNode {
-  return section.actions?.map((action, index) => renderAction(action, resolveActionEmphasis(section, index), section.ground, "md"));
+  return section.actions?.map((action, index) => renderAction(action, resolveActionEmphasis(section, index), "md"));
 }
 
 function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround, look: SectionedViewHeroActions, centered = false, size: "md" | "lg"): ReactNode {
-  if (look === "button") return renderRoleActions(actions, ground, centered, size);
+  if (look === "button") return renderRoleActions(actions, centered, size);
   return actions?.map((action) => <a key={action.id} href={action.href} className={`inline-flex items-center text-body font-body underline ${ACTION_INK[ground]}`} style={TEXT_LINK_ACTION_STYLE}>{action.label}</a>);
 }
 
@@ -494,11 +599,8 @@ function renderStatGrid(section: Extract<ResolvedSectionedViewSection, { kind: "
   return (
     <div key={section.id} id={section.id} className={`flex flex-col gap-lg ${colors.surface}`}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {section.eyebrow ? <p className={`text-caption uppercase tracking-label ${colors.muted}`}>{section.eyebrow}</p> : null}
-          <h2 className={`text-h2 font-display ${colors.primary}`}>{section.heading}</h2>
-          {section.description ? <p className={`text-body ${colors.secondary}`}>{section.description}</p> : null}
-        </div>
+        <SectionHeader density="standard" level={2} ground={section.ground}
+          eyebrow={section.eyebrow} title={section.heading} description={section.description} />
       ) : null}
       <div className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4">
         {section.items.map((item) => (

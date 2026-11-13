@@ -61,8 +61,8 @@ describe("AuthView", () => {
   it("form measure: <main> max-width is the form-measure token with no raw-length fallback", () => {
     render(<AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} />);
     const main = screen.getByRole("main");
-    expect(main.style.maxWidth).toBe("var(--ui-width-form-max, none)");
-    expect(main.style.maxWidth).not.toMatch(/rem|px/);
+    expect(main).toHaveClass("max-w-[var(--ui-width-form-max,none)]");
+    expect(main.style.maxWidth).toBe("");
   });
 
   it("description under heading: the description is the element directly after the <h1> inside the title block", () => {
@@ -128,7 +128,7 @@ describe("AuthView", () => {
       'import type { A } from "react";',
       'import "some-auth-provider";',
       'export * from "another-provider";',
-      'export { B } from "@clossys/designer/atoms";',
+      'export { B } from "@clossys/designer/components";',
       "import {",
       "  C,",
       '} from "third-provider";',
@@ -137,7 +137,7 @@ describe("AuthView", () => {
       "react",
       "some-auth-provider",
       "another-provider",
-      "@clossys/designer/atoms",
+      "@clossys/designer/components",
       "third-provider",
     ]);
     const offenders = moduleSpecifiers(sample).filter((specifier) => !ALLOWED_IMPORT.test(specifier));
@@ -157,7 +157,7 @@ describe("AuthView", () => {
       />,
     );
     const link = screen.getByRole("link", { name: "No account? Join the waitlist" });
-    const card = container.querySelector(".rounded-control") as HTMLElement;
+    const card = container.querySelector("[data-slot=\"card\"]") as HTMLElement;
     expect(card).not.toBeNull();
     expect(card).not.toContainElement(link);
     const line = link.closest("main > div") as HTMLElement;
@@ -203,7 +203,7 @@ describe("AuthView", () => {
         }
       />,
     );
-    const card = container.querySelector(".rounded-control") as HTMLElement;
+    const card = container.querySelector("[data-slot=\"card\"]") as HTMLElement;
     const input = screen.getByLabelText("Email") as HTMLInputElement;
     expect(input).toBeInTheDocument();
     const fieldset = input.closest("fieldset[disabled]") as HTMLElement;
@@ -243,7 +243,7 @@ describe("AuthView", () => {
         />,
       );
       expect(container.querySelector("fieldset")).toBeNull();
-      const card = container.querySelector(".rounded-control") as HTMLElement;
+      const card = container.querySelector("[data-slot=\"card\"]") as HTMLElement;
       expect(card.firstElementChild).toBe(screen.getByRole("form", { name: "Sign in form" }));
       unmount();
     }
@@ -311,7 +311,7 @@ describe("AuthView", () => {
         footnote="Terms apply."
       />,
     );
-    const card = container.querySelector(".rounded-control") as HTMLElement;
+    const card = container.querySelector("[data-slot=\"card\"]") as HTMLElement;
     expect(card).not.toBeNull();
     const signInForm = screen.getByRole("form", { name: "Sign in form" });
     expect(card).toContainElement(signInForm);
@@ -416,7 +416,7 @@ describe("AuthView", () => {
       <AuthView brand="Acme" heading="Sign in" description="Welcome back." form={<div>form</div>} notes={<a href="/signup">Create an account</a>} footnote="Terms apply." />,
     );
     const link = screen.getByRole("link", { name: "Create an account" });
-    const card = container.querySelector(".rounded-control") as HTMLElement;
+    const card = container.querySelector("[data-slot=\"card\"]") as HTMLElement;
     const line = link.closest("main > div") as HTMLElement;
     expect(card.nextElementSibling).toBe(line);
     expect(line.className).toContain("flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary");

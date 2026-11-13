@@ -1,0 +1,63 @@
+{
+  "schema": "clossys.action/1",
+  "id": "pick.publisher",
+  "agent": "publisher",
+  "kind": "decide:judgment",
+  "stage": "publish.pin",
+  "summary": "A judge seat picks one of a Publisher slot's options (pin basis agent); Studio shows confirm until the owner pins.",
+  "run": "clossys pick publisher/<slot> <candidate-id> --by agent:<seat>",
+  "inputs": [
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/slot.json",
+      "schema": "slot"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/publisher/*/pin.json#basis",
+      "schema": "pin"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:slot-options -- node ../producer/scripts/check-slot-options.mjs",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "decisions",
+    "slot-options"
+  ],
+  "uses": [],
+  "decider": "agent",
+  "packet": {
+    "inputs": [
+      "clossys/agents/publisher/*/candidates/*",
+      "clossys/agents/publisher/*/slot.json"
+    ],
+    "write": [
+      {
+        "glob": "clossys/agents/publisher/*/pin.json#basis",
+        "schema": "pin"
+      }
+    ],
+    "checks": [
+      "slot-options",
+      "decisions"
+    ]
+  },
+  "skill": "skill.md"
+}

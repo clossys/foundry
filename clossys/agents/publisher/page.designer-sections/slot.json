@@ -1,0 +1,45 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "page.designer-sections",
+  "agent": "publisher",
+  "ia": {
+    "l1": "studio",
+    "l2": "designer",
+    "order": 11
+  },
+  "kind": "page",
+  "contract": {},
+  "inputs": [
+    "frames.studio-shell",
+    "sections.module.checks",
+    "sections.module.outline",
+    "sections.studio.checks",
+    "sections.studio.contract",
+    "sections.studio.history",
+    "sections.studio.leaf-header",
+    "sections.studio.options",
+    "sections.studio.page-header",
+    "sections.studio.page-tabs",
+    "sections.studio.references",
+    "sections.studio.slot-groups",
+    "sections.studio.specimen"
+  ],
+  "uses": [
+    "frames.studio-shell",
+    "sections.module.checks",
+    "sections.module.outline",
+    "sections.studio.checks",
+    "sections.studio.contract",
+    "sections.studio.history",
+    "sections.studio.leaf-header",
+    "sections.studio.options",
+    "sections.studio.page-header",
+    "sections.studio.page-tabs",
+    "sections.studio.references",
+    "sections.studio.slot-groups",
+    "sections.studio.specimen",
+    "strings.common",
+    "strings.descriptions",
+    "strings.page-titles"
+  ]
+}

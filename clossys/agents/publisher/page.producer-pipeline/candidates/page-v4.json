@@ -1,0 +1,107 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/content",
+  "title": "Overview",
+  "frame": "frames.studio-shell",
+  "sections": [
+    "sections.studio.page-header",
+    "sections.producer.team-strip",
+    "sections.producer.pipeline-legend",
+    "sections.producer.pipeline-flow"
+  ],
+  "copy": {},
+  "nav": {
+    "nav": true,
+    "group": "content"
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "icon": "assets.icon-team",
+        "note": "SYSTEMS-IA 2026-11-04 (D1-D3): the Content system's overview, how its agents work together. Order: page-header, the team strip (one stock Item per seat holder from the pipeline roster, linking to ?seat=<id>), one compact legend row, then the workflow map as a swimlane (lanes the seat holders, columns the named stages). The pipeline loader reads packages/producer/pipeline/graph.json only (GET /api/pipeline). No page-tabs, no expansion and no leaf: the record's former tab and leaves were the designer sections.producer IA, which Designer's own records already serve. Copy is studio.content.*, studio.team.* and studio.pipeline.* Writer keys."
+      },
+      "blocks": {
+        "Actions": [],
+        "Route": {
+          "body": "plain",
+          "data": {
+            "loader": "pipeline",
+            "purpose": "studio.content.description",
+            "description": "studio.content.description"
+          },
+          "inputs": {
+            "sections.studio.page-header": "header",
+            "sections.producer.team-strip": "team",
+            "sections.producer.pipeline-legend": "legend",
+            "sections.producer.pipeline-flow": "flow"
+          },
+          "manifest": {
+            "navigator": "outline",
+            "modules": [
+              {
+                "id": "outline",
+                "icon": "assets.icon-outline",
+                "label": "studio.outline-label",
+                "section": "sections.module.outline",
+                "source": "page.outline",
+                "shortcut": "o"
+              },
+              {
+                "id": "checks",
+                "icon": "assets.icon-checks",
+                "label": "studio.checks",
+                "section": "sections.module.checks",
+                "source": "page.checks",
+                "shortcut": "c"
+              }
+            ],
+            "actions": [],
+            "wiring": [
+              {
+                "do": "open outline",
+                "expect": "outline open"
+              },
+              {
+                "do": "open checks",
+                "expect": "checks open"
+              },
+              {
+                "do": "select outline",
+                "expect": "target in view and highlighted"
+              },
+              {
+                "do": "cmdk",
+                "expect": "every popover listed with its shortcut"
+              },
+              {
+                "do": "key o",
+                "expect": "outline open"
+              },
+              {
+                "do": "key escape",
+                "expect": "popover closed"
+              },
+              {
+                "do": "click outside",
+                "expect": "popover closed"
+              }
+            ]
+          }
+        }
+      },
+      "publication": "studio",
+      "entryId": "producer-pipeline",
+      "entryMeta": {
+        "pin": {
+          "nav": true,
+          "group": "content"
+        }
+      }
+    }
+  }
+}

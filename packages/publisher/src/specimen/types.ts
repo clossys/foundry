@@ -1,0 +1,121 @@
+/**
+ * Publisher "specimen" format: a one-slot page that renders exactly one element record.
+ *
+ * These types are the renderer's own minimal view of an element record. The full record
+ * schema is owned elsewhere; it reaches the renderer only through `SpecimenRecordSource`
+ * (see `source.ts`), so a schema change touches one adapter, not the renderer.
+ */
+
+/** Which specimen renderer a record uses. Data, media and flow render a stub for now. */
+export const SPECIMEN_KINDS = ["visual", "text", "data", "media", "flow"] as const;
+export type SpecimenKind = typeof SPECIMEN_KINDS[number];
+
+/** Where the element sits inside the specimen page. */
+export const SPECIMEN_CONTAINERS = ["canvas", "section-in-frame", "page"] as const;
+export type SpecimenContainer = typeof SPECIMEN_CONTAINERS[number];
+
+/** Text roles the text specimen sets with the theme's typography. */
+export const SPECIMEN_TEXT_ROLES = ["display", "heading", "subheading", "body", "label", "caption"] as const;
+export type SpecimenTextRole = typeof SPECIMEN_TEXT_ROLES[number];
+
+/** One piece of copy and the limits of the slot it fills. */
+export interface SpecimenCopy {
+  readonly text: string;
+  readonly role?: SpecimenTextRole;
+  readonly maxChars?: number;
+  readonly maxLines?: number;
+}
+
+/** The record's `preview.json`, as the renderer reads it. */
+export interface SpecimenPreview {
+  /** Props passed to a visual element. `{ "$copy": "<key>" }` resolves to that copy's text. */
+  readonly fixtures?: Readonly<Record<string, unknown>>;
+  /** Sample or pinned copy, keyed by copy key. */
+  readonly copy?: Readonly<Record<string, SpecimenCopy>>;
+  readonly container?: SpecimenContainer;
+  /** Default theme id, used when the URL asks only for `light` or `dark`. */
+  readonly theme?: string;
+  /** Default width in CSS pixels. */
+  readonly width?: number;
+  /** Visual only: the payload file to mount (registry `path`) and its export name. */
+  readonly entry?: string;
+  readonly export?: string;
+  /** Named payload export mapping copy props to Writer slot names. */
+  readonly copyKeys?: string;
+  /**
+   * The element's declared copy slots (`meta.element.reads.copyKeys` entries). When present they
+   * are the element's only copy slots: a page binds `slot`, the text renders at `prop` (a dot path
+   * into the mounted props), and the specimen previews it with Writer key `previewKey`.
+   */
+  readonly copySlots?: readonly SpecimenCopySlot[];
+}
+
+/** One declared copy slot of an element. */
+export interface SpecimenCopySlot {
+  /** The page-binding name, such as `hero.heading`. */
+  readonly slot: string;
+  /** Where the text renders: a dot path into the mounted props (`heading`, `nav.items.0.label`). */
+  readonly prop: string;
+  /** The Writer key the specimen and preview read. */
+  readonly previewKey: string;
+}
+
+/** One file of a payload, in shadcn registry-item form (`files[]`). */
+export interface SpecimenFile {
+  readonly path: string;
+  readonly content: string;
+  readonly type?: string;
+  /** The registry file's install target, when it names one (see installed-path.ts). */
+  readonly target?: string;
+}
+
+/** What an `@/` import resolution may consult: the shadcn registry dependencies the importing items declare. */
+export interface SpecimenAliasContext {
+  readonly registryDependencies: readonly string[];
+}
+
+/** The renderer's minimal element record: id, version, kind, payload, preview. */
+export interface SpecimenRecord {
+  readonly id: string;
+  readonly version: number;
+  readonly kind: SpecimenKind;
+  /** The payload: shadcn registry-item files for code, or the cell text for copy. */
+  readonly payload: { readonly path: string; readonly files: readonly SpecimenFile[]; readonly raw: string };
+  /** Every payload file as stored, before any registry-item expansion (a registry item can name sibling files instead of inlining them). */
+  readonly sources?: readonly SpecimenFile[];
+  readonly preview: SpecimenPreview;
+  /** sha256 of the record's own files (element.json, preview.json, payload). */
+  readonly contentHash: string;
+}
+
+/** A theme as shadcn's registry `cssVars`: variables by shadcn name, without the leading `--`. */
+export interface SpecimenTheme {
+  readonly id: string;
+  readonly theme?: Readonly<Record<string, string>>;
+  readonly light: Readonly<Record<string, string>>;
+  readonly dark?: Readonly<Record<string, string>>;
+  readonly contentHash: string;
+}
+
+/** The one adapter between a record store and the renderer. */
+export interface SpecimenRecordSource {
+  /** One record; the highest version when `version` is omitted. */
+  read(id: string, version?: number): Promise<SpecimenRecord | undefined>;
+  /** A theme by id; the source's default theme when `id` is omitted. */
+  theme(id?: string): Promise<SpecimenTheme | undefined>;
+  /**
+   * The item whose registry files install `@/<path>` in the consumer app (the consumer's pinned
+   * item, by the install mapping in installed-path.ts). Optional: a source without it resolves
+   * `@/` imports by sibling record name only.
+   */
+  alias?(path: string, context: SpecimenAliasContext): Promise<SpecimenRecord | undefined>;
+}
+
+/** Parsed `/__specimen` query. */
+export interface SpecimenQuery {
+  readonly element: string;
+  readonly version?: number;
+  /** `light`, `dark`, `<theme-id>`, or `<theme-id>:light|dark`. */
+  readonly theme?: string;
+  readonly width?: number;
+}

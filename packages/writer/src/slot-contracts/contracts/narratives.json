@@ -1,0 +1,619 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/writer",
+  "layer": "narratives",
+  "checkSuiteId": "writer.copy.v1",
+  "slots": [
+    {
+      "id": "narratives.page-story",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "The ordered story of a marketing or demo page, as a sequence of passages.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:advantage.proposition.proof",
+        "director:focus.lifecycle.acquisition",
+        "director:identity.verbal.narrative"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "page",
+        "requiredProperties": [
+          "frame",
+          "passages"
+        ],
+        "countKey": "passages",
+        "minCount": 3,
+        "maxCount": 20
+      },
+      "references": [
+        {
+          "id": "narratives.page-story.guide",
+          "kind": "guide",
+          "guide": "Open with the promise, prove it, answer the main objection, then ask for one action; each passage earns its place.",
+          "exemplars": [
+            {
+              "outline": [
+                "hero: the promise for small teams",
+                "features: three ways the rota fixes itself",
+                "stats: pilot results with sources",
+                "faq: switching questions",
+                "call-to-action: start a trial"
+              ]
+            },
+            {
+              "outline": [
+                "hero: one diary for the whole clinic",
+                "steps: from paper book to shared diary",
+                "testimonials: two front-desk quotes",
+                "pricing: one plan per clinic",
+                "call-to-action: book a demo"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.screen",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "The ordered copy of one app or admin screen, as a sequence of passages.",
+      "inputs": [
+        "director:focus.offer.included",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "page",
+        "requiredProperties": [
+          "frame",
+          "passages"
+        ],
+        "countKey": "passages",
+        "minCount": 1,
+        "maxCount": 20
+      },
+      "references": [
+        {
+          "id": "narratives.screen.guide",
+          "kind": "guide",
+          "guide": "Header first, then the main task, then secondary panels; empty and error states are part of the screen.",
+          "exemplars": [
+            {
+              "outline": [
+                "page-header: Rotas",
+                "resource-list: rotas by week",
+                "empty-state: no rotas yet"
+              ]
+            },
+            {
+              "outline": [
+                "page-header: Billing",
+                "account-summary: plan and payment method",
+                "usage: limits this month",
+                "data-table: invoices"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.site-chrome",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "The copy for site header, navigation and footer regions.",
+      "inputs": [
+        "director:identity.naming.architecture",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "chrome",
+        "requiredProperties": [
+          "frame",
+          "regions"
+        ],
+        "countKey": "regions",
+        "minCount": 1,
+        "maxCount": 8
+      },
+      "references": [
+        {
+          "id": "narratives.site-chrome.guide",
+          "kind": "guide",
+          "guide": "Navigation uses the reader's nouns; the footer carries legal links and the short boilerplate.",
+          "exemplars": [
+            {
+              "outline": [
+                "header: brand name, Product, Pricing, Help, Sign in",
+                "footer: short boilerplate, Terms, Privacy, Contact"
+              ]
+            },
+            {
+              "outline": [
+                "header: brand name, Features, Customers, Start trial",
+                "footer: company address, Status, Privacy"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.app-chrome",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "The copy for app shell regions: navigation rail, account menu and command palette.",
+      "inputs": [
+        "director:identity.naming.architecture",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "chrome",
+        "requiredProperties": [
+          "frame",
+          "regions"
+        ],
+        "countKey": "regions",
+        "minCount": 1,
+        "maxCount": 8
+      },
+      "references": [
+        {
+          "id": "narratives.app-chrome.guide",
+          "kind": "guide",
+          "guide": "Rail labels match page titles exactly; the account menu says who is signed in and how to leave.",
+          "exemplars": [
+            {
+              "outline": [
+                "rail: Rotas, People, Locations, Settings",
+                "account: signed-in name, Switch workspace, Sign out",
+                "command: Search or jump to"
+              ]
+            },
+            {
+              "outline": [
+                "rail: Diary, Patients, Notes, Reports",
+                "account: Profile, Sign out"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.article",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "A long-form article: title, frame and ordered blocks.",
+      "inputs": [
+        "director:identity.verbal.narrative",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "long-form",
+        "requiredProperties": [
+          "title",
+          "frame",
+          "blocks"
+        ],
+        "countKey": "blocks",
+        "minCount": 1,
+        "maxCount": 200
+      },
+      "references": [
+        {
+          "id": "narratives.article.guide",
+          "kind": "guide",
+          "guide": "Headline the answer, open with the reader's problem, one idea per section, end with a next step.",
+          "exemplars": [
+            {
+              "outline": [
+                "heading: how to plan around school holidays",
+                "paragraph: the problem in one sentence",
+                "list: four planning steps",
+                "callout: what to do when cover falls through",
+                "paragraph: next step"
+              ]
+            },
+            {
+              "outline": [
+                "heading: why swaps need approval",
+                "paragraph: what goes wrong without it",
+                "quote: a manager's experience",
+                "paragraph: how approval works"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.guide",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "A how-to guide with ordered, checkable steps.",
+      "inputs": [
+        "director:focus.offer.included",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "long-form",
+        "requiredProperties": [
+          "title",
+          "frame",
+          "blocks"
+        ],
+        "countKey": "blocks",
+        "minCount": 1,
+        "maxCount": 200
+      },
+      "references": [
+        {
+          "id": "narratives.guide.guide",
+          "kind": "guide",
+          "guide": "State the outcome and prerequisites first; each step is one action and its visible result.",
+          "exemplars": [
+            {
+              "outline": [
+                "heading: import staff from a spreadsheet",
+                "paragraph: what you need first",
+                "list: five steps with results",
+                "callout: common import errors"
+              ]
+            },
+            {
+              "outline": [
+                "heading: set up shift swaps",
+                "list: three steps",
+                "figure: the approval screen",
+                "paragraph: what staff see"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.release-notes",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "Release notes for one version or period.",
+      "inputs": [
+        "director:advantage.proposition.proof",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "long-form",
+        "requiredProperties": [
+          "title",
+          "frame",
+          "blocks"
+        ],
+        "countKey": "blocks",
+        "minCount": 1,
+        "maxCount": 200
+      },
+      "references": [
+        {
+          "id": "narratives.release-notes.guide",
+          "kind": "guide",
+          "guide": "Lead with what the reader can now do; group by impact; name breaking changes plainly.",
+          "exemplars": [
+            {
+              "outline": [
+                "heading: November update",
+                "list: new things you can do",
+                "list: fixes",
+                "callout: one change that needs action"
+              ]
+            },
+            {
+              "outline": [
+                "heading: version 2.4",
+                "paragraph: summary",
+                "list: improvements"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.legal-document",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "A legal document such as terms or a privacy notice.",
+      "inputs": [
+        "director:focus.reach.geography",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "long-form",
+        "requiredProperties": [
+          "title",
+          "frame",
+          "blocks"
+        ],
+        "countKey": "blocks",
+        "minCount": 1,
+        "maxCount": 400
+      },
+      "references": [
+        {
+          "id": "narratives.legal-document.guide",
+          "kind": "guide",
+          "guide": "A plain summary first, defined terms once, numbered sections, an exact revision date.",
+          "exemplars": [
+            {
+              "outline": [
+                "heading: terms of service",
+                "paragraph: plain summary",
+                "list: numbered sections",
+                "paragraph: how to contact us"
+              ]
+            },
+            {
+              "outline": [
+                "heading: privacy notice",
+                "paragraph: what we collect",
+                "table: data, purpose and retention",
+                "paragraph: your rights"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.deck-script",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "The script of a slide deck, one block per slide.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:advantage.proposition.proof",
+        "director:identity.verbal.narrative"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "long-form",
+        "requiredProperties": [
+          "title",
+          "frame",
+          "blocks"
+        ],
+        "countKey": "blocks",
+        "minCount": 3,
+        "maxCount": 60
+      },
+      "references": [
+        {
+          "id": "narratives.deck-script.guide",
+          "kind": "guide",
+          "guide": "One message per slide, written as a full sentence; the sequence alone should tell the story.",
+          "exemplars": [
+            {
+              "outline": [
+                "heading: small teams lose an hour finding cover",
+                "paragraph: what that costs a month",
+                "figure: the planner fills the shift",
+                "quote: a pilot manager",
+                "paragraph: the ask"
+              ]
+            },
+            {
+              "outline": [
+                "heading: notes go missing between desk and room",
+                "paragraph: the insurer rule that changes this",
+                "figure: booking-linked notes",
+                "paragraph: pricing and next step"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.email",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "An email: subject, preview text and body blocks.",
+      "inputs": [
+        "director:focus.lifecycle.acquisition",
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "long-form",
+        "requiredProperties": [
+          "title",
+          "frame",
+          "blocks"
+        ],
+        "countKey": "blocks",
+        "minCount": 1,
+        "maxCount": 40
+      },
+      "references": [
+        {
+          "id": "narratives.email.guide",
+          "kind": "guide",
+          "guide": "The subject says what the reader gets; the first line repeats the one action; one link per goal.",
+          "exemplars": [
+            {
+              "outline": [
+                "heading: subject, your rota for next week is ready",
+                "paragraph: preview, two open shifts need cover",
+                "paragraph: body with the one action",
+                "paragraph: sign-off"
+              ]
+            },
+            {
+              "outline": [
+                "heading: subject, your trial ends on Friday",
+                "paragraph: what you keep",
+                "paragraph: add a payment method"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.notification",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "A push or in-app notification.",
+      "inputs": [
+        "director:identity.verbal.voice"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "long-form",
+        "requiredProperties": [
+          "title",
+          "frame",
+          "blocks"
+        ],
+        "countKey": "blocks",
+        "minCount": 1,
+        "maxCount": 6
+      },
+      "references": [
+        {
+          "id": "narratives.notification.guide",
+          "kind": "guide",
+          "guide": "Title is the event, body is the consequence, the action opens the exact item.",
+          "exemplars": [
+            {
+              "outline": [
+                "heading: shift swap requested",
+                "paragraph: Ana wants to swap Saturday close"
+              ]
+            },
+            {
+              "outline": [
+                "heading: rota published",
+                "paragraph: you work three shifts next week"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "narratives.video-script",
+      "package": "writer",
+      "layer": "narratives",
+      "purpose": "A timed video script with narration and on-screen text.",
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:identity.brand.personality",
+        "director:identity.verbal.narrative"
+      ],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": false,
+        "fields": {},
+        "shape": "long-form",
+        "requiredProperties": [
+          "title",
+          "frame",
+          "blocks"
+        ],
+        "countKey": "blocks",
+        "minCount": 2,
+        "maxCount": 120
+      },
+      "references": [
+        {
+          "id": "narratives.video-script.guide",
+          "kind": "guide",
+          "guide": "Each block has timing; narration and on-screen text say the same thing in fewer words on screen.",
+          "exemplars": [
+            {
+              "outline": [
+                "heading: 0-5s the Sunday-night rota problem",
+                "paragraph: 5-20s the planner fills an open shift",
+                "paragraph: 20-30s call to action"
+              ]
+            },
+            {
+              "outline": [
+                "heading: 0-4s a clinic morning",
+                "paragraph: 4-18s booking opens its note",
+                "paragraph: 18-25s try it free"
+              ]
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    }
+  ]
+}

@@ -63,3 +63,22 @@ describe("renderMaterialsIndexHtml", () => {
     expect(renderMaterialsIndexHtml([])).toContain("<tbody>");
   });
 });
+
+
+describe("document locale from Writer", () => {
+  const manifest = { defaultLocale: "en", locales: [
+    { tag: "en", dir: "ltr" as const, state: "active" as const },
+    { tag: "ar", dir: "rtl" as const, state: "active" as const },
+    { tag: "ar-XB", dir: "rtl" as const, state: "pseudo" as const },
+    { tag: "en-US", dir: "ltr" as const, state: "active" as const },
+  ] };
+  it.each([[undefined, "en", "ltr"], ["ar", "ar", "rtl"], ["ar-XB", "ar-XB", "rtl"], ["en-us", "en-US", "ltr"]])("renders %s as %s/%s", (locale, tag, dir) => {
+    const options = locale === undefined ? {} : { locale, manifest };
+    expect(renderMaterialsIndexHtml(entries, options)).toContain(`<html lang="${tag}" dir="${dir}">`);
+  });
+  it("uses the manifest default and refuses undeclared direction", () => {
+    const options = { manifest: { ...manifest, defaultLocale: "ar" } };
+    expect(renderMaterialsIndexHtml(entries, options)).toContain('<html lang="ar" dir="rtl">');
+    expect(() => renderMaterialsIndexHtml(entries, { locale: "ar" })).toThrow();
+  });
+});
