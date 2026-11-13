@@ -1,6 +1,15 @@
-import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_Z_SKIP_LINK } from "./internal/shell-vars.js";
+import type { ComponentProps, ReactNode } from "react";
+import { cx } from "../components/internal/cx.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+
+/**
+ * The skip link's look: visually hidden until focused, then a fixed primary
+ * plate at the inline-start corner on the skip-link layer. The link keeps its
+ * own focus ring.
+ */
+const SKIP_LINK_CLASSES = "sr-only focus:not-sr-only layer-skip-link focus:fixed focus:skip-link-inset focus:rounded-control focus:bg-primary focus:text-body focus:text-primary-foreground focus:outline-none";
 
 export interface SkipLinkProps {
   /**
@@ -63,38 +72,40 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
     return document.activeElement === target;
   };
 
-  const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
+  const onClick: NonNullable<ComponentProps<typeof Link>["onClick"]> = event => {
     if (event.defaultPrevented) return;
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (jumpToTarget()) event.preventDefault();
   };
 
-  // A link activates on Enter natively (as a click); Space is added here so
-  // the control also answers to it, as a button would. Space does not follow
-  // an `href` on its own, so when focus cannot move to the target the handler
+  // A link activates on Enter natively (as a click). The link's press handling
+  // hands `onClick` a synthetic copy of that click only on key release, after
+  // the native click has already followed the `href`, so Enter is cancelled
+  // here, at the key press, once focus has moved. Space is added so the
+  // control also answers to it, as a button would. Space does not follow an
+  // `href` on its own, so when focus cannot move to the target the handler
   // clicks the link, which runs the `href` fragment fallback exactly as Enter
   // does, and also keeps Space from scrolling the page.
-  const onKeyDown = (event: KeyboardEvent<HTMLAnchorElement>) => {
-    if (event.defaultPrevented || event.key !== " ") return;
+  const onKeyDown: NonNullable<ComponentProps<typeof Link>["onKeyDown"]> = event => {
+    if (event.defaultPrevented || (event.key !== " " && event.key !== "Enter")) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (event.key === "Enter") {
+      if (jumpToTarget()) event.preventDefault();
+      return;
+    }
     event.preventDefault();
-    if (!jumpToTarget()) event.currentTarget.click();
+    if (!jumpToTarget() && event.currentTarget instanceof HTMLElement) event.currentTarget.click();
   };
 
   return (
-    <a
+    <Link
+      variant="link"
       href={`#${targetId}`}
       onClick={onClick}
       onKeyDown={onKeyDown}
-      className={cx(
-        "sr-only focus:not-sr-only",
-        "focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm",
-        "focus:text-body focus:text-ink-on-accent focus:outline-none",
-        className,
-      )}
-      style={{ zIndex: UI_Z_SKIP_LINK }}
+      className={cx(SKIP_LINK_CLASSES, className)}
     >
       {children}
-    </a>
+    </Link>
   );
 }

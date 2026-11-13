@@ -1,0 +1,3653 @@
+/** Shared component selection data. No runtime imports; the public components barrel remains client-only. */
+export type ComponentMedium = "web" | "email" | "print" | "video";
+export type ComponentMediumState = "implemented" | "planned" | "unsupported" | "not-applicable" | "unassessed";
+export type ComponentScalar = string | number | boolean;
+export interface ComponentEvidence { readonly source: string; readonly evidence: string }
+export interface ComponentOptionGuidance {
+  readonly prop: string; readonly label: string; readonly purpose: string;
+  readonly values: readonly { readonly value: ComponentScalar; readonly purpose: string }[];
+  readonly applicability: string;
+  readonly support: { readonly state: "implemented" | "partial" | "unavailable" | "unassessed"; readonly reason: string };
+}
+export type ComponentCondition = { readonly prop: string; readonly values: readonly ComponentScalar[] }
+  | { readonly prop: string; readonly present: boolean }
+  | { readonly any: readonly ComponentCondition[] } | { readonly all: readonly ComponentCondition[] };
+export interface ComponentConstraint {
+  readonly kind: "effective-when" | "paired" | "requires" | "exclusive" | "derived" | "data";
+  readonly props: readonly string[]; readonly reason: string;
+  readonly effectiveWhen?: ComponentCondition; readonly when?: ComponentCondition;
+  readonly requires?: readonly string[]; readonly excludes?: readonly string[];
+  readonly presence?: "exactly-one";
+  readonly enforcement: "ignored" | "type" | "runtime" | "derived";
+  readonly evidence: ComponentEvidence;
+}
+export interface ComponentWebImplementation {
+  readonly exportName: string; readonly entrypoint: "components" | "charts";
+  readonly notes: string; readonly options: readonly ComponentOptionGuidance[];
+  readonly constraints: readonly ComponentConstraint[];
+}
+export interface ComponentMediumGuidance {
+  readonly state: ComponentMediumState; readonly reason: string; readonly evidence: readonly string[];
+  readonly implementation?: ComponentWebImplementation;
+}
+export interface ComponentGuidance {
+  readonly purpose: string; readonly useWhen: string; readonly avoidWhen: string; readonly alternatives: string;
+  readonly content: string; readonly anatomy: string; readonly composition: string; readonly accessibility: string;
+  readonly media: Readonly<Record<ComponentMedium, ComponentMediumGuidance>>;
+  readonly demonstration: { readonly state: "unassessed" | "partial" | "available" | "unavailable"; readonly reason: string };
+}
+export interface ComponentApiFacts {
+  readonly exportName: string; readonly source: string;
+  readonly options: readonly {
+    readonly prop: string; readonly values: readonly ComponentScalar[];
+    readonly default: { readonly kind: "value"; readonly value: ComponentScalar; readonly source: string; readonly evidence: string }
+      | { readonly kind: "required" | "omitted" | "peer" | "conditional"; readonly reason: string };
+    readonly forwarding: ComponentEvidence;
+  }[];
+  readonly tokens: {
+    readonly coverage: "partial" | "none-owned"; readonly reason: string;
+    readonly dependencies: readonly { readonly property: string; readonly kind: "direct" | "transitive";
+      readonly source: string; readonly evidence: string; readonly via: readonly ComponentEvidence[] }[];
+  };
+}
+
+const unassessed = (medium: string): ComponentMediumGuidance => ({
+  state: "unassessed",
+  reason: `No ${medium} renderer or supported configuration has been assessed for this leaf.`,
+  evidence: ["This record documents the existing web component source only; no non-web implementation evidence is recorded."],
+});
+function entry(stable: Omit<ComponentGuidance, "media" | "demonstration">, implementation: ComponentWebImplementation, source: string): ComponentGuidance {
+  return { ...stable,
+    media: {
+      web: { state: "implemented", reason: "The existing component renders or forwards its documented web implementation in the named source.", evidence: [source], implementation },
+      email: unassessed("email"), print: unassessed("print"), video: unassessed("video"),
+    },
+    demonstration: { state: "unassessed", reason: "Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration." },
+  };
+}
+
+/** Curated selection semantics, distinct from checked API facts below. */
+export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
+  "act.button": entry(
+{
+  "purpose": "Carry out one named action.",
+  "useWhen": "The reader is ready to submit, confirm or change something.",
+  "avoidWhen": "The intent is to travel to a destination rather than perform an action.",
+  "alternatives": "Use Link for navigation; an icon-size Button for a compact, clearly named secondary control.",
+  "content": "Write a short verb phrase that describes the resulting action.",
+  "anatomy": "One action label, with an optional subordinate visual cue.",
+  "composition": "In a consumer-owned form block, place a submit Button after the fields.",
+  "accessibility": "Keep the action name understandable without relying on its fill or icon."
+},
+{
+  "exportName": "Button",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock Button has no ground or trailing-icon option; icons are children marked with data-icon.",
+  "options": [
+    {
+      "prop": "variant",
+      "label": "Style preset",
+      "purpose": "Style preset selects the existing Button variant behavior.",
+      "values": [
+        {
+          "value": "default",
+          "purpose": "Accent-filled primary action."
+        },
+        {
+          "value": "outline",
+          "purpose": "Unfilled action with an inset edge."
+        },
+        {
+          "value": "secondary",
+          "purpose": "Tonal lower-emphasis action."
+        },
+        {
+          "value": "ghost",
+          "purpose": "Unfilled action that gains hover emphasis."
+        },
+        {
+          "value": "destructive",
+          "purpose": "Destructive action with danger treatment."
+        },
+        {
+          "value": "link",
+          "purpose": "Inline text action with hover underline."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "size",
+      "label": "Size",
+      "purpose": "Size selects the existing Button size behavior.",
+      "values": [
+        {
+          "value": "default",
+          "purpose": "Medium control height."
+        },
+        {
+          "value": "xs",
+          "purpose": "Extra-small control height."
+        },
+        {
+          "value": "sm",
+          "purpose": "Small control height."
+        },
+        {
+          "value": "lg",
+          "purpose": "Large control height."
+        },
+        {
+          "value": "icon",
+          "purpose": "Square medium icon-only control."
+        },
+        {
+          "value": "icon-xs",
+          "purpose": "Square extra-small icon-only control."
+        },
+        {
+          "value": "icon-sm",
+          "purpose": "Square small icon-only control."
+        },
+        {
+          "value": "icon-lg",
+          "purpose": "Square large icon-only control."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/button/button.tsx"),
+  "act.link": entry(
+{
+  "purpose": "Take the reader to a related destination.",
+  "useWhen": "Following a URL is the actual outcome, including a prominent call to action.",
+  "avoidWhen": "The operation changes state without navigation.",
+  "alternatives": "Use Button for an operation; Breadcrumb for an ordered ancestor trail.",
+  "content": "Name the destination or outcome in words that work outside the surrounding sentence.",
+  "anatomy": "One destination label and its navigation target.",
+  "composition": "In a consumer-owned article-card block, make the title a Link to the full article.",
+  "accessibility": "Preserve link semantics even when the link uses a button appearance."
+},
+{
+  "exportName": "LinkButton",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock LinkButton keeps link semantics for every variant; variant link is the inline text treatment.",
+  "options": [
+    {
+      "prop": "variant",
+      "label": "Link appearance",
+      "purpose": "Link appearance selects the existing LinkButton variant behavior.",
+      "values": [
+        {
+          "value": "default",
+          "purpose": "Accent-filled primary navigation."
+        },
+        {
+          "value": "outline",
+          "purpose": "Unfilled navigation with an inset edge."
+        },
+        {
+          "value": "secondary",
+          "purpose": "Tonal lower-emphasis navigation."
+        },
+        {
+          "value": "ghost",
+          "purpose": "Unfilled navigation that gains hover emphasis."
+        },
+        {
+          "value": "destructive",
+          "purpose": "Destructive navigation with danger treatment."
+        },
+        {
+          "value": "link",
+          "purpose": "Inline text link with hover underline."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/button/button.tsx"),
+  "act.breadcrumb": entry(
+{
+  "purpose": "Locate the current page within an ordered hierarchy.",
+  "useWhen": "The reader can move to meaningful ancestor destinations.",
+  "avoidWhen": "The sequence is a workflow, a history list or a set of unrelated destinations.",
+  "alternatives": "Use Tabs for peer panels; use a navigation block for an unordered set of routes.",
+  "content": "Author the ancestor names in root-to-current order.",
+  "anatomy": "An ordered trail of repeated steps ending at the current location.",
+  "composition": "In a consumer-owned detail-header block, place Breadcrumb above the page title.",
+  "accessibility": "Give the trail a useful navigation name and identify the final step as current."
+},
+{
+  "exportName": "Breadcrumb",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. BreadcrumbList holds BreadcrumbItem steps; a BreadcrumbLink carries href and content and the last item is current/inert. The surrounding navigation name defaults to breadcrumb. There is no separate active-index knob.",
+  "options": [],
+  "constraints": []
+}, "src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx"),
+  "act.menu": entry(
+{
+  "purpose": "Offer a compact collection of actions from one trigger.",
+  "useWhen": "Several related commands should be revealed on demand.",
+  "avoidWhen": "The content is an input choice set or a rich explanatory panel.",
+  "alternatives": "Use Select for choosing a value; Popover for arbitrary panel content.",
+  "content": "Name the trigger and each command. Use MenuGroup with MenuLabel for a real section heading and MenuSeparator between groups.",
+  "anatomy": "A DropdownMenuTrigger holding the trigger control and the DropdownMenu panel of MenuItem commands, optionally grouped in MenuGroup with a MenuLabel heading.",
+  "composition": "AccountMenu composes MenuItem commands and MenuGroup preference groups behind an actor trigger.",
+  "accessibility": "Name the trigger and each group. Group headings use MenuLabel; group selection provides menuitemcheckbox preferences. Disabled items and keyboard navigation belong to the primitive."
+},
+{
+  "exportName": "Menu",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. DropdownMenu is the stock menu panel; DropdownMenuTrigger owns the opening interaction. Destructive emphasis is item-level. InlineMenu is the stock always-visible list for the inline presentation.",
+  "options": [],
+  "constraints": []
+}, "src/components/preview-runtime/components/menu/dropdown-menu.tsx"),
+  "enter.text-field": entry(
+{
+  "purpose": "Collect one line of free-form text.",
+  "useWhen": "The answer is a short textual value with optional guidance or validation.",
+  "avoidWhen": "The answer needs several paragraphs, date segments or a predefined option list.",
+  "alternatives": "Use Textarea for long text, DateField for dates, or Select for fixed choices.",
+  "content": "Supply a persistent field label; helper and error text should explain the expected value.",
+  "anatomy": "A label, a single value entry and optional supporting messages.",
+  "composition": "In a consumer-owned contact-form block, pair a name TextField with submit controls.",
+  "accessibility": "A placeholder never replaces the label or its association with the input."
+},
+{
+  "exportName": "TextField",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the existing TextField isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isInvalid",
+      "label": "Validation state",
+      "purpose": "Validation state selects the existing TextField isInvalid behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "No invalid state requested."
+        },
+        {
+          "value": true,
+          "purpose": "Expose validation state and the authored error."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/TextField.tsx"),
+  "enter.textarea": entry(
+{
+  "purpose": "Collect text that may span several lines.",
+  "useWhen": "The reader needs room for a message, explanation or description.",
+  "avoidWhen": "The value is a single short identifier or a structured selection.",
+  "alternatives": "Use TextField for a short value; a consumer-owned editor block for rich document editing.",
+  "content": "Label the long answer and describe any length or content requirements.",
+  "anatomy": "A labelled multi-line value area with optional helper and error messages.",
+  "composition": "In a consumer-owned feedback block, place Textarea above the feedback submission action.",
+  "accessibility": "Keep the label and validation messages associated with the multi-line control."
+},
+{
+  "exportName": "Textarea",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. rows defaults to 3 and is forwarded to TextArea; resizing is vertical. Rows is a numeric prop, not an enumerated preset.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the existing Textarea isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isInvalid",
+      "label": "Validation state",
+      "purpose": "Validation state selects the existing Textarea isInvalid behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "No invalid state requested."
+        },
+        {
+          "value": true,
+          "purpose": "Expose validation state and the authored error."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/Textarea.tsx"),
+  "enter.search-field": entry(
+{
+  "purpose": "Collect a query that narrows or finds content.",
+  "useWhen": "Typing a query and clearing it are part of the same search task.",
+  "avoidWhen": "The value is ordinary form data with no search meaning.",
+  "alternatives": "Use TextField for stored text; ComboBox for searching a fixed choice set.",
+  "content": "Name what can be searched and give helpful query instructions when needed.",
+  "anatomy": "A query entry with a clear affordance when the query is nonempty.",
+  "composition": "In a consumer-owned results-toolbar block, connect SearchField to the results query.",
+  "accessibility": "The clear action must remain keyboard reachable and return attention to the query."
+},
+{
+  "exportName": "SearchField",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the existing SearchField isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isInvalid",
+      "label": "Validation state",
+      "purpose": "Validation state selects the existing SearchField isInvalid behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "No invalid state requested."
+        },
+        {
+          "value": true,
+          "purpose": "Expose validation state and the authored error."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/SearchField.tsx"),
+  "enter.date-field": entry(
+{
+  "purpose": "Collect a calendar-aware date through editable segments.",
+  "useWhen": "Direct date entry is appropriate and locale-specific segment order matters.",
+  "avoidWhen": "The task requires picking a day from a calendar grid.",
+  "alternatives": "Use a consumer-owned date-picker block for a calendar; TextField for unstructured date prose.",
+  "content": "Label the date and specify the required granularity and any bounds in the task context.",
+  "anatomy": "A date label, ordered calendar segments and optional validation messages.",
+  "composition": "In a consumer-owned booking block, use DateField for a directly entered departure date.",
+  "accessibility": "Use calendar-aware date values and retain the segments’ keyboard and label wiring."
+},
+{
+  "exportName": "DateField",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Calendar-aware DateValue input supports inherited granularity and bounds; no calendar grid is rendered. Locale ordering belongs to the installed ARIA primitive.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the existing DateField isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isInvalid",
+      "label": "Validation state",
+      "purpose": "Validation state selects the existing DateField isInvalid behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "No invalid state requested."
+        },
+        {
+          "value": true,
+          "purpose": "Expose validation state and the authored error."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/DateField.tsx"),
+  "enter.select": entry(
+{
+  "purpose": "Choose one value from a closed list of options.",
+  "useWhen": "The choices are known and scanning a compact dropdown is practical.",
+  "avoidWhen": "The reader needs to search a long list or compare every choice at once.",
+  "alternatives": "Use ComboBox for filtering; RadioGroup for a small visible choice set.",
+  "content": "Give each option a stable ID and readable label; provide plain text for non-text labels.",
+  "anatomy": "A labelled current-value trigger and a repeated set of choices.",
+  "composition": "In a consumer-owned preferences block, use Select for a compact language choice.",
+  "accessibility": "Label the field and associate validation error text with its trigger through the field context."
+},
+{
+  "exportName": "Select",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Compose SelectTrigger, SelectValue, SelectContent and SelectItem; isInvalid and isDisabled reach the react-aria Select through its forwarded props.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the existing Select isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isInvalid",
+      "label": "Validation state",
+      "purpose": "Validation state selects the existing Select isInvalid behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "No invalid state requested."
+        },
+        {
+          "value": true,
+          "purpose": "Expose validation state and the authored error."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/select/select.tsx"),
+  "enter.combo-box": entry(
+{
+  "purpose": "Choose one value by typing to narrow a known option set.",
+  "useWhen": "The list is large enough that filtering reduces scanning effort.",
+  "avoidWhen": "The task is open-ended search without a selected option identity.",
+  "alternatives": "Use Select for a short closed list; SearchField for finding external results.",
+  "content": "Provide stable option IDs, readable labels and textValue for complex labels.",
+  "anatomy": "A labelled editable query, suggestion trigger and filtered repeated options.",
+  "composition": "In a consumer-owned assignment block, use ComboBox to find an assignee from known people.",
+  "accessibility": "Keep focus in the input while navigating suggestions and name the suggestion trigger."
+},
+{
+  "exportName": "ComboBox",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. options feeds defaultItems for built-in filtering; triggerLabel defaults to Show suggestions. Content, collection data and callbacks are not scalar configuration axes.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the existing ComboBox isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isInvalid",
+      "label": "Validation state",
+      "purpose": "Validation state selects the existing ComboBox isInvalid behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "No invalid state requested."
+        },
+        {
+          "value": true,
+          "purpose": "Expose validation state and the authored error."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/ComboBox.tsx"),
+  "enter.checkbox": entry(
+{
+  "purpose": "Mark a selection that can be committed with other choices.",
+  "useWhen": "One or more independent selections form part of a larger task.",
+  "avoidWhen": "A setting should take effect immediately or choices are mutually exclusive.",
+  "alternatives": "Use Switch for immediate settings; RadioGroup for choosing exactly one option.",
+  "content": "Describe the selection in a visible label rather than only marking the box.",
+  "anatomy": "A binary selection mark and its label, optionally a mixed aggregate state.",
+  "composition": "In a consumer-owned bulk-actions block, derive checked and mixed state from selected rows.",
+  "accessibility": "Mixed is a separate presentational state; it does not set the underlying selection."
+},
+{
+  "exportName": "Checkbox",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the existing Checkbox isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isSelected",
+      "label": "Controlled selection",
+      "purpose": "Controlled selection selects the existing Checkbox isSelected behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Unselected controlled state."
+        },
+        {
+          "value": true,
+          "purpose": "Selected controlled state."
+        }
+      ],
+      "applicability": "A consumer-controlled value requires a corresponding change handler; a fixed fixture cannot demonstrate toggling.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isIndeterminate",
+      "label": "Aggregate state",
+      "purpose": "Aggregate state selects the existing Checkbox isIndeterminate behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Ordinary binary presentation."
+        },
+        {
+          "value": true,
+          "purpose": "Mixed aggregate presentation independent of isSelected."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/checkbox/checkbox.tsx"),
+  "enter.switch": entry(
+{
+  "purpose": "Turn an immediately applied setting on or off.",
+  "useWhen": "The reader expects the change to take effect as soon as the switch changes.",
+  "avoidWhen": "The choice is a pending selection awaiting a separate save action.",
+  "alternatives": "Use Checkbox for pending selection; RadioGroup for more than two exclusive choices.",
+  "content": "Use a stable setting name that still reads clearly in both states.",
+  "anatomy": "An on/off control and the name of the setting it changes.",
+  "composition": "In a consumer-owned preferences block, wire Switch changes to the real preference state.",
+  "accessibility": "A controlled switch needs a change handler that updates its selected value."
+},
+{
+  "exportName": "Switch",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Controlled isSelected without a state-updating onChange handler stays fixed; this does not mean the package lacks interactive switching.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the existing Switch isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isSelected",
+      "label": "Controlled selection",
+      "purpose": "Controlled selection selects the existing Switch isSelected behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Unselected controlled state."
+        },
+        {
+          "value": true,
+          "purpose": "Selected controlled state."
+        }
+      ],
+      "applicability": "A consumer-controlled value requires a corresponding change handler; a fixed fixture cannot demonstrate toggling.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/switch/switch.tsx"),
+  "enter.radio-group": entry(
+{
+  "purpose": "Choose one value while keeping a small option set visible.",
+  "useWhen": "Side-by-side comparison of mutually exclusive options aids the decision.",
+  "avoidWhen": "The list is too large to scan or independent selections are allowed.",
+  "alternatives": "Use Select for compact choice; Checkbox for independent options.",
+  "content": "Name the group and each choice; optional per-choice descriptions explain differences.",
+  "anatomy": "One group label and repeated mutually exclusive labelled choices.",
+  "composition": "In a consumer-owned preference-selection block, render at least two RadioGroupItem choices.",
+  "accessibility": "Use the group’s label and roving keyboard selection; orientation sets the arrow-key direction of keyboard navigation."
+},
+{
+  "exportName": "RadioGroup",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation forwards to the react-aria RadioGroup for keyboard semantics; the stock grid lays the items out in one column either way. A single-option specimen cannot prove selection differences.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the existing RadioGroup isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isInvalid",
+      "label": "Validation state",
+      "purpose": "Validation state selects the existing RadioGroup isInvalid behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "No invalid state requested."
+        },
+        {
+          "value": true,
+          "purpose": "Expose validation state and the authored error."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "orientation",
+      "label": "ARIA orientation",
+      "purpose": "Orientation aligns the options layout with keyboard semantics.",
+      "values": [
+        {
+          "value": "horizontal",
+          "purpose": "Horizontal option layout and keyboard semantics."
+        },
+        {
+          "value": "vertical",
+          "purpose": "Vertical option layout and keyboard semantics."
+        }
+      ],
+      "applicability": "Keyboard semantics follow the supplied orientation; the stock layout does not change.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component uses orientation for layout and forwards it to the ARIA primitive."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/radio-group/radio-group.tsx"),
+  "enter.file-trigger": entry(
+{
+  "purpose": "Start device file selection from an authored trigger.",
+  "useWhen": "The reader needs to choose local files with native picker behavior.",
+  "avoidWhen": "The task requires upload management, file previews or drag-and-drop.",
+  "alternatives": "Compose a consumer-owned upload block for progress and preview; use Button as the trigger.",
+  "content": "Name the file-selection action and explain accepted files in nearby content.",
+  "anatomy": "A pressable trigger leading to the device’s file-choice experience.",
+  "composition": "In a consumer-owned attachment block, combine FileTrigger with file state and ProgressBar.",
+  "accessibility": "Use a pressable trigger; disabled behavior belongs to that trigger, not a styled picker surface."
+},
+{
+  "exportName": "FileTrigger",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. No local visual surface or camera default is supplied. FileList handling, preview, upload progress and trigger disabled state belong to consumer composition.",
+  "options": [
+    {
+      "prop": "allowsMultiple",
+      "label": "Multiple files",
+      "purpose": "Multiple files selects the existing FileTrigger allowsMultiple behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Choose one file."
+        },
+        {
+          "value": true,
+          "purpose": "Allow multiple file choices."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "defaultCamera",
+      "label": "Capture camera",
+      "purpose": "Capture camera selects the existing FileTrigger defaultCamera behavior.",
+      "values": [
+        {
+          "value": "user",
+          "purpose": "User-facing camera hint."
+        },
+        {
+          "value": "environment",
+          "purpose": "Environment-facing camera hint."
+        }
+      ],
+      "applicability": "Omission is supported. A consumer preview choosing a camera does not create a package default.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/file-trigger/file-trigger.tsx"),
+  "enter.field": entry(
+{
+  "purpose": "Associate a label and supporting messages with a custom control.",
+  "useWhen": "The control has no dedicated labelled field component in this package.",
+  "avoidWhen": "A supplied TextField, Select or other labelled component already owns this wiring.",
+  "alternatives": "Prefer the dedicated input component when available; Field supplies wiring rather than an input.",
+  "content": "Write a control label, an optional instruction and a specific validation message.",
+  "anatomy": "A label, one custom value control and optional helper and error messages.",
+  "composition": "In a consumer-owned signature block, spread Field’s generated wiring onto the actual input control.",
+  "accessibility": "The consumer must apply the generated ID and ARIA properties to the correct focusable control."
+},
+{
+  "exportName": "Field",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "options": [
+    {
+      "prop": "isInvalid",
+      "label": "Validation state",
+      "purpose": "Validation state selects the existing Field isInvalid behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "No validation error announced."
+        },
+        {
+          "value": true,
+          "purpose": "Associate the authored error with the control."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "isRequired",
+      "label": "Required state",
+      "purpose": "Required state selects the existing Field isRequired behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "No required signal supplied."
+        },
+        {
+          "value": true,
+          "purpose": "Pass required semantics to the authored control."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/Field.tsx"),
+  "inform.badge": entry(
+{
+  "purpose": "Attach a compact static category or status label to content.",
+  "useWhen": "A short label helps scanning without becoming another interaction.",
+  "avoidWhen": "The reader needs to remove the label or perform an action.",
+  "alternatives": "Use TagGroup for a removable label; StatusMark for a lighter labelled state.",
+  "content": "Write the category or state explicitly instead of communicating it through color alone.",
+  "anatomy": "One compact label enclosed in a small visual treatment.",
+  "composition": "In a consumer-owned result-card block, place Badge beside a release-state title.",
+  "accessibility": "Badge is static text; do not present it as a keyboard-operable control."
+},
+{
+  "exportName": "Badge",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry tones (neutral, success, warning, danger, info) are caller data in BADGE_TONE: each is a stock variant plus at most one token class.",
+  "options": [
+    {
+      "prop": "variant",
+      "label": "Label style",
+      "purpose": "Label style selects the stock Badge variant.",
+      "values": [
+        {
+          "value": "default",
+          "purpose": "Action-filled label."
+        },
+        {
+          "value": "secondary",
+          "purpose": "Tonal neutral label."
+        },
+        {
+          "value": "destructive",
+          "purpose": "Danger-tinted label."
+        },
+        {
+          "value": "outline",
+          "purpose": "Bordered label without a fill."
+        },
+        {
+          "value": "ghost",
+          "purpose": "Unfilled label that gains hover emphasis."
+        },
+        {
+          "value": "link",
+          "purpose": "Text label styled as a link."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/badge/badge.tsx"),
+  "inform.banner": entry(
+{
+  "purpose": "Deliver a persistent inline message with a meaningful severity.",
+  "useWhen": "Information or a warning belongs in the normal content flow until the reader responds.",
+  "avoidWhen": "The message is a queued transient notification or neutral content without severity.",
+  "alternatives": "Use a consumer-owned toast flow for transient notices; Card for ordinary grouped content.",
+  "content": "Write the message so its severity is understandable without its status color.",
+  "anatomy": "One persistent message region with a title, a description and an optional action slot.",
+  "composition": "In a consumer-owned form-status block, place the Alert above the affected fields and let the owner handle any action.",
+  "accessibility": "Danger is an assertive alert; other severities are polite status messages, not independently configurable live-region modes."
+},
+{
+  "exportName": "Alert",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry severities (info, success, warning, danger) are caller data in ALERT_TONE: a stock variant, role and aria-live, plus at most one token class.",
+  "options": [
+    {
+      "prop": "variant",
+      "label": "Message style",
+      "purpose": "Message style selects the stock Alert variant.",
+      "values": [
+        {
+          "value": "default",
+          "purpose": "Neutral message on a raised surface."
+        },
+        {
+          "value": "destructive",
+          "purpose": "Danger-coloured message."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "derived",
+      "props": [
+        "variant"
+      ],
+      "reason": "The stock Alert has no live-region option; ALERT_TONE derives danger as destructive with alert/assertive and every other severity as default with status/polite.",
+      "enforcement": "derived",
+      "evidence": {
+        "source": "src/components/surface-tones.ts",
+        "evidence": "danger: { variant: \"destructive\", role: \"alert\", \"aria-live\": \"assertive\" }"
+      }
+    }
+  ]
+}, "src/components/preview-runtime/components/banner/alert.tsx"),
+  "inform.status-mark": entry(
+{
+  "purpose": "Name one data state with a small distinctive mark.",
+  "useWhen": "Several nearby states need a lighter treatment than filled status pills.",
+  "avoidWhen": "The content needs a large message, a removable label or a quantitative scale.",
+  "alternatives": "Use Badge for a filled static label; Banner for a persistent message; Meter for quantity.",
+  "content": "Write the state in words so the mark is a redundant cue.",
+  "anatomy": "One state label preceded by a tone-specific symbolic mark.",
+  "composition": "In a consumer-owned records block, place StatusMark in a table cell beside the affected record.",
+  "accessibility": "Visible state text carries the meaning; its glyph is decorative and tone determines shape."
+},
+{
+  "exportName": "StatusMark",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. tone is required with no package default. Shape follows tone: success circle-check, warning triangle-alert, danger circle-x, info circle, neutral dash.",
+  "options": [
+    {
+      "prop": "tone",
+      "label": "State tone",
+      "purpose": "State tone selects the existing StatusMark tone behavior.",
+      "values": [
+        {
+          "value": "success",
+          "purpose": "Success circle check."
+        },
+        {
+          "value": "warning",
+          "purpose": "Warning triangle alert."
+        },
+        {
+          "value": "danger",
+          "purpose": "Danger circle x."
+        },
+        {
+          "value": "info",
+          "purpose": "Information circle."
+        },
+        {
+          "value": "neutral",
+          "purpose": "Neutral dash."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "derived",
+      "props": [
+        "tone"
+      ],
+      "reason": "State glyph shape is derived from tone and is not an independent configurable prop.",
+      "enforcement": "derived",
+      "evidence": {
+        "source": "src/components/StatusMark.tsx",
+        "evidence": "data-shape={SHAPES[tone]}"
+      }
+    }
+  ]
+}, "src/components/StatusMark.tsx"),
+  "inform.meter": entry(
+{
+  "purpose": "Explain a measured quantity against a scale and optional limit.",
+  "useWhen": "The quantity’s magnitude or distance from a cap or floor matters.",
+  "avoidWhen": "The value describes completion progress rather than a measurement.",
+  "alternatives": "Use ProgressBar for completion; StatusMark for a state without magnitude.",
+  "content": "Author the visible value, optional limit and prior-value text with their real units.",
+  "anatomy": "A measured value, a scale track and optional limit and prior-measurement markers.",
+  "composition": "In a consumer-owned metric-panel block, pair Meter with a heading and explanatory limit text.",
+  "accessibility": "The visible text carries the meaning; decorative geometry cannot replace valueText or previousText."
+},
+{
+  "exportName": "Meter",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. tone is required with no default. scaleMax must be finite and positive; value and limit finite/nonnegative. Value and limit drawing clamp to the scale; previous above scaleMax rejects. direction defaults to max but needs limit for a visible effect.",
+  "options": [
+    {
+      "prop": "tone",
+      "label": "Measurement tone",
+      "purpose": "Measurement tone selects the existing Meter tone behavior.",
+      "values": [
+        {
+          "value": "success",
+          "purpose": "Success state."
+        },
+        {
+          "value": "warning",
+          "purpose": "Warning with hatching."
+        },
+        {
+          "value": "danger",
+          "purpose": "Danger state."
+        },
+        {
+          "value": "info",
+          "purpose": "Information with inset ring."
+        },
+        {
+          "value": "neutral",
+          "purpose": "Plain neutral quantity."
+        },
+        {
+          "value": "accent",
+          "purpose": "Brand-accent quantity, not a status."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "direction",
+      "label": "Limit direction",
+      "purpose": "Limit direction selects the existing Meter direction behavior.",
+      "values": [
+        {
+          "value": "max",
+          "purpose": "Value should remain at or below the cap."
+        },
+        {
+          "value": "min",
+          "purpose": "Value should remain at or above the floor."
+        }
+      ],
+      "applicability": "Accepted without limit but produces no limit zone or tick until limit is supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "emphasis",
+      "label": "Value emphasis",
+      "purpose": "Value emphasis selects the existing Meter emphasis behavior.",
+      "values": [
+        {
+          "value": "default",
+          "purpose": "Compact value row."
+        },
+        {
+          "value": "figure",
+          "purpose": "Large focal measurement."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "effective-when",
+      "props": [
+        "direction",
+        "limit"
+      ],
+      "reason": "direction is accepted without limit but has no visible limit zone until limit is supplied.",
+      "enforcement": "ignored",
+      "evidence": {
+        "source": "src/components/Meter.server.tsx",
+        "evidence": "limitPct === undefined"
+      },
+      "effectiveWhen": {
+        "prop": "limit",
+        "present": true
+      }
+    },
+    {
+      "kind": "paired",
+      "props": [
+        "previous",
+        "previousText"
+      ],
+      "reason": "previous and nonblank previousText must be supplied together; previous is finite, nonnegative and within scaleMax.",
+      "enforcement": "runtime",
+      "evidence": {
+        "source": "src/components/Meter.server.tsx",
+        "evidence": "(previous === undefined) !== (previousText === undefined)"
+      }
+    }
+  ]
+}, "src/components/Meter.tsx"),
+  "inform.progress-bar": entry(
+{
+  "purpose": "Communicate completion of an ongoing operation.",
+  "useWhen": "Progress is known numerically or explicitly unknown while work continues.",
+  "avoidWhen": "The quantity is a stable measurement against a threshold.",
+  "alternatives": "Use Meter for a measurement; Spinner for compact indeterminate activity.",
+  "content": "Name the operation and provide truthful completion values or an indeterminate state.",
+  "anatomy": "An operation label and a progress track with an optional value readout.",
+  "composition": "In a consumer-owned upload-status block, connect the stock Progress to actual transferred work and name it with ProgressLabel.",
+  "accessibility": "Indeterminate progress must not announce a fabricated numeric completion value."
+},
+{
+  "exportName": "ProgressBar",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry exports the stock shadcn@aria Progress under the ProgressBar name.",
+  "options": [
+    {
+      "prop": "isIndeterminate",
+      "label": "Completion knowledge",
+      "purpose": "Completion knowledge selects the stock Progress isIndeterminate behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Known numeric completion."
+        },
+        {
+          "value": true,
+          "purpose": "Unknown completion; omit the numeric value announcement."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/progress-bar/progress.tsx"),
+  "inform.spinner": entry(
+{
+  "purpose": "Signal compact indeterminate activity.",
+  "useWhen": "Work is ongoing but no useful completion fraction is known.",
+  "avoidWhen": "The reader needs a stable measurement or a detailed loading layout.",
+  "alternatives": "Use ProgressBar for known progress; Skeleton for a placeholder matching incoming content.",
+  "content": "Supply an activity name only when the spinner is the sole loading signal.",
+  "anatomy": "One small spinning lucide Loader2 mark with role status and a default Loading name.",
+  "composition": "In a consumer-owned save-status block, pair Spinner with visible saving text or its own label.",
+  "accessibility": "The stock Spinner announces Loading by default; pass aria-label for a specific activity, or aria-hidden when nearby text already announces it."
+},
+{
+  "exportName": "Spinner",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock Spinner has no options; it is one size-4 mark sized by className.",
+  "options": [],
+  "constraints": []
+}, "src/components/spinner/spinner.tsx"),
+  "inform.skeleton": entry(
+{
+  "purpose": "Reserve the shape of content that is still loading.",
+  "useWhen": "The structure of incoming content can be shown without inventing its value.",
+  "avoidWhen": "The interface needs to report exact progress or an actual empty state.",
+  "alternatives": "Use ProgressBar for completion; a consumer-owned empty-state block when loading has finished.",
+  "content": "Choose a placeholder shape corresponding to the expected content.",
+  "anatomy": "A text, block or circular placeholder for one incoming content piece.",
+  "composition": "In a consumer-owned loading-card block, group title and image Skeletons under one loading announcement.",
+  "accessibility": "Label a lone loading placeholder; grouped decorative placeholders need one surrounding announcement."
+},
+{
+  "exportName": "Skeleton",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock Skeleton has no options; a Foundry shape (text, block, circle) is caller size data in SKELETON_SHAPE.",
+  "options": [],
+  "constraints": []
+}, "src/components/preview-runtime/components/skeleton/skeleton.tsx"),
+  "group.card": entry(
+{
+  "purpose": "Give a small unit of related content a coherent surface.",
+  "useWhen": "Content needs a shared ground distinct from its surrounding section.",
+  "avoidWhen": "The surface needs interaction semantics supplied automatically.",
+  "alternatives": "Use a consumer-owned card block for named heading, body and actions; Link or Button for actual interaction.",
+  "content": "Keep the content hierarchy meaningful within the surface rather than relying on the border.",
+  "anatomy": "One containing content surface whose treatment follows its context.",
+  "composition": "In a consumer-owned summary-card block, compose Card with a heading, metric and action.",
+  "accessibility": "A Card is not inherently interactive or a landmark; add appropriate semantics through composition."
+},
+{
+  "exportName": "Card",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry surfaces (raised, outline, plate) are caller className data in CARD_SURFACE; raised is the stock card.",
+  "options": [
+    {
+      "prop": "size",
+      "label": "Card density",
+      "purpose": "Card density selects the stock Card size.",
+      "values": [
+        {
+          "value": "default",
+          "purpose": "Stock card spacing."
+        },
+        {
+          "value": "sm",
+          "purpose": "Compact card spacing."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/card/card.tsx"),
+  "group.grid-list": entry({
+    purpose: "Work through interactive records with independent selection and actions.",
+    useWhen: "Records have flexible content, selection controls or secondary actions within each row.",
+    avoidWhen: "Column relationships require a table or content has no row interaction.",
+    alternatives: "Use Table for shared columns or ResourceList for an assembled record-list block.",
+    content: "Supply a list name, each row’s plain text identity and host-authored checkbox names.",
+    anatomy: "A named grid with repeated record rows and optional selection checkboxes.",
+    composition: "Compose GridList.Item content with GridList.SelectionCheckbox and named child actions.",
+    accessibility: "Space toggles selection and Enter activates onAction during selection; href routing follows the peer’s toggle-selection semantics."
+  }, {
+    exportName: "GridList", entrypoint: "components",
+    notes: "Draft stack layout with toggle selection fixed by the component. The peer supplies collection, keyboard, disabled and action behavior. Supply aria-label or aria-labelledby; each Item requires textValue and each SelectionCheckbox requires its host aria-label. Direct-row Enter adapts onAction during active selection. Href rows route while selection is empty; active-selection row presses toggle selection without navigation.",
+    options: [],
+    constraints: [{ kind: "data", props: ["aria-label", "aria-labelledby"], reason: "At least one nonblank accessible naming path is required.", enforcement: "runtime", evidence: { source: "src/components/GridList.tsx", evidence: "GridList requires aria-label or aria-labelledby." } }]
+  }, "src/components/GridList.tsx"),
+  "group.table": entry(
+{
+  "purpose": "Compare structured records across shared columns.",
+  "useWhen": "Each record has the same attributes and row or column relationships matter.",
+  "avoidWhen": "The content is a simple unstructured list or needs an already assembled data-grid feature set.",
+  "alternatives": "Use a consumer-owned list block for prose items; build sorting and filtering around Table primitives.",
+  "content": "Author meaningful column headings, row identities and cell values.",
+  "anatomy": "Column headings and repeated records made of corresponding cells.",
+  "composition": "In a consumer-owned records block, assemble TableHeader, TableBody, rows and cells with selection controls.",
+  "accessibility": "Name the table and identify row headers; controlled sorting and selection need consumer state."
+},
+{
+  "exportName": "Table",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. TableHeader/TableHead/TableBody/TableRow/TableCell parts own content. Selection checkboxes reuse Checkbox. Sorting and selection are controlled by consumer state; a one-row fixture is limited demonstration evidence.",
+  "options": [
+    {
+      "prop": "selectionMode",
+      "label": "Row selection",
+      "purpose": "Row selection selects the existing Table selectionMode behavior.",
+      "values": [
+        {
+          "value": "none",
+          "purpose": "No row selection."
+        },
+        {
+          "value": "single",
+          "purpose": "Select one row."
+        },
+        {
+          "value": "multiple",
+          "purpose": "Select multiple rows."
+        }
+      ],
+      "applicability": "Controlled selectedKeys requires a state-updating handler; multiple rows are needed to demonstrate selection differences.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/table/table.tsx"),
+  "group.separator": entry(
+{
+  "purpose": "Mark a boundary between neighboring groups of content.",
+  "useWhen": "A subtle rule improves grouping without adding another content surface.",
+  "avoidWhen": "Spacing alone already explains the structure or the rule is mistaken for content.",
+  "alternatives": "Use Card for a containing surface; use spacing within a consumer-owned block for weak grouping.",
+  "content": "A separator carries no authored message; the adjacent groups provide its meaning.",
+  "anatomy": "One horizontal or vertical boundary, optionally purely decorative.",
+  "composition": "In a consumer-owned toolbar block, use decorative Separator between related action groups.",
+  "accessibility": "Mark decorative boundaries hidden; a semantic separator keeps the corresponding orientation."
+},
+{
+  "exportName": "Separator",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "options": [
+    {
+      "prop": "orientation",
+      "label": "Boundary orientation",
+      "purpose": "Boundary orientation selects the existing Separator orientation behavior.",
+      "values": [
+        {
+          "value": "horizontal",
+          "purpose": "Horizontal content boundary."
+        },
+        {
+          "value": "vertical",
+          "purpose": "Vertical content boundary."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/separator/separator.tsx"),
+  "depict.logomark": entry({
+    purpose: "Represent a brand with one decorative glyph and an optional shared plate.",
+    useWhen: "A surrounding identity link or adjacent text already names the brand.",
+    avoidWhen: "The image must communicate an accessible name or act as a standalone control.",
+    alternatives: "Use Lockup for a mark beside live text; use Brandmark for the established home link.",
+    content: "Supply the light, dark or mono artwork as an image URL, never injected markup.",
+    anatomy: "One glyph image, optionally inset inside one rounded square plate.",
+    composition: "In Lockup, place Logomark before the live wordmark and center both regions vertically.",
+    accessibility: "The image has empty alternative text; its surrounding text or control supplies the name.",
+  }, {
+    exportName: "Logomark", entrypoint: "components",
+    notes: "Size, tone and plate are finite choices. Artwork URLs and optional titles are authored content; artwork contrast remains caller-owned.",
+    options: [
+      { prop: "size", label: "Size", purpose: "Select the mark height from the existing brandmark scale.",
+        values: [{ value: "sm", purpose: "Small mark height." }, { value: "md", purpose: "Medium mark height." }, { value: "lg", purpose: "Large mark height." }],
+        applicability: "Always effective; size is required.", support: { state: "implemented", reason: "The mark consumes its size through the shared height bindings." } },
+      { prop: "tone", label: "Plate ink", purpose: "Choose shared plate ink to match the surrounding ground.",
+        values: [{ value: "auto", purpose: "Primary ink plate." }, { value: "inverse", purpose: "Inverse ink plate." }],
+        applicability: "Effective only with a shared plate; self-plated artwork supplies its own paint.", support: { state: "implemented", reason: "The shared plate selects the corresponding existing ink utility." } },
+      { prop: "plate", label: "Plate ownership", purpose: "Choose whether the caller artwork already includes a plate.",
+        values: [{ value: "self", purpose: "Render the supplied artwork at its natural aspect ratio." }, { value: "shared", purpose: "Inset the glyph in the shared square plate." }],
+        applicability: "Always effective for the mark geometry.", support: { state: "implemented", reason: "The component renders either the image alone or the shared plate." } },
+    ],
+    constraints: [{ kind: "effective-when", props: ["tone"], enforcement: "ignored", effectiveWhen: { prop: "plate", values: ["shared"] },
+      reason: "Tone paints the shared plate only; it never rewrites the supplied artwork URL.",
+      evidence: { source: "src/components/Logomark.tsx", evidence: 'if (plate !== "shared")' } }],
+  }, "src/components/Logomark.tsx"),
+  "depict.avatar": entry(
+{
+  "purpose": "Represent one person or entity with a picture or initials.",
+  "useWhen": "A compact identity cue helps readers recognize an associated entity.",
+  "avoidWhen": "The image is explanatory content, a general illustration or the only identification text needed.",
+  "alternatives": "Use an ordinary content image for illustration; pair Avatar with a visible name in a consumer-owned identity block.",
+  "content": "Supply the represented entity’s name, its initials and an optional image source.",
+  "anatomy": "One identity image or its initials alternative.",
+  "composition": "In a consumer-owned author block, place Avatar beside the author name and affiliation.",
+  "accessibility": "Give AvatarImage the entity’s name as alt; AvatarFallback shows the initials when the image fails to load."
+},
+{
+  "exportName": "Avatar",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "options": [
+    {
+      "prop": "size",
+      "label": "Mark size",
+      "purpose": "Mark size selects the stock Avatar size.",
+      "values": [
+        {
+          "value": "default",
+          "purpose": "Medium identity mark."
+        },
+        {
+          "value": "sm",
+          "purpose": "Small identity mark."
+        },
+        {
+          "value": "lg",
+          "purpose": "Large identity mark."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/avatar/avatar.tsx"),
+  "depict.icon": entry(
+{
+  "purpose": "Render one symbolic glyph with a consistent visual and naming contract.",
+  "useWhen": "A compact symbol supports a labelled control or conveys a named concept.",
+  "avoidWhen": "The image needs photographic detail or a string-based glyph lookup.",
+  "alternatives": "Use Avatar for entity pictures; an icon-size Button for a named glyph action.",
+  "content": "Supply glyph data or inner SVG markup, and decide whether the symbol adds information.",
+  "anatomy": "One symbolic image and, when informative, an equivalent name.",
+  "composition": "In a consumer-owned benefit block, pair a decorative Icon with a visible benefit heading.",
+  "accessibility": "Choose decorative or labelled semantics exclusively, and glyph or children content exclusively."
+},
+{
+  "exportName": "Icon",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "options": [
+    {
+      "prop": "size",
+      "label": "Size",
+      "purpose": "Size selects the existing Icon size behavior.",
+      "values": [
+        {
+          "value": "sm",
+          "purpose": "sm size within the existing component scale."
+        },
+        {
+          "value": "md",
+          "purpose": "md size within the existing component scale."
+        },
+        {
+          "value": "lg",
+          "purpose": "lg size within the existing component scale."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "exclusive",
+      "props": [
+        "decorative",
+        "label"
+      ],
+      "reason": "decorative true excludes label; informative icons require label with decorative false or omitted.",
+      "enforcement": "type",
+      "evidence": {
+        "source": "src/components/preview-runtime/components/icon/icon.tsx",
+        "evidence": "decorative: true;"
+      },
+      "when": {
+        "prop": "decorative",
+        "values": [
+          true
+        ]
+      },
+      "excludes": [
+        "label"
+      ]
+    },
+    {
+      "kind": "exclusive",
+      "props": [
+        "glyph",
+        "children"
+      ],
+      "reason": "Supply glyph data or inner SVG children, never both; children is content, not a scalar configuration.",
+      "enforcement": "type",
+      "evidence": {
+        "source": "src/components/preview-runtime/components/icon/icon.tsx",
+        "evidence": "glyph: IconNode; children?: undefined"
+      },
+      "presence": "exactly-one"
+    },
+    {
+      "kind": "requires",
+      "props": [
+        "label"
+      ],
+      "reason": "An informative icon needs label when decorative is false or omitted.",
+      "enforcement": "type",
+      "evidence": {
+        "source": "src/components/preview-runtime/components/icon/icon.tsx",
+        "evidence": "decorative?: false; label: string"
+      },
+      "when": {
+        "any": [
+          {
+            "prop": "decorative",
+            "values": [
+              false
+            ]
+          },
+          {
+            "prop": "decorative",
+            "present": false
+          }
+        ]
+      },
+      "requires": [
+        "label"
+      ]
+    }
+  ]
+}, "src/components/preview-runtime/components/icon/icon.tsx"),
+  "reveal.dialog": entry(
+{
+  "purpose": "Focus attention on a modal task that temporarily suspends the page.",
+  "useWhen": "The reader needs to finish or dismiss a bounded task before returning.",
+  "avoidWhen": "The information can remain inline or is merely a short description.",
+  "alternatives": "Use Disclosure for inline content; Popover for an anchored task; Tooltip for a short description.",
+  "content": "Supply a clear dialog heading and purposeful task content through the content slot.",
+  "anatomy": "An opening trigger, a modal content surface and a dismissal path.",
+  "composition": "In a consumer-owned confirmation block, compose DialogHeader with DialogTitle and DialogDescription, then DialogFooter with explicit action controls.",
+  "accessibility": "Retain focus containment, Escape dismissal and focus return; use DialogTitle for the content name."
+},
+{
+  "exportName": "Dialog",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "options": [
+    {
+      "prop": "isDismissable",
+      "label": "Outside dismissal",
+      "purpose": "Outside dismissal selects the existing Dialog isDismissable behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Outside click leaves the dialog open; Escape still closes it."
+        },
+        {
+          "value": true,
+          "purpose": "Outside click dismisses the dialog; Escape also closes it."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/dialog/dialog.tsx"),
+  "reveal.popover": entry(
+{
+  "purpose": "Reveal an anchored panel for a small contextual task.",
+  "useWhen": "A rich preview or compact form should remain visually related to its trigger.",
+  "avoidWhen": "A purpose-built menu, choice field or tooltip already matches the content.",
+  "alternatives": "Use Menu for commands, Select for choices, Tooltip for short help, or Dialog for a larger modal task.",
+  "content": "Name the trigger and give the panel content an understandable task hierarchy.",
+  "anatomy": "One contextual trigger and its anchored content panel.",
+  "composition": "In a consumer-owned filter block, put several filter fields inside Popover and manage their state outside it.",
+  "accessibility": "The panel uses dialog behavior; supply aria-label for its accessible name when there is no visible title heading, and preserve focus entry, outside dismissal and return to the trigger."
+},
+{
+  "exportName": "Popover",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to bottom and offset to 4. PopoverTrigger opens it and supplies dialog behavior; PopoverHeader, PopoverTitle and PopoverDescription name the panel.",
+  "options": [],
+  "constraints": []
+}, "src/components/preview-runtime/components/popover/popover.tsx"),
+  "reveal.tooltip": entry(
+{
+  "purpose": "Give a short supplementary description of another element.",
+  "useWhen": "The trigger already has a name and needs brief contextual explanation.",
+  "avoidWhen": "The information is essential instructions, an interactive panel or the control’s only label.",
+  "alternatives": "Use visible helper text for essential guidance; Popover for interactive or rich content.",
+  "content": "Write a short description that adds to the trigger name rather than repeating it.",
+  "anatomy": "A described trigger and its transient explanatory text.",
+  "composition": "In a consumer-owned icon-toolbar block, use Tooltip to supplement an already labelled icon-size Button.",
+  "accessibility": "Keep keyboard-focus access and the description association; hover alone cannot provide the information."
+},
+{
+  "exportName": "Tooltip",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to top and offset to 4. TooltipTrigger owns the opening interaction and reads its delay and close timing from behaviorTiming.",
+  "options": [],
+  "constraints": []
+}, "src/components/preview-runtime/components/tooltip/tooltip.tsx"),
+  "reveal.disclosure": entry(
+{
+  "purpose": "Reveal or hide one section while retaining its place in the document.",
+  "useWhen": "Supplementary content can be expanded without opening a separate overlay.",
+  "avoidWhen": "The task needs mutually exclusive panels or a coordinated accordion controller.",
+  "alternatives": "Use Tabs for peer panels; a consumer-owned accordion block for coordinated disclosures.",
+  "content": "Name the expandable section with a title that predicts its contents.",
+  "anatomy": "One persistent section trigger and its expandable content.",
+  "composition": "In a consumer-owned FAQ block, repeat AccordionItem rows for independently expandable answers.",
+  "accessibility": "Preserve the trigger-to-panel association and expanded state; hidden content remains part of the disclosure."
+},
+{
+  "exportName": "Accordion",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "options": [],
+  "constraints": []
+}, "src/components/preview-runtime/components/disclosure/accordion.tsx"),
+  "reveal.tabs": entry(
+{
+  "purpose": "Switch among peer panels within the same context.",
+  "useWhen": "A small set of related panels can share one location.",
+  "avoidWhen": "The controls navigate to unrelated pages or hide essential sequential instructions.",
+  "alternatives": "Use Link for route navigation; Disclosure for inline supplementary sections.",
+  "content": "Give each tab a distinct label and match it to the corresponding panel identity.",
+  "anatomy": "A repeated set of tab labels and one associated panel per label.",
+  "composition": "In a consumer-owned account-details block, compose TabsList, multiple TabsTrigger items and matched TabsContent panels.",
+  "accessibility": "Preserve tab-panel IDs and keyboard selection; orientation aligns the list layout and keyboard navigation."
+},
+{
+  "exportName": "Tabs",
+  "entrypoint": "components",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Foundry exports the stock shadcn@aria Tabs, TabsList, TabsTrigger and TabsContent. Orientation stacks the list as a row or a column and forwards matching semantics to the react-aria-components Tabs. A single-option specimen cannot prove panel switching.",
+  "options": [
+    {
+      "prop": "isDisabled",
+      "label": "Availability",
+      "purpose": "Availability selects the stock Tabs isDisabled behavior.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Enabled interaction."
+        },
+        {
+          "value": true,
+          "purpose": "Disabled interaction."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "orientation",
+      "label": "ARIA orientation",
+      "purpose": "Orientation aligns the list layout with keyboard semantics.",
+      "values": [
+        {
+          "value": "horizontal",
+          "purpose": "Horizontal list with matching keyboard semantics."
+        },
+        {
+          "value": "vertical",
+          "purpose": "Vertical list with matching keyboard semantics."
+        }
+      ],
+      "applicability": "Layout and keyboard semantics follow the supplied orientation.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component uses orientation for layout and forwards it to the ARIA primitive."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/components/preview-runtime/components/tabs/tabs.tsx"),
+  "depict.bar-chart": entry(
+{
+  "purpose": "Compare magnitudes across discrete categories.",
+  "useWhen": "A common numeric scale makes category differences easy to judge.",
+  "avoidWhen": "The story is continuous change, paired numeric relationships or incompatible units.",
+  "alternatives": "Use LineChart for change, or separate charts for unlike units.",
+  "content": "Supply category labels and aligned series values with stable series identity.",
+  "anatomy": "Discrete category marks sharing one magnitude scale and a text alternative.",
+  "composition": "In a consumer-owned comparison block, combine BarChart with a question heading and explanatory caption.",
+  "accessibility": "Retain the title and table alternative; static marks and fluid sizing are separate choices."
+},
+{
+  "exportName": "BarChart",
+  "entrypoint": "charts",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. fit defaults to fixed, marks to interactive. Intrinsic width defaults to 480 for fixed and 360 for fluid; height defaults to 280. Static OR fluid uses token mark geometry, while marks alone controls interaction. No stacking or orientation option exists.",
+  "options": [
+    {
+      "prop": "fit",
+      "label": "Sizing behavior",
+      "purpose": "Sizing behavior selects the existing BarChart fit behavior.",
+      "values": [
+        {
+          "value": "fixed",
+          "purpose": "Intrinsic fixed-size graphic."
+        },
+        {
+          "value": "fluid",
+          "purpose": "Fluid fitting of the intrinsic chart."
+        }
+      ],
+      "applicability": "Effective for this component when supplied.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    },
+    {
+      "prop": "marks",
+      "label": "Mark interaction",
+      "purpose": "Mark interaction selects the existing BarChart marks behavior.",
+      "values": [
+        {
+          "value": "interactive",
+          "purpose": "Focusable marks with individual labels."
+        },
+        {
+          "value": "static",
+          "purpose": "One static graphic with table alternative."
+        }
+      ],
+      "applicability": "Fluid fit changes token mark geometry but retains interaction when marks remains interactive.",
+      "support": {
+        "state": "implemented",
+        "reason": "The component consumes or forwards this existing prop in the cited source."
+      }
+    }
+  ],
+  "constraints": []
+}, "src/charts/BarChart.tsx"),
+  "depict.line-chart": entry(
+{
+  "purpose": "Show how one or more series change over ordered positions.",
+  "useWhen": "Time or another meaningful ordered numeric axis explains the trend.",
+  "avoidWhen": "Unordered categories or unrelated measurement scales would imply a misleading connection.",
+  "alternatives": "Use BarChart for categories.",
+  "content": "Supply a shared ordered x domain, aligned series values and stable names.",
+  "anatomy": "Ordered connected observations on one x scale and one y scale.",
+  "composition": "In a consumer-owned trend block, pair LineChart with an explanation of the shared units and period.",
+  "accessibility": "The keyboard inspection overlay must offer the same values as pointer inspection and the table."
+},
+{
+  "exportName": "LineChart",
+  "entrypoint": "charts",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Intrinsic width defaults to 480 and height to 280. This component has no fit or marks prop. Pointer and keyboard overlay inspection uses component state; never infer static support from another chart.",
+  "options": [],
+  "constraints": []
+}, "src/charts/LineChart.tsx"),
+  "depict.area-chart": entry(
+{
+  "purpose": "Compare how one or several quantities change or accumulate across ordered categories or time.",
+  "useWhen": "Filled magnitude, authored series totals or a normalized percentage composition answer the stated question.",
+  "avoidWhen": "Area overlap conceals the comparison, units differ between series or missing observations would be mistaken for zero.",
+  "alternatives": "Use LineChart for precise trends without filled areas, BarChart for categorical comparisons or a table for exact values.",
+  "content": "Author one consistent x domain, named same-length series and explicit null gaps; normalized and stacked quantities must be nonnegative.",
+  "anatomy": "Contiguous filled runs share axes, a named series legend, an inspection crosshair and an equivalent native data table.",
+  "composition": "In a consumer-owned trends block, place AreaChart beside period definitions and an explanation of magnitude, stacking or percentages.",
+  "accessibility": "Retain visible series names, keyboard inspection and the complete table; explain missing values rather than relying on the filled colour alone."
+},
+{
+  "exportName": "AreaChart",
+  "entrypoint": "charts",
+  "notes": "Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. The stacked prop is supported and described in the public chart contract, but is not a represented comparison axis here. Inspection and selection may be controlled; the server export preserves static geometry and table data.",
+  "options": [
+    {
+      "prop": "normalized",
+      "label": "Percentage composition",
+      "purpose": "Choose whether the visible series use authored magnitude or normalized column totals.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Retain authored magnitudes on one shared value scale."
+        },
+        {
+          "value": true,
+          "purpose": "Stack each nonzero column to a total of one hundred percent."
+        }
+      ],
+      "applicability": "Normalization implies stacking; all-zero columns remain zero and null values remain missing.",
+      "support": {
+        "state": "implemented",
+        "reason": "The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels."
+      }
+    },
+    {
+      "prop": "smooth",
+      "label": "Interpolation",
+      "purpose": "Choose straight or smooth geometry within each contiguous nonmissing area run.",
+      "values": [
+        {
+          "value": false,
+          "purpose": "Connect adjacent samples with straight segments."
+        },
+        {
+          "value": true,
+          "purpose": "Use cubic interpolation within each nonmissing run."
+        }
+      ],
+      "applicability": "Smoothing never connects across an explicit null gap and does not change the table data.",
+      "support": {
+        "state": "implemented",
+        "reason": "The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels."
+      }
+    }
+  ],
+  "constraints": [
+    {
+      "kind": "derived",
+      "props": [
+        "normalized",
+        "stacked"
+      ],
+      "reason": "Normalization implies stacking; an unstacked percentage mode is not a separate supported configuration.",
+      "enforcement": "derived",
+      "evidence": {
+        "source": "src/charts/internal/signature-geometry.ts",
+        "evidence": "const bottom = stacked || normalized ? bases[index]! : 0;"
+      }
+    },
+    {
+      "kind": "data",
+      "props": [
+        "x",
+        "series"
+      ],
+      "reason": "Every named series supplies one finite number or explicit null for each x; stacking and normalization refuse negative values.",
+      "enforcement": "runtime",
+      "evidence": {
+        "source": "src/charts/internal/signature-geometry.ts",
+        "evidence": "AreaChart series must have one value for every x."
+      }
+    }
+  ]
+}, "src/charts/AreaChart.tsx"),
+  "enter.resize-handle": entry({
+    purpose: "Adjust the bounded size of one adjacent content pane.",
+    useWhen: "A host exposes a user-adjustable inline width or block height.",
+    avoidWhen: "The boundary is decorative or no dimension can actually change.",
+    alternatives: "Use Separator for a static boundary; ResizablePane for a complete bounded Panel composition.",
+    content: "Supply an accessible name identifying the pane being resized, with finite dimensions and a reset value.",
+    anatomy: "One focusable separator, a token-bound visible edge and a minimum interactive target.",
+    composition: "ResizablePane composes the handle with Panel and owns its uncontrolled or controlled size.",
+    accessibility: "Arrow keys adjust, Home and End reach bounds, Enter resets, and Escape cancels an active pointer drag. Horizontal movement follows inherited or explicit RTL.",
+  }, {
+    exportName: "ResizeHandle", entrypoint: "components",
+    notes: "Numeric dimensions, step, reset, names and callbacks are authored inputs. Pointer capture, cancellation and keyboard changes report bounded values through onChange; the Component is controlled and never stores preferences.",
+    options: [{
+      prop: "orientation", label: "Separator orientation", purpose: "Select the visible separator and its perpendicular movement axis.",
+      values: [{ value: "vertical", purpose: "Inline width, moved horizontally with RTL reversal." }, { value: "horizontal", purpose: "Block height, moved vertically without RTL reversal." }],
+      applicability: "Effective for both pointer and keyboard movement.",
+      support: { state: "implemented", reason: "The component consumes orientation for semantics, visible edge and input axis." },
+    }, {
+      prop: "dir", label: "Explicit direction", purpose: "Override inherited direction for horizontal movement.",
+      values: [{ value: "ltr", purpose: "Right increases inline width." }, { value: "rtl", purpose: "Left increases inline width." }],
+      applicability: "Only horizontal movement reverses; omission follows computed or inherited direction.",
+      support: { state: "implemented", reason: "The component resolves direction when handling each interaction." },
+    }],
+    constraints: [{
+      kind: "data", props: ["value", "min", "max", "resetValue", "step"],
+      reason: "All dimensions must be finite, bounds ordered and step positive; emitted values and the reset are clamped to the supplied bounds.",
+      enforcement: "runtime", evidence: { source: "src/components/ResizeHandle.tsx", evidence: "![value, min, max, resetValue, step].every(Number.isFinite)" },
+    }, {
+      kind: "data", props: ["label"], reason: "An interactive separator requires an authored nonempty string name.",
+      enforcement: "runtime", evidence: { source: "src/components/ResizeHandle.tsx", evidence: "typeof label !== \"string\" || !label.trim()" },
+    }],
+  }, "src/components/ResizeHandle.tsx"),
+};
+
+/** Source-checked facts, not a claim to enumerate the whole inherited API or token graph. */
+export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = {
+  "enter.resize-handle": {
+    exportName: "ResizeHandle", source: "src/components/ResizeHandle.tsx",
+    options: [{
+      prop: "orientation", values: ["vertical", "horizontal"],
+      default: { kind: "value", value: "vertical", source: "src/components/ResizeHandle.tsx", evidence: "orientation = \"vertical\"" },
+      forwarding: { source: "src/components/ResizeHandle.tsx", evidence: "aria-orientation={orientation}" },
+    }, {
+      prop: "dir", values: ["ltr", "rtl"], default: { kind: "omitted", reason: "Omission follows effective direction at interaction time." },
+      forwarding: { source: "src/components/ResizeHandle.tsx", evidence: "dir={dir}" },
+    }],
+    tokens: { coverage: "partial", reason: "Representative consumed target, edge and native focus-color tokens; not an exhaustive generated utility inventory.", dependencies: [
+      { property: "--ui-layout-tap-target", kind: "transitive", source: "src/components/internal/ui-vars.ts", evidence: "var(--ui-layout-tap-target, 44px)", via: [{ source: "src/components/ResizeHandle.tsx", evidence: "minWidth: UI_LAYOUT_TAP_TARGET" }] },
+      { property: "--ui-border-hairline", kind: "transitive", source: "src/components/internal/ui-vars.ts", evidence: "var(--ui-border-hairline, 1px)", via: [{ source: "src/components/ResizeHandle.tsx", evidence: "borderWidth: UI_BORDER_HAIRLINE" }] },
+    ] },
+  },
+  "act.button": {
+    "exportName": "Button",
+    "source": "src/components/preview-runtime/components/button/button.tsx",
+    "options": [
+      {
+        "prop": "variant",
+        "values": [
+          "default",
+          "outline",
+          "secondary",
+          "ghost",
+          "destructive",
+          "link"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "default",
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "variant = \"default\""
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "buttonVariants({ variant, size, className })"
+        }
+      },
+      {
+        "prop": "size",
+        "values": [
+          "default",
+          "xs",
+          "sm",
+          "lg",
+          "icon",
+          "icon-xs",
+          "icon-sm",
+          "icon-lg"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "default",
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "size = \"default\""
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "buttonVariants({ variant, size, className })"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-action",
+          "kind": "transitive",
+          "source": "styles/tokens.css",
+          "evidence": "--color-action:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/button/button.tsx",
+              "evidence": "bg-(--color-action)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "act.link": {
+    "exportName": "LinkButton",
+    "source": "src/components/preview-runtime/components/button/button.tsx",
+    "options": [
+      {
+        "prop": "variant",
+        "values": [
+          "default",
+          "outline",
+          "secondary",
+          "ghost",
+          "destructive",
+          "link"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "default",
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "variant = \"default\""
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "buttonVariants({ variant, size, className })"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-accent-text",
+          "kind": "transitive",
+          "source": "styles/tokens.css",
+          "evidence": "--color-accent-text:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/button/button.tsx",
+              "evidence": "text-(--color-accent-text)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "act.breadcrumb": {
+    "exportName": "Breadcrumb",
+    "source": "src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-ink-muted",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-ink-muted:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx",
+              "evidence": "text-(--color-ink-muted)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "act.menu": {
+    "exportName": "Menu",
+    "source": "src/components/preview-runtime/components/menu/dropdown-menu.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-overlay-surface",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-overlay-surface:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/menu/dropdown-menu.tsx",
+              "evidence": "bg-(--color-overlay-surface)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.text-field": {
+    "exportName": "TextField",
+    "source": "src/components/TextField.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/TextField.tsx",
+          "evidence": "AriaTextField"
+        }
+      },
+      {
+        "prop": "isInvalid",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/TextField.tsx",
+          "evidence": "<AriaTextField {...rest}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--ui-ring-focus",
+          "kind": "transitive",
+          "source": "src/components/internal/ui-vars.ts",
+          "evidence": "var(--ui-ring-focus,",
+          "via": [
+            {
+              "source": "src/components/TextField.tsx",
+              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.textarea": {
+    "exportName": "Textarea",
+    "source": "src/components/Textarea.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/Textarea.tsx",
+          "evidence": "AriaTextField"
+        }
+      },
+      {
+        "prop": "isInvalid",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/Textarea.tsx",
+          "evidence": "<AriaTextField {...rest}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--ui-ring-focus",
+          "kind": "transitive",
+          "source": "src/components/internal/ui-vars.ts",
+          "evidence": "var(--ui-ring-focus,",
+          "via": [
+            {
+              "source": "src/components/Textarea.tsx",
+              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.search-field": {
+    "exportName": "SearchField",
+    "source": "src/components/SearchField.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/SearchField.tsx",
+          "evidence": "AriaSearchField"
+        }
+      },
+      {
+        "prop": "isInvalid",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/SearchField.tsx",
+          "evidence": "<AriaSearchField {...rest}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--ui-ring-focus",
+          "kind": "transitive",
+          "source": "src/components/internal/ui-vars.ts",
+          "evidence": "var(--ui-ring-focus,",
+          "via": [
+            {
+              "source": "src/components/SearchField.tsx",
+              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.date-field": {
+    "exportName": "DateField",
+    "source": "src/components/DateField.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/DateField.tsx",
+          "evidence": "AriaDateField"
+        }
+      },
+      {
+        "prop": "isInvalid",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/DateField.tsx",
+          "evidence": "<AriaDateField {...rest}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--ui-ring-focus",
+          "kind": "transitive",
+          "source": "src/components/internal/ui-vars.ts",
+          "evidence": "var(--ui-ring-focus,",
+          "via": [
+            {
+              "source": "src/components/DateField.tsx",
+              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.select": {
+    "exportName": "Select",
+    "source": "src/components/preview-runtime/components/select/select.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/select/select.tsx",
+          "evidence": "{...props}"
+        }
+      },
+      {
+        "prop": "isInvalid",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/select/select.tsx",
+          "evidence": "{...props}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-focus-ring",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/select/select.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.combo-box": {
+    "exportName": "ComboBox",
+    "source": "src/components/ComboBox.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/ComboBox.tsx",
+          "evidence": "AriaComboBox"
+        }
+      },
+      {
+        "prop": "isInvalid",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/ComboBox.tsx",
+          "evidence": "isInvalid={isInvalid}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--ui-ring-focus",
+          "kind": "transitive",
+          "source": "src/components/internal/ui-vars.ts",
+          "evidence": "var(--ui-ring-focus,",
+          "via": [
+            {
+              "source": "src/components/ComboBox.tsx",
+              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.checkbox": {
+    "exportName": "Checkbox",
+    "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
+          "evidence": "{...props}"
+        }
+      },
+      {
+        "prop": "isSelected",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
+          "evidence": "{...props}"
+        }
+      },
+      {
+        "prop": "isIndeterminate",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
+          "evidence": "{ isSelected, isIndeterminate }"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-focus-ring",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/checkbox/checkbox.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.switch": {
+    "exportName": "Switch",
+    "source": "src/components/preview-runtime/components/switch/switch.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/switch/switch.tsx",
+          "evidence": "{...props}"
+        }
+      },
+      {
+        "prop": "isSelected",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/switch/switch.tsx",
+          "evidence": "{...props}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-focus-ring",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/switch/switch.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.radio-group": {
+    "exportName": "RadioGroup",
+    "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+          "evidence": "{...props}"
+        }
+      },
+      {
+        "prop": "isInvalid",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+          "evidence": "{...props}"
+        }
+      },
+      {
+        "prop": "orientation",
+        "values": [
+          "horizontal",
+          "vertical"
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+          "evidence": "{...props}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-focus-ring",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "enter.file-trigger": {
+    "exportName": "FileTrigger",
+    "source": "src/components/preview-runtime/components/file-trigger/file-trigger.tsx",
+    "options": [
+      {
+        "prop": "allowsMultiple",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/file-trigger/file-trigger.tsx",
+          "evidence": "<AriaFileTrigger {...props} ref={ref}>"
+        }
+      },
+      {
+        "prop": "defaultCamera",
+        "values": [
+          "user",
+          "environment"
+        ],
+        "default": {
+          "kind": "omitted",
+          "reason": "Omitted by default; the package supplies no selected value."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/file-trigger/file-trigger.tsx",
+          "evidence": "<AriaFileTrigger {...props} ref={ref}>"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "none-owned",
+      "reason": "FileTrigger has no styled visual surface of its own; an authored trigger can consume tokens independently.",
+      "dependencies": []
+    }
+  },
+  "enter.field": {
+    "exportName": "Field",
+    "source": "src/components/Field.tsx",
+    "options": [
+      {
+        "prop": "isInvalid",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/components/Field.tsx",
+          "evidence": "isInvalid = false"
+        },
+        "forwarding": {
+          "source": "src/components/Field.tsx",
+          "evidence": "aria-invalid"
+        }
+      },
+      {
+        "prop": "isRequired",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/components/Field.tsx",
+          "evidence": "isRequired = false"
+        },
+        "forwarding": {
+          "source": "src/components/Field.tsx",
+          "evidence": "aria-required"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-ink-secondary",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-ink-secondary:",
+          "via": [
+            {
+              "source": "src/components/Field.tsx",
+              "evidence": "text-ink-secondary"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "inform.badge": {
+    "exportName": "Badge",
+    "source": "src/components/preview-runtime/components/badge/badge.tsx",
+    "options": [
+      {
+        "prop": "variant",
+        "values": [
+          "default",
+          "secondary",
+          "destructive",
+          "outline",
+          "ghost",
+          "link"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "default",
+          "source": "src/components/preview-runtime/components/badge/badge.tsx",
+          "evidence": "variant = \"default\""
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/badge/badge.tsx",
+          "evidence": "badgeVariants({ variant })"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-action",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-action:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/badge/badge.tsx",
+              "evidence": "bg-(--color-action)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "inform.banner": {
+    "exportName": "Alert",
+    "source": "src/components/preview-runtime/components/banner/alert.tsx",
+    "options": [
+      {
+        "prop": "variant",
+        "values": [
+          "default",
+          "destructive"
+        ],
+        "default": {
+          "kind": "omitted",
+          "reason": "No local initializer; an omitted variant resolves to default through the alertVariants defaultVariants."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/banner/alert.tsx",
+          "evidence": "alertVariants({ variant })"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-status-danger",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-status-danger:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/banner/alert.tsx",
+              "evidence": "text-(--color-status-danger)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "inform.status-mark": {
+    "exportName": "StatusMark",
+    "source": "src/components/StatusMark.tsx",
+    "options": [
+      {
+        "prop": "tone",
+        "values": [
+          "success",
+          "warning",
+          "danger",
+          "info",
+          "neutral"
+        ],
+        "default": {
+          "kind": "required",
+          "reason": "Required by the prop type; no package default is supplied."
+        },
+        "forwarding": {
+          "source": "src/components/StatusMark.tsx",
+          "evidence": "SHAPES[tone]"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-status-success",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-status-success:",
+          "via": [
+            {
+              "source": "src/components/StatusMark.tsx",
+              "evidence": "text-status-success"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "inform.meter": {
+    "exportName": "Meter",
+    "source": "src/components/Meter.tsx",
+    "options": [
+      {
+        "prop": "tone",
+        "values": [
+          "success",
+          "warning",
+          "danger",
+          "info",
+          "neutral",
+          "accent"
+        ],
+        "default": {
+          "kind": "required",
+          "reason": "Required by the prop type; no package default is supplied."
+        },
+        "forwarding": {
+          "source": "src/components/Meter.server.tsx",
+          "evidence": "FILL_CLASSES[tone]"
+        }
+      },
+      {
+        "prop": "direction",
+        "values": [
+          "max",
+          "min"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "max",
+          "source": "src/components/Meter.server.tsx",
+          "evidence": "direction = \"max\""
+        },
+        "forwarding": {
+          "source": "src/components/Meter.server.tsx",
+          "evidence": "direction === \"max\""
+        }
+      },
+      {
+        "prop": "emphasis",
+        "values": [
+          "default",
+          "figure"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "default",
+          "source": "src/components/Meter.tsx",
+          "evidence": "emphasis = \"default\""
+        },
+        "forwarding": {
+          "source": "src/components/Meter.tsx",
+          "evidence": "VALUE_ROW_CLASSES[emphasis]"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--ui-border-rule",
+          "kind": "transitive",
+          "source": "src/components/internal/ui-vars.ts",
+          "evidence": "var(--ui-border-rule,",
+          "via": [
+            {
+              "source": "src/components/Meter.server.tsx",
+              "evidence": "inset 0 0 0 ${UI_BORDER_RULE} currentColor"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "inform.progress-bar": {
+    "exportName": "ProgressBar",
+    "source": "src/components/preview-runtime/components/progress-bar/progress.tsx",
+    "options": [
+      {
+        "prop": "isIndeterminate",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/progress-bar/progress.tsx",
+          "evidence": "data-slot=\"progress\""
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-surface-sunken",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-surface-sunken:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/progress-bar/progress.tsx",
+              "evidence": "bg-(--color-surface-sunken)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "inform.spinner": {
+    "exportName": "Spinner",
+    "source": "src/components/spinner/spinner.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--animate-spin",
+          "kind": "transitive",
+          "source": "styles/compiled.css",
+          "evidence": "var(--animate-spin, spin 1s linear infinite)",
+          "via": [
+            {
+              "source": "src/components/spinner/spinner.tsx",
+              "evidence": "animate-spin"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "inform.skeleton": {
+    "exportName": "Skeleton",
+    "source": "src/components/preview-runtime/components/skeleton/skeleton.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-surface-sunken",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-surface-sunken:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/skeleton/skeleton.tsx",
+              "evidence": "bg-(--color-surface-sunken)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "group.card": {
+    "exportName": "Card",
+    "source": "src/components/preview-runtime/components/card/card.tsx",
+    "options": [
+      {
+        "prop": "size",
+        "values": [
+          "default",
+          "sm"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "default",
+          "source": "src/components/preview-runtime/components/card/card.tsx",
+          "evidence": "size = \"default\""
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/card/card.tsx",
+          "evidence": "data-size={size}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-surface-raised",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-surface-raised:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/card/card.tsx",
+              "evidence": "bg-(--color-surface-raised)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "group.grid-list": {
+    exportName: "GridList", source: "src/components/GridList.tsx", options: [],
+    tokens: {
+      coverage: "partial", reason: "Representative row state dependencies; checkbox styling is composed from the existing component.",
+      dependencies: [
+        { property: "--ui-layout-tap-target", kind: "transitive", source: "src/components/internal/ui-vars.ts", evidence: "--ui-layout-tap-target", via: [{ source: "src/components/GridList.tsx", evidence: "minBlockSize: UI_LAYOUT_TAP_TARGET" }] },
+        { property: "--ui-ring-focus", kind: "transitive", source: "src/components/internal/ui-vars.ts", evidence: "--ui-ring-focus", via: [{ source: "src/components/GridList.tsx", evidence: "UI_RING_FOCUS" }] }
+      ]
+    }
+  },
+  "group.table": {
+    "exportName": "Table",
+    "source": "src/components/preview-runtime/components/table/table.tsx",
+    "options": [
+      {
+        "prop": "selectionMode",
+        "values": [
+          "none",
+          "single",
+          "multiple"
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/table/table.tsx",
+          "evidence": "<TablePrimitive\n        data-slot=\"table\""
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-ink-primary",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-ink-primary:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/table/table.tsx",
+              "evidence": "text-(--color-ink-primary)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "group.separator": {
+    "exportName": "Separator",
+    "source": "src/components/preview-runtime/components/separator/separator.tsx",
+    "options": [
+      {
+        "prop": "orientation",
+        "values": [
+          "horizontal",
+          "vertical"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "horizontal",
+          "source": "src/components/preview-runtime/components/separator/separator.tsx",
+          "evidence": "orientation = \"horizontal\""
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/separator/separator.tsx",
+          "evidence": "orientation={orientation}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-line-base",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-line-base:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/separator/separator.tsx",
+              "evidence": "bg-(--color-line-base)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "depict.logomark": {
+    exportName: "Logomark", source: "src/components/Logomark.tsx",
+    options: [
+      { prop: "size", values: ["sm", "md", "lg"], default: { kind: "required", reason: "The caller selects the required height scale." }, forwarding: { source: "src/components/Logomark.tsx", evidence: "HEIGHTS[size]" } },
+      { prop: "tone", values: ["auto", "inverse"], default: { kind: "value", value: "auto", source: "src/components/Logomark.tsx", evidence: 'tone = "auto"' }, forwarding: { source: "src/components/Logomark.tsx", evidence: 'tone === "inverse"' } },
+      { prop: "plate", values: ["shared", "self"], default: { kind: "value", value: "self", source: "src/components/Logomark.tsx", evidence: 'plate = "self"' }, forwarding: { source: "src/components/Logomark.tsx", evidence: 'plate !== "shared"' } },
+    ],
+    tokens: { coverage: "partial", reason: "The height binding is representative; plate ink uses the existing primary or inverse ink utilities.", dependencies: [
+      { property: "--ui-brandmark-height-md", kind: "transitive", source: "src/internal/brandmark.ts", evidence: '"var(--ui-brandmark-height-md, 36px)"', via: [{ source: "src/components/Logomark.tsx", evidence: "HEIGHTS[size]" }] },
+    ] },
+  },
+  "depict.avatar": {
+    "exportName": "Avatar",
+    "source": "src/components/preview-runtime/components/avatar/avatar.tsx",
+    "options": [
+      {
+        "prop": "size",
+        "values": [
+          "default",
+          "sm",
+          "lg"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "default",
+          "source": "src/components/preview-runtime/components/avatar/avatar.tsx",
+          "evidence": "size = \"default\""
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/avatar/avatar.tsx",
+          "evidence": "data-size={size}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-surface-sunken",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-surface-sunken:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/avatar/avatar.tsx",
+              "evidence": "bg-(--color-surface-sunken)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "depict.icon": {
+    "exportName": "Icon",
+    "source": "src/components/preview-runtime/components/icon/icon.tsx",
+    "options": [
+      {
+        "prop": "size",
+        "values": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "sm",
+          "source": "src/components/preview-runtime/components/icon/icon.tsx",
+          "evidence": "size = \"sm\""
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/icon/icon.tsx",
+          "evidence": "SIZES[size]"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "none-owned",
+      "reason": "The stock Icon owns no token: it draws in currentColor with a fixed 2px stroke and a size utility.",
+      "dependencies": []
+    }
+  },
+  "reveal.dialog": {
+    "exportName": "Dialog",
+    "source": "src/components/preview-runtime/components/dialog/dialog.tsx",
+    "options": [
+      {
+        "prop": "isDismissable",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": true,
+          "source": "src/components/preview-runtime/components/dialog/dialog.tsx",
+          "evidence": "isDismissable = true"
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/dialog/dialog.tsx",
+          "evidence": "isDismissable={isDismissable}"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-overlay-surface",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-overlay-surface:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/dialog/dialog.tsx",
+              "evidence": "bg-(--color-overlay-surface)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "reveal.popover": {
+    "exportName": "Popover",
+    "source": "src/components/preview-runtime/components/popover/popover.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-overlay-surface",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-overlay-surface:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/popover/popover.tsx",
+              "evidence": "bg-(--color-overlay-surface)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "reveal.tooltip": {
+    "exportName": "Tooltip",
+    "source": "src/components/preview-runtime/components/tooltip/tooltip.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-ink-primary",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-ink-primary:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/tooltip/tooltip.tsx",
+              "evidence": "bg-(--color-ink-primary)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "reveal.disclosure": {
+    "exportName": "Accordion",
+    "source": "src/components/preview-runtime/components/disclosure/accordion.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-ink-primary",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-ink-primary:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/disclosure/accordion.tsx",
+              "evidence": "hover:text-(--color-ink-primary)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "reveal.tabs": {
+    "exportName": "Tabs",
+    "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+    "options": [
+      {
+        "prop": "isDisabled",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+          "evidence": "<TabsPrimitive"
+        }
+      },
+      {
+        "prop": "orientation",
+        "values": [
+          "horizontal",
+          "vertical"
+        ],
+        "default": {
+          "kind": "peer",
+          "reason": "No local initializer; any inherited default belongs to the installed peer."
+        },
+        "forwarding": {
+          "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+          "evidence": "data-slot=\"tabs\""
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-focus-ring",
+          "kind": "transitive",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-focus-ring:",
+          "via": [
+            {
+              "source": "src/components/preview-runtime/components/tabs/tabs.tsx",
+              "evidence": "focus-visible:outline-(--color-focus-ring)"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "depict.bar-chart": {
+    "exportName": "BarChart",
+    "source": "src/charts/BarChart.tsx",
+    "options": [
+      {
+        "prop": "fit",
+        "values": [
+          "fixed",
+          "fluid"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "fixed",
+          "source": "src/charts/BarChart.tsx",
+          "evidence": "fit = \"fixed\""
+        },
+        "forwarding": {
+          "source": "src/charts/BarChart.tsx",
+          "evidence": "fit={fit}"
+        }
+      },
+      {
+        "prop": "marks",
+        "values": [
+          "interactive",
+          "static"
+        ],
+        "default": {
+          "kind": "value",
+          "value": "interactive",
+          "source": "src/charts/BarChart.tsx",
+          "evidence": "marks = \"interactive\""
+        },
+        "forwarding": {
+          "source": "src/charts/BarChart.tsx",
+          "evidence": "marks === \"interactive\""
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--ui-border-hairline",
+          "kind": "transitive",
+          "source": "src/charts/internal/marks.ts",
+          "evidence": "var(--ui-border-hairline,",
+          "via": [
+            {
+              "source": "src/charts/BarChart.tsx",
+              "evidence": "tokenMarks ? CHART_HAIRLINE : 1"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "depict.line-chart": {
+    "exportName": "LineChart",
+    "source": "src/charts/LineChart.tsx",
+    "options": [],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
+      "dependencies": [
+        {
+          "property": "--color-chart-grid",
+          "kind": "transitive",
+          "source": "src/charts/internal/chart-vars.ts",
+          "evidence": "var(--color-chart-grid,",
+          "via": [
+            {
+              "source": "src/charts/LineChart.tsx",
+              "evidence": "stroke={CHART_GRID}"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "depict.area-chart": {
+    "exportName": "AreaChart",
+    "source": "src/charts/AreaChart.tsx",
+    "options": [
+      {
+        "prop": "normalized",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "normalized = false"
+        },
+        "forwarding": {
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "normalized = false"
+        }
+      },
+      {
+        "prop": "smooth",
+        "values": [
+          false,
+          true
+        ],
+        "default": {
+          "kind": "value",
+          "value": false,
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "smooth = false"
+        },
+        "forwarding": {
+          "source": "src/charts/internal/signature-views.tsx",
+          "evidence": "smooth = false"
+        }
+      }
+    ],
+    "tokens": {
+      "coverage": "partial",
+      "reason": "One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.",
+      "dependencies": [
+        {
+          "property": "--color-chart-categorical-1",
+          "kind": "transitive",
+          "source": "src/charts/internal/chart-vars.ts",
+          "evidence": "TOKENS[\"--color-chart-categorical-1\"]",
+          "via": [
+            {
+              "source": "src/charts/internal/signature-views.tsx",
+              "evidence": "fill={resolveSeriesColor("
+            },
+            {
+              "source": "src/charts/AreaChart.tsx",
+              "evidence": "<AreaView"
+            }
+          ]
+        }
+      ]
+    }
+  }
+};
+
+
+/** Preferred finite axes; evaluate constraints with complete consumer-authored props. */
+export interface ComponentComparison {
+  readonly columns: { readonly option: string; readonly values: readonly ComponentScalar[] };
+  readonly rows?: ComponentComparison["columns"];
+  /** Conservative bound including cells the constraint policy may skip. */
+  readonly maxCells: number;
+  /** Original rule array, shared by identity with COMPONENT_GUIDANCE. */
+  readonly constraints: readonly ComponentConstraint[];
+  /** Only requires/exclusive/paired can skip; applicability, derived and data rules cannot. */
+  readonly constraintPolicy: "skip-violations";
+}
+
+function comparison(id: string, column: string, row?: string): ComponentComparison {
+  const api = COMPONENT_API_FACTS[id];
+  const constraints = COMPONENT_GUIDANCE[id]?.media.web.implementation?.constraints;
+  if (!api || !constraints) throw new Error(`Unknown comparison component: ${id}`);
+  const axis = (option: string): ComponentComparison["columns"] => {
+    const fact = api.options.find(candidate => candidate.prop === option);
+    if (!fact) throw new Error(`Unknown finite comparison option: ${id}.${option}`);
+    return Object.freeze({ option, values: Object.freeze([...fact.values]) });
+  };
+  const columns = axis(column);
+  const rows = row === undefined ? undefined : axis(row);
+  // Freeze only new containers: existing guidance and rule descriptors stay intact.
+  return Object.freeze({
+    columns,
+    ...(rows ? { rows } : {}),
+    maxCells: columns.values.length * (rows?.values.length ?? 1),
+    constraints,
+    constraintPolicy: "skip-violations",
+  });
+}
+
+/** Data only: absence means no represented finite comparison; this renders nothing. */
+export const COMPONENT_COMPARISON = Object.freeze({
+  "act.button": comparison("act.button", "variant"),
+  "act.link": comparison("act.link", "variant"),
+  "enter.text-field": comparison("enter.text-field", "isInvalid", "isDisabled"),
+  "enter.textarea": comparison("enter.textarea", "isInvalid", "isDisabled"),
+  "enter.search-field": comparison("enter.search-field", "isInvalid", "isDisabled"),
+  "enter.date-field": comparison("enter.date-field", "isInvalid", "isDisabled"),
+  "enter.select": comparison("enter.select", "isInvalid", "isDisabled"),
+  "enter.combo-box": comparison("enter.combo-box", "isInvalid", "isDisabled"),
+  "enter.checkbox": comparison("enter.checkbox", "isSelected", "isDisabled"),
+  "enter.switch": comparison("enter.switch", "isSelected", "isDisabled"),
+  "enter.radio-group": comparison("enter.radio-group", "orientation", "isDisabled"),
+  "enter.file-trigger": comparison("enter.file-trigger", "allowsMultiple", "defaultCamera"),
+  "enter.field": comparison("enter.field", "isRequired", "isInvalid"),
+  "enter.resize-handle": comparison("enter.resize-handle", "orientation", "dir"),
+  "inform.badge": comparison("inform.badge", "variant"),
+  "inform.banner": comparison("inform.banner", "variant"),
+  "inform.status-mark": comparison("inform.status-mark", "tone"),
+  "inform.meter": comparison("inform.meter", "tone", "emphasis"),
+  "inform.progress-bar": comparison("inform.progress-bar", "isIndeterminate"),
+  "group.card": comparison("group.card", "size"),
+  "group.table": comparison("group.table", "selectionMode"),
+  "group.separator": comparison("group.separator", "orientation"),
+  "depict.avatar": comparison("depict.avatar", "size"),
+  "depict.icon": comparison("depict.icon", "size"),
+  "depict.logomark": comparison("depict.logomark", "plate", "size"),
+  "reveal.dialog": comparison("reveal.dialog", "isDismissable"),
+  "reveal.tabs": comparison("reveal.tabs", "orientation", "isDisabled"),
+  "depict.bar-chart": comparison("depict.bar-chart", "fit", "marks"),
+  "depict.area-chart": comparison("depict.area-chart", "normalized", "smooth"),
+});

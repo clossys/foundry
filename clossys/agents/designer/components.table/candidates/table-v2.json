@@ -1,0 +1,254 @@
+{
+  "name": "table",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "table.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  Cell as CellPrimitive,\n  Column as ColumnPrimitive,\n  Row as RowPrimitive,\n  TableBody as TableBodyPrimitive,\n  TableFooter as TableFooterPrimitive,\n  TableHeader as TableHeaderPrimitive,\n  Table as TablePrimitive,\n  type CellProps,\n  type ColumnProps,\n  type RowProps,\n  type TableBodyProps,\n  type TableFooterProps,\n  type TableHeaderProps,\n  type TableProps,\n} from \"react-aria-components\"\n\nfunction Table({ className, ...props }: TableProps) {\n  return (\n    <div\n      data-slot=\"table-container\"\n      className=\"relative w-full overflow-x-auto\"\n    >\n      <TablePrimitive\n        data-slot=\"table\"\n        className={cn(\"w-full caption-bottom text-sm\", className)}\n        {...props}\n      />\n    </div>\n  )\n}\n\nfunction TableHeader<T>({ className, ...props }: TableHeaderProps<T>) {\n  return (\n    <TableHeaderPrimitive\n      data-slot=\"table-header\"\n      className={cn(\"[&_tr]:border-b\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction TableBody<T>({ className, ...props }: TableBodyProps<T>) {\n  return (\n    <TableBodyPrimitive\n      data-slot=\"table-body\"\n      className={cn(\n        \"data-empty:h-24 data-empty:text-center [&_tr:last-child]:border-0\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TableFooter<T>({ className, ...props }: TableFooterProps<T>) {\n  return (\n    <TableFooterPrimitive\n      data-slot=\"table-footer\"\n      className={cn(\n        \"border-t bg-muted/50 font-medium [&>tr]:last:border-b-0\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TableRow<T>({ className, ...props }: RowProps<T>) {\n  return (\n    <RowPrimitive\n      data-slot=\"table-row\"\n      className={cn(\n        \"border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted data-selected:bg-muted\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TableHead({ className, ...props }: ColumnProps) {\n  return (\n    <ColumnPrimitive\n      data-slot=\"table-head\"\n      className={cn(\n        \"h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([data-slot=checkbox])]:pr-0 [&:has([role=checkbox])]:pr-0\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TableCell({ className, ...props }: CellProps) {\n  return (\n    <CellPrimitive\n      data-slot=\"table-cell\"\n      className={cn(\n        \"p-2 align-middle whitespace-nowrap [&:has([data-slot=checkbox])]:pr-0 [&:has([role=checkbox])]:pr-0\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TableCaption({\n  className,\n  ...props\n}: React.ComponentProps<\"figcaption\">) {\n  return (\n    <figcaption\n      data-slot=\"table-caption\"\n      className={cn(\n        \"mt-4 text-center text-sm text-muted-foreground\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Table,\n  TableHeader,\n  TableBody,\n  TableFooter,\n  TableHead,\n  TableRow,\n  TableCell,\n  TableCaption,\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.table",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/table@4.23.0"
+      ],
+      "hash": "sha256:8b6578dcaf946c6aa5aa9fb171567d0917d0322915ad79119d4141a5b3e78e1f",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "table.tsx": "registry/aria-nova/ui/table.tsx"
+      }
+    },
+    "element": {
+      "id": "table",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.table",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "COMPONENT-FIXTURES"
+      },
+      "reason": "COMPONENT-FIXTURES: table-v1 code unchanged (sha256:fb65519bb4330b3ffdbc5532b3a1b8042900340b081ca60046904e7e6ea7be39); adds a preview fixture whose element tree composes the component's own exports with plain sample text, so the Studio card shows a realistic specimen.",
+      "createdAt": "2026-11-03T12:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "table.tsx",
+        "export": "Table",
+        "props": {
+          "aria-label": "Invoices",
+          "children": [
+            {
+              "$component": "TableHeader",
+              "children": [
+                {
+                  "$component": "TableHead",
+                  "props": {
+                    "isRowHeader": true
+                  },
+                  "children": [
+                    "Invoice"
+                  ]
+                },
+                {
+                  "$component": "TableHead",
+                  "children": [
+                    "Status"
+                  ]
+                },
+                {
+                  "$component": "TableHead",
+                  "children": [
+                    "Method"
+                  ]
+                },
+                {
+                  "$component": "TableHead",
+                  "props": {
+                    "className": "text-right"
+                  },
+                  "children": [
+                    "Amount"
+                  ]
+                }
+              ]
+            },
+            {
+              "$component": "TableBody",
+              "children": [
+                {
+                  "$component": "TableRow",
+                  "props": {
+                    "id": "inv1"
+                  },
+                  "children": [
+                    {
+                      "$component": "TableCell",
+                      "children": [
+                        "INV001"
+                      ]
+                    },
+                    {
+                      "$component": "TableCell",
+                      "children": [
+                        "Paid"
+                      ]
+                    },
+                    {
+                      "$component": "TableCell",
+                      "children": [
+                        "Credit card"
+                      ]
+                    },
+                    {
+                      "$component": "TableCell",
+                      "props": {
+                        "className": "text-right"
+                      },
+                      "children": [
+                        "$250.00"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "$component": "TableRow",
+                  "props": {
+                    "id": "inv2"
+                  },
+                  "children": [
+                    {
+                      "$component": "TableCell",
+                      "children": [
+                        "INV002"
+                      ]
+                    },
+                    {
+                      "$component": "TableCell",
+                      "children": [
+                        "Pending"
+                      ]
+                    },
+                    {
+                      "$component": "TableCell",
+                      "children": [
+                        "PayPal"
+                      ]
+                    },
+                    {
+                      "$component": "TableCell",
+                      "props": {
+                        "className": "text-right"
+                      },
+                      "children": [
+                        "$150.00"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "$component": "TableRow",
+                  "props": {
+                    "id": "inv3"
+                  },
+                  "children": [
+                    {
+                      "$component": "TableCell",
+                      "children": [
+                        "INV003"
+                      ]
+                    },
+                    {
+                      "$component": "TableCell",
+                      "children": [
+                        "Unpaid"
+                      ]
+                    },
+                    {
+                      "$component": "TableCell",
+                      "children": [
+                        "Bank transfer"
+                      ]
+                    },
+                    {
+                      "$component": "TableCell",
+                      "props": {
+                        "className": "text-right"
+                      },
+                      "children": [
+                        "$350.00"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

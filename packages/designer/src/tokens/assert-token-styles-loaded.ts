@@ -3,7 +3,7 @@
  * documented "silent unstyled render" gap (see the README: "Without the
  * token CSS imported, those class names don't correspond to anything and
  * every component renders unstyled, with no error anywhere to explain
- * why"). Every class this package's components render (`bg-accent`,
+ * why"). Every class this package's components render (`bg-primary`,
  * `text-ink-primary`, `rounded-control`, ...) is a Tailwind utility
  * generated from `styles/tokens.css`'s tokens; a consumer who forgets to
  * import that file gets no signal at all today. This closes that gap —
@@ -94,7 +94,7 @@ export function assertTokenStylesLoaded(options: AssertTokenStylesLoadedOptions 
   }
   console.error(
     `@clossys/designer: token CSS does not appear to be loaded (missing computed property ` +
-      `"${TOKEN_STYLES_SENTINEL_PROPERTY}"). Every class this package's components render (bg-accent, ` +
+      `"${TOKEN_STYLES_SENTINEL_PROPERTY}"). Every class this package's components render (bg-primary, ` +
       `text-ink-primary, rounded-control, ...) is a Tailwind utility generated from ` +
       `"@clossys/designer/tokens.css"'s tokens — without it, those classes don't correspond to anything ` +
       `and components render unstyled. Import "@clossys/designer/tokens.css" (directly, or via your own ` +

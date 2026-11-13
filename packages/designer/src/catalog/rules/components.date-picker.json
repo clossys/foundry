@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "content": "import { forwardRef, type ReactElement, type ReactNode, type Ref, type RefAttributes } from \"react\";\nimport {\n  DatePicker as AriaDatePicker,\n  DateRangePicker as AriaDateRangePicker,\n  Group, Dialog, Label, Text, FieldError,\n  type DateValue, type DatePickerProps as AriaDatePickerProps,\n  type DateRangePickerProps as AriaDateRangePickerProps,\n  type DatePickerRenderProps, type DateRangePickerRenderProps, type ValidationResult,\n} from \"react-aria-components\";\nimport { Icon } from \"@clossys/designer/components\";\nimport { glyphs } from \"../../adapters/glyphs\";\nimport { DateField } from \"../date-field/index\";\nimport { Popover } from \"../popover/index\";\nimport { Calendar } from \"../calendar/index\";\n\ntype Content<State> = (state: State & { defaultChildren: ReactNode }) => ReactNode;\ntype Naming = {\n  label: ReactNode;\n  triggerLabel: string;\n  description?: ReactNode;\n  errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);\n};\nexport interface DatePickerProps<T extends DateValue = DateValue>\n  extends Omit<AriaDatePickerProps<T>, \"children\">, Naming {\n  children?: Content<DatePickerRenderProps>;\n}\nexport interface DateRangePickerProps<T extends DateValue = DateValue>\n  extends Omit<AriaDateRangePickerProps<T>, \"children\">, Naming {\n  startLabel: ReactNode;\n  endLabel: ReactNode;\n  children?: Content<DateRangePickerRenderProps>;\n}\n\nexport const DatePicker = forwardRef(function DatePicker<T extends DateValue>(\n  { label, triggerLabel, description, errorMessage, children, ...props }: DatePickerProps<T>,\n  ref: Ref<HTMLDivElement>,\n) {\n  const content = <>\n    <Label>{label}</Label>\n    <Group className=\"flex items-center\">\n      <DateField label={null} pickerTrigger={{ label: triggerLabel, children: <Icon glyph={glyphs[\"assets.icon-date\"]} decorative /> }} />\n    </Group>\n    {description ? <Text slot=\"description\">{description}</Text> : null}\n    <FieldError>{errorMessage}</FieldError>\n    <Popover><Dialog><Calendar selection=\"single\" /></Dialog></Popover>\n  </>;\n  return <AriaDatePicker {...props} ref={ref}>{state => children ? children({ ...state, defaultChildren: content }) : content}</AriaDatePicker>;\n}) as <T extends DateValue = DateValue>(props: DatePickerProps<T> & RefAttributes<HTMLDivElement>) => ReactElement;\n\nexport const DateRangePicker = forwardRef(function DateRangePicker<T extends DateValue>(\n  { label, startLabel, endLabel, triggerLabel, description, errorMessage, children, ...props }: DateRangePickerProps<T>,\n  ref: Ref<HTMLDivElement>,\n) {\n  const content = <>\n    <Label>{label}</Label>\n    <Group className=\"flex items-center\">\n      <DateField label={startLabel} slot=\"start\" />\n      <DateField label={endLabel} slot=\"end\" pickerTrigger={{ label: triggerLabel, children: <Icon glyph={glyphs[\"assets.icon-date\"]} decorative /> }} />\n    </Group>\n    {description ? <Text slot=\"description\">{description}</Text> : null}\n    <FieldError>{errorMessage}</FieldError>\n    <Popover><Dialog><Calendar selection=\"range\" /></Dialog></Popover>\n  </>;\n  return <AriaDateRangePicker {...props} ref={ref}>{state => children ? children({ ...state, defaultChildren: content }) : content}</AriaDateRangePicker>;\n}) as <T extends DateValue = DateValue>(props: DateRangePickerProps<T> & RefAttributes<HTMLDivElement>) => ReactElement;\n",
+      "path": "components/date-picker/date-picker.tsx"
+    },
+    {
+      "content": "# Date picker composition\n\nCopyright contributors. Licensed under the MIT License.\n\nOwned wiring of the selected date field, popover and calendar. Their dependency notices remain separate.\n",
+      "path": "notices/date-picker.md"
+    }
+  ],
+  "id": "compose:date-picker@1",
+  "inputs": [
+    "components.calendar",
+    "components.date-field",
+    "components.popover"
+  ],
+  "kind": "compose",
+  "slot": "components.date-picker"
+}

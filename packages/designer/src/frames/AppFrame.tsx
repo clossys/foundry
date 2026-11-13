@@ -1,0 +1,333 @@
+"use client";
+import { ShellI18nProvider } from "#designer-frame-i18n";
+
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { OverlayDirection, useOverlayLocale } from "../components/internal/overlay-context.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
+
+import { Layers, List, Search } from "../icons/index.js";
+import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";
+import { ThemeProvider, useTheme } from "../theme/index.js";
+import { ThemeTogglePresentation } from "../theme/ThemeToggle.js";
+import { FrameSlotProvider, FrameSlotOutlet, useFramePageHeader } from "../shell/index.js";
+import { framePageHeaderDeclaration } from "../shell/FrameSlots.js";
+import { AppFrameThemeSection } from "./AppFrameBrandTheme.js";
+import { assertAppFrameBrand } from "./AppFrameBrand.js";
+import { FrameDock } from "./FrameDock.js";
+import { SkipLink } from "../shell/SkipLink.js";
+import { ToasterFrameInsetProvider, type ToasterFrameInset } from "../shell/Toaster.js";
+import { FrameNoticeProvider } from "./frame-notices.js";
+import { APP_FRAME_ALWAYS_NARROW, APP_FRAME_ALWAYS_WIDE, APP_FRAME_LAYOUT, APP_FRAME_NAVIGATION_SIZE, APP_FRAME_PANEL_SIZE, APP_FRAME_PANEL_WIDTH_VAR, APP_FRAME_WIDE_QUERY, appFrameMainId, appFramePanels, appFrameCorner } from "./app-frame-layout.js";
+import type { AppFrameAccount, AppFrameProps } from "./app-frame-types.js";
+import { ShellCopyProvider, useShellCopy } from "../components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+
+import { componentLeaf } from "../runtime/component-leaf.js";
+import { MenuGroup, MenuItem, MenuLabel, ShellMenu } from "../blocks/shell-menu.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Button = componentLeaf<typeof import("../components/index.js").Button>("components.button");
+const Icon = componentLeaf<typeof import("../components/index.js").Icon>("components.icon");
+const Logomark = componentLeaf<typeof import("../components/index.js").Logomark>("components.logo");
+const ToggleButton = componentLeaf<typeof import("../components/preview-runtime/components/toggle-button/toggle.js").Toggle>("components.toggle-button");
+
+/** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
+const FRAME_STAMP = dsAttrs("frames", "frames.app-shell", "foundry/frames.app-shell");
+
+/**
+ * Header row and stage main classes live here, above every template literal: the compiled-CSS
+ * class scan pairs backticks file-wide, so a class literal inside the JSX below can be skipped.
+ */
+const HEADER_ROW = "frame-header-container relative flex min-w-0 shrink-0 items-center";
+/** Root block size per `fill`: the host's definite height, or the dynamic viewport with no host glue. */
+const ROOT_FILL: Record<NonNullable<AppFrameProps["fill"]>, string> = { host: "h-full", viewport: "h-dvh" };
+const STAGE_INSET = "frame-main-inset";
+const MAIN = "flex h-full min-h-0 min-w-0 flex-col frame-main-gap frame-main-bleed overflow-auto ";
+const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-frame-control text-body focus-ring forced-colors:border-current";
+/** The two edge toggles share one glyph, each facing its own edge: the panel toggle is the navigation toggle's mirror in either direction. */
+const NAVIGATION_GLYPH = "rtl:-scale-x-100";
+const PANEL_GLYPH = "-scale-x-100 rtl:scale-x-100";
+
+function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc, theme, controls }: Omit<AppFrameAccount, "avatar"> & { markSrc: string; theme?: React.ComponentProps<typeof AppFrameThemeSection>; controls?: React.ReactNode }) {
+  const populated = sections.map(section => ({ ...section, entries: section.entries.filter(entry => !entry.isDisabled) }) as typeof section).filter(section => section.entries.length > 0);
+  if (!signedOutLabel.trim()) throw new TypeError("AppFrame: signed-out label must be non-empty.");
+  if (!populated.length && theme === undefined && controls == null) return <SemanticContent as="div" className="flex min-w-0 items-center frame-account-row"><Logomark src={markSrc} size="sm" /><SemanticContent as="span" className="min-w-0 truncate">{signedOutLabel}</SemanticContent></SemanticContent>;
+  const itemKey = (section: string, entry: string) => JSON.stringify([section, entry]);
+  const trigger = <Button variant="ghost" className={CONTROL + " w-full justify-start whitespace-normal text-start"}><Logomark src={markSrc} size="sm" /><SemanticContent as="span" className="min-w-0 break-words">{signedOutLabel}</SemanticContent></Button>;
+  const content = <>{theme !== undefined && <AppFrameThemeSection {...theme} />}{populated.map(section => <MenuGroup key={section.id} aria-label={section.label ?? signedOutLabel}
+      selectionMode={section.kind === "preferences" ? "multiple" : "none"}
+      selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => itemKey(section.id, entry.id)) : undefined}
+      shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}
+      onSelectionChange={section.kind === "preferences" ? keys => {
+        for (const entry of section.entries) {
+          const checked = keys === "all" || keys.has(itemKey(section.id, entry.id));
+          if (checked !== entry.checked) entry.onCheckedChange(checked);
+        }
+      } : undefined}>
+      {section.label && <MenuLabel>{section.label}</MenuLabel>}
+      {section.entries.map(entry => <MenuItem key={entry.id} id={itemKey(section.id, entry.id)} textValue={entry.label} isDisabled={entry.isDisabled}
+        variant={entry.kind === "destructive" ? "destructive" : "default"} href={entry.kind === "link" ? entry.href : undefined}
+        onAction={entry.kind === "preference" ? undefined : () => { if (entry.kind === "link") onRoute?.(entry); else entry.onAction(); }}>{entry.label}</MenuItem>)}
+    </MenuGroup>)}</>;
+  return <ShellMenu trigger={trigger} label={signedOutLabel} controls={controls}>{content}</ShellMenu>;
+}
+
+function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, showAccount = true, commands, children, main: suppliedMain, pageModule, pageModuleLabel, headerTrail, headerActions, inspectorContext, state, stateViews, progress, toasts, rightPanel: suppliedRightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir: suppliedDir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
+  /** @default "Skip to content" */
+  skipLabel: suppliedSkipLabel, mainId }: AppFrameProps) {
+  const rightPanel = suppliedRightPanel && inspectorContext !== undefined ? { ...suppliedRightPanel, children: inspectorContext } : suppliedRightPanel;
+  const [moduleOpen, setModuleOpen] = useState(true);
+  const main = suppliedMain === undefined ? children : suppliedMain;
+  const { resolvedTheme } = useTheme();
+  const markSrc = resolvedTheme === "dark" ? brand.reversedMarkSrc ?? brand.markSrc : brand.markSrc;
+  const { direction: contextDirection, locale } = useOverlayLocale();
+  const dir = suppliedDir ?? contextDirection;
+  const copy = useShellCopy();
+  const skipLabel = suppliedSkipLabel ?? copy(SHELL_COPY_REFS.frame.skip);
+  // The page header is leased by PageHeaderModule only; the frame takes no header prop.
+  const resolvedHeader = useFramePageHeader();
+  assertAppFrameBrand(brand);
+  const {
+    /** @default "Open navigation" */ openLabel: suppliedNavigationOpenLabel,
+    /** @default "Close navigation" */ closeLabel: suppliedNavigationCloseLabel,
+  } = navigation;
+  const navigationOpenLabel = suppliedNavigationOpenLabel ?? copy(SHELL_COPY_REFS.frame.navigationOpen);
+  const navigationCloseLabel = suppliedNavigationCloseLabel ?? copy(SHELL_COPY_REFS.frame.navigationClose);
+  const generated = useId();
+  const target = appFrameMainId(mainId, generated);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const queryChange = commands.onQueryChange;
+  const openCommands = useCallback(() => { setQuery(""); queryChange?.(""); setCommandOpen(true); }, [queryChange]);
+  const { shortcutEnabled = true, triggerLabel, onQueryChange: _onQueryChange, ...commandProps } = commands;
+  useCommandMenuShortcut({ onOpen: openCommands, enabled: shortcutEnabled });
+  const [narrow, setNarrow] = useState(false);
+  const [available, setAvailable] = useState(Infinity);
+  const [wide, setWide] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(APP_FRAME_LAYOUT.sidebarDefault);
+  const [navDrawerOpen, setNavDrawerOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [width, setWidth] = useState(rightPanel?.defaultValue ?? 0);
+  const [panelCollapsed, setPanelCollapsed] = useState(rightPanel?.defaultCollapsed ?? false);
+  const [panelSupplied, setPanelSupplied] = useState(rightPanel !== undefined);
+  if (rightPanel && !panelSupplied) {
+    // A panel first supplied after mount starts from its own defaults, not the absent-panel placeholders.
+    setPanelSupplied(true); setWidth(rightPanel.defaultValue); setPanelCollapsed(rightPanel.defaultCollapsed ?? false);
+  }
+  const [navigationCollapsed, setNavigationCollapsed] = useState(navigation.defaultCollapsed ?? shellLayout === "immersive");
+  const collapsed = rightPanel?.collapsed ?? panelCollapsed;
+  const navCollapsed = navigation.collapsed ?? navigationCollapsed;
+  const openLabel = rightPanel ? rightPanel.openLabel ?? copy(SHELL_COPY_REFS.frame.panelOpen) : "";
+  const closeLabel = rightPanel ? rightPanel.closeLabel ?? copy(SHELL_COPY_REFS.frame.panelClose) : "";
+  const frame = useRef<HTMLDivElement>(null);
+  const [navigationControlHost, setNavigationControlHost] = useState<HTMLSpanElement | null>(null);
+  const [panelCloseButtonStyle, setPanelCloseButtonStyle] = useState<DrawerProps["closeButtonStyle"]>();
+  useEffect(() => {
+    if (!narrow || !panelOpen) { setPanelCloseButtonStyle(undefined); return; }
+    const measure = () => {
+      const opener = frame.current?.querySelector<HTMLElement>('[data-application-frame-panel="trigger"]');
+      if (opener) setPanelCloseButtonStyle(appFrameCorner(opener, dir));
+    };
+    measure(); window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [narrow, panelOpen, dir]);
+  const sidebarProbe = useRef<HTMLSpanElement>(null);
+  const currentPanelWidth = rightPanel ? Math.min(rightPanel.max, Math.max(rightPanel.min, rightPanel.value ?? width)) : 0;
+  const geometry = useRef({ sidebarWidth, panelWidth: currentPanelWidth, navOpen: !navCollapsed, panelOpen: Boolean(rightPanel) && !collapsed });
+  useLayoutEffect(() => {
+    geometry.current = { sidebarWidth, panelWidth: currentPanelWidth, navOpen: !navCollapsed, panelOpen: Boolean(rightPanel) && !collapsed };
+  });
+  const layout = appFramePanels(available, wide, sidebarWidth, currentPanelWidth, !navCollapsed, Boolean(rightPanel) && !collapsed);
+  const navigationDocked = !layout.navigationOverlay && !navCollapsed;
+  const panelDocked = Boolean(rightPanel) && !narrow && !collapsed;
+  const panelRegion = useRef<HTMLElement>(null);
+  // The docked panel's width is the reader's dragged value, runtime state rather than a token, so the
+  // frame writes it to the panel's custom property before paint instead of styling it inline.
+  useLayoutEffect(() => {
+    const region = panelRegion.current;
+    if (!region) return;
+    if (panelDocked) region.style.setProperty(APP_FRAME_PANEL_WIDTH_VAR, `${currentPanelWidth}px`);
+    else region.style.removeProperty(APP_FRAME_PANEL_WIDTH_VAR);
+  }, [panelDocked, currentPanelWidth]);
+  const syncResponsive = useRef<() => void>(() => {});
+  const panelFocus = useRef<EventTarget | null>(null);
+  const panelState = useRef({ narrow, panelOpen });
+  panelState.current = { narrow, panelOpen };
+  const desiredNarrow = useRef(false);
+  const responsiveActive = useRef(false);
+  const panelHandoff = useRef<"main" | "control" | null>(null);
+  const drawerToRelease = useRef<Element | null>(null);
+  const [handoffVersion, setHandoffVersion] = useState(0);
+  const capturePanelFocus = (event: { target: EventTarget | null }) => { panelFocus.current = event.target; };
+  useEffect(() => {
+    responsiveActive.current = true;
+    const media = window.matchMedia(APP_FRAME_WIDE_QUERY);
+    const sync = () => {
+      const nextAvailable = frame.current?.getBoundingClientRect().width || window.innerWidth;
+      const nextSidebar = sidebarProbe.current?.getBoundingClientRect().width || APP_FRAME_LAYOUT.sidebarDefault;
+      const currentGeometry = geometry.current;
+      const nextLayout = appFramePanels(nextAvailable, media.matches, nextSidebar, currentGeometry.panelWidth, currentGeometry.navOpen, currentGeometry.panelOpen);
+      const nextNarrow = nextLayout.panelOverlay;
+      setAvailable(nextAvailable); setWide(media.matches); setSidebarWidth(nextSidebar);
+      const current = panelState.current;
+      desiredNarrow.current = nextNarrow;
+      if (nextNarrow === current.narrow && panelHandoff.current === null) return;
+      const active = document.activeElement;
+      const panelTrigger = frame.current?.querySelector('[data-application-frame-panel="trigger"]');
+      // React focus capture includes nested portals; exact identity avoids stale ownership outside the panel.
+      const ownsFocus = active !== null && (panelFocus.current === active || panelTrigger === active);
+      const drawerId = current.narrow ? panelTrigger?.getAttribute("aria-controls") : null;
+      const drawer = drawerId ? document.getElementById(drawerId) : null;
+      const drawerOpen = current.narrow && (current.panelOpen || drawer !== null);
+      desiredNarrow.current = nextNarrow;
+      panelHandoff.current = ownsFocus && nextNarrow !== current.narrow ? drawerOpen && !nextNarrow ? "main" : "control" : null;
+      drawerToRelease.current = panelHandoff.current === "main" ? drawer : null;
+      setPanelOpen(false);
+      if (panelHandoff.current !== "main") setNarrow(nextNarrow);
+      // Also process a handoff when closing an already-closed controlled drawer changes no state.
+      setHandoffVersion(version => version + 1);
+    };
+    syncResponsive.current = sync;
+    sync(); media.addEventListener("change", sync); window.addEventListener("resize", sync);
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(sync) : undefined;
+    if (frame.current) observer?.observe(frame.current);
+    if (sidebarProbe.current) observer?.observe(sidebarProbe.current);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", sync); syncResponsive.current = () => {}; responsiveActive.current = false; panelHandoff.current = null; drawerToRelease.current = null; media.removeEventListener("change", sync); };
+  }, []);
+  useEffect(() => { syncResponsive.current(); }, [currentPanelWidth, navCollapsed, collapsed, rightPanel !== undefined]);
+  useEffect(() => {
+    const handoff = panelHandoff.current;
+    if (!handoff || !responsiveActive.current) return;
+    if (handoff === "main") {
+      if (desiredNarrow.current || !narrow) { panelHandoff.current = null; drawerToRelease.current = null; return; }
+      if (panelOpen) return;
+      const drawer = drawerToRelease.current;
+      if (drawer?.isConnected) {
+        // React Aria may retain one exiting commit even without authored exit animation.
+        const observer = new MutationObserver(() => {
+          if (drawer.isConnected) return;
+          observer.disconnect();
+          if (responsiveActive.current && panelHandoff.current === "main" && !desiredNarrow.current) setHandoffVersion(version => version + 1);
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        return () => observer.disconnect();
+      }
+      const active = document.activeElement;
+      const trigger = frame.current?.querySelector('[data-application-frame-panel="trigger"]');
+      const retainsFocus = active === null || active === document.body || active === panelFocus.current || active === trigger;
+      panelHandoff.current = null;
+      drawerToRelease.current = null;
+      // The modal has unmounted and released its trap; keep its opener connected until main owns focus.
+      if (retainsFocus) frame.current?.querySelector<HTMLElement>("main")?.focus();
+      setNarrow(false);
+      return;
+    }
+    if (desiredNarrow.current !== narrow) return;
+    panelHandoff.current = null;
+    drawerToRelease.current = null;
+    frame.current?.querySelector<HTMLElement>('[data-application-frame-panel="trigger"]')?.focus();
+  }, [narrow, panelOpen, handoffVersion]);
+  const stage = useRef<HTMLDivElement>(null);
+  const [toastInset, setToastInset] = useState<ToasterFrameInset | null>(null);
+  const hasToasts = toasts !== undefined && toasts !== null && toasts !== false;
+  useLayoutEffect(() => {
+    const element = stage.current;
+    if (!hasToasts || !element) return;
+    // Toasts portal to the document; anchoring them to the stage corner keeps them clear of the header and dock.
+    const measure = () => {
+      const rect = element.getBoundingClientRect(), direction = dir;
+      const next = { blockEnd: Math.max(0, window.innerHeight - rect.bottom), inlineEnd: Math.max(0, direction === "rtl" ? rect.left : window.innerWidth - rect.right), direction };
+      setToastInset(previous => previous?.blockEnd === next.blockEnd && previous.inlineEnd === next.inlineEnd && previous.direction === next.direction ? previous : next);
+    };
+    measure();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
+    observer?.observe(element); window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, [hasToasts, dir]);
+  const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
+  // The theme control is revealed inside the account menu popover: a ThemeToggle there shows labelled radios and no tooltips.
+  const themeSlot = themeControl == null ? undefined : <SemanticContent as="div" data-application-frame-slot="theme-control" className="shrink-0"><ThemeTogglePresentation value="menu">{themeControl}</ThemeTogglePresentation></SemanticContent>;
+  const accountTheme = themeControl === undefined ? { preferenceLabels: theme?.preferenceLabels, toggleLabel: theme?.toggleLabel, preferenceAnnouncement: theme?.preferenceAnnouncement } : undefined;
+  // The full footer track belongs to the actor; theme controls are revealed in the account popup.
+  const accountControl = !showAccount ? null : account.actor
+    ? <AccountMenu {...account} menuContent={accountTheme && <AppFrameThemeSection {...accountTheme} />} controls={themeSlot} actor={{ ...account.actor, image: avatar === "initials" ? account.actor.image : markSrc }} />
+    : <SignedOutMenu {...account} markSrc={markSrc} theme={accountTheme} controls={themeSlot} />;
+  const footer = !showAccount ? undefined : <SemanticContent as="div" data-application-frame-footer={footerLayout} className="w-full min-w-0">
+    <SemanticContent as="div" data-application-frame-slot="account" className="w-full min-w-0">{accountControl}</SemanticContent>
+  </SemanticContent>;
+    const panelTrigger = rightPanel && (narrow ? <SemanticContent as="div" className="contents" onFocusCapture={capturePanelFocus}><OverlayDirection dir={dir}><Drawer fullViewport wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
+    heading={rightPanel.label} closeLabel={closeLabel} closeButtonStyle={panelCloseButtonStyle} navigationKey={navigation.navigationKey}
+    isOpen={panelOpen} onOpenChange={next => { setPanelOpen(next); if (next) { setNavDrawerOpen(false); navigation.onDrawerOpenChange?.(false); } }}
+    trigger={<Button variant="ghost" className={CONTROL} aria-label={openLabel} aria-expanded={panelOpen} data-application-frame-panel="trigger"><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>}>
+    <FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet>
+  </Drawer></OverlayDirection></SemanticContent> : <Button variant="ghost" className={CONTROL} aria-controls={generated + "-panel"} aria-expanded={!collapsed} aria-label={collapsed ? openLabel : closeLabel} data-application-frame-panel="trigger"
+    onPress={() => changeCollapsed(!collapsed)}><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>);
+  const navOpen = layout.navigationOverlay ? navigation.drawerOpen ?? navDrawerOpen : !navCollapsed;
+  const changeNav = () => {
+    if (layout.navigationOverlay) { if (!navOpen) setPanelOpen(false); setNavDrawerOpen(!navOpen); navigation.onDrawerOpenChange?.(!navOpen); }
+    else { setNavigationCollapsed(navOpen); navigation.onCollapsedChange?.(navOpen); }
+  };
+  const navigationTrigger = <Button variant="ghost" className={CONTROL}
+    data-application-frame-navigation="trigger"
+    aria-controls={generated + "-navigation"} aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative className={NAVIGATION_GLYPH} /></Button>;
+  // The navigation top reserves one tap-sized corner row (the drawer close control sits at its start); a brand row takes that row instead of bare padding.
+  const navigationBrand = <SemanticContent as="div" data-application-frame-slot="brand" className={"flex min-w-0 items-center frame-brand-gap frame-brand-row" + (layout.navigationOverlay ? " frame-brand-row-overlay" : "")}>
+    <Logomark src={markSrc} size="sm" />{brand.navigationMark && <SemanticContent as="span" className="min-w-0 truncate text-body">{brand.navigationMark.label}</SemanticContent>}
+  </SemanticContent>;
+  const commandTrigger = <SemanticContent as="div">{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start"} onPress={openCommands}><Icon glyph={Search} decorative /><SemanticContent as="span" className="min-w-0 truncate">{triggerLabel}</SemanticContent></Button></SemanticContent>;
+  const moduleToggle = pageModule != null && pageModuleLabel ? <ToggleButton aria-label={pageModuleLabel} isSelected={moduleOpen} onChange={setModuleOpen}><Icon glyph={List} decorative /></ToggleButton> : null;
+  const hasRegions = headerTrail !== undefined || headerActions !== undefined;
+  const regionPage = hasRegions ? { ...(page ?? { title: resolvedHeader?.title ?? "" }), breadcrumb: headerTrail ?? page?.breadcrumb, actions: headerActions ?? page?.actions } : page;
+  const leasedActions = hasRegions && headerActions === undefined ? resolvedHeader?.actions?.render({ compact: !wide }) : null;
+  const mainState = state?.main ?? "ready";
+  const displayedMain = mainState === "ready" ? main : stateViews?.[mainState];
+  if (mainState !== "ready" && displayedMain === undefined) throw new TypeError("AppFrame: a resolved view is required for its main state");
+  const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? (shellLayout === "immersive" ? "glass" : "solid")} header={hasRegions ? undefined : resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={regionPage} workspaces={workspaces} narrow={!wide}
+    embedded dir={dir}
+    start={<SemanticContent as="span" ref={setNavigationControlHost} className="contents">{!navigationControlHost && navigationTrigger}</SemanticContent>}
+    end={<>{leasedActions}{moduleToggle}{rightPanel ? panelTrigger : <SemanticContent as="span" aria-hidden="true" className="icon-control-md shrink-0" />}</>}
+    labels={{ breadcrumb: breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo),
+      pageActions: pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />;
+  return <OverlayDirection dir={dir}>
+    <SemanticContent as="div" ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden text-body " + GROUND_PAINT.page.surface + " " + GROUND_PAINT.page.primary + " " + ROOT_FILL[fill]}>
+      {state?.navigating && progress ? <SemanticContent as="div" data-application-frame-region="progress" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden progress-hairline layer-progress">{progress}</SemanticContent> : null}
+      <SkipLink targetId={target}>{skipLabel}</SkipLink>
+      <SemanticContent as="span" aria-hidden="true" className="absolute size-0 overflow-hidden"><SemanticContent as="span" ref={sidebarProbe} className="block frame-sidebar-measure" /></SemanticContent>
+      <SemanticContent as="div" className="flex min-h-0 min-w-0 flex-1">
+        <SemanticContent as="div" id={generated + "-navigation"} data-application-frame-region="navigation" data-open={navigationDocked} aria-hidden={!navigationDocked} inert={!navigationDocked && !layout.navigationOverlay} className={"frame-docked-navigation min-h-0 shrink-0 overflow-hidden " + APP_FRAME_NAVIGATION_SIZE[navigationDocked ? "docked" : "closed"]}>
+          <FrameSlotOutlet slot="left-sidebar"><AppNavigation {...navigation} fullViewport retainMounted onNavigate={onNavigate} dismissAt={layout.navigationOverlay ? APP_FRAME_ALWAYS_NARROW : APP_FRAME_ALWAYS_WIDE}
+            header={commandTrigger} footer={footer} triggerContainer={navigationControlHost} trigger={navigationControlHost ? navigationTrigger : <></>}
+            drawerOpen={navigation.drawerOpen ?? navDrawerOpen} onDrawerOpenChange={next => { setNavDrawerOpen(next); if (next) setPanelOpen(false); navigation.onDrawerOpenChange?.(next); }}
+            collapsed={navCollapsed} onCollapsedChange={next => { setNavigationCollapsed(next); navigation.onCollapsedChange?.(next); }} /></FrameSlotOutlet>
+        </SemanticContent>
+        <SemanticContent as="div" className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <SemanticContent as="div" data-application-frame-region="header" className={HEADER_ROW}>
+            {pageBar}
+          </SemanticContent>
+          <SemanticContent as="div" ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
+            className={"relative isolate flex min-h-0 min-w-0 flex-1 overflow-hidden" + (stageInset === "full" ? "" : " " + STAGE_INSET)}>
+            <SemanticContent as="main" id={target} tabIndex={-1} className={MAIN + "focus-ring-inset flex-1 scroll-anchor-auto"} aria-busy={mainState === "loading" || undefined}>{displayedMain}</SemanticContent>
+            {pageModule != null && moduleOpen ? <SemanticContent as="aside" data-application-frame-region="page-module" aria-label={pageModuleLabel} className="min-h-0 shrink-0 overflow-auto frame-sidebar-measure">{pageModule}</SemanticContent> : null}
+          </SemanticContent>
+          <FrameDock notices={notices} dock={dock} sheet={!wide} />
+        </SemanticContent>
+        {rightPanel && <SemanticContent as="aside" ref={panelRegion} id={generated + "-panel"} aria-label={rightPanel.label} data-open={panelDocked} aria-hidden={!panelDocked} inert={!panelDocked}
+          className={"frame-docked-panel h-full min-h-0 shrink-0 overflow-hidden " + APP_FRAME_PANEL_SIZE[panelDocked ? "docked" : "closed"]}>
+          {!narrow && <ResizablePane min={rightPanel.min} max={rightPanel.max} defaultValue={rightPanel.defaultValue}
+            value={rightPanel.value ?? width} step={rightPanel.step} label={rightPanel.label} handleLabel={rightPanel.handleLabel}
+            onChange={next => { setWidth(next); rightPanel.onChange?.(next); }} onFocusCapture={capturePanelFocus} data-application-frame-panel="pane"
+            className={"h-full min-h-0 shrink-0 rounded-none border-0 border-s p-frame-panel " + GROUND_PAINT.page.border}><FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet></ResizablePane>}
+        </SemanticContent>}
+      </SemanticContent>
+      <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={value => { setQuery(value); queryChange?.(value); }} />
+      {hasToasts ? <ToasterFrameInsetProvider value={toastInset}>{toasts}</ToasterFrameInsetProvider> : null}
+    </SemanticContent>
+  </OverlayDirection>;
+
+}
+
+/** Host-resolved application chrome; the host owns routes, account actions and main-free route content. */
+export function AppFrame(props: AppFrameProps) {
+  return <ShellCopyProvider resolver={props.copyResolver}><ShellI18nProvider locale={props.locale}><ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference} preference={props.theme?.preference} onPreferenceChange={props.theme?.onPreferenceChange}><FrameSlotProvider initialHeader={framePageHeaderDeclaration(props.children)}><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider></ShellI18nProvider></ShellCopyProvider>;
+}

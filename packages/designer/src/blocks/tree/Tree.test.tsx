@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 import { Tree, type TreeNodeData, type TreeProps } from "./Tree.js";
 
 const simple: TreeNodeData[] = [

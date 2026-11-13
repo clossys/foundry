@@ -24,7 +24,7 @@ export interface SignatureChartLabels {
   /** @default "Scale: {minimum} to {maximum}" */
   scale: (minimum: string, maximum: string) => string;
   /** @default The authored status key: ok, warn, error or unknown. */
-  status: (status: StatusStripSegment["status"]) => string;
+  status: (status: "ok" | "warn" | "error" | "unknown") => string;
 }
 
 export interface SignatureChartProps {
@@ -64,27 +64,4 @@ export interface AreaChartProps extends SignatureChartProps {
   onHiddenSeriesChange?: (names: readonly string[]) => void;
   valueFormat?: (value: number) => string;
   xFormat?: (value: string | number | Date) => string;
-}
-
-export interface HeatmapProps extends SignatureChartProps {
-  readonly rows: readonly string[];
-  readonly columns: readonly string[];
-  readonly values: ReadonlyArray<ReadonlyArray<number | string | null>>;
-  categorical?: boolean;
-  /** Full stable identity domain for categorical mode (at most eight). */
-  readonly colorDomain?: readonly string[];
-  valueFormat?: (value: number | string) => string;
-}
-
-export interface StatusStripSegment {
-  readonly from: number | Date;
-  readonly to: number | Date;
-  readonly status: "ok" | "warn" | "error" | "unknown";
-}
-
-export interface StatusStripProps extends SignatureChartProps {
-  readonly segments: readonly StatusStripSegment[];
-  /** Optional full observation window; uncovered intervals become explicit unknown segments. */
-  readonly domain?: readonly [number | Date, number | Date];
-  intervalFormat?: (value: number | Date) => string;
 }

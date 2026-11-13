@@ -1,0 +1,105 @@
+{
+  "name": "explorer",
+  "type": "registry:block",
+  "registryDependencies": [
+    "breadcrumb",
+    "button",
+    "icon",
+    "item",
+    "resizable",
+    "tree"
+  ],
+  "dependencies": [
+    "cn",
+    "react-aria-components"
+  ],
+  "files": [
+    {
+      "path": "explorer/explorer.tsx",
+      "type": "registry:block",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport type { Selection } from \"react-aria-components\"\n\nimport { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from \"@/components/ui/breadcrumb\"\nimport { Button } from \"@/components/ui/button\"\nimport { Icon } from \"@/components/ui/icon\"\nimport { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from \"@/components/ui/item\"\nimport { ResizableHandle, ResizablePanel, ResizablePanelGroup } from \"@/components/ui/resizable\"\nimport { Tree, TreeItem } from \"@/components/ui/tree\"\n\ntype Node = { id: string; name: string; children?: Node[]; meta?: string }\n\nfunction findPath(nodes: Node[], id: string, trail: Node[] = []): Node[] | undefined {\n  for (const n of nodes) {\n    const here = [...trail, n]\n    if (n.id === id) return here\n    const deeper = n.children && findPath(n.children, id, here)\n    if (deeper) return deeper\n  }\n  return undefined\n}\n\nfunction renderNodes(nodes: Node[]): React.ReactNode {\n  return nodes\n    .filter((n) => n.children)\n    .map((n) => (\n      <TreeItem key={n.id} id={n.id} textValue={n.name} icon={<Icon name=\"folder\" />}>\n        {renderNodes(n.children ?? [])}\n      </TreeItem>\n    ))\n}\n\n/**\n * Two-pane explorer: folder Tree on the left, the selected folder's entries as\n * a grid list on the right, a breadcrumb trail and a resize handle between.\n */\nexport default function Explorer({\n  heading = \"Files\",\n  nodes = [\n    {\n      id: \"docs\",\n      name: \"Docs\",\n      children: [\n        { id: \"guides\", name: \"Guides\", children: [{ id: \"start\", name: \"Getting started.md\", meta: \"2 KB\" }] },\n        { id: \"readme\", name: \"Readme.md\", meta: \"1 KB\" },\n      ],\n    },\n    { id: \"assets\", name: \"Assets\", children: [{ id: \"logo\", name: \"logo.svg\", meta: \"4 KB\" }] },\n  ],\n  onOpen,\n}: {\n  heading?: string\n  nodes?: Node[]\n  onOpen?: (node: Node) => void\n}) {\n  const [selected, setSelected] = React.useState<string>(nodes[0]?.id ?? \"\")\n  const path = findPath(nodes, selected) ?? []\n  const folder = path.at(-1)\n  const entries = folder?.children ?? nodes\n\n  return (\n    <section data-slot=\"explorer\" aria-label={heading} className=\"py-8\">\n      <div className=\"mx-auto max-w-5xl px-6\">\n        <div className=\"flex items-center justify-between gap-4\">\n          <Breadcrumb>\n            <BreadcrumbList>\n              <BreadcrumbItem>\n                <BreadcrumbLink onPress={() => setSelected(nodes[0]?.id ?? \"\")}>{heading}</BreadcrumbLink>\n              </BreadcrumbItem>\n              {path.map((n, i) => (\n                <BreadcrumbItem key={n.id}>\n                  {i === path.length - 1 ? <BreadcrumbPage>{n.name}</BreadcrumbPage> : <BreadcrumbLink onPress={() => setSelected(n.id)}>{n.name}</BreadcrumbLink>}\n                </BreadcrumbItem>\n              ))}\n            </BreadcrumbList>\n          </Breadcrumb>\n          <Button variant=\"outline\" size=\"sm\" isDisabled={path.length < 2} onPress={() => setSelected(path.at(-2)?.id ?? selected)}>\n            <Icon name=\"chevron-up\" data-icon=\"inline-start\" />\n            Up\n          </Button>\n        </div>\n        <ResizablePanelGroup orientation=\"horizontal\" className=\"mt-4 min-h-80 rounded-lg border border-border\">\n          <ResizablePanel defaultSize=\"30%\" minSize=\"20%\">\n            <div role=\"region\" aria-label=\"Folders\" className=\"h-full overflow-auto p-2\">\n              <Tree\n                aria-label=\"Folders\"\n                selectionMode=\"single\"\n                disallowEmptySelection\n                selectedKeys={[selected]}\n                defaultExpandedKeys={nodes.map((n) => n.id)}\n                onSelectionChange={(keys: Selection) => {\n                  if (keys !== \"all\") {\n                    const k = [...keys][0]\n                    if (k !== undefined) setSelected(String(k))\n                  }\n                }}\n              >\n                {renderNodes(nodes)}\n              </Tree>\n            </div>\n          </ResizablePanel>\n          <ResizableHandle withHandle />\n          <ResizablePanel defaultSize=\"70%\">\n            <div role=\"region\" aria-label=\"Contents\" className=\"h-full overflow-auto p-2\">\n              <ItemGroup className=\"grid gap-1 sm:grid-cols-2\">\n                {entries.map((n) => (\n                  <Item\n                    key={n.id}\n                    variant=\"outline\"\n                    size=\"sm\"\n                    role=\"button\"\n                    tabIndex={0}\n                    onClick={() => (n.children ? setSelected(n.id) : onOpen?.(n))}\n                    onKeyDown={(e) => {\n                      if (e.key === \"Enter\") (n.children ? setSelected(n.id) : onOpen?.(n))\n                    }}\n                    className=\"cursor-default\"\n                  >\n                    <ItemMedia>\n                      <Icon name={n.children ? \"folder\" : \"document\"} />\n                    </ItemMedia>\n                    <ItemContent>\n                      <ItemTitle>{n.name}</ItemTitle>\n                      <ItemDescription>{n.children ? `${n.children.length} items` : n.meta}</ItemDescription>\n                    </ItemContent>\n                  </Item>\n                ))}\n              </ItemGroup>\n            </div>\n          </ResizablePanel>\n        </ResizablePanelGroup>\n      </div>\n    </section>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.explorer",
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "license": "MIT"
+    },
+    "com.clossys.origin": {
+      "kind": "authored",
+      "license": "MIT",
+      "note": "create (FILL-DESIGNER-3): two-pane explorer composed of Tree, aria-nova Item grid, Breadcrumbs, Button, Icon and the shadcn resizable handle."
+    },
+    "element": {
+      "id": "explorer",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.explorer",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "CREATE (FILL-DESIGNER-3; no trusted reference): two-pane explorer composed of Tree, aria-nova Item grid, Breadcrumbs, Button, Icon and the shadcn resizable handle.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-NO-SOURCE"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "react-aria-components": "*"
+        },
+        "registry": [
+          "breadcrumb",
+          "button",
+          "icon",
+          "item",
+          "resizable",
+          "tree"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}

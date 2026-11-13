@@ -1,0 +1,254 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.comparison",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Matrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.comparison",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Matrix",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "comparison": {
+      "composes": [
+        "components.badge",
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon",
+        "components.menu",
+        "components.radio-group",
+        "components.semantic-content",
+        "components.status-mark",
+        "components.table",
+        "sections.section-header"
+      ],
+      "configs": {
+        "arrangement": "grid"
+      },
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.badge",
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon",
+          "components.menu",
+          "components.radio-group",
+          "components.semantic-content",
+          "components.status-mark",
+          "components.table",
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.badge",
+            "components.button",
+            "components.card",
+            "components.dialog",
+            "components.icon",
+            "components.menu",
+            "components.radio-group",
+            "components.semantic-content",
+            "components.status-mark",
+            "components.table"
+          ],
+          "themes": [
+            "themes.font-mono",
+            "themes.primary"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/canvas/CanvasLod.tsx",
+            "sha256": "2faddc7545e1ef3159c6f08bb9fb73c172d468b5c31e82daafe854c448989097"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/trend.ts",
+            "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/policies.ts",
+            "sha256": "5f5021cbedb8dc65384c4ca045e164f644f7acd536835f8f5a8a3f5b2df0bdc3"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/candidate-prompt.ts",
+            "sha256": "9ec62f8fc0e1120522cf1cf3224573deb791e0d6ab1152a024ef662399a273ed"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+            "sha256": "229560186b838ac3ffbb877435b3de596b4de4497d4cc3247bbb1c702fee5196"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
+            "sha256": "6209446c574599c589df0de1f71e9270eb595f092c9726a742643777bf99a5d8"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+            "sha256": "f4a1fa82872614ebfae49858266bce5305debaae76f28be3876bdf096e1d8486"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/model.ts",
+            "sha256": "d508a6c800a4163bde5c987512bc15104b00db5c9ee1923128b7fce7e1a69c88"
+          },
+          {
+            "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+            "sha256": "7958ae9f74f6a9ea73dc6d64b165e3768b981a5d44201c9115d9ec677345d9a7"
+          },
+          {
+            "path": "packages/designer/src/blocks/Matrix.tsx",
+            "sha256": "9628decb6d37c6574b160cda0e4a6fbef7b1c3655389e51f5d003d945ce4c561"
+          },
+          {
+            "path": "packages/designer/src/blocks/matrix/choices.tsx",
+            "sha256": "f8cc1527f91db1a08910348838ba2da11e43865e878dd66fd4cce9af9b4c5ade"
+          },
+          {
+            "path": "packages/designer/src/blocks/matrix/grid.tsx",
+            "sha256": "bf0a1ea6bac2c18ce864a684a3413cf49980ad56bb0ef945b15c0879fd7b3faa"
+          },
+          {
+            "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
+            "sha256": "8e50bf8776d3ff31b3f5a4ad08c1b889cb7850b578363c45b20a7f8de70bf323"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
+          },
+          {
+            "path": "packages/designer/src/blocks/shell-menu.tsx",
+            "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/runtime-ports.ts",
+            "sha256": "a57803847077519760f54df3277337f466bca2adb42c3e92aed53ea584f1ef45"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/runtime-snapshot-identity.ts",
+            "sha256": "1fa5e5d2cda0acb6f621209c6050b4c01bd694a0831b5ee18b49ca2e4db075af"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          },
+          {
+            "path": "packages/designer/src/icons/Check.ts",
+            "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronDown.ts",
+            "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+          },
+          {
+            "path": "packages/designer/src/icons/ExternalLink.ts",
+            "sha256": "1803843525669af0f404ee8a5640a2c219753f1dbb9e8f5711cde00581b8c9f9"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
+            "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/ExternalLink.js#ExternalLink",
+            "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+            "line": 5
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Check.js#Check",
+            "file": "packages/designer/src/blocks/Matrix.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "Matrix",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "The exported Matrix preserves Matrix arrangement=grid for authored comparison cells and arrangement=choices for content-sized native RadioGroup rows. Choices accepts one or more library columns and unbounded leaf rows without an internal scroll region.",
+        "The explicit library-board configuration selects LibraryBoardSection typed columns, rows and controls records through LIBRARY_BOARD_CONFIG; its canonical member is arrangement.library-board. Grid remains the existing literal. Selected runtime qualification remains separate.",
+        "The choices assembly consumes SectionHeader, RadioGroup, Card, Badge, Tooltip and token-backed table layout; Studio supplies checked token, asset or component previews.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Matrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "arrangement.library-board": "./blocks#Matrix.arrangement=library-board"
+      },
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.font-mono",
+          "themes.primary"
+        ]
+      },
+      "slot": "sections.comparison",
+      "slotMap": {
+        "columns": "./blocks#Matrix.columns",
+        "controls": "./blocks#Matrix.records.controls",
+        "highlight": "./blocks#Matrix.featured",
+        "rows": "./blocks#Matrix.rows"
+      },
+      "source": "foundry"
+    }
+  }
+}

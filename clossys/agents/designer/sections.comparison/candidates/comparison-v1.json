@@ -1,0 +1,106 @@
+{
+  "name": "comparison",
+  "type": "registry:component",
+  "title": "Comparison",
+  "description": "Two options weighed side by side, with the pick named and argued.",
+  "registryDependencies": [
+    "https://r.assistant-ui.com/elements-surfaces.json"
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2026 AgentbaseAI Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "comparison-card.tsx",
+      "type": "registry:component",
+      "target": "components/assistant-ui/elements/comparison-card.tsx",
+      "content": "\n\nimport type { ComponentProps } from \"react\";\nimport { CheckIcon, MinusIcon } from \"lucide-react\";\nimport { cn } from \"@/lib/utils\";\nimport { field, mono, paper } from \"./surfaces\";\n\nexport interface ComparisonOption {\n  id: string;\n  name: string;\n  headline: string;\n  traits: readonly (string | false)[];\n}\n\nexport function ComparisonCard({\n  traitLabels,\n  options,\n  recommendedId,\n  reason,\n  className,\n  ...props\n}: Omit<\n  ComponentProps<\"div\">,\n  \"children\" | \"traitLabels\" | \"options\" | \"recommendedId\" | \"reason\"\n> & {\n  traitLabels: readonly string[];\n  options: readonly ComparisonOption[];\n  recommendedId: string;\n  reason: string;\n}) {\n  return (\n    <div\n      data-slot=\"comparison-card\"\n      className={cn(\n        paper,\n        \"flex w-full max-w-md flex-col gap-3 rounded-2xl p-4\",\n        className,\n      )}\n\n      {...props}\n    >\n      <div className=\"flex gap-2\">\n        {options.map((option) => {\n          const recommended = option.id === recommendedId;\n          return (\n            <div\n              key={option.id}\n              className={cn(\n                \"flex min-w-0 flex-1 flex-col gap-2 rounded-xl p-3 transition-colors\",\n                recommended ? \"bg-blue-500/[0.07] dark:bg-blue-400/10\" : field,\n              )}\n            >\n              <div className=\"flex flex-col gap-0.5\">\n                <span className=\"flex items-baseline gap-1.5\">\n                  <span className=\"truncate text-[13px] font-medium\">\n                    {option.name}\n                  </span>\n                  {recommended && (\n                    <span\n                      className={cn(\n                        mono,\n                        \"shrink-0 text-blue-600 dark:text-blue-400\",\n                      )}\n                    >\n                      pick\n                    </span>\n                  )}\n                </span>\n                <span className=\"text-muted-foreground truncate text-xs\">\n                  {option.headline}\n                </span>\n              </div>\n\n              <div className=\"flex flex-col gap-1\">\n                {traitLabels.map((label, i) => {\n                  const trait = option.traits[i];\n                  const absent = !trait;\n                  return (\n                    <span\n                      key={`${i}-${label}`}\n                      className=\"flex items-center gap-1.5 text-xs\"\n                    >\n                      {absent ? (\n                        <MinusIcon className=\"text-muted-foreground size-3 shrink-0\" />\n                      ) : (\n                        <CheckIcon className=\"size-3 shrink-0 text-emerald-500\" />\n                      )}\n                      <span\n                        className={cn(\n                          \"min-w-0 truncate\",\n                          absent\n                            ? \"text-muted-foreground\"\n                            : \"text-foreground/65\",\n                        )}\n                      >\n                        {absent ? label : trait}\n                      </span>\n                    </span>\n                  );\n                })}\n              </div>\n            </div>\n          );\n        })}\n      </div>\n\n      <p className=\"text-muted-foreground text-xs leading-relaxed\">{reason}</p>\n    </div>\n  );\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.comparison",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "assistant-ui/elements-comparison-card@ff654d8"
+      ],
+      "hash": "sha256:636d63e751c3ff2077a4674be813b01d060cd1332d093c9eb3b9759a59ce8fa3",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "comparison-card.tsx": "components/assistant-ui/elements/comparison-card.tsx"
+      }
+    },
+    "element": {
+      "id": "comparison",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.comparison",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock assistant-ui/elements-comparison-card@ff654d8 adopted unmodified (shadcn add-time normalization only) as the initial candidate for sections.comparison.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "https://r.assistant-ui.com/elements-surfaces.json"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--destructive",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--tracking-tight",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}

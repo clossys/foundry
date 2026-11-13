@@ -84,7 +84,8 @@ describe("SiteHeader mobile layout", () => {
     // tested viewport, then let its CSS engine apply their actual selectors.
     const hideSelector = ".site-header-contract[data-header-root] .site-header-brand a > span:not([data-brand-mark]):not(:has(img))";
     const narrow = cssBlock(compiled.slice(compiled.lastIndexOf("@media", compiled.indexOf(hideSelector))), "@media (width < 768px) {");
-    const desktop = cssBlock(compiled, "@media (width >= 1280px) {");
+    // The shipped desktop utilities: the 1280px block that holds them, not the first 1280px block in the file.
+    const desktop = cssBlock(compiled.slice(compiled.lastIndexOf("@media", compiled.indexOf(".desktop\\:block {"))), "@media (width >= 1280px) {");
     const style = document.createElement("style");
     style.textContent = cssBlock(compiled, "  .hidden {") + cssBlock(compiled, "  .inline-flex {")
       + (width < 768 ? cssBlock(narrow, "    .site-header-contract[data-header-root] .site-header-brand a > span:not([data-brand-mark]):not(:has(img)) {") : "")
@@ -168,7 +169,7 @@ describe("header brand slot", () => {
     expect(mark.tagName).toBe("SPAN");
     expect(mark).toHaveAttribute("data-brand-mark", "");
     expect(mark).toHaveAttribute("aria-hidden", "true");
-    expect(mark).toHaveClass("bg-accent");
+    expect(mark).toHaveClass("bg-primary");
     expect(anchor.querySelector("img")).toBeNull();
     // The quote is escaped, so the URL cannot end the mask value early.
     expect(html).toContain('mask-image:url(&quot;/brand/mark\\22 .svg&quot;)');
@@ -202,7 +203,7 @@ describe("header brand slot", () => {
       expect(anchor.querySelector("img")).toBeNull();
       const mark = markOf(anchor);
       expect(mark).toHaveAttribute("data-brand-mark", "");
-      expect(mark.matches(".bg-accent") || mark.querySelector(".bg-accent") !== null).toBe(true);
+      expect(mark.matches(".bg-primary") || mark.querySelector(".bg-primary") !== null).toBe(true);
       // jsdom drops mask properties on the client, so read the paint from the server markup.
       if (root === host) expect((mark.matches("[style*=mask]") ? mark : mark.querySelector("[style*=mask]"))!.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
       // The wordmark hides below tablet; the accent mark stays centered.
@@ -217,7 +218,7 @@ describe("header brand slot", () => {
     const anchor = screen.getByRole("link", { name: "Example home" });
     expect(anchor.querySelector("img")).toHaveAttribute("src", "/mark.svg");
     expect(anchor.querySelector("[data-brand-mark]")).toBeNull();
-    expect(anchor.querySelector(".bg-accent")).toBeNull();
+    expect(anchor.querySelector(".bg-primary")).toBeNull();
     // The opted-out image mark also stays visible on mobile.
     expect(mobileBrand(anchor).shown[0]).toBe(markOf(anchor));
   });
@@ -225,20 +226,20 @@ describe("header brand slot", () => {
   it("keeps an explicit tone and accent default together in the header", () => {
     render(<SiteHeader brand={<Brandmark variant="lockup" wordmark="Example" size="md" label="Example home" markSrc="/mark.svg" tone="inverse" />} />);
     const anchor = screen.getByRole("link", { name: "Example home" });
-    expect(anchor).toHaveClass("text-ink-on-inverse");
-    expect(markOf(anchor)).toHaveClass("bg-accent");
+    expect(anchor).toHaveClass("text-background");
+    expect(markOf(anchor)).toHaveClass("bg-primary");
   });
 
   it.each([
     ["auto", "text-ink-primary"],
-    ["inverse", "text-ink-on-inverse"],
+    ["inverse", "text-background"],
   ] as const)("sets the %s wordmark in the surface's own ink token, which follows the colour scheme", (tone, ink) => {
     render(<Brandmark variant="lockup" wordmark="Example" size="md" label="Example home" markSrc="/mark.svg" markInk="accent" tone={tone} />);
     const anchor = screen.getByRole("link", { name: "Example home" });
     expect(anchor).toHaveClass(ink);
     // The wordmark inherits that ink; only the mark carries the accent.
     expect(wordmarkOf(anchor)!.className).not.toMatch(/\b(?:text|bg)-/);
-    expect(markOf(anchor)).toHaveClass("bg-accent");
+    expect(markOf(anchor)).toHaveClass("bg-primary");
   });
 
   it("defines the wordmark and accent inks for light and dark schemes, and the mobile header leaves brand paint alone", () => {

@@ -1,0 +1,40 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.font-mono",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.typography",
+    "l2": "typography-fonts",
+    "order": 37
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "fontFamily",
+    "emit": {
+      "default": "--font-mono"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "tier": "scale"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": []
+}

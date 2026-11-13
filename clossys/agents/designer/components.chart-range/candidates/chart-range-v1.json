@@ -1,0 +1,156 @@
+{
+  "name": "chart-range",
+  "type": "registry:ui",
+  "registryDependencies": [
+    "chart"
+  ],
+  "dependencies": [
+    "cn",
+    "recharts"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "chart-range.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from \"recharts\"\n\nimport {\n  ChartContainer,\n  ChartLegend,\n  ChartLegendContent,\n  ChartTooltip,\n  ChartTooltipContent,\n  type ChartConfig,\n} from \"@/components/ui/chart\"\n\nconst chartConfig = {\n  range: { label: \"Range\", color: \"var(--chart-1)\" },\n  value: { label: \"Value\", color: \"var(--chart-2)\" },\n} satisfies ChartConfig\n\n/**\n * Range (band) chart on the shadcn chart primitives: a Recharts range Area\n * ([low, high]) with an optional center line.\n */\nfunction ChartRange({\n  data,\n  axes = true,\n  legend = true,\n  tooltip = true,\n  className,\n}: {\n  data: { label: string; low: number; high: number; value?: number }[]\n  axes?: boolean\n  legend?: boolean\n  tooltip?: boolean\n  className?: string\n}) {\n  const rows = data.map((d) => ({ ...d, range: [d.low, d.high] as [number, number] }))\n  const hasValue = data.some((d) => d.value !== undefined)\n  return (\n    <ChartContainer config={chartConfig} className={className}>\n      <ComposedChart accessibilityLayer data={rows} margin={{ left: 12, right: 12 }}>\n        {axes && <CartesianGrid vertical={false} />}\n        {axes && <XAxis dataKey=\"label\" tickLine={false} axisLine={false} tickMargin={8} />}\n        {axes && <YAxis tickLine={false} axisLine={false} tickMargin={8} width={40} />}\n        {tooltip && <ChartTooltip cursor={false} content={<ChartTooltipContent />} />}\n        <Area dataKey=\"range\" type=\"monotone\" fill=\"var(--color-range)\" fillOpacity={0.25} stroke=\"var(--color-range)\" />\n        {hasValue && <Line dataKey=\"value\" type=\"monotone\" stroke=\"var(--color-value)\" strokeWidth={2} dot={false} />}\n        {legend && <ChartLegend content={<ChartLegendContent />} />}\n      </ComposedChart>\n    </ChartContainer>\n  )\n}\n\nexport { ChartRange }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.chart-range",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-aria/chart@4.23.0",
+        "npm:recharts@3.8.0#ComposedChart"
+      ],
+      "hash": "sha256:c70a1e3d399eb15cb24e8c19c4e92568c111b93f8922804f7788a73c1ce21ee4",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "chart-range",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.chart-range",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "Range band (Area over [low, high]) plus a value Line in a Recharts ComposedChart inside the shadcn ChartContainer.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "recharts": "*"
+        },
+        "registry": [
+          "chart"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--chart-1",
+          "--chart-2",
+          "--chart-3",
+          "--chart-4",
+          "--chart-5",
+          "--radius",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "chart-range.tsx",
+        "export": "ChartRange",
+        "props": {
+          "className": "h-48 w-full max-w-md aspect-auto",
+          "data": [
+            {
+              "label": "Jan",
+              "low": 120,
+              "high": 210,
+              "value": 165
+            },
+            {
+              "label": "Feb",
+              "low": 140,
+              "high": 236,
+              "value": 188
+            },
+            {
+              "label": "Mar",
+              "low": 132,
+              "high": 228,
+              "value": 180
+            },
+            {
+              "label": "Apr",
+              "low": 150,
+              "high": 250,
+              "value": 200
+            },
+            {
+              "label": "May",
+              "low": 160,
+              "high": 262,
+              "value": 211
+            },
+            {
+              "label": "Jun",
+              "low": 172,
+              "high": 284,
+              "value": 228
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

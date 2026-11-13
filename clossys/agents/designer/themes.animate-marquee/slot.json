@@ -1,0 +1,47 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.animate-marquee",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.motion",
+    "l2": "motion-animations",
+    "order": 42
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "duration",
+    "emit": {
+      "default": "--animate-marquee",
+      "duration": "--duration"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default",
+        "duration"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "tier": "scale"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [],
+  "notNeeded": {
+    "reason": "planner:DS-COMPLETE: magicui registry:ui animation var mis-slotted as a theme token; no pinned element's code consumes it (only metadata reads lists)",
+    "since": "2026-11-05",
+    "decidedBy": "planner:DS-COMPLETE"
+  }
+}

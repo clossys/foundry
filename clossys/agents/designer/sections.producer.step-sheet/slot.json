@@ -1,0 +1,69 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.producer.step-sheet",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.producer",
+    "l2": "producer-pipeline",
+    "order": 263
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.producer.step-sheet",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The selected pipeline step's command, inputs, outputs, options, seat and status in a stock shadcn Sheet; an open seat and no selection are stated.",
+    "inputs": [
+      {
+        "name": "sheet",
+        "kind": "data",
+        "required": true,
+        "description": "The selected graph.json step (or null), whether the sheet is open, and the sheet headings."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "badge",
+        "version": "4.23.0",
+        "hash": "sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/badge.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "sheet",
+        "version": "4.23.0",
+        "hash": "sha256:faf68ebfa080e72f9f8c2f0a946c0a243f6fedf8d3a35cc71ba125a4436fe711",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/sheet.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "table",
+        "version": "4.23.0",
+        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [],
+  "notNeeded": {
+    "reason": "composed into pipeline-flow v4",
+    "since": "2026-11-04",
+    "decidedBy": "planner:PIPELINE-CANVAS"
+  }
+}

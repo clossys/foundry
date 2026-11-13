@@ -8,41 +8,41 @@
  * `@testing-library/react`, collects the real DOM `className`s, and checks
  * each one against a freshly generated `compiled.css`.
  *
- * SCOPE, STATED HONESTLY: this exercises a representative set of atoms
+ * SCOPE, STATED HONESTLY: this exercises a representative set of components
  * spanning every structural pattern this package's README documents
  * (plain markup, a variant table, a size table, a boolean-state control, a
  * labeled field, a homogeneous collection, link variants) — not all 31
- * atoms in every documented prop combination. The atoms it does NOT render
+ * components in every documented prop combination. The components it does NOT render
  * here (`Select`, `Menu`, `Dialog`, `Popover`, `ComboBox`, `Tabs`,
  * `RadioGroup`, `DateField`, `SearchField`, `FileTrigger`, `Disclosure`,
  * `ProgressBar`, `Table`, `Field`, `Tooltip`) mostly require opening a
  * portalled overlay or richer state setup to reach their real classes in
  * the DOM; `class-scan.ts`'s static extraction (not rendering) is what
- * keeps `compiled.css` complete for those, since it reads every atom's
+ * keeps `compiled.css` complete for those, since it reads every component's
  * source text directly rather than needing to drive its UI. This test's
  * job is narrower and different: catch a REGEX BUG in `class-scan.ts`
  * (a class shape it silently fails to extract), not exhaustively enumerate
- * every atom. See the introducing PR body for the same statement.
+ * every component. See the introducing PR body for the same statement.
  */
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render as renderBare, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Logomark } from "../atoms/Logomark.js";
+import { Logomark } from "../components/Logomark.js";
 import { Lockup } from "../blocks/Lockup.js";
-import { Avatar } from "../atoms/Avatar.js";
-import { Badge } from "../atoms/Badge.js";
-import { Banner } from "../atoms/Banner.js";
-import { Breadcrumb } from "../atoms/Breadcrumb.js";
-import { Button } from "../atoms/Button.js";
-import { Card } from "../atoms/Card.js";
-import { Checkbox } from "../atoms/Checkbox.js";
-import { Chip } from "../atoms/Chip.js";
-import { Link } from "../atoms/Link.js";
-import { Meter } from "../atoms/Meter.js";
-import { Separator } from "../atoms/Separator.js";
-import { ResizeHandle } from "../atoms/ResizeHandle.js";
+import { Avatar } from "../components/preview-runtime/components/avatar/avatar.js";
+import { Badge } from "../components/preview-runtime/components/badge/badge.js";
+import { Alert } from "../components/preview-runtime/components/banner/alert.js";
+import { ALERT_TONE } from "../components/surface-tones.js";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "../components/preview-runtime/components/breadcrumbs/breadcrumb.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
+import { Card } from "../components/preview-runtime/components/card/card.js";
+import { Checkbox } from "../components/preview-runtime/components/checkbox/checkbox.js";
+import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
+import { Meter } from "../components/Meter.js";
+import { Separator } from "../components/preview-runtime/components/separator/separator.js";
+import { ResizeHandle } from "../components/ResizeHandle.js";
 import { Panel } from "../blocks/Panel.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
@@ -51,15 +51,15 @@ import { GroupedTable } from "../blocks/GroupedTable.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
 import { RelationGraph } from "../blocks/RelationGraph.js";
 import { FlowCanvas } from "../blocks/FlowCanvas.js";
-import { Skeleton } from "../atoms/Skeleton.js";
-import { Spinner } from "../atoms/Spinner.js";
-import { StatusMark } from "../atoms/StatusMark.js";
-import { Switch } from "../atoms/Switch.js";
-import { TextField } from "../atoms/TextField.js";
-import { Textarea } from "../atoms/Textarea.js";
+import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
+import { Spinner } from "../components/spinner/spinner.js";
+import { StatusMark } from "../components/StatusMark.js";
+import { Switch } from "../components/preview-runtime/components/switch/switch.js";
+import { TextField } from "../components/preview-runtime/components/text-field/text-field.js";
+import { Textarea } from "../components/preview-runtime/components/text-field/text-field.js";
 import { Hero } from "../blocks/Hero.js";
 import { AccountMenu } from "../blocks/AccountMenu.js";
-import { Item } from "../blocks/items/Item.js";
+import { StockItem } from "../blocks/items/StockItem.js";
 import { Items } from "../blocks/items/Items.js";
 import { Items as NativeItems } from "../blocks/items/Items.server.js";
 import { Matrix } from "../blocks/Matrix.js";
@@ -73,6 +73,9 @@ import { SpecimenPanel } from "../blocks/specimen/SpecimenPanel.js";
 import type { SpecimenPanelItem } from "../blocks/specimen/SpecimenPanel.js";
 import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
+import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
+/** The consumer supplies the Writer shell copy resolver for every rendered specimen. */
+const render = hostedRender(renderBare);
 
 const packageRoot = resolve(import.meta.dirname, "..", "..");
 
@@ -82,7 +85,7 @@ const packageRoot = resolve(import.meta.dirname, "..", "..");
  * `HTMLElement` but an `SVGAnimatedString` OBJECT on an `SVGElement`
  * (`Icon`/`Spinner` render `<svg>`). Reading `.className` directly here
  * would silently stringify that object instead of the class list on any
- * SVG-rendering atom — a real bug caught while building this test.
+ * SVG-rendering component — a real bug caught while building this test.
  */
 function collectClassNames(container: HTMLElement): Set<string> {
   const classes = new Set<string>();
@@ -107,16 +110,48 @@ function toSelectorText(className: string): string {
   return "." + className.replace(/[^a-zA-Z0-9_-]/g, (ch) => "\\" + ch);
 }
 
+/**
+ * Whether Tailwind itself compiles a class, given alone as the only candidate, to a rule of its own.
+ * A Tailwind marker (`group/button`, `peer/field-label`) or a package hook class (`lucide`,
+ * `react-aria-TextField`, Kibo's status name) compiles to nothing: no scan can be missing it, and no
+ * compiled.css could contain it. Every class Tailwind does compile must reach compiled.css (WD-REG).
+ */
+const compilesAlone = new Map<string, Promise<boolean>>();
+function tailwindCompiles(className: string): Promise<boolean> {
+  let known = compilesAlone.get(className);
+  if (!known) {
+    known = generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: [className] }).then(out => out.css.includes(toSelectorText(className)));
+    compilesAlone.set(className, known);
+  }
+  return known;
+}
+/** The listed classes Tailwind compiles to a rule, in order. */
+async function compiledRules(classNames: Iterable<string>): Promise<string[]> {
+  const names = [...new Set(classNames)];
+  const compiles = await Promise.all(names.map(tailwindCompiles));
+  return names.filter((_, index) => compiles[index]);
+}
+/** Rendered classes this CSS lacks although Tailwind compiles each one to a rule: a real scan or build gap. */
+async function uncovered(classNames: Iterable<string>, css: string): Promise<string[]> {
+  return compiledRules([...classNames].filter(name => !css.includes(toSelectorText(name))));
+}
+
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("counts a class as uncovered only when Tailwind compiles it alone, and never a marker or hook", async () => {
+    // Utilities and variants compile alone; markers and package hooks do not, whatever the CSS.
+    expect(await compiledRules(["flex", "group-hover/button:opacity-50", "group/button", "peer/field-label", "lucide", "react-aria-TextField"])).toEqual(["flex", "group-hover/button:opacity-50"]);
+    expect(await uncovered(["flex", "lucide"], "")).toEqual(["flex"]);
+    expect(await uncovered(["flex"], ".flex{display:flex}")).toEqual([]);
+  });
   it("covers RelationGraph nodes, drawing and refusals in fresh and shipped CSS", async () => {
     const view = render(<RelationGraph kinds={["unit"]} label="Relationships" selectedId="a"
       nodes={[{ id: "a", label: "Alpha", kind: "unit", href: "/alpha" }, { id: "b", label: "Beta", kind: "unit", href: "javascript:void(0)" }]}
       edges={[{ from: "a", to: "b", label: "uses" }]} />);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
     const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
-    for (const name of collectClassNames(view.container)) {
-      expect(generated.css, `fresh ${name}`).toContain(toSelectorText(name));
-      expect(shipped, `shipped ${name}`).toContain(toSelectorText(name));
+    const classes = collectClassNames(view.container);
+    for (const [label, css] of [["fresh", generated.css], ["shipped", shipped]] as const) {
+      expect(await uncovered(classes, css), label).toEqual([]);
     }
     view.unmount();
   });
@@ -131,9 +166,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
     const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
-    for (const name of classes) {
-      expect(generated.css, `grouped table fresh: ${name}`).toContain(toSelectorText(name));
-      expect(shipped, `grouped table shipped: ${name}`).toContain(toSelectorText(name));
+    for (const [label, css] of [["grouped table fresh:", generated.css], ["grouped table shipped:", shipped]] as const) {
+      expect(await uncovered(classes, css), label).toEqual([]);
     }
   });
   it("covers CommandMenu enabled, disabled, filtered and empty rendered states", async () => {
@@ -145,15 +179,15 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
           { id: "second", label: "Second", description: "Details", shortcutHint: "S", href: "#second" },
           { id: "disabled", label: "Unavailable", onAction: () => {}, disabled: true },
         ] }]} isOpen onOpenChange={() => {}} query={query} onQueryChange={() => {}} />);
-      await view.findByRole("combobox");
+      // The stock Command input is a search field inside RAC Autocomplete.
+      await view.findByRole("searchbox");
       for (const name of collectClassNames(document.body)) classes.add(name);
       view.unmount();
     }
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
     const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
-    for (const name of classes) {
-      expect(generated.css, `fresh: ${name}`).toContain(toSelectorText(name));
-      expect(shipped, `shipped: ${name}`).toContain(toSelectorText(name));
+    for (const [label, css] of [["fresh:", generated.css], ["shipped:", shipped]] as const) {
+      expect(await uncovered(classes, css), label).toEqual([]);
     }
   });
   it("covers actual expanded, rail and narrow Drawer navigation classes", async () => {
@@ -179,9 +213,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
       const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
       for (const names of focusClasses) expect(names).toContain("focus-visible:-outline-offset-2");
-      for (const name of classes) {
-        expect(generated.css, `navigation fresh: ${name}`).toContain(toSelectorText(name));
-        expect(shipped, `navigation shipped: ${name}`).toContain(toSelectorText(name));
+      for (const [label, css] of [["navigation fresh:", generated.css], ["navigation shipped:", shipped]] as const) {
+        expect(await uncovered(classes, css), label).toEqual([]);
       }
       for (const css of [generated.css, shipped]) {
         for (const [utility, declaration] of [["border-0", /border-width:\s*0(?:px)?;/], ["bg-transparent", /background-color:\s*transparent;/],
@@ -212,10 +245,9 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
     const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
-    for (const name of ["stroke-accent", "stroke-ink-muted", "fill-accent", "flow-canvas-drawing", "line-clamp-2", "sr-only", "forced-colors:outline-solid", "forced-colors:outline-2", "forced-colors:outline-offset-2", "forced-colors:outline-current"]) expect(classes).toContain(name);
-    for (const name of classes) {
-      expect(generated.css, `flow canvas fresh: ${name}`).toContain(toSelectorText(name));
-      expect(shipped, `flow canvas shipped: ${name}`).toContain(toSelectorText(name));
+    for (const name of ["stroke-primary", "stroke-ink-muted", "fill-primary", "flow-canvas-drawing", "line-clamp-2", "sr-only", "forced-colors:outline-solid", "forced-colors:outline-2", "forced-colors:outline-offset-2", "forced-colors:outline-current"]) expect(classes).toContain(name);
+    for (const [label, css] of [["flow canvas fresh:", generated.css], ["flow canvas shipped:", shipped]] as const) {
+      expect(await uncovered(classes, css), label).toEqual([]);
     }
   });
 
@@ -240,7 +272,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       } finally { style.remove(); tree.unmount(); }
     }
   });
-  it("covers AccountMenu portals with normal rings and forced-colors-only outlines", async () => {
+  it("covers AccountMenu portals with solid Button trigger focus and forced-colors outlines", async () => {
     const classes = new Set<string>(), user = userEvent.setup();
     for (const collapsed of [false, true]) {
       const tree = render(<AccountMenu actor={{ name: "Alex Morgan" }} collapsed={collapsed}
@@ -251,22 +283,27 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       await user.tab();
       const trigger = screen.getByRole("button", { name: "Alex Morgan" });
       await waitFor(() => expect(trigger).toHaveFocus());
-      expect(trigger.style.outlineStyle).toBe("");
-      expect(trigger.style.boxShadow).not.toBe("");
+      // The stock Button draws the same focus ring from classes: width, style, colour and offset tokens.
+      expect(trigger).toHaveClass("focus-visible:outline-solid", "focus-visible:outline-(length:--ui-border-focus,3px)", "focus-visible:outline-(--color-focus-ring)", "focus-visible:outline-offset-(--ui-focus-offset)");
+      expect(trigger.style.outline).toBe("");
+      expect(trigger.style.boxShadow).toBe("");
       expect(trigger).toHaveClass("forced-colors:focus-visible:outline", "forced-colors:focus-visible:outline-solid");
       for (const cls of collectClassNames(document.body)) classes.add(cls);
       await user.keyboard("{ArrowDown}");
       const focused = await screen.findByRole("menuitemcheckbox", { name: "Enabled" });
       const details = within(screen.getByRole("menu")).getByText("Alex Morgan").parentElement!;
-      expect(details.style.maxInlineSize).toBe("min(var(--ui-layout-sidebar-w, 256px), calc(100vw - 2 * var(--spacing-2xl, 32px)))");
-      expect(focused).toHaveFocus(); expect(focused).toHaveClass("outline-none", "forced-colors:outline", "forced-colors:outline-solid");
-      expect(focused).not.toHaveClass("outline");
+      // planner:wd-reg: fe11dce93 dropped the inline fallbacks; styles/tokens.css ships --ui-layout-sidebar-w 256px and --spacing-2xl 32px.
+      expect(details.style.maxInlineSize).toBe("min(var(--ui-layout-sidebar-w), calc(100vw - 2 * var(--spacing-2xl)))");
+      // planner:wd-reg: the stock dropdown-menu item draws a solid focus-visible outline, which forced colors keeps as a system-colour
+      // ring, plus the selected-surface fill; it no longer hides the outline and restores it only under forced colors.
+      expect(focused).toHaveFocus(); expect(focused).toHaveClass("focus-visible:outline-solid", "focus-visible:outline-(--color-focus-ring)", "focus:bg-(--color-surface-selected)");
+      expect(focused).not.toHaveClass("outline"); expect(focused).not.toHaveClass("outline-none"); expect(focused).not.toHaveClass("outline-hidden");
       for (const cls of collectClassNames(document.body)) classes.add(cls);
       tree.unmount();
     }
     const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
-    expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+    expect(await uncovered(classes, generated.css)).toEqual([]);
     expect(generated.css).toMatch(/\.max-w-full\s*\{[^}]*max-width:\s*100%/);
     expect(generated.css).toMatch(/\.box-border\s*\{[^}]*box-sizing:\s*border-box/);
     // Both actual rendered outline rules must be nested inside the forced-colors media query.
@@ -293,9 +330,9 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         view.unmount();
       }
     }
-    const atom = render(<ResizeHandle value={100} min={50} max={200} resetValue={100} label="Resize tools" onChange={() => {}} />);
-    collect(atom.container);
-    atom.unmount();
+    const component = render(<ResizeHandle value={100} min={50} max={200} resetValue={100} label="Resize tools" onChange={() => {}} />);
+    collect(component.container);
+    component.unmount();
     for (const ground of ["base", "sunken", "inverse"] as const) {
       const view = render(<Panel ground={ground} header="Header" footer="Footer">Content</Panel>);
       collect(view.container);
@@ -309,9 +346,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
     const shipped = readFileSync(resolve(packageRoot, "styles/compiled.css"), "utf8");
-    for (const name of classes) {
-      expect(generated.css, `fresh: ${name}`).toContain(toSelectorText(name));
-      expect(shipped, `shipped: ${name}`).toContain(toSelectorText(name));
+    for (const [label, css] of [["fresh:", generated.css], ["shipped:", shipped]] as const) {
+      expect(await uncovered(classes, css), label).toEqual([]);
     }
     for (const [label, css] of [["fresh", generated.css], ["shipped", shipped]] as const) {
       expect(css, `${label}: solid outline`).toContain(".focus-visible\\:outline-solid:focus-visible");
@@ -322,7 +358,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     }
   });
 
-  it("covers actual ordered tracks and native/React Aria disclosure states", async () => {
+  it("covers actual ordered tracks and stock disclosure states in both entries", async () => {
     const classes = new Set<string>();
     const user = userEvent.setup();
     const collect = (tree: ReturnType<typeof render>) => { for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount(); };
@@ -331,14 +367,18 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       for (const count of [3, 5]) collect(render(<Items arrangement="stacked" order="connected" ground={ground} lanes={[{ id: "a", label: "First" }, { id: "b", label: "Second" }]} end="continues" endLabel="Next" items={Array.from({ length: count }, (_, i) => ({ id: String(i), heading: "Step", description: "Support", lane: i % 2 ? "b" : "a", visual: <span>Visual</span> }))} />));
       for (const Component of [Items, NativeItems]) for (const treatment of ["plain", "rule", "plate"] as const) {
         const tree = render(<Component arrangement="rows" columns={2} reveal="disclose" order="numbered" ground={ground} treatment={treatment} items={[0,1,2,3].map(i => ({ id: String(i), heading: "Question", description: "Answer", badge: { label: "Beta", tone: "info" }, meta: "Actor" }))} groups={[{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }]} />);
-        if (Component === Items) await user.click(tree.container.querySelector("button")!);
-        else tree.container.querySelector("details")!.open = true;
+        // Both entries render the stock disclosure; expand it the way a reader does.
+        expect(tree.container.querySelectorAll("details, summary")).toHaveLength(0);
+        const trigger = tree.container.querySelector<HTMLButtonElement>('button[slot="trigger"][aria-controls]')!;
+        await user.click(trigger);
+        expect(trigger).toHaveAttribute("aria-expanded", "true");
+        expect(tree.container.querySelector(`[id="${trigger.getAttribute("aria-controls")}"]`)).not.toHaveAttribute("hidden");
         collect(tree);
       }
     }
     const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
-    expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+    expect(await uncovered(classes, generated.css)).toEqual([]);
     expect(generated.css).toContain("::details-content");
     expect(generated.css).toContain("--disclosure-panel-height");
     expect(generated.css).toContain("forced-colors: active");
@@ -359,10 +399,12 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     const classes = new Set<string>();
     const tones = ["neutral", "success", "warning", "danger", "info"] as const;
     for (const ground of ["base", "sunken", "inverse"] as const) for (const treatment of ["plain", "rule", "plate"] as const) {
-      const tree = render(<Item id="one" heading="Title" size="display" treatment={treatment} ground={ground} href="/one" icon={<svg />} eyebrow="Area" meta="Actor" description="Support" visual={<div>Visual</div>} badge={{ label: "Beta", tone: "info" }} />);
+      // The deleted standalone Item's treatments stay covered through the same renderer in Items; the stock Item covers each ground.
+      const slots = { icon: <svg />, eyebrow: "Area", meta: "Actor", description: "Support", visual: <div>Visual</div>, badge: { label: "Beta", tone: "info" as const } };
+      const tree = render(<><Items arrangement="rows" size="display" treatment={treatment} ground={ground} items={[{ id: "one", heading: "Title", href: "/one", ...slots }, { id: "two", heading: "Title", href: "/two", ...slots }]} /><StockItem id="one" heading="Title" ground={ground} href="/one" {...slots} /></>);
       for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount();
     }
-    for (const tone of tones) { const tree = render(<Item id={tone} heading="Title" size="standard" treatment="plain" ground="base" badge={{ label: "State", tone }} />); for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount(); }
+    for (const tone of tones) { const tree = render(<StockItem id={tone} heading="Title" ground="base" badge={{ label: "State", tone }} />); for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount(); }
     for (const arrangement of ["columns", "rows", "bento", "stacked"] as const) {
       const count = arrangement === "columns" ? 3 : 2;
       const tree = render(<Items arrangement={arrangement} items={Array.from({ length: count }, (_, i) => ({ id: String(i), heading: "Title" }))} />);
@@ -372,7 +414,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     for (const cls of collectClassNames(grouped.container)) classes.add(cls); grouped.unmount();
     const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
-    expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+    expect(await uncovered(classes, generated.css)).toEqual([]);
   }, 30_000);
 
   it("Hero (with media) and primary Button render classes present in a fresh compiled.css", async () => {
@@ -382,7 +424,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         <Hero
           heading="Placeholder heading"
           description="Placeholder description."
-          actions={<Button variant="primary">Continue</Button>}
+          actions={<Button>Continue</Button>}
           media={<img src="/placeholder.png" alt="Placeholder still" />}
           composition="split"
         />,
@@ -395,7 +437,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       result.unmount();
     }
 
-    for (const required of ["text-display-m", "tablet:text-display-l", "font-display", "bg-accent", "rounded-control", "tablet:grid-cols-2"]) {
+    for (const required of ["text-display-m", "tablet:text-display-l", "font-display", "bg-(--color-action)", "text-(--color-ink-on-action)", "rounded-(--radius-control)", "tablet:grid-cols-2"]) {
       expect(renderedClasses.has(required), required).toBe(true);
     }
 
@@ -407,15 +449,15 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       const selector = toSelectorText(className);
       if (!generated.css.includes(selector)) missing.push(className);
     }
-    expect(missing).toEqual([]);
+    expect(await compiledRules(missing)).toEqual([]);
   });
 
-  it("collects classes from a representative set of atoms and cross-checks against a fresh compiled.css", async () => {
+  it("collects classes from a representative set of components and cross-checks against a fresh compiled.css", async () => {
     const trees: Array<[string, ReturnType<typeof render>]> = [];
-    trees.push(["Button primary md", render(<Button variant="primary" size="md">Save</Button>)]);
+    trees.push(["Button default", render(<Button>Save</Button>)]);
     trees.push(["Button secondary sm", render(<Button variant="secondary" size="sm">Save</Button>)]);
     trees.push(["Button ghost lg", render(<Button variant="ghost" size="lg">Save</Button>)]);
-    trees.push(["Button danger", render(<Button variant="danger">Delete</Button>)]);
+    trees.push(["Button destructive", render(<Button variant="destructive">Delete</Button>)]);
     trees.push(["Button outline lg", render(<Button variant="outline" size="lg">See an example</Button>)]);
     trees.push(["Badge neutral", render(<Badge>Active</Badge>)]);
     trees.push(["Badge success", render(<Badge variant="success">Active</Badge>)]);
@@ -445,8 +487,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     trees.push(["Avatar sm", render(<Avatar alt="A" size="sm" />)]);
     trees.push(["Avatar md", render(<Avatar alt="A" size="md" />)]);
     trees.push(["Avatar lg", render(<Avatar alt="A" size="lg" />)]);
-    trees.push(["Spinner labeled", render(<Spinner label="Loading" size="md" />)]);
-    trees.push(["Spinner decorative", render(<Spinner size="sm" />)]);
+    trees.push(["Spinner", render(<Spinner />)]);
+    trees.push(["Spinner named", render(<Spinner aria-label="Saving" className="size-6" />)]);
     trees.push(["Checkbox", render(<Checkbox>Select all</Checkbox>)]);
     trees.push(["Checkbox indeterminate", render(<Checkbox isIndeterminate>Select all</Checkbox>)]);
     trees.push(["Switch", render(<Switch>Notifications</Switch>)]);
@@ -459,19 +501,18 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       "Breadcrumb",
       render(
         <Breadcrumb>
-          <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
-          <Breadcrumb.Item>Current</Breadcrumb.Item>
+          <BreadcrumbList>
+            <BreadcrumbItem id="home"><BreadcrumbLink href="/">Home</BreadcrumbLink></BreadcrumbItem>
+            <BreadcrumbItem id="current"><BreadcrumbPage>Current</BreadcrumbPage></BreadcrumbItem>
+          </BreadcrumbList>
         </Breadcrumb>,
       ),
     ]);
-    trees.push(["Link default", render(<Link href="/x">Go</Link>)]);
-    trees.push(["Link muted", render(<Link href="/x" variant="muted">Go</Link>)]);
-    trees.push(["Link standalone", render(<Link href="/x" variant="standalone">Go</Link>)]);
-    trees.push(["Chip", render(<Chip onRemove={() => {}} removeLabel="Remove">Tag</Chip>)]);
+    trees.push(["LinkButton link", render(<Link href="/x" variant="link">Go</Link>)]);
     trees.push(["Separator", render(<Separator />)]);
     trees.push(["Skeleton", render(<Skeleton style={{ width: 100, height: 20 }} />)]);
-    trees.push(["Banner info", render(<Banner variant="info">Heads up</Banner>)]);
-    trees.push(["Banner danger", render(<Banner variant="danger">Careful</Banner>)]);
+    trees.push(["Alert info", render(<Alert {...ALERT_TONE.info}>Heads up</Alert>)]);
+    trees.push(["Alert danger", render(<Alert {...ALERT_TONE.danger}>Careful</Alert>)]);
 
     const renderedClasses = new Set<string>();
     for (const [, result] of trees) {
@@ -490,7 +531,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       if (!generated.css.includes(selector)) missing.push(className);
     }
 
-    expect(missing).toEqual([]);
+    expect(await compiledRules(missing)).toEqual([]);
   });
 
   it("content layout blocks render classes present in a fresh compiled.css", async () => {
@@ -582,7 +623,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     ];
     trees.push(...navTrees);
     const navActiveClasses = [...new Set(navTrees.flatMap(tree => [...collectClassNames(tree.container)]).filter(className => className.startsWith("active:")))].sort();
-    expect(navActiveClasses).toEqual(["active:bg-surface-raised", "active:decoration-current"]);
+    // The stock LinkButton adds its press nudge; it must compile like every other rendered class.
+    expect(navActiveClasses).toEqual(["active:bg-surface-raised", "active:decoration-current", "active:not-aria-[haspopup]:translate-y-(--ui-border-hairline)"]);
 
     const renderedClasses = new Set<string>();
     for (const result of trees) {
@@ -645,7 +687,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     for (const className of renderedClasses) {
       if (!generated.css.includes(toSelectorText(className))) missing.push(className);
     }
-    expect(missing).toEqual([]);
+    expect(await compiledRules(missing)).toEqual([]);
   }, 30_000);
 
   it("the Specimen family renders classes present in a fresh compiled.css", async () => {
@@ -706,7 +748,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       for (const c of collectClassNames(result.container)) renderedClasses.add(c);
       result.unmount();
     }
-    for (const required of ["@container", "@md:table", "@md:not-sr-only", "@md:table-cell", "@lg:grid-cols-4", "desktop:grid-cols-3", "size-2xl", "font-mono", "max-tablet:hidden", "border-s", "border-dashed", "border-ink-secondary", "bg-surface-sunken", "text-ink-secondary", "bg-status-success-tint", "text-status-success-text", "bg-status-warning-tint", "text-status-warning-text", "bg-status-danger-tint", "text-status-danger-text", "bg-status-info-tint", "text-status-info-text"]) {
+    for (const required of ["@container", "@md:table", "@md:not-sr-only", "@md:table-cell", "@lg:grid-cols-4", "desktop:grid-cols-3", "size-2xl", "font-mono", "max-tablet:hidden", "border-s", "border-dashed", "border-ink-secondary", "bg-surface-sunken", "text-ink-secondary", "bg-status-success-tint", "text-status-success-text", "bg-status-warning-tint", "text-status-warning-text", "bg-(--color-status-danger)/10", "text-(--color-status-danger)", "bg-status-info-tint", "text-status-info-text"]) {
       expect(renderedClasses.has(required), required).toBe(true);
     }
 
@@ -716,7 +758,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     for (const className of renderedClasses) {
       if (!generated.css.includes(toSelectorText(className))) missing.push(className);
     }
-    expect(missing).toEqual([]);
+    expect(await compiledRules(missing)).toEqual([]);
   }, 30_000);
 });
 
@@ -742,7 +784,7 @@ it("emits every real Ledger form, cap, ground and rule-card layout class", async
     cards.unmount();
   }
   const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
-  expect([...classes].filter(cls => !generated.css.includes(toSelectorText(cls)))).toEqual([]);
+  expect(await uncovered(classes, generated.css)).toEqual([]);
   expect(classes.has("max-tablet:hidden")).toBe(true);
   expect(generated.css).toContain(toSelectorText("max-tablet:hidden"));
   const groupDividers = [...generated.css.matchAll(/[^{}]*\.ledger-group-divided[^{}]*\{([^}]*)\}/g)];
@@ -758,5 +800,8 @@ it("emits every real Ledger form, cap, ground and rule-card layout class", async
 it("scans Anatomy marker, ground and responsive source classes without generated output", () => {
   const candidates = new Set(scanCompiledCssSources(packageRoot).candidates);
   for (const candidate of ["anatomy-disc", "anatomy-key-row", "anatomy-key-measure", "tablet-lg:anatomy-columns", "tablet-lg:gap-x-3xl", "text-surface-raised", "text-surface-base", "text-surface-sunken", "text-surface-inverse", "text-body-l", "font-body", "text-h2", "leading-heading"]) expect(candidates.has(candidate), candidate).toBe(true);
-  expect(candidates.has("row-span-2")).toBe(false);
+  // A utility written only under a variant stays prefixed; the scan never invents its bare base.
+  // (Bare row-span-2 is real now: stock CardAction and Alert render it.)
+  expect(candidates.has("tablet:row-span-3")).toBe(true);
+  expect(candidates.has("row-span-3")).toBe(false);
 });

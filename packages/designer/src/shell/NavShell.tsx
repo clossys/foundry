@@ -1,22 +1,18 @@
 import type { ReactNode } from "react";
-import {
-  Dialog as AriaDialog,
-  DialogTrigger,
-  Modal,
-  ModalOverlay,
-  type DialogTriggerProps as AriaDialogTriggerProps,
-} from "react-aria-components";
-import { Button } from "../atoms/Button.js";
-import { Icon } from "../atoms/Icon.js";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_ELEVATION_FLOATING, UI_Z_MODAL } from "../atoms/internal/ui-vars.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
+import { Sheet, SheetClose, SheetTitle, SheetTrigger } from "../components/preview-runtime/components/sheet/sheet.js";
+import type { OverlayTriggerProps } from "../components/internal/overlay-context.js";
+import { Icon } from "../components/preview-runtime/components/icon/icon.js";
+import { cx } from "../components/internal/cx.js";
 import { X } from "../icons/index.js";
-import { UI_LAYOUT_DRAWER_W } from "./internal/shell-vars.js";
 
-export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> {
+/** The drawer's open-state props: every stock `SheetTrigger` prop, none of its surface props (the drawer owns those). */
+type NavShellDialogProps = Omit<OverlayTriggerProps, "trigger" | "role" | "className" | "style">;
+
+export interface NavShellProps extends NavShellDialogProps {
   /**
    * The site's primary navigation links — typically one or more `Link`
-   * atoms. Rendered TWICE: once inside a plain inline `<nav>` visible from
+   * components. Rendered TWICE: once inside a plain inline `<nav>` visible from
    * the `tablet` breakpoint up, and once inside the mobile drawer's own
    * `<nav>`, visible below it. See this component's own doc comment for
    * why duplication, rather than a single relocated subtree, is the
@@ -57,7 +53,7 @@ export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> 
  * **Why `children` renders twice rather than once, relocated.** The
  * drawer's content is portalled to `document.body` by react-aria-
  * components' own `Modal` (the same primitive this package's `Dialog`
- * atom uses — see there for the full mechanism), which cannot be
+ * component uses — see there for the full mechanism), which cannot be
  * conditionally skipped by a breakpoint at RENDER time without reading
  * `matchMedia` — exactly the SSR-unsafe, JS-dependent-layout shape this
  * package's README warns against. Rendering the SAME `children` into both
@@ -72,11 +68,11 @@ export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> 
  * DOM `id` — never hits this; documented here rather than silently
  * accepted.
  *
- * **The drawer's accessibility contract**, built entirely on react-aria-
- * components' `DialogTrigger` + `ModalOverlay` + `Modal` + `Dialog` — the
- * same primitives this package's own `Dialog` atom uses (see its own doc
- * comment for the underlying `useModalOverlay`/`useOverlayTrigger`
- * mechanism) — none of it reimplemented here:
+ * **The drawer's accessibility contract** comes from composing this
+ * stock `Sheet` (react-aria-components' `useModalOverlay`/`useOverlayTrigger`
+ * underneath); the drawer only sizes its surface and names it with a visually
+ * hidden `SheetTitle`. None of
+ * it is reimplemented here:
  *
  *   - **Focus moves into the drawer on open, and is trapped there while
  *     open** — `useDialog`'s own `FocusScope`, `contain`ed for as long as
@@ -97,7 +93,7 @@ export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> 
  *     on (deliberately not opted out of via `isNonModal` — see `Popover`'s
  *     own doc comment for why a general-purpose overlay stays modal).
  *   - **Usable with the keyboard alone, start to finish** — a real
- *     `<button>` (this package's own `Button` atom) opens it on Enter/
+ *     `<button>` (this package's own `Button` component) opens it on Enter/
  *     Space, Tab/Shift+Tab move within the trap, Escape or the close
  *     button's own Enter/Space closes it.
  */
@@ -111,39 +107,25 @@ export function NavShell({
 }: NavShellProps) {
   return (
     <>
-      <nav aria-label={ariaLabel} className={cx("hidden items-center gap-md tablet:flex", className)}>
+      <nav aria-label={ariaLabel} className={cx("hidden items-center nav-shell-row tablet:flex", className)}>
         {children}
       </nav>
-      <DialogTrigger {...rest}>
+      <SheetTrigger {...rest}>
         <Button variant="ghost" size="sm" className="tablet:hidden">
           {triggerLabel}
         </Button>
-        <ModalOverlay className="fixed inset-0 bg-overlay-scrim" style={{ zIndex: UI_Z_MODAL }} isDismissable>
-          <Modal
-            className="fixed inset-y-0 start-0 flex h-full flex-col outline-none"
-            style={{ width: UI_LAYOUT_DRAWER_W }}
-          >
-            <AriaDialog
-              aria-label={ariaLabel}
-              className="flex h-full w-full flex-col gap-lg overflow-auto border-e border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary outline-none"
-              style={{ boxShadow: UI_ELEVATION_FLOATING }}
-            >
-              {({ close }) => (
-                <>
-                  <div className="flex items-center justify-end">
-                    <Button variant="ghost" size="sm" aria-label={closeLabel} onPress={close}>
-                      <Icon glyph={X} decorative />
-                    </Button>
-                  </div>
-                  <nav aria-label={ariaLabel} className="flex flex-col gap-sm">
-                    {children}
-                  </nav>
-                </>
-              )}
-            </AriaDialog>
-          </Modal>
-        </ModalOverlay>
-      </DialogTrigger>
+        <Sheet side="left" showCloseButton={false} className="w-nav-drawer gap-nav-drawer">
+          <SheetTitle className="sr-only">{ariaLabel}</SheetTitle>
+          <div className="flex items-center justify-end">
+            <SheetClose variant="ghost" size="sm" aria-label={closeLabel}>
+              <Icon glyph={X} decorative />
+            </SheetClose>
+          </div>
+          <nav aria-label={ariaLabel} className="flex flex-col nav-shell-list">
+            {children}
+          </nav>
+        </Sheet>
+      </SheetTrigger>
     </>
   );
 }

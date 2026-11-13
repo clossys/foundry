@@ -1,0 +1,229 @@
+{
+  "name": "producer-pipeline-flow",
+  "type": "registry:block",
+  "dependencies": [
+    "@xyflow/react"
+  ],
+  "registryDependencies": [
+    "components.badge",
+    "components.card",
+    "components.field",
+    "components.flow.base-node",
+    "components.flow.canvas",
+    "components.flow.edge",
+    "components.flow.labeled-handle",
+    "components.flow.node-status",
+    "components.item",
+    "components.sheet"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\n---\n\nMIT License\n\nCopyright (c) 2019-2025 webkid GmbH\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "content": "'use client';\nimport { Background, Badge, BaseNode, BaseNodeContent, Card, CardDescription, CardHeader, CardTitle, Controls, Field, FieldDescription, FieldGroup, FieldTitle, Item, ItemActions, ItemContent, ItemTitle, LabeledHandle, MiniMap, NodeStatusIndicator, Panel, Position, ReactFlow, Sheet, SheetDescription, SheetHeader, SheetTitle, SmoothStepEdge, useReactFlow, type Edge, type Node, type NodeProps, type ReactFlowProps } from '@clossys/designer-ui';\n\n/** The node kinds a pipeline step carries; graph.json names one per step. */\nexport type StepKind = 'plumb' | 'decide:creative' | 'decide:judgment';\n\n/** One step's facts as graph.json records them; the step sheet shows them, the node shows only counts. */\nexport interface StepFacts {\n  command: string;\n  inputs: readonly string[];\n  outputs: readonly string[];\n  options: readonly string[];\n  /** The seat holder, or null for an open seat. */\n  seat: string | null;\n  /** graph.json's step state; the node's status border and the sheet's Writer label follow it. */\n  status: StepStatus;\n  /** The step's round (the column group its stage sits in), as its Writer label. */\n  round: string;\n  /** The step's stage (its column inside the round), as its Writer label. */\n  stage: string;\n  /** Who holds the step (its lane), as resolved Writer labels. */\n  holder: StepHolder;\n}\n\n/** A step's seat holder: its name, seat kind, AI tier (null when none is named) and where the hold comes from. */\nexport interface StepHolder {\n  name: string;\n  kind: string | null;\n  tier: string | null;\n  /** The source label: named in the step's seat file, or derived from the step. */\n  source: string;\n  derived: boolean;\n}\n\n/** A step's state as `clossys pipeline status` names it. */\nexport type StepStatus = 'ready' | 'pending';\n\n/** A step node's data. Positions are graph.json's; this section computes no layout. */\nexport interface StepData {\n  [key: string]: unknown;\n  label: string;\n  kind: StepKind;\n  lane: string;\n  stage: string;\n  /** The step's port counts as its handles show them (Writer copy, the counts filled). */\n  inputsLabel: string;\n  outputsLabel: string;\n  facts: StepFacts;\n}\n\n/** One swim row (WHO): its lane id, a roster entry or `unassigned`, and the position graph.json gives its label. */\nexport interface PipelineLane { id: string; position: { x: number; y: number } }\n\n/** One column (WHEN): its stage id (`<round>.<stage>`) and the position graph.json gives its header. */\nexport interface PipelineStage { id: string; position: { x: number; y: number } }\n\n/** One round (a group of columns): its round id and the position graph.json gives its header, above its first stage's header. */\nexport interface PipelineRound { id: string; position: { x: number; y: number } }\n\n/** graph.json: the steps with their positions, the lanes, the rounds and their stages, and the edges between steps. */\nexport interface PipelineGraph { nodes: readonly Node<StepData>[]; edges: readonly Edge[]; lanes: readonly PipelineLane[]; stages: readonly PipelineStage[]; rounds: readonly PipelineRound[] }\n\n/** Writer copy of the flow and its step sheet (studio.pipeline.*). */\nexport interface PipelineFlowCopy {\n  label: string;\n  kinds: Readonly<Record<StepKind, string>>;\n  lanes: Readonly<Record<string, string>>;\n  stages: Readonly<Record<string, string>>;\n  rounds: Readonly<Record<string, string>>;\n  emptyTitle: string;\n  emptyDescription: string;\n  command: string;\n  inputs: string;\n  outputs: string;\n  options: string;\n  seat: string;\n  status: string;\n  round: string;\n  stage: string;\n  holder: string;\n  none: string;\n  openSeat: string;\n  statuses: Readonly<Record<StepStatus, string>>;\n  /** What a node is called to assistive technology (`aria-roledescription`). */\n  nodeRole: string;\n  /** The React Flow attribution link's text and accessible name. */\n  attribution: string;\n  attributionLabel: string;\n  /** Every word React Flow renders itself: its keyboard help, Controls and MiniMap labels. */\n  aria: NonNullable<ReactFlowProps['ariaLabelConfig']>;\n}\n\n/** The `flow` input of `sections.producer.pipeline-flow`. `seat` is the highlighted lane (the page's `?seat=<id>`), or null. */\nexport interface PipelineFlowInput { graph: PipelineGraph; copy: PipelineFlowCopy; seat: string | null }\n\ntype StepNodeData = StepData & { kindLabel: string; copy: PipelineFlowCopy; active: boolean };\ntype LaneNodeData = { [key: string]: unknown; label: string; active: boolean };\ntype StageNodeData = { [key: string]: unknown; label: string };\ntype RoundNodeData = { [key: string]: unknown; label: string };\n\n/** Each kind's stock Badge variant; the legend uses the same mapping. */\nconst KIND_VARIANT = { plumb: 'outline', 'decide:creative': 'secondary', 'decide:judgment': 'default' } as const;\n\n/** A step's status on the stock React Flow UI NodeStatusIndicator: a ready step shows the success border, a pending one the loading border. */\nconst STATUS_INDICATOR = { ready: 'success', pending: 'loading' } as const;\n\n/**\n * One step: the stock React Flow UI BaseNode anatomy inside the stock NodeStatusIndicator. Its header\n * is the stock shadcn Item: the title in ItemContent (ItemTitle clamps it to one line) and the kind\n * Badge in ItemActions, so the badge stays inside the card at any title length (Item wraps the\n * actions under the title when both do not fit). One labeled handle per side carries the port count.\n * The step's sheet follows React Flow's own selection: a click anywhere on the node, or Enter on the\n * focused node, selects it and opens the sheet; closing the sheet clears the selection. A step in the\n * highlighted lane shows the stock muted Item.\n */\nfunction StepNode({ id, data, selected }: NodeProps<Node<StepNodeData, 'step'>>) {\n  const { updateNode } = useReactFlow();\n  return <NodeStatusIndicator status={STATUS_INDICATOR[data.facts.status]}>\n    <BaseNode>\n      <Item size=\"sm\" variant={data.active ? 'muted' : 'default'} data-seat-active={data.active ? '' : undefined}>\n        <ItemContent>\n          <ItemTitle>{data.label}</ItemTitle>\n        </ItemContent>\n        <ItemActions>\n          <Badge variant={KIND_VARIANT[data.kind]}>{data.kindLabel}</Badge>\n        </ItemActions>\n      </Item>\n      <BaseNodeContent>\n        <LabeledHandle id=\"in\" title={data.inputsLabel} type=\"target\" position={Position.Left} />\n        <LabeledHandle id=\"out\" title={data.outputsLabel} type=\"source\" position={Position.Right} />\n      </BaseNodeContent>\n    </BaseNode>\n    <StepSheet step={data} copy={data.copy} isOpen={selected} onOpenChange={open => { if (!open) updateNode(id, { selected: false }); }} />\n  </NodeStatusIndicator>;\n}\n\n/** One swim row's label (WHO), placed once at the row's start; the highlighted lane's label is the stock default Badge. */\nfunction LaneNode({ data }: NodeProps<Node<LaneNodeData, 'lane'>>) {\n  return <Badge variant={data.active ? 'default' : 'ghost'}>{data.label}</Badge>;\n}\n\n/** One column's header (WHEN), placed once above the column's start. */\nfunction StageNode({ data }: NodeProps<Node<StageNodeData, 'stage'>>) {\n  return <Badge variant=\"outline\">{data.label}</Badge>;\n}\n\n/** One round's header, placed once above its first stage's header; its stages' headers sit under it. */\nfunction RoundNode({ data }: NodeProps<Node<RoundNodeData, 'round'>>) {\n  return <Badge variant=\"secondary\">{data.label}</Badge>;\n}\n\nconst NODE_TYPES = { step: StepNode, lane: LaneNode, stage: StageNode, round: RoundNode };\n/** The pinned components.flow.edge smoothstep edge between a step's right handle and the next step's left handle. */\nconst EDGE_TYPES = { smoothstep: SmoothStepEdge };\nconst EDGE_OPTIONS = { type: 'smoothstep' };\n/**\n * The initial zoom: step titles are the stock ItemTitle's 14px text, so 0.86 renders them at no less\n * than 12px. The view opens at the graph's top left (the lane labels) at that zoom; the stock\n * Controls and MiniMap pan and zoom from there, down to MIN_ZOOM, past the readable size.\n */\nconst READABLE_ZOOM = 0.86;\nconst MIN_ZOOM = 0.1;\n/** Screen inset of the opening view from the canvas's top left corner, in pixels. */\nconst INSET = 16;\n/** The stock Controls' fit-view button shows every step. */\nconst FIT_ALL = { padding: 0.04 };\n/** The stock attribution renders as the Panel below, so its words are Writer copy. */\nconst HIDE_ATTRIBUTION = { hideAttribution: true };\n\nconst list = (values: readonly string[], none: string) => values.length ? values.join(', ') : none;\n\n/** One step's facts in a stock shadcn Sheet on the right: a stock FieldGroup with one Field (title, then the value) per fact, so long values wrap; the command keeps the code style. Read-only. */\nfunction StepSheet({ step, copy, isOpen, onOpenChange }: { step: StepData; copy: PipelineFlowCopy; isOpen: boolean; onOpenChange: (open: boolean) => void }) {\n  const facts = step.facts;\n  return <Sheet isDismissable isOpen={isOpen} onOpenChange={onOpenChange}>\n    <SheetHeader>\n      <SheetTitle>{step.label}</SheetTitle>\n      <SheetDescription>{facts.holder.name}</SheetDescription>\n    </SheetHeader>\n    <FieldGroup className=\"px-4\">\n      <Field data-fact=\"round\"><FieldTitle>{copy.round}</FieldTitle><FieldDescription>{facts.round}</FieldDescription></Field>\n      <Field data-fact=\"stage\"><FieldTitle>{copy.stage}</FieldTitle><FieldDescription>{facts.stage}</FieldDescription></Field>\n      <Field data-fact=\"holder\"><FieldTitle>{copy.holder}</FieldTitle><FieldDescription>{facts.holder.name}</FieldDescription>\n        <ItemActions>\n          {facts.holder.kind ? <Badge variant=\"secondary\">{facts.holder.kind}</Badge> : null}\n          {facts.holder.tier ? <Badge variant=\"outline\">{facts.holder.tier}</Badge> : null}\n          <Badge variant=\"outline\" data-derived={facts.holder.derived ? '' : undefined}>{facts.holder.source}</Badge>\n        </ItemActions>\n      </Field>\n      <Field data-fact=\"command\"><FieldTitle>{copy.command}</FieldTitle><FieldDescription><code>{facts.command}</code></FieldDescription></Field>\n      <Field data-fact=\"inputs\"><FieldTitle>{copy.inputs}</FieldTitle><FieldDescription>{list(facts.inputs, copy.none)}</FieldDescription></Field>\n      <Field data-fact=\"outputs\"><FieldTitle>{copy.outputs}</FieldTitle><FieldDescription>{list(facts.outputs, copy.none)}</FieldDescription></Field>\n      <Field data-fact=\"options\"><FieldTitle>{copy.options}</FieldTitle><FieldDescription>{list(facts.options, copy.none)}</FieldDescription></Field>\n      <Field data-fact=\"seat\"><FieldTitle>{copy.seat}</FieldTitle><FieldDescription>{facts.seat ?? <Badge variant=\"outline\">{copy.openSeat}</Badge>}</FieldDescription></Field>\n      <Field data-fact=\"status\"><FieldTitle>{copy.status}</FieldTitle><FieldDescription><Badge variant=\"secondary\" data-status={facts.status}>{copy.statuses[facts.status]}</Badge></FieldDescription></Field>\n    </FieldGroup>\n  </Sheet>;\n}\n\n/** `sections.producer.pipeline-flow`: the standard canvas-app layout, as a swimlane: lanes are WHO (one per seat holder), columns are WHEN (one per stage, grouped by round). graph.json rendered by @xyflow/react in a stock Card that fills the content area: components.flow.* step nodes with their status, one lane label per swim row, one round header above each round's columns, one stage header per column, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */\nexport default function PipelineFlowSection({ flow, ...provenance }: { flow: PipelineFlowInput } & { [marker: `data-clossys-${string}`]: string }) {\n  const { graph, copy, seat } = flow;\n  if (!graph.nodes.length) return <Card size=\"sm\" {...provenance}>\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{copy.emptyTitle}</CardTitle>\n      <CardDescription>{copy.emptyDescription}</CardDescription>\n    </CardHeader>\n  </Card>;\n  const steps: Node[] = graph.nodes.map(node => ({\n    ...node, type: 'step',\n    data: { ...node.data, kindLabel: copy.kinds[node.data.kind], copy, active: node.data.lane === seat },\n  }));\n  const fixed = { selectable: false, focusable: false, draggable: false, connectable: false, domAttributes: { 'aria-roledescription': copy.nodeRole } } as const;\n  const lanes: Node[] = graph.lanes.map(lane => ({\n    id: `lane:${lane.id}`, type: 'lane', position: lane.position, data: { label: copy.lanes[lane.id], active: lane.id === seat }, ...fixed,\n  }));\n  const stages: Node[] = graph.stages.map(stage => ({\n    id: `stage:${stage.id}`, type: 'stage', position: stage.position, data: { label: copy.stages[stage.id] }, ...fixed,\n  }));\n  const rounds: Node[] = graph.rounds.map(round => ({\n    id: `round:${round.id}`, type: 'round', position: round.position, data: { label: copy.rounds[round.id] }, ...fixed,\n  }));\n  // Open at the lane labels' and round headers' top left corner at the readable zoom.\n  const left = Math.min(...graph.lanes.map(lane => lane.position.x), ...graph.nodes.map(node => node.position.x));\n  const top = Math.min(...graph.rounds.map(round => round.position.y), ...graph.stages.map(stage => stage.position.y), ...graph.lanes.map(lane => lane.position.y), ...graph.nodes.map(node => node.position.y));\n  const viewport = { x: INSET - left * READABLE_ZOOM, y: INSET - top * READABLE_ZOOM, zoom: READABLE_ZOOM };\n  // Uncontrolled (defaultNodes, defaultEdges): React Flow keeps the measured node sizes, which the stock MiniMap draws from.\n  // The flow is read-only and mounts once graph.json has loaded (the empty state renders until then).\n  // The stock Card is the canvas's frame and fills the content area below the page's header rows (flex-1); the canvas fills the Card.\n  // A new highlighted lane (`?seat=`) remounts the uncontrolled flow with that lane's nodes marked.\n  return <Card size=\"sm\" className=\"flex-1\" {...provenance}>\n    <ReactFlow key={seat ?? ''} aria-label={copy.label} defaultNodes={[...rounds, ...stages, ...lanes, ...steps]} defaultEdges={[...graph.edges]} nodeTypes={NODE_TYPES} edgeTypes={EDGE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}\n      ariaLabelConfig={copy.aria} proOptions={HIDE_ATTRIBUTION}\n      nodesDraggable={false} nodesConnectable={false} selectionKeyCode={null} multiSelectionKeyCode={null} defaultViewport={viewport} minZoom={MIN_ZOOM}>\n      <Background />\n      <Controls position=\"bottom-left\" showInteractive={false} fitViewOptions={FIT_ALL} />\n      <MiniMap position=\"bottom-right\" pannable zoomable />\n      {/* React Flow's own attribution, kept as its stock panel and link, with Writer words. */}\n      <Panel position=\"bottom-right\" className=\"react-flow__attribution\"><a href=\"https://reactflow.dev\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label={copy.attributionLabel}>{copy.attribution}</a></Panel>\n    </ReactFlow>\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"producer-pipeline-flow\",\n  \"type\": \"registry:block\",\n  \"title\": \"Pipeline Flow\",\n  \"description\": \"graph.json rendered by @xyflow/react inside a stock Card as a swimlane: lanes are the seat holders (the pipeline roster, plus Unassigned while any step has no holder), columns are the stages, grouped by round: one stock secondary Badge round header above each round's stage columns, and the stages as stock outline Badges under it; one components.flow.base-node per step wrapped in the React Flow UI NodeStatusIndicator, its header the stock shadcn Item; a seat in the URL highlights that lane with stock Item and Badge variants; the pinned smoothstep edge, stock Controls and MiniMap; selecting a step opens a read-only shadcn Sheet whose facts (stage, holder with kind, tier and file or derived source) are stock Field label + value pairs.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [\n    \"@xyflow/react\"\n  ],\n  \"registryDependencies\": [\n    \"components.badge\",\n    \"components.card\",\n    \"components.field\",\n    \"components.flow.base-node\",\n    \"components.flow.canvas\",\n    \"components.flow.edge\",\n    \"components.flow.labeled-handle\",\n    \"components.flow.node-status\",\n    \"components.item\",\n    \"components.sheet\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/producer-pipeline-flow/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.producer.pipeline-flow",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.field",
+          "files": [
+            "registry/aria-nova/ui/field.tsx",
+            "registry/aria-nova/ui/label.tsx"
+          ]
+        },
+        {
+          "slot": "components.flow.base-node",
+          "files": [
+            "base-node.tsx"
+          ]
+        },
+        {
+          "slot": "components.flow.canvas",
+          "files": [
+            "flow-canvas.ts"
+          ]
+        },
+        {
+          "slot": "components.flow.edge",
+          "files": [
+            "flow-edge.ts"
+          ]
+        },
+        {
+          "slot": "components.flow.labeled-handle",
+          "files": [
+            "labeled-handle.tsx"
+          ]
+        },
+        {
+          "slot": "components.flow.node-status",
+          "files": [
+            "node-status-indicator.tsx"
+          ]
+        },
+        {
+          "slot": "components.item",
+          "files": [
+            "registry/aria-nova/ui/item.tsx"
+          ]
+        },
+        {
+          "slot": "components.sheet",
+          "files": [
+            "registry/aria-nova/ui/sheet.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:235e0768e8517097d733065a3a70e735a110efd347807daaba248e49dc577c87",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "producer-pipeline-flow",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.producer.pipeline-flow",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT; React Flow UI (xyflow/xyflow), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "SEEN-COPY"
+      },
+      "reason": "SEEN-COPY (planner): every word the flow renders is Writer copy: the handle counts, node and edge role descriptions, edge names, React Flow keyboard help, Controls and MiniMap labels (ariaLabelConfig) and the attribution link (stock Panel, hideAttribution); no id fallback for lane, stage or round headers. planner 2026-11-04 (SEEN-COPY).",
+      "createdAt": "2026-11-04T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {
+          "@xyflow/react": "12.12.1"
+        },
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.pipeline.flow-label",
+          "studio.pipeline.kind.plumb",
+          "studio.pipeline.kind.decide-creative",
+          "studio.pipeline.kind.decide-judgment",
+          "studio.pipeline.lane.director",
+          "studio.pipeline.lane.designer",
+          "studio.pipeline.lane.writer",
+          "studio.pipeline.lane.publisher",
+          "studio.pipeline.lane.producer",
+          "studio.pipeline.lane.code",
+          "studio.pipeline.lane.owner",
+          "studio.pipeline.empty.title",
+          "studio.pipeline.empty.description",
+          "studio.pipeline.step.command",
+          "studio.pipeline.step.inputs",
+          "studio.pipeline.step.outputs",
+          "studio.pipeline.step.options",
+          "studio.pipeline.step.seat",
+          "studio.pipeline.step.status",
+          "studio.pipeline.step.none",
+          "studio.pipeline.seat.open",
+          "studio.pipeline.status.ready",
+          "studio.pipeline.status.pending",
+          "studio.pipeline.lane.you",
+          "studio.pipeline.lane.checks",
+          "studio.pipeline.lane.unassigned",
+          "studio.pipeline.stage.brief",
+          "studio.pipeline.stage.select",
+          "studio.pipeline.stage.make",
+          "studio.pipeline.stage.pin",
+          "studio.pipeline.stage.assemble",
+          "studio.pipeline.stage.check",
+          "studio.pipeline.stage.publish",
+          "studio.pipeline.step.stage",
+          "studio.pipeline.step.holder",
+          "studio.pipeline.seat.derived",
+          "studio.pipeline.seat.file",
+          "studio.team.kind.you",
+          "studio.team.kind.ai",
+          "studio.team.kind.code",
+          "studio.team.tier.low",
+          "studio.team.tier.mid",
+          "studio.team.tier.high",
+          "studio.team.tier-open",
+          "studio.pipeline.round.direct",
+          "studio.pipeline.round.design",
+          "studio.pipeline.round.publish",
+          "studio.pipeline.step.round",
+          "studio.flow.node-role",
+          "studio.flow.edge-role",
+          "studio.flow.edge-label",
+          "studio.flow.attribution",
+          "studio.flow.attribution-label",
+          "studio.flow.node-description",
+          "studio.flow.node-description-keyboard",
+          "studio.flow.node-moved",
+          "studio.flow.edge-description",
+          "studio.flow.controls",
+          "studio.flow.zoom-in",
+          "studio.flow.zoom-out",
+          "studio.flow.fit-view",
+          "studio.flow.interactive",
+          "studio.flow.minimap",
+          "studio.flow.handle",
+          "studio.pipeline.step.inputs-count",
+          "studio.pipeline.step.outputs-count"
+        ],
+        "themeVars": [
+          "--background",
+          "--card",
+          "--card-foreground",
+          "--border",
+          "--radius",
+          "--muted-foreground",
+          "--ring",
+          "--secondary",
+          "--popover",
+          "--popover-foreground",
+          "--foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

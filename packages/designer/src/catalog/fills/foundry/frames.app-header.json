@@ -1,0 +1,166 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.app-header",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#PageBar",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.app-header",
+      "source": "foundry",
+      "sourceAddress": "./blocks#PageBar",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "app-header": {
+      "composes": [
+        "components.button",
+        "components.dialog",
+        "components.icon",
+        "components.link",
+        "components.menu",
+        "components.popover",
+        "components.semantic-content",
+        "components.toggle-button"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.dialog",
+          "components.icon",
+          "components.link",
+          "components.menu",
+          "components.popover",
+          "components.semantic-content",
+          "components.toggle-button"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.dialog",
+            "components.icon",
+            "components.link",
+            "components.menu",
+            "components.popover",
+            "components.semantic-content",
+            "components.toggle-button"
+          ],
+          "themes": [
+            "themes.primary"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/frame-header-layout.ts",
+            "sha256": "30f6f578ba60d142b3cf6aebe98151e24f36a490fc857f57ae44642513ef5761"
+          },
+          {
+            "path": "packages/designer/src/blocks/frame-navigation.ts",
+            "sha256": "fd8e4f554ec87389b5c411e2624e2ccac29222eddd9e75ee7993962b071e40e9"
+          },
+          {
+            "path": "packages/designer/src/blocks/page-bar-layout.ts",
+            "sha256": "63a563d79f47cd30a1c30f59a146c57197361fb33ace739df71fe5cd58765d8a"
+          },
+          {
+            "path": "packages/designer/src/blocks/PageBar.tsx",
+            "sha256": "8e068a21259de806129cc0d0d6f9ffa7a6ad5e2e02329314b0b08ac44141d316"
+          },
+          {
+            "path": "packages/designer/src/blocks/shell-menu.tsx",
+            "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/frame-header-options.ts",
+            "sha256": "f71b58c6ee2f652a2058b3f58cb938735c16aaf1cbe39a139e158e15e132fb0a"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          },
+          {
+            "path": "packages/designer/src/icons/Check.ts",
+            "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronDown.ts",
+            "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/page-bar-layout.ts",
+            "line": 1
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
+            "file": "packages/designer/src/blocks/PageBar.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Check.js#Check",
+            "file": "packages/designer/src/blocks/PageBar.tsx",
+            "line": 8
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "PageBar",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [
+        "fallback.opaque",
+        "position.static",
+        "position.sticky",
+        "surface.glass"
+      ],
+      "propMap": {
+        "fallback.opaque": "surface=glass",
+        "position.static": "position=static",
+        "position.sticky": "position=sticky",
+        "surface.glass": "surface=glass"
+      },
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.primary"
+        ]
+      },
+      "slot": "frames.app-header",
+      "slots": {
+        "actions": "page.actions",
+        "context": "context",
+        "info": "page",
+        "trail": "page.breadcrumb"
+      },
+      "statePorts": {}
+    }
+  }
+}

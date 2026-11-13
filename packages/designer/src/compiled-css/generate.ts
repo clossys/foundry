@@ -13,7 +13,7 @@
  * calls its own compiler. The declarations this produces are BYTE-FOR-BYTE
  * what Tailwind itself would generate for the same candidates against the
  * same theme — this is not a second, hand-maintained approximation of what
- * `bg-accent` means, it is Tailwind's own answer, precompiled instead of
+ * `bg-primary` means, it is Tailwind's own answer, precompiled instead of
  * compiled at a consumer's own build time. That is what makes this
  * boundary smaller than it looks: it is the SAME first (Tailwind-native)
  * path, not a second styling system with its own semantics to keep in sync
@@ -60,7 +60,7 @@
  * module reads `theme.css` from disk UNCHANGED (stripping only its own
  * `@import "./tokens.css"` line — see below) specifically so that
  * liveness survives the precompile step too: `compiled.css`'s generated
- * `.bg-accent` rule reads `var(--color-accent, oklch(...))` exactly like
+ * `.bg-primary` rule reads `var(--primary, oklch(...))` exactly like
  * the Tailwind-native path's own generated CSS would, so a brand override
  * applied to the SAME `--color-accent` custom property `tokens.css`
  * declares is picked up identically on both paths — this is not a
@@ -150,7 +150,7 @@ const GENERATED_FILE_HEADER = `/* ═══════════════�
  * \`npm test\` — \`src/compiled-css/check.test.ts\` runs the same
  * re-derive-and-diff check as part of this package's ordinary test suite.
  *
- * Scope: \`atoms\`, \`blocks\`, and \`shell\` — enough for a pre-auth page
+ * Scope: \`components\`, \`blocks\`, and \`shell\` — enough for a pre-auth page
  * (Hero, feature blocks, site chrome) on the default \`tokens.css\` +
  * \`compiled.css\` path without Tailwind. \`charts\` and \`theme\` remain
  * Tailwind-native only.
@@ -307,6 +307,36 @@ function stripThemeReflectionBlock(css: string): string {
 }
 
 /**
+ * A plain (non-inline) `@theme` key — `theme-keys.css`'s `--spacing`, which
+ * the stock shadcn parts multiply as `calc(var(--spacing) * n)` — is read by
+ * the generated utilities through a BARE `var(--key)`, and its only
+ * declaration is the reflection block stripped above. Left alone, a consumer
+ * on the documented `tokens.css` + `compiled.css` path gets no value for it
+ * (every `max-w-40`, `h-8`, `gap-1` rule silently invalid). This restores
+ * the contract this file's header states — every generated utility resolves
+ * from a literal fallback without the reflection block — by rewriting each
+ * bare read of a key the stripped block declared with a LITERAL value (no
+ * `var()`; live keys such as `--primary` stay exactly as Tailwind emitted
+ * them) to `var(--key, <literal>)`, the value read from the same raw output,
+ * never hand-copied.
+ */
+function addFallbacksForStrippedThemeLiterals(css: string, rawCss: string): string {
+  const start = rawCss.indexOf(":root, :host {");
+  const end = rawCss.indexOf("}", start);
+  if (start === -1 || end === -1) return css;
+  const literals = new Map<string, string>();
+  for (const m of rawCss.slice(start, end).matchAll(/(--[a-zA-Z0-9_-]+)\s*:\s*([^;{}]+);/g)) {
+    const value = (m[2] as string).trim();
+    if (!value.includes("var(")) literals.set(m[1] as string, value);
+  }
+  if (literals.size === 0) return css;
+  return css.replace(/var\(\s*(--[a-zA-Z0-9_-]+)\s*\)/g, (whole, name: string) => {
+    const value = literals.get(name);
+    return value === undefined ? whole : `var(${name}, ${value})`;
+  });
+}
+
+/**
  * Tailwind v4's own internal `--tw-*` custom properties (`--tw-border-
  * style`, `--tw-content`, `--tw-translate-x`, ...) are read via a BARE
  * `var(--tw-x)` with no fallback argument — verified against this
@@ -355,7 +385,7 @@ function addExplicitFallbacksForInternalProperties(css: string): string {
  * package.json's `peerDependenciesMeta`) — optional so a token-only or
  * `compiled.css`-only consumer never needs it. This module (see its own
  * header) is the one place in this package that imports the real
- * `tailwindcss` package, and — unlike `atoms/index.ts` and friends — it is
+ * `tailwindcss` package, and — unlike `components/index.ts` and friends — it is
  * a repository-internal build tool with no `exports` subpath of its own,
  * so it is never reachable by an external consumer, browser or otherwise;
  * the Node-only `resolveInstalledPeerVersion` is safe to use here
@@ -384,7 +414,7 @@ export async function generateCompiledCss(options: GenerateCompiledCssOptions): 
   });
 
   const rawCss = compiled.build(options.candidates);
-  const stripped = stripThemeReflectionBlock(rawCss);
+  const stripped = addFallbacksForStrippedThemeLiterals(stripThemeReflectionBlock(rawCss), rawCss);
   const withFallbacks = addExplicitFallbacksForInternalProperties(stripped);
   const finalCss = GENERATED_FILE_HEADER + BASE_LAYER_CSS + withFallbacks.trimStart();
 

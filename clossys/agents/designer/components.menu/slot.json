@@ -1,0 +1,102 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.menu",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.actions",
+    "l2": "actions-menus",
+    "order": 97
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Menu",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "presentation.popup",
+        "presentation.inline",
+        "selection.none",
+        "selection.single",
+        "selection.multiple"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.shadow",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono",
+        "themes.tracking-tight",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": [
+        "assets.icon-check",
+        "assets.icon-chevron-right"
+      ]
+    },
+    "composes": [
+      "components.button",
+      "components.popover"
+    ],
+    "apg": "menu",
+    "memberRoots": {
+      "presentation.popup": "rac:Menu",
+      "presentation.inline": "rac:Menu"
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-check",
+    "assets.icon-chevron-right",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.accent-foreground",
+    "themes.border",
+    "themes.destructive",
+    "themes.foreground",
+    "themes.muted-foreground",
+    "themes.popover",
+    "themes.popover-foreground",
+    "themes.radius",
+    "themes.shadow",
+    "themes.spacing"
+  ],
+  "uses": [
+    "assets.icon-check",
+    "assets.icon-chevron-right"
+  ]
+}

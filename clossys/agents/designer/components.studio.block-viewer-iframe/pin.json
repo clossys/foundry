@@ -1,0 +1,12 @@
+{
+  "candidate": "block-viewer-iframe-v6.json",
+  "sha256": "e7643b5b21c9e4934b088c03b54b63a9178478140ac9fc8b23ac97a514240550",
+  "decidedBy": "agent:designer",
+  "basis": "agent",
+  "at": "2026-11-13T04:09:16.459Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6844299301",
+    "at": "2026-11-13T04:46:19.008Z"
+  }
+}

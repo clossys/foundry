@@ -1,0 +1,264 @@
+{
+  "benchmark": {
+    "disabled": [
+      "var(--ui-alpha-disabled, 0.5)"
+    ],
+    "focus": [
+      "var(--ui-border-focus, 2px) solid var(--color-focus-ring)",
+      "var(--ui-ring-focus, 0 0 0 2px var(--color-accent, oklch(0.4748 0 0)))"
+    ],
+    "target": [
+      "control-h-md",
+      "var(--ui-layout-tap-target, 44px)"
+    ]
+  },
+  "slots": {
+    "tag-group": {
+      "parts": [
+        {
+          "disabled": null,
+          "focus": "var(--ui-ring-focus, 0 0 0 2px var(--color-accent, oklch(0.4748 0 0)))",
+          "forcedColors": true,
+          "inDisabledState": false,
+          "keyboard": true,
+          "literalPaint": [],
+          "part": "tag",
+          "pressable": true,
+          "scenario": "removable+disabled",
+          "spacing": [
+            "gap-xs",
+            "px-sm"
+          ],
+          "target": "control-h-md"
+        },
+        {
+          "disabled": null,
+          "focus": "var(--ui-border-focus, 2px) solid var(--color-focus-ring)",
+          "forcedColors": true,
+          "inDisabledState": false,
+          "keyboard": true,
+          "literalPaint": [],
+          "part": "remove",
+          "pressable": true,
+          "scenario": "removable+disabled",
+          "spacing": [],
+          "target": "control-h-md"
+        },
+        {
+          "disabled": "var(--ui-alpha-disabled, 0.5)",
+          "focus": null,
+          "forcedColors": true,
+          "inDisabledState": true,
+          "keyboard": false,
+          "literalPaint": [],
+          "part": "tag-disabled",
+          "pressable": true,
+          "scenario": "removable+disabled",
+          "spacing": [
+            "gap-xs",
+            "px-sm"
+          ],
+          "target": "control-h-md"
+        }
+      ],
+      "scenarios": [
+        "removable+disabled"
+      ]
+    },
+    "toolbar": {
+      "parts": [
+        {
+          "disabled": null,
+          "focus": null,
+          "forcedColors": false,
+          "inDisabledState": false,
+          "keyboard": false,
+          "literalPaint": [],
+          "part": "strip",
+          "pressable": false,
+          "scenario": "orientation=horizontal",
+          "spacing": [
+            "gap-sm",
+            "p-sm"
+          ],
+          "target": null
+        },
+        {
+          "disabled": null,
+          "focus": "var(--ui-border-focus, 2px) solid var(--color-focus-ring)",
+          "forcedColors": true,
+          "inDisabledState": false,
+          "keyboard": true,
+          "literalPaint": [],
+          "part": "control",
+          "pressable": true,
+          "scenario": "orientation=horizontal",
+          "spacing": [
+            "gap-sm",
+            "px-md"
+          ],
+          "target": "control-h-md"
+        },
+        {
+          "disabled": "var(--ui-alpha-disabled, 0.5)",
+          "focus": null,
+          "forcedColors": false,
+          "inDisabledState": true,
+          "keyboard": false,
+          "literalPaint": [],
+          "part": "control-disabled",
+          "pressable": true,
+          "scenario": "orientation=horizontal",
+          "spacing": [
+            "gap-sm",
+            "px-md"
+          ],
+          "target": "control-h-md"
+        },
+        {
+          "disabled": null,
+          "focus": "var(--ui-border-focus, 2px) solid var(--color-focus-ring)",
+          "forcedColors": true,
+          "inDisabledState": false,
+          "keyboard": true,
+          "literalPaint": [],
+          "part": "control-arrowed",
+          "pressable": true,
+          "scenario": "orientation=horizontal",
+          "spacing": [
+            "gap-sm",
+            "px-md"
+          ],
+          "target": "control-h-md"
+        },
+        {
+          "disabled": null,
+          "focus": null,
+          "forcedColors": false,
+          "inDisabledState": false,
+          "keyboard": false,
+          "literalPaint": [],
+          "part": "strip",
+          "pressable": false,
+          "scenario": "orientation=vertical",
+          "spacing": [
+            "gap-sm",
+            "p-sm"
+          ],
+          "target": null
+        },
+        {
+          "disabled": null,
+          "focus": "var(--ui-border-focus, 2px) solid var(--color-focus-ring)",
+          "forcedColors": true,
+          "inDisabledState": false,
+          "keyboard": true,
+          "literalPaint": [],
+          "part": "control",
+          "pressable": true,
+          "scenario": "orientation=vertical",
+          "spacing": [
+            "gap-sm",
+            "px-md"
+          ],
+          "target": "control-h-md"
+        },
+        {
+          "disabled": "var(--ui-alpha-disabled, 0.5)",
+          "focus": null,
+          "forcedColors": false,
+          "inDisabledState": true,
+          "keyboard": false,
+          "literalPaint": [],
+          "part": "control-disabled",
+          "pressable": true,
+          "scenario": "orientation=vertical",
+          "spacing": [
+            "gap-sm",
+            "px-md"
+          ],
+          "target": "control-h-md"
+        },
+        {
+          "disabled": null,
+          "focus": "var(--ui-border-focus, 2px) solid var(--color-focus-ring)",
+          "forcedColors": true,
+          "inDisabledState": false,
+          "keyboard": true,
+          "literalPaint": [],
+          "part": "control-arrowed",
+          "pressable": true,
+          "scenario": "orientation=vertical",
+          "spacing": [
+            "gap-sm",
+            "px-md"
+          ],
+          "target": "control-h-md"
+        }
+      ],
+      "scenarios": [
+        "orientation=horizontal",
+        "orientation=vertical"
+      ]
+    },
+    "tree": {
+      "parts": [
+        {
+          "disabled": null,
+          "focus": "var(--ui-ring-focus, 0 0 0 2px var(--color-accent, oklch(0.4748 0 0)))",
+          "forcedColors": true,
+          "inDisabledState": false,
+          "keyboard": true,
+          "literalPaint": [],
+          "part": "row",
+          "pressable": true,
+          "scenario": "nested+disabled+selection=single",
+          "spacing": [],
+          "target": "var(--ui-layout-tap-target, 44px)"
+        },
+        {
+          "disabled": null,
+          "focus": "var(--ui-ring-focus, 0 0 0 2px var(--color-accent, oklch(0.4748 0 0)))",
+          "forcedColors": true,
+          "inDisabledState": false,
+          "keyboard": true,
+          "literalPaint": [],
+          "part": "row-nested",
+          "pressable": true,
+          "scenario": "nested+disabled+selection=single",
+          "spacing": [],
+          "target": "var(--ui-layout-tap-target, 44px)"
+        },
+        {
+          "disabled": null,
+          "focus": null,
+          "forcedColors": false,
+          "inDisabledState": false,
+          "keyboard": false,
+          "literalPaint": [],
+          "part": "chevron",
+          "pressable": true,
+          "scenario": "nested+disabled+selection=single",
+          "spacing": [],
+          "target": "control-h-md"
+        },
+        {
+          "disabled": "var(--ui-alpha-disabled, 0.5)",
+          "focus": null,
+          "forcedColors": true,
+          "inDisabledState": true,
+          "keyboard": false,
+          "literalPaint": [],
+          "part": "row-disabled",
+          "pressable": true,
+          "scenario": "nested+disabled+selection=single",
+          "spacing": [],
+          "target": "var(--ui-layout-tap-target, 44px)"
+        }
+      ],
+      "scenarios": [
+        "nested+disabled+selection=single"
+      ]
+    }
+  }
+}

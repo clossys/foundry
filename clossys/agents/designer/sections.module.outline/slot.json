@@ -1,0 +1,54 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.module.outline",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 241
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.module.outline",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Outline module: the open page's own sections in page order; a click brings one into view and the section in view is highlighted.",
+    "inputs": [
+      {
+        "name": "outline",
+        "kind": "data",
+        "required": true,
+        "description": "The page's sections (label, target selector), the active target and the select callback."
+      }
+    ],
+    "limits": {
+      "items": 12
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "command",
+        "version": "4.23.0",
+        "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/command.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "flow"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "components.command"
+  ]
+}

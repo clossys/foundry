@@ -53,6 +53,26 @@ export function toScreen(viewport: Viewport, world: CanvasPoint): CanvasPoint {
   const result = { x: world.x * viewport.zoom + viewport.x, y: world.y * viewport.zoom + viewport.y };
   point(result); return result;
 }
+/**
+ * A frame-level gesture owner asks the canvas surface it routes to for a zoom
+ * at the surface center. `detail.factor` multiplies the current zoom.
+ */
+export const CANVAS_ZOOM_REQUEST_EVENT = "canvaszoomrequest";
+export interface CanvasZoomRequestDetail { readonly factor: number }
+/**
+ * Zoom rate per wheel pixel: one 100px mouse-wheel notch scales the camera by about 9%
+ * (e^0.09), so stepping through zoom stays controllable. Every wheel owner shares it.
+ */
+export const CANVAS_WHEEL_ZOOM_RATE = 0.0009;
+/** One wheel normalization for every owner: line and page deltas, capped so each factor stays finite. */
+export function wheelZoomFactor(deltaY: number, deltaMode: number, pageHeight: number): number {
+  const units = deltaMode === 1 ? 16 : deltaMode === 2 ? pageHeight : 1;
+  return Math.exp(-Math.max(-1000, Math.min(1000, deltaY * units)) * CANVAS_WHEEL_ZOOM_RATE);
+}
+/** Safari `GestureEvent.scale` is cumulative from gesturestart; each change applies its ratio to the last. */
+export function gestureZoomFactor(scale: number, previous: number): number {
+  return Number.isFinite(scale) && scale > 0 && Number.isFinite(previous) && previous > 0 ? scale / previous : 1;
+}
 /** Scale around a screen-space anchor without moving the world point underneath it. */
 export function zoomAt(viewport: Viewport, anchor: CanvasPoint, factor: number): Viewport {
   const world = toWorld(viewport, anchor);

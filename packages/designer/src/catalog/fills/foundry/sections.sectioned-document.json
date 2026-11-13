@@ -1,0 +1,638 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.sectioned-document",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./web#SectionedView",
+        "package": "@clossys/publisher",
+        "version": "0.13.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.sectioned-document",
+      "source": "foundry",
+      "sourceAddress": "./web#SectionedView",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "sectioned-document": {
+      "composes": [
+        "components.avatar",
+        "components.badge",
+        "components.card",
+        "components.disclosure",
+        "components.icon",
+        "components.item",
+        "components.link",
+        "components.semantic-content",
+        "components.status-mark",
+        "sections.content",
+        "sections.media",
+        "sections.pricing",
+        "sections.section-header"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.avatar",
+          "components.badge",
+          "components.card",
+          "components.disclosure",
+          "components.icon",
+          "components.item",
+          "components.link",
+          "components.semantic-content",
+          "components.status-mark",
+          "sections.content",
+          "sections.media",
+          "sections.pricing",
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.avatar",
+            "components.badge",
+            "components.card",
+            "components.disclosure",
+            "components.icon",
+            "components.item",
+            "components.link",
+            "components.semantic-content",
+            "components.status-mark"
+          ],
+          "themes": [
+            "themes.accent",
+            "themes.font-mono",
+            "themes.primary"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/AnatomyCallouts.tsx",
+            "sha256": "369afcc611c838492059dd1eb24252c597d4369d484ff15d16428337fa7a6394"
+          },
+          {
+            "path": "packages/designer/src/blocks/Faq.server.tsx",
+            "sha256": "118303fe0fc3de43066fc6a37ad5315821834db2b17db4f9f2cbc930bef30644"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/block-vars.ts",
+            "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/disclosure-heading-level.client.tsx",
+            "sha256": "30eba436a64603496037e89a0ecf667217dfcfd84ccb9681f117d11d27cb5108"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/disclosure-heading-level.tsx",
+            "sha256": "06bc5832ee25528b4f4f6285247a44e90a30c43b9e217e42d4aecc33f974dddf"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/disclosure-row.server.tsx",
+            "sha256": "03de0efe80f1db3b2b984ffb56a27f6968c20104b87dc94c94fd0e7c7bc0351f"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/disclosure-row.tsx",
+            "sha256": "37049aa1c7e9a2d5f6f884a0aadf2697250180c85a26b4712be02de0b19b167b"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/ledger-data.ts",
+            "sha256": "967d06a6d841ed270a66c39ffe8aaef762ea2c695265cfcd38095a45379d294c"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/ledger-ids.ts",
+            "sha256": "5da5c03842196b121a48d3f1844f0f97d88e023973462f441827b5a1d72aef3c"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/trend.ts",
+            "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/anatomy.tsx",
+            "sha256": "8ca317930c5ff082b03ea9b016b5acd590921a2241edcaa8166ebce644b0965f"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/Items.server.tsx",
+            "sha256": "fbff14142220857e2394b2e416268f0b3f96b8cb82044025c629c7dddf72ed2c"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/Items.tsx",
+            "sha256": "d8fa5e1146c7200797cee5a14970c8a87133ba77e15402fd864218fe245fc683"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/ItemsStatic.tsx",
+            "sha256": "5960ebcfe2394927f14a489d004d6a6b3460382dc26dd2839a2c69e19dbc6f59"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/link-safety.ts",
+            "sha256": "620c4e1c13c25e6a64e00e29ef677422734f8689d25539062b413ea505358297"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/order-classes.ts",
+            "sha256": "ad18d9bf94966b8576a616848b72b49f754359a270ea16ed3813feab05f4a395"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/order.tsx",
+            "sha256": "9e9f4388417aad04a9de7bd3ade3c089864cba58236a548086ca7e382992441f"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/policies.ts",
+            "sha256": "5f5021cbedb8dc65384c4ca045e164f644f7acd536835f8f5a8a3f5b2df0bdc3"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/render.tsx",
+            "sha256": "17b25a4de0142df0be62b7bebdd7f2405f97f9f59fb1b7ed14fd849f36d44b63"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/reveal-policy.tsx",
+            "sha256": "5d3449708b7ad7d0b9b264f2babf2453cb975befd46245e92e7e878726930d48"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/reveal.server.tsx",
+            "sha256": "b0eafb2a2cf1804a1eebd2b8422cefaa7cd61290d221df811da9448af7458d4e"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/reveal.tsx",
+            "sha256": "b0fc30cd5a5132feda5e41fa028025f3616c47b9ec57d627cc315d5a435f940d"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/StockItem.tsx",
+            "sha256": "d87b3dc36d2d89670e599cd0c7c13321fab5cfcbafb8ce160248113880c21370"
+          },
+          {
+            "path": "packages/designer/src/blocks/ledger-rows.tsx",
+            "sha256": "92c54874012bc8fd01eab44e054edb6fd8e0493f8471dabba1ec31660899568e"
+          },
+          {
+            "path": "packages/designer/src/blocks/Matrix.server.tsx",
+            "sha256": "17390517e76ce9591faadceaa1ff0275d38ec2b538f57b6a34b88017637fd791"
+          },
+          {
+            "path": "packages/designer/src/blocks/matrix/grid.tsx",
+            "sha256": "bf0a1ea6bac2c18ce864a684a3413cf49980ad56bb0ef945b15c0879fd7b3faa"
+          },
+          {
+            "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
+            "sha256": "8e50bf8776d3ff31b3f5a4ad08c1b889cb7850b578363c45b20a7f8de70bf323"
+          },
+          {
+            "path": "packages/designer/src/blocks/matrix/static.tsx",
+            "sha256": "e2eaa654c57e0daba8c2c11ef796bad9e31614dd17ce795f23179f71c13983fb"
+          },
+          {
+            "path": "packages/designer/src/blocks/RecordLedger.tsx",
+            "sha256": "d543ae4aa3394e4ea2b3012000e2936231dc54509d2b68cae1991a9cd983d05a"
+          },
+          {
+            "path": "packages/designer/src/blocks/scene/geometry.ts",
+            "sha256": "3a48ab21b68a3fe13468c34465140b893c6fde7316b3332a9a0f7e5b4a731483"
+          },
+          {
+            "path": "packages/designer/src/blocks/scene/Scene.tsx",
+            "sha256": "22d1272815f1071959c0b8e380aa4544bbd5901f09a540197f73fc7b6522c007"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
+          },
+          {
+            "path": "packages/designer/src/blocks/specimen/parts.tsx",
+            "sha256": "899b12a57c040ab0c723c8ad6f71ac8b2c613b79424daa319bfc3e193e192f47"
+          },
+          {
+            "path": "packages/designer/src/blocks/specimen/Specimen.tsx",
+            "sha256": "0091357fd15a59387ff9f75defb3bd1e2e0e210f81a046a85ca912ab76879798"
+          },
+          {
+            "path": "packages/designer/src/blocks/specimen/SpecimenPanel.tsx",
+            "sha256": "1d9bffc48aba55c2958d21235056bc477561c56fc31e85b6953a9177d027546b"
+          },
+          {
+            "path": "packages/designer/src/blocks/Stat.tsx",
+            "sha256": "cd084edd1fa77d9da716cda0325b082fcc682b3bf17da8fe0b432197f0abbbe4"
+          },
+          {
+            "path": "packages/designer/src/blocks/stretched-link.tsx",
+            "sha256": "20c899ae1a637fe6ece7a4a7bca2f94065462d7fcb3a0d09a24fea28c275fd8f"
+          },
+          {
+            "path": "packages/designer/src/blocks/Testimonial.server.tsx",
+            "sha256": "d470dd9fd5a2208a1fe249acfde1990a28b5235d8a35ebef8b93b26577e92bb3"
+          },
+          {
+            "path": "packages/designer/src/blocks/Testimonial.tsx",
+            "sha256": "26fdf7117bf1f3b4f9a614a63f6f137eed1dd93259e896bc290d827ddb62bc83"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/avatar-initials.ts",
+            "sha256": "df6c2becd0a3196515d10f976c6dbabb17e103bd5a7cb9a9dd526e8fdf493f27"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          },
+          {
+            "path": "packages/designer/src/components/Meter.server.tsx",
+            "sha256": "6722cde47d126ee4de73605604d041277089293991b1551be3f76a46e150234c"
+          },
+          {
+            "path": "packages/designer/src/components/preview-runtime/components/_parts/utils/index.ts",
+            "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+          },
+          {
+            "path": "packages/designer/src/components/preview-runtime/components/avatar/avatar.tsx",
+            "sha256": "b689552fb97ab80ed221ca6ef1495f38ecf5e5f99b60ddd819938b2456b00b51"
+          },
+          {
+            "path": "packages/designer/src/components/surface-tones.ts",
+            "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
+          },
+          {
+            "path": "packages/designer/src/icons/ArrowRight.ts",
+            "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+          },
+          {
+            "path": "packages/designer/src/icons/Briefcase.ts",
+            "sha256": "dab81f836f47fc08fa113053b3f8cbfd1331e3cce6485c42a71cf73311166394"
+          },
+          {
+            "path": "packages/designer/src/icons/Building2.ts",
+            "sha256": "c774892a801f2765135e929313deb96d44b62ea6ad21d03178a261686ed655a0"
+          },
+          {
+            "path": "packages/designer/src/icons/Calendar.ts",
+            "sha256": "a1e5fc91fbad729410ac3637f2be8a37951ddb30f4a552c5ff9f0b7430fe569a"
+          },
+          {
+            "path": "packages/designer/src/icons/Check.ts",
+            "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronRight.ts",
+            "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+          },
+          {
+            "path": "packages/designer/src/icons/Clock.ts",
+            "sha256": "1c2f0abc0105b9902bfe89c3d79b7493f80b0d9aa2674a44b55909ae56306bfd"
+          },
+          {
+            "path": "packages/designer/src/icons/FileCheck.ts",
+            "sha256": "93cb25323e680b6e02d37fe076b9672cc2cf91c4f7bb9cf9d41757ba16344f82"
+          },
+          {
+            "path": "packages/designer/src/icons/FileText.ts",
+            "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+          },
+          {
+            "path": "packages/designer/src/icons/Folder.ts",
+            "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+          },
+          {
+            "path": "packages/designer/src/icons/Globe.ts",
+            "sha256": "fe5d866c8220c13289d604f83fca685f0cfe8b4bf66c17dbf66dc21ff2dcd8e2"
+          },
+          {
+            "path": "packages/designer/src/icons/Landmark.ts",
+            "sha256": "defe18c0251260c4f6e44882f36756daba7aaa6544b5c35794c59e0baefeb384"
+          },
+          {
+            "path": "packages/designer/src/icons/Layers.ts",
+            "sha256": "b59dcca2c5d4bbea7050a85b895eff429370bf5bdd005189c75c0d648e92d59b"
+          },
+          {
+            "path": "packages/designer/src/icons/Lock.ts",
+            "sha256": "baaf147a4a1580802e2cecd2598df14c060fc829191a64af549a42ae175b15c2"
+          },
+          {
+            "path": "packages/designer/src/icons/Receipt.ts",
+            "sha256": "e718142acbdde5943a83cff95c85d38db1776c83bf406178ff549a94cde7d092"
+          },
+          {
+            "path": "packages/designer/src/icons/Scale.ts",
+            "sha256": "714f4f993e88b1f58945144d4767f9bec3876e52be5bdac1ae212a7ee5372df6"
+          },
+          {
+            "path": "packages/designer/src/icons/Search.ts",
+            "sha256": "85a680f4b9b2a41659159f5c3a825fec027443760fc8527ca570c3ec646fa6a3"
+          },
+          {
+            "path": "packages/designer/src/icons/ShieldCheck.ts",
+            "sha256": "17dd064d3a3c7cd9ab4d006dcea05d9127f5b248d13c164cf0dde2a7d24091a4"
+          },
+          {
+            "path": "packages/designer/src/icons/Users.ts",
+            "sha256": "f5ba36adeb1462a29cfcf8edd3f7456756756449d73fdbb91948ce1ac4939104"
+          },
+          {
+            "path": "packages/designer/src/runtime/absent-peer.ts",
+            "sha256": "1da7688cd478f99a721e0d0668d9df4a1d4ec22e334f1cd01203cdcc0df87f17"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          },
+          {
+            "path": "packages/designer/src/runtime/stock-link-button.tsx",
+            "sha256": "dbd9a375c078056fada73ec9b9c9b928fbb6dbc4e95afd73201d9e15213622cc"
+          },
+          {
+            "path": "packages/publisher/src/content/copy-provenance.ts",
+            "sha256": "40f7b9c7aae31e85532b69ae0791ef29373f17e83c2ef14a64f6a9332848433f"
+          },
+          {
+            "path": "packages/publisher/src/core/content-asset.ts",
+            "sha256": "3cac86a74516e1427500dc9bccb85b80b56d213cb6dedd44072e31ef38acb4f3"
+          },
+          {
+            "path": "packages/publisher/src/core/content-contract.ts",
+            "sha256": "09bf7b0fd9da5bbf3d21fee0b0e03957071d98c4f6ccd464ad265cbaa63d19c5"
+          },
+          {
+            "path": "packages/publisher/src/core/content-ground.ts",
+            "sha256": "188f61cf5c113d5e10131e36d674127ff0890a1a3c5a2240a5b8c294c371b48b"
+          },
+          {
+            "path": "packages/publisher/src/core/page-flow.ts",
+            "sha256": "62296b40af038bf92c4712903c38ce3132b8dd8bdafbce24fb63718b4ca952d8"
+          },
+          {
+            "path": "packages/publisher/src/core/sectioned-view.ts",
+            "sha256": "468b3ab707bb368a621716c1cbcd59ba2ffbf82182f7e120694c696a6805f31b"
+          },
+          {
+            "path": "packages/publisher/src/core/status-list-catalog.ts",
+            "sha256": "4ccbf551c74b16104476d703aa0e94060699ebf77dc836622df388cd04177896"
+          },
+          {
+            "path": "packages/publisher/src/internal/assets.ts",
+            "sha256": "28c51738e07dbe31d56c834b46e8e963b0812b332da1e8b3182f62a0f196dd41"
+          },
+          {
+            "path": "packages/publisher/src/internal/href.ts",
+            "sha256": "36c0690b4f606166f36ae1dd7a042674977126be921223e058d3df7346c096cc"
+          },
+          {
+            "path": "packages/publisher/src/internal/prose-text.ts",
+            "sha256": "2b608bac5f11fdfdf991ca27f89dc96a57a917066a81248c46d4ae0c98c71d85"
+          },
+          {
+            "path": "packages/publisher/src/web/buildAssetElement.tsx",
+            "sha256": "05563ac6324f7b29b7572ed2a8244099917db6ea939882f427a3839518b02619"
+          },
+          {
+            "path": "packages/publisher/src/web/views/landingViewGrounds.ts",
+            "sha256": "47a8c7c89733995dde15f1abf2c8113be9908214eccdf53abfeca312e69e6cb7"
+          },
+          {
+            "path": "packages/publisher/src/web/views/SectionedView.tsx",
+            "sha256": "123838b28855b25223f38e1d267991cc705b54389ce23ae16ae4d75f2dec50b3"
+          },
+          {
+            "path": "packages/publisher/src/web/views/SectionedViewActions.tsx",
+            "sha256": "60b1088bc24c781308b4c06776e70905754d09cff439dc7bfddf6fb5c39d8271"
+          },
+          {
+            "path": "packages/publisher/src/web/views/SectionedViewBlocks.tsx",
+            "sha256": "29e9280b60b2bb082f3a9a0321557ba69b6771da5c4b9be2d4d93edfc1af1282"
+          },
+          {
+            "path": "packages/publisher/src/web/views/SectionedViewCanonical.ts",
+            "sha256": "a619a40546ff87889d253cafd2a6a08e107c25e472bd0b129bec9244e9050625"
+          },
+          {
+            "path": "packages/publisher/src/web/views/SectionedViewContent.tsx",
+            "sha256": "b220c4f7a123b7d2465b0c3ba05f5e270ab9ce50d7b5f2974a42b0270af1e96b"
+          },
+          {
+            "path": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "sha256": "f084f29902e4439720050ec0d9e0aa603d6275f4416533381fa005b81a805964"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/blocks/internal/disclosure-heading-level.tsx",
+            "line": 5
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/ArrowRight.js#ArrowRight",
+            "file": "packages/designer/src/blocks/items/order.tsx",
+            "line": 5
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/items/order.tsx",
+            "line": 71
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/Check.js#Check",
+            "file": "packages/designer/src/blocks/matrix/static.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+            "file": "packages/designer/src/blocks/stretched-link.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/stock-link-button.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#ChevronRight",
+            "file": "packages/publisher/src/web/views/SectionedViewActions.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../../internal/errors.js#RenderError",
+            "file": "packages/publisher/src/web/views/SectionedViewContent.tsx",
+            "line": 15
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Briefcase",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Building2",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Calendar",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Clock",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#FileCheck",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#FileText",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Folder",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Globe",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Landmark",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Layers",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Lock",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Receipt",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Scale",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Search",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#ShieldCheck",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import @clossys/designer/icons#Users",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../../internal/errors.js#RenderError",
+            "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+            "line": 7
+          }
+        ]
+      },
+      "impl": {
+        "export": "SectionedView",
+        "kind": "package",
+        "module": "@clossys/publisher/web"
+      },
+      "license": "MIT",
+      "notes": [
+        "The required resolved document placement maps two native props: document and landmark. This is a placement mapping, not JSON type equivalence.",
+        "The host resolves the whole document before materialization; document.resolutions retains Writer provenance. This section owns no additional copy.",
+        "landmark must be none inside the parent SiteFrame main landmark. SectionedView preserves the authored section order and intro heading.",
+        "Asset-bearing documents additionally require the host runtime resolveAssetId callback, which this JSON-only candidate cannot serialize or supply."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./web#SectionedView",
+        "package": "@clossys/publisher",
+        "version": "0.13.0"
+      },
+      "propMap": {
+        "landmark.none": "./web#SectionedView.landmark=none"
+      },
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.accent",
+          "themes.font-mono",
+          "themes.primary"
+        ]
+      },
+      "slot": "sections.sectioned-document",
+      "slotMap": {
+        "document": "./web#SectionedView.document,landmark"
+      },
+      "source": "foundry"
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.logo",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.display",
+    "l2": "display-assets",
+    "order": 128
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "content.mark",
+        "content.lockup",
+        "size.sm",
+        "size.md",
+        "size.lg",
+        "ground.base",
+        "ground.inverse"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": [
+        "assets.mark",
+        "assets.lockup"
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.lockup",
+    "assets.mark",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent-foreground",
+    "themes.card-foreground",
+    "themes.foreground",
+    "themes.muted-foreground",
+    "themes.popover-foreground",
+    "themes.primary",
+    "themes.primary-foreground",
+    "themes.secondary-foreground",
+    "themes.sidebar-accent-foreground",
+    "themes.sidebar-foreground",
+    "themes.sidebar-primary-foreground"
+  ],
+  "uses": []
+}

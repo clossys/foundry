@@ -1,0 +1,101 @@
+{
+  "name": "command",
+  "type": "registry:block",
+  "title": "Command",
+  "registryDependencies": [
+    "button",
+    "command",
+    "example"
+  ],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "command-example.tsx",
+      "type": "registry:example",
+      "content": "\n\nimport * as React from \"react\"\n\nimport {\n  Example,\n  ExampleWrapper,\n} from \"@/components/example\"\nimport { Button } from \"@/components/ui/button\"\nimport { Card, CardContent } from \"@/components/ui/card\"\nimport {\n  Command,\n  CommandDialog,\n  CommandEmpty,\n  CommandGroup,\n  CommandInput,\n  CommandItem,\n  CommandList,\n  CommandSeparator,\n  CommandShortcut,\n} from \"@/components/ui/command\"\nimport { CalendarIcon, SmileIcon, CalculatorIcon, UserIcon, CreditCardIcon, SettingsIcon, HomeIcon, InboxIcon, FileTextIcon, FolderIcon, PlusIcon, FolderPlusIcon, CopyIcon, ScissorsIcon, ClipboardPasteIcon, TrashIcon, LayoutGridIcon, ListIcon, ZoomInIcon, ZoomOutIcon, BellIcon, HelpCircleIcon, ImageIcon, CodeIcon } from \"lucide-react\"\n\nexport default function CommandExample() {\n  return (\n    <ExampleWrapper>\n      <CommandInline />\n      <CommandBasic />\n      <CommandWithShortcuts />\n      <CommandWithGroups />\n      <CommandManyItems />\n    </ExampleWrapper>\n  )\n}\n\nfunction CommandInline() {\n  return (\n    <Example title=\"Inline\">\n      <Card className=\"w-full p-0\">\n        <CardContent className=\"p-0\">\n          <Command>\n            <CommandInput placeholder=\"Type a command or search...\" />\n            <CommandList\n              renderEmptyState={() => (\n                <CommandEmpty>No results found.</CommandEmpty>\n              )}\n            >\n              <CommandGroup heading=\"Suggestions\">\n                <CommandItem textValue=\"Calendar\">\n                  <CalendarIcon\n                  />\n                  <span>Calendar</span>\n                </CommandItem>\n                <CommandItem textValue=\"Search Emoji\">\n                  <SmileIcon\n                  />\n                  <span>Search Emoji</span>\n                </CommandItem>\n                <CommandItem textValue=\"Calculator\">\n                  <CalculatorIcon\n                  />\n                  <span>Calculator</span>\n                </CommandItem>\n              </CommandGroup>\n              <CommandSeparator />\n              <CommandGroup heading=\"Settings\">\n                <CommandItem textValue=\"Profile\">\n                  <UserIcon\n                  />\n                  <span>Profile</span>\n                  <CommandShortcut>⌘P</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Billing\">\n                  <CreditCardIcon\n                  />\n                  <span>Billing</span>\n                  <CommandShortcut>⌘B</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Settings\">\n                  <SettingsIcon\n                  />\n                  <span>Settings</span>\n                  <CommandShortcut>⌘S</CommandShortcut>\n                </CommandItem>\n              </CommandGroup>\n            </CommandList>\n          </Command>\n        </CardContent>\n      </Card>\n    </Example>\n  )\n}\n\nfunction CommandBasic() {\n  const [open, setOpen] = React.useState(false)\n\n  return (\n    <Example title=\"Basic\">\n      <div className=\"flex flex-col gap-4\">\n        <Button\n          onPress={() => setOpen(true)}\n          variant=\"outline\"\n          className=\"w-fit\"\n        >\n          Open Menu\n        </Button>\n        <CommandDialog open={open} onOpenChange={setOpen}>\n          <Command>\n            <CommandInput placeholder=\"Type a command or search...\" />\n            <CommandList\n              renderEmptyState={() => (\n                <CommandEmpty>No results found.</CommandEmpty>\n              )}\n            >\n              <CommandGroup heading=\"Suggestions\">\n                <CommandItem>Calendar</CommandItem>\n                <CommandItem>Search Emoji</CommandItem>\n                <CommandItem>Calculator</CommandItem>\n              </CommandGroup>\n            </CommandList>\n          </Command>\n        </CommandDialog>\n      </div>\n    </Example>\n  )\n}\n\nfunction CommandWithShortcuts() {\n  const [open, setOpen] = React.useState(false)\n\n  return (\n    <Example title=\"With Shortcuts\">\n      <div className=\"flex flex-col gap-4\">\n        <Button\n          onPress={() => setOpen(true)}\n          variant=\"outline\"\n          className=\"w-fit\"\n        >\n          Open Menu\n        </Button>\n        <CommandDialog open={open} onOpenChange={setOpen}>\n          <Command>\n            <CommandInput placeholder=\"Type a command or search...\" />\n            <CommandList\n              renderEmptyState={() => (\n                <CommandEmpty>No results found.</CommandEmpty>\n              )}\n            >\n              <CommandGroup heading=\"Settings\">\n                <CommandItem textValue=\"Profile\">\n                  <UserIcon\n                  />\n                  <span>Profile</span>\n                  <CommandShortcut>⌘P</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Billing\">\n                  <CreditCardIcon\n                  />\n                  <span>Billing</span>\n                  <CommandShortcut>⌘B</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Settings\">\n                  <SettingsIcon\n                  />\n                  <span>Settings</span>\n                  <CommandShortcut>⌘S</CommandShortcut>\n                </CommandItem>\n              </CommandGroup>\n            </CommandList>\n          </Command>\n        </CommandDialog>\n      </div>\n    </Example>\n  )\n}\n\nfunction CommandWithGroups() {\n  const [open, setOpen] = React.useState(false)\n\n  return (\n    <Example title=\"With Groups\">\n      <div className=\"flex flex-col gap-4\">\n        <Button\n          onPress={() => setOpen(true)}\n          variant=\"outline\"\n          className=\"w-fit\"\n        >\n          Open Menu\n        </Button>\n        <CommandDialog open={open} onOpenChange={setOpen}>\n          <Command>\n            <CommandInput placeholder=\"Type a command or search...\" />\n            <CommandList\n              renderEmptyState={() => (\n                <CommandEmpty>No results found.</CommandEmpty>\n              )}\n            >\n              <CommandGroup heading=\"Suggestions\">\n                <CommandItem textValue=\"Calendar\">\n                  <CalendarIcon\n                  />\n                  <span>Calendar</span>\n                </CommandItem>\n                <CommandItem textValue=\"Search Emoji\">\n                  <SmileIcon\n                  />\n                  <span>Search Emoji</span>\n                </CommandItem>\n                <CommandItem textValue=\"Calculator\">\n                  <CalculatorIcon\n                  />\n                  <span>Calculator</span>\n                </CommandItem>\n              </CommandGroup>\n              <CommandSeparator />\n              <CommandGroup heading=\"Settings\">\n                <CommandItem textValue=\"Profile\">\n                  <UserIcon\n                  />\n                  <span>Profile</span>\n                  <CommandShortcut>⌘P</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Billing\">\n                  <CreditCardIcon\n                  />\n                  <span>Billing</span>\n                  <CommandShortcut>⌘B</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Settings\">\n                  <SettingsIcon\n                  />\n                  <span>Settings</span>\n                  <CommandShortcut>⌘S</CommandShortcut>\n                </CommandItem>\n              </CommandGroup>\n            </CommandList>\n          </Command>\n        </CommandDialog>\n      </div>\n    </Example>\n  )\n}\n\nfunction CommandManyItems() {\n  const [open, setOpen] = React.useState(false)\n\n  return (\n    <Example title=\"Many Groups & Items\">\n      <div className=\"flex flex-col gap-4\">\n        <Button\n          onPress={() => setOpen(true)}\n          variant=\"outline\"\n          className=\"w-fit\"\n        >\n          Open Menu\n        </Button>\n        <CommandDialog open={open} onOpenChange={setOpen}>\n          <Command>\n            <CommandInput placeholder=\"Type a command or search...\" />\n            <CommandList\n              renderEmptyState={() => (\n                <CommandEmpty>No results found.</CommandEmpty>\n              )}\n            >\n              <CommandGroup heading=\"Navigation\">\n                <CommandItem textValue=\"Home\">\n                  <HomeIcon\n                  />\n                  <span>Home</span>\n                  <CommandShortcut>⌘H</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Inbox\">\n                  <InboxIcon\n                  />\n                  <span>Inbox</span>\n                  <CommandShortcut>⌘I</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Documents\">\n                  <FileTextIcon\n                  />\n                  <span>Documents</span>\n                  <CommandShortcut>⌘D</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Folders\">\n                  <FolderIcon\n                  />\n                  <span>Folders</span>\n                  <CommandShortcut>⌘F</CommandShortcut>\n                </CommandItem>\n              </CommandGroup>\n              <CommandSeparator />\n              <CommandGroup heading=\"Actions\">\n                <CommandItem textValue=\"New File\">\n                  <PlusIcon\n                  />\n                  <span>New File</span>\n                  <CommandShortcut>⌘N</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"New Folder\">\n                  <FolderPlusIcon\n                  />\n                  <span>New Folder</span>\n                  <CommandShortcut>⇧⌘N</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Copy\">\n                  <CopyIcon\n                  />\n                  <span>Copy</span>\n                  <CommandShortcut>⌘C</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Cut\">\n                  <ScissorsIcon\n                  />\n                  <span>Cut</span>\n                  <CommandShortcut>⌘X</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Paste\">\n                  <ClipboardPasteIcon\n                  />\n                  <span>Paste</span>\n                  <CommandShortcut>⌘V</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Delete\">\n                  <TrashIcon\n                  />\n                  <span>Delete</span>\n                  <CommandShortcut>⌫</CommandShortcut>\n                </CommandItem>\n              </CommandGroup>\n              <CommandSeparator />\n              <CommandGroup heading=\"View\">\n                <CommandItem textValue=\"Grid View\">\n                  <LayoutGridIcon\n                  />\n                  <span>Grid View</span>\n                </CommandItem>\n                <CommandItem textValue=\"List View\">\n                  <ListIcon\n                  />\n                  <span>List View</span>\n                </CommandItem>\n                <CommandItem textValue=\"Zoom In\">\n                  <ZoomInIcon\n                  />\n                  <span>Zoom In</span>\n                  <CommandShortcut>⌘+</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Zoom Out\">\n                  <ZoomOutIcon\n                  />\n                  <span>Zoom Out</span>\n                  <CommandShortcut>⌘-</CommandShortcut>\n                </CommandItem>\n              </CommandGroup>\n              <CommandSeparator />\n              <CommandGroup heading=\"Account\">\n                <CommandItem textValue=\"Profile\">\n                  <UserIcon\n                  />\n                  <span>Profile</span>\n                  <CommandShortcut>⌘P</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Billing\">\n                  <CreditCardIcon\n                  />\n                  <span>Billing</span>\n                  <CommandShortcut>⌘B</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Settings\">\n                  <SettingsIcon\n                  />\n                  <span>Settings</span>\n                  <CommandShortcut>⌘S</CommandShortcut>\n                </CommandItem>\n                <CommandItem textValue=\"Notifications\">\n                  <BellIcon\n                  />\n                  <span>Notifications</span>\n                </CommandItem>\n                <CommandItem textValue=\"Help & Support\">\n                  <HelpCircleIcon\n                  />\n                  <span>Help & Support</span>\n                </CommandItem>\n              </CommandGroup>\n              <CommandSeparator />\n              <CommandGroup heading=\"Tools\">\n                <CommandItem textValue=\"Calculator\">\n                  <CalculatorIcon\n                  />\n                  <span>Calculator</span>\n                </CommandItem>\n                <CommandItem textValue=\"Calendar\">\n                  <CalendarIcon\n                  />\n                  <span>Calendar</span>\n                </CommandItem>\n                <CommandItem textValue=\"Image Editor\">\n                  <ImageIcon\n                  />\n                  <span>Image Editor</span>\n                </CommandItem>\n                <CommandItem textValue=\"Code Editor\">\n                  <CodeIcon\n                  />\n                  <span>Code Editor</span>\n                </CommandItem>\n              </CommandGroup>\n            </CommandList>\n          </Command>\n        </CommandDialog>\n      </div>\n    </Example>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "frames.command",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/command-example@4.23.0"
+      ],
+      "hash": "sha256:46357c0ab3410253773513718349312e87d6f770604ed29dbe9782fbc04ee76e",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "command-example.tsx": "registry/aria-nova/examples/command-example.tsx"
+      }
+    },
+    "element": {
+      "id": "command",
+      "package": "designer",
+      "layer": "frames",
+      "slot": "frames.command",
+      "kind": "registry:example",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-2"
+      },
+      "reason": "Stock shadcn-aria/command-example@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for frames.command.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "button",
+          "command",
+          "example"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--shadow",
+          "--spacing",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--ring",
+          "--sidebar-ring",
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius"
+        ]
+      }
+    }
+  }
+}

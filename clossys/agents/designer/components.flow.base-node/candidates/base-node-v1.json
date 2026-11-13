@@ -1,0 +1,74 @@
+{
+  "name": "base-node",
+  "type": "registry:component",
+  "dependencies": [
+    "@xyflow/react"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2019-2025 webkid GmbH\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "base-node.tsx",
+      "type": "registry:component",
+      "content": "import type { ComponentProps } from \"react\";\n\nimport { cn } from \"@/lib/utils\";\n\nexport function BaseNode({ className, ...props }: ComponentProps<\"div\">) {\n  return (\n    <div\n      className={cn(\n        \"bg-card text-card-foreground relative rounded-md border\",\n        \"hover:ring-1\",\n        // React Flow displays node elements inside of a `NodeWrapper`\n        // component, which compiles down to a div with the class\n        // `react-flow__node`. When a node is selected, the class `selected` is\n        // added to the `react-flow__node` element. This allows us to style the\n        // node when it is selected.\n        \"in-[.selected]:border-muted-foreground\",\n        \"in-[.selected]:shadow-lg\",\n        className,\n      )}\n      tabIndex={0}\n      {...props}\n    />\n  );\n}\n\n/**\n * A container for a consistent header layout intended to be used inside the\n * `<BaseNode />` component.\n */\nexport function BaseNodeHeader({\n  className,\n  ...props\n}: ComponentProps<\"header\">) {\n  return (\n    <header\n      {...props}\n      className={cn(\n        \"mx-0 my-0 -mb-1 flex flex-row items-center justify-between gap-2 px-3 py-2\",\n        // Remove or modify these classes if you modify the padding in the\n        // `<BaseNode />` component.\n        className,\n      )}\n    />\n  );\n}\n\n/**\n * The title text for the node. To maintain a native application feel, the title\n * text is not selectable.\n */\nexport function BaseNodeHeaderTitle({\n  className,\n  ...props\n}: ComponentProps<\"h3\">) {\n  return (\n    <h3\n      data-slot=\"base-node-title\"\n      className={cn(\"user-select-none flex-1 font-semibold\", className)}\n      {...props}\n    />\n  );\n}\n\nexport function BaseNodeContent({\n  className,\n  ...props\n}: ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"base-node-content\"\n      className={cn(\"flex flex-col gap-y-2 p-3\", className)}\n      {...props}\n    />\n  );\n}\n\nexport function BaseNodeFooter({ className, ...props }: ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"base-node-footer\"\n      className={cn(\n        \"flex flex-col items-center gap-y-2 border-t px-3 pb-3 pt-2\",\n        className,\n      )}\n      {...props}\n    />\n  );\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.flow.base-node",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "reactflow/base-node@20261103"
+      ],
+      "hash": "sha256:4c5125009f11fb4fdb99bd2643f273317197bdc1248007ac4fdb02c2c2e7378b",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "base-node.tsx": "base-node.tsx"
+      }
+    },
+    "element": {
+      "id": "base-node",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.flow.base-node",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "CANVAS-PARTS"
+      },
+      "reason": "Stock React Flow UI reactflow/base-node@20261103 adopted unmodified (shadcn add-time alias normalization only) for components.flow.base-node; the approved-registry item the reference map marks direct for this slot.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {
+          "@xyflow/react": "12.12.1"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card",
+          "--card-foreground",
+          "--border",
+          "--ring",
+          "--muted-foreground"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,181 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.site-shell",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.page-shells",
+    "l2": "page-shells-documents",
+    "order": 228
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "div",
+    "landmarks": [
+      {
+        "slot": "header",
+        "role": "banner",
+        "topLevel": true,
+        "nameRequired": false
+      },
+      {
+        "slot": "main",
+        "role": "main",
+        "topLevel": true,
+        "nameRequired": false,
+        "id": "main-content",
+        "tabIndex": -1
+      },
+      {
+        "slot": "footer",
+        "role": "contentinfo",
+        "topLevel": true,
+        "nameRequired": false
+      },
+      {
+        "slot": "toasts",
+        "role": "region",
+        "topLevel": true,
+        "nameRequired": true
+      }
+    ],
+    "slots": [
+      {
+        "id": "skip-link",
+        "required": true,
+        "accepts": "host-node"
+      },
+      {
+        "id": "progress",
+        "required": false,
+        "accepts": "components.progress-bar"
+      },
+      {
+        "id": "consent",
+        "required": false,
+        "accepts": "sections.*"
+      },
+      {
+        "id": "header",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "main",
+        "required": true,
+        "accepts": "view"
+      },
+      {
+        "id": "footer",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "toasts",
+        "required": false,
+        "accepts": "components.toast"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "chrome.full",
+        "chrome.minimal",
+        "footer-placement.flow",
+        "footer-placement.overlay",
+        "header-placement.overlay"
+      ]
+    },
+    "statePorts": [],
+    "rendering": "server",
+    "breakpoints": [
+      "sm",
+      "md",
+      "lg",
+      "xl",
+      "2xl"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.primary",
+        "themes.sidebar-primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.shadow",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.tracking-tight",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": [
+        "assets.image"
+      ]
+    },
+    "composes": [
+      "frames.site-header",
+      "frames.site-footer",
+      "components.progress-bar",
+      "components.toast",
+      "components.avatar",
+      "components.badge",
+      "components.card",
+      "components.disclosure",
+      "components.icon",
+      "components.logo",
+      "components.semantic-content",
+      "components.status-mark"
+    ],
+    "skipTarget": "main-content"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.image",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent-foreground",
+    "themes.background",
+    "themes.border",
+    "themes.font-heading",
+    "themes.foreground",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.primary",
+    "themes.radius",
+    "themes.ring",
+    "themes.shadow",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.logo"
+  ]
+}

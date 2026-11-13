@@ -1,0 +1,37 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "assets.icon-organization",
+  "agent": "designer",
+  "ia": {
+    "l0": "assets",
+    "l1": "assets.icons",
+    "l2": "icons-objects",
+    "order": 72
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "asset",
+    "valueKind": "glyph",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "grid": 24
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": []
+}

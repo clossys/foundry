@@ -1,0 +1,155 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.pagination",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Pagination",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.pagination",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Pagination",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "mode.cursor",
+        "mode.load-more"
+      ]
+    }
+  },
+  "sections": {
+    "pagination": {
+      "composes": [
+        "components.button",
+        "components.field",
+        "components.icon",
+        "components.select",
+        "components.semantic-content"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.field",
+          "components.icon",
+          "components.select",
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [
+            "assets.icon-chevron-left",
+            "assets.icon-chevron-right"
+          ],
+          "components": [
+            "components.button",
+            "components.field",
+            "components.icon",
+            "components.select",
+            "components.semantic-content"
+          ],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Pagination.tsx",
+            "sha256": "6940f4d9c7da059ed79352cc68e50530e540b025a654c1279f1f9cf8381463e4"
+          },
+          {
+            "path": "packages/designer/src/blocks/stock-select.tsx",
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy-context.tsx",
+            "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy.ts",
+            "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../components/glyph-context.js#useGlyph",
+            "file": "packages/designer/src/blocks/Pagination.tsx",
+            "line": 5
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "Pagination",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Omitted labels and summary messages resolve the existing Writer pagination CopyRefs through the configured host resolver; no English fallback is shipped.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Pagination",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "mode.pages": "./blocks#Pagination.page"
+      },
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-left",
+          "assets.icon-chevron-right"
+        ],
+        "themes": []
+      },
+      "slot": "sections.pagination",
+      "slotMap": {
+        "page": "./blocks#Pagination.page",
+        "total": "./blocks#Pagination.totalItems"
+      },
+      "source": "foundry"
+    }
+  }
+}

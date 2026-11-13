@@ -27,33 +27,8 @@ const area = {
   width: 400,
   height: 200,
 };
-const heat = {
-  title: "Capacity",
-  description: "Capacity by team",
-  rows: ["East", "West"],
-  columns: ["Mon", "Tue"],
-  values: [
-    [0, 100],
-    [null, 50],
-  ],
-  width: 400,
-  height: 200,
-};
-const strip = {
-  title: "Uptime",
-  description: "Service history",
-  segments: [
-    { from: 0, to: 10, status: "ok" },
-    { from: 20, to: 40, status: "error" },
-  ],
-  domain: [0, 40],
-  width: 400,
-  height: 100,
-};
 const cases = [
   ["AreaChart", area],
-  ["Heatmap", heat],
-  ["StatusStrip", strip],
 ] as const;
 function plot(name: string, props: object) {
   return render(createElement(component(name), props));
@@ -72,13 +47,6 @@ describe("signature chart common contract", () => {
     const labels = { loading: "Chargement", empty: "Aucune donnée", missing: "Absent" };
     const { container } = plot(name, { ...props, loading: true, labels });
     expect(container.querySelector('[role="status"]')?.textContent).toBe("Chargement");
-  });
-  it("uses the same missing-value and accessible-name overrides throughout inspection and table data", () => {
-    const { container } = plot("Heatmap", { ...heat, activeIndex: 2, labels: { missing: "Absent", rowColumn: "Équipe", scale: (min: string, max: string) => `${min} à ${max}` } });
-    expect(container.querySelector('[data-chart-part="readout"]')?.textContent).toBe("West, Mon, Absent");
-    expect(rows(container)[1]).toEqual(["West", "Absent", "50"]);
-    expect(container.querySelector("th")?.textContent).toBe("Équipe");
-    expect(container.querySelector('[aria-label="0 à 100"]')).not.toBeNull();
   });
   it.each(cases)(
     "%s exposes accessible title, description and table fallback",
@@ -196,8 +164,6 @@ describe("signature chart common contract", () => {
   );
   it.each([
     ["AreaChart", { x: [], series: [] }],
-    ["Heatmap", { rows: [], columns: [], values: [] }],
-    ["StatusStrip", { segments: [] }],
   ])("%s exposes an empty state", (name, data) => {
     const { container } = plot(name as string, {
       title: "Empty",
@@ -215,8 +181,6 @@ describe("signature chart common contract", () => {
     );
     const fixtures = [
       { ...area, name: "AreaChart" },
-      { ...heat, name: "Heatmap" },
-      { ...strip, name: "StatusStrip" },
     ];
     const script = `import * as charts from ${JSON.stringify(entry)}; for (const {name,...props} of ${JSON.stringify(fixtures)}) { if(typeof charts[name]!=="function") throw new Error(name); const result=charts[name](props); if(!result) throw new Error(name+" empty"); } process.stdout.write("OK");`;
     expect(
@@ -455,249 +419,6 @@ describe("AreaChart", () => {
       expect(() =>
         renderToStaticMarkup(createElement(component("AreaChart"), props)),
       ).toThrow();
-  });
-});
-
-describe("Heatmap", () => {
-  it("maps min and max to the sequential ramp ends and displays every datum in the table", () => {
-    const { container } = plot("Heatmap", heat);
-    const cells = [...container.querySelectorAll('[role="gridcell"]')];
-    expect(cells).toHaveLength(4);
-    expect(cells[0]?.getAttribute("fill")).toContain(
-      "--color-chart-sequential-100",
-    );
-    expect(cells[1]?.getAttribute("fill")).toContain(
-      "--color-chart-sequential-700",
-    );
-    expect(cells.map((cell) => cell.getAttribute("aria-label"))).toEqual([
-      "East, Mon, 0",
-      "East, Tue, 100",
-      "West, Mon, No data",
-      "West, Tue, 50",
-    ]);
-    expect(rows(container)).toEqual([
-      ["East", "0", "100"],
-      ["West", "No data", "50"],
-    ]);
-    expect(
-      container.querySelectorAll('[data-chart-part="ramp-step"]'),
-    ).toHaveLength(7);
-  });
-  it("uses categorical identity and labels rather than a sequential numeric ramp", () => {
-    const { container } = plot("Heatmap", {
-      ...heat,
-      categorical: true,
-      values: [
-        ["Open", "Closed"],
-        [null, "Open"],
-      ],
-    });
-    const cells = [...container.querySelectorAll('[role="gridcell"]')];
-    expect(cells[0]?.getAttribute("fill")).toBe(cells[3]?.getAttribute("fill"));
-    expect(cells[0]?.getAttribute("fill")).not.toBe(
-      cells[1]?.getAttribute("fill"),
-    );
-    expect(
-      container.querySelector('[data-chart-part="categorical-legend"]')
-        ?.textContent,
-    ).toContain("Closed");
-    expect(container.querySelector('[data-chart-part="ramp-step"]')).toBeNull();
-  });
-  it("navigates grid cells with arrows, clamps edges, displays value on focus and selects by keyboard", () => {
-    const onActiveIndexChange = vi.fn(),
-      onSelectionChange = vi.fn();
-    const { container } = plot("Heatmap", {
-      ...heat,
-      onActiveIndexChange,
-      onSelectionChange,
-    });
-    const cells = [...container.querySelectorAll('[role="gridcell"]')];
-    fireEvent.focus(cells[0]!);
-    fireEvent.keyDown(cells[0]!, { key: "ArrowRight" });
-    expect(document.activeElement).toBe(cells[1]);
-    fireEvent.keyDown(cells[1]!, { key: "ArrowDown" });
-    expect(document.activeElement).toBe(cells[3]);
-    expect(
-      container.querySelector('[data-chart-part="readout"]')?.textContent,
-    ).toBe("West, Tue, 50");
-    fireEvent.keyDown(cells[3]!, { key: "ArrowRight" });
-    expect(document.activeElement).toBe(cells[3]);
-    fireEvent.keyDown(cells[3]!, { key: "Enter" });
-    expect(onSelectionChange).toHaveBeenLastCalledWith(3);
-    expect(onActiveIndexChange).toHaveBeenLastCalledWith(3);
-  });
-  it("keeps a controlled active cell until the host rerenders", () => {
-    const onActiveIndexChange = vi.fn();
-    const { container } = plot("Heatmap", {
-      ...heat,
-      activeIndex: 0,
-      onActiveIndexChange,
-    });
-    fireEvent.pointerEnter(container.querySelectorAll('[role="gridcell"]')[1]!);
-    expect(onActiveIndexChange).toHaveBeenCalledWith(1);
-    expect(
-      container.querySelector('[data-chart-part="readout"]')?.textContent,
-    ).toBe("East, Mon, 0");
-  });
-  it("handles constant and all-null data without nonfinite colours or missing labels", () => {
-    const { container, rerender } = plot("Heatmap", {
-      ...heat,
-      values: [
-        [4, 4],
-        [4, 4],
-      ],
-    });
-    expect(
-      [...container.querySelectorAll('[role="gridcell"]')].every((cell) =>
-        cell.getAttribute("fill")?.includes("--color-chart-sequential-100"),
-      ),
-    ).toBe(true);
-    rerender(
-      createElement(component("Heatmap"), {
-        ...heat,
-        values: [
-          [null, null],
-          [null, null],
-        ],
-      }),
-    );
-    expect(
-      [...container.querySelectorAll('[role="gridcell"]')].every((cell) =>
-        cell.getAttribute("aria-label")?.includes("No data"),
-      ),
-    ).toBe(true);
-    expect(container.innerHTML).not.toMatch(/NaN|Infinity/);
-  });
-  it("rejects ragged data and invalid sequential values", () => {
-    for (const values of [
-      [[1]],
-      [
-        [1, 2],
-        [3, "bad"],
-      ],
-      [
-        [1, Infinity],
-        [3, 4],
-      ],
-    ]) {
-      expect(() =>
-        renderToStaticMarkup(
-          createElement(component("Heatmap"), { ...heat, values }),
-        ),
-      ).toThrow();
-    }
-  });
-});
-
-describe("StatusStrip", () => {
-  it("scales interval widths, inserts explicit unknown gaps and names every interval", () => {
-    const { container } = plot("StatusStrip", strip);
-    const segments = [
-      ...container.querySelectorAll('[data-chart-part="segment"]'),
-    ];
-    expect(
-      segments.map((segment) => Number(segment.getAttribute("width"))),
-    ).toEqual([84, 84, 168]);
-    expect(
-      segments.map((segment) => segment.getAttribute("aria-label")),
-    ).toEqual(["ok: 0–10", "unknown: 10–20", "error: 20–40"]);
-    expect(rows(container)).toEqual([
-      ["0", "10", "ok"],
-      ["10", "20", "unknown"],
-      ["20", "40", "error"],
-    ]);
-  });
-  it("uses a visible label and unique pattern for every status including unknown", () => {
-    const segments = ["ok", "warn", "error", "unknown"].map(
-      (status, index) => ({ from: index, to: index + 1, status }),
-    );
-    const { container } = plot("StatusStrip", {
-      ...strip,
-      domain: [0, 4],
-      segments,
-    });
-    expect(
-      [...container.querySelectorAll('[data-chart-part="status-label"]')].map(
-        (label) => label.textContent,
-      ),
-    ).toEqual(["ok", "warn", "error", "unknown"]);
-    const fills = [
-      ...container.querySelectorAll('[data-chart-part="segment"]'),
-    ].map((segment) => segment.getAttribute("fill"));
-    expect(fills.every((fill) => fill?.startsWith("url(#"))).toBe(true);
-    expect(new Set(fills).size).toBe(4);
-    expect(container.querySelectorAll("pattern")).toHaveLength(4);
-  });
-  it("handles leading and trailing unknown periods and time intervals", () => {
-    const { container } = plot("StatusStrip", {
-      ...strip,
-      domain: [new Date(0), new Date(40)],
-      segments: [{ from: new Date(10), to: new Date(20), status: "warn" }],
-    });
-    expect(
-      container.querySelectorAll('[data-chart-part="segment"]'),
-    ).toHaveLength(3);
-    expect(rows(container).map((row) => row[2])).toEqual([
-      "unknown",
-      "warn",
-      "unknown",
-    ]);
-  });
-  it("exposes controlled inspection and selection without coupling to a table component", () => {
-    const onActiveIndexChange = vi.fn(),
-      onSelectionChange = vi.fn();
-    const { container } = plot("StatusStrip", {
-      ...strip,
-      activeIndex: 0,
-      onActiveIndexChange,
-      onSelectionChange,
-    });
-    const segment = container.querySelectorAll(
-      '[data-chart-part="segment"]',
-    )[2]!;
-    fireEvent.focus(segment);
-    fireEvent.click(segment);
-    expect(onActiveIndexChange).toHaveBeenCalledWith(2);
-    expect(onSelectionChange).toHaveBeenCalledWith(2);
-    expect(
-      container.querySelector('[data-chart-part="readout"]')?.textContent,
-    ).toBe("ok: 0–10");
-  });
-  it("rejects overlapping or reversed authored intervals", () => {
-    expect(() =>
-      renderToStaticMarkup(
-        createElement(component("StatusStrip"), {
-          ...strip,
-          segments: [{ from: 10, to: 0, status: "ok" }],
-        }),
-      ),
-    ).toThrow(/interval/i);
-    expect(() =>
-      renderToStaticMarkup(
-        createElement(component("StatusStrip"), {
-          ...strip,
-          segments: [
-            { from: 0, to: 20, status: "ok" },
-            { from: 10, to: 30, status: "warn" },
-          ],
-        }),
-      ),
-    ).toThrow(/overlap/i);
-  });
-  it("sorts intervals, retains an entirely unknown observation window and navigates segments", () => {
-    const { container, rerender } = plot("StatusStrip", {
-      ...strip,
-      segments: [...strip.segments].reverse(),
-    });
-    const first = container.querySelector('[data-chart-part="segment"]')!;
-    fireEvent.keyDown(first, { key: "End" });
-    expect(document.activeElement).toBe(
-      container.querySelectorAll('[data-chart-part="segment"]')[2],
-    );
-    rerender(
-      createElement(component("StatusStrip"), { ...strip, segments: [] }),
-    );
-    expect(rows(container)).toEqual([["0", "40", "unknown"]]);
   });
 });
 

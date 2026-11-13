@@ -4,7 +4,7 @@
  * `package.json#exports` subpaths is safe for.
  *
  * This is DATA, not logic. It records `"server-safe"` or `"client-only"`
- * per subpath, decided empirically (see `atoms/server.ts`,
+ * per subpath, decided empirically (see `components/server.ts`,
  * `blocks/server.ts`, `shell/server.ts`, `charts/server.ts`, and
  * `theme/server.ts` — each one's own header documents the
  * `node --conditions=react-server` probe that produced its verdict, run
@@ -60,18 +60,34 @@ export const RENDER_ENVIRONMENT: Readonly<Record<string, RenderEnvironment>> = {
   "./utilities.css": "server-safe",
   "./compiled.css": "server-safe",
   "./brand-template.css": "server-safe",
-  "./atoms": "client-only",
-  "./atoms/server": "server-safe",
+  "./specimen-frame.css": "server-safe",
+  "./components": "client-only",
+  "./components/server": "server-safe",
   "./icons": "server-safe",
   "./charts": "client-only",
   "./charts/server": "server-safe",
   "./blocks": "client-only",
-  // Includes the server Testimonial variant, composed with the server Avatar.
+  "./frames": "client-only",
+  // Includes the server Testimonial variant, composed with the stock Avatar root and fallback.
   "./blocks/server": "server-safe",
   "./shell": "client-only",
   "./shell/server": "server-safe",
   "./theme": "client-only",
   "./theme/server": "server-safe",
   "./gate": "server-safe",
+  "./catalog": "server-safe",
+  "./catalog-bundles": "server-safe",
+  "./catalog/server": "server-safe",
+  "./catalog/node": "server-safe",
+  "./catalog/dogfood/node": "server-safe",
+  "./studio": "client-only",
+  "./studio/queries": "server-safe",
+  "./studio/state": "client-only",
+  // Measured under --conditions=react-server (WD-REG): route.js reads useContext at module scope; the rest import cleanly.
+  "./studio/route": "client-only",
+  "./studio/route/server": "server-safe",
+  "./frames/error": "server-safe",
+  "./shadcn-flavor": "server-safe",
+  "./ref-verbatim": "server-safe",
   "./render-environment": "server-safe",
 };

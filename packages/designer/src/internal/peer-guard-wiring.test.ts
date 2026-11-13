@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 /**
- * `atoms/index.ts`, `blocks/index.ts`, `shell/index.ts`, `charts/index.ts`,
+ * `components/index.ts`, `blocks/index.ts`, `shell/index.ts`, `charts/index.ts`,
  * and `theme/index.ts` each call `assertPeerVersion` at module top level
  * (see their own doc comments, and `internal/peer-version.ts`'s header).
  * No other test in this package imports these barrels directly — every
@@ -13,14 +13,14 @@ import { describe, expect, it } from "vitest";
  * against a genuinely compatible install would fail here first.
  */
 // A generous timeout: importing each barrel transforms every component
-// file it re-exports (dozens, for `atoms/index.ts`), which is slow under
+// file it re-exports (dozens, for `components/index.ts`), which is slow under
 // vitest's on-the-fly transform the first time it happens, but is not a
 // hang — see each `it`'s own real duration once transformed.
 const BARREL_IMPORT_TIMEOUT_MS = 30_000;
 
 describe("component subpath barrels load cleanly with real, in-range installed peers", () => {
-  it("atoms/index.ts", async () => {
-    await expect(import("../atoms/index.js")).resolves.toBeDefined();
+  it("components/index.ts", async () => {
+    await expect(import("../components/index.js")).resolves.toBeDefined();
   }, BARREL_IMPORT_TIMEOUT_MS);
 
   it("blocks/index.ts", async () => {

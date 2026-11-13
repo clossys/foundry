@@ -1,0 +1,87 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.search-field",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-text",
+    "order": 104
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:SearchField",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "part.clear",
+        "part.submit",
+        "state.empty",
+        "state.filled"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.ring"
+      ],
+      "assets": [
+        "assets.icon-search",
+        "assets.icon-close"
+      ]
+    },
+    "composes": [
+      "components.button"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-close",
+    "assets.icon-search",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.border",
+    "themes.destructive",
+    "themes.input",
+    "themes.muted-foreground",
+    "themes.radius",
+    "themes.ring",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.button",
+    "themes.input"
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "name": "dialog",
+  "type": "registry:ui",
+  "registryDependencies": [
+    "button"
+  ],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "dialog.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  Dialog as DialogPrimitive,\n  DialogTrigger as DialogTriggerPrimitive,\n  Heading,\n  ModalOverlay as ModalOverlayPrimitive,\n  Modal as ModalPrimitive,\n  type DialogProps as DialogPrimitiveProps,\n  type DialogTriggerProps as DialogTriggerPrimitiveProps,\n  type ModalOverlayProps as ModalOverlayPrimitiveProps,\n} from \"react-aria-components\"\n\nimport { Button } from \"@/components/ui/button\"\nimport { XIcon } from \"lucide-react\"\n\nfunction DialogTrigger({ ...props }: DialogTriggerPrimitiveProps) {\n  return <DialogTriggerPrimitive data-slot=\"dialog-trigger\" {...props} />\n}\n\nfunction DialogClose({\n  className,\n  variant = \"outline\",\n  size = \"default\",\n  ...props\n}: React.ComponentProps<typeof Button>) {\n  return (\n    <Button\n      slot=\"close\"\n      data-slot=\"dialog-close\"\n      variant={variant}\n      size={size}\n      className={cn(className)}\n      {...props}\n    />\n  )\n}\n\nfunction DialogOverlay({\n  className,\n  children,\n  ...props\n}: Omit<ModalOverlayPrimitiveProps, \"className\" | \"children\"> & {\n  className?: string\n  children: React.ReactNode\n}) {\n  return (\n    <ModalOverlayPrimitive\n      data-slot=\"dialog-overlay\"\n      className={cn(\n        \"fixed inset-0 isolate z-50 bg-black/10 duration-100 data-entering:animate-in data-entering:fade-in-0 data-exiting:animate-out data-exiting:fade-out-0 supports-backdrop-filter:backdrop-blur-xs\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n    </ModalOverlayPrimitive>\n  )\n}\n\nfunction Dialog({\n  className,\n  children,\n  showCloseButton = true,\n  isDismissable = true,\n  ...props\n}: Omit<ModalOverlayPrimitiveProps, \"className\" | \"children\"> &\n  Pick<React.ComponentProps<typeof ModalPrimitive>, \"isDismissable\"> & {\n    className?: string\n    children: React.ReactNode\n    showCloseButton?: boolean\n  }) {\n  return (\n    <DialogOverlay isDismissable={isDismissable} {...props}>\n      <ModalPrimitive\n        data-slot=\"dialog-content\"\n        className={cn(\n          \"fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-entering:animate-in data-entering:fade-in-0 data-entering:zoom-in-95 data-exiting:animate-out data-exiting:fade-out-0 data-exiting:zoom-out-95 sm:max-w-sm\",\n          className\n        )}\n      >\n        <DialogPrimitive\n          data-slot=\"dialog\"\n          className=\"[display:inherit] [gap:inherit] outline-none\"\n        >\n          {children}\n          {showCloseButton && (\n            <DialogClose\n              variant=\"ghost\"\n              className=\"absolute top-2 right-2\"\n              size=\"icon-sm\"\n            >\n              <XIcon\n              />\n              <span className=\"sr-only\">Close</span>\n            </DialogClose>\n          )}\n        </DialogPrimitive>\n      </ModalPrimitive>\n    </DialogOverlay>\n  )\n}\n\nfunction DialogHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"dialog-header\"\n      className={cn(\"flex flex-col gap-2\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction DialogFooter({\n  className,\n  showCloseButton = false,\n  children,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  showCloseButton?: boolean\n}) {\n  return (\n    <div\n      data-slot=\"dialog-footer\"\n      className={cn(\n        \"-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n      {showCloseButton && <DialogClose variant=\"outline\">Close</DialogClose>}\n    </div>\n  )\n}\n\nfunction DialogTitle({\n  className,\n  ...props\n}: Omit<React.ComponentProps<typeof Heading>, \"slot\">) {\n  return (\n    <Heading\n      slot=\"title\"\n      data-slot=\"dialog-title\"\n      className={cn(\n        \"font-heading text-base leading-none font-medium\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction DialogDescription({\n  className,\n  ...props\n}: Omit<React.ComponentProps<\"div\">, \"slot\">) {\n  return (\n    <div\n      data-slot=\"dialog-description\"\n      className={cn(\n        \"text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  type DialogPrimitiveProps,\n  type DialogTriggerPrimitiveProps,\n  Dialog,\n  DialogClose,\n  DialogDescription,\n  DialogFooter,\n  DialogHeader,\n  DialogOverlay,\n  DialogTitle,\n  DialogTrigger,\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.dialog",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/dialog@4.23.0"
+      ],
+      "hash": "sha256:8535339d00a591c14c7083205c6a05839cc7890ac7c542f0f08c0afad0d37653",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "dialog.tsx": "registry/aria-nova/ui/dialog.tsx"
+      }
+    },
+    "element": {
+      "id": "dialog",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.dialog",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "COMPONENT-FIXTURES"
+      },
+      "reason": "COMPONENT-FIXTURES: dialog-v1 code unchanged (sha256:f684f93f36ccb6c1db0f67e71868f0af6db4540a37fb78d330db91318d116ca8); adds a preview fixture whose element tree composes the component's own exports with plain sample text, so the Studio card shows a realistic specimen.",
+      "createdAt": "2026-11-03T12:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "button"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--shadow",
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono",
+          "--ring",
+          "--sidebar-ring"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "dialog.tsx",
+        "export": "DialogTrigger",
+        "props": {
+          "defaultOpen": true,
+          "children": [
+            "Edit profile",
+            {
+              "$component": "Dialog",
+              "props": {
+                "className": "sm:max-w-md"
+              },
+              "children": [
+                {
+                  "$component": "DialogHeader",
+                  "children": [
+                    {
+                      "$component": "DialogTitle",
+                      "children": [
+                        "Edit profile"
+                      ]
+                    },
+                    {
+                      "$component": "DialogDescription",
+                      "children": [
+                        "Make changes to your profile here. Click save when you're done."
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "$component": "DialogFooter",
+                  "children": [
+                    {
+                      "$component": "DialogClose",
+                      "props": {
+                        "variant": "outline"
+                      },
+                      "children": [
+                        "Cancel"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

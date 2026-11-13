@@ -1,0 +1,77 @@
+{
+  "name": "specimen-frame",
+  "type": "registry:component",
+  "dependencies": [
+    "cn"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "specimen-frame.tsx",
+      "type": "registry:component",
+      "content": "// Studio specimen frame: the shadcn aspect-ratio box (shadcn-aria aspect-ratio@4.23.0,\n// `relative aspect-(--ratio)`) holding the BlockViewer iframe. The ratio is a Designer layout token.\nimport type { ComponentProps } from \"react\"\nimport { cn } from \"cn\"\n\nconst SPECIMEN_RATIO = {\n  thumbnail: \"aspect-(--specimen-ratio-thumbnail)\",\n  mobile: \"aspect-(--specimen-ratio-mobile)\",\n  tablet: \"aspect-(--specimen-ratio-tablet)\",\n  desktop: \"aspect-(--specimen-ratio-desktop)\",\n} as const\n\nexport type SpecimenRatio = keyof typeof SPECIMEN_RATIO\n\n/** A fixed-ratio specimen window: the framed page fills it and never sets the box's height. */\nfunction SpecimenFrame({ src, title, ratio = \"thumbnail\", interactive = false, className, ...props }: Omit<ComponentProps<\"div\">, \"children\"> & {\n  src: string\n  title: string\n  ratio?: SpecimenRatio\n  /** Thumbnails are inert so the card link owns every pointer and focus event. */\n  interactive?: boolean\n}) {\n  return (\n    <div\n      data-slot=\"specimen-frame\"\n      className={cn(\"relative w-full overflow-hidden rounded-md border bg-background\", SPECIMEN_RATIO[ratio], className)}\n      {...props}\n    >\n      <iframe title={title} src={src} loading=\"lazy\" inert={!interactive} className=\"absolute inset-0 size-full border-0\" />\n    </div>\n  )\n}\n\nexport { SpecimenFrame }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.studio.specimen-frame",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "{\"registry\":\"shadcn-aria\",\"item\":\"aspect-ratio\",\"version\":\"4.23.0\",\"hash\":\"sha256:694009e544a67e457e0258bbc0298b0f71d2da21d3c321db7a9647c5a2040b6c\",\"url\":\"https://ui.shadcn.com/r/styles/aria-nova/aspect-ratio.json\"}"
+      ],
+      "license": "MIT",
+      "hash": "sha256:bca3638e4a47b0b50018eb73dc45705e48a1a9710f4dd18d68054ebc910cfb65"
+    },
+    "element": {
+      "id": "specimen-frame",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.studio.specimen-frame",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE round 3 (D1): the aspect-ratio box holding an inert specimen iframe, its ratio a Designer layout token. Created through the Designer create path as a component-layer slot that installs into @clossys/designer-ui (src/components/specimen-frame.tsx); the Foundry extension under src/foundry re-exports it only.",
+      "createdAt": "2026-11-05T09:30:30.076Z",
+      "deps": {
+        "npm": {
+          "react": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--border",
+          "--background",
+          "--radius"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "specimen-frame.tsx",
+        "export": "SpecimenFrame",
+        "props": {
+          "src": "about:blank",
+          "title": "Specimen preview",
+          "ratio": "thumbnail",
+          "className": "max-w-xs"
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

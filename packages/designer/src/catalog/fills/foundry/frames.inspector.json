@@ -1,0 +1,165 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.inspector",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#InspectorFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.inspector",
+      "source": "foundry",
+      "sourceAddress": "./frames#InspectorFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "inspector": {
+      "composes": [
+        "components.button",
+        "components.card",
+        "components.resize-handle",
+        "components.semantic-content",
+        "frames.sheet"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.card",
+          "components.resize-handle",
+          "components.semantic-content",
+          "frames.sheet"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.card",
+            "components.resize-handle",
+            "components.semantic-content"
+          ],
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.ring",
+            "themes.sidebar"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Panel.tsx",
+            "sha256": "2e53e8b3ccec984228fe9221674caf627d37c4a8b025cb2bb88f1368b8abb455"
+          },
+          {
+            "path": "packages/designer/src/blocks/ResizablePane.tsx",
+            "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/ground-paint.ts",
+            "sha256": "fa0ccf04c141467fffaf0ef138ca32ba86bf908f02b92161ad34237c3f62b0f7"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/frames/InspectorFrame.tsx",
+            "sha256": "473370994ae457d2410eef5fc9259ab7a3cd830d8b7e52b22fe1b65d2be40526"
+          },
+          {
+            "path": "packages/designer/src/frames/right-panel-config.ts",
+            "sha256": "61e568622459344a0fd1fc8737d8b3a11af155f929f18c743cc8b3bfc836570b"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/frames/right-panel-config.ts",
+            "line": 1
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "InspectorFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [
+        "presentation.collapsed",
+        "presentation.docked",
+        "presentation.overlay"
+      ],
+      "propMap": {
+        "presentation.collapsed": "collapsed=true",
+        "presentation.docked": "presentation=docked",
+        "presentation.overlay": "presentation=overlay"
+      },
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.ring",
+          "themes.sidebar"
+        ]
+      },
+      "slot": "frames.inspector",
+      "slots": {
+        "content": "children"
+      },
+      "statePorts": {
+        "collapsed": "collapsed/onCollapsedChange",
+        "max": "max",
+        "min": "min",
+        "step": "step",
+        "width": "value/onChange"
+      }
+    }
+  }
+}

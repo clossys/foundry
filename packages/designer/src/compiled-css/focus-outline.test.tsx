@@ -2,10 +2,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Banner } from "../atoms/Banner.js";
+import { NoticeList } from "../blocks/NoticeList.js";
 import { Faq } from "../blocks/Faq.server.js";
 import { Home } from "../icons/index.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
+import { ShellCopyTestHost } from "../frames/__fixtures__/shell-copy.js";
 
 const compiledCss = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
 
@@ -22,7 +23,7 @@ function ruleBody(selector: string): string {
 const outlineNoneRule = ruleBody(".outline-none");
 const focusWidthRule = ruleBody(".focus-visible\\:outline-2:focus-visible");
 const focusOffsetRule = ruleBody(".focus-visible\\:outline-offset-2:focus-visible");
-const focusColorRule = ruleBody(".focus-visible\\:outline-accent:focus-visible");
+const focusColorRule = ruleBody(".focus-visible\\:outline-primary:focus-visible");
 
 function resolvedFocusOutlineStyle(className: string): string {
   const poisonedStyle = /--tw-outline-style:\s*([^;]+);/.exec(outlineNoneRule)?.[1]?.trim();
@@ -32,24 +33,27 @@ function resolvedFocusOutlineStyle(className: string): string {
 }
 
 describe("compiled focus-outline cascade", () => {
-  it("resolves a paintable outline for Banner dismiss, server-native FAQ controls and SiteHeader.ActionLink", () => {
+  it("resolves a paintable outline for NoticeList dismiss, server FAQ disclosure triggers and SiteHeader.ActionLink", () => {
     const { container } = render(
       <>
-        <Banner onDismiss={() => {}}>Notice</Banner>
+        <NoticeList label="Notices" notices={[{ id: "n", message: "Notice" }]} onDismiss={() => {}} dismissLabel="Dismiss" />
         <Faq items={[{ id: "one", question: "Question", answer: "Answer" }]} />
         <SiteHeader.ActionLink href="/" label="Home" icon={Home} />
       </>,
+      { wrapper: ShellCopyTestHost },
     );
     const controls = [
       screen.getByRole("button", { name: "Dismiss" }),
-      container.querySelector("details > summary"),
+      container.querySelector('button[slot="trigger"][aria-controls]'),
       screen.getByRole("link", { name: "Home" }),
     ];
 
     expect(outlineNoneRule).toMatch(/--tw-outline-style:\s*none/);
     expect(focusWidthRule).toMatch(/outline-width:\s*2px/);
     expect(focusOffsetRule).toMatch(/outline-offset:\s*2px/);
-    expect(focusColorRule).toMatch(/outline-color:\s*var\(--color-accent/);
+    // planner:wd-reg: after the P0 shadcn reset --color-primary is var(--primary) (theme-keys.css, 931102357) and the legacy
+    // brand/action colour maps to primary (legacy-color-map.json); the emitted brand CSS defines --primary in both modes.
+    expect(focusColorRule).toMatch(/outline-color:\s*var\(--primary\)/);
     for (const control of controls) {
       expect(control).toBeInstanceOf(HTMLElement);
       expect(resolvedFocusOutlineStyle((control as HTMLElement).className)).toBe("solid");

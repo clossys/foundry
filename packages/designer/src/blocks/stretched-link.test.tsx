@@ -79,7 +79,7 @@ describe("linked items (stretched link)", () => {
           expect(chevron.previousElementSibling).toHaveAttribute("aria-hidden", "true");
           expect(chevron.previousElementSibling?.textContent).toBe(" ");
           expect(link).toHaveClass("quiet-action", "after:absolute", "after:z-10", "focus-visible:after:outline-2", "focus-visible:after:outline-offset-2");
-          expect(link).toHaveClass(ground === "inverse" ? "focus-visible:after:outline-accent-on-inverse" : "focus-visible:after:outline-accent");
+          expect(link).toHaveClass(ground === "inverse" ? "focus-visible:after:outline-accent-on-inverse" : "focus-visible:after:outline-primary");
           expect(link).toHaveClass("underline", "decoration-transparent", "hover:decoration-current");
           expect(link.className).not.toMatch(/transition/);
           const container = link.closest(".relative.isolate");

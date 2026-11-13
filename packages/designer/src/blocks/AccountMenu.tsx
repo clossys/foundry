@@ -1,14 +1,17 @@
 "use client";
 
 import { Fragment } from "react";
-import { Avatar } from "../atoms/Avatar.js";
-import { Button } from "../atoms/Button.js";
-import { Icon } from "../atoms/Icon.js";
-import { Menu } from "../atoms/Menu.js";
-import { Tooltip } from "../atoms/Tooltip.js";
-import { Check } from "../icons/Check.js";
+
 import { ChevronUp } from "../icons/ChevronUp.js";
 import type { AccountMenuProps, AccountMenuSection } from "./account-menu-types.js";
+import { avatarInitials } from "../components/avatar-initials.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+import { Avatar, AvatarFallback, AvatarImage, MenuGroup, MenuItem, MenuLabel, MenuSeparator, ShellMenu } from "./shell-menu.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
+
 export type { AccountMenuProps } from "./account-menu-types.js";
 
 /** The same destination boundary used by Items; no identity or routing service. */
@@ -21,7 +24,7 @@ function isSanctionedHref(value: unknown): value is string {
 }
 
 /** Host-owned account data composed into a client menu; no identity or persistence service. */
-export function AccountMenu({ actor, sections, contextLabel, triggerLabel, collapsed = false, onClose, onRoute }: AccountMenuProps) {
+export function AccountMenu({ actor, sections, contextLabel, triggerLabel, collapsed = false, onClose, onRoute, menuContent, controls }: AccountMenuProps) {
   if (new Set(sections.map(section => section.id)).size !== sections.length) {
     throw new TypeError("AccountMenu: section IDs must be unique within the menu.");
   }
@@ -30,8 +33,8 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
       throw new TypeError("AccountMenu: entry IDs must be unique within their section.");
     }
   }
-  const populated = sections.filter(section => section.entries.length > 0);
-  if (populated.length === 0) return null;
+  const populated = sections.map(section => ({ ...section, entries: section.entries.filter(entry => !entry.isDisabled) }) as AccountMenuSection).filter(section => section.entries.length > 0);
+  if (populated.length === 0 && menuContent == null && controls == null) return null;
   if (!actor.name.trim() || populated.some(section => section.entries.some(entry => !entry.label.trim()))) {
     throw new TypeError("AccountMenu: actor name and entry labels must be non-empty.");
   }
@@ -44,46 +47,52 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
   const label = triggerLabel?.trim() ? triggerLabel : actor.name;
   const keyFor = (sectionId: string, entryId: string) => JSON.stringify([sectionId, entryId]);
   const trigger = <Button variant="ghost" aria-label={collapsed ? label : actor.name}
-    className={collapsed ? "icon-control-md border-0 bg-transparent p-0 forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid" : "border-0 bg-transparent w-full justify-start gap-sm text-start forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid"}>
-    <span aria-hidden="true" className="shrink-0"><Avatar alt={actor.name} src={actor.image} /></span>
+    className={collapsed ? "icon-control-md border-0 bg-transparent p-0 forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid" : "control-h-lg border-0 bg-transparent w-full min-w-0 justify-start gap-sm py-sm whitespace-normal text-start forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid"}>
+    <SemanticContent as="span" aria-hidden="true" className="shrink-0"><Avatar>
+      {actor.image ? <AvatarImage src={actor.image} alt="" /> : null}
+      <AvatarFallback>{avatarInitials(actor.name)}</AvatarFallback>
+    </Avatar></SemanticContent>
     {!collapsed && <>
-      <span className="flex min-w-0 flex-1 flex-col text-start">
-        <span className="truncate">{actor.name}</span>
-        {contextLabel && <span className="truncate text-caption text-ink-muted">{contextLabel}</span>}
-      </span>
+      <SemanticContent as="span" className="flex min-w-0 flex-1 flex-col text-start">
+        <SemanticContent as="span" className="break-words whitespace-normal">{actor.name}</SemanticContent>
+        {contextLabel && <SemanticContent as="span" className="break-words whitespace-normal text-caption text-ink-muted">{contextLabel}</SemanticContent>}
+      </SemanticContent>
       <Icon glyph={ChevronUp} decorative size="sm" className="shrink-0" />
     </>}
   </Button>;
-  const entriesFor = (section: AccountMenuSection) => section.entries.map(entry => <Menu.Item key={keyFor(section.id, entry.id)} id={keyFor(section.id, entry.id)}
-    textValue={entry.label} isDisabled={entry.isDisabled} isDestructive={entry.kind === "destructive"}
+  const entriesFor = (section: AccountMenuSection) => section.entries.map(entry => <MenuItem key={keyFor(section.id, entry.id)} id={keyFor(section.id, entry.id)}
+    textValue={entry.label} isDisabled={entry.isDisabled} variant={entry.kind === "destructive" ? "destructive" : "default"}
     href={entry.kind === "link" ? entry.href : undefined}
-    onAction={entry.kind === "link" ? () => onRoute?.(entry) : entry.kind === "preference" ? undefined : entry.onAction}>
-    {entry.kind === "preference" && entry.checked && <Icon glyph={Check} decorative size="sm" />}
+    onAction={entry.kind === "preference" ? undefined : () => { if (entry.kind === "link") onRoute?.(entry); else entry.onAction(); }}>
     {entry.label}
-  </Menu.Item>);
-  return <Menu className="min-w-0" popoverClassName="box-border max-w-full" trigger={collapsed ? <Tooltip trigger={trigger} delay={0}>{label}</Tooltip> : trigger}
-    onOpenChange={open => { if (!open) onClose?.(); }}>
+  </MenuItem>);
+  const identity = (section: AccountMenuSection) => <SemanticContent as="span" className="flex min-w-0 flex-col gap-xs"
+    style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w), calc(100vw - 2 * var(--spacing-2xl)))" }}>
+    <SemanticContent as="span" className="break-words whitespace-normal">{actor.name}</SemanticContent>
+    {actor.secondaryText && <SemanticContent as="span" className="truncate">{actor.secondaryText}</SemanticContent>}
+    {contextLabel && <SemanticContent as="span" className="truncate">{contextLabel}</SemanticContent>}
+    {section.label?.trim() && <SemanticContent as="span" className="truncate">{section.label}</SemanticContent>}
+  </SemanticContent>;
+  const content = <>
+    {menuContent}
     {populated.map((section, index) => index > 0 && !section.label?.trim()
-      ? <Fragment key={section.id}><Menu.Separator />{entriesFor(section)}</Fragment>
-      : <Menu.Section key={section.id}
-      aria-label={section.label}
-      heading={index === 0 ? <span className="flex min-w-0 flex-col gap-xs"
-        style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w, 256px), calc(100vw - 2 * var(--spacing-2xl, 32px)))" }}>
-        <span className="truncate">{actor.name}</span>
-        {actor.secondaryText && <span className="truncate">{actor.secondaryText}</span>}
-        {contextLabel && <span className="truncate">{contextLabel}</span>}
-        {section.label && <span className="truncate">{section.label}</span>}
-      </span> : section.label}
-      selectionMode={section.kind === "preferences" ? "multiple" : "none"}
-      selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => keyFor(section.id, entry.id)) : undefined}
-      shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}
-      onSelectionChange={section.kind === "preferences" ? keys => {
-        for (const entry of section.entries) {
-          const checked = keys === "all" || keys.has(keyFor(section.id, entry.id));
-          if (checked !== entry.checked) entry.onCheckedChange(checked);
-        }
-      } : undefined}>
-      {entriesFor(section)}
-    </Menu.Section>)}
-  </Menu>;
+      ? <Fragment key={section.id}><MenuSeparator />{entriesFor(section)}</Fragment>
+      : <MenuGroup key={section.id}
+        aria-label={section.label?.trim() ? section.label : index === 0 ? actor.name : undefined}
+        selectionMode={section.kind === "preferences" ? "multiple" : "none"}
+        selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => keyFor(section.id, entry.id)) : undefined}
+        shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}
+        onSelectionChange={section.kind === "preferences" ? keys => {
+          for (const entry of section.entries) {
+            const checked = keys === "all" || keys.has(keyFor(section.id, entry.id));
+            if (checked !== entry.checked) entry.onCheckedChange(checked);
+          }
+        } : undefined}>
+        {index === 0 ? <MenuLabel>{identity(section)}</MenuLabel> : <MenuLabel>{section.label}</MenuLabel>}
+        {entriesFor(section)}
+      </MenuGroup>)}
+  </>;
+  const onOpenChange = (open: boolean) => { if (!open) onClose?.(); };
+  // The collapsed trigger keeps its accessible name; its hover tooltip waits on an owner tooltip-timing placement.
+  return <ShellMenu trigger={trigger} label={actor.name} controls={controls} onOpenChange={onOpenChange}>{content}</ShellMenu>;
 }

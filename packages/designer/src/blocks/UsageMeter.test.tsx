@@ -5,7 +5,7 @@ import { render, screen } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { UsageMeter, type UsageMeterProps, type UsageMeterThreshold } from "./UsageMeter.js";
 import { UsageMeter as ServerUsageMeter } from "./UsageMeter.server.js";
-import { Meter } from "../atoms/Meter.js";
+import { Meter } from "../components/Meter.js";
 
 const thresholds: readonly UsageMeterThreshold[] = [
   { at: 0.8, tone: "warning", message: "You have used at least 80 percent of this limit." },
@@ -46,7 +46,7 @@ describe("UsageMeter", () => {
     expect(screen.queryByText(thresholds[0]!.message)).toBeNull();
     const message = screen.getByText(thresholds[1]!.message);
     expect(message).toBeVisible();
-    expect(message.closest("[data-tone]")?.querySelector("[data-part='mark']")).toHaveAttribute("data-shape", "diamond");
+    expect(message.closest("[data-tone]")?.querySelector("[data-part='mark']")).toHaveAttribute("data-shape", "circle-x");
     expect(container.querySelectorAll("[data-part='mark']")).toHaveLength(1);
   });
 

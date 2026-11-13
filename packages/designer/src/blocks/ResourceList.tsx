@@ -1,15 +1,27 @@
 "use client";
 
-import { useId, useState, type HTMLAttributes, type ReactNode } from "react";
-import { Button } from "../atoms/Button.js";
-import { GridList } from "../atoms/GridList.js";
-import { IconButton } from "../atoms/IconButton.js";
-import { Menu } from "../atoms/Menu.js";
-import { Skeleton } from "../atoms/Skeleton.js";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
+import { useId, useState, type ComponentProps, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
+
+import { SECTION_CONTENT_STYLE } from "./internal/section-content-gutter.js";
+import { cx } from "../components/internal/cx.js";
+import { SKELETON_SHAPE } from "../components/surface-tones.js";
+import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+import { MenuItem, ShellMenu } from "./shell-menu.js";
+
+type StockButton = typeof import("../components/preview-runtime/components/button/button.js").Button;
+/** Stock-bound button, plus the slot's own shape axis (shape.icon-only maps to the stock icon size). */
+const Button = componentLeaf<(props: ComponentProps<StockButton> & { readonly shape?: "text" | "icon-only" }) => ReactElement>("components.button");
+const GridList = componentLeaf<typeof import("../components/GridList.js").GridList>("components.grid-list");
+const Icon = componentLeaf<typeof import("../components/index.js").Icon>("components.icon");
+const Skeleton = componentLeaf<typeof import("../components/preview-runtime/components/skeleton/skeleton.js").Skeleton>("components.skeleton");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.resource-list", "foundry/sections.resource-list");
 
 export interface ResourceListAction {
   id: string;
@@ -59,28 +71,25 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
   const reasonId = (action: ResourceListAction, index: number, slot: string) =>
     disabled(action) && action.disabledReason ? `${prefix}-${slot}-${index}` : undefined;
   const menuItems = (entries: readonly ResourceListAction[], slot: string) => entries.map((action, index) => (
-    <Menu.Item key={action.id} id={action.id} textValue={action.label} aria-label={action.label}
-      isDisabled={disabled(action)} isDestructive={action.isDestructive} onAction={action.onAction}
-      aria-describedby={reasonId(action, index, slot)}>
+    // The stock menu item names itself from its content; a disabled reason is read with the label.
+    <MenuItem key={action.id} id={action.id} textValue={action.label} aria-label={reasonId(action, index, slot) ? undefined : action.label}
+      isDisabled={disabled(action)} variant={action.isDestructive ? "destructive" : "default"} onAction={action.onAction}>
       {action.label}
-      {reasonId(action, index, slot) && <span id={reasonId(action, index, slot)} className="sr-only">{action.disabledReason}</span>}
-    </Menu.Item>
+      {reasonId(action, index, slot) && <SemanticContent as="span" id={reasonId(action, index, slot)} className="sr-only">{action.disabledReason}</SemanticContent>}
+    </MenuItem>
   ));
-  return <div className="flex shrink-0 items-center gap-sm">
-    <div className="hidden items-center gap-sm tablet:flex">
-      {actions.slice(0, 2).map((action, index) => <span key={action.id} className="inline-flex">
-        <Button variant="quiet" size="sm" trailingIcon={null} className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
+  return <SemanticContent as="div" className="flex shrink-0 items-center gap-sm">
+    <SemanticContent as="div" className="flex flex-wrap items-center gap-sm">
+      {actions.slice(0, 2).map((action, index) => <SemanticContent as="span" key={action.id} className="inline-flex">
+        <Button variant="ghost" size="sm" className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
           aria-describedby={reasonId(action, index, "inline")}>{action.label}</Button>
-        {reasonId(action, index, "inline") && <span id={reasonId(action, index, "inline")} className="sr-only">{action.disabledReason}</span>}
-      </span>)}
-    </div>
-    <Menu trigger={<IconButton icon={ChevronDown} label={label} className="tablet:hidden" />}>
-      {menuItems(actions, "compact")}
-    </Menu>
-    {actions.length > 2 && <Menu trigger={<IconButton icon={ChevronDown} label={label} className="hidden tablet:inline-flex" />}>
+        {reasonId(action, index, "inline") && <SemanticContent as="span" id={reasonId(action, index, "inline")} className="sr-only">{action.disabledReason}</SemanticContent>}
+      </SemanticContent>)}
+    </SemanticContent>
+    {actions.length > 2 && <ShellMenu label={label} trigger={<Button variant="ghost" shape="icon-only" aria-label={label}><Icon glyph={ChevronDown} decorative /></Button>}>
       {menuItems(actions.slice(2), "wide")}
-    </Menu>}
-  </div>;
+    </ShellMenu>}
+  </SemanticContent>;
 }
 
 /**
@@ -92,7 +101,7 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
 export function ResourceList({
   "aria-label": ariaLabel, items, selectionMode = "none", selectedKeys, onSelectionChange,
   selectRowLabel, onAction, actionsLabel, isLoading = false, loadingLabel, loadingRowCount = 5,
-  emptyState, error, toolbar, bulkBar, footer, className, ...rest
+  emptyState, error, toolbar, bulkBar, footer, className, style, ...rest
 }: ResourceListProps) {
   const [internalKeys, setInternalKeys] = useState<"all" | Set<string>>(new Set());
   if (!ariaLabel?.trim()) {
@@ -110,15 +119,15 @@ export function ResourceList({
   const selection = selectedKeys ?? internalKeys;
   const hasSelection = selectionMode === "multiple" && items.some(item =>
     !item.isDisabled && (selection === "all" || selection.has(item.id)));
-  return <section {...rest} aria-label={ariaLabel} className={cx("flex min-w-0 flex-col gap-md", className)}>
+  return <SemanticContent as="section" {...SECTION_STAMP} {...rest} aria-label={ariaLabel} className={cx("flex min-w-0 flex-col gap-md", className)} style={{ ...SECTION_CONTENT_STYLE, ...style }}>
     {toolbar}
     {hasSelection ? bulkBar : null}
-    {error != null && error !== false ? error : isLoading ? <div>
-      <span role="status" className="sr-only">{loadingLabel}</span>
-      <div aria-hidden="true">
-        {Array.from({ length: loadingRowCount }, (_, index) => <div key={index} className="flex items-center px-md py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton /></div>)}
-      </div>
-    </div> : items.length === 0 ? <EmptyState {...emptyState} /> : <GridList aria-label={ariaLabel} items={items} selectionMode={selectionMode}
+    {error != null && error !== false ? error : isLoading ? <SemanticContent as="div">
+      <SemanticContent as="span" role="status" className="sr-only">{loadingLabel}</SemanticContent>
+      <SemanticContent as="div" aria-hidden="true">
+        {Array.from({ length: loadingRowCount }, (_, index) => <SemanticContent as="div" key={index} className="flex items-center px-0 py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton aria-hidden className={SKELETON_SHAPE.text} /></SemanticContent>)}
+      </SemanticContent>
+    </SemanticContent> : items.length === 0 ? <EmptyState {...emptyState} /> : <GridList aria-label={ariaLabel} items={items} selectionMode={selectionMode}
       selectedKeys={selection === "all" ? "all" : new Set(selection)}
       onSelectionChange={keys => {
         const next = keys === "all" ? "all" : new Set([...keys].map(String));
@@ -126,18 +135,18 @@ export function ResourceList({
         onSelectionChange?.(next);
       }} onAction={onAction ? key => onAction(String(key)) : undefined}
       renderEmptyState={() => <EmptyState {...emptyState} />}>
-      {item => <GridList.Item id={item.id} textValue={item.textValue} href={item.href} isDisabled={item.isDisabled}>
+      {item => <GridList.Item className="px-0" id={item.id} textValue={item.textValue} href={item.href} isDisabled={item.isDisabled}>
         {selectionMode === "multiple" && <GridList.SelectionCheckbox aria-label={selectRowLabel!(item.textValue)} />}
-        {item.media && <div className="size-10 shrink-0">{item.media}</div>}
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-body text-ink-primary" title={item.textValue}>{item.title}</div>
+        {item.media && <SemanticContent as="div" className="size-10 shrink-0">{item.media}</SemanticContent>}
+        <SemanticContent as="div" className="min-w-0 flex-1">
+          <SemanticContent as="div" className="truncate text-body text-ink-primary" title={item.textValue}>{item.title}</SemanticContent>
           {item.status}
-          {item.description && <div className="line-clamp-2 text-body-s text-ink-muted">{item.description}</div>}
-          {item.meta && <div className="text-caption text-ink-muted break-words">{item.meta}</div>}
-        </div>
+          {item.description && <SemanticContent as="div" className="line-clamp-2 text-body-s text-ink-muted">{item.description}</SemanticContent>}
+          {item.meta && <SemanticContent as="div" className="text-caption text-ink-muted break-words">{item.meta}</SemanticContent>}
+        </SemanticContent>
         {!!item.actions?.length && <ResourceListActions item={item} label={actionsLabel!(item.textValue)} />}
       </GridList.Item>}
     </GridList>}
     {footer}
-  </section>;
+  </SemanticContent>;
 }

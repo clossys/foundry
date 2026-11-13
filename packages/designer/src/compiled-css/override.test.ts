@@ -177,7 +177,7 @@ describe("override precedence — structural proof", () => {
   });
 
   it("places every class-selector style rule inside a named @layer (never bare/unlayered)", async () => {
-    const scan = scanClassCandidates(resolve(packageRoot, "src", "atoms"));
+    const scan = scanClassCandidates(resolve(packageRoot, "src", "components"));
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
     const { insideLayer, outsideLayer } = ruleLayerMembership(generated.css);
     expect(insideLayer.length).toBeGreaterThan(0);
@@ -185,7 +185,7 @@ describe("override precedence — structural proof", () => {
   });
 
   it("declares the layer name as foundry-ui-compiled (matching README.md's documented precedence contract)", async () => {
-    const scan = scanClassCandidates(resolve(packageRoot, "src", "atoms"));
+    const scan = scanClassCandidates(resolve(packageRoot, "src", "components"));
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
     expect(generated.css).toContain("@layer foundry-ui-compiled {");
   });

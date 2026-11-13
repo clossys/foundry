@@ -5,12 +5,14 @@ import { Faq } from "../Faq.js";
 import { Faq as ServerFaq } from "../Faq.server.js";
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Item } from "./Item.js";
+import { StockItem as Item, type StockItemProps } from "./StockItem.js";
 import { Items } from "./Items.js";
 import { Items as ServerItems } from "./Items.server.js";
-import type { ItemData, ItemProps } from "./types.js";
+import type { ItemData } from "./types.js";
+import { withoutDsAttrs } from "../../catalog-core/provenance-attrs.js";
+import { stableStringify } from "../../catalog-core/stable.js";
 
-const single = { id: "one", heading: "Search", treatment: "plain", size: "standard", ground: "base" } as const;
+const single = { id: "one", heading: "Search", ground: "base" } as const;
 const data = (count = 3): ItemData[] => Array.from({ length: count }, (_, index) => ({
   id: `state-${index}`, heading: `Service ${index}`, description: "Details", status: { tone: "success", label: `Available ${index}` },
 }));
@@ -23,7 +25,7 @@ function legacyDisclosureHtml(consumer: DisclosureConsumer): string {
     const Component = consumer === "Faq/client" ? Faq : ServerFaq;
     for (const ground of ["base", "sunken", "inverse"] as const) for (const headingLevel of [2, 3, 4, 5, 6] as const) for (const region of [false, true]) {
       const items = [{ id: "first", question: <span>First question</span>, answer: <p>First answer</p> }, { id: "second", question: "Second question", answer: "Second answer" }];
-      records[`${consumer}/${ground}/h${headingLevel}/region-${region}`] = renderToStaticMarkup(<Component ground={ground} headingLevel={headingLevel} items={items} {...(region ? { heading: "Questions", eyebrow: "Help", description: "Supporting copy" } : {})} />);
+      records[`${consumer}/${ground}/h${headingLevel}/region-${region}`] = withoutDsAttrs(renderToStaticMarkup(<Component ground={ground} headingLevel={headingLevel} items={items} {...(region ? { heading: "Questions", eyebrow: "Help", description: "Supporting copy" } : {})} />));
     }
   } else {
     const Component = consumer === "Items/client" ? Items : ServerItems;
@@ -43,35 +45,36 @@ function idSlots(): ItemData {
 }
 function legacyIdSlotHtml(name: string): string {
   const [kind, entry, arrangement, reveal] = name.split("/");
-  if (kind === "Item") return renderToStaticMarkup(<Item {...idSlots()} treatment={entry as "plain" | "plate"} size="standard" ground="base" />);
+  if (kind === "StockItem") return renderToStaticMarkup(<Item {...idSlots()} ground="base" />);
   const Component = entry === "client" ? Items : ServerItems;
   return renderToStaticMarkup(<Component items={Array.from({ length: reveal === "disclose" ? 4 : 3 }, (_, i) => ({ ...idSlots(), id: `reference-${i}` }))} arrangement={arrangement as "columns" | "rows" | "stacked"} reveal={reveal as "all" | "disclose"} />);
 }
 
 describe("Item status", () => {
   it.each([
-    ["Item/plain", "106c4515e4e5053ec6d4b0c6dd54288dc3f1ba268b2424a370215c550016d889"],
-    ["Item/plate", "858eadf71e1db60368d39313add1c3e762c67646c8c5467f28ca94047696e6d2"],
     ["Items/client/columns/all", "e390b9257082d8cc11006b5d92ebcc86bfcfaf4a00af26b194dd335994146b06"],
     ["Items/client/rows/all", "386bb663af3eaab3c7b48617e9b0166becdc873438b26cff70d972dc00d03c9c"],
-    ["Items/client/rows/disclose", "c50ae8b29ee0c6154b258696714ddc54530e6905d0245eb4eb2df37c5a3f06d3"],
     ["Items/client/stacked/all", "68adb232a2f1cee1b5ff84d745b6327f409344c2263c2fe82ea17c81656d1499"],
     ["Items/server/columns/all", "e390b9257082d8cc11006b5d92ebcc86bfcfaf4a00af26b194dd335994146b06"],
     ["Items/server/rows/all", "386bb663af3eaab3c7b48617e9b0166becdc873438b26cff70d972dc00d03c9c"],
-    ["Items/server/rows/disclose", "53cb06fd4c7c74fcb97c638146de8bcc6e7e6560fd52a124d13409426da327e0"],
     ["Items/server/stacked/all", "68adb232a2f1cee1b5ff84d745b6327f409344c2263c2fe82ea17c81656d1499"],
   ] as const)("preserves legacy useId-bearing slot HTML for %s", (name, expectedSha256) => {
     expect(createHash("sha256").update(legacyIdSlotHtml(name)).digest("hex")).toBe(expectedSha256);
   });
 
-  it.each([
-    ["Faq/client", "3cc9e536ab23244c724851fc6460e2e6efaa0d18c4b597a1420a544ee1419d04"],
-    ["Faq/server", "846ac0d4e03871cfd77b9ef45bf6799dfaa1bff4de79d839c22e0e0a68a0711f"],
-    ["Items/client", "a01cc815a05f5b2395a0dbac62e649637c3ed040a644395071a80cf5b41500a9"],
-    ["Items/server", "b353fb23cc06d15a99b1b0b1f025be459dfbad8d43a376e1226e67b433fcb720"],
-  ] as const)("preserves byte-identical legacy HTML for %s without status", (consumer, expectedSha256) => {
-    expect(createHash("sha256").update(legacyDisclosureHtml(consumer)).digest("hex")).toBe(expectedSha256);
-  });
+  // Re-captured by planner:R2F-05 into a generated file (`vitest run -u`), never a hand-edited hash. These renders
+  // hold selected stock leaves: the plate is the stock Card (E4, P0 shadcn reset; ebd6753ac) and every disclosure
+  // row is the selected stock accordion (ebd6753ac, 78237484a), which owns the trigger, panel and disclosure
+  // styling and fixes its own h3 header. Diffed against the 90eedc80d capture, no other byte changed. Status
+  // must still leave these bytes untouched. The look is on the owner CREATIVE list.
+  it("preserves the stock-leaf legacy HTML captures without status", async () => {
+    const sha = (html: string) => createHash("sha256").update(html).digest("hex");
+    const hashes = {
+      ...Object.fromEntries((["StockItem", "Items/client/rows/disclose", "Items/server/rows/disclose"] as const).map(name => [name, sha(legacyIdSlotHtml(name))])),
+      ...Object.fromEntries((["Faq/client", "Faq/server", "Items/client", "Items/server"] as const).map(consumer => [consumer, sha(legacyDisclosureHtml(consumer))])),
+    };
+    await expect(stableStringify({ $capture: "stock Card plate and selected stock accordion (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05; single item on the stock Item anatomy, plain/plate treatments retired (R2F-26b); stock Badge with caller tone data (R2F-29)", hashes }) + "\n").toMatchFileSnapshot("__golden__/item-status-stock.sha256.json");
+  }, 60_000);
 
   it("renders StatusMark with a visible label in the meta row", () => {
     const { container } = render(<Item {...single} eyebrow="Product" meta="Updated" status={{ tone: "success", label: "Available" }} />);
@@ -79,22 +82,22 @@ describe("Item status", () => {
     const status = row.querySelector("[data-item-status]")!;
     expect(row).toHaveTextContent("ProductUpdatedAvailable");
     expect(status).toHaveAttribute("data-tone", "success");
-    expect(status.querySelector("[data-part=mark]")).toHaveAttribute("data-shape", "circle");
+    expect(status.querySelector("[data-part=mark]")).toHaveAttribute("data-shape", "circle-check");
     expect(status.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     expect(status).toContainElement(screen.getByText("Available"));
     expect(screen.getByText("Available")).toBeVisible();
     expect(status.querySelector(".sr-only")).toBeNull();
   });
 
-  it.each([["success", "circle"], ["warning", "triangle"], ["danger", "diamond"], ["info", "open-circle"], ["neutral", "dash"]] as const)("keeps the %s mark's non-colour shape", (tone, shape) => {
+  it.each([["success", "circle-check"], ["warning", "triangle-alert"], ["danger", "circle-x"], ["info", "info"], ["neutral", "minus"]] as const)("keeps the %s mark's non-colour shape", (tone, shape) => {
     const { container } = render(<Item {...single} status={{ tone, label: "State" }} />);
     expect(container.querySelector("[data-shape]")).toHaveAttribute("data-shape", shape);
     expect(screen.getByText("State")).toBeVisible();
   });
 
   it.each(["plain", "rule", "plate"] as const)("accepts status in %s treatment", treatment => {
-    render(<Item {...single} treatment={treatment} status={{ tone: "info", label: "In progress" }} />);
-    expect(screen.getByText("In progress")).toBeVisible();
+    render(<Items arrangement="columns" treatment={treatment} items={data()} />);
+    expect(screen.getByText("Available 0")).toBeVisible();
   });
 
   it.each(["base", "sunken", "inverse"] as const)("keeps the status on its checked backing on %s", ground => {
@@ -126,7 +129,7 @@ describe("Item status", () => {
     expect(rows).toHaveLength(4);
     rows.forEach((row, index) => {
       expect(row.querySelector("[data-item-status]")).toHaveTextContent(`Available ${index}`);
-      expect(row.querySelector("[data-shape]")).toHaveAttribute("data-shape", "circle");
+      expect(row.querySelector("[data-shape]")).toHaveAttribute("data-shape", "circle-check");
     });
   });
 
@@ -154,7 +157,7 @@ describe("Item status", () => {
   });
 
   it.each([{ tone: "success", label: " " }, { tone: "other", label: "State" }, null])("rejects incomplete status data %j", status => {
-    expect(() => renderToStaticMarkup(<Item {...({ ...single, status } as unknown as ItemProps)} />)).toThrow(/status/i);
+    expect(() => renderToStaticMarkup(<Item {...({ ...single, status } as unknown as StockItemProps)} />)).toThrow(/status/i);
   });
 
   it("keeps authored zero as the visible status label", () => {

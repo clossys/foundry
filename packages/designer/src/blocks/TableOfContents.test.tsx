@@ -81,7 +81,7 @@ describe("TableOfContents", () => {
     const links = screen.getAllByRole("link");
     expect(links[1]).toHaveAttribute("aria-current", "location");
     expect(links.filter(link => link.hasAttribute("aria-current"))).toHaveLength(1);
-    expect(links[1]).toHaveClass("border-accent", "font-medium", "text-ink-primary", "forced-colors:border-current");
+    expect(links[1]).toHaveClass("border-primary", "font-medium", "text-ink-primary", "forced-colors:border-current");
     expect(links[0]).toHaveClass("border-transparent", "text-ink-secondary");
     expect(links[0]).not.toHaveClass("font-medium");
   });
@@ -93,7 +93,7 @@ describe("TableOfContents", () => {
     ["an id with a space", { items: [{ id: "a b", label: "One" }, { id: "c", label: "Two" }] }],
     ["an id with a hash", { items: [{ id: "#a", label: "One" }, { id: "c", label: "Two" }] }],
     ["an empty label", { label: " " }],
-    ["a level outside 2 and 3", { items: [{ id: "a", label: "One", level: 4 as 2 }, { id: "c", label: "Two" }] }],
+    ["a level outside 2 and 3", { items: [{ id: "a", label: "One", level: 5 as 2 }, { id: "c", label: "Two" }] }],
     ["a currentId outside the items", { currentId: "z" }],
   ])("throws a prefixed TypeError for %s", (_name, props) => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -165,7 +165,9 @@ describe("TableOfContents", () => {
     render(view());
     for (const link of screen.getAllByRole("link")) {
       expect(link.style.minBlockSize).toBe("var(--ui-layout-tap-target, 44px)");
-      expect(link).toHaveClass("flex", "items-center", "border-s-2", "pe-sm", "text-body-s", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent");
+      expect(link).toHaveClass("flex", "items-center", "border-s-2", "pe-sm", "text-(length:--text-body-s)", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-primary");
+      // The body-small size survives the stock LinkButton merge; its default size does not.
+      expect(link).not.toHaveClass("text-(length:--text-sm)");
     }
   });
 
@@ -195,10 +197,12 @@ describe("TableOfContents", () => {
     expect(box).toHaveClass("rounded-panel", "border", "border-line-base", "p-md", "mt-lg");
     const trigger = screen.getByRole("button", { name: LABEL });
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(trigger).toHaveClass("focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent");
+    // The trigger is the stock Accordion trigger, which paints its own solid focus-visible outline.
+    expect(trigger).toHaveAttribute("data-slot", "accordion-trigger");
+    expect(trigger).toHaveClass("focus-visible:outline-solid");
     const nav = screen.getByRole("navigation", { name: LABEL });
     expect(nav).toBeVisible();
-    expect(nav.parentElement).toHaveClass("ps-0");
+    expect(nav.closest("[data-slot=accordion-content]")).not.toBeNull();
     expect(nav.querySelector("p")).toBeNull();
     expect(nav).not.toHaveClass("desktop:sticky");
     await user.click(trigger);
@@ -210,7 +214,8 @@ describe("TableOfContents", () => {
     const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
     const { container } = render(<>{view({ currentId: "a" })}{view({ presentation: "inline" })}</>);
     const classes = new Set<string>();
-    for (const element of container.querySelectorAll("*")) for (const name of element.classList) classes.add(name);
+    // The inline disclosure is the stock Accordion: its own anatomy is stock-owned, so only the classes this block adds are pinned.
+    for (const element of container.querySelectorAll("*")) if (!element.closest("[data-slot^=accordion]") || element.closest("nav")) for (const name of element.classList) classes.add(name);
     expect(classes.size).toBeGreaterThan(20);
     const missing = [...classes].filter(name => !css.includes("." + name.replace(/[^a-zA-Z0-9_-]/g, character => "\\" + character)));
     expect(missing).toEqual([]);

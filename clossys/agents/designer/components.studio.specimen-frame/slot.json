@@ -1,0 +1,53 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.studio.specimen-frame",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.studio",
+    "l2": "studio-specimens",
+    "order": 272
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [],
+    "install": {
+      "layer": "@clossys/designer-ui",
+      "alias": "components",
+      "file": "specimen-frame.tsx"
+    },
+    "allowedReads": {
+      "themes": [
+        "themes.border",
+        "themes.background",
+        "themes.radius"
+      ],
+      "assets": [],
+      "components": [
+        "components.card"
+      ]
+    },
+    "composes": [
+      "components.card"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "components.card"
+  ]
+}

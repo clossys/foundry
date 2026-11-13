@@ -1,0 +1,16 @@
+{
+  "clauses": [
+    {
+      "id": "namespaces",
+      "title": "Theme variable namespaces"
+    },
+    {
+      "id": "spacing-multiplier",
+      "title": "Spacing multiplier"
+    }
+  ],
+  "id": "tailwind-v4-theme",
+  "title": "Tailwind CSS v4 theme variables",
+  "url": "https://tailwindcss.com/docs/theme",
+  "version": "4.3.3"
+}

@@ -1,0 +1,93 @@
+{
+  "name": "tag-group",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn",
+    "@diceui/tags-input"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2024 Sadman Sakib\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+    },
+    {
+      "path": "tags-input.tsx",
+      "type": "registry:ui",
+      "content": "import type * as React from \"react\";\n\nimport * as TagsInputPrimitive from \"@diceui/tags-input\";\nimport { cn } from \"cn\";\n\nimport { X } from \"lucide-react\"\n\nfunction TagsInput({\n  className,\n  ...props\n}: React.ComponentProps<typeof TagsInputPrimitive.Root>) {\n  return (\n    <TagsInputPrimitive.Root\n      data-slot=\"tags-input\"\n      className={cn(\"flex w-95 flex-col gap-2\", className)}\n      {...props}\n    />\n  );\n}\n\nfunction TagsInputLabel({\n  className,\n  ...props\n}: React.ComponentProps<typeof TagsInputPrimitive.Label>) {\n  return (\n    <TagsInputPrimitive.Label\n      data-slot=\"tags-input-label\"\n      className={cn(\"text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70\", className)}\n      {...props}\n    />\n  );\n}\n\nfunction TagsInputList({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"tags-input-list\"\n      className={cn(\"flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1 text-sm focus-within:ring-1 focus-within:ring-ring disabled:cursor-not-allowed disabled:opacity-50\", className)}\n      {...props}\n    />\n  );\n}\n\nfunction TagsInputInput({\n  className,\n  ...props\n}: React.ComponentProps<typeof TagsInputPrimitive.Input>) {\n  return (\n    <TagsInputPrimitive.Input\n      data-slot=\"tags-input-input\"\n      className={cn(\"flex-1 bg-transparent outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50\", className)}\n      {...props}\n    />\n  );\n}\n\nfunction TagsInputItem({\n  className,\n  children,\n  ...props\n}: React.ComponentProps<typeof TagsInputPrimitive.Item>) {\n  return (\n    <TagsInputPrimitive.Item\n      data-slot=\"tags-input-item\"\n      className={cn(\"inline-flex max-w-[calc(100%-8px)] items-center gap-1.5 rounded-md border bg-transparent px-2.5 py-1 text-sm focus:outline-hidden data-editable:select-none data-editing:bg-transparent data-editing:ring-1 data-editing:ring-ring data-disabled:cursor-not-allowed data-disabled:opacity-50 [&:not([data-editing])]:pr-1.5 [&[data-highlighted]:not([data-editing])]:bg-accent [&[data-highlighted]:not([data-editing])]:text-accent-foreground\", className)}\n      {...props}\n    >\n      <TagsInputPrimitive.ItemText className=\"truncate\">\n        {children}\n      </TagsInputPrimitive.ItemText>\n      <TagsInputPrimitive.ItemDelete className=\"size-4 shrink-0 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100\">\n        <X\n          className=\"size-3.5\"\n        />\n      </TagsInputPrimitive.ItemDelete>\n    </TagsInputPrimitive.Item>\n  );\n}\n\nfunction TagsInputClear({\n  ...props\n}: React.ComponentProps<typeof TagsInputPrimitive.Clear>) {\n  return <TagsInputPrimitive.Clear data-slot=\"tags-input-clear\" {...props} />;\n}\n\nexport {\n  TagsInput,\n  TagsInputClear,\n  TagsInputInput,\n  TagsInputItem,\n  TagsInputLabel,\n  TagsInputList,\n};\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.tag-group",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "diceui/tags-input@04aad54"
+      ],
+      "hash": "sha256:1b07b658eb734f77610da1410f6391babe7ca82ff0dcfae8a66343b0f5e28e31",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "tags-input.tsx": "ui/tags-input.tsx"
+      }
+    },
+    "element": {
+      "id": "tag-group",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.tag-group",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock diceui/tags-input@04aad54 adopted unmodified (shadcn add-time normalization only) as the initial candidate for components.tag-group.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--ring",
+          "--sidebar-ring",
+          "--tracking-tight",
+          "--radius",
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans"
+        ]
+      }
+    }
+  }
+}

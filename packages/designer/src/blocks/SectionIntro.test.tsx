@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { buttonLinkClassName, iconButtonLinkClassName } from "../atoms/button-classes.js";
+import { buttonVariants } from "../components/preview-runtime/components/button/button.js";
 import { SectionIntro } from "./SectionIntro.js";
 
 describe("SectionIntro", () => {
@@ -83,73 +83,38 @@ describe("SectionIntro", () => {
   });
 });
 
-describe("buttonLinkClassName", () => {
-  it("gives an anchor the Button look with a focus-visible outline, without the button-only classes", () => {
-    const look = buttonLinkClassName("primary", "lg").split(" ");
-    expect(look).toEqual(expect.arrayContaining(["bg-accent", "text-ink-on-accent", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent"]));
+// R2F-52: the Foundry link-look helpers (buttonLinkClassName, iconButtonLinkClassName) were removed for the stock
+// shadcn@aria buttonVariants. Same guarantees on the stock look: an anchor gets the button look with a keyboard
+// focus outline and no outline suppression; the actions row still sets the ground's ink.
+describe("buttonVariants on a link", () => {
+  it("gives an anchor the Button look with a focus-visible outline, without outline suppression", () => {
+    const look = buttonVariants({ variant: "default", size: "lg" }).split(" ");
+    expect(look).toEqual(expect.arrayContaining(["bg-(--color-action)", "text-(--color-ink-on-action)", "focus-visible:outline-solid", "focus-visible:outline-(--color-focus-ring)", "focus-visible:outline-offset-(--ui-focus-offset)"]));
     expect(look).not.toContain("outline-none");
-    expect(look).not.toContain("disabled:cursor-not-allowed");
   });
-});
 
-describe("buttonLinkClassName outline", () => {
-  it("draws the primary box with no fill and an inset edge in the surrounding ink", () => {
-    const sizeOf = (look: string[]) => look.filter((token) => /^(px|py|text-body|rounded|inline-flex|items-center|justify-center|gap)-?/.test(token) && !token.startsWith("text-ink"));
-    const primary = buttonLinkClassName("primary", "lg").split(" ");
-    const outline = buttonLinkClassName("outline", "lg").split(" ");
+  it("outline keeps the default box size and the same focus outline", () => {
+    const sizeOf = (look: string[]) => look.filter((token) => /^(h|px|gap|rounded)-/.test(token));
+    const primary = buttonVariants({ variant: "default", size: "lg" }).split(" ");
+    const outline = buttonVariants({ variant: "outline", size: "lg" }).split(" ");
     expect(sizeOf(outline)).toEqual(sizeOf(primary));
-    expect(outline).toEqual(
-      expect.arrayContaining([
-        "bg-transparent",
-        "ring-inset",
-        "ring-current",
-        "ring-1",
-        "hover:ring-2",
-        "focus-visible:outline-2",
-        "focus-visible:outline-accent",
-      ]),
-    );
-    // No border (it would grow the box past primary's) and no ink of its own (it takes the ground's).
-    expect(outline.filter((token) => token === "border" || token.startsWith("border-"))).toEqual([]);
-    expect(outline.filter((token) => token.startsWith("text-ink-"))).toEqual([]);
+    expect(outline).toEqual(expect.arrayContaining(["focus-visible:outline-solid", "focus-visible:outline-(--color-focus-ring)"]));
     expect(outline).not.toContain("outline-none");
   });
 
   it("takes the ground's primary ink from the actions row, so the edge reads on light and dark grounds", () => {
-    const { container, rerender } = render(<SectionIntro heading="Heading" actions={<a href="/go" className={buttonLinkClassName("outline", "lg")}>Go</a>} />);
+    const look = buttonVariants({ variant: "outline", size: "lg" });
+    const { container, rerender } = render(<SectionIntro heading="Heading" actions={<a href="/go" className={look}>Go</a>} />);
     expect(container.querySelector("[data-section-intro-actions]")).toHaveClass("text-ink-primary");
-    rerender(<SectionIntro ground="inverse" heading="Heading" actions={<a href="/go" className={buttonLinkClassName("outline", "lg")}>Go</a>} />);
+    rerender(<SectionIntro ground="inverse" heading="Heading" actions={<a href="/go" className={look}>Go</a>} />);
     const row = container.querySelector("[data-section-intro-actions]") as HTMLElement;
     expect(row).toHaveClass("text-ink-on-inverse");
     expect(row).not.toHaveClass("text-ink-primary");
   });
-});
 
-describe("iconButtonLinkClassName", () => {
-  it("draws a 44px circle with a hairline edge, ground-aware colours, every state and the standard focus outline", () => {
-    const base = iconButtonLinkClassName().split(" ");
-    expect(base).toEqual(iconButtonLinkClassName("base").split(" "));
-    expect(base).toEqual(
-      expect.arrayContaining([
-        "icon-control-md",
-        "rounded-pill",
-        "border",
-        "bg-surface-raised",
-        "text-ink-primary",
-        "border-line-base",
-        "hover:bg-surface-sunken",
-        "active:border-ink-primary",
-        "focus-visible:outline-2",
-        "focus-visible:outline-offset-2",
-        "focus-visible:outline-accent",
-        "focus-visible:ring-2",
-        "focus-visible:ring-surface-raised",
-        "motion-reduce:transition-none",
-      ]),
-    );
-    const inverse = iconButtonLinkClassName("inverse").split(" ");
-    expect(inverse).toEqual(expect.arrayContaining(["bg-surface-inverse-raised", "text-ink-on-inverse", "border-line-on-inverse", "active:border-ink-on-inverse"]));
-    expect(inverse).not.toContain("bg-surface-raised");
-    expect(base).not.toContain("outline-none");
+  it("an icon-size link is a square on the control-height token with the standard focus outline", () => {
+    const look = buttonVariants({ variant: "outline", size: "icon-lg" }).split(" ");
+    expect(look).toEqual(expect.arrayContaining(["size-(--ui-control-h-lg,calc(var(--spacing)*9))", "focus-visible:outline-(--color-focus-ring)"]));
+    expect(look).not.toContain("outline-none");
   });
 });

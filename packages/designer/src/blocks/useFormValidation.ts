@@ -7,7 +7,6 @@ import {
   useState,
   type ChangeEvent,
   type FormEvent,
-  type ReactNode,
   type RefObject,
 } from "react";
 import type { FormError, FormValidationBinding } from "./Form.js";
@@ -27,13 +26,14 @@ export type FormStringFieldName<V> = {
 /**
  * Validates one field. Returns the error to show — consumer copy, in
  * whatever language the consumer renders — or nothing when the value is
- * valid. `undefined`, `null`, `false` and `""` all mean "valid"; anything
- * else is the message. Receives every current value too, so a rule can
+ * valid. `undefined`, `null`, `false` and `""` all mean "valid"; any other
+ * string is the message. A string, because it reaches the field through
+ * react-aria-components' `Form` `validationErrors`, which carries text. Receives every current value too, so a rule can
  * depend on another field (a confirmation matching its original) — but it
  * re-runs only on its OWN field's change/blur/submit, never when that other
  * field changes.
  */
-export type FieldValidator<V, K extends keyof V> = (value: V[K], values: V) => ReactNode;
+export type FieldValidator<V, K extends keyof V> = (value: V[K], values: V) => string | false | null | undefined;
 
 export interface UseFormValidationOptions<V extends Record<string, unknown>> {
   /** Starting values, and what `reset()` returns to. Read on mount and on `reset()`. */
@@ -60,11 +60,13 @@ export interface UseFormValidationOptions<V extends Record<string, unknown>> {
 }
 
 /**
- * Props for a designer field atom (`TextField`, `Textarea`, `SearchField`,
+ * Props for a designer field component (`TextField`, `Textarea`, `SearchField`,
  * `Select`, ... — anything built on a react-aria-components field with
- * `value`/`onChange`). Spread them on: react-aria-components then wires
- * `aria-invalid` and the `aria-describedby` link to the atom's own error
- * element itself, so none of that is hand-rolled here.
+ * `value`/`onChange`). Spread them on inside the `Form` the hook is bound
+ * to: the error reaches the field by its `name` through react-aria-components'
+ * `Form` `validationErrors` (`validationErrors` below), and the field then
+ * wires `aria-invalid`, its own `FieldError` and the `aria-describedby` link
+ * itself, so no invalid state or message is passed per field.
  */
 export interface FormFieldProps<T> {
   id: string;
@@ -72,19 +74,11 @@ export interface FormFieldProps<T> {
   value: T;
   onChange: (value: T) => void;
   onBlur: () => void;
-  isInvalid: boolean;
-  errorMessage: ReactNode;
-  /**
-   * Always `"aria"`: the hook owns when an error shows, so the field must
-   * not ALSO push it into the browser's native constraint validation
-   * (react-aria-components' `"native"` default calls `setCustomValidity`).
-   */
-  validationBehavior: "aria";
 }
 
 /**
  * Props for a plain native `<input>`/`<textarea>`/`<select>`. There is no
- * atom to render the error here, so the consumer renders it, with
+ * component to render the error here, so the consumer renders it, with
  * `id={errorId(name)}`, while `errors[name]` is set — `aria-describedby`
  * names that id only while the field shows an error, so it never points
  * at an element that isn't there.
@@ -109,7 +103,7 @@ export interface FormValidation<V extends Record<string, unknown>> extends FormV
   /** Current values. */
   values: V;
   /** Errors currently SHOWN — a field that is invalid but not yet due to show its error is absent. */
-  errors: Partial<Record<FormFieldName<V>, ReactNode>>;
+  errors: Partial<Record<FormFieldName<V>, string>>;
   /** Fields the user has left (blurred) at least once, or every field after a submit. */
   touched: Partial<Record<FormFieldName<V>, boolean>>;
   /** Submit attempts so far, valid or not. `0` means "before the first submit". */
@@ -131,7 +125,7 @@ export interface FormValidation<V extends Record<string, unknown>> extends FormV
 
 interface State<V> {
   values: V;
-  errors: Partial<Record<FormFieldName<V>, ReactNode>>;
+  errors: Partial<Record<FormFieldName<V>, string>>;
   touched: Partial<Record<FormFieldName<V>, boolean>>;
   submitCount: number;
   isSubmitting: boolean;
@@ -148,8 +142,8 @@ interface State<V> {
 // One shared empty list, so "no summary" never churns identity.
 const NO_ERRORS: readonly FormError[] = Object.freeze([]);
 
-function isError(result: ReactNode): boolean {
-  return result !== undefined && result !== null && result !== false && result !== "";
+function isError(result: string | false | null | undefined): result is string {
+  return typeof result === "string" && result !== "";
 }
 
 function lookupRoot(form: HTMLFormElement | null): Pick<Document, "getElementById"> | null {
@@ -190,8 +184,9 @@ function sortByDocumentOrder(
  * The validation timing half of the form pattern `Form` lays out. `Form`
  * itself still owns no validation — this hook is the optional, separate
  * piece a consumer opts into by passing its return value to `Form`'s
- * `validation` prop (or, without `Form`, by wiring `formRef` and
- * `handleSubmit` onto their own `<form>`). A consumer already using React
+ * `validation` prop (or, without `Form`, by wiring `formRef`,
+ * `handleSubmit` and `validationErrors` onto their own react-aria-components
+ * `Form`). A consumer already using React
  * Hook Form, Formik, or react-aria-components' own `validate` keeps using
  * that and never calls this.
  *
@@ -207,7 +202,7 @@ function sortByDocumentOrder(
  *
  * **Pending, never disabled.** A valid submit sets `isSubmitting` until
  * `onSubmit` settles; `getSubmitButtonProps()` maps that onto the
- * `Button` atom's `isPending`, which keeps the button focusable (a
+ * `Button` component's `isPending`, which keeps the button focusable (a
  * `disabled` button drops keyboard focus to `<body>` mid-submit) and has
  * react-aria-components announce the state. A second submit while the
  * first is pending is dropped by a ref, not by `isSubmitting` state, so
@@ -255,7 +250,7 @@ export function useFormValidation<V extends Record<string, unknown>>(
   const fieldId = useCallback((name: string) => `${prefixRef.current}-${name}`, []);
   const errorId = useCallback((name: string) => `${prefixRef.current}-${name}-error`, []);
 
-  const validateField = useCallback((name: FormFieldName<V>, values: V): ReactNode => {
+  const validateField = useCallback((name: FormFieldName<V>, values: V): string | undefined => {
     const validator = optionsRef.current.validators[name] as FieldValidator<V, typeof name> | undefined;
     if (!validator) return undefined;
     const result = validator(values[name], values);
@@ -263,7 +258,7 @@ export function useFormValidation<V extends Record<string, unknown>>(
   }, []);
 
   const withFieldError = useCallback(
-    (errors: State<V>["errors"], name: FormFieldName<V>, error: ReactNode): State<V>["errors"] => {
+    (errors: State<V>["errors"], name: FormFieldName<V>, error: string | undefined): State<V>["errors"] => {
       if (error === undefined) {
         if (!(name in errors)) return errors;
         const rest = { ...errors };
@@ -384,20 +379,15 @@ export function useFormValidation<V extends Record<string, unknown>>(
 
   const getFieldProps = useCallback(
     <K extends FormFieldName<V>>(name: K): FormFieldProps<V[K]> => {
-      const error = state.errors[name];
-      const invalid = error !== undefined;
       return {
         id: fieldId(name),
         name,
         value: state.values[name],
         onChange: (value: V[K]) => setFieldValue(name, value),
         onBlur: () => blurField(name),
-        isInvalid: invalid,
-        errorMessage: invalid ? error : undefined,
-        validationBehavior: "aria",
       };
     },
-    [state.errors, state.values, fieldId, setFieldValue, blurField],
+    [state.values, fieldId, setFieldValue, blurField],
   );
 
   const getNativeInputProps = useCallback(
@@ -421,10 +411,18 @@ export function useFormValidation<V extends Record<string, unknown>>(
     [state.isSubmitting],
   );
 
+  // A new object on every state update, never memoised on `errors` alone:
+  // react-aria-components drops a field's server error once the user commits
+  // a change to it and shows it again only when `validationErrors` is a new
+  // identity. The hook is the source of truth, so every update re-arms
+  // exactly the errors it still holds.
+  const validationErrors = useMemo<Record<string, string>>(() => ({ ...state.errors }) as Record<string, string>, [state]);
+
   return useMemo(
     () => ({
       values: state.values,
       errors: state.errors,
+      validationErrors,
       touched: state.touched,
       submitCount: state.submitCount,
       isSubmitting: state.isSubmitting,
@@ -439,6 +437,6 @@ export function useFormValidation<V extends Record<string, unknown>>(
       handleSubmit,
       reset,
     }),
-    [state, fieldId, errorId, getFieldProps, getNativeInputProps, getSubmitButtonProps, setFieldValue, handleSubmit, reset],
+    [state, validationErrors, fieldId, errorId, getFieldProps, getNativeInputProps, getSubmitButtonProps, setFieldValue, handleSubmit, reset],
   );
 }

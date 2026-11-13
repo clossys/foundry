@@ -9,6 +9,10 @@ export const surfaceEntryParity: [SiteHeaderSurface, RootSurface, ServerSurface]
 export const solidSurface = <SiteHeader brand="Acme" surface="solid" tone="base" />;
 export const transparentSurface = <SiteHeader brand="Acme" surface="transparent" tone="inverse" />;
 export const glassSurface = <SiteHeader brand="Acme" surface="glass" tone="inverse" />;
+export const stickySurface = <SiteHeader brand="Acme" surface="solid" position="sticky" />;
+export const staticSurface = <SiteHeader brand="Acme" surface="transparent" position="static" />;
+// @ts-expect-error fixed is the glass mechanism, not a selectable position member
+export const invalidPosition = <SiteHeader brand="Acme" position="fixed" />;
 // @ts-expect-error ground is removed from SiteHeader
 export const staleHeaderGround = <SiteHeader brand="Acme" ground="inverse" />;
 // @ts-expect-error placement is removed from SiteHeader

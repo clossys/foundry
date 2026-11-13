@@ -124,16 +124,8 @@ describe("SiteHeader", () => {
   });
 
   describe("surface", () => {
-    it("documents an inverse overlay whose children inherit the gated ink", () => {
-      const readme = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8");
-      const blocks = [...readme.matchAll(/```tsx\n([\s\S]*?)```/g)].map((match) => match[1] ?? "");
-      const example = blocks.find((block) => block.includes('surface="glass"') && block.includes('tone="inverse"'));
-      expect(example).toBeDefined();
-      // tone sets inherited ink only: no child in the example may set its own.
-      expect(example).not.toMatch(/<Link\b|<Brandmark\b|ActionLink|text-ink-/);
-      const anchors = example?.match(/<a\b[^>]*>/g) ?? [];
-      expect(anchors.length).toBeGreaterThan(0);
-      for (const anchor of anchors) expect(anchor).toContain('className="text-inherit"');
+    it("renders an inverse overlay whose children inherit the gated ink", () => {
+      // tone sets inherited ink only: the children set no ink of their own...
       // ...so every child reads in the header's own ink, which the gate checks over the inverse glass.
       const { container } = render(
         <SiteHeader
@@ -143,10 +135,10 @@ describe("SiteHeader", () => {
           actions={<a href="/sign-in" className="text-inherit">Sign in</a>}
         />,
       );
-      expect(container.querySelector("header")?.classList.contains("text-ink-on-inverse")).toBe(true);
+      expect(container.querySelector("header")?.classList.contains("text-background")).toBe(true);
       for (const link of container.querySelectorAll("a")) expect(link.className).toBe("text-inherit");
       const gated = CONTRAST_PAIRS.filter((pair) => pair.background === "--color-surface-glass-inverse").map((pair) => pair.foreground);
-      expect(new Set(gated)).toEqual(new Set(["--color-ink-on-inverse"]));
+      expect(new Set(gated)).toEqual(new Set(["--background"]));
     });
 
     const FLOW_MARKUP = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} navPlacement="centered" surface="solid" />);
@@ -160,23 +152,22 @@ describe("SiteHeader", () => {
     it("applies inverse tone to the solid surface", () => {
       render(<SiteHeader brand={<span>Acme</span>} tone="inverse" menuOpen />);
       expect(screen.getByRole("banner")).toHaveAttribute("data-tone", "inverse");
-      expect(screen.getByRole("banner")).toHaveClass("bg-surface-inverse", "text-ink-on-inverse");
+      expect(screen.getByRole("banner")).toHaveClass("bg-foreground", "text-background");
     });
 
     it("overlay fixes the header to the top of the viewport, out of flow, over the shell z-index", () => {
       render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
       const banner = screen.getByRole("banner");
-      expect(banner.style.position).toBe("fixed");
-      expect(banner.style.insetBlockStart).toBe("0");
-      expect(banner.style.insetInline).toBe("0");
-      expect(banner.style.zIndex).toBe("var(--ui-z-shell, 20)");
+      // Named utilities: fixed, block-start 0, both inline edges 0, and the shell layer (--ui-z-shell).
+      expect(banner).toHaveClass("fixed", "top-0", "inset-x-0", "layer-shell");
+      expect(banner.getAttribute("style")).toBeNull();
       expect(banner).toHaveAttribute("data-placement", "overlay");
     });
 
     it("overlay paints through the site-header-overlay utility, with no ground plate or border classes", () => {
       render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
       const classes = screen.getByRole("banner").className.split(" ");
-      expect(classes).toEqual(expect.arrayContaining(["site-header-overlay", "site-header-ink", "text-ink-primary", "py-sm", "site-header-contract"]));
+      expect(classes).toEqual(expect.arrayContaining(["site-header-overlay", "site-header-ink", "text-foreground", "py-shell-chrome", "site-header-contract"]));
       expect(classes).not.toEqual(expect.arrayContaining(["bg-surface-raised", "border-b"]));
       expect(screen.getByRole("banner").style.borderBottomWidth).toBe("");
     });
@@ -188,7 +179,7 @@ describe("SiteHeader", () => {
       render(<SiteHeader brand={<span>Acme</span>} surface="glass" tone="inverse" />);
       const banner = screen.getByRole("banner");
       expect(banner).toHaveAttribute("data-tone", "inverse");
-      expect(banner.className).toContain("text-ink-on-inverse");
+      expect(banner.className).toContain("text-background");
       expect(banner.className).not.toContain("text-ink-primary");
     });
 
@@ -205,7 +196,7 @@ describe("SiteHeader", () => {
         <ServerSiteHeader brand={<span>Acme</span>} surface="glass" className="my-header" style={{ zIndex: 5 }} />,
       );
       expect(html).toMatch(/class="[^"]*site-header-overlay[^"]*my-header"/);
-      expect(html).toContain("position:fixed");
+      expect(html).toMatch(/class="[^"]*\bfixed\b[^"]*"/);
       expect(html).toContain("z-index:5");
       expect(html).toContain('data-surface="glass"');
     });
@@ -220,9 +211,11 @@ describe("SiteHeader", () => {
       expect(link.querySelector(".sr-only")).toBeNull();
       expect(link.childNodes).toHaveLength(1);
       expect(link.firstChild?.nodeType).toBe(Node.TEXT_NODE);
-      expect(link.className).toContain("bg-accent");
-      expect(link.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
-      expect(link.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+      // The stock primary button at the small size, held to the tap target by the shared utility.
+      expect(link).toHaveAttribute("data-slot", "button");
+      expect(link).toHaveAttribute("data-variant", "default");
+      expect(link).toHaveAttribute("data-size", "sm");
+      expect(link).toHaveClass("min-size-tap");
     });
 
     function renderEnvironments(current: "app" | "admin" | null = "admin") {
@@ -257,14 +250,15 @@ describe("SiteHeader", () => {
       expect(label.className.split(" ")).toEqual(["sr-only", "tablet:not-sr-only"]);
     });
 
-    it("marks only the current link with aria-current=true and a non-colour cue", () => {
+    it("marks only the current link with aria-current=page and a non-colour cue", () => {
       renderEnvironments("admin");
       const app = screen.getByRole("link", { name: "App" });
       const admin = screen.getByRole("link", { name: "Admin" });
-      expect(admin).toHaveAttribute("aria-current", "true");
+      expect(admin).toHaveAttribute("aria-current", "page");
       expect(app).not.toHaveAttribute("aria-current");
-      expect(admin.style.boxShadow).toContain("inset");
-      expect(app.style.boxShadow).toBe("");
+      // The non-colour cue is the current-mark utility (an inset block-end rule in currentColor).
+      expect(admin).toHaveClass("current-mark");
+      expect(app).not.toHaveClass("current-mark");
     });
 
     it("renders no aria-current when no link is current", () => {
@@ -275,22 +269,24 @@ describe("SiteHeader", () => {
     it("reaches the tap-target token in both dimensions", () => {
       renderEnvironments();
       const app = screen.getByRole("link", { name: "App" });
-      expect(app.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
-      expect(app.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+      expect(app).toHaveClass("min-size-tap");
+      expect(app.style.minHeight).toBe("");
     });
 
     it("borrows the small button look without the outline-none that would hide its focus outline", () => {
       render(<SiteHeader.ActionLink href="/" label="Home" icon={Home} variant="primary" />);
-      const classes = screen.getByRole("link", { name: "Home" }).className.split(" ");
-      expect(classes).toContain("bg-accent");
-      expect(classes).toContain("px-sm");
+      const link = screen.getByRole("link", { name: "Home" });
+      expect(link).toHaveAttribute("data-variant", "default");
+      expect(link).toHaveAttribute("data-size", "sm");
+      const classes = link.className.split(" ");
       expect(classes).not.toContain("outline-none");
-      expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent"]));
+      // The stock focus outline stays on: a solid focus-ring outline when focus is visible.
+      expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-solid", "focus-visible:outline-(--color-focus-ring)"]));
     });
 
     it("defaults to the secondary look", () => {
       render(<SiteHeader.ActionLink href="/" label="Home" icon={Home} />);
-      expect(screen.getByRole("link", { name: "Home" }).className).toContain("bg-surface-raised");
+      expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("data-variant", "secondary");
     });
 
     it("keeps one banner and no navigation landmark when several links fill actions", () => {
@@ -302,7 +298,7 @@ describe("SiteHeader", () => {
     it("ships from the server entry and renders without client code", () => {
       const html = renderToStaticMarkup(<ServerSiteHeader.ActionLink href="/" label="Home" icon={Home} isCurrent />);
       expect(html).toContain('href="/"');
-      expect(html).toContain('aria-current="true"');
+      expect(html).toContain('aria-current="page"');
       expect(html).toContain(">Home</span>");
     });
   });
@@ -323,6 +319,7 @@ it("ships the default header candidate and a shared frame clearance including sa
   expect(readFileSync(join(styles, "theme-keys.css"), "utf8").match(/& \.nav-disclosure-panel \{[^\n]*padding-inline:[^\n]+/g)?.at(-1)).toContain("padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))");
 });
 
-it("documents the two decorative icon bars", () => {
-  expect(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8")).toContain("icon toggle draws two\ndecorative bars");
+it("draws the icon toggle as a decorative stock icon", () => {
+  render(<NavDisclosure trigger="icon"><a href="/about">About</a></NavDisclosure>);
+  expect(document.querySelector(".nav-disclosure-toggle svg")).toHaveAttribute("aria-hidden", "true");
 });

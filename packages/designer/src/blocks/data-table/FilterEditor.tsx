@@ -1,11 +1,15 @@
 import { defaultMinimumMessage, defaultMaximumMessage, defaultApplyRangeMessage, defaultComparisonMessage, defaultFilterValueMessage, defaultMatchingMessage, defaultBooleanFilterMessage, defaultFacetValueMessage, type DataTableMessages } from "./messages.js";
 import { useEffect, useState } from "react";
-import { Button } from "../../atoms/Button.js";
-import { Checkbox } from "../../atoms/Checkbox.js";
-import { Select } from "../../atoms/Select.js";
-import { TextField } from "../../atoms/TextField.js";
+
 import type { TableFacet, TableFilter } from "../table-model/index.js";
 import { dateValue } from "../table-model/model.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
+import { StockSelect } from "../stock-select.js";
+
+const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
+const Checkbox = componentLeaf<typeof import("../../components/preview-runtime/components/checkbox/checkbox.js").Checkbox>("components.checkbox");
+const TextField = componentLeaf<typeof import("../../components/preview-runtime/components/text-field/text-field.js").TextField>("components.text-field");
+const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 type RangeFilter = Extract<TableFilter, { kind: "number" | "date" }>;
 function isEmptyFilter(filter: TableFilter): filter is Extract<TableFilter, { op: "empty" | "notEmpty" }> {
@@ -40,11 +44,11 @@ function RangeEditor({
     const bounds = { ...(min ? { min: filter.kind === "number" ? Number(min) : min } : {}), ...(max ? { max: filter.kind === "number" ? Number(max) : max } : {}) };
     change({ column: filter.column, kind: filter.kind, op: "range", ...bounds } as RangeFilter);
   };
-  return <div className="flex flex-col gap-sm">
-    <TextField label={minimumMessage(label)} value={min} onChange={setMin} isInvalid={invalid} errorMessage={invalidRangeLabel} description={filter.kind === "date" ? <span>{dateHintLabel}</span> : undefined} />
+  return <SemanticContent as="div" className="flex flex-col gap-sm">
+    <TextField label={minimumMessage(label)} value={min} onChange={setMin} isInvalid={invalid} errorMessage={invalidRangeLabel} description={filter.kind === "date" ? <SemanticContent as="span">{dateHintLabel}</SemanticContent> : undefined} />
     <TextField label={maximumMessage(label)} value={max} onChange={setMax} isInvalid={invalid} errorMessage={invalidRangeLabel} />
     <Button variant="secondary" onPress={apply}>{applyRangeMessage(label)}</Button>
-  </div>;
+  </SemanticContent>;
 }
 export function FilterEditor({
   /** @default column => `${column} comparison` */
@@ -75,14 +79,14 @@ export function FilterEditor({
   if (filter.op === "notEquals" || filter.op === "notIn") return null;
   if (filter.kind === "number" || filter.kind === "date") return <RangeEditor {...messages} filter={filter} label={label} change={change} />;
   if (filter.kind === "text") return <>
-    <Select label={comparisonMessage(label)} selectedKey={filter.op} options={[{ id: "contains", label: containsLabel }, { id: "equals", label: equalsLabel }]} onSelectionChange={key => { if (key === "contains" || key === "equals") change({ ...filter, op: key }); }} />
+    <StockSelect label={comparisonMessage(label)} selectedKey={filter.op} options={[{ id: "contains", label: containsLabel }, { id: "equals", label: equalsLabel }]} onSelectionChange={key => { if (key === "contains" || key === "equals") change({ ...filter, op: key }); }} />
     <TextField label={filterValueMessage(label)} value={filter.value} onChange={value => change({ ...filter, value })} />
   </>;
   if (filter.kind === "boolean") return <Checkbox isSelected={filter.value} onChange={value => change({ ...filter, value })}>{booleanFilterMessage(label)}</Checkbox>;
   const values = [...new Set([...facets.flatMap(facet => typeof facet.value === "string" ? [facet.value] : []), ...filter.values])];
-  return <div className="flex flex-col gap-sm">
-    {filter.kind === "tags" ? <Select label={matchingMessage(label)} selectedKey={filter.op} options={[{ id: "any", label: anyTagsLabel }, { id: "all", label: allTagsLabel }, { id: "none", label: noTagsLabel }]} onSelectionChange={key => { if (key === "any" || key === "all" || key === "none") change({ ...filter, op: key }); }} /> : null}
+  return <SemanticContent as="div" className="flex flex-col gap-sm">
+    {filter.kind === "tags" ? <StockSelect label={matchingMessage(label)} selectedKey={filter.op} options={[{ id: "any", label: anyTagsLabel }, { id: "all", label: allTagsLabel }, { id: "none", label: noTagsLabel }]} onSelectionChange={key => { if (key === "any" || key === "all" || key === "none") change({ ...filter, op: key }); }} /> : null}
     {values.map(value => <Checkbox key={value} isSelected={filter.values.includes(value)} onChange={checked => change({ ...filter, values: checked ? [...filter.values, value] : filter.values.filter(item => item !== value) })}>{facetValueMessage(label, value)}</Checkbox>)}
-    {!values.length ? <p className="text-body-s text-ink-muted">{noFacetValuesLabel}</p> : null}
-  </div>;
+    {!values.length ? <SemanticContent as="p" className="text-body-s text-ink-muted">{noFacetValuesLabel}</SemanticContent> : null}
+  </SemanticContent>;
 }

@@ -1,0 +1,2848 @@
+{
+  "order": "per L2: shadcn@aria (or shadcn-charts on core charts) first, then a Foundry gap seat only where no external ships the whole component, then Custom (last, hidden when empty)",
+  "custom": {
+    "id": "custom",
+    "label": "Custom",
+    "position": "last",
+    "hiddenWhenEmpty": true
+  },
+  "never": [
+    "rac-starter",
+    "shadcn-ui",
+    "heroui-v3",
+    "untitled-ui-react",
+    "radix-themes",
+    "mantine",
+    "park-ui",
+    "base-ui",
+    "shadcn-blocks",
+    "carbon",
+    "material-3",
+    "fluent",
+    "primer",
+    "bootstrap"
+  ],
+  "components": [
+    {
+      "l2": "actions-buttons",
+      "leaves": [
+        "components.button",
+        "components.native-action",
+        "components.toggle-button"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.button",
+            "components.toggle-button"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.native-action"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L4",
+            "slotNeeded": "a native <button> with browser form semantics (type, form, formAction) and native activation; the stock aria Button is a react-aria Button",
+            "reason": "native-action: retired 2026-11-11, merged into components.button (owner LAD-2; act.native-action now aliases components.button); NativeAction stays shipped for native <button> form semantics until callers move; styles come from stock buttonVariants",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "actions-menus",
+      "leaves": [
+        "components.menu",
+        "components.command",
+        "components.dropdown-menu"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.menu",
+            "components.command",
+            "components.dropdown-menu"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "actions-toolbars",
+      "leaves": [
+        "components.toolbar"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.toolbar"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@intentui/toolbar",
+              "url": "https://intentui.com/docs/components/controls/toolbar",
+              "stars": 1980,
+              "weeklyDownloads": 9084435,
+              "licence": "MIT"
+            },
+            "reason": "toolbar: no stock aria toolbar; Intent UI is react-aria based and the most popular partner (runner-up Jolly UI 1115 stars); new dep tailwindcss-react-aria-components; swap pending",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "inputs-form",
+      "leaves": [
+        "components.field",
+        "components.form"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.field",
+            "components.form"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/field+form"
+            },
+            "reason": "L1 decision: field already exports stock shadcn@aria field; form moves to stock form; swap pending (roster/fill relabel for field, stock form for form)",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "inputs-text",
+      "leaves": [
+        "components.text-field",
+        "components.search-field"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.text-field",
+            "components.search-field"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/input+field+input-group"
+            },
+            "reason": "L1 decision: text-field already exports stock shadcn@aria text-field (relabel pending); search-field composes stock input-group+input (R2F-45 stopped on Foundry-pinned contracts)",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "inputs-choice",
+      "leaves": [
+        "components.checkbox",
+        "components.radio-group",
+        "components.switch",
+        "components.select",
+        "components.combo-box",
+        "components.toggle-group"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.checkbox",
+            "components.radio-group",
+            "components.switch",
+            "components.select",
+            "components.combo-box",
+            "components.toggle-group"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "inputs-tags",
+      "leaves": [
+        "components.tag-group"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.tag-group"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "question:components.tag-group"
+            },
+            "reason": "tag-group: no stock tag group; R2F-45 stopped (no new dep); likely L2 Intent UI tag-group, not measured by R2F-50; re-run the ladder scout for this leaf",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "inputs-number",
+      "leaves": [
+        "components.number-field",
+        "components.slider"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.slider"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.number-field"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "question:delete"
+            },
+            "reason": "number-field: retired 2026-11-11 (owner LAD-1; zero callers, R2F-50 DELETE); id kept, never reused; Intent UI number-field (1980 stars) if it is needed later",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "inputs-date",
+      "leaves": [
+        "components.date-field",
+        "components.date-picker",
+        "components.calendar"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.calendar"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.date-field",
+            "components.date-picker"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/calendar+popover+input-group"
+            },
+            "reason": "date-field/date-picker: no stock date field; date-picker composes stock calendar+popover; R2F-45 stopped (Foundry-pinned contracts); segmented date-field not measured by R2F-50",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "inputs-color",
+      "leaves": [
+        "components.color-picker"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.color-picker"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L4",
+            "slotNeeded": "a react-aria color area/wheel/slider/swatch compound; no stock color picker",
+            "reason": "color-picker: kept per R2F-53 ladder; partner candidates not measured by R2F-50; craft qualification before catalog adoption",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "inputs-files",
+      "leaves": [
+        "components.file-trigger"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.file-trigger"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "display-data",
+      "leaves": [
+        "components.table",
+        "components.grid-list",
+        "components.tree",
+        "components.meter"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.table"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.grid-list",
+            "components.tree",
+            "components.meter"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@intentui/grid-list|tree|meter",
+              "url": "https://intentui.com/docs/components/collections/grid-list",
+              "stars": 1980,
+              "weeklyDownloads": 9084435,
+              "licence": "MIT"
+            },
+            "reason": "grid-list, tree, meter: no stock (meter 404); Intent UI is react-aria based with parity to the current RAC parts (runner-ups Jolly UI 1115, Kibo tree 3982 not react-aria); swap pending",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "display-labels",
+      "leaves": [
+        "components.badge",
+        "components.keyboard"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.badge",
+            "components.keyboard"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "display-media",
+      "leaves": [
+        "components.avatar",
+        "components.media-player"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.avatar"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.media-player"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@kibo-ui/video-player",
+              "url": "https://www.kibo-ui.com/components/video-player",
+              "stars": 3982,
+              "weeklyDownloads": 5679525,
+              "licence": "MIT"
+            },
+            "reason": "media-player: adopted in R2F-53 (Kibo UI video-player on media-chrome); runner-up Dice UI media-player 2111 stars; roster source label still foundry",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "display-assets",
+      "leaves": [
+        "components.icon",
+        "components.logo"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.icon",
+            "components.logo"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "lucide-react",
+              "url": "https://github.com/lucide-icons/lucide",
+              "stars": 25685,
+              "weeklyDownloads": 131230292,
+              "licence": "ISC"
+            },
+            "reason": "icon: lucide-react is shadcn's default icon library (runner-up @phosphor-icons/react); logo: consumer brand mark, a brand asset with no external part; Icon still re-renders lucide path data, swap pending",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "charts-core",
+      "leaves": [
+        "components.chart-bar",
+        "components.chart-line",
+        "components.chart-area"
+      ],
+      "offers": [
+        {
+          "source": "shadcn-charts",
+          "leaves": [
+            "components.chart-bar",
+            "components.chart-line",
+            "components.chart-area"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "charts-compact",
+      "leaves": [
+        "components.chart-sparkline",
+        "components.chart-status-strip"
+      ],
+      "offers": []
+    },
+    {
+      "l2": "charts-analytic",
+      "leaves": [
+        "components.chart-scatter",
+        "components.chart-heatmap",
+        "components.chart-range",
+        "components.chart-waterfall"
+      ],
+      "offers": []
+    },
+    {
+      "l2": "display-content",
+      "leaves": [
+        "components.semantic-content",
+        "components.rich-text",
+        "components.item"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.item"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.rich-text"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "minimal-tiptap",
+              "url": "https://github.com/Aslam97/minimal-tiptap",
+              "stars": 1798,
+              "weeklyDownloads": 29366338,
+              "licence": "MIT"
+            },
+            "rejected": [
+              {
+                "id": "@kibo-ui/editor",
+                "url": "https://www.kibo-ui.com/components/editor",
+                "stars": 3982,
+                "weeklyDownloads": 5679525,
+                "licence": "MIT",
+                "reason": "stars are the whole Kibo UI repo; minimal-tiptap is the most used dedicated Tiptap shadcn editor"
+              }
+            ],
+            "reason": "rich-text: relabelled to its real source (D6, 2026-11-11): shipped RichText is Foundry-authored on Tiptap 3 (engine exception, fill foundry/components.rich-text); no stock rich-text; partner minimal-tiptap per R2F-50",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-11"
+          }
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.semantic-content"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L4",
+            "slotNeeded": "registration seat: seen=registered needs registered native elements (owner keep 2026-11-10)",
+            "reason": "semantic-content: owner chose Keep over Delete 2026-11-10; plain HTML tags, no custom design; native JSX + stock typography is the rejected alternative",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "display-specimens",
+      "leaves": [
+        "components.specimen-swatch",
+        "components.specimen-ladder",
+        "components.specimen-player",
+        "components.specimen-grid",
+        "components.specimen-matrix",
+        "components.specimen-viewport",
+        "components.specimen-passage",
+        "components.specimen-copy-in-context"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.specimen-swatch",
+            "components.specimen-ladder",
+            "components.specimen-player",
+            "components.specimen-grid",
+            "components.specimen-matrix",
+            "components.specimen-viewport",
+            "components.specimen-passage",
+            "components.specimen-copy-in-context"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "category": "studio-composition",
+            "reason": "Studio specimens (swatch, ladder, player, grid, matrix, viewport, passage, copy-in-context): Studio's own preview compositions, no external part",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "feedback-messages",
+      "leaves": [
+        "components.banner",
+        "components.toast",
+        "components.empty"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.banner",
+            "components.empty"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.toast"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/sonner"
+            },
+            "reason": "toast: adopted in R2F-53 (stock shadcn@aria sonner); roster source label still foundry, relabel is a swap-list item",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "feedback-indicators",
+      "leaves": [
+        "components.status-mark"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.status-mark"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@kibo-ui/status",
+              "url": "https://www.kibo-ui.com/components/status",
+              "stars": 3982,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "status-mark: adopted in R2F-53 (Kibo UI status + lucide glyph per tone); runner-up Dice UI status 2111 stars; weeklyDownloads 0: registry-distributed, no npm download count",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "feedback-progress",
+      "leaves": [
+        "components.progress-bar",
+        "components.spinner",
+        "components.skeleton"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.progress-bar",
+            "components.skeleton"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.spinner"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/spinner"
+            },
+            "reason": "L1 decision: spinner already exports the vendored stock shadcn@aria spinner (R2F-52); roster/fill relabel pending",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "navigation-links",
+      "leaves": [
+        "components.link",
+        "components.breadcrumbs"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.breadcrumbs"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.link"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/button#LinkButton"
+            },
+            "reason": "L1 decision: link uses stock button LinkButton (R2F-52, vendored button@4.23.0); roster/fill relabel pending",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "navigation-panels",
+      "leaves": [
+        "components.tabs"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.tabs"
+          ]
+        }
+      ]
+    },
+    {
+      "l2": "navigation-trees",
+      "leaves": [
+        "components.navigation-tree",
+        "components.sidebar"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.navigation-tree"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "components.tree"
+            },
+            "reason": "navigation-tree: merge candidate into components.tree (Intent UI tree) or stock sidebar menu; R2F-45 stopped (Foundry-pinned contracts); not measured by R2F-50",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "navigation-canvas",
+      "leaves": [
+        "components.canvas-zoom",
+        "components.canvas-map"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.canvas-zoom",
+            "components.canvas-map"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L4",
+            "slotNeeded": "Studio's canvas camera: zoom controls and a board overview minimap over the Foundry CanvasSurface projection; both are visible in Studio, so they are registered (owner LAD-3, 2026-11-11)",
+            "reason": "canvas-zoom composes stock toolbar+button+icon; canvas-map composes stock button over SVG board rects; no stock shadcn@aria canvas camera part, and partner canvases (React Flow controls/minimap) own their own surface, so they cannot drive CanvasSurface",
+            "checkedAt": "2026-11-11"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "containment-structure",
+      "leaves": [
+        "components.card",
+        "components.separator",
+        "components.disclosure",
+        "components.resize-handle",
+        "components.scroll-area"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.card",
+            "components.separator",
+            "components.disclosure",
+            "components.scroll-area"
+          ]
+        },
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.resize-handle"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/resizable"
+            },
+            "reason": "L1 decision: resize-handle moves to stock shadcn resizable (react-resizable-panels); R2F-53 held it for the frames rework (high follow-up)",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "containment-overlays",
+      "leaves": [
+        "components.dialog",
+        "components.popover",
+        "components.tooltip",
+        "components.sheet"
+      ],
+      "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.dialog",
+            "components.popover",
+            "components.tooltip",
+            "components.sheet"
+          ]
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "l2": "logo-artwork",
+      "leaves": [
+        "assets.lockup",
+        "assets.mark"
+      ],
+      "offers": [],
+      "starter": "identity-kit"
+    },
+    {
+      "l2": "app-identity-browser",
+      "leaves": [
+        "assets.favicon"
+      ],
+      "offers": [],
+      "starter": "identity-kit"
+    },
+    {
+      "l2": "app-identity-application",
+      "leaves": [
+        "assets.app-icon"
+      ],
+      "offers": [],
+      "starter": "identity-kit"
+    },
+    {
+      "l2": "icons-navigation",
+      "leaves": [
+        "assets.icon-chevron-down",
+        "assets.icon-chevron-up",
+        "assets.icon-chevron-left",
+        "assets.icon-chevron-right",
+        "assets.icon-arrow-right",
+        "assets.icon-external-link",
+        "assets.icon-home",
+        "assets.icon-panel-left"
+      ],
+      "offers": [
+        {
+          "source": "lucide",
+          "leaves": [
+            "assets.icon-chevron-down",
+            "assets.icon-chevron-up",
+            "assets.icon-chevron-left",
+            "assets.icon-chevron-right",
+            "assets.icon-arrow-right",
+            "assets.icon-external-link",
+            "assets.icon-home",
+            "assets.icon-panel-left"
+          ],
+          "ladder": {
+            "rung": "L2",
+            "category": "icon-standard",
+            "chosen": {
+              "id": "lucide-react",
+              "url": "https://github.com/lucide-icons/lucide",
+              "stars": 25685,
+              "weeklyDownloads": 131230292,
+              "licence": "ISC"
+            },
+            "reason": "icons: lucide is shadcn's default icon library; offered first",
+            "checkedAt": "2026-11-10"
+          }
+        },
+        {
+          "source": "phosphor",
+          "leaves": [
+            "assets.icon-chevron-down",
+            "assets.icon-chevron-up",
+            "assets.icon-chevron-left",
+            "assets.icon-chevron-right",
+            "assets.icon-arrow-right",
+            "assets.icon-external-link",
+            "assets.icon-home"
+          ],
+          "ladder": {
+            "rung": "L2",
+            "category": "icon-standard",
+            "chosen": {
+              "id": "@phosphor-icons/react",
+              "url": "https://github.com/phosphor-icons/react",
+              "stars": 1794,
+              "weeklyDownloads": 7475231,
+              "licence": "MIT"
+            },
+            "reason": "icons: popular MIT alternate set offered after lucide (the default); shadcn iconLibrary listing not verified",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "icons-actions",
+      "leaves": [
+        "assets.icon-search",
+        "assets.icon-close",
+        "assets.icon-check",
+        "assets.icon-settings",
+        "assets.icon-list-view",
+        "assets.icon-grid-view",
+        "assets.icon-theme-light",
+        "assets.icon-theme-dark",
+        "assets.icon-theme-system"
+      ],
+      "offers": [
+        {
+          "source": "lucide",
+          "leaves": [
+            "assets.icon-search",
+            "assets.icon-close",
+            "assets.icon-check",
+            "assets.icon-settings",
+            "assets.icon-list-view",
+            "assets.icon-grid-view",
+            "assets.icon-theme-light",
+            "assets.icon-theme-dark",
+            "assets.icon-theme-system"
+          ],
+          "ladder": {
+            "rung": "L2",
+            "category": "icon-standard",
+            "chosen": {
+              "id": "lucide-react",
+              "url": "https://github.com/lucide-icons/lucide",
+              "stars": 25685,
+              "weeklyDownloads": 131230292,
+              "licence": "ISC"
+            },
+            "reason": "icons: lucide is shadcn's default icon library; offered first",
+            "checkedAt": "2026-11-10"
+          }
+        },
+        {
+          "source": "phosphor",
+          "leaves": [
+            "assets.icon-search",
+            "assets.icon-close",
+            "assets.icon-check",
+            "assets.icon-settings",
+            "assets.icon-list-view",
+            "assets.icon-grid-view",
+            "assets.icon-theme-light",
+            "assets.icon-theme-dark",
+            "assets.icon-theme-system"
+          ],
+          "ladder": {
+            "rung": "L2",
+            "category": "icon-standard",
+            "chosen": {
+              "id": "@phosphor-icons/react",
+              "url": "https://github.com/phosphor-icons/react",
+              "stars": 1794,
+              "weeklyDownloads": 7475231,
+              "licence": "MIT"
+            },
+            "reason": "icons: popular MIT alternate set offered after lucide (the default); shadcn iconLibrary listing not verified",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "icons-status",
+      "leaves": [
+        "assets.icon-success",
+        "assets.icon-warning",
+        "assets.icon-danger",
+        "assets.icon-info"
+      ],
+      "offers": [
+        {
+          "source": "lucide",
+          "leaves": [
+            "assets.icon-success",
+            "assets.icon-warning",
+            "assets.icon-danger",
+            "assets.icon-info"
+          ],
+          "ladder": {
+            "rung": "L2",
+            "category": "icon-standard",
+            "chosen": {
+              "id": "lucide-react",
+              "url": "https://github.com/lucide-icons/lucide",
+              "stars": 25685,
+              "weeklyDownloads": 131230292,
+              "licence": "ISC"
+            },
+            "reason": "icons: lucide is shadcn's default icon library; offered first",
+            "checkedAt": "2026-11-10"
+          }
+        },
+        {
+          "source": "phosphor",
+          "leaves": [
+            "assets.icon-success",
+            "assets.icon-warning",
+            "assets.icon-danger",
+            "assets.icon-info"
+          ],
+          "ladder": {
+            "rung": "L2",
+            "category": "icon-standard",
+            "chosen": {
+              "id": "@phosphor-icons/react",
+              "url": "https://github.com/phosphor-icons/react",
+              "stars": 1794,
+              "weeklyDownloads": 7475231,
+              "licence": "MIT"
+            },
+            "reason": "icons: popular MIT alternate set offered after lucide (the default); shadcn iconLibrary listing not verified",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "icons-objects",
+      "leaves": [
+        "assets.icon-user",
+        "assets.icon-team",
+        "assets.icon-organization",
+        "assets.icon-website",
+        "assets.icon-institution",
+        "assets.icon-guide",
+        "assets.icon-document",
+        "assets.icon-document-approved",
+        "assets.icon-folder",
+        "assets.icon-date",
+        "assets.icon-time",
+        "assets.icon-payment",
+        "assets.icon-receipt",
+        "assets.icon-business",
+        "assets.icon-security",
+        "assets.icon-locked",
+        "assets.icon-legal",
+        "assets.icon-package",
+        "assets.icon-layers",
+        "assets.icon-integration"
+      ],
+      "offers": [
+        {
+          "source": "lucide",
+          "leaves": [
+            "assets.icon-user",
+            "assets.icon-team",
+            "assets.icon-organization",
+            "assets.icon-website",
+            "assets.icon-institution",
+            "assets.icon-guide",
+            "assets.icon-document",
+            "assets.icon-document-approved",
+            "assets.icon-folder",
+            "assets.icon-date",
+            "assets.icon-time",
+            "assets.icon-payment",
+            "assets.icon-receipt",
+            "assets.icon-business",
+            "assets.icon-security",
+            "assets.icon-locked",
+            "assets.icon-legal",
+            "assets.icon-package",
+            "assets.icon-layers",
+            "assets.icon-integration"
+          ],
+          "ladder": {
+            "rung": "L2",
+            "category": "icon-standard",
+            "chosen": {
+              "id": "lucide-react",
+              "url": "https://github.com/lucide-icons/lucide",
+              "stars": 25685,
+              "weeklyDownloads": 131230292,
+              "licence": "ISC"
+            },
+            "reason": "icons: lucide is shadcn's default icon library; offered first",
+            "checkedAt": "2026-11-10"
+          }
+        },
+        {
+          "source": "phosphor",
+          "leaves": [
+            "assets.icon-user",
+            "assets.icon-team",
+            "assets.icon-organization",
+            "assets.icon-website",
+            "assets.icon-institution",
+            "assets.icon-guide",
+            "assets.icon-document",
+            "assets.icon-document-approved",
+            "assets.icon-folder",
+            "assets.icon-date",
+            "assets.icon-time",
+            "assets.icon-payment",
+            "assets.icon-receipt",
+            "assets.icon-business",
+            "assets.icon-security",
+            "assets.icon-locked",
+            "assets.icon-legal",
+            "assets.icon-package",
+            "assets.icon-layers",
+            "assets.icon-integration"
+          ],
+          "ladder": {
+            "rung": "L2",
+            "category": "icon-standard",
+            "chosen": {
+              "id": "@phosphor-icons/react",
+              "url": "https://github.com/phosphor-icons/react",
+              "stars": 1794,
+              "weeklyDownloads": 7475231,
+              "licence": "MIT"
+            },
+            "reason": "icons: popular MIT alternate set offered after lucide (the default); shadcn iconLibrary listing not verified",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "imagery-framing",
+      "leaves": [
+        "assets.image-ratio"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "assets.image-ratio"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/aspect-ratio"
+            },
+            "reason": "L1 decision: image-ratio moves to stock shadcn aspect-ratio; swap pending",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "imagery-resources",
+      "leaves": [
+        "assets.image",
+        "assets.video"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "assets.image",
+            "assets.video"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "category": "brand-asset",
+            "reason": "image, video: asset loaders for consumer media, not UI parts",
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "imagery-patterns",
+      "leaves": [
+        "assets.pattern"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "assets.pattern"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@magicui/dot-pattern|grid-pattern",
+              "url": "https://magicui.design/docs/components/dot-pattern",
+              "stars": 23192,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "pattern: Magic UI dot/grid pattern, no deps, most popular; weeklyDownloads 0: registry-distributed, no npm download count; swap pending",
+            "adoption": {
+              "state": "pending",
+              "wave": "A"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "l2": "specimens-content",
+      "leaves": [
+        "sections.specimen-swatch",
+        "sections.specimen-color-ramp",
+        "sections.specimen-type-ladder",
+        "sections.specimen-spacing-ladder",
+        "sections.specimen-radius-ladder",
+        "sections.specimen-motion-player",
+        "sections.specimen-asset-grid",
+        "sections.specimen-icon-grid",
+        "sections.specimen-variant-matrix",
+        "sections.specimen-section-viewports",
+        "sections.specimen-frame-viewports",
+        "sections.specimen-rich-passage",
+        "sections.specimen-copy-in-context",
+        "sections.specimen-page-viewports"
+      ],
+      "offers": []
+    },
+    {
+      "l2": "parts-structure",
+      "leaves": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.band",
+            "sections.section-header"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "compose:native-section+typography+badge+button"
+            },
+            "reason": "band: native section + Tailwind container, no partner ships a band; section-header composes stock typography+badge+button",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "parts-navigation",
+      "leaves": [
+        "sections.pagination"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.pagination"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/pagination"
+            },
+            "reason": "L1 decision: pagination moves to stock shadcn pagination (cursor/load-more modes unmapped today)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "explain-introductions",
+      "leaves": [
+        "sections.hero",
+        "sections.logo-hero",
+        "sections.page-header",
+        "sections.logo-mark"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.hero",
+            "sections.logo-hero",
+            "sections.page-header",
+            "sections.logo-mark"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@reui/hero",
+              "url": "https://reui.io/r/registry.json",
+              "stars": 4032,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "hero: ReUI hero (runner-up Tailark hero-section 2341, Base-UI button); logo-hero composes hero+logo; page-header composes breadcrumb+typography; logo-mark retired 2026-11-11 (owner LAD-1); weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "explain-reading",
+      "leaves": [
+        "sections.content",
+        "sections.article",
+        "sections.sectioned-document",
+        "sections.legal-prose"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.content",
+            "sections.article",
+            "sections.sectioned-document",
+            "sections.legal-prose"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "compose:typography+table-of-contents"
+            },
+            "reason": "content, article: stock typography prose; sectioned-document adds table-of-contents; legal-prose retired 2026-11-11 (owner LAD-1)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "explain-promotion",
+      "leaves": [
+        "sections.features",
+        "sections.call-to-action"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.features",
+            "sections.call-to-action"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@reui/cta",
+              "url": "https://reui.io/r/registry.json",
+              "stars": 4032,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "call-to-action: ReUI cta (runner-up Tailark 2341); features: Tailark features-1 (Magic UI bento-grid adds @radix-ui/react-icons); weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "explain-social-proof",
+      "leaves": [
+        "sections.testimonials",
+        "sections.logo-cloud",
+        "sections.people"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.testimonials",
+            "sections.logo-cloud",
+            "sections.people"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@magicui/marquee",
+              "url": "https://magicui.design/docs/components/marquee",
+              "stars": 23192,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "testimonials (marquee + stock card), logo-cloud: Magic UI marquee (runner-up Tailark 2341); people: Tailark team-1; weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "explain-media",
+      "leaves": [
+        "sections.media",
+        "sections.gallery"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.media",
+            "sections.gallery"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/aspect-ratio+carousel"
+            },
+            "reason": "L1 decision: media = figure + stock aspect-ratio; gallery = stock carousel (embla)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "explain-guidance",
+      "leaves": [
+        "sections.faq",
+        "sections.steps",
+        "sections.timeline"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.faq",
+            "sections.steps",
+            "sections.timeline"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@reui/how-it-works|timeline",
+              "url": "https://reui.io/r/registry.json",
+              "stars": 4032,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "faq: L1 stock accordion; steps: ReUI how-it-works (runner-up Tailark 2341); timeline: ReUI timeline (Dice UI 2111 radix-ui; Origin UI excluded, Base UI); weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "organize-collections",
+      "leaves": [
+        "sections.cards",
+        "sections.resource-list",
+        "sections.task-list"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.cards",
+            "sections.resource-list",
+            "sections.task-list"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/card+item+checkbox+progress"
+            },
+            "reason": "cards compose stock card+item; resource-list composes item+grid-list; task-list composes item+checkbox+progress",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "organize-comparison",
+      "leaves": [
+        "sections.comparison",
+        "sections.pricing"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.comparison",
+            "sections.pricing"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@reui/pricing",
+              "url": "https://reui.io/r/registry.json",
+              "stars": 4032,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "comparison: L1 stock table (Tailark comparator; ReUI's needs Base UI); pricing: ReUI pricing (Tailark pricing uses a Base-UI button); weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "organize-summaries",
+      "leaves": [
+        "sections.stats",
+        "sections.status-list",
+        "sections.usage",
+        "sections.account-summary"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.stats",
+            "sections.status-list",
+            "sections.usage",
+            "sections.account-summary"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@reui/stats",
+              "url": "https://reui.io/r/registry.json",
+              "stars": 4032,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "stats: ReUI stats (Dice UI stat 2111); status-list composes item+badge; usage composes progress+item; account-summary composes card+item (merge with record-detail); weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "organize-records",
+      "leaves": [
+        "sections.data-table",
+        "sections.data-grid",
+        "sections.record-detail"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.data-table",
+            "sections.data-grid",
+            "sections.record-detail"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@tablecn/data-grid",
+              "url": "https://raw.githubusercontent.com/sadmann7/tablecn/main/registry.json",
+              "stars": 6379,
+              "weeklyDownloads": 35545733,
+              "licence": "MIT"
+            },
+            "reason": "data-table: L1 stock aria data-table page; data-grid: tablecn data-grid, most popular non-Base-UI (Dice UI 2111; ReUI excluded, Base UI); new dep @tanstack/react-virtual; record-detail retired 2026-11-11 (owner LAD-1)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "organize-history",
+      "leaves": [
+        "sections.activity-feed",
+        "sections.audit-log"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.activity-feed",
+            "sections.audit-log"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/data-table+item"
+            },
+            "reason": "audit-log: L1 stock data-table; activity-feed composes item (merge candidate with timeline)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "collect-forms",
+      "leaves": [
+        "sections.form",
+        "sections.newsletter"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.form",
+            "sections.newsletter"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/form+field"
+            },
+            "reason": "L1 decision: form composes stock form+field; newsletter retired 2026-11-11 (owner LAD-1)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "collect-workflows",
+      "leaves": [
+        "sections.wizard"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.wizard"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@reui/wizard",
+              "url": "https://reui.io/r/registry.json",
+              "stars": 4032,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "wizard: ReUI wizard, most popular (Dice UI stepper 2111); weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "collect-preferences",
+      "leaves": [
+        "sections.settings"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.settings"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/field+switch+card"
+            },
+            "reason": "settings composes stock field/fieldset+switch+card (ReUI settings-1 too specific)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "collect-configuration",
+      "leaves": [
+        "sections.column-mapper",
+        "sections.access-matrix"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.column-mapper",
+            "sections.access-matrix"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/table+select+checkbox"
+            },
+            "reason": "column-mapper composes table+select (no partner found); access-matrix composes table+checkbox",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "collect-conversation",
+      "leaves": [
+        "sections.chat"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.chat"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/message+bubble+message-scroller+attachment"
+            },
+            "reason": "L1 decision: chat composes the stock chat parts (prompt-kit 3150 stars is the partner alternative)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "collect-inputs",
+      "leaves": [
+        "sections.sign-in-form"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.sign-in-form"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/login-01"
+            },
+            "reason": "L1 decision: sign-in-form moves to the vendored stock login-01..05 blocks",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "navigate-indexes",
+      "leaves": [
+        "sections.link-index",
+        "sections.table-of-contents"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.link-index",
+            "sections.table-of-contents"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@reui/scrollspy",
+              "url": "https://reui.io/r/registry.json",
+              "stars": 4032,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "table-of-contents: ReUI scrollspy (Dice UI scroll-spy 2111); link-index composes item+LinkButton; weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "navigate-discovery",
+      "leaves": [
+        "sections.explorer",
+        "sections.filter-builder"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.explorer",
+            "sections.filter-builder"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@tablecn/data-table-filter-menu",
+              "url": "https://raw.githubusercontent.com/sadmann7/tablecn/main/registry.json",
+              "stars": 6379,
+              "weeklyDownloads": 35545733,
+              "licence": "MIT"
+            },
+            "reason": "filter-builder: tablecn data-table-filter-menu, most popular (ReUI filters 4032 registry-only, Dice query-builder 2111); explorer composes data-table+input-group+toggle-group",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "respond-states",
+      "leaves": [
+        "sections.empty-state",
+        "sections.error-state",
+        "sections.boundary-message"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.empty-state",
+            "sections.error-state",
+            "sections.boundary-message"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/empty"
+            },
+            "reason": "L1 decision: empty-state and error-state move to stock empty; boundary-message retired 2026-11-11 (owner LAD-1)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "respond-messages",
+      "leaves": [
+        "sections.notices",
+        "sections.consent"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.notices",
+            "sections.consent"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/alert+button"
+            },
+            "reason": "notices: L1 stock alert (+sonner); consent composes alert/card+button",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    }
+  ],
+  "frames": [
+    {
+      "l2": "page-shells-documents",
+      "leaves": [
+        "frames.site-shell",
+        "frames.document"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.site-shell",
+            "frames.document"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "compose:site-header+site-footer+typography+sidebar"
+            },
+            "reason": "site-shell composes site-header+site-footer+main (no partner shell); document composes typography+sidebar",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "page-shells-workspaces",
+      "leaves": [
+        "frames.app-shell"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.app-shell"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/sidebar-07"
+            },
+            "reason": "L1 decision: app-shell moves to the vendored stock sidebar-07 block (dashboard-01 the alternative)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "page-shells-authentication",
+      "leaves": [
+        "frames.auth-shell"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.auth-shell"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/login-01"
+            },
+            "reason": "L1 decision: auth-shell moves to the vendored stock login-0x layout",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "headers",
+      "leaves": [
+        "frames.site-header",
+        "frames.app-header"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.site-header",
+            "frames.app-header"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@reui/navbar",
+              "url": "https://reui.io/r/registry.json",
+              "stars": 4032,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "site-header: ReUI navbar, most popular eligible (Tailark header excluded, Base-UI button); app-header: L1 stock sidebar-0x header (trigger+breadcrumb); weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "navigation",
+      "leaves": [
+        "frames.app-sidebar"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.app-sidebar"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/sidebar"
+            },
+            "reason": "L1 decision: app-sidebar moves to stock sidebar",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "panels",
+      "leaves": [
+        "frames.inspector"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.inspector"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/sidebar+sheet+resizable"
+            },
+            "reason": "inspector composes stock sidebar (side=right) or sheet with resizable",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "footers",
+      "leaves": [
+        "frames.site-footer"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.site-footer"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L2",
+            "chosen": {
+              "id": "@tailark/footer",
+              "url": "https://tailark.com/r/registry.json",
+              "stars": 2341,
+              "weeklyDownloads": 0,
+              "licence": "MIT"
+            },
+            "reason": "site-footer: Tailark footer-1 (needs only logo/copyright parts; ReUI has no footer); weeklyDownloads 0: registry-distributed, no npm download count",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "overlay-shells-panels",
+      "leaves": [
+        "frames.sheet"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.sheet"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/sheet+drawer"
+            },
+            "reason": "L1 decision: sheet frame moves to stock sheet+drawer (already composes components.sheet)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "l2": "overlay-shells-commands",
+      "leaves": [
+        "frames.command"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.command"
+          ],
+          "reason": "no external covers",
+          "ladder": {
+            "rung": "L3",
+            "chosen": {
+              "id": "shadcn@aria/command"
+            },
+            "reason": "L1 decision: command frame moves to stock command (already composes components.command)",
+            "adoption": {
+              "state": "pending",
+              "wave": "B"
+            },
+            "checkedAt": "2026-11-10"
+          }
+        }
+      ]
+    }
+  ],
+  "themes": {
+    "presets": [
+      {
+        "id": "shadcn-neutral",
+        "label": "shadcn neutral",
+        "default": true,
+        "theme": {
+          "source": "shadcn@aria",
+          "baseColor": "neutral",
+          "pin": {
+            "url": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/themes.ts",
+            "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+            "file": "apps/v4/registry/themes.ts#neutral",
+            "sha256": "60cb5ed25f7b39d9973e2280f476dd2119a4268317f45bd7ee3cac7883db8ea0"
+          },
+          "vars": {
+            "light": {
+              "--background": "oklch(1 0 0)",
+              "--foreground": "oklch(0.145 0 0)",
+              "--card": "oklch(1 0 0)",
+              "--card-foreground": "oklch(0.145 0 0)",
+              "--popover": "oklch(1 0 0)",
+              "--popover-foreground": "oklch(0.145 0 0)",
+              "--primary": "oklch(0.205 0 0)",
+              "--primary-foreground": "oklch(0.985 0 0)",
+              "--secondary": "oklch(0.97 0 0)",
+              "--secondary-foreground": "oklch(0.205 0 0)",
+              "--muted": "oklch(0.97 0 0)",
+              "--muted-foreground": "oklch(0.556 0 0)",
+              "--accent": "oklch(0.97 0 0)",
+              "--accent-foreground": "oklch(0.205 0 0)",
+              "--destructive": "oklch(0.577 0.245 27.325)",
+              "--border": "oklch(0.922 0 0)",
+              "--input": "oklch(0.922 0 0)",
+              "--ring": "oklch(0.708 0 0)",
+              "--chart-1": "oklch(0.87 0 0)",
+              "--chart-2": "oklch(0.556 0 0)",
+              "--chart-3": "oklch(0.439 0 0)",
+              "--chart-4": "oklch(0.371 0 0)",
+              "--chart-5": "oklch(0.269 0 0)",
+              "--radius": "0.625rem",
+              "--sidebar": "oklch(0.985 0 0)",
+              "--sidebar-foreground": "oklch(0.145 0 0)",
+              "--sidebar-primary": "oklch(0.205 0 0)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.97 0 0)",
+              "--sidebar-accent-foreground": "oklch(0.205 0 0)",
+              "--sidebar-border": "oklch(0.922 0 0)",
+              "--sidebar-ring": "oklch(0.708 0 0)"
+            },
+            "dark": {
+              "--background": "oklch(0.145 0 0)",
+              "--foreground": "oklch(0.985 0 0)",
+              "--card": "oklch(0.205 0 0)",
+              "--card-foreground": "oklch(0.985 0 0)",
+              "--popover": "oklch(0.205 0 0)",
+              "--popover-foreground": "oklch(0.985 0 0)",
+              "--primary": "oklch(0.922 0 0)",
+              "--primary-foreground": "oklch(0.205 0 0)",
+              "--secondary": "oklch(0.269 0 0)",
+              "--secondary-foreground": "oklch(0.985 0 0)",
+              "--muted": "oklch(0.269 0 0)",
+              "--muted-foreground": "oklch(0.708 0 0)",
+              "--accent": "oklch(0.269 0 0)",
+              "--accent-foreground": "oklch(0.985 0 0)",
+              "--destructive": "oklch(0.704 0.191 22.216)",
+              "--border": "oklch(1 0 0 / 10%)",
+              "--input": "oklch(1 0 0 / 15%)",
+              "--ring": "oklch(0.556 0 0)",
+              "--chart-1": "oklch(0.87 0 0)",
+              "--chart-2": "oklch(0.556 0 0)",
+              "--chart-3": "oklch(0.439 0 0)",
+              "--chart-4": "oklch(0.371 0 0)",
+              "--chart-5": "oklch(0.269 0 0)",
+              "--sidebar": "oklch(0.205 0 0)",
+              "--sidebar-foreground": "oklch(0.985 0 0)",
+              "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.269 0 0)",
+              "--sidebar-accent-foreground": "oklch(0.985 0 0)",
+              "--sidebar-border": "oklch(1 0 0 / 10%)",
+              "--sidebar-ring": "oklch(0.556 0 0)"
+            }
+          }
+        },
+        "namespace": {
+          "source": "tailwind-default"
+        }
+      },
+      {
+        "id": "shadcn-zinc",
+        "label": "shadcn zinc",
+        "theme": {
+          "source": "shadcn@aria",
+          "baseColor": "zinc",
+          "pin": {
+            "url": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/themes.ts",
+            "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+            "file": "apps/v4/registry/themes.ts#zinc",
+            "sha256": "60cb5ed25f7b39d9973e2280f476dd2119a4268317f45bd7ee3cac7883db8ea0"
+          },
+          "vars": {
+            "light": {
+              "--background": "oklch(1 0 0)",
+              "--foreground": "oklch(0.141 0.005 285.823)",
+              "--card": "oklch(1 0 0)",
+              "--card-foreground": "oklch(0.141 0.005 285.823)",
+              "--popover": "oklch(1 0 0)",
+              "--popover-foreground": "oklch(0.141 0.005 285.823)",
+              "--primary": "oklch(0.21 0.006 285.885)",
+              "--primary-foreground": "oklch(0.985 0 0)",
+              "--secondary": "oklch(0.967 0.001 286.375)",
+              "--secondary-foreground": "oklch(0.21 0.006 285.885)",
+              "--muted": "oklch(0.967 0.001 286.375)",
+              "--muted-foreground": "oklch(0.552 0.016 285.938)",
+              "--accent": "oklch(0.967 0.001 286.375)",
+              "--accent-foreground": "oklch(0.21 0.006 285.885)",
+              "--destructive": "oklch(0.577 0.245 27.325)",
+              "--border": "oklch(0.92 0.004 286.32)",
+              "--input": "oklch(0.92 0.004 286.32)",
+              "--ring": "oklch(0.705 0.015 286.067)",
+              "--chart-1": "oklch(0.871 0.006 286.286)",
+              "--chart-2": "oklch(0.552 0.016 285.938)",
+              "--chart-3": "oklch(0.442 0.017 285.786)",
+              "--chart-4": "oklch(0.37 0.013 285.805)",
+              "--chart-5": "oklch(0.274 0.006 286.033)",
+              "--radius": "0.625rem",
+              "--sidebar": "oklch(0.985 0 0)",
+              "--sidebar-foreground": "oklch(0.141 0.005 285.823)",
+              "--sidebar-primary": "oklch(0.21 0.006 285.885)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.967 0.001 286.375)",
+              "--sidebar-accent-foreground": "oklch(0.21 0.006 285.885)",
+              "--sidebar-border": "oklch(0.92 0.004 286.32)",
+              "--sidebar-ring": "oklch(0.705 0.015 286.067)"
+            },
+            "dark": {
+              "--background": "oklch(0.141 0.005 285.823)",
+              "--foreground": "oklch(0.985 0 0)",
+              "--card": "oklch(0.21 0.006 285.885)",
+              "--card-foreground": "oklch(0.985 0 0)",
+              "--popover": "oklch(0.21 0.006 285.885)",
+              "--popover-foreground": "oklch(0.985 0 0)",
+              "--primary": "oklch(0.92 0.004 286.32)",
+              "--primary-foreground": "oklch(0.21 0.006 285.885)",
+              "--secondary": "oklch(0.274 0.006 286.033)",
+              "--secondary-foreground": "oklch(0.985 0 0)",
+              "--muted": "oklch(0.274 0.006 286.033)",
+              "--muted-foreground": "oklch(0.705 0.015 286.067)",
+              "--accent": "oklch(0.274 0.006 286.033)",
+              "--accent-foreground": "oklch(0.985 0 0)",
+              "--destructive": "oklch(0.704 0.191 22.216)",
+              "--border": "oklch(1 0 0 / 10%)",
+              "--input": "oklch(1 0 0 / 15%)",
+              "--ring": "oklch(0.552 0.016 285.938)",
+              "--chart-1": "oklch(0.871 0.006 286.286)",
+              "--chart-2": "oklch(0.552 0.016 285.938)",
+              "--chart-3": "oklch(0.442 0.017 285.786)",
+              "--chart-4": "oklch(0.37 0.013 285.805)",
+              "--chart-5": "oklch(0.274 0.006 286.033)",
+              "--sidebar": "oklch(0.21 0.006 285.885)",
+              "--sidebar-foreground": "oklch(0.985 0 0)",
+              "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.274 0.006 286.033)",
+              "--sidebar-accent-foreground": "oklch(0.985 0 0)",
+              "--sidebar-border": "oklch(1 0 0 / 10%)",
+              "--sidebar-ring": "oklch(0.552 0.016 285.938)"
+            }
+          }
+        },
+        "namespace": {
+          "source": "tailwind-default"
+        }
+      },
+      {
+        "id": "shadcn-stone",
+        "label": "shadcn stone",
+        "theme": {
+          "source": "shadcn@aria",
+          "baseColor": "stone",
+          "pin": {
+            "url": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/themes.ts",
+            "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+            "file": "apps/v4/registry/themes.ts#stone",
+            "sha256": "60cb5ed25f7b39d9973e2280f476dd2119a4268317f45bd7ee3cac7883db8ea0"
+          },
+          "vars": {
+            "light": {
+              "--background": "oklch(1 0 0)",
+              "--foreground": "oklch(0.147 0.004 49.25)",
+              "--card": "oklch(1 0 0)",
+              "--card-foreground": "oklch(0.147 0.004 49.25)",
+              "--popover": "oklch(1 0 0)",
+              "--popover-foreground": "oklch(0.147 0.004 49.25)",
+              "--primary": "oklch(0.216 0.006 56.043)",
+              "--primary-foreground": "oklch(0.985 0.001 106.423)",
+              "--secondary": "oklch(0.97 0.001 106.424)",
+              "--secondary-foreground": "oklch(0.216 0.006 56.043)",
+              "--muted": "oklch(0.97 0.001 106.424)",
+              "--muted-foreground": "oklch(0.553 0.013 58.071)",
+              "--accent": "oklch(0.97 0.001 106.424)",
+              "--accent-foreground": "oklch(0.216 0.006 56.043)",
+              "--destructive": "oklch(0.577 0.245 27.325)",
+              "--border": "oklch(0.923 0.003 48.717)",
+              "--input": "oklch(0.923 0.003 48.717)",
+              "--ring": "oklch(0.709 0.01 56.259)",
+              "--chart-1": "oklch(0.869 0.005 56.366)",
+              "--chart-2": "oklch(0.553 0.013 58.071)",
+              "--chart-3": "oklch(0.444 0.011 73.639)",
+              "--chart-4": "oklch(0.374 0.01 67.558)",
+              "--chart-5": "oklch(0.268 0.007 34.298)",
+              "--radius": "0.625rem",
+              "--sidebar": "oklch(0.985 0.001 106.423)",
+              "--sidebar-foreground": "oklch(0.147 0.004 49.25)",
+              "--sidebar-primary": "oklch(0.216 0.006 56.043)",
+              "--sidebar-primary-foreground": "oklch(0.985 0.001 106.423)",
+              "--sidebar-accent": "oklch(0.97 0.001 106.424)",
+              "--sidebar-accent-foreground": "oklch(0.216 0.006 56.043)",
+              "--sidebar-border": "oklch(0.923 0.003 48.717)",
+              "--sidebar-ring": "oklch(0.709 0.01 56.259)"
+            },
+            "dark": {
+              "--background": "oklch(0.147 0.004 49.25)",
+              "--foreground": "oklch(0.985 0.001 106.423)",
+              "--card": "oklch(0.216 0.006 56.043)",
+              "--card-foreground": "oklch(0.985 0.001 106.423)",
+              "--popover": "oklch(0.216 0.006 56.043)",
+              "--popover-foreground": "oklch(0.985 0.001 106.423)",
+              "--primary": "oklch(0.923 0.003 48.717)",
+              "--primary-foreground": "oklch(0.216 0.006 56.043)",
+              "--secondary": "oklch(0.268 0.007 34.298)",
+              "--secondary-foreground": "oklch(0.985 0.001 106.423)",
+              "--muted": "oklch(0.268 0.007 34.298)",
+              "--muted-foreground": "oklch(0.709 0.01 56.259)",
+              "--accent": "oklch(0.268 0.007 34.298)",
+              "--accent-foreground": "oklch(0.985 0.001 106.423)",
+              "--destructive": "oklch(0.704 0.191 22.216)",
+              "--border": "oklch(1 0 0 / 10%)",
+              "--input": "oklch(1 0 0 / 15%)",
+              "--ring": "oklch(0.553 0.013 58.071)",
+              "--chart-1": "oklch(0.869 0.005 56.366)",
+              "--chart-2": "oklch(0.553 0.013 58.071)",
+              "--chart-3": "oklch(0.444 0.011 73.639)",
+              "--chart-4": "oklch(0.374 0.01 67.558)",
+              "--chart-5": "oklch(0.268 0.007 34.298)",
+              "--sidebar": "oklch(0.216 0.006 56.043)",
+              "--sidebar-foreground": "oklch(0.985 0.001 106.423)",
+              "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+              "--sidebar-primary-foreground": "oklch(0.985 0.001 106.423)",
+              "--sidebar-accent": "oklch(0.268 0.007 34.298)",
+              "--sidebar-accent-foreground": "oklch(0.985 0.001 106.423)",
+              "--sidebar-border": "oklch(1 0 0 / 10%)",
+              "--sidebar-ring": "oklch(0.553 0.013 58.071)"
+            }
+          }
+        },
+        "namespace": {
+          "source": "tailwind-default"
+        }
+      },
+      {
+        "id": "shadcn-mauve",
+        "label": "shadcn mauve",
+        "theme": {
+          "source": "shadcn@aria",
+          "baseColor": "mauve",
+          "pin": {
+            "url": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/themes.ts",
+            "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+            "file": "apps/v4/registry/themes.ts#mauve",
+            "sha256": "60cb5ed25f7b39d9973e2280f476dd2119a4268317f45bd7ee3cac7883db8ea0"
+          },
+          "vars": {
+            "light": {
+              "--background": "oklch(1 0 0)",
+              "--foreground": "oklch(0.145 0.008 326)",
+              "--card": "oklch(1 0 0)",
+              "--card-foreground": "oklch(0.145 0.008 326)",
+              "--popover": "oklch(1 0 0)",
+              "--popover-foreground": "oklch(0.145 0.008 326)",
+              "--primary": "oklch(0.212 0.019 322.12)",
+              "--primary-foreground": "oklch(0.985 0 0)",
+              "--secondary": "oklch(0.96 0.003 325.6)",
+              "--secondary-foreground": "oklch(0.212 0.019 322.12)",
+              "--muted": "oklch(0.96 0.003 325.6)",
+              "--muted-foreground": "oklch(0.542 0.034 322.5)",
+              "--accent": "oklch(0.96 0.003 325.6)",
+              "--accent-foreground": "oklch(0.212 0.019 322.12)",
+              "--destructive": "oklch(0.577 0.245 27.325)",
+              "--border": "oklch(0.922 0.005 325.62)",
+              "--input": "oklch(0.922 0.005 325.62)",
+              "--ring": "oklch(0.711 0.019 323.02)",
+              "--chart-1": "oklch(0.865 0.012 325.68)",
+              "--chart-2": "oklch(0.542 0.034 322.5)",
+              "--chart-3": "oklch(0.435 0.029 321.78)",
+              "--chart-4": "oklch(0.364 0.029 323.89)",
+              "--chart-5": "oklch(0.263 0.024 320.12)",
+              "--radius": "0.625rem",
+              "--sidebar": "oklch(0.985 0 0)",
+              "--sidebar-foreground": "oklch(0.145 0.008 326)",
+              "--sidebar-primary": "oklch(0.212 0.019 322.12)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.96 0.003 325.6)",
+              "--sidebar-accent-foreground": "oklch(0.212 0.019 322.12)",
+              "--sidebar-border": "oklch(0.922 0.005 325.62)",
+              "--sidebar-ring": "oklch(0.711 0.019 323.02)"
+            },
+            "dark": {
+              "--background": "oklch(0.145 0.008 326)",
+              "--foreground": "oklch(0.985 0 0)",
+              "--card": "oklch(0.212 0.019 322.12)",
+              "--card-foreground": "oklch(0.985 0 0)",
+              "--popover": "oklch(0.212 0.019 322.12)",
+              "--popover-foreground": "oklch(0.985 0 0)",
+              "--primary": "oklch(0.922 0.005 325.62)",
+              "--primary-foreground": "oklch(0.212 0.019 322.12)",
+              "--secondary": "oklch(0.263 0.024 320.12)",
+              "--secondary-foreground": "oklch(0.985 0 0)",
+              "--muted": "oklch(0.263 0.024 320.12)",
+              "--muted-foreground": "oklch(0.711 0.019 323.02)",
+              "--accent": "oklch(0.263 0.024 320.12)",
+              "--accent-foreground": "oklch(0.985 0 0)",
+              "--destructive": "oklch(0.704 0.191 22.216)",
+              "--border": "oklch(1 0 0 / 10%)",
+              "--input": "oklch(1 0 0 / 15%)",
+              "--ring": "oklch(0.542 0.034 322.5)",
+              "--chart-1": "oklch(0.865 0.012 325.68)",
+              "--chart-2": "oklch(0.542 0.034 322.5)",
+              "--chart-3": "oklch(0.435 0.029 321.78)",
+              "--chart-4": "oklch(0.364 0.029 323.89)",
+              "--chart-5": "oklch(0.263 0.024 320.12)",
+              "--sidebar": "oklch(0.212 0.019 322.12)",
+              "--sidebar-foreground": "oklch(0.985 0 0)",
+              "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+              "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+              "--sidebar-accent": "oklch(0.263 0.024 320.12)",
+              "--sidebar-accent-foreground": "oklch(0.985 0 0)",
+              "--sidebar-border": "oklch(1 0 0 / 10%)",
+              "--sidebar-ring": "oklch(0.542 0.034 322.5)"
+            }
+          }
+        },
+        "namespace": {
+          "source": "tailwind-default"
+        }
+      },
+      {
+        "id": "shadcn-olive",
+        "label": "shadcn olive",
+        "theme": {
+          "source": "shadcn@aria",
+          "baseColor": "olive",
+          "pin": {
+            "url": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/themes.ts",
+            "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+            "file": "apps/v4/registry/themes.ts#olive",
+            "sha256": "60cb5ed25f7b39d9973e2280f476dd2119a4268317f45bd7ee3cac7883db8ea0"
+          },
+          "vars": {
+            "light": {
+              "--background": "oklch(1 0 0)",
+              "--foreground": "oklch(0.153 0.006 107.1)",
+              "--card": "oklch(1 0 0)",
+              "--card-foreground": "oklch(0.153 0.006 107.1)",
+              "--popover": "oklch(1 0 0)",
+              "--popover-foreground": "oklch(0.153 0.006 107.1)",
+              "--primary": "oklch(0.228 0.013 107.4)",
+              "--primary-foreground": "oklch(0.988 0.003 106.5)",
+              "--secondary": "oklch(0.966 0.005 106.5)",
+              "--secondary-foreground": "oklch(0.228 0.013 107.4)",
+              "--muted": "oklch(0.966 0.005 106.5)",
+              "--muted-foreground": "oklch(0.58 0.031 107.3)",
+              "--accent": "oklch(0.966 0.005 106.5)",
+              "--accent-foreground": "oklch(0.228 0.013 107.4)",
+              "--destructive": "oklch(0.577 0.245 27.325)",
+              "--border": "oklch(0.93 0.007 106.5)",
+              "--input": "oklch(0.93 0.007 106.5)",
+              "--ring": "oklch(0.737 0.021 106.9)",
+              "--chart-1": "oklch(0.88 0.011 106.6)",
+              "--chart-2": "oklch(0.58 0.031 107.3)",
+              "--chart-3": "oklch(0.466 0.025 107.3)",
+              "--chart-4": "oklch(0.394 0.023 107.4)",
+              "--chart-5": "oklch(0.286 0.016 107.4)",
+              "--radius": "0.625rem",
+              "--sidebar": "oklch(0.988 0.003 106.5)",
+              "--sidebar-foreground": "oklch(0.153 0.006 107.1)",
+              "--sidebar-primary": "oklch(0.228 0.013 107.4)",
+              "--sidebar-primary-foreground": "oklch(0.988 0.003 106.5)",
+              "--sidebar-accent": "oklch(0.966 0.005 106.5)",
+              "--sidebar-accent-foreground": "oklch(0.228 0.013 107.4)",
+              "--sidebar-border": "oklch(0.93 0.007 106.5)",
+              "--sidebar-ring": "oklch(0.737 0.021 106.9)"
+            },
+            "dark": {
+              "--background": "oklch(0.153 0.006 107.1)",
+              "--foreground": "oklch(0.988 0.003 106.5)",
+              "--card": "oklch(0.228 0.013 107.4)",
+              "--card-foreground": "oklch(0.988 0.003 106.5)",
+              "--popover": "oklch(0.228 0.013 107.4)",
+              "--popover-foreground": "oklch(0.988 0.003 106.5)",
+              "--primary": "oklch(0.93 0.007 106.5)",
+              "--primary-foreground": "oklch(0.228 0.013 107.4)",
+              "--secondary": "oklch(0.286 0.016 107.4)",
+              "--secondary-foreground": "oklch(0.988 0.003 106.5)",
+              "--muted": "oklch(0.286 0.016 107.4)",
+              "--muted-foreground": "oklch(0.737 0.021 106.9)",
+              "--accent": "oklch(0.286 0.016 107.4)",
+              "--accent-foreground": "oklch(0.988 0.003 106.5)",
+              "--destructive": "oklch(0.704 0.191 22.216)",
+              "--border": "oklch(1 0 0 / 10%)",
+              "--input": "oklch(1 0 0 / 15%)",
+              "--ring": "oklch(0.58 0.031 107.3)",
+              "--chart-1": "oklch(0.88 0.011 106.6)",
+              "--chart-2": "oklch(0.58 0.031 107.3)",
+              "--chart-3": "oklch(0.466 0.025 107.3)",
+              "--chart-4": "oklch(0.394 0.023 107.4)",
+              "--chart-5": "oklch(0.286 0.016 107.4)",
+              "--sidebar": "oklch(0.228 0.013 107.4)",
+              "--sidebar-foreground": "oklch(0.988 0.003 106.5)",
+              "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+              "--sidebar-primary-foreground": "oklch(0.988 0.003 106.5)",
+              "--sidebar-accent": "oklch(0.286 0.016 107.4)",
+              "--sidebar-accent-foreground": "oklch(0.988 0.003 106.5)",
+              "--sidebar-border": "oklch(1 0 0 / 10%)",
+              "--sidebar-ring": "oklch(0.58 0.031 107.3)"
+            }
+          }
+        },
+        "namespace": {
+          "source": "tailwind-default"
+        }
+      },
+      {
+        "id": "shadcn-mist",
+        "label": "shadcn mist",
+        "theme": {
+          "source": "shadcn@aria",
+          "baseColor": "mist",
+          "pin": {
+            "url": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/themes.ts",
+            "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+            "file": "apps/v4/registry/themes.ts#mist",
+            "sha256": "60cb5ed25f7b39d9973e2280f476dd2119a4268317f45bd7ee3cac7883db8ea0"
+          },
+          "vars": {
+            "light": {
+              "--background": "oklch(1 0 0)",
+              "--foreground": "oklch(0.148 0.004 228.8)",
+              "--card": "oklch(1 0 0)",
+              "--card-foreground": "oklch(0.148 0.004 228.8)",
+              "--popover": "oklch(1 0 0)",
+              "--popover-foreground": "oklch(0.148 0.004 228.8)",
+              "--primary": "oklch(0.218 0.008 223.9)",
+              "--primary-foreground": "oklch(0.987 0.002 197.1)",
+              "--secondary": "oklch(0.963 0.002 197.1)",
+              "--secondary-foreground": "oklch(0.218 0.008 223.9)",
+              "--muted": "oklch(0.963 0.002 197.1)",
+              "--muted-foreground": "oklch(0.56 0.021 213.5)",
+              "--accent": "oklch(0.963 0.002 197.1)",
+              "--accent-foreground": "oklch(0.218 0.008 223.9)",
+              "--destructive": "oklch(0.577 0.245 27.325)",
+              "--border": "oklch(0.925 0.005 214.3)",
+              "--input": "oklch(0.925 0.005 214.3)",
+              "--ring": "oklch(0.723 0.014 214.4)",
+              "--chart-1": "oklch(0.872 0.007 219.6)",
+              "--chart-2": "oklch(0.56 0.021 213.5)",
+              "--chart-3": "oklch(0.45 0.017 213.2)",
+              "--chart-4": "oklch(0.378 0.015 216)",
+              "--chart-5": "oklch(0.275 0.011 216.9)",
+              "--radius": "0.625rem",
+              "--sidebar": "oklch(0.987 0.002 197.1)",
+              "--sidebar-foreground": "oklch(0.148 0.004 228.8)",
+              "--sidebar-primary": "oklch(0.218 0.008 223.9)",
+              "--sidebar-primary-foreground": "oklch(0.987 0.002 197.1)",
+              "--sidebar-accent": "oklch(0.963 0.002 197.1)",
+              "--sidebar-accent-foreground": "oklch(0.218 0.008 223.9)",
+              "--sidebar-border": "oklch(0.925 0.005 214.3)",
+              "--sidebar-ring": "oklch(0.723 0.014 214.4)"
+            },
+            "dark": {
+              "--background": "oklch(0.148 0.004 228.8)",
+              "--foreground": "oklch(0.987 0.002 197.1)",
+              "--card": "oklch(0.218 0.008 223.9)",
+              "--card-foreground": "oklch(0.987 0.002 197.1)",
+              "--popover": "oklch(0.218 0.008 223.9)",
+              "--popover-foreground": "oklch(0.987 0.002 197.1)",
+              "--primary": "oklch(0.925 0.005 214.3)",
+              "--primary-foreground": "oklch(0.218 0.008 223.9)",
+              "--secondary": "oklch(0.275 0.011 216.9)",
+              "--secondary-foreground": "oklch(0.987 0.002 197.1)",
+              "--muted": "oklch(0.275 0.011 216.9)",
+              "--muted-foreground": "oklch(0.723 0.014 214.4)",
+              "--accent": "oklch(0.275 0.011 216.9)",
+              "--accent-foreground": "oklch(0.987 0.002 197.1)",
+              "--destructive": "oklch(0.704 0.191 22.216)",
+              "--border": "oklch(1 0 0 / 10%)",
+              "--input": "oklch(1 0 0 / 15%)",
+              "--ring": "oklch(0.56 0.021 213.5)",
+              "--chart-1": "oklch(0.872 0.007 219.6)",
+              "--chart-2": "oklch(0.56 0.021 213.5)",
+              "--chart-3": "oklch(0.45 0.017 213.2)",
+              "--chart-4": "oklch(0.378 0.015 216)",
+              "--chart-5": "oklch(0.275 0.011 216.9)",
+              "--sidebar": "oklch(0.218 0.008 223.9)",
+              "--sidebar-foreground": "oklch(0.987 0.002 197.1)",
+              "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+              "--sidebar-primary-foreground": "oklch(0.987 0.002 197.1)",
+              "--sidebar-accent": "oklch(0.275 0.011 216.9)",
+              "--sidebar-accent-foreground": "oklch(0.987 0.002 197.1)",
+              "--sidebar-border": "oklch(1 0 0 / 10%)",
+              "--sidebar-ring": "oklch(0.56 0.021 213.5)"
+            }
+          }
+        },
+        "namespace": {
+          "source": "tailwind-default"
+        }
+      },
+      {
+        "id": "shadcn-taupe",
+        "label": "shadcn taupe",
+        "theme": {
+          "source": "shadcn@aria",
+          "baseColor": "taupe",
+          "pin": {
+            "url": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/themes.ts",
+            "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+            "file": "apps/v4/registry/themes.ts#taupe",
+            "sha256": "60cb5ed25f7b39d9973e2280f476dd2119a4268317f45bd7ee3cac7883db8ea0"
+          },
+          "vars": {
+            "light": {
+              "--background": "oklch(1 0 0)",
+              "--foreground": "oklch(0.147 0.004 49.3)",
+              "--card": "oklch(1 0 0)",
+              "--card-foreground": "oklch(0.147 0.004 49.3)",
+              "--popover": "oklch(1 0 0)",
+              "--popover-foreground": "oklch(0.147 0.004 49.3)",
+              "--primary": "oklch(0.214 0.009 43.1)",
+              "--primary-foreground": "oklch(0.986 0.002 67.8)",
+              "--secondary": "oklch(0.96 0.002 17.2)",
+              "--secondary-foreground": "oklch(0.214 0.009 43.1)",
+              "--muted": "oklch(0.96 0.002 17.2)",
+              "--muted-foreground": "oklch(0.547 0.021 43.1)",
+              "--accent": "oklch(0.96 0.002 17.2)",
+              "--accent-foreground": "oklch(0.214 0.009 43.1)",
+              "--destructive": "oklch(0.577 0.245 27.325)",
+              "--border": "oklch(0.922 0.005 34.3)",
+              "--input": "oklch(0.922 0.005 34.3)",
+              "--ring": "oklch(0.714 0.014 41.2)",
+              "--chart-1": "oklch(0.868 0.007 39.5)",
+              "--chart-2": "oklch(0.547 0.021 43.1)",
+              "--chart-3": "oklch(0.438 0.017 39.3)",
+              "--chart-4": "oklch(0.367 0.016 35.7)",
+              "--chart-5": "oklch(0.268 0.011 36.5)",
+              "--radius": "0.625rem",
+              "--sidebar": "oklch(0.986 0.002 67.8)",
+              "--sidebar-foreground": "oklch(0.147 0.004 49.3)",
+              "--sidebar-primary": "oklch(0.214 0.009 43.1)",
+              "--sidebar-primary-foreground": "oklch(0.986 0.002 67.8)",
+              "--sidebar-accent": "oklch(0.96 0.002 17.2)",
+              "--sidebar-accent-foreground": "oklch(0.214 0.009 43.1)",
+              "--sidebar-border": "oklch(0.922 0.005 34.3)",
+              "--sidebar-ring": "oklch(0.714 0.014 41.2)"
+            },
+            "dark": {
+              "--background": "oklch(0.147 0.004 49.3)",
+              "--foreground": "oklch(0.986 0.002 67.8)",
+              "--card": "oklch(0.214 0.009 43.1)",
+              "--card-foreground": "oklch(0.986 0.002 67.8)",
+              "--popover": "oklch(0.214 0.009 43.1)",
+              "--popover-foreground": "oklch(0.986 0.002 67.8)",
+              "--primary": "oklch(0.922 0.005 34.3)",
+              "--primary-foreground": "oklch(0.214 0.009 43.1)",
+              "--secondary": "oklch(0.268 0.011 36.5)",
+              "--secondary-foreground": "oklch(0.986 0.002 67.8)",
+              "--muted": "oklch(0.268 0.011 36.5)",
+              "--muted-foreground": "oklch(0.714 0.014 41.2)",
+              "--accent": "oklch(0.268 0.011 36.5)",
+              "--accent-foreground": "oklch(0.986 0.002 67.8)",
+              "--destructive": "oklch(0.704 0.191 22.216)",
+              "--border": "oklch(1 0 0 / 10%)",
+              "--input": "oklch(1 0 0 / 15%)",
+              "--ring": "oklch(0.547 0.021 43.1)",
+              "--chart-1": "oklch(0.868 0.007 39.5)",
+              "--chart-2": "oklch(0.547 0.021 43.1)",
+              "--chart-3": "oklch(0.438 0.017 39.3)",
+              "--chart-4": "oklch(0.367 0.016 35.7)",
+              "--chart-5": "oklch(0.268 0.011 36.5)",
+              "--sidebar": "oklch(0.214 0.009 43.1)",
+              "--sidebar-foreground": "oklch(0.986 0.002 67.8)",
+              "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+              "--sidebar-primary-foreground": "oklch(0.986 0.002 67.8)",
+              "--sidebar-accent": "oklch(0.268 0.011 36.5)",
+              "--sidebar-accent-foreground": "oklch(0.986 0.002 67.8)",
+              "--sidebar-border": "oklch(1 0 0 / 10%)",
+              "--sidebar-ring": "oklch(0.547 0.021 43.1)"
+            }
+          }
+        },
+        "namespace": {
+          "source": "tailwind-default"
+        }
+      }
+    ],
+    "default": "shadcn-neutral"
+  }
+}

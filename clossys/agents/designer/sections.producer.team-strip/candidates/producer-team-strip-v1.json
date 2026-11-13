@@ -1,0 +1,131 @@
+{
+  "name": "producer-team-strip",
+  "type": "registry:block",
+  "dependencies": [],
+  "registryDependencies": [
+    "components.avatar",
+    "components.badge",
+    "components.card",
+    "components.item"
+  ],
+  "meta": {
+    "slot": "sections.producer.team-strip",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.avatar",
+          "files": [
+            "registry/aria-nova/ui/avatar.tsx"
+          ]
+        },
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.item",
+          "files": [
+            "registry/aria-nova/ui/item.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:2e183945737592064bbcdd46819e1da28414713e1894de31198e17f99d304c7c",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "producer-team-strip",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.producer.team-strip",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "SYSTEMS-IA"
+      },
+      "reason": "SYSTEMS-IA D3(a) (owner: the overview is team setup; who does what, when; shadcn-compatible, no hand-rolling): one card per seat holder from the pipeline roster, built only from the pinned stock Card, Item, Avatar and Badge with stock props and variants.",
+      "createdAt": "2026-11-04T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.team.label",
+          "studio.team.kind.you",
+          "studio.team.kind.ai",
+          "studio.team.kind.code",
+          "studio.team.tier.low",
+          "studio.team.tier.mid",
+          "studio.team.tier.high",
+          "studio.team.tier-open",
+          "studio.team.steps",
+          "studio.team.show",
+          "studio.team.about.you",
+          "studio.team.about.director",
+          "studio.team.about.designer",
+          "studio.team.about.writer",
+          "studio.team.about.publisher",
+          "studio.team.about.checks",
+          "studio.team.about.unassigned",
+          "studio.pipeline.lane.you",
+          "studio.pipeline.lane.checks",
+          "studio.pipeline.lane.unassigned"
+        ],
+        "themeVars": [
+          "--card",
+          "--border",
+          "--muted",
+          "--muted-foreground",
+          "--secondary",
+          "--foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  },
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "content": "import { Avatar, AvatarFallback, Badge, Card, CardContent, CardHeader, CardTitle, Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from '@clossys/designer-ui';\n\n/** One seat holder of the system: who it is, how it holds its steps, and how many it holds. All words are resolved Writer copy. */\nexport interface TeamCard {\n  /** The roster id (`you`, an agent, `checks`, or `unassigned`); the map's lane of the same id. */\n  id: string;\n  name: string;\n  /** The avatar fallback: the name's first letter. */\n  initials: string;\n  /** The seat kinds it holds steps as (You, AI, Code), as labels. */\n  kinds: readonly string[];\n  /** The AI tier its seats name, or the tier-open label; absent when it holds no AI step. */\n  tier?: string;\n  /** One line on what it does. */\n  description: string;\n  /** The number of steps it holds, as a label. */\n  steps: string;\n  /** Its lane on the workflow map (`?seat=<id>`). */\n  href: string;\n  /** The link's accessible name. */\n  showLabel: string;\n  /** Whether its lane is the one the map highlights. */\n  active: boolean;\n}\n\n/** The `team` input of `sections.producer.team-strip`. */\nexport interface TeamStripInput { label: string; cards: readonly TeamCard[] }\n\n/**\n * `sections.producer.team-strip`: the system's team in one stock Card. Each seat holder is one\n * stock outline Item linking to its lane on the map: a stock Avatar with its initial, its name and\n * one line on what it does, and stock Badges for its seat kinds, tier and step count. The holder\n * whose lane is highlighted shows the stock muted Item.\n */\nexport default function TeamStripSection({ team, ...provenance }: { team: TeamStripInput } & { [marker: `data-clossys-${string}`]: string }) {\n  return <Card size=\"sm\" {...provenance}>\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{team.label}</CardTitle>\n    </CardHeader>\n    <CardContent>\n      <ItemGroup className=\"grid sm:grid-cols-2 xl:grid-cols-3\">\n        {team.cards.map(card => <Item key={card.id} href={card.href} variant={card.active ? 'muted' : 'outline'} size=\"sm\" data-seat={card.id} aria-label={card.showLabel} {...(card.active ? { 'aria-current': 'true' as const } : {})}>\n          <ItemMedia>\n            <Avatar><AvatarFallback>{card.initials}</AvatarFallback></Avatar>\n          </ItemMedia>\n          <ItemContent>\n            <ItemTitle>{card.name}</ItemTitle>\n            <ItemDescription>{card.description}</ItemDescription>\n          </ItemContent>\n          <ItemActions>\n            {card.kinds.map(kind => <Badge key={kind} variant=\"secondary\">{kind}</Badge>)}\n            {card.tier ? <Badge variant=\"outline\">{card.tier}</Badge> : null}\n            <Badge variant=\"outline\" data-steps>{card.steps}</Badge>\n          </ItemActions>\n        </Item>)}\n      </ItemGroup>\n    </CardContent>\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"producer-team-strip\",\n  \"type\": \"registry:block\",\n  \"title\": \"Team Strip\",\n  \"description\": \"The system's team in one stock Card: one stock outline Item per seat holder with a stock Avatar, its name and one line on what it does, and stock Badges for its seat kinds, tier and step count; each Item links to its lane on the workflow map.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"components.avatar\",\n    \"components.badge\",\n    \"components.card\",\n    \"components.item\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/producer-team-strip/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ]
+}

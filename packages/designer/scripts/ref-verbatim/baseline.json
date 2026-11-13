@@ -1,0 +1,5 @@
+{
+  "schema": "clossys.ref-verbatim-baseline/1",
+  "note": "Pins that failed the ref-verbatim check when the gate landed (2026-10-31). Shrink only: remove a row once its pin passes; a row not in BASELINE_CEILING (scripts/check-ref-verbatim.mjs) fails the run.",
+  "rows": []
+}

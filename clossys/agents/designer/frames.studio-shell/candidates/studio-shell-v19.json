@@ -1,0 +1,377 @@
+{
+  "name": "studio-shell",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "PageNotice.tsx",
+      "type": "registry:file",
+      "content": "import { Card, CardDescription, CardHeader, CardTitle, Skeleton } from '@clossys/designer-ui';\n\n/** A loading, empty or failed page: a title and why. */\nexport interface PageNoticeData { title: string; description: string }\n\n/** Loading (no notice, labelled by `loadingLabel`, Writer copy), empty and failed page states, inside the frame's content column. */\nexport function PageNotice({ notice, loadingLabel }: { notice?: PageNoticeData; loadingLabel?: string }) {\n  if (!notice) return <Card role=\"status\" aria-label={loadingLabel}><CardHeader><Skeleton /><Skeleton /></CardHeader></Card>;\n  return <Card>\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={1}>{notice.title}</CardTitle>\n      <CardDescription>{notice.description}</CardDescription>\n    </CardHeader>\n  </Card>;\n}\n"
+    },
+    {
+      "path": "app-sidebar.tsx",
+      "type": "registry:file",
+      "content": "\"use client\"\n\nimport { NavMain, type NavMainItem } from \"./nav-main\"\nimport { NavUser, type ShellUser } from \"./nav-user\"\nimport { TeamSwitcher, type ShellTeam } from \"./team-switcher\"\nimport {\n  Sidebar,\n  SidebarContent,\n  SidebarFooter,\n  SidebarHeader,\n  SidebarRail,\n} from \"@clossys/designer-ui\"\n\n/** The left sidebar's data: the map's root pages, one group per system, the workspace and the user. */\nexport interface ShellNavigation {\n  pages: readonly NavMainItem[]\n  systems: readonly { id: string; label: string; items: readonly NavMainItem[] }[]\n  team?: ShellTeam\n  user: ShellUser\n  chevron?: React.ReactNode\n}\n\n/**\n * The left sidebar: shadcn sidebar-15's `SidebarLeft` (off-canvas, full height, toggled from the\n * header) holding the N1 navigation, shadcn sidebar-07 `AppSidebar` content. Its sample data is\n * replaced by Studio's: the consumer brand as the one team, the Studio map's navigation tree as\n * one `NavMain` per system (the map's root groups), the local workspace as the user. The block's\n * `NavProjects` group is left out: the Studio map has no projects.\n */\nexport function AppSidebar({ navigation, ...props }: React.ComponentProps<typeof Sidebar> & { navigation: ShellNavigation }) {\n  return (\n    <Sidebar className=\"border-r-0\" {...props}>\n      <SidebarHeader>\n        <TeamSwitcher team={navigation.team} />\n      </SidebarHeader>\n      <SidebarContent>\n        <NavMain items={navigation.pages} chevron={navigation.chevron} />\n        {navigation.systems.map((system) => (\n          <NavMain key={system.id} label={system.label} items={system.items} chevron={navigation.chevron} />\n        ))}\n      </SidebarContent>\n      <SidebarFooter>\n        <NavUser user={navigation.user} />\n      </SidebarFooter>\n      {props.collapsible !== \"none\" && <SidebarRail />}\n    </Sidebar>\n  )\n}\n\n/** The sidebar's words (Writer copy): the workspace team, its plan line, and the local user. The page resolves them into `ShellNavigation`. */\nexport interface SidebarCopy {\n  team: string\n  /** The plan line when the consumer brand names the workspace, and when it does not. */\n  plan: string\n  localPlan: string\n  user: { name: string; email: string; initials: string }\n}\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "'use client';\n\nimport {\n  Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,\n  CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,\n  FieldGroup, Item, ItemActions, ItemContent,\n  PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, Separator,\n  Sidebar, SidebarGroup, SidebarInset, SidebarProvider, SidebarTrigger,\n  useSidebar,\n} from '@clossys/designer-ui';\nimport { AppSidebar, type ShellNavigation, type SidebarCopy } from './app-sidebar';\nimport { HeaderIconButton, HeaderPopover, HeaderTooltip } from './stock-header-controls';\nimport { ChatContent, type ChatCopy } from './stock-chat-sidebar';\n\nexport { PageNotice, type PageNoticeData } from './PageNotice';\nexport { AppSidebar, type ShellNavigation, type SidebarCopy } from './app-sidebar';\nexport type { NavMainItem } from './nav-main';\nexport type { ChatCopy } from './stock-chat-sidebar';\nexport type { ShellTeam } from './team-switcher';\nexport type { ShellUser } from './nav-user';\n\n/** Every word the shell shows (Writer copy, resolved by the page): controls, the command menu, chat and sidebar (the page resolves `sidebar` into `navigation`). */\nexport interface StudioShellCopy {\n  copied: string;\n  copyPrompt: string;\n  search: { title: string; description: string; placeholder: string; label: string; empty: string; page: string };\n  resizeChat: string;\n  toggleSidebar: string;\n  toggleTheme: string;\n  toggleChat: string;\n  chat: ChatCopy;\n  sidebar: SidebarCopy;\n}\n\n/** One header popover as the page shows it: its trigger glyph, open state, heading and body. */\nexport interface ShellPopover {\n  id: string;\n  label: string;\n  icon?: React.ReactNode;\n  shortcut?: string;\n  description?: string;\n  open: boolean;\n  onOpenChange: (open: boolean) => void;\n  /** A module popover's placed section. */\n  body?: React.ReactNode;\n  /** An action popover's text and its copy button state. */\n  copy?: { text: string; copied: boolean; onCopy: () => void };\n}\n\n/** One command menu entry: a page to open or a page command to run. */\nexport interface ShellCommand { id: string; label: string; icon?: React.ReactNode; shortcut?: string; onAction: () => void; [data: `data-${string}`]: string }\n\n/** The command menu: its open state and its groups (the page's own commands first). */\nexport interface ShellCommands {\n  open: boolean;\n  onOpenChange: (open: boolean) => void;\n  groups: readonly { id: string; heading: string; items: readonly ShellCommand[] }[];\n}\n\n/**\n * The inputs of `frames.studio-shell`, each already resolved by the page: navigation, commands and\n * breadcrumbs are Publisher's projections of the one Studio map, `popovers` the page manifest's\n * modules and actions (one header icon each). Every state is the page's: the left sidebar's open\n * state (`open`), the chat (`chat`), the theme control (`theme`) and the mobile sheet's panel.\n * `bridge` is rendered inside the stock SidebarProvider and draws nothing. `body` is the assembly's\n * layout: both stack the sections in the page column (`detail` keeps the first section as the head).\n */\nexport interface StudioShellProps {\n  navigation: ShellNavigation;\n  commands: ShellCommands;\n  breadcrumbs: readonly { id: string; label: string; href?: string }[];\n  copy: StudioShellCopy;\n  popovers?: readonly ShellPopover[];\n  open?: boolean;\n  onOpenChange?: (open: boolean) => void;\n  theme?: { dark: boolean; icon?: React.ReactNode; onToggle?: () => void };\n  chat?: { open: boolean; pressed: boolean; icon?: React.ReactNode; titleIcon?: React.ReactNode; emptyIcon?: React.ReactNode; onToggle?: () => void };\n  mobilePanel?: 'left' | 'chat';\n  onLeftToggle?: () => void;\n  bridge?: React.ReactNode;\n  body?: 'plain' | 'detail';\n  head?: React.ReactNode;\n  children?: React.ReactNode;\n}\n\n/** An action popover's body: the text it copies, then the stock copy button. */\nfunction CopyBody({ id, copy, words }: { id: string; copy: NonNullable<ShellPopover['copy']>; words: StudioShellCopy }) {\n  return <>\n    <PopoverDescription data-popover-text={id}>{copy.text}</PopoverDescription>\n    <Button size=\"sm\" data-popover-copy={id} onPress={copy.onCopy}>{copy.copied ? words.copied : words.copyPrompt}</Button>\n  </>;\n}\n\n/** The stock command dialog over the given groups. */\nfunction CommandMenu({ commands, copy }: { commands: ShellCommands; copy: StudioShellCopy['search'] }) {\n  return <CommandDialog open={commands.open} onOpenChange={commands.onOpenChange} title={copy.title} description={copy.description}>\n    <Command>\n      <CommandInput placeholder={copy.placeholder} />\n      <CommandList aria-label={copy.label} renderEmptyState={() => <CommandEmpty>{copy.empty}</CommandEmpty>}>\n        {commands.groups.filter(group => group.items.length).map(group => <CommandGroup key={group.id} id={group.id} heading={group.heading}>\n          {group.items.map(({ id, label, icon, shortcut, onAction, ...data }) => <CommandItem key={id} id={`${group.id}:${id}`} textValue={label} {...data} onAction={onAction}>\n            {icon}{label}{shortcut && <CommandShortcut>{shortcut.toUpperCase()}</CommandShortcut>}\n          </CommandItem>)}\n        </CommandGroup>)}\n      </CommandList>\n    </Command>\n  </CommandDialog>;\n}\n\n/**\n * `frames.studio-shell` is the shadcn sidebar-15 page (aria-nova) composed of stock parts: the\n * provider, the left sidebar, the inset with its header row and body column, and the right sidebar\n * (the chat). The header's far-left icon toggles the left sidebar, its far-right icon (after a\n * divider) the chat; every other header icon opens its module or action as a popover anchored to\n * it. Below the stock `md` mobile boundary both sidebars open in the stock Sidebar's own mobile\n * sheet, one at a time. The frame holds no state of its own: the page owns every open state.\n */\nexport default function StudioShellFrame({ open, onOpenChange, bridge, ...given }: StudioShellProps & { [marker: `data-clossys-${string}`]: string }) {\n  const provenance = Object.fromEntries(Object.entries(given).filter(([key]) => key.startsWith('data-clossys-'))) as { [marker: `data-clossys-${string}`]: string };\n  const props = Object.fromEntries(Object.entries(given).filter(([key]) => !key.startsWith('data-clossys-'))) as unknown as StudioShellProps;\n  return <SidebarProvider open={open} onOpenChange={onOpenChange} {...provenance}>\n    {bridge}\n    <StudioShellContent {...props} />\n  </SidebarProvider>;\n}\n\nfunction StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers = [], theme, chat, mobilePanel = 'left', onLeftToggle, body = 'plain', head, children }: StudioShellProps) {\n  const { isMobile } = useSidebar();\n  return <>\n    {!isMobile && <AppSidebar navigation={navigation} />}\n    <SidebarInset>\n      <header>\n      <Item size=\"sm\" data-studio-header>\n        <ItemActions>\n          <HeaderTooltip label={copy.toggleSidebar}><SidebarTrigger data-panel-toggle=\"left\" onPress={onLeftToggle} /></HeaderTooltip>\n          <Separator orientation=\"vertical\" className=\"mr-2 data-[orientation=vertical]:h-4\" />\n        </ItemActions>\n        <ItemContent>\n          <Breadcrumb>\n            <BreadcrumbList>\n              {breadcrumbs.map((crumb, index) => index < breadcrumbs.length - 1\n                ? <BreadcrumbItem key={crumb.id} id={crumb.id}>\n                  {crumb.href ? <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink> : <BreadcrumbPage>{crumb.label}</BreadcrumbPage>}\n                </BreadcrumbItem>\n                : <BreadcrumbItem key={crumb.id} id={crumb.id}>\n                  <BreadcrumbPage className=\"line-clamp-1\">{crumb.label}</BreadcrumbPage>\n                </BreadcrumbItem>)}\n            </BreadcrumbList>\n          </Breadcrumb>\n        </ItemContent>\n        <ItemActions>\n          {popovers.map(spec => <HeaderPopover key={spec.id} id={spec.id} label={spec.label} shortcut={spec.shortcut} open={spec.open} onOpenChange={spec.onOpenChange} content={<>\n            <PopoverHeader>\n              <PopoverTitle>{spec.label}</PopoverTitle>\n              {spec.description && <PopoverDescription>{spec.description}</PopoverDescription>}\n            </PopoverHeader>\n            {spec.copy ? <CopyBody id={spec.id} copy={spec.copy} words={copy} /> : <ScrollArea data-popover-body={spec.id}>{spec.body}</ScrollArea>}\n          </>}>{spec.icon}</HeaderPopover>)}\n          {theme && <HeaderIconButton label={copy.toggleTheme} aria-pressed={theme.dark} data-theme-toggle onPress={theme.onToggle}>{theme.icon}</HeaderIconButton>}\n          <Separator orientation=\"vertical\" className=\"mr-2 data-[orientation=vertical]:h-4\" />\n          <HeaderIconButton label={copy.toggleChat} aria-pressed={chat?.pressed ?? false} data-panel-toggle=\"chat\" onPress={chat?.onToggle}>{chat?.icon}</HeaderIconButton>\n        </ItemActions>\n      </Item>\n      </header>\n      <SidebarGroup>\n        <FieldGroup id=\"studio-main\" data-body={body}>\n          {head}{children}\n        </FieldGroup>\n      </SidebarGroup>\n    </SidebarInset>\n    {!isMobile && chat?.open && <Sidebar collapsible=\"none\" className=\"sticky top-0 hidden h-svh border-l lg:flex\" aria-label={copy.chat.title} data-panel=\"chat\">\n      <ChatContent copy={copy.chat} icon={chat.titleIcon} emptyIcon={chat.emptyIcon} />\n    </Sidebar>}\n    <CommandMenu commands={commands} copy={copy.search} />\n    {isMobile && <Sidebar side={mobilePanel === 'chat' ? 'right' : 'left'} data-panel={mobilePanel}>\n      {mobilePanel === 'chat' ? <ChatContent copy={copy.chat} icon={chat?.titleIcon} emptyIcon={chat?.emptyIcon} /> : <AppSidebar navigation={navigation} collapsible=\"none\" />}\n    </Sidebar>}\n  </>;\n}\n"
+    },
+    {
+      "path": "nav-main.tsx",
+      "type": "registry:file",
+      "content": "\"use client\"\n\nimport {\n  Collapsible,\n  CollapsibleContent,\n  SidebarGroup,\n  SidebarGroupLabel,\n  SidebarMenu,\n  SidebarMenuButton,\n  SidebarMenuItem,\n  SidebarMenuSub,\n  SidebarMenuSubButton,\n  SidebarMenuSubItem,\n} from \"@clossys/designer-ui\"\n\n/** One sidebar-07 `NavMain` row: a page (menu button) or a group (collapsible with its sub pages). */\nexport interface NavMainItem {\n  id: string\n  title: string\n  url?: string\n  icon?: React.ReactNode\n  isActive?: boolean\n  items?: { id: string; title: string; url: string; isActive?: boolean }[]\n}\n\n/**\n * shadcn sidebar-07 `NavMain`, fed from the Studio map. A map page without children (Home) is the\n * block's menu button without the collapsible; a map group (an agent) is the block's collapsible\n * item. `label` is the block's \"Platform\" group label, given only for the map's group rows.\n * `chevron` is the block's collapsible indicator glyph, supplied by the page.\n */\nexport function NavMain({ label, items, chevron }: { label?: string; items: readonly NavMainItem[]; chevron?: React.ReactNode }) {\n  return (\n    <SidebarGroup>\n      {label ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}\n      <SidebarMenu>\n        {items.map((item) =>\n          item.items?.length ? (\n            <Collapsible\n              key={item.id}\n              defaultExpanded\n              className=\"group/collapsible\"\n              render={(props) => <SidebarMenuItem {...props} />}\n            >\n              <SidebarMenuButton slot=\"trigger\" tooltip={item.title}>\n                {item.icon}\n                <span>{item.title}</span>\n                {chevron}\n              </SidebarMenuButton>\n              <CollapsibleContent>\n                <SidebarMenuSub>\n                  {item.items.map((subItem) => (\n                    <SidebarMenuSubItem key={subItem.id}>\n                      <SidebarMenuSubButton href={subItem.url} isActive={subItem.isActive}>\n                        <span>{subItem.title}</span>\n                      </SidebarMenuSubButton>\n                    </SidebarMenuSubItem>\n                  ))}\n                </SidebarMenuSub>\n              </CollapsibleContent>\n            </Collapsible>\n          ) : (\n            <SidebarMenuItem key={item.id}>\n              <SidebarMenuButton href={item.url} tooltip={item.title} isActive={item.isActive}>\n                {item.icon}\n                <span>{item.title}</span>\n              </SidebarMenuButton>\n            </SidebarMenuItem>\n          )\n        )}\n      </SidebarMenu>\n    </SidebarGroup>\n  )\n}\n"
+    },
+    {
+      "path": "nav-user.tsx",
+      "type": "registry:file",
+      "content": "\"use client\"\n\nimport { Avatar, AvatarFallback, AvatarImage, Item, ItemContent, ItemDescription, ItemMedia, ItemTitle, SidebarMenu, SidebarMenuItem } from \"@clossys/designer-ui\"\n\n/** The local user row's data. */\nexport interface ShellUser { name: string; email: string; avatar?: string; initials: string }\n\n/** sidebar-07's sample avatar image; Producer serves every `/avatars/*` image as the workspace placeholder. */\nconst SAMPLE_AVATAR = \"/avatars/shadcn.jpg\"\n\n/** sidebar-07 profile row on a static stock Item; the existing local workspace has no account menu. */\nexport function NavUser({ user }: { user: ShellUser }) {\n  return (\n    <SidebarMenu>\n      <SidebarMenuItem>\n        <Item size=\"sm\" data-sidebar-static-row=\"user\">\n          <ItemMedia>\n            <Avatar>\n              <AvatarImage src={user.avatar ?? SAMPLE_AVATAR} alt={user.name} />\n              <AvatarFallback>{user.initials}</AvatarFallback>\n            </Avatar>\n          </ItemMedia>\n          <ItemContent>\n            <ItemTitle>{user.name}</ItemTitle>\n            <ItemDescription>{user.email}</ItemDescription>\n          </ItemContent>\n        </Item>\n      </SidebarMenuItem>\n    </SidebarMenu>\n  )\n}\n"
+    },
+    {
+      "path": "stock-chat-sidebar.tsx",
+      "type": "registry:file",
+      "content": "\"use client\"\n\nimport {\n  Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,\n  SidebarContent, SidebarGroupLabel, SidebarHeader,\n} from \"@clossys/designer-ui\"\n\n/** The chat panel's words (Writer copy): its title and the empty state. */\nexport interface ChatCopy {\n  title: string;\n  emptyTitle: string;\n  emptyDescription: string;\n}\n\n/** sidebar-15 right-side slots, bound to Studio's existing unconnected chat state; the page supplies the glyphs. */\nexport function ChatContent({ copy, icon, emptyIcon }: { copy: ChatCopy; icon?: React.ReactNode; emptyIcon?: React.ReactNode }) {\n  return <>\n    <SidebarHeader>\n      <SidebarGroupLabel>{icon}{copy.title}</SidebarGroupLabel>\n    </SidebarHeader>\n    <SidebarContent>\n      <Empty data-chat-empty>\n        <EmptyHeader>\n          <EmptyMedia variant=\"icon\">{emptyIcon}</EmptyMedia>\n          <EmptyTitle>{copy.emptyTitle}</EmptyTitle>\n          <EmptyDescription>{copy.emptyDescription}</EmptyDescription>\n        </EmptyHeader>\n      </Empty>\n    </SidebarContent>\n  </>\n}\n"
+    },
+    {
+      "path": "stock-header-controls.tsx",
+      "type": "registry:file",
+      "content": "\"use client\"\n\nimport { Button, Popover, PopoverTrigger, Tooltip, TooltipTrigger } from \"@clossys/designer-ui\"\n\n/** A stock tooltip naming the header control it wraps. */\nexport function HeaderTooltip({ label, children }: { label: string; children: React.ReactNode }) {\n  return <TooltipTrigger>\n    {children}\n    <Tooltip>{label}</Tooltip>\n  </TooltipTrigger>\n}\n\n/** One stock ghost icon button with its tooltip. */\nexport function HeaderIconButton({ label, children, ...props }: React.ComponentProps<typeof Button> & { label: string }) {\n  return <HeaderTooltip label={label}>\n    <Button variant=\"ghost\" size=\"icon-sm\" aria-label={label} {...props}>{children}</Button>\n  </HeaderTooltip>\n}\n\n/** One actual stock icon button anchors both overlays: its tooltip and its popover. */\nexport function HeaderPopover({ id, label, shortcut, open, onOpenChange, content, children }: {\n  id: string\n  label: string\n  shortcut?: string\n  open: boolean\n  onOpenChange: (open: boolean) => void\n  content: React.ReactNode\n  children: React.ReactNode\n}) {\n  return <PopoverTrigger isOpen={open} onOpenChange={onOpenChange}>\n    <HeaderTooltip label={shortcut ? `${label} (${shortcut.toUpperCase()})` : label}>\n      <Button variant={open ? \"secondary\" : \"ghost\"} size=\"icon-sm\" aria-label={label} aria-haspopup=\"dialog\" aria-keyshortcuts={shortcut} data-popover-trigger={id}>{children}</Button>\n    </HeaderTooltip>\n    <Popover placement=\"bottom end\" aria-label={label} data-popover={id}>{content}</Popover>\n  </PopoverTrigger>\n}\n"
+    },
+    {
+      "path": "team-switcher.tsx",
+      "type": "registry:file",
+      "content": "\"use client\"\n\nimport { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle, SidebarMenu, SidebarMenuItem } from \"@clossys/designer-ui\"\n\n/** The one workspace row's data: its name, plan line and mark. */\nexport interface ShellTeam { name: string; plan: string; logo?: React.ReactNode }\n\n/**\n * sidebar-07 workspace row; Studio supplies one workspace, so no switch menu is rendered. The\n * block's logo tile and two-line label are the stock Item image media, title and description, on a static stock Item (no button, ref or press handler).\n */\nexport function TeamSwitcher({ team }: { team?: ShellTeam }) {\n  if (!team) return null\n  return (\n    <SidebarMenu>\n      <SidebarMenuItem>\n        <Item size=\"sm\" data-sidebar-static-row=\"team\">\n          <ItemMedia variant=\"image\">{team.logo}</ItemMedia>\n          <ItemContent>\n            <ItemTitle>{team.name}</ItemTitle>\n            <ItemDescription>{team.plan}</ItemDescription>\n          </ItemContent>\n        </Item>\n      </SidebarMenuItem>\n    </SidebarMenu>\n  )\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-shell\",\n  \"type\": \"registry:block\",\n  \"title\": \"Studio Shell\",\n  \"description\": \"The shadcn sidebar-15 block (left and right sidebars) as the Studio app shell: the left sidebar is the sidebar-07 nav (team switcher as the consumer brand, the Studio map as navMain, the local workspace as the user), the right sidebar is the chat; header toggles at both ends, every other header icon a popover from the page manifest, and the command menu.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"avatar\",\n    \"breadcrumb\",\n    \"button\",\n    \"card\",\n    \"collapsible\",\n    \"command\",\n    \"empty\",\n    \"field\",\n    \"item\",\n    \"popover\",\n    \"scroll-area\",\n    \"separator\",\n    \"sidebar\",\n    \"skeleton\",\n    \"tooltip\"\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "frames.studio-shell",
+    "source": {
+      "kind": "composition",
+      "ref": [
+        "shadcn-aria/sidebar-15@4.23.0",
+        "shadcn-aria/sidebar-07@4.23.0",
+        "shadcn-aria/dashboard-01@4.23.0"
+      ],
+      "parts": [
+        {
+          "slot": "components.avatar",
+          "files": [
+            "registry/aria-nova/ui/avatar.tsx"
+          ]
+        },
+        {
+          "slot": "components.breadcrumbs",
+          "files": [
+            "registry/aria-nova/ui/breadcrumb.tsx"
+          ]
+        },
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.command",
+          "files": [
+            "registry/aria-nova/ui/command.tsx"
+          ]
+        },
+        {
+          "slot": "components.disclosure",
+          "files": [
+            "registry/aria-nova/ui/collapsible.tsx"
+          ]
+        },
+        {
+          "slot": "components.empty",
+          "files": [
+            "registry/aria-nova/ui/empty.tsx"
+          ]
+        },
+        {
+          "slot": "components.field",
+          "files": [
+            "registry/aria-nova/ui/field.tsx",
+            "registry/aria-nova/ui/label.tsx"
+          ]
+        },
+        {
+          "slot": "components.item",
+          "files": [
+            "registry/aria-nova/ui/item.tsx"
+          ]
+        },
+        {
+          "slot": "components.popover",
+          "files": [
+            "registry/aria-nova/ui/popover.tsx"
+          ]
+        },
+        {
+          "slot": "components.scroll-area",
+          "files": [
+            "registry/aria-nova/ui/scroll-area.tsx"
+          ]
+        },
+        {
+          "slot": "components.separator",
+          "files": [
+            "registry/aria-nova/ui/separator.tsx"
+          ]
+        },
+        {
+          "slot": "components.sidebar",
+          "files": [
+            "registry/aria-nova/ui/sidebar.tsx"
+          ]
+        },
+        {
+          "slot": "components.skeleton",
+          "files": [
+            "registry/aria-nova/ui/skeleton.tsx"
+          ]
+        },
+        {
+          "slot": "components.tooltip",
+          "files": [
+            "registry/aria-nova/ui/tooltip.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:81547a374675a4aca2d059d4a27c302209f59b82cfad5ad6b3725b064006da3d",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-shell",
+      "package": "producer",
+      "layer": "frames",
+      "slot": "frames.studio-shell",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "R2F-03b"
+      },
+      "reason": "R2F-03b: stock shadcn sidebar-15 composition; the vendored sidebar, Item team media and the stock mobile sheet header, no frame-side restyle",
+      "createdAt": "2026-11-06T19:58:22.959Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--background",
+          "--foreground",
+          "--muted",
+          "--muted-foreground",
+          "--sidebar",
+          "--sidebar-foreground",
+          "--sidebar-primary",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent",
+          "--sidebar-accent-foreground",
+          "--sidebar-border",
+          "--sidebar-ring"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {
+          "navigation": {
+            "pages": [
+              {
+                "id": "home",
+                "title": {
+                  "$copy": "studio.home"
+                },
+                "url": "#",
+                "isActive": true
+              }
+            ],
+            "systems": [
+              {
+                "id": "designer",
+                "label": {
+                  "$copy": "studio.designer"
+                },
+                "items": [
+                  {
+                    "id": "components",
+                    "title": {
+                      "$copy": "studio.library"
+                    },
+                    "url": "#"
+                  },
+                  {
+                    "id": "tokens",
+                    "title": {
+                      "$copy": "studio.sections"
+                    },
+                    "items": [
+                      {
+                        "id": "colors",
+                        "title": {
+                          "$copy": "studio.library"
+                        },
+                        "url": "#"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "team": {
+              "name": {
+                "$copy": "studio.workspace-name"
+              },
+              "plan": {
+                "$copy": "studio.studio"
+              }
+            },
+            "user": {
+              "name": {
+                "$copy": "studio.local-workspace"
+              },
+              "email": {
+                "$copy": "studio.producer-on-this-machine"
+              },
+              "avatar": "/avatars/shadcn.jpg",
+              "initials": {
+                "$copy": "studio.local-workspace-initials"
+              }
+            }
+          },
+          "commands": {
+            "open": false,
+            "groups": []
+          },
+          "breadcrumbs": [
+            {
+              "id": "home",
+              "label": {
+                "$copy": "studio.home"
+              },
+              "href": "#"
+            },
+            {
+              "id": "components",
+              "label": {
+                "$copy": "studio.library"
+              }
+            }
+          ],
+          "copy": {
+            "copied": {
+              "$copy": "studio.copied"
+            },
+            "copyPrompt": {
+              "$copy": "studio.copy-prompt"
+            },
+            "search": {
+              "title": {
+                "$copy": "studio.find-a-page"
+              },
+              "description": {
+                "$copy": "studio.search-studio-pages-and-commands"
+              },
+              "placeholder": {
+                "$copy": "studio.search-pages-and-commands"
+              },
+              "label": {
+                "$copy": "studio.pages"
+              },
+              "empty": {
+                "$copy": "studio.no-matching-pages"
+              },
+              "page": {
+                "$copy": "studio.this-page"
+              }
+            },
+            "resizeChat": {
+              "$copy": "studio.resize-chat"
+            },
+            "toggleSidebar": {
+              "$copy": "studio.toggle-sidebar"
+            },
+            "toggleTheme": {
+              "$copy": "studio.toggle-theme"
+            },
+            "toggleChat": {
+              "$copy": "studio.toggle-chat"
+            },
+            "chat": {
+              "title": {
+                "$copy": "studio.chat"
+              },
+              "emptyTitle": {
+                "$copy": "studio.no-conversation-yet"
+              }
+            },
+            "sidebar": {
+              "team": {
+                "$copy": "studio.workspace-name"
+              },
+              "plan": {
+                "$copy": "studio.studio"
+              },
+              "localPlan": {
+                "$copy": "studio.local-workspace"
+              },
+              "user": {
+                "name": {
+                  "$copy": "studio.local-workspace"
+                },
+                "email": {
+                  "$copy": "studio.producer-on-this-machine"
+                },
+                "initials": {
+                  "$copy": "studio.local-workspace-initials"
+                }
+              }
+            }
+          },
+          "popovers": [],
+          "theme": {
+            "dark": false
+          },
+          "chat": {
+            "open": false,
+            "pressed": false
+          }
+        }
+      },
+      "copy": {},
+      "container": "page",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

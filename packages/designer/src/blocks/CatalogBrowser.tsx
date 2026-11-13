@@ -1,11 +1,12 @@
 import { useEffect, useReducer, useRef, useState, type ReactNode } from "react";
-import { Badge } from "../atoms/Badge.js";
-import { SearchField } from "../atoms/SearchField.js";
-import { Select } from "../atoms/Select.js";
-import { Skeleton } from "../atoms/Skeleton.js";
-import { Switch } from "../atoms/Switch.js";
-import { Tabs } from "../atoms/Tabs.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Badge } from "../components/preview-runtime/components/badge/badge.js";
+import { BADGE_TONE } from "../components/surface-tones.js";
+import { SearchField } from "../components/SearchField.js";
+import { StockSelect } from "./stock-select.js";
+import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
+import { StockSwitch } from "./stock-switch.js";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/preview-runtime/components/tabs/tabs.js";
+import { cx } from "../components/internal/cx.js";
 import { CatalogWorkspace } from "./CatalogWorkspace.js";
 import { EmptyState } from "./EmptyState.js";
 import { Toolbar } from "./Toolbar.js";
@@ -102,10 +103,10 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
     <Toolbar aria-label={labels.toolbar}
       search={<SearchField label={labels.search} value={state.query} onChange={query => update({ query })} />}
       trailing={binding.filters?.length || tree.parkedCount ? <>
-        {(binding.filters ?? []).map(filter => <Select key={filter.id} label={filter.label}
-          options={[{ id: ANY_VALUE, label: labels.anyValue }, ...filter.options]} value={own(state.filters, filter.id) ?? ANY_VALUE}
-          onChange={value => { if (value !== null) update({ filters: { ...state.filters, [filter.id]: String(value) } }); }} />)}
-        {tree.parkedCount ? <Switch isSelected={state.showParked} onChange={showParked => update({ showParked })}>{labels.showParked(tree.parkedCount)}</Switch> : null}
+        {(binding.filters ?? []).map(filter => <StockSelect key={filter.id} label={filter.label}
+          options={[{ id: ANY_VALUE, label: labels.anyValue }, ...filter.options]} selectedKey={own(state.filters, filter.id) ?? ANY_VALUE}
+          onSelectionChange={value => { if (value !== null) update({ filters: { ...state.filters, [filter.id]: String(value) } }); }} />)}
+        {tree.parkedCount ? <StockSwitch isSelected={state.showParked} onChange={showParked => update({ showParked })}>{labels.showParked(tree.parkedCount)}</StockSwitch> : null}
       </> : undefined} />
     <CatalogWorkspace items={tree.items} selectedId={entry ? entry.id : null}
       onSelect={id => { const next = { catalog: active.kind, entryId: id }; fromTree.current = selectionKey(next); settleTreeRequest(); select(next); }}
@@ -119,12 +120,12 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
   return <section role="region" aria-label={label} dir={dir} className={cx("flex h-full min-h-0 min-w-0 flex-col gap-md text-ink-primary", className)}>
     {catalogs.length > 1 ? <Tabs selectedKey={active.kind} className="min-h-0 flex-1"
       onSelectionChange={kind => { fromTree.current = null; select({ catalog: String(kind), entryId: null }); }}>
-      <Tabs.List aria-label={labels.catalogs}>
-        {catalogs.map(item => <Tabs.Tab key={item.kind} id={item.kind}>
-          <span className="inline-flex items-center gap-xs">{own(kinds, item.kind)!.label} <Badge>{item.entries.length}</Badge></span>
-        </Tabs.Tab>)}
-      </Tabs.List>
-      {catalogs.map(item => <Tabs.Panel key={item.kind} id={item.kind} className="flex min-h-0 flex-1 flex-col">{item.kind === active.kind ? body : null}</Tabs.Panel>)}
+      <TabsList aria-label={labels.catalogs}>
+        {catalogs.map(item => <TabsTrigger key={item.kind} id={item.kind}>
+          <span className="inline-flex items-center gap-xs">{own(kinds, item.kind)!.label} <Badge {...BADGE_TONE.neutral}>{item.entries.length}</Badge></span>
+        </TabsTrigger>)}
+      </TabsList>
+      {catalogs.map(item => <TabsContent key={item.kind} id={item.kind} className="flex min-h-0 flex-1 flex-col">{item.kind === active.kind ? body : null}</TabsContent>)}
     </Tabs> : body}
   </section>;
 }

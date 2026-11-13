@@ -1,0 +1,85 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.link",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.navigation",
+    "l2": "navigation-links",
+    "order": 148
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Link",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "appearance.inline",
+        "appearance.button"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.sidebar-primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "apg": "link"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.background",
+    "themes.border",
+    "themes.destructive",
+    "themes.foreground",
+    "themes.input",
+    "themes.muted",
+    "themes.primary",
+    "themes.primary-foreground",
+    "themes.radius",
+    "themes.ring",
+    "themes.secondary",
+    "themes.secondary-foreground",
+    "themes.spacing"
+  ],
+  "uses": []
+}

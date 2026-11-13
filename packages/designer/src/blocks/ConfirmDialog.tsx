@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
-import { Button } from "../atoms/Button.js";
-import { Dialog, type DialogProps } from "../atoms/Dialog.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
+import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/preview-runtime/components/dialog/dialog.js";
+import { DialogRole, type OverlayTriggerProps } from "../components/internal/overlay-context.js";
 
 export type ConfirmDialogTone = "neutral" | "destructive";
 
-export interface ConfirmDialogProps extends Omit<DialogProps, "children" | "size"> {
-  /** The dialog's title — rendered via `Dialog.Heading`, the same accessible-name wiring `Dialog` itself documents. */
+export interface ConfirmDialogProps extends Omit<OverlayTriggerProps, "style"> {
+  /** The dialog's title — rendered via the stock `DialogTitle`, which names the dialog. */
   heading: ReactNode;
   /** The confirmation question/message body. */
   message: ReactNode;
@@ -37,10 +38,10 @@ export interface ConfirmDialogProps extends Omit<DialogProps, "children" | "size
 }
 
 /**
- * A confirmation prompt built on the `Dialog` atom: a heading region, a
+ * A confirmation prompt built on the `Dialog` component: a heading region, a
  * message region, and an actions region (Cancel/Confirm) — three regions
  * that always render together and differ in kind, which is what makes this
- * a block rather than an atom (see the README's "Placement rules", test 2).
+ * a block rather than an component (see the README's "Placement rules", test 2).
  * `Dialog` itself deliberately stops short of this fixed shape — see its
  * own doc comment for exactly where its scope ends and this block's begins.
  *
@@ -90,18 +91,23 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   className,
-  style,
+  role = "dialog",
   ...rest
 }: ConfirmDialogProps) {
   const isDestructive = tone === "destructive";
 
   return (
-    <Dialog {...rest} trigger={trigger} size="sm" className={className} style={style}>
+    <DialogTrigger {...rest}>
+      {trigger}
+      <DialogRole role={role}>
+      <Dialog showCloseButton={false} isDismissable={role !== "alertdialog"} className={className}>
       {({ close }) => (
         <>
-          <Dialog.Heading>{heading}</Dialog.Heading>
-          <p className="text-body text-ink-secondary">{message}</p>
-          <div className="flex items-center justify-end gap-sm">
+          <DialogHeader>
+            <DialogTitle>{heading}</DialogTitle>
+            <DialogDescription>{message}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
             <Button
               variant="secondary"
               autoFocus={isDestructive}
@@ -113,7 +119,7 @@ export function ConfirmDialog({
               {cancelLabel}
             </Button>
             <Button
-              variant={isDestructive ? "danger" : "primary"}
+              variant={isDestructive ? "destructive" : "default"}
               autoFocus={!isDestructive}
               onPress={() => {
                 onConfirm();
@@ -122,9 +128,11 @@ export function ConfirmDialog({
             >
               {confirmLabel}
             </Button>
-          </div>
+          </DialogFooter>
         </>
       )}
-    </Dialog>
+      </Dialog>
+      </DialogRole>
+    </DialogTrigger>
   );
 }

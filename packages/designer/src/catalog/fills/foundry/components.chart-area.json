@@ -1,0 +1,114 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.chart-area",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./charts#AreaChart",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.chart-area",
+      "source": "foundry",
+      "sourceAddress": "./charts#AreaChart",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "chart-area": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        }
+      ],
+      "impl": {
+        "export": "AreaChart",
+        "kind": "package",
+        "module": "@clossys/designer/charts"
+      },
+      "license": "MIT",
+      "members": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "pin": {
+        "export": "./charts#AreaChart",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "axes": "./charts#AreaChart",
+        "legend": "./charts#AreaChart",
+        "series": "./charts#AreaChart",
+        "tooltip": "./charts#AreaChart"
+      },
+      "props": [
+        "className",
+        "series",
+        "title",
+        "x"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "themes": [
+          "themes.accent",
+          "themes.accent-foreground",
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.card-foreground",
+          "themes.chart-1",
+          "themes.chart-2",
+          "themes.chart-3",
+          "themes.chart-4",
+          "themes.chart-5",
+          "themes.font-heading",
+          "themes.font-mono",
+          "themes.font-sans",
+          "themes.foreground",
+          "themes.input",
+          "themes.muted",
+          "themes.muted-foreground",
+          "themes.popover",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.radius",
+          "themes.secondary",
+          "themes.secondary-foreground",
+          "themes.sidebar",
+          "themes.sidebar-accent",
+          "themes.sidebar-accent-foreground",
+          "themes.sidebar-border",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground"
+        ]
+      },
+      "root": "engine:none",
+      "slot": "components.chart-area",
+      "source": "foundry"
+    }
+  }
+}

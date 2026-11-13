@@ -8,6 +8,8 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ConsentBanner } from "./ConsentBanner.js";
 import { TOKENS } from "../tokens/tokens.js";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
+import { stableStringify } from "../catalog-core/stable.js";
 
 function setup(overrides: Partial<Parameters<typeof ConsentBanner>[0]> = {}) {
   const onAccept = vi.fn();
@@ -342,7 +344,7 @@ describe("ConsentBanner: opaque and responsive", () => {
 
   it("carries no transition or animation classes and no fixed positioning on its own elements", () => {
     const { root } = setup();
-    // The Button atom's own classes are out of scope; check every other element.
+    // The Button component's own classes are out of scope; check every other element.
     const own = [root, ...root.querySelectorAll("*")].filter((el) => el.tagName !== "BUTTON");
     for (const el of own) {
       expect(el.getAttribute("class") ?? "").not.toMatch(
@@ -382,12 +384,21 @@ function consentCardUtility(): string {
 }
 
 describe("CONSENT-1 card presentation", () => {
-  it("preserves the immutable-base banner HTML by default and by explicit opt-in", () => {
+  it("preserves the immutable-base banner HTML by default and by explicit opt-in", async () => {
+    const hashes: Record<string, string> = {};
     for (const presentation of [undefined, "banner"] as const) {
-      const html = renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />)
+      const html = withoutDsAttrs(renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />))
         .replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
-      expect(createHash("sha256").update(html).digest("hex")).toBe("cfb61e6eb29a35cd8d643f517852d1ce9027db3dabd53e1b0483035c195405d0");
+      hashes[presentation ?? "default"] = createHash("sha256").update(html).digest("hex");
     }
+    // Default and explicit banner stay one HTML. Re-captured by planner:R2F-05 into a generated file
+    // (`vitest run -u`), never a hand-edited hash: the two choice buttons are the selected stock Button
+    // (secondary; stock leaf routing ebd6753ac), and diffed against the 90eedc80d capture (a004cf6a…) no
+    // other byte changed. The look is on the owner CREATIVE list. Re-captured by R2F-15a (`vitest run -u`):
+    // the root gains data-react-aria-top-layer="" (R2F-24 387df7b44, REQ-0010); with that one attribute
+    // removed the HTML hashes to the R2F-05 capture (f96b613f…), so no other byte changed.
+    expect(hashes.default).toBe(hashes.banner);
+    await expect(stableStringify({ $capture: "stock Button choices (ebd6753ac) + React Aria top layer (387df7b44); planner:R2F-15a", hashes }) + "\n").toMatchFileSnapshot("__golden__/consent-banner.sha256.json");
   });
 
   it("keeps a named region, a visually hidden title, equal choices and a placement hook", () => {
@@ -497,11 +508,12 @@ describe("CONSENT-1 card geometry matches the signed-off reference", () => {
     const card = consentCardUtility();
     expect(cardDeclaration(card, "position")).toBe("fixed");
     expect(cardDeclaration(card, "z-index")).toBe("var(--ui-z-notice, 40)");
-    const shell = readFileSync(resolve(import.meta.dirname, "..", "shell", "internal", "shell-vars.ts"), "utf8");
-    expect(shell).toContain('export const UI_Z_SHELL = "var(--ui-z-shell, 20)"');
+    // The shell chrome stacks through the layer-shell theme-keys utility over --ui-z-shell.
+    const keys = readFileSync(resolve(import.meta.dirname, "..", "..", "styles", "theme-keys.css"), "utf8");
+    expect(keys).toContain("@utility layer-shell { z-index: var(--ui-z-shell, 20); }");
     for (const shellFile of ["SiteFooter.tsx", "SiteHeader.tsx"]) {
       const source = readFileSync(resolve(import.meta.dirname, "..", "shell", shellFile), "utf8");
-      expect(source, shellFile).toMatch(/zIndex: UI_Z_SHELL/);
+      expect(source, shellFile).toMatch(/"[^"]*\blayer-shell\b[^"]*"/);
     }
     expect(tokenValue("--ui-z-notice")).toBeGreaterThan(tokenValue("--ui-z-shell"));
     expect(tokenValue("--ui-z-notice")).toBeGreaterThan(tokenValue("--ui-z-sticky"));
@@ -529,7 +541,7 @@ describe("CONSENT-1 card geometry matches the signed-off reference", () => {
     expect(accept.parentElement).toHaveClass("grid", "grid-cols-2", "gap-sm");
     expect(accept).not.toHaveClass("whitespace-nowrap");
     const card = consentCardUtility();
-    expect(card).toMatch(/& button \{\s*min-block-size: var\(--ui-layout-tap-target, 44px\);\s*transition-duration: var\(--ui-duration-fast, 160ms\);\s*transition-timing-function: var\(--ease-default, cubic-bezier\(\.2, 0, 0, 1\)\);/);
+    expect(card).toMatch(/& button \{\s*min-block-size: var\(--ui-layout-tap-target, 44px\);\s*transition-duration: var\(--ui-duration-fast, 120ms\);\s*transition-timing-function: var\(--ease-default, cubic-bezier\(\.2, 0, 0, 1\)\);/);
   });
 });
 

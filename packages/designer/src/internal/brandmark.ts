@@ -24,7 +24,7 @@ export const UI_BRANDMARK_GAP_LG = "var(--ui-brandmark-gap-lg, 8px)";
 /**
  * A lockup wordmark's font-size as a fraction of the mark's height (22/48,
  * the identity kit's lockup wordmark-size ratio). Defined here rather than
- * imported from `../../tokens/identity-kit.js`: no atom, block, or shell
+ * imported from `../../tokens/identity-kit.js`: no component, block, or shell
  * source file imports from `tokens/` today (only tests do), so importing it
  * would open a new dependency direction for one number. The component's test
  * asserts this equals the identity kit's own ratio.

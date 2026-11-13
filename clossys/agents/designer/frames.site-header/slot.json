@@ -1,0 +1,143 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.site-header",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.regions",
+    "l2": "headers",
+    "order": 232
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "header",
+    "landmarks": [
+      {
+        "slot": "brand",
+        "role": "banner",
+        "topLevel": true,
+        "nameRequired": false
+      },
+      {
+        "slot": "nav",
+        "role": "navigation",
+        "topLevel": false,
+        "nameRequired": true
+      }
+    ],
+    "slots": [
+      {
+        "id": "brand",
+        "required": true,
+        "accepts": "components.logo"
+      },
+      {
+        "id": "nav",
+        "required": false,
+        "accepts": "components.link"
+      },
+      {
+        "id": "actions",
+        "required": false,
+        "accepts": "components.button"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "surface.solid",
+        "surface.transparent",
+        "surface.glass",
+        "tone.base",
+        "tone.inverse",
+        "nav-placement.leading",
+        "nav-placement.centered",
+        "position.sticky",
+        "position.static"
+      ]
+    },
+    "statePorts": [],
+    "rendering": "server",
+    "breakpoints": [
+      "sm",
+      "md",
+      "lg",
+      "xl",
+      "2xl"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.primary",
+        "themes.sidebar-primary",
+        "themes.radius",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": [
+        "assets.lockup",
+        "assets.mark",
+        "assets.icon-close"
+      ]
+    },
+    "composes": [
+      "components.logo",
+      "components.link",
+      "components.button",
+      "components.icon",
+      "components.badge",
+      "components.disclosure",
+      "components.dialog",
+      "components.item"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-close",
+    "assets.lockup",
+    "assets.mark",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent-foreground",
+    "themes.background",
+    "themes.border",
+    "themes.muted-foreground",
+    "themes.radius",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.button",
+    "components.item"
+  ]
+}

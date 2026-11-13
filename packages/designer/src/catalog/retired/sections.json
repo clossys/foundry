@@ -1,0 +1,292 @@
+[
+  {
+    "id": "form.chat",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.chat"
+  },
+  {
+    "id": "form.column-mapper",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.column-mapper"
+  },
+  {
+    "id": "form.filter-builder",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.filter-builder"
+  },
+  {
+    "id": "form.form",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.form"
+  },
+  {
+    "id": "form.form-wizard",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.wizard"
+  },
+  {
+    "id": "form.load-more",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.pagination"
+  },
+  {
+    "id": "form.newsletter-band",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.newsletter"
+  },
+  {
+    "id": "form.pagination",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.pagination"
+  },
+  {
+    "id": "form.save-bar",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.settings"
+  },
+  {
+    "id": "form.settings-section",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.settings"
+  },
+  {
+    "id": "items.activity-feed",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.activity-feed"
+  },
+  {
+    "id": "items.cards",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.cards"
+  },
+  {
+    "id": "items.event-item",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.activity-feed"
+  },
+  {
+    "id": "items.explorer",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.explorer"
+  },
+  {
+    "id": "items.faq",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.faq"
+  },
+  {
+    "id": "items.feature-grid",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.features"
+  },
+  {
+    "id": "items.features",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.features"
+  },
+  {
+    "id": "items.legacy-faq",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.faq"
+  },
+  {
+    "id": "items.link-index",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.link-index"
+  },
+  {
+    "id": "items.logo-cloud",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.logo-cloud"
+  },
+  {
+    "id": "items.media-gallery",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.gallery"
+  },
+  {
+    "id": "items.nav-grid",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.link-index"
+  },
+  {
+    "id": "items.ordered-step-sequence",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.steps"
+  },
+  {
+    "id": "items.people-grid",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.people"
+  },
+  {
+    "id": "items.record-ledger",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.record-detail"
+  },
+  {
+    "id": "items.resource-list",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.resource-list"
+  },
+  {
+    "id": "items.stat",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.stats"
+  },
+  {
+    "id": "items.stat-grid",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.stats"
+  },
+  {
+    "id": "items.statement",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.features"
+  },
+  {
+    "id": "items.status-list",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.status-list"
+  },
+  {
+    "id": "items.steps",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.steps"
+  },
+  {
+    "id": "items.task-list",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.task-list"
+  },
+  {
+    "id": "items.timeline",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.timeline"
+  },
+  {
+    "id": "items.topics",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.link-index"
+  },
+  {
+    "id": "items.usage-meter",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.usage"
+  },
+  {
+    "id": "matrix.access-matrix",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.access-matrix"
+  },
+  {
+    "id": "matrix.audit-log",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.audit-log"
+  },
+  {
+    "id": "matrix.comparison",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.comparison"
+  },
+  {
+    "id": "matrix.data-grid",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.data-grid"
+  },
+  {
+    "id": "matrix.data-table",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.data-table"
+  },
+  {
+    "id": "matrix.detail",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.record-detail"
+  },
+  {
+    "id": "matrix.grouped-table",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.data-table"
+  },
+  {
+    "id": "matrix.pricing",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.pricing"
+  },
+  {
+    "id": "prose.article",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.article"
+  },
+  {
+    "id": "prose.table-of-contents",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.table-of-contents"
+  },
+  {
+    "id": "say.chapter",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.content"
+  },
+  {
+    "id": "say.empty-state",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.empty-state"
+  },
+  {
+    "id": "say.error-state",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.error-state"
+  },
+  {
+    "id": "say.hero",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.hero"
+  },
+  {
+    "id": "say.media-figure",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.media"
+  },
+  {
+    "id": "say.notice-stack",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.notices"
+  },
+  {
+    "id": "say.page-header",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.page-header"
+  },
+  {
+    "id": "say.section-header",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.section-header"
+  },
+  {
+    "id": "say.section-intro",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.section-header"
+  },
+  {
+    "id": "say.takeaway",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.content"
+  },
+  {
+    "id": "say.testimonial",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.testimonials"
+  },
+  {
+    "id": "say.testimonial-set",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "sections.testimonials"
+  },
+  {
+    "id": "sections.error-message",
+    "retiredAt": "2026-10-29",
+    "replacedBy": "sections.error-state"
+  }
+]

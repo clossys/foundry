@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Link } from "../atoms/Link.js";
-import { Button } from "../atoms/Button.js";
-import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
+import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
+import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
 import { layoutRelationGraph, relationGraphHref } from "./relation-graph-layout.js";
 import type { RelationGraphProps } from "./relation-graph-types.js";
 
@@ -18,7 +18,7 @@ const CLASSES = {
   list: "relative m-0 flex list-none flex-col gap-lg p-0",
   layered: " tablet-lg:grid",
   node: "relative flex min-w-0 flex-col gap-sm rounded-panel bg-surface-raised p-md ",
-  selected: "border-accent",
+  selected: "border-primary",
   unselected: "border-line-base",
   kind: "text-caption text-ink-secondary",
   status: "m-0 text-caption",
@@ -115,7 +115,7 @@ export function RelationGraph<Kind extends string>({ nodes, edges, kinds, label,
               className={CLASSES.node + (isSelected ? CLASSES.selected : CLASSES.unselected)}
               style={{ gridColumn: position ? position.layer + 1 : undefined, gridRow: position ? position.row + 1 : undefined, borderStyle: "solid", borderWidth: UI_BORDER_HAIRLINE }}>
               <span className={CLASSES.kind}>{node.kind}</span>
-              {relationGraphHref(node.href) ? <Link {...control} href={node.href} buttonVariant="ghost">{node.label}</Link> : <Button {...control} variant="ghost">{node.label}</Button>}
+              {relationGraphHref(node.href) ? <Link {...control} href={node.href} variant="ghost">{node.label}</Link> : <Button {...control} variant="ghost">{node.label}</Button>}
               {node.description ? <p className={CLASSES.message}>{node.description}</p> : null}
               {node.status ? <p className={CLASSES.status}>{node.status}</p> : null}
               {neighbours(node.id, true, incomingLabel)}{neighbours(node.id, false, outgoingLabel)}

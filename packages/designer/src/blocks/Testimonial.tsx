@@ -1,6 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Avatar } from "../atoms/Avatar.js";
-import { renderTestimonial } from "./Testimonial.server.js";
+import { renderTestimonial, testimonialAvatar } from "./Testimonial.server.js";
 
 export interface TestimonialBaseProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   /** The quoted words themselves. */
@@ -26,12 +25,10 @@ export type TestimonialProps = TestimonialBaseProps &
         /**
          * Accessible name for the avatar image — REQUIRED whenever
          * `avatarSrc` is supplied, the exact same "no way to supply an
-         * image without also supplying its alt text" enforcement `Chip`'s
-         * own `removeLabel`/`onRemove` pairing already establishes in this
-         * package (see that component's own doc comment): this prop is
+         * image without also supplying its alt text" enforcement: this prop is
          * only optional in the branch of `TestimonialProps` where
          * `avatarSrc` is absent too. Rendered via this package's own
-         * `Avatar` atom, which independently requires `alt` at ITS own
+         * `Avatar` component, which independently requires `alt` at ITS own
          * type level — belt and suspenders, not redundant, since `Avatar`
          * enforces the contract for anyone composing it directly while
          * this union enforces it for anyone composing `Testimonial`.
@@ -64,9 +61,8 @@ export type TestimonialProps = TestimonialBaseProps &
  *
  * **The avatar is optional and, when present, required to carry real alt
  * text at the type level** — see `TestimonialProps`' own discriminated
- * union. Composed from this package's own `Avatar` atom (blocks may import
- * atoms) rather than a bare `<img>`, so the initials fallback and
- * image-load-failure handling `Avatar` already implements come for free.
+ * union. Composed from the stock `Avatar` (see `testimonialAvatar`), with
+ * the initials fallback when no image is given.
  */
 export function Testimonial({
   avatarSrc,
@@ -75,6 +71,6 @@ export function Testimonial({
 }: TestimonialProps) {
   return renderTestimonial(
     props,
-    avatarAlt ? <Avatar alt={avatarAlt} src={avatarSrc} /> : null,
+    avatarAlt ? testimonialAvatar(avatarAlt, avatarSrc) : null,
   );
 }

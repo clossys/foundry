@@ -18,18 +18,18 @@ describe("shell ground plates (#1057)", () => {
       />,
     );
     const footer = screen.getByRole("contentinfo");
-    expect(footer.className).toContain("bg-surface-inverse");
+    expect(footer.className).toContain("bg-foreground");
     expect(footer.className).not.toContain("bg-surface-raised");
-    expect(footer.className).toContain("text-ink-on-inverse");
+    expect(footer.className).toContain("text-background");
     const heading = screen.getByRole("heading", { name: "Product" });
     expect(heading.className).not.toContain("text-ink-primary");
-    expect(heading.className).not.toContain("text-ink-on-inverse");
+    expect(heading.className).not.toContain("text-background");
   });
 
   it("paints SiteHeader inverse plate tokens", () => {
     render(<SiteHeader brand={<span>Brand</span>} surface="solid" tone="inverse" />);
     const header = screen.getByRole("banner");
-    expect(header.className).toContain("bg-surface-inverse");
+    expect(header.className).toContain("bg-foreground");
   });
 
   it("paints Shell.Footer inverse plate tokens", () => {
@@ -40,6 +40,6 @@ describe("shell ground plates (#1057)", () => {
       </Shell>,
     );
     const footer = screen.getByRole("contentinfo");
-    expect(footer.className).toContain("bg-surface-inverse");
+    expect(footer.className).toContain("bg-foreground");
   });
 });

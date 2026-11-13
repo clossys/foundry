@@ -1,0 +1,161 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.error-state",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.respond",
+    "l2": "respond-states",
+    "order": 224
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "code",
+        "type": "copy",
+        "required": false
+      },
+      {
+        "name": "retry",
+        "type": "action",
+        "required": false
+      },
+      {
+        "name": "report",
+        "type": "action",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "kind.not-found",
+        "kind.failure",
+        "kind.forbidden",
+        "kind.offline"
+      ]
+    },
+    "allowedComposes": [
+      "components.button",
+      "components.link",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "both",
+    "substrates": [
+      "flow"
+    ],
+    "substrateTests": [
+      {
+        "substrate": "flow",
+        "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+        "name": "renders typed Publisher error-state in flow"
+      }
+    ],
+    "passageSchema": "passages.error-state",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "code",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "retry.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "report.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.muted",
+    "themes.spacing"
+  ],
+  "uses": [
+    "assets.icon-folder",
+    "components.button",
+    "components.empty"
+  ]
+}

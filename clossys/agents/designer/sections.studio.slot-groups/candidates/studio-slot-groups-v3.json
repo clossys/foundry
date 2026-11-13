@@ -1,0 +1,77 @@
+{
+  "name": "studio-slot-groups",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, LinkButton } from '@clossys/designer-ui';\nimport { SpecimenContent, type SpecimenInput } from '../studio-specimen';\n\nexport type SlotTone = 'secondary' | 'outline' | 'destructive';\n\n/** One slot card: the slot, its shown state and the route of its detail page. */\nexport interface SlotCard {\n  id: string;\n  name: string;\n  href: string;\n  statusLabel: string;\n  statusTone: SlotTone;\n  version?: number;\n  /** The shown version as displayed (Writer copy), when there is one. */\n  versionLabel?: string;\n  /** What the slot's pin produces, drawn by the detail page's specimen renderer: a view-only frame or the record's lead lines. */\n  specimen: SpecimenInput;\n}\n\n/** One IA group of the active tab: its label and its slots, in IA order. */\nexport interface SlotGroup {\n  id: string;\n  label: string;\n  cards: readonly SlotCard[];\n}\n\n/** The `groups` input of `sections.studio.slot-groups`. */\nexport interface SlotGroupsInput {\n  empty: string;\n  groups: readonly SlotGroup[];\n}\n\n/** `sections.studio.slot-groups`: the active tab's IA groups, stacked, each a grid of stock shadcn slot cards. */\nexport default function SlotGroupsSection({ groups }: { groups: SlotGroupsInput }) {\n  return <CardContent data-studio-section=\"slot-groups\" className=\"flex flex-col gap-8\">\n    {groups.groups.length ? groups.groups.map(group => <section key={group.id} id={group.id} aria-label={group.label}>\n      <CardTitle role=\"heading\" aria-level={2} className=\"pb-3\">{group.label}</CardTitle>\n      <CardGrid className=\"@xl/main:grid-cols-2 @5xl/main:grid-cols-3\">\n        {group.cards.map(card => <Card key={card.id} size=\"sm\" data-slot-card={card.id}>\n          <CardHeader>\n            <CardTitle className=\"flex flex-wrap items-center gap-2\">\n              <LinkButton href={card.href} variant=\"link\" size=\"sm\" className=\"h-auto px-0\">{card.name}</LinkButton>\n              {card.versionLabel ? <Badge variant=\"ghost\">{card.versionLabel}</Badge> : null}\n              <Badge variant={card.statusTone}>{card.statusLabel}</Badge>\n            </CardTitle>\n            <CardDescription className=\"font-mono text-xs\">{card.id}</CardDescription>\n          </CardHeader>\n          <SpecimenContent specimen={card.specimen} />\n        </Card>)}\n      </CardGrid>\n    </section>) : <CardDescription>{groups.empty}</CardDescription>}\n  </CardContent>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-slot-groups\",\n  \"type\": \"registry:block\",\n  \"title\": \"Slot Groups\",\n  \"description\": \"The body of a Studio tab: its IA groups stacked, each a grid of stock shadcn slot cards linking to the slot's detail route.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"card\",\n    \"badge\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-slot-groups/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.slot-groups",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "{\"registry\":\"shadcn\",\"item\":\"card\",\"version\":\"4.23.0\",\"hash\":\"sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/card.json\"}",
+        "{\"registry\":\"shadcn\",\"item\":\"badge\",\"version\":\"4.23.0\",\"hash\":\"sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/badge.json\"}",
+        "{\"version\":2,\"hash\":\"sha256:5e9ea53bbd03a70b2fc348e5350f719017db67caad56553d5ba3f35a76d8ebbc\"}"
+      ],
+      "hash": "sha256:2d0664eb3cdf26f96866fceb76f26e03626019916c354ace97efbf72a930102c",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-slot-groups",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.slot-groups",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "W2-COPY-THROUGH-WRITER"
+      },
+      "reason": "Every visible string resolves from a Writer key through studioCopy: the element takes its words as inputs instead of literals; owner go 2026-11-03 W2-COPY-THROUGH-WRITER.",
+      "createdAt": "2026-11-03T13:45:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card-foreground",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

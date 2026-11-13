@@ -1,0 +1,110 @@
+{
+  "name": "logo-cloud",
+  "type": "registry:block",
+  "registryDependencies": [
+    "@tailark-oss/core-hulu",
+    "@tailark-oss/core-spotify",
+    "@tailark-oss/core-supabase",
+    "@tailark-oss/core-vercel"
+  ],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2025 Irung\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+    },
+    {
+      "path": "one.tsx",
+      "type": "registry:block",
+      "target": "components/logo-cloud/one.tsx",
+      "content": "import { Spotify } from '@/components/ui/svgs/spotify'\nimport { VercelFull } from '@/components/ui/svgs/vercel'\nimport { SupabaseFull } from '@/components/ui/svgs/supabase'\nimport { Hulu } from '@/components/ui/svgs/hulu'\n\nexport default function LogoCloud() {\n    return (\n        <section>\n            <div className=\"mx-auto max-w-5xl px-6 py-8\">\n                <div>\n                    <p className=\"text-muted-foreground font-medium\">Trusted by teams at :</p>\n                    <div className=\"**:fill-foreground mt-4 flex items-center gap-12\">\n                        <Spotify\n                            height={22}\n                            width={73}\n                        />\n                        <VercelFull\n                            height={20}\n                            width={76}\n                        />\n                        <SupabaseFull className=\"h-[22px]\" />\n                        <Hulu\n                            height={16}\n                            width={50}\n                        />\n                    </div>\n                </div>\n            </div>\n        </section>\n    )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.logo-cloud",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "tailark-oss/mist-logo-cloud-1@8139698"
+      ],
+      "hash": "sha256:405568b809e3c20c96355097e5cd7e804578377303cef96150b9f8c965b3e443",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "one.tsx": "mist/blocks/logo-cloud/one.tsx"
+      }
+    },
+    "element": {
+      "id": "logo-cloud",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.logo-cloud",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock tailark-oss/mist-logo-cloud-1@8139698 adopted unmodified (shadcn add-time normalization only) as the initial candidate for sections.logo-cloud.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "@tailark-oss/core-hulu",
+          "@tailark-oss/core-spotify",
+          "@tailark-oss/core-supabase",
+          "@tailark-oss/core-vercel"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--destructive",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--sidebar-primary",
+          "--ring",
+          "--sidebar-ring",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}

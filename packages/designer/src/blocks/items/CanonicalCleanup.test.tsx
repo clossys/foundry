@@ -1,7 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
-import { Item } from "./Item.js";
+import { StockItem as Item } from "./StockItem.js";
 import { Items } from "./Items.js";
 import type { ItemData, ItemSpan } from "./types.js";
 
@@ -47,13 +46,14 @@ describe("canonical successors to retired wrapper layout assertions", () => {
     expect(container.querySelector("[data-items]")).not.toHaveClass("gap-y-3xl");
   });
   it("retains ordinary visual containment after authored copy", () => {
-    const { container } = render(<Item id="one" heading="Title" description="Body" visual={<img src="/example.png" alt="Example" />} treatment="plain" size="display" ground="base" />);
+    const { container } = render(<Item id="one" heading="Title" description="Body" visual={<img src="/example.png" alt="Example" />} ground="base" />);
     const body = container.querySelector("[data-item]")!;
     const visual = body.querySelector("[data-item-visual]")!;
     expect(visual.parentElement).toBe(body);
-    expect(visual).toHaveClass("mt-auto", "w-full", "min-w-0");
+    expect(visual).toHaveAttribute("data-slot", "item-footer");
     expect(body.lastElementChild).toBe(visual);
-    expect(visual.previousElementSibling).toHaveAttribute("data-item-description");
+    expect(visual.previousElementSibling).toHaveAttribute("data-slot", "item-content");
+    expect(visual.previousElementSibling!.lastElementChild).toHaveAttribute("data-item-description");
     expect(screen.getByRole("img", { name: "Example" })).not.toHaveAttribute("aria-hidden");
   });
   it.each([2, 3, 4])("keeps %s named groups with the canonical responsive rows policy", count => {
@@ -77,49 +77,29 @@ describe("canonical successors to retired wrapper layout assertions", () => {
   });
 });
 
-describe("canonical ground and linked frame successors", () => {
+describe("canonical ground and linked stock Item successors", () => {
   for (const ground of ["base", "sunken", "inverse"] as const) {
-    for (const treatment of ["plain", "rule", "plate"] as const) {
-      it(`retains ${ground} ${treatment} title hit, ring and secondary copy`, () => {
-        const { container } = render(<Item id="one" heading="Title" description="Body" icon={<svg data-testid="supplied-icon" />} href="/one" treatment={treatment} size="standard" ground={ground} />);
-        const body = container.querySelector("[data-item]")!;
-        if (treatment === "plate") {
-          expect(body).toHaveAttribute("data-variant", "plate");
-          expect(body).toHaveClass("rounded-panel", "p-lg", ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised");
-        }
-
-        const link = screen.getByRole("link", { name: "Title" });
-        expect(body).toHaveClass("relative", "isolate");
-        expect((body as HTMLElement).style.minBlockSize).toBe(UI_LAYOUT_TAP_TARGET);
-        expect(link).toHaveClass("after:absolute", "after:rounded-panel", "focus-visible:after:outline-2", "focus-visible:after:outline-offset-2", ground === "inverse" ? "focus-visible:after:outline-accent-on-inverse" : "focus-visible:after:outline-accent");
-        expect(link.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
-        expect(link.parentElement).toHaveClass(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
-        const icon = screen.getByTestId("supplied-icon");
-        expect(icon.parentElement).toHaveAttribute("aria-hidden", "true");
-        expect(icon.parentElement).toHaveClass(ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary");
-        expect(icon.closest("a")).toBeNull();
-        expect(screen.getByText("Body").closest("a")).toBeNull();
-        expect(screen.getByText("Body")).toHaveClass(ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary");
-        if (treatment === "plate") {
-          expect(link).toHaveClass("after:inset-0");
-          expect(body).toHaveClass("border", "border-transparent");
-          expect((body as HTMLElement).style.borderWidth).toBe(UI_BORDER_HAIRLINE);
-        } else {
-          expect(link).toHaveClass("after:-inset-x-sm", "tablet:after:-inset-x-md");
-          expect(body).toHaveClass("before:-inset-x-sm", "tablet:before:-inset-x-md");
-          if (treatment === "rule") {
-            expect(link).toHaveClass("after:top-0", "after:-bottom-sm", "tablet:after:-bottom-md");
-            expect(body).toHaveClass("border-t", "pt-lg", ground === "inverse" ? "border-line-on-inverse" : "border-line-strong");
-            expect((body as HTMLElement).style.borderBlockStartWidth).toBe(UI_BORDER_HAIRLINE);
-          }
-        }
-      });
-    }
-    it(`keeps an unlinked ${ground} item free of a hit context and action decoration`, () => {
-      const { container } = render(<Item id="one" heading="Title" treatment="plain" size="standard" ground={ground} />);
+    it(`renders a linked ${ground} item as the stock Item's single link with ground copy`, () => {
+      const { container } = render(<Item id="one" heading="Title" description="Body" icon={<svg data-testid="supplied-icon" />} href="/one" ground={ground} />);
+      const body = container.querySelector("[data-item]")!;
+      const link = screen.getByRole("link");
+      expect(screen.getAllByRole("link")).toHaveLength(1);
+      expect(link).toBe(body);
+      expect(link).toHaveAttribute("data-slot", "item");
+      expect(link).toHaveAttribute("href", "/one");
+      expect(link).toHaveTextContent("TitleBody");
+      const icon = screen.getByTestId("supplied-icon");
+      expect(icon.parentElement).toHaveAttribute("data-slot", "item-media");
+      expect(icon.parentElement).toHaveAttribute("aria-hidden", "true");
+      expect(icon.parentElement).toHaveClass(ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary");
+      expect(screen.getByText("Title")).toHaveClass(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
+      expect(screen.getByText("Body")).toHaveClass(ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary");
+    });
+    it(`keeps an unlinked ${ground} item free of a link and action decoration`, () => {
+      const { container } = render(<Item id="one" heading="Title" ground={ground} />);
       expect(screen.queryByRole("link")).toBeNull();
       expect(container.querySelector("svg")).toBeNull();
-      expect(container.querySelector("[data-item]")).not.toHaveClass("isolate");
+      expect(container.querySelector("[data-item]")!.tagName).toBe("DIV");
     });
   }
 });

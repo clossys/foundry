@@ -1,0 +1,58 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.module.checks",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 240
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.module.checks",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Checks module: the open page's failing checks, pending options and open needs, each row linking to its leaf.",
+    "inputs": [
+      {
+        "name": "checks",
+        "kind": "data",
+        "required": true,
+        "description": "A summary and three groups (failing, options, needs) of display-ready rows."
+      }
+    ],
+    "limits": {
+      "groups": 3
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "item",
+        "version": "4.23.0",
+        "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/item.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "flow"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.field",
+    "components.separator"
+  ]
+}

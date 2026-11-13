@@ -1,0 +1,147 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.sheet",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#Drawer",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.sheet",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Drawer",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "sheet": {
+      "composes": [
+        "components.card",
+        "components.icon",
+        "components.semantic-content",
+        "components.sheet"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.card",
+          "components.icon",
+          "components.semantic-content",
+          "components.sheet"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.card",
+            "components.icon",
+            "components.semantic-content",
+            "components.sheet"
+          ],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Drawer.tsx",
+            "sha256": "287d3ccbaea0873b709ca790793d9828d4648b1234a8ab22afa84ebb995e137b"
+          },
+          {
+            "path": "packages/designer/src/blocks/Panel.tsx",
+            "sha256": "2e53e8b3ccec984228fe9221674caf627d37c4a8b025cb2bb88f1368b8abb455"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/internal/overlay-context.tsx",
+            "sha256": "a6db3b633fb20f893ae20388705ccc760b51599fb855692d1132cab130fbbb2d"
+          },
+          {
+            "path": "packages/designer/src/icons/X.ts",
+            "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/X.js#X",
+            "file": "packages/designer/src/blocks/Drawer.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/Drawer.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "Drawer",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [
+        "placement.bottom",
+        "placement.end",
+        "placement.start",
+        "wide.dismiss",
+        "wide.sheet"
+      ],
+      "propMap": {
+        "placement.bottom": "placement=bottom",
+        "placement.end": "placement=end",
+        "placement.start": "placement=start",
+        "wide.dismiss": "wide=dismiss",
+        "wide.sheet": "wide=sheet"
+      },
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "frames.sheet",
+      "slots": {
+        "body": "children",
+        "footer": "footer",
+        "heading": "heading"
+      },
+      "statePorts": {
+        "open": "isOpen/onOpenChange"
+      }
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { SectionFrame as S4Frame } from "./SectionFrame.js";
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { ArticleBody } from "./ArticleBody.js";
@@ -69,4 +70,22 @@ describe("ArticleBody", () => {
     expect(article.style.marginTop).toBe("8px");
     expect(article.style.maxWidth).toBe("");
   });
+});
+
+it("S4-6 retains the bare root, direct children and host identity under one external band", () => {
+  let clicks = 0;
+  const view = render(<ArticleBody children={<p>Host copy</p>} id="bare" dir="rtl" data-host="bare" className="gap-xl" style={{ marginTop: 7 }} onClick={() => clicks++} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("ARTICLE");
+  expect(root).toHaveAttribute("id", "bare");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "bare");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root).toHaveClass("gap-xl");
+  expect(Array.from(root.children).every(child => child.tagName === "P")).toBe(true);
+  expect(root.querySelector("section,header,h1,h2")).toBeNull();
+  root.click(); expect(clicks).toBe(1);
+  view.rerender(<S4Frame><ArticleBody children={<p>Host copy</p>} id="bare" /></S4Frame>);
+  expect(view.container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
+  expect(view.container.querySelector("#bare")?.tagName).toBe("ARTICLE");
 });

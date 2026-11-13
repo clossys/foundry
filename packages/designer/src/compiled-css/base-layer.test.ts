@@ -12,7 +12,7 @@ const COMPILED_OPEN = "@layer foundry-ui-compiled {";
 let freshCss = "";
 
 beforeAll(async () => {
-  freshCss = (await generateCompiledCss({ stylesDir, candidates: ["bg-accent", "px-md"] })).css;
+  freshCss = (await generateCompiledCss({ stylesDir, candidates: ["bg-primary", "px-md"] })).css;
 });
 
 /** Body of the first balanced `{ ... }` that follows `open` (which must end in `{`). */

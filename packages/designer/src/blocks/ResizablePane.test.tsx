@@ -5,6 +5,7 @@ import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { I18nProvider } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
 import { contrastRatio } from "../tokens/color.js";
@@ -16,20 +17,26 @@ const props = { min: 100, max: 300, defaultValue: 180, step: 20, label: "Tools",
 describe("ResizablePane", () => {
   it("uses the on-inverse focus outline against its inverse raised Panel", () => {
     const { rerender } = render(<ResizablePane {...props} ground="inverse">Content</ResizablePane>);
-    expect(screen.getByRole("region", { name: "Tools" })).toHaveClass("bg-surface-inverse-raised");
+    // The Panel is the stock Card (E2): the inverse ground reaches it as token classes in place of its own surface and ink.
+    const region = screen.getByRole("region", { name: "Tools" });
+    expect(region).toHaveClass("bg-surface-inverse-raised", "text-ink-on-inverse");
+    expect(region).not.toHaveClass("bg-(--color-surface-raised)");
     expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-accent-on-inverse");
+    // The handle's default outline colour is merged away, so the inverse outline never depends on stylesheet order.
+    expect(screen.getByRole("separator")).not.toHaveClass("focus-visible:outline-primary");
     rerender(<ResizablePane {...props} ground="base">Content</ResizablePane>);
     expect(screen.getByRole("separator")).not.toHaveClass("focus-visible:outline-accent-on-inverse");
-    expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-accent");
+    expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-primary");
   });
 
   it("ships the inverse focus utility with a passing neutral-token contrast", () => {
     // Source/compiled CSS and analytical token proof, not browser painting or brand qualification.
     const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
     const selector = String.raw`.focus-visible\:outline-accent-on-inverse:focus-visible`;
-    const ordinary = String.raw`.focus-visible\:outline-accent:focus-visible`;
+    const ordinary = String.raw`.focus-visible\:outline-primary:focus-visible`;
     const start = css.indexOf(selector);
-    expect(start).toBeGreaterThan(css.indexOf(ordinary));
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(css.indexOf(ordinary)).toBeGreaterThanOrEqual(0);
     const rule = css.slice(start, css.indexOf("}", start));
     expect(rule).toContain(`outline-color: var(--color-accent-on-inverse, ${TOKENS["--color-accent-on-inverse"]!.value})`);
     const ground = TOKENS["--color-surface-inverse-raised"]!.value;
@@ -162,9 +169,10 @@ describe("ResizablePane start edge", () => {
     "places the start handle before content and reports actual $orientation size in $dir", async ({ dir, orientation }) => {
       function Host() {
         const [size, setSize] = useState(180);
-        return <div dir={dir}><ResizablePane {...props} orientation={orientation} handleEdge="start" value={size} onChange={setSize}>
+        // Direction comes from the React Aria locale, as the shell shares it (ResizeHandle reads useLocale).
+        return <I18nProvider locale={dir === "rtl" ? "ar-EG" : "en-US"}><div dir={dir}><ResizablePane {...props} orientation={orientation} handleEdge="start" value={size} onChange={setSize}>
           <input aria-label="Inspector data" defaultValue="Retained" />
-        </ResizablePane></div>;
+        </ResizablePane></div></I18nProvider>;
       }
       render(<Host />);
       const panel = screen.getByRole("region", { name: "Tools" });

@@ -1,0 +1,81 @@
+[
+  {
+    "id": "components.chart-heatmap",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:D2 2026-11-11",
+    "reason": "chart leaf retired; chart code removed in R2F-53"
+  },
+  {
+    "id": "components.chart-range",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:D2 2026-11-11",
+    "reason": "chart leaf retired; chart code removed in R2F-53"
+  },
+  {
+    "id": "components.chart-scatter",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:D2 2026-11-11",
+    "reason": "chart leaf retired; chart code removed in R2F-53"
+  },
+  {
+    "id": "components.chart-sparkline",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:D2 2026-11-11",
+    "reason": "chart leaf retired; chart code removed in R2F-53"
+  },
+  {
+    "id": "components.chart-status-strip",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:D2 2026-11-11",
+    "reason": "chart leaf retired; chart code removed in R2F-53"
+  },
+  {
+    "id": "components.chart-waterfall",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:D2 2026-11-11",
+    "reason": "chart leaf retired; chart code removed in R2F-53"
+  },
+  {
+    "id": "components.native-action",
+    "retiredAt": "2026-11-11",
+    "replacedBy": "components.button",
+    "decidedBy": "owner:LAD-2 2026-11-11T07:08Z",
+    "reason": "merged into components.button; native-action kept as an alias"
+  },
+  {
+    "id": "components.number-field",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:LAD-1 2026-11-11T07:08Z",
+    "reason": "R2F-50 source ladder: DELETE"
+  },
+  {
+    "id": "sections.boundary-message",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:LAD-1 2026-11-11T07:08Z",
+    "reason": "R2F-50 source ladder: DELETE"
+  },
+  {
+    "id": "sections.legal-prose",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:LAD-1 2026-11-11T07:08Z",
+    "reason": "R2F-50 source ladder: DELETE"
+  },
+  {
+    "id": "sections.logo-mark",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:LAD-1 2026-11-11T07:08Z",
+    "reason": "R2F-50 source ladder: DELETE"
+  },
+  {
+    "id": "sections.newsletter",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:LAD-1 2026-11-11T07:08Z",
+    "reason": "R2F-50 source ladder: DELETE"
+  },
+  {
+    "id": "sections.record-detail",
+    "retiredAt": "2026-11-11",
+    "decidedBy": "owner:LAD-1 2026-11-11T07:08Z",
+    "reason": "R2F-50 source ladder: DELETE"
+  }
+]

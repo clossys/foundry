@@ -1,4 +1,5 @@
 import { Children, isValidElement, type ReactNode } from "react";
+import { assertItemLink } from "./link-safety.js";
 import type { ItemData, ItemSpan, ItemsProps } from "./types.js";
 
 /** Own keys only: inherited Object names are never span values. */
@@ -46,7 +47,6 @@ export function hasContent(node: ReactNode): boolean {
     return true;
   });
 }
-const CONTROL_TAGS = new Set(["a", "button", "input", "select", "textarea", "summary", "details", "label", "iframe", "object", "embed"]);
 const PHRASING_TAGS = new Set(["abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "del", "dfn", "em", "i", "img", "ins", "kbd", "mark", "picture", "q", "ruby", "rp", "rt", "s", "samp", "small", "source", "span", "strong", "sub", "sup", "time", "u", "var", "wbr", "svg", "g", "path", "circle", "ellipse", "line", "polyline", "polygon", "rect", "text", "tspan", "defs", "symbol", "use", "clippath", "mask", "pattern", "lineargradient", "radialgradient", "stop", "filter", "fegaussianblur", "fecolormatrix", "feoffset", "feblend", "fecomposite", "femerge", "femergenode", "title", "desc", "foreignobject", "math", "mrow", "mi", "mo", "mn", "ms", "mtext", "msub", "msup", "msubsup", "mfrac", "msqrt", "mroot", "mstyle", "mpadded", "mphantom", "mfenced", "menclose", "semantics", "annotation"]);
 const TRIGGER_CONTROL_ROLES = new Set(["button", "link", "checkbox", "radio", "switch", "textbox", "combobox", "listbox", "option", "menuitem", "menuitemcheckbox", "menuitemradio", "slider", "spinbutton", "tab", "treeitem"]);
 function invalidTrigger(node: ReactNode): boolean {
@@ -64,23 +64,6 @@ function invalidTriggerIn(node: ReactNode, inSvg: boolean): boolean {
     return (native !== undefined && !PHRASING_TAGS.has(native) && !(native === "image" && svg)) || editable || focusable || (typeof props.role === "string" && props.role.split(/\s+/).some(role => TRIGGER_CONTROL_ROLES.has(role))) || (props.href !== undefined && !resource) || props.onClick !== undefined || props.onPress !== undefined || invalidTriggerIn(props.children as ReactNode, native === "foreignobject" ? false : svg);
   });
 }
-function hasControl(node: ReactNode): boolean {
-  return hasControlIn(node, false);
-}
-function hasControlIn(node: ReactNode, inSvg: boolean): boolean {
-  return Children.toArray(node).some((child) => {
-    if (!isValidElement(child)) return false;
-    const props = child.props as Record<string, unknown>;
-    const native = typeof child.type === "string";
-    const editable = props.contentEditable === true || (typeof props.contentEditable === "string" && ["", "true", "plaintext-only"].includes(props.contentEditable.toLowerCase()));
-    const focusable = (typeof props.tabIndex === "number" && Number.isFinite(props.tabIndex)) || (typeof props.tabIndex === "string" && props.tabIndex.trim() !== "" && Number.isFinite(Number(props.tabIndex)));
-    const media = (child.type === "audio" || child.type === "video") && Boolean(props.controls);
-    const tag = native ? (child.type as string).toLowerCase() : undefined;
-    const svg = tag === "svg" || inSvg;
-    const resource = svg && (tag === "use" || tag === "image");
-    return (native && (CONTROL_TAGS.has(child.type as string) || editable || focusable || media)) || (props.href !== undefined && !resource) || props.onClick !== undefined || props.onPress !== undefined || hasControlIn(props.children as ReactNode, tag === "foreignobject" ? false : svg);
-  });
-}
 /** The public item guard reads supplied elements recursively, without executing opaque components. */
 export function assertItemData(item: ItemData): void {
   if (!item || typeof item !== "object" || typeof item.id !== "string" || !item.id.trim() || !hasContent(item.heading)) throw new TypeError("Item: a stable id and nonblank heading are required.");
@@ -95,18 +78,7 @@ export function assertItemData(item: ItemData): void {
     if (!item.status || !hasContent(item.status.label) || !["success", "warning", "danger", "info", "neutral"].includes(item.status.tone)) throw new TypeError("Item: status needs a visible label and an existing StatusMark tone.");
     if (item.badge !== undefined) throw new TypeError("Item: status and badge cannot share an item.");
   }
-  if (item.href !== undefined) {
-    if (!isSanctionedHref(item.href)) throw new TypeError("Item: href must be an anchor, one-origin path, HTTP(S) URL or explicit mail link.");
-    if ([item.heading, item.description, item.eyebrow, item.icon, item.meta, item.visual, item.badge?.label, item.figure?.value, item.figure?.delta, item.status?.label].some(hasControl)) throw new TypeError(`Item: linked item "${item.id}" cannot contain another interactive target.`);
-  }
-}
-/** Mirrors the package's server-view route boundary, without importing another package. */
-function isSanctionedHref(value: unknown): value is string {
-  if (typeof value !== "string" || !value.trim() || value !== value.trim() || /[\u0000-\u001f\u007f]/.test(value) || value.includes("\\")) return false;
-  if (value.startsWith("#")) return true;
-  if (value.startsWith("/")) return !value.startsWith("//");
-  if (value.toLowerCase().startsWith("mailto:")) return value.slice(7).trim().length > 0;
-  try { const url = new URL(value); return (url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password; } catch { return false; }
+  assertItemLink(item);
 }
 function normalizedDestination(href: string): string {
   const hash = href.indexOf("#");

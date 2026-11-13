@@ -1,0 +1,115 @@
+{
+  "name": "resize-handle",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn",
+    "react-resizable-panels"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "resizable.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport { cn } from \"cn\"\nimport * as ResizablePrimitive from \"react-resizable-panels\"\n\nfunction ResizablePanelGroup({\n  className,\n  ...props\n}: ResizablePrimitive.GroupProps) {\n  return (\n    <ResizablePrimitive.Group\n      data-slot=\"resizable-panel-group\"\n      className={cn(\n        \"flex h-full w-full aria-[orientation=vertical]:flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ResizablePanel({ ...props }: ResizablePrimitive.PanelProps) {\n  return <ResizablePrimitive.Panel data-slot=\"resizable-panel\" {...props} />\n}\n\nfunction ResizableHandle({\n  withHandle,\n  className,\n  ...props\n}: ResizablePrimitive.SeparatorProps & {\n  withHandle?: boolean\n}) {\n  return (\n    <ResizablePrimitive.Separator\n      data-slot=\"resizable-handle\"\n      className={cn(\n        \"relative flex w-px items-center justify-center bg-border ring-offset-background after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-hidden aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:after:left-0 aria-[orientation=horizontal]:after:h-1 aria-[orientation=horizontal]:after:w-full aria-[orientation=horizontal]:after:translate-x-0 aria-[orientation=horizontal]:after:-translate-y-1/2 [&[aria-orientation=horizontal]>div]:rotate-90\",\n        className\n      )}\n      {...props}\n    >\n      {withHandle && (\n        <div className=\"z-10 flex h-6 w-1 shrink-0 rounded-lg bg-border\" />\n      )}\n    </ResizablePrimitive.Separator>\n  )\n}\n\nexport { ResizableHandle, ResizablePanel, ResizablePanelGroup }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.resize-handle",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn/resizable@4.23.0"
+      ],
+      "hash": "sha256:d0a0f1a4a61b426405c7d8cb3f3989d136a37bd3e18d8097bed8c875c6447948",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "resizable.tsx": "registry/radix-nova/ui/resizable.tsx"
+      }
+    },
+    "element": {
+      "id": "resize-handle",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.resize-handle",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock shadcn/resizable@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for components.resize-handle.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "resizable.tsx",
+        "export": "ResizablePanelGroup",
+        "props": {
+          "orientation": "horizontal",
+          "className": "min-h-40 max-w-md rounded-lg border",
+          "children": [
+            {
+              "$component": "ResizablePanel",
+              "props": {
+                "defaultSize": 50,
+                "className": "flex items-center justify-center p-6 text-sm font-medium"
+              },
+              "children": [
+                "Sidebar"
+              ]
+            },
+            {
+              "$component": "ResizableHandle",
+              "props": {
+                "withHandle": true
+              }
+            },
+            {
+              "$component": "ResizablePanel",
+              "props": {
+                "defaultSize": 50,
+                "className": "flex items-center justify-center p-6 text-sm font-medium"
+              },
+              "children": [
+                "Content"
+              ]
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

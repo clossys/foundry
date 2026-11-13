@@ -1,0 +1,141 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.table-of-contents",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.navigate",
+    "l2": "navigate-indexes",
+    "order": 220
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "headings",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "active-id",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "label",
+        "type": "copy",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "tracking.css"
+      ]
+    },
+    "allowedComposes": [
+      "components.link",
+      "components.disclosure",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "site",
+    "passageSchema": "passages.table-of-contents",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "headings[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.accent-foreground",
+    "themes.foreground",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.radius",
+    "themes.spacing"
+  ],
+  "uses": [],
+  "notNeeded": {
+    "reason": "planner:DS-COMPLETE: no pinned candidate, slot uses list or publication composes it; candidate v1 has no trusted-registry lineage. Earlier migrated evidence: no approved-registry source; W6 composition check (strict, table-of-contents-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 3 styled raw element attribute(s); imports outside the stock parts: lucide-react, cn, @/components/ui/semantic-content (absent from the component layer). The only direct item, diceui/scroll-spy@04aad54, is a registry:ui primitive (verbatim adopt fails REF-PRIMITIVE-AS-REF and REF-FLAVOR); no registry:block or registry:example; candidate v1 fails ref-verbatim.",
+    "since": "2026-11-05",
+    "decidedBy": "planner:DS-COMPLETE"
+  }
+}

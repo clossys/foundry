@@ -3,7 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RouterProvider } from "react-aria-components";
-import { Badge } from "../atoms/Badge.js";
+import { Badge } from "../components/preview-runtime/components/badge/badge.js";
 import { ResourceList, type ResourceListItem } from "./ResourceList.js";
 
 const items: ResourceListItem[] = [
@@ -92,7 +92,7 @@ describe("ResourceList", () => {
 
   it("R3 requires host action copy and names each overflow trigger from textValue", () => {
     expect(() => render(<ResourceList {...base} actionsLabel={undefined} />)).toThrow(TypeError);
-    render(<ResourceList {...base} />);
+    render(<ResourceList {...base} items={[{ ...items[0]!, actions: [...items[0]!.actions!, { id: "archive", label: "Archive", onAction() {} }] }]} />);
     expect(screen.getAllByRole("button", { name: "Options for Quarterly planning notes" }).length).toBeGreaterThan(0);
   });
 
@@ -174,11 +174,13 @@ describe("ResourceList", () => {
 
   it("R8 renders a destructive menu action and invokes it once", async () => {
     const action = vi.fn(); const rowAction = vi.fn(); const selection = vi.fn(); const user = userEvent.setup();
-    render(<ResourceList {...base} items={[{ ...items[0]!, href: undefined, actions: [{ id: "del", label: "Delete note", onAction: action, isDestructive: true }] }]}
+    render(<ResourceList {...base} items={[{ ...items[0]!, href: undefined, actions: [{ id: "open", label: "Open", onAction() {} }, { id: "copy", label: "Copy", onAction() {} }, { id: "del", label: "Delete note", onAction: action, isDestructive: true }] }]}
       onAction={rowAction} selectionMode="multiple" selectRowLabel={selectRowLabel} onSelectionChange={selection} />);
     await user.click(screen.getAllByRole("button", { name: "Options for Quarterly planning notes" })[0]!);
     const item = await screen.findByRole("menuitem", { name: "Delete note" });
-    expect(item).toHaveClass("text-status-danger-text");
+    // Stock shadcn@aria anatomy: the destructive variant is a data attribute its danger classes key on.
+    expect(item).toHaveAttribute("data-variant", "destructive");
+    expect(item.className).toContain("data-[variant=destructive]:text-(--color-status-danger)");
     await user.click(item);
     expect(action).toHaveBeenCalledExactlyOnceWith();
     expect(rowAction).not.toHaveBeenCalled();

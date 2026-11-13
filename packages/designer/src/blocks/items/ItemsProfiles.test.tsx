@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Items } from "./Items.js";
 import { Items as NativeItems } from "./Items.server.js";
-import { Item } from "./Item.js";
+import { StockItem as Item } from "./StockItem.js";
 import { Matrix } from "../Matrix.js";
 import type { ItemData, ItemsProps } from "./types.js";
 
@@ -106,9 +106,10 @@ describe("collection render profiles", () => {
     draw({ arrangement: "rows", order: "numbered", items: data(3) });
     expect(screen.getByRole("heading", { name: "Entry 0" })).toHaveClass("text-body-l");
   });
-  it("keeps the standalone Item measured scale", () => {
-    render(<Item id="single" heading="Standalone" treatment="plain" size="standard" ground="base" />);
-    expect(screen.getByText("Standalone")).toHaveClass("text-body-l", "font-semibold");
+  it("renders the standalone item title on the stock Item anatomy", () => {
+    const { container } = render(<Item id="single" heading="Standalone" ground="base" />);
+    expect(container.querySelector("[data-item]")).toHaveAttribute("data-slot", "item");
+    expect(screen.getByText("Standalone")).toHaveAttribute("data-slot", "item-title");
   });
   it.each([true, false, null])("rejects retired item featured=%s", featured => {
     expect(() => draw({ items: data(3).map(item => ({ ...item, featured })) as unknown as ItemData[] })).toThrow(/featured.*retired/);

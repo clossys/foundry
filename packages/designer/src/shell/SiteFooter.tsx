@@ -1,10 +1,25 @@
 import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
-import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
-import { UI_BORDER_HAIRLINE, UI_BRANDMARK_HEIGHT_SM, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { SemanticContent } from "../components/SemanticContent.js";
+import type { LinkButton } from "../components/preview-runtime/components/button/button.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+/** The selected pinned shadcn button module owns navigation semantics and styling. */
+const FooterLink = componentLeaf<typeof LinkButton>("components.button", "LinkButton");
+import { Logomark } from "../components/Logomark.js";
+import { Icon } from "../components/preview-runtime/components/icon/icon.js";
+import type { IconNode } from "../icons/types.js";
+import { isImageResource, type ImageResource } from "../catalog-assets/media.js";
+
+/** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
+const FRAME_STAMP = dsAttrs("frames", "frames.site-footer", "foundry/frames.site-footer");
 
 export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
+  /** Identity band, normally the frame's resolved `Brandmark`; first grid cell when columns are present. */
+  brand?: ReactNode;
   /**
    * The grouped link columns — typically one or more `SiteFooter.Column`s
    * laid out in a responsive grid this component owns. Optional: a short
@@ -14,7 +29,7 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   /**
    * The secondary/legal row below the columns — a copyright line, legal
    * links, a locale switcher. Rendered under a hairline divider once
-   * `columns` is present.
+   * `brand` or `columns` is present.
    */
   secondary?: ReactNode;
   /**
@@ -37,43 +52,40 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * automatically at the top level, the same placement rule `Shell.Footer`
  * already carries.
  */
-function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", className, style, ...rest }: SiteFooterProps) {
+function SiteFooterRoot({ brand, columns, secondary, ground = "base", rule = "none", className, ...rest }: SiteFooterProps) {
   const colors = SITE_CHROME_GROUND_CLASSES[ground];
   const bordered = siteChromeHasBorder(ground);
   const topRule = ground === "transparent" && rule === "top";
 
   return (
     <footer
+      {...FRAME_STAMP}
       {...rest}
       data-footer-root=""
-      className={cx("site-footer-dark", colors.surface, colors.primary, "py-lg", bordered ? cx("border-t", colors.border) : topRule ? "border-t border-line-base" : "", className)}
-      style={{
-        position: "relative",
-        zIndex: UI_Z_SHELL,
-        ...(bordered || topRule ? { borderTopWidth: UI_BORDER_HAIRLINE } : {}),
-        ...style,
-      }}
+      className={cx("site-footer-dark relative layer-shell", colors.surface, colors.primary, "py-shell-region", bordered ? cx("hairline-t", colors.border) : topRule ? cx("hairline-t", GROUND_PAINT.page.border) : "", className)}
     >
-      <div
-        className="mx-auto flex w-full flex-col gap-lg"
-        style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
+      <SemanticContent as="div"
+        className="mx-auto flex w-full flex-col footer-stack page-inset-x"
       >
         {columns ? (
-          <div className="site-footer-columns">{columns}</div>
-        ) : null}
+          <SemanticContent as="div" className="site-footer-columns">
+            {brand ? <SemanticContent as="div" data-footer-brand="" className="flex min-w-0 items-center">{brand}</SemanticContent> : null}
+            {columns}
+          </SemanticContent>
+        ) : brand ? <SemanticContent as="div" data-footer-brand="" className="flex min-w-0 items-center">{brand}</SemanticContent> : null}
         {secondary ? (
-          <div
+          <SemanticContent as="div"
             className={cx(
-              "flex flex-col gap-sm text-body-s",
+              "flex flex-col footer-secondary-gap text-body-s",
               colors.secondary,
               "tablet:flex-row tablet:items-center tablet:justify-between",
-              columns && bordered ? cx("border-t pt-lg", colors.border) : "",
+              (brand || columns) && bordered ? cx("border-t footer-rule-gap", colors.border) : "",
             )}
           >
             {secondary}
-          </div>
+          </SemanticContent>
         ) : null}
-      </div>
+      </SemanticContent>
     </footer>
   );
 }
@@ -81,7 +93,7 @@ function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", cl
 export interface SiteFooterColumnProps {
   /** The column's own heading, rendered as a real `<h2>`. */
   heading: ReactNode;
-  /** The column's links — typically one or more `Link` atoms (`variant="muted"` reads well here). */
+  /** The column's links — typically one or more `Link` components (`variant="muted"` reads well here). */
   children: ReactNode;
   className?: string;
 }
@@ -90,7 +102,7 @@ export interface SiteFooterColumnProps {
  * One grouped column of footer links: a heading region and the links
  * themselves, the two regions that differ in kind inside a single column.
  * Ships as a sub-component (`SiteFooter.Column`, the same `Object.assign`
- * shape `Dialog.Heading`/`Menu.Item`/`Table.Row` already use in this
+ * shape `Dialog.Heading`/`Menu.Item` already use in this
  * package) rather than a `columns` data prop: a real footer's columns
  * routinely differ column-by-column (link count, an occasional icon next
  * to one link) in a way that reads more naturally as hand-written JSX —
@@ -99,10 +111,10 @@ export interface SiteFooterColumnProps {
  */
 function SiteFooterColumn({ heading, children, className }: SiteFooterColumnProps) {
   return (
-    <div className={cx("flex flex-col gap-sm", className)}>
-      <h2 className="m-0 text-body-s font-body font-medium">{heading}</h2>
-      <div className="flex flex-col gap-xs">{safeColumnLinks(children)}</div>
-    </div>
+    <SemanticContent as="div" className={cx("flex flex-col footer-column", className)}>
+      <SemanticContent as="h2" className="m-0 text-body-s font-body font-medium">{heading}</SemanticContent>
+      <SemanticContent as="div" className="flex flex-col footer-column-links">{safeColumnLinks(children)}</SemanticContent>
+    </SemanticContent>
   );
 }
 
@@ -111,6 +123,30 @@ export interface SiteFooterLegalLink {
   label: string;
   /** The link's destination — rendered as a real `<a href>`. */
   href: string;
+}
+
+/** A named profile destination with exactly one consumer image or existing glyph. */
+export type SiteFooterSocialLinkProps = SiteFooterLegalLink & (
+  | { readonly image: ImageResource; readonly icon?: never }
+  | { readonly icon: IconNode; readonly image?: never }
+);
+
+/** Consumer artwork stays decorative; the supplied profile name is also visible. */
+function SiteFooterSocialLink({ label, href, image, icon }: SiteFooterSocialLinkProps) {
+  requireNamedDestination({ label, href });
+  if ((image === undefined) === (icon === undefined)) throw new TypeError("Footer social links need exactly one image or glyph.");
+  if (image !== undefined) {
+    if (!isImageResource(image) || NONCANONICAL_HREF.test(image.src) || /[\\\u0000-\u001F\u007F]/.test(image.src) || image.src.startsWith("//")) {
+      throw new TypeError("Footer social artwork must be an image resource.");
+    }
+    const protocol = new URL(image.src, PARSE_BASES[0]).protocol;
+    if (protocol !== "https:" && protocol !== "http:") throw new TypeError("Footer social image destination is unsafe.");
+  } else if (!Array.isArray(icon)) throw new TypeError("Footer social glyphs must be plain icon data.");
+  return <FooterLink variant="link" href={href} aria-label={label} rel={externalRel(href)}
+    className="inline-flex items-center footer-link-gap min-size-tap text-inherit no-underline hover:underline">
+    {image !== undefined ? <Logomark src={image.src} size="sm" plate="shared" tone="inverse" /> : <Icon glyph={icon!} decorative />}
+    {label}
+  </FooterLink>;
 }
 
 export interface SiteFooterLegalProps {
@@ -136,7 +172,9 @@ export interface SiteFooterLegalProps {
    * the link's whole accessible name and the art is decorative, as in
    * `Brandmark`. Omitted, no mark renders.
    */
-  home?: { readonly label: string; readonly href: string; readonly markSrc: string };
+  home?: { readonly label: string; readonly href: string } & (
+    { readonly markSrc: string; readonly variant?: never } | { readonly variant: "text"; readonly markSrc?: never }
+  );
 }
 
 /**
@@ -164,13 +202,18 @@ export class SiteFooterContractError extends TypeError {
   }
 }
 
+/**
+ * The stock link button is a one-line control (nowrap at a fixed height); a legal link is
+ * running text, so it wraps inside its centred track and grows with its lines.
+ */
 const LEGAL_LINK_CLASSES = cx(
-  "inline-flex items-center justify-center px-xs",
-  "text-inherit no-underline",
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse",
+  "inline-flex items-center justify-center site-nav-link-inset min-size-tap",
+  "h-auto whitespace-normal break-words text-center",
+  "text-body-s text-inherit no-underline",
+  "focus-visible:outline-2 focus-visible:outline-offset-2",
+  GROUND_PAINT.inverse.focus,
 );
 
-const LEGAL_LINK_STYLE = { minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET } as const;
 
 /** Apply link safety to supported column anchors without changing their artwork or copy. */
 function safeColumnLinks(children: ReactNode): ReactNode {
@@ -218,11 +261,6 @@ function requireNamedDestination(link: { label: string; href: string }): void {
   if (!["http:", "https:", "mailto:", "tel:"].includes(protocol)) throw new TypeError("Footer link destination is unsafe.");
 }
 
-/** The home plate's padding and corner, from the same shares `Brandmark`'s shared plate uses. */
-const HOME_PLATE_STYLE = {
-  padding: "calc(" + UI_BRANDMARK_HEIGHT_SM + " * " + BADGE_INSET_SHARE / (1 - 2 * BADGE_INSET_SHARE) + ")",
-  borderRadius: "calc(" + UI_BRANDMARK_HEIGHT_SM + " * " + BADGE_RADIUS_SHARE / (1 - 2 * BADGE_INSET_SHARE) + ")",
-} as const;
 
 /**
  * Standard composition: links, icons (home last), copyright in reading order.
@@ -231,7 +269,8 @@ const HOME_PLATE_STYLE = {
  * From the `desktop` breakpoint of the footer's own width, copyright sits at
  * the inline start, links in the centre and icons at the inline end, in the
  * document's direction; narrower footers stack in reading order.
- * No consent controls or arbitrary children are accepted in this row.
+ * No consent state, callbacks or arbitrary children are accepted in this row.
+ * SiteFrame may supply its explicit fixed-destination privacy choices link.
  */
 function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLabel }: SiteFooterLegalProps) {
   for (const link of links) requireNamedDestination(link);
@@ -246,37 +285,37 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
   if (home && [...links, ...icons].some(link => link.href === home.href)) {
     throw new SiteFooterContractError("footer-duplicate-link", "Footer links and icons must not repeat the home destination.");
   }
-  const IconGroup = iconsLabel ? "nav" : "div";
   const year = new Date().getFullYear();
   const list = (
-    <ul role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
+    <SemanticContent as="ul" role="list" className="m-0 flex list-none flex-wrap items-center justify-center footer-row-gap p-0">
       {links.map((link, index) => (
-        <li key={index}>
-          <a href={link.href} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
+        <SemanticContent as="li" key={index}>
+          <FooterLink variant="link" href={link.href} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES}>
             {link.label}
-          </a>
-        </li>
+          </FooterLink>
+        </SemanticContent>
       ))}
-    </ul>
+    </SemanticContent>
+  );
+  const iconList = (
+    <SemanticContent as="ul" role="list" className="m-0 flex list-none flex-wrap items-center justify-center footer-row-gap p-0">
+      {icons.map((link, index) => <SemanticContent as="li" key={index}>
+        <FooterLink variant="link" href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES}>{link.icon}</FooterLink>
+      </SemanticContent>)}
+      {home ? <SemanticContent as="li"><FooterLink variant="link" href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES}>
+        {home.variant === "text" ? home.label : <SemanticContent as="span" data-footer-home-plate="" aria-hidden="true" className="inline-flex">
+          <Logomark src={home.markSrc} size="sm" plate="page" />
+        </SemanticContent>}
+      </FooterLink></SemanticContent> : null}
+    </SemanticContent>
   );
   return (
-    <div data-footer-composition="" className="site-footer-composition">
-      {linksLabel ? <nav data-footer-region="links" aria-label={linksLabel}>{list}</nav> : <div data-footer-region="links">{list}</div>}
-      <IconGroup data-footer-region="icons" aria-label={iconsLabel}>
-        <ul role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
-          {icons.map((link, index) => <li key={index}>
-            <a href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</a>
-          </li>)}
-          {home ? <li><a href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
-            <span data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-surface-base" style={HOME_PLATE_STYLE}>
-              <img src={home.markSrc} alt="" style={{ height: UI_BRANDMARK_HEIGHT_SM, width: "auto" }} />
-            </span>
-          </a></li> : null}
-        </ul>
-      </IconGroup>
-      <p data-footer-region="copyright" className="m-0">{`© ${year} ${entity}`}</p>
-    </div>
+    <SemanticContent as="div" data-footer-composition="" className="site-footer-composition">
+      {linksLabel ? <nav data-footer-region="links" aria-label={linksLabel}>{list}</nav> : <SemanticContent as="div" data-footer-region="links">{list}</SemanticContent>}
+      {iconsLabel ? <nav data-footer-region="icons" aria-label={iconsLabel}>{iconList}</nav> : <SemanticContent as="div" data-footer-region="icons">{iconList}</SemanticContent>}
+      <SemanticContent as="p" data-footer-region="copyright" className="m-0">{`© ${year} ${entity}`}</SemanticContent>
+    </SemanticContent>
   );
 }
 
-export const SiteFooter = Object.assign(SiteFooterRoot, { Column: SiteFooterColumn, Legal: SiteFooterLegal });
+export const SiteFooter = Object.assign(SiteFooterRoot, { Column: SiteFooterColumn, Legal: SiteFooterLegal, SocialLink: SiteFooterSocialLink, Link: FooterLink });

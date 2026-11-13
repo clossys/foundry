@@ -12,14 +12,14 @@
  *   1 — `--check` only: the on-disk file is STALE (differs from a fresh
  *       re-derivation) — never used for `--write`, which always either
  *       succeeds (0) or fails to run at all (2).
- *   2 — could not run at all: `src/atoms/` unreadable or matched zero
+ *   2 — could not run at all: `src/components/` unreadable or matched zero
  *       files, `tailwindcss` not resolvable, an unexpected exception, or
  *       (in `--check` mode) `styles/compiled.css` does not exist yet.
  *
  * This is a project-internal tool, not a general-purpose gate a consumer
  * would run against their own code (unlike `designer-token-check`, which accepts
  * an arbitrary `--tokens` registry) — it always checks THIS package's own
- * `styles/compiled.css` against THIS package's own `src/atoms/`. It is not
+ * `styles/compiled.css` against THIS package's own `src/components/`. It is not
  * published as a `bin` entry for exactly that reason (see the introducing
  * PR body): invoke it via `npm run generate:compiled-css` / `npm run
  * check:compiled-css` from within this package, or `node dist/compiled-
@@ -33,17 +33,26 @@ import { scanCompiledCssSources, scanUtilitiesSources } from "./scan-sources.js"
 import { generateCompiledCss } from "./generate.js";
 import { checkCompiledCssFreshness } from "./check.js";
 import { generateUtilitiesCss } from "./utilities.js";
+import { renderThemeKeys, type ThemesTokenSlot } from "./shadcn-theme-keys.js";
+
+/** styles/theme-keys.css with its generated shadcn colour-key region re-derived from the themes layer. */
+function derivedThemeKeys(packageRoot: string): { path: string; current: string; expected: string } {
+  const path = resolve(packageRoot, "styles", "theme-keys.css");
+  const current = readFileSync(path, "utf8");
+  const themes = JSON.parse(readFileSync(resolve(packageRoot, "src", "catalog", "slots", "themes.json"), "utf8")) as ThemesTokenSlot[];
+  return { path, current, expected: renderThemeKeys(themes, current) };
+}
 
 const USAGE = `Usage: ui-compiled-css-check [--write] [--package-root <path>]
 
   --check          (default) Verify styles/compiled.css and
                     styles/utilities.css match a fresh re-derivation from
-                    src/atoms/. Does not write anything.
+                    src/components/. Does not write anything.
   --write           Regenerate styles/compiled.css and styles/utilities.css
                     and write them to disk.
   --package-root <path>
                     This package's own root directory (containing styles/
-                    and src/atoms/). Defaults to two directories up from
+                    and src/components/). Defaults to two directories up from
                     this file's own compiled location (dist/compiled-css/).
   --help            Print this message and exit 0.
 
@@ -97,7 +106,7 @@ export async function main(argv: string[]): Promise<number> {
   }
   const packageRoot = resolve(args.packageRoot ?? defaultPackageRoot());
 
-  // A missing/unreadable src/atoms/ directory, a missing "tailwindcss", or
+  // A missing/unreadable src/components/ directory, a missing "tailwindcss", or
   // any other failure DURING scanning/generation is a "could not run"
   // outcome (exit 2), never an uncaught rejection — `scanClassCandidates`/
   // `generateCompiledCss`/`checkCompiledCssFreshness` all fail closed by
@@ -107,13 +116,19 @@ export async function main(argv: string[]): Promise<number> {
   try {
     if (args.mode === "write") {
       const stylesDir = resolve(packageRoot, "styles");
+      // theme-keys.css first: compiled.css is derived from it.
+      const themeKeys = derivedThemeKeys(packageRoot);
+      if (themeKeys.expected !== themeKeys.current) {
+        writeFileSync(themeKeys.path, themeKeys.expected, "utf8");
+        console.log(`Wrote ${themeKeys.path} (generated shadcn colour keys).`);
+      }
       const scan = scanCompiledCssSources(packageRoot);
       if (scan.filesScanned === 0) {
-        console.error(`No files matched under src/atoms, src/blocks, or src/shell — nothing was scanned. Refusing to write a compiled.css derived from nothing.`);
+        console.error(`No files matched under src/components, src/blocks, or src/shell — nothing was scanned. Refusing to write a compiled.css derived from nothing.`);
         return 2;
       }
       console.log(
-        `Scanned ${scan.filesScanned} file(s) (atoms ${scan.byDir.atoms}, blocks ${scan.byDir.blocks}, shell ${scan.byDir.shell}), ${scan.candidates.length} class candidate(s) extracted.`,
+        `Scanned ${scan.filesScanned} file(s) (${Object.entries(scan.byDir).map(([dir, count]) => `${dir} ${count}`).join(", ")}), ${scan.candidates.length} class candidate(s) extracted.`,
       );
       const generated = await generateCompiledCss({ stylesDir, candidates: scan.candidates });
       const outPath = resolve(stylesDir, "compiled.css");
@@ -132,6 +147,11 @@ export async function main(argv: string[]): Promise<number> {
       return 2;
     }
 
+    const themeKeys = derivedThemeKeys(packageRoot);
+    if (themeKeys.expected !== themeKeys.current) {
+      console.error(`"${themeKeys.path}": the generated shadcn colour-key region is stale against src/catalog/slots/themes.json. Run \`npm run generate:compiled-css\`.`);
+      return 1;
+    }
     const result = await checkCompiledCssFreshness({ packageRoot });
     console.log(`Scanned ${result.filesScanned} file(s), ${result.classCount} class rule(s) in a fresh re-derivation.`);
     const utilitiesPath = resolve(packageRoot, "styles", "utilities.css");

@@ -10,12 +10,18 @@ let dir: string;
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "ui-compiled-css-cli-"));
   cpSync(join(packageRoot, "styles"), join(dir, "styles"), { recursive: true });
-  cpSync(join(packageRoot, "src", "atoms"), join(dir, "src", "atoms"), { recursive: true });
+  cpSync(join(packageRoot, "src", "components"), join(dir, "src", "components"), { recursive: true });
   cpSync(join(packageRoot, "src", "blocks"), join(dir, "src", "blocks"), { recursive: true });
   cpSync(join(packageRoot, "src", "shell"), join(dir, "src", "shell"), { recursive: true });
+  cpSync(join(packageRoot, "src", "frames"), join(dir, "src", "frames"), { recursive: true });
+  cpSync(join(packageRoot, "src", "runtime"), join(dir, "src", "runtime"), { recursive: true });
+  cpSync(join(packageRoot, "src", "studio"), join(dir, "src", "studio"), { recursive: true });
   cpSync(join(packageRoot, "src", "charts"), join(dir, "src", "charts"), { recursive: true });
   cpSync(join(packageRoot, "src", "theme"), join(dir, "src", "theme"), { recursive: true });
   cpSync(join(packageRoot, "src", "tokens", "preview"), join(dir, "src", "tokens", "preview"), { recursive: true });
+  // The generated shadcn colour-key region is emitted from the themes layer.
+  mkdirSync(join(dir, "src", "catalog", "slots"), { recursive: true });
+  cpSync(join(packageRoot, "src", "catalog", "slots", "themes.json"), join(dir, "src", "catalog", "slots", "themes.json"));
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -46,11 +52,11 @@ describe("main --write", () => {
     expect(code).toBe(0);
     const written = readFileSync(join(dir, "styles", "compiled.css"), "utf8");
     expect(written).toContain("@layer foundry-ui-compiled");
-    expect(written).toContain(".bg-accent {");
+    expect(written).toContain(".bg-primary {");
   });
 
   it("returns 2 when every compiled-css source dir is empty", async () => {
-    for (const sub of ["atoms", "blocks", "shell"] as const) {
+    for (const sub of ["components", "blocks", "shell", "frames", "runtime", "studio"] as const) {
       rmSync(join(dir, "src", sub), { recursive: true, force: true });
       mkdirSync(join(dir, "src", sub), { recursive: true });
       writeFileSync(join(dir, "src", sub, "data.json"), "{}");

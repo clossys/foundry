@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { TOKENS } from "../../tokens/tokens.js";
-import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
-import { Item } from "../items/Item.js";
+import { cx } from "../../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
+import { StockItem } from "../items/StockItem.js";
 import { hasContent } from "../items/policies.js";
 import type { ItemData } from "../items/types.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
@@ -77,7 +77,7 @@ export function Tree(props: TreeProps) {
       {!right && !isRoot && siblingIndex === 0 ? stroke("down-spine", { insetInlineStart: "50%", insetBlockStart: NEGATIVE_HALF_COLUMN_GAP, inlineSize: `calc((100% + var(--spacing-lg, ${TOKENS["--spacing-lg"]!.value})) * ${siblingCount - 1})`, blockSize: UI_BORDER_HAIRLINE }) : null}
       <div data-diagram-node={node.id} style={right ? undefined : { maxInlineSize: `calc(var(--ui-width-prose-max, ${TOKENS["--ui-width-prose-max"]!.value}) / 3)` }} className={cx(PLATE, tokens.plate, right ? "tablet-lg:col-start-1 tablet-lg:row-start-1 tablet-lg:self-center" : DOWN_PLATE)}>
         {!isRoot && hasContent(edgeLabel) ? <div data-diagram-edge="" className={cx("m-0 text-caption font-body", colors.secondary)}>{edgeLabel}</div> : null}
-        <Item {...item} treatment="plain" size="standard" ground={ground} headingLevel={isRoot ? 3 : 4} />
+        <StockItem {...item} ground={ground} headingLevel={isRoot ? 3 : 4} />
         {right && hasChildren ? stroke("horizontal-outgoing", { insetInlineStart: "100%", insetBlockStart: "50%", inlineSize: HALF_COLUMN_GAP, blockSize: UI_BORDER_HAIRLINE }) : null}
         {!right && !isRoot ? stroke("down-incoming", { insetInlineStart: "50%", insetBlockStart: NEGATIVE_HALF_COLUMN_GAP, inlineSize: UI_BORDER_HAIRLINE, blockSize: HALF_COLUMN_GAP }) : null}
         {!right && hasChildren ? stroke("down-outgoing", { insetInlineStart: "50%", insetBlockStart: "100%", inlineSize: UI_BORDER_HAIRLINE, blockSize: HALF_COLUMN_GAP }) : null}

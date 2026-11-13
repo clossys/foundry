@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Badge } from "../../atoms/Badge.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
+import { BADGE_TONE } from "../../components/surface-tones.js";
 import { Explorer } from "../Explorer.js";
 import type { CatalogWorkspaceItem } from "./types.js";
 import type { catalogIndex } from "./model.js";
@@ -21,5 +22,5 @@ export function Browse({ items, index, selectedId, onSelect, label, defaultExpan
   return <Explorer key={disclosure.generation} defaultExpandedIds={defaultExpandedIds} tree={items} selectedId={selection} onSelect={id => {
     const item = index.nodes.get(id); if (item && item.children === undefined) onSelect(id);
   }} label={label}
-    renderDetails={item => <><span>{item.kind}{item.tag ? ` · ${item.tag}` : ""}</span>{item.badge ? <> <Badge>{item.badge}</Badge></> : null}</>} />;
+    renderDetails={item => <><span>{item.kind}{item.tag ? ` · ${item.tag}` : ""}</span>{item.badge ? <> <Badge {...BADGE_TONE.neutral}>{item.badge}</Badge></> : null}</>} />;
 }

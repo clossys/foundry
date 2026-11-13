@@ -1,0 +1,131 @@
+{
+  "name": "inspector",
+  "type": "registry:block",
+  "title": "Sheet",
+  "registryDependencies": [
+    "button",
+    "field",
+    "input",
+    "sheet"
+  ],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "sheet-example.tsx",
+      "type": "registry:example",
+      "content": "import {\n  Example,\n  ExampleWrapper,\n} from \"@/components/example\"\nimport { Button } from \"@/components/ui/button\"\nimport { Field, FieldGroup, FieldLabel } from \"@/components/ui/field\"\nimport { Input } from \"@/components/ui/input\"\nimport {\n  Sheet,\n  SheetClose,\n  SheetDescription,\n  SheetFooter,\n  SheetHeader,\n  SheetTitle,\n  SheetTrigger,\n} from \"@/components/ui/sheet\"\n\nexport default function SheetExample() {\n  return (\n    <ExampleWrapper>\n      <SheetWithForm />\n      <SheetNoCloseButton />\n      <SheetWithSides />\n    </ExampleWrapper>\n  )\n}\n\nfunction SheetWithForm() {\n  return (\n    <Example title=\"With Form\">\n      <SheetTrigger>\n        <Button variant=\"outline\">Open</Button>\n        <Sheet>\n          <SheetHeader>\n            <SheetTitle>Edit profile</SheetTitle>\n            <SheetDescription>\n              Make changes to your profile here. Click save when you&apos;re\n              done.\n            </SheetDescription>\n          </SheetHeader>\n          <div className=\"style-vega:px-4 style-nova:px-4 style-lyra:px-4 style-maia:px-6 style-mira:px-6 style-luma:px-6 style-rhea:px-6\">\n            <FieldGroup>\n              <Field>\n                <FieldLabel htmlFor=\"sheet-demo-name\">Name</FieldLabel>\n                <Input id=\"sheet-demo-name\" defaultValue=\"Pedro Duarte\" />\n              </Field>\n              <Field>\n                <FieldLabel htmlFor=\"sheet-demo-username\">Username</FieldLabel>\n                <Input id=\"sheet-demo-username\" defaultValue=\"@peduarte\" />\n              </Field>\n            </FieldGroup>\n          </div>\n          <SheetFooter>\n            <Button type=\"submit\">Save changes</Button>\n            <SheetClose variant=\"outline\">Close</SheetClose>\n          </SheetFooter>\n        </Sheet>\n      </SheetTrigger>\n    </Example>\n  )\n}\n\nfunction SheetNoCloseButton() {\n  return (\n    <Example title=\"No Close Button\">\n      <SheetTrigger>\n        <Button variant=\"outline\">No Close Button</Button>\n        <Sheet showCloseButton={false}>\n          <SheetHeader>\n            <SheetTitle>No Close Button</SheetTitle>\n            <SheetDescription>\n              This sheet doesn&apos;t have a close button in the top-right\n              corner. You can only close it using the button below.\n            </SheetDescription>\n          </SheetHeader>\n        </Sheet>\n      </SheetTrigger>\n    </Example>\n  )\n}\n\nconst SHEET_SIDES = [\"top\", \"right\", \"bottom\", \"left\"] as const\n\nfunction SheetWithSides() {\n  return (\n    <Example title=\"Sides\">\n      <div className=\"flex flex-wrap gap-2\">\n        {SHEET_SIDES.map((side) => (\n          <SheetTrigger key={side}>\n            <Button variant=\"outline\" className=\"capitalize\">\n              {side}\n            </Button>\n            <Sheet\n              side={side}\n              className=\"data-[side=bottom]:max-h-[50vh] data-[side=top]:max-h-[50vh]\"\n            >\n              <SheetHeader>\n                <SheetTitle>Edit profile</SheetTitle>\n                <SheetDescription>\n                  Make changes to your profile here. Click save when you&apos;re\n                  done.\n                </SheetDescription>\n              </SheetHeader>\n              <div className=\"no-scrollbar overflow-y-auto style-vega:px-4 style-nova:px-4 style-lyra:px-4 style-maia:px-6 style-mira:px-6 style-luma:px-6 style-rhea:px-6\">\n                {Array.from({ length: 10 }).map((_, index) => (\n                  <p\n                    key={index}\n                    className=\"mb-4 leading-normal style-lyra:mb-2 style-lyra:leading-relaxed\"\n                  >\n                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed\n                    do eiusmod tempor incididunt ut labore et dolore magna\n                    aliqua. Ut enim ad minim veniam, quis nostrud exercitation\n                    ullamco laboris nisi ut aliquip ex ea commodo consequat.\n                    Duis aute irure dolor in reprehenderit in voluptate velit\n                    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint\n                    occaecat cupidatat non proident, sunt in culpa qui officia\n                    deserunt mollit anim id est laborum.\n                  </p>\n                ))}\n              </div>\n              <SheetFooter>\n                <Button type=\"submit\">Save changes</Button>\n                <SheetClose variant=\"outline\">Cancel</SheetClose>\n              </SheetFooter>\n            </Sheet>\n          </SheetTrigger>\n        ))}\n      </div>\n    </Example>\n  )\n}\n"
+    },
+    {
+      "path": "components/example.tsx",
+      "type": "registry:component",
+      "content": "import { cn } from \"@/lib/utils\"\n\nfunction ExampleWrapper({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div className=\"w-full bg-muted dark:bg-background\">\n      <div\n        data-slot=\"example-wrapper\"\n        className={cn(\n          \"mx-auto grid min-h-screen w-full max-w-5xl min-w-0 content-center items-start gap-8 p-4 pt-2 sm:gap-12 sm:p-6 md:grid-cols-2 md:gap-8 lg:p-12 2xl:max-w-6xl\",\n\n          className\n        )}\n        {...props}\n      />\n    </div>\n  )\n}\n\nfunction Example({\n  title,\n  children,\n  className,\n  containerClassName,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  title?: string\n  containerClassName?: string\n}) {\n  return (\n    <div\n      data-slot=\"example\"\n      className={cn(\n        \"mx-auto flex w-full max-w-lg min-w-0 flex-col gap-1 self-stretch lg:max-w-none\",\n        containerClassName\n      )}\n      {...props}\n    >\n      {title && (\n        <div className=\"px-1.5 py-2 text-xs font-medium text-muted-foreground\">\n          {title}\n        </div>\n      )}\n      <div\n        data-slot=\"example-content\"\n        className={cn(\n          \"flex min-w-0 flex-1 flex-col items-start gap-6 rounded-xl bg-card p-12 text-foreground style-lyra:rounded-none style-sera:rounded-none *:[div:not([class*='w-'])]:w-full\",\n          className\n        )}\n      >\n        {children}\n      </div>\n    </div>\n  )\n}\n\nexport { ExampleWrapper, Example }\n"
+    }
+  ],
+  "meta": {
+    "slot": "frames.inspector",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/sheet-example@4.23.0"
+      ],
+      "hash": "sha256:4adf6955838a2ea628ad3ca6bf4cd5892690bde7ee6e7796d24802e07ab9f8e4",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "sheet-example.tsx": "registry/aria-nova/examples/sheet-example.tsx"
+      },
+      "parts": [
+        {
+          "registry": "shadcn-aria",
+          "item": "example",
+          "version": "4.23.0",
+          "hash": "sha256:bde91607d2ac74d2e566887ecb54e0d52242a4d8b00f9918973c32d8571faaba",
+          "files": {
+            "components/example.tsx": "registry/aria-nova/components/example.tsx"
+          }
+        }
+      ],
+      "adaptations": [
+        {
+          "kind": "import-paths",
+          "file": "components/example.tsx",
+          "hash": "sha256:d66ace007635f678db145622a3ad612b40876614a773cf2045e88d4a2e619a54",
+          "reason": "The vendored example imports its cn helper from the bare registry specifier \"cn\"; it is pointed at the consumer utils alias @/lib/utils (components.json aliases.utils), as shadcn add does for the registry utils path."
+        },
+        {
+          "kind": "import-paths",
+          "file": "components/example.tsx",
+          "hash": "sha256:d1e849a473b631b105bc1fc3770a6bd87385f23e92074528258e715d3ca41a93",
+          "reason": "The vendored example imports its cn helper from the bare registry specifier \"cn\"; it is pointed at the consumer utils alias @/lib/utils (components.json aliases.utils), as shadcn add does for the registry utils path."
+        }
+      ]
+    },
+    "element": {
+      "id": "inspector",
+      "package": "designer",
+      "layer": "frames",
+      "slot": "frames.inspector",
+      "kind": "registry:example",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "SECTION-REPICK"
+      },
+      "reason": "Bundles the vendored shadcn-aria/example@4.23.0 part the example imports (unmodified apart from the import path), so the section renders from its own payload. Previous: inspector-v1.json.",
+      "createdAt": "2026-11-03T13:50:29Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "button",
+          "field",
+          "input",
+          "sheet"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--primary",
+          "--spacing"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "sheet-example.tsx",
+        "export": "default",
+        "props": {}
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

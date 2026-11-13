@@ -208,11 +208,11 @@ describe("Specimen", () => {
 });
 
 describe("SpecimenPanel", () => {
-  it("is a lifted outline card: raised fill, one panel edge, rounded-panel, the panel elevation, padding by its own width", () => {
+  it("is a lifted stock outline card: one panel edge, rounded-panel, the panel elevation, padding by its own width", () => {
     const { container } = render(<SpecimenPanel parts={[FIELDS]} title="Order" />);
     const panel = container.querySelector<HTMLElement>("[data-specimen-panel]");
-    expect(panel).toHaveAttribute("data-variant", "outline");
-    expect(panel).toHaveClass("bg-surface-raised", "border-line-panel", "rounded-panel", "@container", "p-0");
+    expect(panel).toHaveAttribute("data-slot", "card");
+    expect(panel).toHaveClass("border", "border-line-panel", "ring-0", "rounded-panel", "@container", "p-0");
     expect(panel?.style.boxShadow).toBe("var(--ui-elevation-panel, var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10)))");
     const body = panel?.querySelector(":scope > [data-specimen-panel-body]");
     expect(body).toHaveClass("flex", "flex-col", "gap-lg", "p-lg", "@md:p-xl");
@@ -243,7 +243,7 @@ describe("SpecimenPanel", () => {
     expect(screen.getByText("Alex Lane")).toHaveClass("text-ink-primary");
     const disc = screen.getByText("AL");
     expect(disc).toHaveAttribute("aria-hidden", "true");
-    expect(disc).toHaveClass("size-2xl", "rounded-pill", "bg-accent-tint", "text-accent-text");
+    expect(disc).toHaveClass("size-2xl", "rounded-pill", "bg-accent", "text-accent-text");
     expect(screen.getByText("Nothing is sent until someone reviews it.")).toHaveClass("text-ink-secondary");
   });
 
@@ -456,17 +456,19 @@ describe("Specimen history, row caps and badges", () => {
   });
 
   it.each([
-    { tone: undefined, fill: "bg-surface-sunken", ink: "text-ink-secondary" },
-    { tone: "neutral", fill: "bg-surface-sunken", ink: "text-ink-secondary" },
-    { tone: "success", fill: "bg-status-success-tint", ink: "text-status-success-text" },
-    { tone: "warning", fill: "bg-status-warning-tint", ink: "text-status-warning-text" },
-    { tone: "danger", fill: "bg-status-danger-tint", ink: "text-status-danger-text" },
-    { tone: "info", fill: "bg-status-info-tint", ink: "text-status-info-text" },
-  ] as const)("renders badge tone $tone alongside the existing title and status", ({ tone, fill, ink }) => {
+    { tone: undefined, variant: "secondary", tokens: [] },
+    { tone: "neutral", variant: "secondary", tokens: [] },
+    { tone: "success", variant: "outline", tokens: ["bg-status-success-tint", "text-status-success-text"] },
+    { tone: "warning", variant: "outline", tokens: ["bg-status-warning-tint", "text-status-warning-text"] },
+    { tone: "danger", variant: "destructive", tokens: [] },
+    { tone: "info", variant: "outline", tokens: ["bg-status-info-tint", "text-status-info-text"] },
+  ] as const)("renders badge tone $tone alongside the existing title and status", ({ tone, variant, tokens }) => {
     const { container } = render(<SpecimenPanel {...PANEL} badge={{ label: "Reviewed record", tone }} />);
     const badge = screen.getByText("Reviewed record");
     expect(badge).toBeVisible();
-    expect(badge).toHaveClass("rounded-pill", fill, ink);
+    expect(badge).toHaveAttribute("data-slot", "badge");
+    expect(badge).toHaveAttribute("data-variant", variant);
+    if (tokens.length > 0) expect(badge).toHaveClass(...tokens);
     if (tone !== undefined && tone !== "neutral") expect(badge.parentElement).toHaveClass("inline-flex", "rounded-pill", "bg-surface-base");
     else expect(badge.parentElement).not.toHaveClass("bg-surface-base");
     expect(badge.closest("[data-specimen-panel-header]")).not.toBeNull();

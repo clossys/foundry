@@ -1,0 +1,69 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.studio.specimen-document",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.studio",
+    "l2": "studio-specimens",
+    "order": 275
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [],
+    "install": {
+      "layer": "@clossys/designer-ui",
+      "alias": "components",
+      "file": "specimen-document.tsx"
+    },
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.foreground",
+        "themes.muted-foreground",
+        "themes.card",
+        "themes.card-foreground",
+        "themes.border",
+        "themes.radius"
+      ],
+      "assets": [],
+      "components": [
+        "components.badge",
+        "components.button",
+        "components.card",
+        "components.empty",
+        "components.item"
+      ]
+    },
+    "composes": [
+      "components.badge",
+      "components.button",
+      "components.card",
+      "components.empty",
+      "components.item"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.empty",
+    "components.item"
+  ]
+}

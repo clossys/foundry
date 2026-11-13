@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { StatusMark } from "../atoms/StatusMark.js";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../atoms/internal/ui-vars.js";
+import { StatusMark } from "../components/StatusMark.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../components/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { hasLedgerContent, type LedgerRowData } from "./internal/ledger-data.js";
 
-const FLAG_CLASSES: Record<SectionGround, string> = { base: "border-s-accent", sunken: "border-s-accent", inverse: "border-s-accent-on-inverse" };
+const FLAG_CLASSES: Record<SectionGround, string> = { base: "border-s-primary", sunken: "border-s-primary", inverse: "border-s-accent-on-inverse" };
 const LIST_CLASSES = "m-0 list-none p-0 flex flex-col";
 const ROW_CLASSES = "grid min-w-0 ledger-row-grid items-start gap-x-lg text-body-s";
 

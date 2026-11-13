@@ -1,0 +1,41 @@
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Checkbox } from "../../components/preview-runtime/components/checkbox/checkbox.js";
+import { StockSelect as Select } from "../stock-select.js";
+import { Tooltip, TooltipTrigger } from "../../components/preview-runtime/components/tooltip/tooltip.js";
+
+describe("AccessMatrix and ColumnMapper main component integration", () => {
+  it("opens a reason Tooltip from the focusable read-only Checkbox and preserves its persistent description", async () => {
+    const user = userEvent.setup();
+    const changed = vi.fn();
+    render(<>
+      <TooltipTrigger behaviorTiming={{ "tooltip-delay": { value: 0, unit: "ms" }, "tooltip-close": { value: 0, unit: "ms" } }}>
+        <Checkbox isReadOnly isSelected aria-describedby="inherited-reason" onChange={changed}>
+          <span className="sr-only">Editor: Export reports</span>
+        </Checkbox>
+        <Tooltip>Included with Viewer access to reports.</Tooltip>
+      </TooltipTrigger>
+      <span id="inherited-reason" className="sr-only">Included with Viewer access to reports.</span>
+    </>);
+    const checkbox = screen.getByRole("checkbox", { name: "Editor: Export reports" });
+    await user.tab();
+    expect(checkbox).toHaveFocus();
+    expect(checkbox).not.toBeDisabled();
+    expect(checkbox).toHaveAccessibleDescription(/Included with Viewer access to reports/);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Included with Viewer access to reports.");
+    await user.keyboard(" ");
+    expect(changed).not.toHaveBeenCalled();
+    expect(checkbox).toBeChecked();
+  });
+
+  it("accepts the prescribed empty internal Select option and reports it unchanged", async () => {
+    const user = userEvent.setup();
+    const changed = vi.fn();
+    render(<Select label="Email" placeholder="Not mapped" selectedKey="email" onSelectionChange={changed}
+      options={[{ id: "", label: "Not mapped" }, { id: "email", label: "E-mail address" }]} />);
+    await user.click(screen.getByRole("button", { name: /Email/ }));
+    await user.click(screen.getByRole("option", { name: "Not mapped" }));
+    expect(changed).toHaveBeenCalledWith("");
+  });
+});

@@ -1,0 +1,149 @@
+{
+  "layer": "themes",
+  "nodes": [
+    {
+      "id": "colors",
+      "label": "Colors",
+      "children": [
+        {
+          "id": "colors-surfaces",
+          "label": "Surfaces",
+          "leaves": [
+            "themes.background",
+            "themes.foreground",
+            "themes.card",
+            "themes.card-foreground",
+            "themes.popover",
+            "themes.popover-foreground"
+          ]
+        },
+        {
+          "id": "colors-actions",
+          "label": "Actions",
+          "leaves": [
+            "themes.primary",
+            "themes.primary-foreground",
+            "themes.secondary",
+            "themes.secondary-foreground",
+            "themes.accent",
+            "themes.accent-foreground",
+            "themes.destructive"
+          ]
+        },
+        {
+          "id": "colors-neutrals",
+          "label": "Neutrals",
+          "leaves": [
+            "themes.muted",
+            "themes.muted-foreground",
+            "themes.border",
+            "themes.input",
+            "themes.ring"
+          ]
+        },
+        {
+          "id": "colors-charts",
+          "label": "Charts",
+          "leaves": [
+            "themes.chart-1",
+            "themes.chart-2",
+            "themes.chart-3",
+            "themes.chart-4",
+            "themes.chart-5"
+          ]
+        },
+        {
+          "id": "colors-sidebar",
+          "label": "Sidebar",
+          "leaves": [
+            "themes.sidebar",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent",
+            "themes.sidebar-accent-foreground",
+            "themes.sidebar-border",
+            "themes.sidebar-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shape",
+      "label": "Shape",
+      "children": [
+        {
+          "id": "shape-corners",
+          "label": "Corners",
+          "leaves": [
+            "themes.radius"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "typography",
+      "label": "Typography",
+      "children": [
+        {
+          "id": "typography-fonts",
+          "label": "Fonts",
+          "leaves": [
+            "themes.font-sans",
+            "themes.font-heading",
+            "themes.font-mono",
+            "themes.font-serif"
+          ]
+        },
+        {
+          "id": "typography-tracking",
+          "label": "Tracking",
+          "leaves": [
+            "themes.tracking-tight"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "space",
+      "label": "Space",
+      "children": [
+        {
+          "id": "space-rhythm",
+          "label": "Rhythm",
+          "leaves": [
+            "themes.spacing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "depth",
+      "label": "Depth",
+      "children": [
+        {
+          "id": "depth-effects",
+          "label": "Effects",
+          "leaves": [
+            "themes.shadow"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "motion",
+      "label": "Motion",
+      "children": [
+        {
+          "id": "motion-animations",
+          "label": "Animations",
+          "leaves": [
+            "themes.animate-marquee",
+            "themes.animate-marquee-vertical",
+            "themes.animate-shiny-text"
+          ]
+        }
+      ]
+    }
+  ]
+}

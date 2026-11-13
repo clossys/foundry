@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "state": "superseded",
+  "upstream": {
+    "repository": "shadcn-ui/ui",
+    "commit": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+    "license": "MIT"
+  },
+  "files": [
+    {
+      "file": "section-cards.tsx.source",
+      "path": "apps/v4/registry/bases/aria/blocks/dashboard-01/components/section-cards.tsx",
+      "bytes": 5588,
+      "sha256": "43e5041dee1804cba02c5ac1359dfb4eb4cebc3cf7d34d457765587cbf880197",
+      "gitBlob": "4ee21e780a053f7e5535555afb28f78dcd9fa35b",
+      "reference": {
+        "registry": "shadcn-app",
+        "item": "studio-home-section-cards",
+        "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+        "hash": "sha256:09fe57bbfe3aef57d3d7945bf6fdb09a305a77d40f027b7251d3b2d47d6a3c0d"
+      }
+    },
+    {
+      "file": "card-example.tsx.source",
+      "path": "apps/v4/registry/bases/aria/examples/card-example.tsx",
+      "bytes": 15164,
+      "sha256": "8df73f6f5241bfa3823f19aea8da37103904ebe4d0d8a8a13aae1c29f9cdf3fa",
+      "gitBlob": "e5185d544ffb67391a33ec81f5eb93f1839202ea",
+      "reference": {
+        "registry": "shadcn-app",
+        "item": "card-example",
+        "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+        "hash": "sha256:edec06e15a64fbde974f05a30da46589bd54fcc55a5b6a2003af537d1cbb304e"
+      }
+    },
+    {
+      "file": "LICENSE.md",
+      "path": "LICENSE.md",
+      "bytes": 1063,
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f",
+      "gitBlob": "fad4d887a681dd49233e5ed01ee2c7a1513089a0"
+    }
+  ],
+  "parts": [
+    {
+      "export": "HomeStockGrid",
+      "file": "section-cards.tsx.source",
+      "lines": [
+        16,
+        16
+      ],
+      "startByte": 321,
+      "endByte": 578,
+      "sha256": "21384d281b4b6c85c19e970bef15745ab40165ec130c4092d2ee2a25ff086346",
+      "bindings": [
+        "children: repeated complete census cards; closing div for extracted opening"
+      ]
+    },
+    {
+      "export": "HomeStockCensusCard",
+      "file": "section-cards.tsx.source",
+      "lines": [
+        17,
+        52
+      ],
+      "startByte": 578,
+      "endByte": 1840,
+      "sha256": "7babe81ad29cc712192e02b286157fb75f1c5b49591f80208e4aaeb0739ab264",
+      "bindings": [
+        "label,total,candidates,pinnedLabel,detail: display-ready text",
+        "icon: each IconPlaceholder binds the supplied agent icon",
+        "id,state,totalLabel,candidatesLabel: metadata/accessibility only"
+      ]
+    },
+    {
+      "export": "HomeStockHeader",
+      "file": "card-example.tsx.source",
+      "lines": [
+        403,
+        408
+      ],
+      "startByte": 12643,
+      "endByte": 12842,
+      "sha256": "63eef8635942bf3b4d5d0d75d2ef4318622579ec1ab4c7ed7c2566195c7bddbe",
+      "bindings": [
+        "title,description: display-ready text",
+        "id,heading role,level 1: accessibility only"
+      ]
+    },
+    {
+      "export": "HomeStockNeedsHeader",
+      "file": "card-example.tsx.source",
+      "lines": [
+        228,
+        246
+      ],
+      "startByte": 6814,
+      "endByte": 7447,
+      "sha256": "21239615d83148d8b406891ca7e657f4a34136b44f1d908644a62320a1de6a19",
+      "bindings": [
+        "title,description,closeLabel: display-ready text",
+        "closeIcon: supplied icon",
+        "onClose: real onPress; closeLabel: accessible label"
+      ]
+    }
+  ],
+  "importRelocations": {
+    "@/registry/bases/aria/ui/card": "./ui/card",
+    "@/registry/bases/aria/ui/badge": "./ui/badge",
+    "@/registry/bases/aria/ui/button": "./ui/button"
+  },
+  "emitted": {
+    "file": "src/components/studio-home-stock.tsx",
+    "sha256": "6dd108fdcb5d212f0ece8395cfda22d08a23e423def1ccdacea3f2c5b8af986e"
+  },
+  "consumer": {
+    "file": "packages/producer/studio/sections/studio-home/index.tsx",
+    "sha256": "6bcf8237d15ca357b2dbb8b7fa4c09734222f301181acd3a8d9f78cf2646f18b",
+    "retained": [
+      "independent census states and labels; no navigation in census cards",
+      "existing Needs rows, severity tones, empty text and close callback",
+      "Card size sm and content slots are retained wrappers; no capped CardMeetingNotes example geometry adopted"
+    ]
+  },
+  "nativeQualification": {
+    "state": "qualified",
+    "candidate": "home-grid-v3.json",
+    "pinChanged": true,
+    "reason": "R2F-03: components.studio.home-grid re-adopted as a composition of stock parts (components.badge, button, card, field); the ref-verbatim composition check qualifies the pin natively, so these exact-range snapshots remain only as the vendored reference record.",
+    "by": "planner:R2F-03"
+  },
+  "containerDependency": "Studio frame must provide @container/main; source is present at implementation base; browser measurement remains owed"
+}

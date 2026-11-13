@@ -1,0 +1,90 @@
+{
+  "name": "block-viewer-iframe",
+  "type": "registry:component",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "block-viewer-iframe.tsx",
+      "type": "registry:component",
+      "content": "// Studio specimen window: a stock shadcn card (components.card) holding a projected specimen route in an\n// unstyled iframe at the card's width and a fixed CSS-pixel height. In an opaque-origin document (a\n// served preview sandboxes specimens without allow-same-origin) every projected route refuses to be\n// framed (frame-ancestors 'self'), so the window renders a static card with its title instead.\nimport { Card, CardHeader, CardTitle } from \"@/components/ui/card\"\n\ntype Viewport = 375 | 768 | 1280\n\n/** Only already-projected, local specimen routes are accepted; never arbitrary URLs or code. */\nexport function specimenSource(src: string, viewport?: Viewport): string {\n  if (/[\\\\\\s\\u0000-\\u001f\\u007f]/.test(src) || !src.startsWith(\"/\") || src.startsWith(\"//\")) {\n    throw new Error(\"Expected a local specimen route\")\n  }\n  const url = new URL(src, \"https://example.com\")\n  if (url.pathname !== \"/__specimen\" && !url.pathname.startsWith(\"/preview/\")) {\n    throw new Error(\"Expected a projected specimen route\")\n  }\n  if (viewport !== undefined) {\n    const widths = url.searchParams.getAll(\"width\")\n    // Producer's existing routes default to 1280 when width is absent.\n    if (![375, 768, 1280].includes(viewport) || widths.length > 1 || (widths.length ? widths[0] !== String(viewport) : viewport !== 1280)) {\n      throw new Error(\"Specimen viewport does not match its projected source\")\n    }\n  }\n  return src\n}\n\nexport interface BlockViewerIframeProps {\n  src: string\n  title: string\n  viewport: Viewport\n  iframeKey: string | number\n  iframeHeight?: number\n  interactive?: boolean\n}\n\n/** True in a document whose origin is opaque, where a nested projected route is always refused. */\nexport function isOpaqueOrigin(): boolean {\n  return typeof window !== \"undefined\" && window.origin === \"null\"\n}\n\n/** A projected specimen route in a stock card window. */\nexport function BlockViewerIframe({ src, title, viewport, iframeKey, iframeHeight = 930, interactive = false }: BlockViewerIframeProps) {\n  if (!Number.isFinite(iframeHeight) || iframeHeight <= 0 || iframeHeight > 10000) throw new Error(\"Invalid specimen height\")\n  const opaque = isOpaqueOrigin()\n  if (opaque) {\n    specimenSource(src, viewport)\n    return (\n      <Card size=\"sm\" data-specimen-viewport={viewport} data-specimen-static=\"\">\n        <CardHeader>\n          <CardTitle>{title}</CardTitle>\n        </CardHeader>\n      </Card>\n    )\n  }\n  return (\n    <Card size=\"sm\" data-specimen-viewport={viewport}>\n      <iframe key={iframeKey} src={specimenSource(src, viewport)} title={title} loading=\"lazy\" inert={!interactive} width=\"100%\" height={iframeHeight} />\n    </Card>\n  )\n}\n\nexport interface BlockViewerCardIframeProps extends Omit<BlockViewerIframeProps, \"interactive\"> {\n  /** Wraps the frame (a card body). */\n  wrap?: (frame: React.ReactNode) => React.ReactNode\n}\n\n/** A gallery card's view-only specimen window. */\nexport function BlockViewerCardIframe({ wrap = frame => frame, iframeHeight = 480, ...props }: BlockViewerCardIframeProps) {\n  return wrap(<BlockViewerIframe {...props} iframeHeight={iframeHeight} interactive={false} />)\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.studio.block-viewer-iframe",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:1d45be4c27c6c418e29c77d9ac38a5b63dd752509abfbb377867a045ce59e699",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "block-viewer-iframe",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.studio.block-viewer-iframe",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "R2F-C11"
+      },
+      "reason": "R2F-C11: v5's opaque-origin static card, with the check computed inline at render (typeof window guard) so the composition imports only @clossys/designer-ui parts",
+      "createdAt": "2026-11-13T04:09:06.000Z",
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.specimen"
+        ],
+        "themeVars": [
+          "--border",
+          "--background",
+          "--radius",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "block-viewer-iframe.tsx",
+        "export": "BlockViewerIframe",
+        "props": {
+          "src": "/__specimen?element=components.card/card&width=1280",
+          "title": {
+            "$copy": "studio.specimen"
+          },
+          "viewport": 1280,
+          "iframeKey": "components.card",
+          "iframeHeight": 480
+        }
+      },
+      "inputs": {
+        "copy": [
+          "studio.specimen"
+        ]
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

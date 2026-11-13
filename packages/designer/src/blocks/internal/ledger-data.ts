@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { StatusMarkTone } from "../../atoms/StatusMark.js";
+import type { StatusMarkTone } from "../../components/StatusMark.js";
 
 /** One static row. The words carry the meaning; tone reinforces them. */
 export interface LedgerRowData {

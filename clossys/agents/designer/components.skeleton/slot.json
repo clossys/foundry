@@ -1,0 +1,50 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.skeleton",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.feedback",
+    "l2": "feedback-progress",
+    "order": 147
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "shape.block"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.radius",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent"
+      ],
+      "assets": []
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.muted",
+    "themes.radius"
+  ],
+  "uses": []
+}

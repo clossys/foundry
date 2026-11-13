@@ -1,10 +1,38 @@
-import { useId, useState } from "react";
-import { Button, Icon, type ButtonProps } from "../atoms/index.js";
+import { useShellCopy } from "../components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+import { createContext, useContext, useId, useState } from "react";
+import { Icon } from "../components/preview-runtime/components/icon/icon.js";
+import { ToggleGroup, ToggleGroupItem, type ToggleGroupProps } from "../components/ToggleGroup.js";
+import { Toolbar } from "../components/Toolbar.js";
+import { Tooltip, TooltipTrigger, type TooltipBehaviorTiming } from "../components/preview-runtime/components/tooltip/tooltip.js";
 import { Monitor, Moon, Sun, type IconNode } from "../icons/index.js";
-import { useTheme } from "./ThemeProvider.js";
+import { useOptionalTheme } from "./ThemeProvider.js";
 import type { ThemePreference } from "./internal/theme-core.js";
 
-const CYCLE: readonly ThemePreference[] = ["system", "light", "dark"];
+/** The peer TooltipTrigger delays this toggle already used; `--ui-duration-tooltip-*` stay unplaced. */
+const TOOLTIP_TIMING: TooltipBehaviorTiming = { "tooltip-delay": { value: 1500, unit: "ms" }, "tooltip-close": { value: 500, unit: "ms" } };
+
+const PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
+
+/**
+ * "menu" when a frame reveals the toggle inside a menu popover: each radio shows its
+ * label beside the glyph and opens no tooltip, so the menu alone owns hover and Escape.
+ */
+const ThemeTogglePresentationContext = createContext<"toolbar" | "menu">("toolbar");
+/** Frame-internal: the frame wraps a host theme control it places in its account menu. */
+export const ThemeTogglePresentation = ThemeTogglePresentationContext.Provider;
+
+/*
+ * The selected preference is a surface step with the primary ink and a 1px
+ * ink ring (the state reads at 3:1 or more without a fill), not the full
+ * action fill, which made the toggle the brightest object in a dark
+ * sidebar. Colour-only motion on the fast tier.
+ */
+const SELECTED_STEP =
+  "icon-control-md shrink-0 transition-colors duration-(--ui-duration-fast) data-selected:bg-surface-selected data-selected:text-ink-primary data-selected:ring-1 data-selected:ring-inset data-selected:ring-current aria-pressed:bg-surface-selected aria-pressed:text-ink-primary";
+
+/** A labelled menu radio keeps the selected step but sizes to its glyph and label (the stock toggle's own text sizing). */
+const MENU_STEP = SELECTED_STEP.replace("icon-control-md ", "");
 
 export interface ThemePreferenceLabels {
   readonly system: string;
@@ -12,11 +40,6 @@ export interface ThemePreferenceLabels {
   readonly dark: string;
 }
 
-const DEFAULT_PREFERENCE_LABELS: ThemePreferenceLabels = {
-  system: "System",
-  light: "Light",
-  dark: "Dark",
-};
 
 const PREFERENCE_GLYPH: Record<ThemePreference, IconNode> = {
   system: Monitor,
@@ -24,119 +47,80 @@ const PREFERENCE_GLYPH: Record<ThemePreference, IconNode> = {
   dark: Moon,
 };
 
-function nextPreference(current: ThemePreference): ThemePreference {
-  const index = CYCLE.indexOf(current);
-  // `index` is always found (CYCLE covers every ThemePreference), so the
-  // fallback `0` below is unreachable in practice — kept only to satisfy
-  // this package's `noUncheckedIndexedAccess` typecheck setting.
-  return CYCLE[(index + 1) % CYCLE.length] ?? "system";
-}
-
-export interface ThemeToggleProps extends Omit<ButtonProps, "children" | "onPress"> {
-  /**
-   * Spoken names for each theme preference.
-   * @default System / Light / Dark
-   */
+export interface ThemeToggleProps extends Omit<ToggleGroupProps,
+  "children" | "selectionMode" | "selectedKeys" | "defaultSelectedKeys" | "onSelectionChange" | "disallowEmptySelection"> {
+  /** Spoken preference names; omitted names resolve through the host Writer seam. */
   preferenceLabels?: ThemePreferenceLabels;
-  /**
-   * Accessible name for the cycling control.
-   * @default (current, next, labels) => `Theme: ${labels[current]}. Activate to switch to ${labels[next]}.`
-   */
-  toggleLabel?: (current: ThemePreference, next: ThemePreference, labels: ThemePreferenceLabels) => string;
-  /**
-   * Live-region announcement after the preference changes.
-   * @default (next, labels) => `Theme set to ${labels[next]}`
-   */
+  /** Accessible toolbar name; omitted means resolve its Writer reference. */
+  toolbarLabel?: string;
+  /** Tooltip copy for an individual option, receiving the current and target preference. */
+  toggleLabel?: (current: ThemePreference, target: ThemePreference, labels: ThemePreferenceLabels) => string;
+  /** Polite announcement after the preference changes. */
   preferenceAnnouncement?: (next: ThemePreference, labels: ThemePreferenceLabels) => string;
+  /** Host-controlled preference; overrides the nearest ThemeProvider and works without one. */
+  preference?: ThemePreference;
+  /** Called with the chosen preference; with `preference`, the host applies it. */
+  onPreferenceChange?: (preference: ThemePreference) => void;
 }
 
-function defaultToggleLabel(
-  current: ThemePreference,
-  next: ThemePreference,
-  labels: ThemePreferenceLabels,
-): string {
-  return `Theme: ${labels[current]}. Activate to switch to ${labels[next]}.`;
+function defaultToggleLabel(_current: ThemePreference, target: ThemePreference, labels: ThemePreferenceLabels): string {
+  return labels[target];
 }
 
-function defaultPreferenceAnnouncement(next: ThemePreference, labels: ThemePreferenceLabels): string {
-  return `Theme set to ${labels[next]}`;
-}
 
-/**
- * A single control that cycles System -> Light -> Dark -> System.
- *
- * WHY A CYCLE, NOT A TWO-STATE SWITCH WITH A SEPARATE RESET. This
- * package's own `Switch` atom communicates exactly one bit — on/off — and
- * a theme preference isn't a bit, it's one of three values. A `Switch`
- * plus a separate "reset to system" control would need two controls to do
- * one job, and the switch itself would have no correct position to show
- * whenever the preference is `"system"` (the OS could be either). A
- * single cycling control keeps `"system"` a first-class, always-reachable
- * stop on the SAME control — never a secondary escape hatch a keyboard or
- * screen-reader user has to discover separately. It also keeps this
- * component to exactly one focusable element, rather than two that have
- * to stay visually and semantically paired.
- *
- * This is a deliberate choice, not the only valid one: `useTheme()`'s
- * `setPreference` accepts any of the three values directly, so a consumer
- * who wants a segmented three-button group, or a `Menu` of three explicit
- * options instead of a cycling button, can build one from this package's
- * `Button`/`Menu` atoms and `useTheme()` without reaching for
- * `ThemeToggle` at all — nothing about the public API privileges this
- * component's own interaction shape.
- *
- * ACCESSIBILITY. Built on this package's own `Button` atom (react-aria-
- * components underneath — see the README's "Why these dependencies") for
- * the same reason every other interactive atom here is: Enter/Space
- * activation, focus management, and disabled-state semantics are not
- * reimplemented here, so this control is keyboard-operable for free.
- * `aria-label` always states BOTH the current preference and what
- * activating the control does next ("Theme: System. Activate to switch to
- * Light."), so a screen-reader user gets the same information a sighted
- * user gets from the icon. That label alone isn't relied on to announce a
- * CHANGE, though: not every screen reader/browser combination reliably
- * re-announces an `aria-label` that changes on an element that already
- * has focus. A visually hidden (`sr-only`) `role="status"`/`aria-live`
- * region is updated on every press instead, which is announced
- * consistently regardless of whether the label itself is re-read.
- */
+/** Three explicit preferences, using the adopted fill's native radio selection and focus protocol. */
 export function ThemeToggle({
-  className,
-  variant = "ghost",
-  size = "sm",
-  preferenceLabels = DEFAULT_PREFERENCE_LABELS,
+  preferenceLabels: suppliedPreferenceLabels,
+  toolbarLabel: suppliedToolbarLabel,
   toggleLabel = defaultToggleLabel,
-  preferenceAnnouncement = defaultPreferenceAnnouncement,
-  "aria-label": ariaLabel,
+  preferenceAnnouncement: suppliedPreferenceAnnouncement,
+  "aria-label": suppliedAriaLabel,
+  "aria-describedby": describedby,
+  preference: hostPreference,
+  onPreferenceChange,
   ...rest
 }: ThemeToggleProps) {
-  const { preference, setPreference } = useTheme();
+  const context = useOptionalTheme();
+  const copy = useShellCopy();
+  const preferenceLabels = suppliedPreferenceLabels ?? { system: copy(SHELL_COPY_REFS.theme.system), light: copy(SHELL_COPY_REFS.theme.light), dark: copy(SHELL_COPY_REFS.theme.dark) };
+  const toolbarLabel = suppliedToolbarLabel ?? copy(SHELL_COPY_REFS.theme.toolbar);
+  const ariaLabel = suppliedAriaLabel ?? copy(SHELL_COPY_REFS.theme.group);
+  const preferenceAnnouncement = suppliedPreferenceAnnouncement ?? ((next: ThemePreference, labels: ThemePreferenceLabels) => copy(SHELL_COPY_REFS.theme.announcement, { theme: labels[next] }));
+  if (hostPreference === undefined && !context) throw new Error("useTheme() must be called within a <ThemeProvider>.");
+  const preference = hostPreference ?? context!.preference;
+  const setPreference = (next: ThemePreference) => {
+    if (hostPreference === undefined) context!.setPreference(next);
+    onPreferenceChange?.(next);
+  };
   const [announcedPreference, setAnnouncedPreference] = useState<ThemePreference | null>(null);
   const statusId = useId();
+  const inMenu = useContext(ThemeTogglePresentationContext) === "menu";
 
-  const next = nextPreference(preference);
-
-  return (
-    <>
-      <Button
-        {...rest}
-        variant={variant}
-        size={size}
-        className={className}
-        aria-label={ariaLabel ?? toggleLabel(preference, next, preferenceLabels)}
-        aria-describedby={statusId}
-        onPress={() => {
+  return <>
+    <Toolbar aria-label={toolbarLabel} className="border-0 p-0">
+    <ToggleGroup {...rest} aria-label={ariaLabel} aria-describedby={[describedby, statusId].filter(Boolean).join(" ")}
+      selectionMode="single" disallowEmptySelection selectedKeys={new Set([preference])}
+      onSelectionChange={keys => {
+        const next = [...keys][0];
+        if ((next === "system" || next === "light" || next === "dark") && next !== preference) {
           setPreference(next);
           setAnnouncedPreference(next);
-        }}
-      >
-        <Icon glyph={PREFERENCE_GLYPH[preference]} decorative />
-      </Button>
-      <span id={statusId} role="status" aria-live="polite" className="sr-only">
-        {announcedPreference === null
-          ? null
-          : preferenceAnnouncement(announcedPreference, preferenceLabels)}
-      </span>
-    </>
-  );
+        }
+      }}>
+      {PREFERENCES.map(target => inMenu
+        ? <ToggleGroupItem key={target} id={target} className={MENU_STEP}>
+          <Icon glyph={PREFERENCE_GLYPH[target]} decorative /><span>{preferenceLabels[target]}</span>
+        </ToggleGroupItem>
+        : <TooltipTrigger key={target} behaviorTiming={TOOLTIP_TIMING}>
+        <ToggleGroupItem id={target} aria-label={preferenceLabels[target]} className={SELECTED_STEP}>
+          <Icon glyph={PREFERENCE_GLYPH[target]} decorative />
+        </ToggleGroupItem>
+        <Tooltip>{toggleLabel(preference, target, preferenceLabels)}</Tooltip>
+      </TooltipTrigger>)}
+    </ToggleGroup>
+    </Toolbar>
+    <span id={statusId} role="status" aria-live="polite" className="sr-only">
+      {announcedPreference === null ? null : preferenceAnnouncement(announcedPreference, preferenceLabels)}
+    </span>
+  </>;
 }

@@ -1,0 +1,19 @@
+/*
+ * The specimen frame document: the shadcn BlockViewer iframe host (apps/v4 block-viewer,
+ * shadcn-app/block-viewer@b8d7baa) reduced to its one scaled iframe. The page fills its card
+ * without margin or scrollbars, stays transparent so the card ground shows, and scales the
+ * inner page from its top-left corner (the frame script sets the scale and height).
+ */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+iframe {
+  display: block;
+  border: 0;
+  transform-origin: 0 0;
+}

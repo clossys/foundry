@@ -1,0 +1,87 @@
+{
+  "name": "status-mark",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn",
+    "class-variance-authority"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2024 Sadman Sakib\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+    },
+    {
+      "path": "status-mark.tsx",
+      "type": "registry:ui",
+      "content": "import type * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"cn\"\n\n/**\n * Status mark: a dot plus label. Tones read theme slots only: the status roles\n * --success, --warning, --info and --destructive.\n */\nconst statusMarkVariants = cva(\n  \"inline-flex w-fit shrink-0 items-center gap-1.5 rounded-4xl border px-2 py-0.5 text-xs font-medium whitespace-nowrap\",\n  {\n    variants: {\n      tone: {\n        neutral: \"border-border bg-muted text-muted-foreground [--status-mark:var(--muted-foreground)]\",\n        success: \"border-[color-mix(in_oklch,var(--success)_30%,transparent)] bg-[color-mix(in_oklch,var(--success)_12%,transparent)] text-foreground [--status-mark:var(--success)]\",\n        warning: \"border-[color-mix(in_oklch,var(--warning)_30%,transparent)] bg-[color-mix(in_oklch,var(--warning)_12%,transparent)] text-foreground [--status-mark:var(--warning)]\",\n        danger: \"border-destructive/30 bg-destructive/10 text-destructive [--status-mark:var(--destructive)]\",\n        info: \"border-[color-mix(in_oklch,var(--info)_30%,transparent)] bg-[color-mix(in_oklch,var(--info)_12%,transparent)] text-foreground [--status-mark:var(--info)]\",\n      },\n    },\n    defaultVariants: { tone: \"neutral\" },\n  }\n)\n\nfunction StatusMark({\n  className,\n  tone = \"neutral\",\n  children,\n  ...props\n}: React.ComponentProps<\"span\"> & VariantProps<typeof statusMarkVariants>) {\n  return (\n    <span data-slot=\"status-mark\" data-tone={tone} className={cn(statusMarkVariants({ tone }), className)} {...props}>\n      <span aria-hidden=\"true\" data-slot=\"status-mark-indicator\" className=\"size-2 shrink-0 rounded-full bg-(--status-mark)\" />\n      {children}\n    </span>\n  )\n}\n\nexport { StatusMark, statusMarkVariants }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.status-mark",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "diceui/status@04aad54"
+      ],
+      "hash": "sha256:3ea06683ca5681b1550f3d8bab5deed735a46642b5dbe4896b78ac448ff77449",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "status-mark",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.status-mark",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "DATA-GAPS"
+      },
+      "reason": "v2: tones read the status roles themes.success, themes.warning and themes.info (with themes.destructive for danger) instead of chart roles and primary.",
+      "createdAt": "2026-11-03T09:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "class-variance-authority": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--destructive",
+          "--success",
+          "--warning",
+          "--info",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}

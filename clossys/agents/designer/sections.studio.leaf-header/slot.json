@@ -1,0 +1,54 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.studio.leaf-header",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 246
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.leaf-header",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The head of a leaf page: back link to its library, name, shown version, status, id and IA trail, and status notes.",
+    "inputs": [
+      {
+        "name": "header",
+        "kind": "data",
+        "required": true,
+        "description": "Name, id, version, status and trail."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "text"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card"
+  ]
+}

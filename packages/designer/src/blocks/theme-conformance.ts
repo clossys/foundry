@@ -31,8 +31,14 @@ const PLATED_READING = [...GROUNDED_READING, ...RAISED_READING, ...INVERSE_RAISE
 
 /** Exact exported component inventory; a new barrel export requires registration. */
 export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
-  { exportName: "AccessMatrix", source: "src/blocks/AccessMatrix.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-on-accent/accent"] },
-  { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised", "status-danger-text/surface-raised"] },
+  /* The selected stock checkbox paints ink-on-action on action (no CONTRAST_PAIRS entry; action-color.test.ts owns that contrast), not ink-on-accent. */
+  { exportName: "AccessMatrix", source: "src/blocks/AccessMatrix.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
+  /* R2F-33d2: the mapping select's label and error are the stock field parts, which own their paint. */
+  { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised"] },
+  /* R2F-33d2: its select labels are the stock field label, which owns its paint; no ink-secondary of its own. */
+  { exportName: "FilterBuilder", source: "src/blocks/FilterBuilder.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-raised"] },
+  { exportName: "SettingsSection", source: "src/blocks/SettingsSection.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
+  { exportName: "FormWizard", source: "src/blocks/FormWizard.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "Lockup", source: "src/blocks/Lockup.tsx", contrastPairs: ["ink-primary/surface-base", "ink-on-inverse/surface-inverse"] },
   { exportName: "PageHeader", source: "src/blocks/PageHeader.tsx", contrastPairs: BASE_READING },
   { exportName: "AccountMenu", source: "src/blocks/AccountMenu.tsx", contrastPairs: RAISED_READING },
@@ -44,7 +50,6 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "UsageMeter", source: "src/blocks/UsageMeter.tsx", contrastPairs: BASE_READING },
   { exportName: "Stat", source: "src/blocks/Stat.tsx", contrastPairs: BASE_READING },
   { exportName: "Form", source: "src/blocks/Form.tsx", contrastPairs: ["ink-primary/surface-base"] },
-  { exportName: "FieldGroup", source: "src/blocks/FieldGroup.tsx", contrastPairs: ["ink-secondary/surface-base", "ink-muted/surface-base"] },
   { exportName: "ConfirmDialog", source: "src/blocks/ConfirmDialog.tsx", contrastPairs: RAISED_READING },
   {
     exportName: "Toolbar", source: "src/blocks/Toolbar.tsx", contrastPairs: [],
@@ -65,6 +70,11 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "StatusList", source: "src/blocks/StatusList.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "TaskList", source: "src/blocks/TaskList.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base"] },
   { exportName: "EventItem", source: "src/blocks/EventItem.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base", "ink-secondary/surface-sunken"] },
+  { exportName: "ActivityFeed", source: "src/blocks/ActivityFeed.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base", "ink-secondary/surface-sunken"] },
+  { exportName: "AuditLog", source: "src/blocks/AuditLog.tsx", contrastPairs: BASE_READING },
+  /* The selected stock parts paint primary and muted ink; secondary ink is no longer painted. */
+  { exportName: "Timeline", source: "src/blocks/Timeline.tsx", contrastPairs: ["ink-primary/surface-base", "ink-muted/surface-base"] },
+  { exportName: "UsageSummary", source: "src/blocks/UsageSummary.tsx", contrastPairs: BASE_READING },
   { exportName: "Faq", source: "src/blocks/Faq.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "PricingTable", source: "src/blocks/PricingTable.tsx", contrastPairs: RAISED_READING },
   { exportName: "Testimonial", source: "src/blocks/Testimonial.tsx", contrastPairs: BASE_READING },
@@ -73,17 +83,27 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "LogoCloud", source: "src/blocks/LogoCloud.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "PeopleGrid", source: "src/blocks/PeopleGrid.tsx", contrastPairs: PLATED_READING },
   { exportName: "ArticleBody", source: "src/blocks/ArticleBody.tsx", contrastPairs: [...BASE_READING, "ink-primary/surface-sunken", "ink-link/surface-base"] },
+  { exportName: "LegalProse", source: "src/blocks/LegalProse.tsx", contrastPairs: [...BASE_READING, "ink-primary/surface-sunken", "ink-link/surface-base"] },
   { exportName: "SectionFrame", source: "src/blocks/SectionFrame.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-sunken", "ink-on-inverse/surface-inverse"] },
   { exportName: "NewsletterBand", source: "src/blocks/NewsletterBand.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "ConsentBanner", source: "src/blocks/ConsentBanner.tsx", contrastPairs: RAISED_READING },
-  {
-    exportName: "Panel", source: "src/blocks/Panel.tsx", contrastPairs: [],
-    exemptionReason: "Owns header, content and footer regions on Card's tokenized outline surface; supplies no foreground text or mark. Caller-supplied content owns its reading ink and contrast pairs; Card's surface and edge remain in the token checks.",
-  },
+  { exportName: "ErrorState", source: "src/blocks/ErrorState.tsx", contrastPairs: [...BASE_READING, "ink-muted/surface-base"] },
+  { exportName: "StatGroup", source: "src/blocks/StatGroup.tsx", contrastPairs: BASE_READING },
+  { exportName: "RecordCards", source: "src/blocks/RecordCards.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised"] },
+  { exportName: "CallToAction", source: "src/blocks/CallToAction.tsx", contrastPairs: GROUNDED_READING },
+  /*
+   * The selected stock alert paints primary and muted ink on its raised surface for every tone it
+   * supports (info -> default, danger -> destructive); the tinted status plates are not painted.
+   * Its destructive ink is --color-status-danger, which has no raised-surface pair yet.
+   */
+  { exportName: "NoticeList", source: "src/blocks/NoticeList.tsx", contrastPairs: ["ink-primary/surface-raised", "ink-muted/surface-raised"] },
+  { exportName: "Gallery", source: "src/blocks/Gallery.tsx", contrastPairs: ["ink-secondary/surface-raised", "ink-muted/surface-base"] },
+  /* The stock Card paints primary and muted ink on its raised surface; an inverse ground paints it inverse raised with on-inverse ink. */
+  { exportName: "Panel", source: "src/blocks/Panel.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised", ...INVERSE_RAISED_READING] },
   { exportName: "Drawer", source: "src/blocks/Drawer.tsx", contrastPairs: ["ink-primary/surface-raised"] },
   {
     exportName: "ResizablePane", source: "src/blocks/ResizablePane.tsx",
-    contrastPairs: ["link-grid/accent/surface-raised", "link-grid/accent-on-inverse/surface-inverse-raised"],
+    contrastPairs: ["focus-outline/primary/surface-raised", "link-grid/accent-on-inverse/surface-inverse-raised"],
   },
   { exportName: "CommandMenu", source: "src/blocks/CommandMenu.tsx", contrastPairs: RAISED_READING },
   { exportName: "PageBar", source: "src/blocks/PageBar.tsx", contrastPairs: BASE_READING },
@@ -92,16 +112,19 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "RecordLedger", source: "src/blocks/RecordLedger.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "AnatomyCallouts", source: "src/blocks/AnatomyCallouts.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Scene", source: "src/blocks/scene/Scene.tsx", contrastPairs: BASE_READING },
-  { exportName: "Item", source: "src/blocks/items/Item.tsx", contrastPairs: GROUNDED_READING },
+  { exportName: "StockItem", source: "src/blocks/items/StockItem.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Tree", source: "src/blocks/tree/Tree.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Items", source: "src/blocks/items/Items.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "GroupedTable", source: "src/blocks/GroupedTable.tsx", contrastPairs: [...RAISED_READING, "ink-primary/surface-sunken"] },
-  { exportName: "CanvasSurface", source: "src/blocks/canvas/CanvasSurface.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-raised"] },
+  { exportName: "CanvasSurface", source: "src/blocks/canvas/CanvasSurface.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-raised", "ink-muted/surface-base"] },
   { exportName: "CatalogWorkspace", source: "src/blocks/CatalogWorkspace.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "CatalogBrowser", source: "src/blocks/CatalogBrowser.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
-  { exportName: "Chat", source: "src/blocks/chat/Chat.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken", "ink-link/surface-base"] },
+  { exportName: "Chat", source: "src/blocks/chat/Chat.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken"] },
   { exportName: "RelationGraph", source: "src/blocks/RelationGraph.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-muted/surface-raised"] },
   { exportName: "FlowCanvas", source: "src/blocks/FlowCanvas.tsx", contrastPairs: ["ink-secondary/surface-base", "ink-muted/surface-base", ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken"] },
+  /* Its error text is the selected stock parts' --color-status-danger, which has no raised-surface pair yet; status-danger-text is no longer painted. */
+  { exportName: "LibraryBoardSection", source: "src/blocks/library-board/LibraryBoardSection.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised"] },
+  { exportName: "LogoHero", source: "src/blocks/LogoHero.tsx", contrastPairs: GROUNDED_READING },
 ];
 
 /** Explicitly classified value exports, never a casing-based escape for new Blocks. */
@@ -166,4 +189,20 @@ export const NON_BLOCK_THEME_EXPORTS: Readonly<Record<string, string>> = {
   clearSelection: "Returns an empty selection identifier array; renders no UI or paint.",
   navigate: "Queries supplied item geometry for the next spatial identifier; renders no UI or paint.",
   minimapModel: "Computes plain minimap dimensions and viewport coordinates; renders no UI or paint.",
+  frameLinkNavigation: "Delegates an ordinary self-target link click to a host navigate callback; renders no UI or paint.",
+  assertLibraryBoardRecords: "Library board record validation over supplied plain data; renders no UI or paint.",
+  assertLibraryBoardCommand: "Library board command validation over supplied plain data; renders no UI or paint.",
+  LIBRARY_BOARD_CONFIG: "Library board matrix configuration as plain constant data; the rendered LibraryBoardSection is registered separately.",
+  ChunkHost: "Scroll chunk host: mounts caller-supplied chunks and same-size placeholders in a caller-classed div; owns no foreground, surface or edge paint.",
+  CHUNK_ROOT_MARGIN: "ChunkHost intersection root margin as a plain constant; renders no UI or paint.",
+  useHeadingScrollSpy: "Heading scroll-spy hook returning the active heading id; renders no regions or paint.",
+  HEADING_ROOT_MARGIN: "Scroll-spy intersection root margin as a plain constant; renders no UI or paint.",
+  SpecimenSwatch: "Studio token/asset specimen leaf (src/studio/specimen-token-assets.tsx), outside the owned Block graph: it renders the selected token value itself, checked by specimen-token-assets.test.tsx and check-specimen-token-host-parts.",
+  SpecimenColorRamp: "Studio token/asset specimen leaf (src/studio/specimen-token-assets.tsx), outside the owned Block graph: it renders the selected token values themselves, checked by specimen-token-assets.test.tsx.",
+  SpecimenTypeLadder: "Studio token/asset specimen leaf (src/studio/specimen-token-assets.tsx), outside the owned Block graph: it renders the selected type values, checked by specimen-token-assets.test.tsx.",
+  SpecimenSpacingLadder: "Studio token/asset specimen leaf (src/studio/specimen-token-assets.tsx), outside the owned Block graph: it renders the selected spacing values, checked by specimen-token-assets.test.tsx.",
+  SpecimenRadiusLadder: "Studio token/asset specimen leaf (src/studio/specimen-token-assets.tsx), outside the owned Block graph: it renders the selected radius values, checked by specimen-token-assets.test.tsx.",
+  SpecimenMotionPlayer: "Studio token/asset specimen leaf (src/studio/specimen-token-assets.tsx), outside the owned Block graph: it plays the selected motion values, checked by specimen-token-assets.test.tsx.",
+  SpecimenAssetGrid: "Studio token/asset specimen leaf (src/studio/specimen-token-assets.tsx), outside the owned Block graph: it renders the selected assets on both grounds, checked by specimen-token-assets.test.tsx.",
+  SpecimenIconGrid: "Studio token/asset specimen leaf (src/studio/specimen-token-assets.tsx), outside the owned Block graph: it renders the selected icons, checked by specimen-token-assets.test.tsx.",
 };

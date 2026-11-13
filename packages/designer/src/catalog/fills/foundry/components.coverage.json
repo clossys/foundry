@@ -1,0 +1,793 @@
+{
+  "coverage": [
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.avatar",
+      "status": "candidate",
+      "supported": [
+        "content.image",
+        "content.initials",
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.badge",
+      "status": "candidate",
+      "supported": [
+        "tone.danger",
+        "tone.neutral"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.banner",
+      "status": "candidate",
+      "supported": [
+        "tone.danger",
+        "tone.info"
+      ]
+    },
+    {
+      "missing": [
+        "collapsed",
+        "current"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.breadcrumbs",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.button",
+      "status": "candidate",
+      "supported": [
+        "ground.base",
+        "shape.icon-only",
+        "shape.text",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "variant.danger",
+        "variant.ghost",
+        "variant.outline",
+        "variant.primary",
+        "variant.secondary"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock shadcn@aria Calendar; a range selection is its RangeCalendar export.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.calendar",
+      "status": "candidate",
+      "supported": [
+        "selection.range",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.card",
+      "status": "candidate",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-area",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-bar",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-heatmap",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-line",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-range",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-scatter",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-sparkline",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-status-strip",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.chart-waterfall",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock shadcn@aria checkbox; its label is the children beside the indicator.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.checkbox",
+      "status": "candidate",
+      "supported": [
+        "scope.single",
+        "state.checked",
+        "state.indeterminate",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.color-picker",
+      "status": "candidate",
+      "supported": [
+        "part.area",
+        "part.field",
+        "part.slider",
+        "part.swatch-picker",
+        "part.wheel"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock shadcn@aria combobox over ComboboxInput, ComboboxContent, ComboboxList and ComboboxItem; it has no label part, so its name is aria-label or aria-labelledby (blocks StockCombobox).",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.combo-box",
+      "status": "candidate",
+      "supported": [
+        "allows-custom",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.date-field",
+      "status": "candidate",
+      "supported": [
+        "content.date",
+        "content.time",
+        "granularity",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [
+        "selection.range",
+        "selection.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.date-picker",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock Dialog opens from a DialogTrigger and is named by DialogTitle inside DialogHeader; DialogFooter holds the actions.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.dialog",
+      "status": "candidate",
+      "supported": [
+        "dismissable",
+        "role.modal"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock Accordion (RAC DisclosureGroup) holds AccordionItem rows, each an AccordionTrigger over AccordionContent addressed by id.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.disclosure",
+      "status": "candidate",
+      "supported": [
+        "scope.group"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Client Field uses RAC Label/Text/FieldError; the server entry preserves its static arbitrary-control render bridge.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.field",
+      "status": "candidate",
+      "supported": [
+        "part.description",
+        "part.error",
+        "part.label",
+        "state.disabled",
+        "state.invalid",
+        "state.required"
+      ]
+    },
+    {
+      "missing": [
+        "accept",
+        "directory",
+        "multiple"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.file-trigger",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.form",
+      "status": "candidate",
+      "supported": [
+        "validation.aria",
+        "validation.native"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.grid-list",
+      "status": "candidate",
+      "supported": [
+        "layout.grid",
+        "layout.list",
+        "selection"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.icon",
+      "status": "candidate",
+      "supported": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [
+        "scope.chord",
+        "scope.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.keyboard",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.link",
+      "status": "candidate",
+      "supported": [
+        "appearance.button",
+        "appearance.inline"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Mark uses Logomark; lockup dispatches to the shell Brandmark export.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.logo",
+      "status": "candidate",
+      "supported": [
+        "content.lockup",
+        "content.mark",
+        "ground.base",
+        "ground.inverse",
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Menu is the stock DropdownMenu opened by DropdownMenuTrigger; InlineMenu presents the same items inline. Root selectionMode applies to both.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.menu",
+      "status": "candidate",
+      "supported": [
+        "presentation.inline",
+        "presentation.popup",
+        "selection.multiple",
+        "selection.none",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.meter",
+      "status": "candidate",
+      "supported": [
+        "emphasis",
+        "tone"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.navigation-tree",
+      "status": "candidate",
+      "supported": [
+        "current",
+        "expand",
+        "part.item",
+        "part.item-content"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.number-field",
+      "status": "candidate",
+      "supported": [
+        "format",
+        "state.invalid",
+        "step"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock Popover opens from a PopoverTrigger; PopoverHeader, PopoverTitle and PopoverDescription name it.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.popover",
+      "status": "candidate",
+      "supported": [
+        "placement"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.progress-bar",
+      "status": "candidate",
+      "supported": [
+        "progress.determinate",
+        "progress.indeterminate"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock shadcn@aria radio group over RadioGroupItem rows; it has no label part, so its name is aria-label or aria-labelledby.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.radio-group",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.resize-handle",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.search-field",
+      "status": "candidate",
+      "supported": [
+        "part.clear",
+        "part.submit",
+        "state.empty",
+        "state.filled"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock shadcn@aria Select anatomy: SelectTrigger over SelectValue and SelectContent over SelectItem rows. The label, description and error are separate text wired by id (blocks StockSelect).",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.select",
+      "status": "candidate",
+      "supported": [
+        "selection.single",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.separator",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.skeleton",
+      "status": "candidate",
+      "supported": [
+        "shape.block"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock shadcn@aria slider: a value array is a range with one thumb per value; it has no label or output part, so its name is aria-label or aria-labelledby and its value text is the formatOptions Intl format.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.slider",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "selection.range",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock shadcn@aria Spinner (lucide Loader2Icon, role=\"status\", default name \"Loading\") has no size prop; each size member dispatches the stock size utility on its className (sm is the stock size-4).",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.spinner",
+      "status": "candidate",
+      "supported": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.status-mark",
+      "status": "candidate",
+      "supported": [
+        "tone.danger",
+        "tone.info",
+        "tone.neutral",
+        "tone.success",
+        "tone.warning"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock shadcn@aria switch draws its children inside the track, so its label is text beside it named by aria-labelledby (blocks StockSwitch).",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.switch",
+      "status": "candidate",
+      "supported": [
+        "state.disabled",
+        "state.off",
+        "state.on"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock Table holds TableHeader/TableHead and TableBody/TableRow/TableCell parts; selection columns render Checkbox slot=\"selection\" inside a TableHead or TableCell.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.table",
+      "status": "candidate",
+      "supported": [
+        "selection",
+        "sort"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tabs",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tag-group",
+      "status": "candidate",
+      "supported": [
+        "removable",
+        "selection.multiple",
+        "selection.none",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock shadcn@aria input and textarea inside a RAC TextField over the composed field; one control size; multiline dispatches to Textarea.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.text-field",
+      "status": "candidate",
+      "supported": [
+        "line.multiline",
+        "line.single-line",
+        "state.disabled",
+        "state.invalid",
+        "state.read-only"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Toaster is the region; tone, timeout and authored action dispatch through shell toast.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toast",
+      "status": "candidate",
+      "supported": [
+        "action",
+        "timeout",
+        "tone.danger",
+        "tone.info",
+        "tone.success",
+        "tone.warning"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toggle-button",
+      "status": "candidate",
+      "supported": [
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "state.selected",
+        "variant.ghost",
+        "variant.outline"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "ToggleGroupItem renders its own RAC ToggleButton with the shared toggle variants; it does not dispatch to the toggle-button leaf, so no composition is claimed.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toggle-group",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "selection.multiple",
+        "selection.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toolbar",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "The stock Tooltip opens from a TooltipTrigger whose behaviorTiming supplies the open and close delays.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tooltip",
+      "status": "candidate",
+      "supported": [
+        "placement"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tree",
+      "status": "candidate",
+      "supported": [
+        "expand",
+        "selection"
+      ]
+    }
+  ],
+  "package": "@clossys/designer",
+  "source": "foundry",
+  "version": "0.12.0"
+}

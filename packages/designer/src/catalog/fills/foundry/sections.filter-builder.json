@@ -1,0 +1,133 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.filter-builder",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#FilterBuilder",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.filter-builder",
+      "source": "foundry",
+      "sourceAddress": "./blocks#FilterBuilder",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "filter-builder": {
+      "composes": [
+        "components.button",
+        "components.card",
+        "components.field",
+        "components.select",
+        "components.semantic-content",
+        "components.text-field"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.card",
+          "components.field",
+          "components.select",
+          "components.semantic-content",
+          "components.text-field"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.card",
+            "components.field",
+            "components.select",
+            "components.semantic-content",
+            "components.text-field"
+          ],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/FilterBuilder.tsx",
+            "sha256": "ceeafb15e95aff5af1538ba4a1e7fa1f77ae15c70a39571315269912cfa34425"
+          },
+          {
+            "path": "packages/designer/src/blocks/stock-select.tsx",
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "FilterBuilder",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Groups are controlled records of field/operator/value conditions with an all/any match; groups combine as all. Host supplies onGroupsChange and labels and evaluates the conditions; no date-picker or tag-group value editor is claimed.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#FilterBuilder",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "sections.filter-builder",
+      "slotMap": {
+        "fields": "./blocks#FilterBuilder.fields",
+        "groups": "./blocks#FilterBuilder.groups",
+        "operators": "./blocks#FilterBuilder.operators"
+      },
+      "source": "foundry"
+    }
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "avatar": [
+    "themes.spacing"
+  ],
+  "badge": [],
+  "banner": [
+    "themes.spacing"
+  ],
+  "breadcrumbs": [
+    "themes.spacing"
+  ],
+  "button": [
+    "themes.spacing"
+  ],
+  "calendar": [
+    "themes.spacing"
+  ],
+  "card": [],
+  "chart-area": [],
+  "chart-bar": [],
+  "chart-line": [],
+  "checkbox": [
+    "themes.spacing"
+  ],
+  "color-picker": [],
+  "combo-box": [
+    "themes.spacing"
+  ],
+  "date-field": [],
+  "dialog": [],
+  "disclosure": [
+    "themes.spacing"
+  ],
+  "field": [],
+  "file-trigger": [],
+  "form": [],
+  "grid-list": [],
+  "icon": [],
+  "link": [
+    "themes.spacing"
+  ],
+  "logo": [],
+  "media-player": [],
+  "menu": [
+    "themes.spacing"
+  ],
+  "meter": [],
+  "native-action": [],
+  "navigation-tree": [],
+  "number-field": [],
+  "popover": [],
+  "progress-bar": [],
+  "radio-group": [
+    "themes.spacing"
+  ],
+  "resize-handle": [],
+  "search-field": [],
+  "select": [
+    "themes.spacing"
+  ],
+  "semantic-content": [],
+  "separator": [],
+  "skeleton": [],
+  "slider": [],
+  "specimen-copy-in-context": [],
+  "specimen-grid": [],
+  "specimen-ladder": [],
+  "specimen-matrix": [],
+  "specimen-passage": [],
+  "specimen-player": [],
+  "specimen-swatch": [],
+  "specimen-viewport": [],
+  "spinner": [],
+  "status-mark": [],
+  "switch": [
+    "themes.spacing"
+  ],
+  "table": [],
+  "tabs": [
+    "themes.spacing"
+  ],
+  "tag-group": [],
+  "text-field": [],
+  "toast": [],
+  "toggle-button": [
+    "themes.spacing"
+  ],
+  "toggle-group": [],
+  "toolbar": [],
+  "tooltip": [],
+  "tree": []
+}

@@ -1,0 +1,59 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.toast",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.feedback",
+    "l2": "feedback-messages",
+    "order": 142
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:UNSTABLE_Toast",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "tone.info",
+        "tone.success",
+        "tone.warning",
+        "tone.danger",
+        "action",
+        "timeout"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [],
+      "assets": [
+        "assets.icon-success",
+        "assets.icon-warning",
+        "assets.icon-danger",
+        "assets.icon-info"
+      ]
+    },
+    "composes": [
+      "components.button"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-danger",
+    "assets.icon-info",
+    "assets.icon-success",
+    "assets.icon-warning",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "assets.icon-info",
+    "assets.icon-success",
+    "assets.icon-warning"
+  ]
+}

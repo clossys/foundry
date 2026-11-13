@@ -1,0 +1,52 @@
+{
+  "name": "image-ratio",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "clossys/assets.image-ratio.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"image-ratio\": {\n      \"cinema\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"height\": 9,\n          \"width\": 21\n        }\n      },\n      \"landscape\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"height\": 3,\n          \"width\": 4\n        }\n      },\n      \"portrait\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"height\": 4,\n          \"width\": 3\n        }\n      },\n      \"share\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"height\": 100,\n          \"width\": 191\n        }\n      },\n      \"square\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"height\": 1,\n          \"width\": 1\n        }\n      },\n      \"wide\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"height\": 9,\n          \"width\": 16\n        }\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.image-ratio",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn/aspect-ratio@4.23.0"
+      ],
+      "hash": "sha256:b6c6bb66c79a2e28091337b07bbcfd344ef7ff051baff59da12532f865756b88",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "image-ratio",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.image-ratio",
+      "kind": "registry:item",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "planner:SPECIMEN-RENDER"
+      },
+      "reason": "SPECIMEN-RENDER P2: the image-ratio payload of image-ratio-v2, unchanged; lineage cites only shadcn/aspect-ratio@4.23.0, the vendored reference-manifest row that v1 was adopted from (v2 cited v1's candidate path, which is not a manifest row id). Pin history keeps v1 and v2.",
+      "createdAt": "2026-11-05T17:12:31.423Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

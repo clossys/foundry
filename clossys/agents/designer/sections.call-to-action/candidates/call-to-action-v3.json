@@ -1,0 +1,162 @@
+{
+  "name": "call-to-action",
+  "type": "registry:block",
+  "dependencies": [],
+  "registryDependencies": [
+    "badge",
+    "button",
+    "empty"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "call-to-action.tsx",
+      "type": "registry:component",
+      "content": "import { Badge } from '@/components/ui/badge';\nimport { LinkButton } from '@/components/ui/button';\nimport { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';\n\n/** One call-to-action button: its Writer label and where it goes. */\nexport interface CallToActionLink { label: string; href: string }\n\n/** The inputs of `sections.call-to-action`: the contract's copy fields, display-ready. */\nexport interface CallToActionInput {\n  header: { title: string; eyebrow?: string; description?: string };\n  actions: { primary: CallToActionLink; secondary?: CallToActionLink };\n}\n\n/** `sections.call-to-action`: a centred heading, description and one or two actions, the stock aria-nova empty layout. */\nexport default function CallToActionSection({ header, actions, ...provenance }: CallToActionInput & { [marker: `data-clossys-${string}`]: string }) {\n  return <Empty {...provenance}>\n    <EmptyHeader>\n      {header.eyebrow ? <Badge variant=\"secondary\">{header.eyebrow}</Badge> : null}\n      <EmptyTitle role=\"heading\" aria-level={2}>{header.title}</EmptyTitle>\n      {header.description ? <EmptyDescription>{header.description}</EmptyDescription> : null}\n    </EmptyHeader>\n    <EmptyContent>\n      <LinkButton href={actions.primary.href} size=\"lg\">{actions.primary.label}</LinkButton>\n      {actions.secondary ? <LinkButton href={actions.secondary.href} size=\"lg\" variant=\"outline\">{actions.secondary.label}</LinkButton> : null}\n    </EmptyContent>\n  </Empty>;\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.call-to-action",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        },
+        {
+          "slot": "components.empty",
+          "files": [
+            "registry/aria-nova/ui/empty.tsx"
+          ]
+        }
+      ],
+      "license": "MIT",
+      "hash": "sha256:1572efdd75e00160f14387600436de9b22614630d06d7a2a87da37c08e2884d6"
+    },
+    "element": {
+      "id": "call-to-action",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.call-to-action",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE round 3 (D3, option a): the centred call to action (tailark mist call-to-action-1 layout intent) as the stock empty header and content with one or two link buttons. Composed through the Designer create path from pinned stock aria-nova parts only (components.badge, components.button, components.empty); no raw styled markup, no restyle of a part, every word a Writer copy prop. Replaces v1 (derived lineage, failing ref-verbatim). call-to-action-v2 follow-up: preview.copy carries the pinned Writer text of every key the fixtures name, so the Studio specimen renders Writer copy.",
+      "createdAt": "2026-11-05T10:52:23.731Z",
+      "deps": {
+        "npm": {},
+        "registry": [
+          "badge",
+          "button",
+          "empty"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--tracking-tight",
+          "--radius",
+          "--destructive",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "call-to-action.tsx",
+        "export": "default",
+        "props": {
+          "header": {
+            "title": {
+              "$copy": "studio.home.cta.header.title"
+            },
+            "description": {
+              "$copy": "studio.home.cta.header.description"
+            }
+          },
+          "actions": {
+            "primary": {
+              "label": {
+                "$copy": "studio.home.cta.actions.primary.label"
+              },
+              "href": "/director"
+            },
+            "secondary": {
+              "label": {
+                "$copy": "studio.home.cta.actions.secondary.label"
+              },
+              "href": "/docs"
+            }
+          }
+        }
+      },
+      "copy": {
+        "studio.home.cta.actions.primary.label": {
+          "text": "Open Director"
+        },
+        "studio.home.cta.actions.secondary.label": {
+          "text": "Read the docs"
+        },
+        "studio.home.cta.header.description": {
+          "text": "Every other agent fills from Director. Review its slots first."
+        },
+        "studio.home.cta.header.title": {
+          "text": "Start with the brief"
+        }
+      },
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

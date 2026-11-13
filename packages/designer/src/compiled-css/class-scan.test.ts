@@ -18,12 +18,12 @@ describe("scanClassCandidates", () => {
   it("extracts class-shaped tokens from string literals", () => {
     writeFileSync(
       join(dir, "Widget.tsx"),
-      `const BASE = "inline-flex items-center rounded-control bg-accent hover:bg-accent-hover";\n` +
+      `const BASE = "inline-flex items-center rounded-control bg-primary hover:bg-accent-hover";\n` +
         `const SIZE = { sm: "px-sm py-xs", md: "px-md py-sm" };\n`,
     );
     const result = scanClassCandidates(dir);
     expect(result.filesScanned).toBe(1);
-    expect(result.candidates).toContain("bg-accent");
+    expect(result.candidates).toContain("bg-primary");
     expect(result.candidates).toContain("hover:bg-accent-hover");
     expect(result.candidates).toContain("rounded-control");
     expect(result.candidates).toContain("px-sm");
@@ -37,10 +37,10 @@ describe("scanClassCandidates", () => {
   });
 
   it("returns a sorted, deduplicated list", () => {
-    writeFileSync(join(dir, "A.tsx"), `"bg-accent bg-accent"`);
-    writeFileSync(join(dir, "B.tsx"), `"bg-accent"`);
+    writeFileSync(join(dir, "A.tsx"), `"bg-primary bg-primary"`);
+    writeFileSync(join(dir, "B.tsx"), `"bg-primary"`);
     const result = scanClassCandidates(dir);
-    const occurrences = result.candidates.filter((c) => c === "bg-accent");
+    const occurrences = result.candidates.filter((c) => c === "bg-primary");
     expect(occurrences.length).toBe(1);
     expect(result.candidates).toEqual([...result.candidates].sort());
   });
@@ -58,15 +58,38 @@ describe("scanClassCandidates", () => {
     expect(result.candidates.some((c) => c.includes(","))).toBe(false);
   });
 
+  it("keeps the Tailwind v4 shapes stock shadcn@aria sources use, still refusing comma reads", () => {
+    writeFileSync(
+      join(dir, "separator.tsx"),
+      `const c = "bg-(--color-line-base) aria-[orientation=horizontal]:h-(--ui-border-hairline) [:is(hr)]:w-full ring-(--color-ink-primary)/10 h-[var(--spacing-xl)] text-(length:--text-sm) [--card-spacing:var(--spacing-lg)]";\n` +
+        `const s = "var(--ui-ring-focus, 0 0 0 2px)";\n`,
+    );
+    const result = scanClassCandidates(dir);
+    for (const token of ["bg-(--color-line-base)", "aria-[orientation=horizontal]:h-(--ui-border-hairline)", "[:is(hr)]:w-full", "ring-(--color-ink-primary)/10", "h-[var(--spacing-xl)]", "text-(length:--text-sm)", "[--card-spacing:var(--spacing-lg)]"]) {
+      expect(result.candidates).toContain(token);
+    }
+    expect(result.candidates.some((c) => c.includes(","))).toBe(false);
+  });
+
+  it("keeps the stock button and breadcrumb fallback, nested calc, nested-selector and arbitrary-property shapes", () => {
+    const tokens = ["border-(length:--ui-border-hairline,1px)", "h-(--ui-control-h-md,calc(var(--spacing)*8))", "disabled:opacity-(--ui-alpha-disabled,50%)",
+      "active:not-aria-[haspopup]:translate-y-(--ui-border-hairline)", "[&>svg]:size-(--ui-control-switch-thumb,calc(var(--spacing)*3.5))",
+      "[&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4))", "[display:inherit]", "[flex-direction:inherit]"];
+    writeFileSync(join(dir, "button.tsx"), `const c = "${tokens.join(" ")}";\nconst s = "var(--ui-ring-focus, 0 0 0 2px) call(value) (prose)";\n`);
+    const result = scanClassCandidates(dir);
+    expect(tokens.filter((token) => !result.candidates.includes(token))).toEqual([]);
+    expect(result.candidates.filter((c) => !tokens.includes(c))).toEqual([]);
+  });
+
   it("skips test, spec, check, and declaration files", () => {
-    writeFileSync(join(dir, "Widget.test.tsx"), `"bg-accent"`);
-    writeFileSync(join(dir, "Widget.check.tsx"), `"bg-accent"`);
-    writeFileSync(join(dir, "Widget.d.ts"), `"bg-accent"`);
+    writeFileSync(join(dir, "Widget.test.tsx"), `"bg-primary"`);
+    writeFileSync(join(dir, "Widget.check.tsx"), `"bg-primary"`);
+    writeFileSync(join(dir, "Widget.d.ts"), `"bg-primary"`);
     writeFileSync(join(dir, "Real.tsx"), `"text-body"`);
     const result = scanClassCandidates(dir);
     expect(result.filesScanned).toBe(1);
     expect(result.skippedByDesign.map((s) => s.file).sort()).toEqual(["Widget.check.tsx", "Widget.d.ts", "Widget.test.tsx"]);
-    expect(result.candidates).not.toContain("bg-accent");
+    expect(result.candidates).not.toContain("bg-primary");
   });
 
   it("skips an `internal/` subdirectory by default", () => {
@@ -78,8 +101,61 @@ describe("scanClassCandidates", () => {
     expect(result.candidates).toContain("text-body");
   });
 
+  it("keeps Tailwind v4 shapes: negatives, variable shorthands, arbitrary properties and variants", () => {
+    writeFileSync(
+      join(dir, "Menu.tsx"),
+      `const A = "-mx-(--spacing-lg) -translate-x-1/2 h-(--ui-control-h-md,calc(var(--spacing)*8))";\n` +
+        `const B = "[--cell-size:var(--ui-control-h-sm)] [&>svg]:size-(--spacing-lg) *:data-[slot=kbd]:z-10";\n` +
+        `const C = "[&_svg:not([class*='size-'])]:size-(--spacing-md) border-(length:--ui-border-hairline,1px) !p-0";\n`,
+    );
+    const result = scanClassCandidates(dir);
+    expect(result.candidates).toEqual(
+      expect.arrayContaining([
+        "-mx-(--spacing-lg)",
+        "-translate-x-1/2",
+        "h-(--ui-control-h-md,calc(var(--spacing)*8))",
+        "[--cell-size:var(--ui-control-h-sm)]",
+        "[&>svg]:size-(--spacing-lg)",
+        "*:data-[slot=kbd]:z-10",
+        "[&_svg:not([class*='size-'])]:size-(--spacing-md)",
+        "border-(length:--ui-border-hairline,1px)",
+        "!p-0",
+      ]),
+    );
+  });
+
+  it("rejects unbalanced or top-level-punctuated v4 lookalikes", () => {
+    writeFileSync(join(dir, "Prose.tsx"), `const s = "see (the -docs, [here or h-(--x isn't a,b";\n`);
+    const result = scanClassCandidates(dir);
+    for (const token of ["(the", "-docs,", "[here", "h-(--x", "isn't", "a,b"]) expect(result.candidates).not.toContain(token);
+  });
+
+  it("reads a template literal with interpolations without swallowing later literals", () => {
+    writeFileSync(
+      join(dir, "Panel.tsx"),
+      "const inset = `${start}px`;\n" +
+        "const cls = `flex ${open ? \"w-40\" : \"w-0\"} gap-sm`;\n" +
+        `const later = "bottom-sm start-sm";\n` +
+        "const tail = `rounded-control`;\n",
+    );
+    const result = scanClassCandidates(dir);
+    expect(result.candidates).toEqual(expect.arrayContaining(["flex", "w-40", "w-0", "gap-sm", "bottom-sm", "start-sm", "rounded-control"]));
+  });
+
+  it("reads single-line single-quoted literals, never pairing apostrophes across lines", () => {
+    writeFileSync(
+      join(dir, "Stage.tsx"),
+      `// the frame's own stage\n` +
+        `const STAGE = 'flex flex-col frame-stage-flow';\n` +
+        `const real = "text-body";\n` +
+        `// a component's caller\n`,
+    );
+    const result = scanClassCandidates(dir);
+    expect(result.candidates).toEqual(expect.arrayContaining(["flex-col", "frame-stage-flow", "text-body"]));
+  });
+
   it("ignores non-matching extensions", () => {
-    writeFileSync(join(dir, "data.json"), `{"class": "bg-accent"}`);
+    writeFileSync(join(dir, "data.json"), `{"class": "bg-primary"}`);
     const result = scanClassCandidates(dir);
     expect(result.filesScanned).toBe(0);
     expect(result.candidates).toEqual([]);

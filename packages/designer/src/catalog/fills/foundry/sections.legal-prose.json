@@ -1,0 +1,125 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.legal-prose",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#LegalProse",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.legal-prose",
+      "source": "foundry",
+      "sourceAddress": "./blocks#LegalProse",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "legal.privacy",
+        "legal.terms"
+      ]
+    }
+  },
+  "sections": {
+    "legal-prose": {
+      "composes": [
+        "components.semantic-content",
+        "sections.article",
+        "sections.section-header"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.semantic-content",
+          "sections.article",
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.semantic-content"
+          ],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/LegalProse.tsx",
+            "sha256": "0659eb2b766a806f319ee76acbda3d72a584194eccc69bdb22b07d6bcbbcd358"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "LegalProse",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Public LegalProse composes ArticleBody, SectionHeader and SemanticContent. heading binds to heading; revision {label,value,dateTime?} binds to revision; typed body records adapt to ArticleBody children. These are host adaptation points, not direct JSON prop equivalence.",
+        "The host owns the legal heading, revision label/value and every policy section. Optional revision.dateTime is valid YYYY-MM-DD calendar metadata, separate from existing Writer-authored display copy; authored dates render through time while legacy label/value revisions retain their display.",
+        "The registered runtime accepts paragraph/heading text and lists of text; React escapes text. Unknown node kinds and fields, arbitrary HTML and undeclared inputs are refused. Paragraph/list nodes use dir=auto and body headings render as h3 below the default h2 legal heading.",
+        "Requires an external Designer SectionFrame; the surrounding page must use a Designer Frame. No legal route, data fetching or document ownership is introduced. Source checks and consumer runtime qualification remain separate.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#LegalProse",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "sections.legal-prose",
+      "slotMap": {
+        "body": "./blocks#LegalProse.children",
+        "heading": "./blocks#LegalProse.heading",
+        "revision": "./blocks#LegalProse.revision"
+      },
+      "source": "foundry"
+    }
+  }
+}

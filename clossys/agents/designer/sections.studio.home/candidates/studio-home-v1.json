@@ -1,0 +1,91 @@
+{
+  "name": "studio-home",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Avatar, AvatarFallback, Badge, Button, Card, CardAction, CardContent, CardDescription, CardFooter, CardGrid, CardHeader, CardTitle, LinkButton, Skeleton } from '@clossys/designer-ui';\n\nexport type HomeTone = 'secondary' | 'outline' | 'destructive';\n\n/** One agent on Home: what it does, how much it has written and where its library is. */\nexport interface HomeAgent { id: string; label: string; purpose: string; icon: React.ReactNode; count?: { label: string; tone: HomeTone }; href: string; openLabel: string; openIcon?: React.ReactNode }\nexport interface HomeNeed { id: string; severity: string; tone: HomeTone; title: string; detail: string }\n\n/** The `home` input of `sections.studio.home`. `needs` is present while the page's Needs module is open. */\nexport interface HomeInput {\n  title: string;\n  description: string;\n  agentsLabel: string;\n  agents: readonly HomeAgent[];\n  needs?: { title: string; description: string; empty: string; rows: readonly HomeNeed[]; closeLabel: string; closeIcon?: React.ReactNode; onClose: () => void };\n}\n\n/** `sections.studio.home`: the workspace's agents, and the owner's open requests when Needs is open. */\nexport default function HomeSection({ home }: { home: HomeInput }) {\n  return <Card className=\"m-4 md:m-6\" data-studio-section=\"home\">\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={1} className=\"text-xl\">{home.title}</CardTitle>\n      <CardDescription className=\"max-w-(--measure)\">{home.description}</CardDescription>\n    </CardHeader>\n    <CardContent className=\"flex flex-col gap-4\">\n      <CardTitle role=\"heading\" aria-level={2} className=\"text-base\">{home.agentsLabel}</CardTitle>\n      <CardGrid>\n        {home.agents.map(agent => <Card key={agent.id}>\n          <CardHeader>\n            <Avatar><AvatarFallback>{agent.icon}</AvatarFallback></Avatar>\n            <CardTitle>{agent.label}</CardTitle>\n            <CardDescription>{agent.purpose}</CardDescription>\n            <CardAction>{agent.count ? <Badge variant={agent.count.tone} className=\"tabular-nums\">{agent.count.label}</Badge> : <Skeleton className=\"h-5 w-14\" />}</CardAction>\n          </CardHeader>\n          <CardFooter><LinkButton variant=\"outline\" size=\"sm\" href={agent.href}>{agent.openLabel}{agent.openIcon}</LinkButton></CardFooter>\n        </Card>)}\n      </CardGrid>\n      {home.needs && <Card size=\"sm\">\n        <CardHeader>\n          <CardTitle>{home.needs.title}</CardTitle>\n          <CardDescription>{home.needs.description}</CardDescription>\n          <CardAction><Button variant=\"ghost\" size=\"icon-xs\" aria-label={home.needs.closeLabel} onPress={home.needs.onClose}>{home.needs.closeIcon}</Button></CardAction>\n        </CardHeader>\n        <CardContent className=\"flex flex-col gap-3\">\n          {home.needs.rows.length\n            ? home.needs.rows.map(row => <CardDescription key={row.id} className=\"flex flex-col items-start gap-1\">\n              <Badge variant={row.tone}>{row.severity}</Badge>\n              <CardTitle className=\"text-sm\">{row.title}</CardTitle>\n              {row.detail}\n            </CardDescription>)\n            : <CardDescription>{home.needs.empty}</CardDescription>}\n        </CardContent>\n      </Card>}\n    </CardContent>\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-home\",\n  \"type\": \"registry:block\",\n  \"title\": \"Studio Home\",\n  \"description\": \"Home: the workspace agents as cards with their purpose, cell counts and a link to each library, and the owner's open requests when the Needs module is open.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"card\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-home/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.home",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "{\"registry\":\"shadcn\",\"item\":\"card\",\"version\":\"4.23.0\",\"hash\":\"sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/card.json\"}"
+      ],
+      "hash": "sha256:a19cd69445524d763a8134bae2f3b07c01971e8ebf4208af534865f792b68979",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-home",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.home",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "STUDIO-PUB"
+      },
+      "reason": "Registers the Home overview Studio already shows (moved from components/CellsWorkspace.tsx), rebuilt from Designer components only.",
+      "createdAt": "2026-10-31T12:00:00Z",
+      "checks": [
+        {
+          "id": "lineage.reference",
+          "suite": "studio",
+          "type": "fixed",
+          "status": "pass",
+          "at": "2026-10-31T12:00:00Z"
+        },
+        {
+          "id": "studio.ds-only",
+          "suite": "studio",
+          "type": "fixed",
+          "status": "pass",
+          "at": "2026-10-31T12:00:00Z"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card",
+          "--card-foreground",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

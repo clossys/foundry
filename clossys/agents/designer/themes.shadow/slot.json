@@ -1,0 +1,57 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.shadow",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.depth",
+    "l2": "depth-effects",
+    "order": 41
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "shadow",
+    "emit": {
+      "2xs": "--shadow-2xs",
+      "xs": "--shadow-xs",
+      "sm": "--shadow-sm",
+      "md": "--shadow-md",
+      "lg": "--shadow-lg",
+      "xl": "--shadow-xl",
+      "2xl": "--shadow-2xl"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "2xs",
+        "xs",
+        "sm",
+        "md",
+        "lg",
+        "xl",
+        "2xl"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "tier": "scale"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [],
+  "notNeeded": {
+    "reason": "planner:DS-COMPLETE: Tailwind v4 default value supplies it unpinned; candidate v1 has no trusted registry:theme lineage, so it cannot be pinned. Earlier migrated evidence: no approved-registry source; W6 composition check (strict, shadow-v1.json unmodified) fails REF-COMP-PART: a token value, not code, so there are no parts to compose. Tailwind v4 default value: shadcn/neutral@4.23.0 and no vendored registry item defines it (references/manifest.json skipped: 'tailwind default'); candidate v1 fails REF-NO-SOURCE.",
+    "since": "2026-11-05",
+    "decidedBy": "planner:DS-COMPLETE"
+  }
+}

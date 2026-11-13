@@ -175,7 +175,7 @@ describe("checkEnvironmentConformance — real package integration", () => {
     expect(result.agreedSubpaths).toEqual(
       expect.arrayContaining([
         "./tokens/server",
-        "./atoms/server",
+        "./components/server",
         "./blocks/server",
         "./shell/server",
         "./charts/server",

@@ -1,0 +1,1535 @@
+[
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.lockup",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "SVG asset with members positive and reversed, under Logo / Artwork.",
+    "inputs": [
+      {
+        "name": "positive",
+        "kind": "data",
+        "required": true,
+        "description": "svg file for the positive member"
+      },
+      {
+        "name": "reversed",
+        "kind": "data",
+        "required": true,
+        "description": "svg file for the reversed member"
+      }
+    ],
+    "limits": {
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "svg"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.mark",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "SVG asset with members mono, positive and reversed, under Logo / Artwork.",
+    "inputs": [
+      {
+        "name": "mono",
+        "kind": "data",
+        "required": true,
+        "description": "svg file for the mono member"
+      },
+      {
+        "name": "positive",
+        "kind": "data",
+        "required": true,
+        "description": "svg file for the positive member"
+      },
+      {
+        "name": "reversed",
+        "kind": "data",
+        "required": true,
+        "description": "svg file for the reversed member"
+      }
+    ],
+    "limits": {
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "svg"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.favicon",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "SVG asset with members small and vector, under App identity / Browser.",
+    "inputs": [
+      {
+        "name": "small",
+        "kind": "data",
+        "required": false,
+        "description": "raster file for the small member"
+      },
+      {
+        "name": "vector",
+        "kind": "data",
+        "required": true,
+        "description": "svg file for the vector member"
+      }
+    ],
+    "limits": {
+      "member.small.kind": "raster",
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "svg"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.app-icon",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "SVG asset with members maskable and standard, under App identity / Application.",
+    "inputs": [
+      {
+        "name": "maskable",
+        "kind": "data",
+        "required": true,
+        "description": "svg file for the maskable member"
+      },
+      {
+        "name": "standard",
+        "kind": "data",
+        "required": true,
+        "description": "svg file for the standard member"
+      }
+    ],
+    "limits": {
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "svg"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.image-ratio",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Rules asset with an open set of named entries, under Media / Framing.",
+    "inputs": [
+      {
+        "name": "entries",
+        "kind": "data",
+        "required": true,
+        "description": "named rules entries whose names match ^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      }
+    ],
+    "limits": {
+      "members.mode": "open",
+      "members.pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "modes": "light",
+      "valueKind": "rules"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "aspect-ratio",
+        "version": "4.23.0",
+        "hash": "sha256:b6c6bb66c79a2e28091337b07bbcfd344ef7ff051baff59da12532f865756b88"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.image",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Rules asset with an open set of named entries, under Media / Resources.",
+    "inputs": [
+      {
+        "name": "entries",
+        "kind": "data",
+        "required": true,
+        "description": "named rules entries whose names match ^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      }
+    ],
+    "limits": {
+      "members.mode": "open",
+      "members.pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "modes": "light",
+      "valueKind": "rules"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.video",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Rules asset with an open set of named entries, under Media / Resources.",
+    "inputs": [
+      {
+        "name": "entries",
+        "kind": "data",
+        "required": true,
+        "description": "named rules entries whose names match ^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      }
+    ],
+    "limits": {
+      "members.mode": "open",
+      "members.pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "modes": "light",
+      "valueKind": "rules"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.pattern",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Rules asset with members dots, lines, grid, grain, noise and topo, under Media / Patterns.",
+    "inputs": [
+      {
+        "name": "dots",
+        "kind": "data",
+        "required": true,
+        "description": "rules file for the dots member"
+      },
+      {
+        "name": "lines",
+        "kind": "data",
+        "required": true,
+        "description": "rules file for the lines member"
+      },
+      {
+        "name": "grid",
+        "kind": "data",
+        "required": true,
+        "description": "rules file for the grid member"
+      },
+      {
+        "name": "grain",
+        "kind": "data",
+        "required": true,
+        "description": "rules file for the grain member"
+      },
+      {
+        "name": "noise",
+        "kind": "data",
+        "required": true,
+        "description": "rules file for the noise member"
+      },
+      {
+        "name": "topo",
+        "kind": "data",
+        "required": true,
+        "description": "rules file for the topo member"
+      }
+    ],
+    "limits": {
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "rules"
+    },
+    "references": [
+      {
+        "registry": "magicui",
+        "item": "grid-pattern",
+        "version": "efe76fc",
+        "hash": "sha256:f3d2d48daec643d659ff9a287a4dc52b4d2ad870b166da5c699ef00a85702a9e"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-chevron-down",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "chevron-down",
+        "version": "1.65.0",
+        "hash": "sha256:cd4acf0e0fa126961c43306d62999c126ec02b6f7c8fd0a00e62b02458ba9136"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-chevron-up",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "chevron-up",
+        "version": "1.65.0",
+        "hash": "sha256:62ed9761eaf397a01f3f3354817f2dbcf732b533b8ab959bd61aca261d19fec8"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-chevron-left",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "chevron-left",
+        "version": "1.65.0",
+        "hash": "sha256:0b119c521ff62f90a02395184a2c894020e31516185bb50008599929813c1035"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-chevron-right",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "chevron-right",
+        "version": "1.65.0",
+        "hash": "sha256:c0d94213314e03382ab0087494939fec83a4da58ed24a218858783665b2334b3"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-arrow-right",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "arrow-right",
+        "version": "1.65.0",
+        "hash": "sha256:86a008288453770b6408cd9615f0c12f257fc78ccc819a038d95b9d9e54bc87e"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-external-link",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "external-link",
+        "version": "1.65.0",
+        "hash": "sha256:58d270af4c57a00c8bfb458fe9e8ae2edb6879ecc91f712b19b8e0482aeab4d9"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-home",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "house",
+        "version": "1.65.0",
+        "hash": "sha256:df50d4861dd56ea5eac865c7329d45bb89f3fcf0206c2f2d8fb9c7dc0f2ccb84"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-search",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "search",
+        "version": "1.65.0",
+        "hash": "sha256:db18ae8fc08bcfa380141c066dfb99d85ebf7a1899035008266333f740793650"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-close",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "x",
+        "version": "1.65.0",
+        "hash": "sha256:e8aaef15b604c6a51184da1f4eb81ce0fd10c9fcbcc963c6f085e3a64f902b96"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-check",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "check",
+        "version": "1.65.0",
+        "hash": "sha256:28375602bd5d0465838d12a423125836b180beaafe7b8b518091c552b8458325"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-settings",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "settings",
+        "version": "1.65.0",
+        "hash": "sha256:e53988af627dae4929b4283b079db7a772038bebd2d17ecc257650f17d09b79f"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-list-view",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "list",
+        "version": "1.65.0",
+        "hash": "sha256:2d1f159ecad505b4703142f1aff43fcc97e51a3b1e319ef535bcd3fce0ae52eb"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-grid-view",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "layout-grid",
+        "version": "1.65.0",
+        "hash": "sha256:678b74cb006618249f703151f7bf8a817fe7f0e2d76aa8da6ee00396fd4e5b3d"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-theme-light",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "sun",
+        "version": "1.65.0",
+        "hash": "sha256:29671c87a75a5072595fdfa4f79cddd1b73328d492c5e724b5545e73d7139a34"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-theme-dark",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "moon",
+        "version": "1.65.0",
+        "hash": "sha256:d132a14fcf2d995e8b730d0f532fd54b0ed9c8e988d796c7e47d214cd1ba4910"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-theme-system",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "monitor",
+        "version": "1.65.0",
+        "hash": "sha256:0195c460816f13f60c59625642c3e2f8e822d21eb4aa331ea41079163e1d96ec"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-success",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Status.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "circle-check",
+        "version": "1.65.0",
+        "hash": "sha256:ae059209bb54dcf561b518f94662632b831f8b4ecf554fcd1806c152351fd4fe"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-warning",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Status.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "triangle-alert",
+        "version": "1.65.0",
+        "hash": "sha256:469cec9e577b315aae754a1929d5e3b31bfb24f4b4125761c4cdb377eed587d2"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-danger",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Status.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "circle-x",
+        "version": "1.65.0",
+        "hash": "sha256:dbb24d07e9cc14264ea8a3a0e50b4cda2deeeab96683924f272e728b029e89a6"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-info",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Status.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "info",
+        "version": "1.65.0",
+        "hash": "sha256:4b9e7b2fa1943280ce9e270b9d4859ebac16af061c13b7a7b53f4acb8be766c0"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-user",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "user",
+        "version": "1.65.0",
+        "hash": "sha256:e4556df289ee53354b3abbffbb9de00263e3de8f4587c0b082c8a6e89ef3e493"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-team",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "users",
+        "version": "1.65.0",
+        "hash": "sha256:6684e468e4c73343176913e3e88c83b5762315d47e81f9305c56a56e9ca1d03c"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-organization",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "building-2",
+        "version": "1.65.0",
+        "hash": "sha256:52a23b75ebd10e6297270c94775f0e7bf650f77faf3a22028e57ede20a5921db"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-website",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "globe",
+        "version": "1.65.0",
+        "hash": "sha256:1c8fa61553642cad50f8d37f00acfdc7262ceba4f5013033dc93d8eb02590579"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-institution",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "landmark",
+        "version": "1.65.0",
+        "hash": "sha256:a8fb1dd3f1238bf697dd89847209ca5ec634cd2f3768e2bc63f331b81ad52b3b"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-guide",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "book-open",
+        "version": "1.65.0",
+        "hash": "sha256:11240d639775af38c63fd9d11d6c9c94415d55c11fc24ff5942c546f19ac6ab9"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-document",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "file-text",
+        "version": "1.65.0",
+        "hash": "sha256:583197dda13576ca3f3a5ef49602f0422d2d7b3610405f57bdfd8b270e17d299"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-document-approved",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "file-check",
+        "version": "1.65.0",
+        "hash": "sha256:56444922a4d2d9051921995db42028c48f39189b0c9daa27547320b52f20fb92"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-folder",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "folder",
+        "version": "1.65.0",
+        "hash": "sha256:eb5cd5fb4db93126cb3ff85c4528a109006e43f0186686b4370089a1aba6bf1e"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-date",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "calendar",
+        "version": "1.65.0",
+        "hash": "sha256:dae34c786fe11a5ac21b9f9797ed99d67d453dd0f345c9022a695beac1baae45"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-time",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "clock",
+        "version": "1.65.0",
+        "hash": "sha256:2bde60d5a7044de60c1383e13d028ed65c397ec1ede2d6577721e066177a8f18"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-payment",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "credit-card",
+        "version": "1.65.0",
+        "hash": "sha256:40eeb0e0dcdd62ca4e0426f12b3ca9cd7349f88bd99d648cf0d65d3e530db925"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-receipt",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "receipt",
+        "version": "1.65.0",
+        "hash": "sha256:8c73de9f929eae7a35d6089a91753d16b9986676d6fd829583c8f49c0d87bd39"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-business",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "briefcase",
+        "version": "1.65.0",
+        "hash": "sha256:5b259bdfb5070d6e819e1121495df72e7a8244184451b5dca860ee9d2a3f1860"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-security",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "shield",
+        "version": "1.65.0",
+        "hash": "sha256:4c5f0b55ad89cf7b68870805651bf600fd10afb946ed214c07adf875139d7b35"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-locked",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "lock",
+        "version": "1.65.0",
+        "hash": "sha256:f0b5d52f1d02b9bb4897c401c3be5f5ec431d2a7a0c71d5a3a30c5b111be556f"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-legal",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "scale",
+        "version": "1.65.0",
+        "hash": "sha256:7bff579e985d5e9ea0848b60db1c4dae65c989322126c90eae7326f54b7ef9e3"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-package",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "package",
+        "version": "1.65.0",
+        "hash": "sha256:6bf8339daf23a267fe5993bca91c9c3a5e7ea086472c2d5211730e468c3fa57d"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-layers",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "layers",
+        "version": "1.65.0",
+        "hash": "sha256:a3df583045465e98d527d784a6ee40d8405a84d883d6df2096e3c63bd2fbd077"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-integration",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Objects.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "plug",
+        "version": "1.65.0",
+        "hash": "sha256:00fc466fe6ff2b75bcb003ac4c9abe6dd53a7fdf0f038b72d6426d319eb07b8f"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "assets.icon-panel-left",
+    "package": "designer",
+    "layer": "assets",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "glyph file for the default member"
+      }
+    ],
+    "limits": {
+      "grid": 24,
+      "members.mode": "closed",
+      "modes": "light",
+      "valueKind": "glyph"
+    },
+    "references": [
+      {
+        "registry": "lucide",
+        "item": "panel-left",
+        "version": "1.65.0",
+        "hash": "sha256:d856992ea13132e4e0f025edd7c1ff19abe129578233f1b40b4969cfd0a6c2a8"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.assets",
+    "specimenKind": "media"
+  }
+]

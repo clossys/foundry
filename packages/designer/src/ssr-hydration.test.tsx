@@ -3,12 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Button } from "./atoms/Button.js";
+import { Button } from "./components/preview-runtime/components/button/button.js";
 import { PageHeader } from "./blocks/PageHeader.js";
 import { CommandMenu, useCommandMenuShortcut } from "./blocks/CommandMenu.js";
 import { Shell } from "./shell/Shell.js";
 import { DEFAULT_STORAGE_KEY, ThemeProvider } from "./theme/ThemeProvider.js";
 import { ThemeToggle } from "./theme/ThemeToggle.js";
+import { ShellCopyTestHost } from "./frames/__fixtures__/shell-copy.js";
 
 afterEach(() => {
   document.documentElement.removeAttribute("data-theme");
@@ -28,13 +29,15 @@ describe("SSR and hydration", () => {
           emptyMessage="No commands" groups={[]} isOpen={isOpen} onOpenChange={setOpen} query={query} onQueryChange={setQuery} />
       </>;
     }
+    // The consumer supplies the Writer resolver on both the server and the hydrating client.
+    const hosted = <ShellCopyTestHost><Host /></ShellCopyTestHost>;
     const container = document.createElement("div");
-    container.innerHTML = renderToString(<Host />);
+    container.innerHTML = renderToString(hosted);
     expect(container.querySelector('[role="dialog"]')).toBeNull();
     document.body.append(container);
     const onRecoverableError = vi.fn();
     let root: ReturnType<typeof hydrateRoot> | undefined;
-    await act(async () => { root = hydrateRoot(container, <Host />, { onRecoverableError }); });
+    await act(async () => { root = hydrateRoot(container, hosted, { onRecoverableError }); });
     const opener = container.querySelector("button")!;
     await userEvent.click(opener);
     expect(document.querySelector('input[role="combobox"]')).toHaveFocus();
@@ -92,9 +95,11 @@ describe("SSR and hydration", () => {
     );
 
     const tree = (
-      <ThemeProvider>
-        <ThemeToggle />
-      </ThemeProvider>
+      <ShellCopyTestHost>
+        <ThemeProvider>
+          <ThemeToggle />
+        </ThemeProvider>
+      </ShellCopyTestHost>
     );
     const serverHtml = renderToString(tree);
     const container = document.createElement("div");
@@ -108,14 +113,16 @@ describe("SSR and hydration", () => {
       await Promise.resolve();
     });
 
-    expect(container.querySelector("button")).toBeInTheDocument();
+    expect(container.querySelector('[role="radiogroup"]')).toHaveAttribute("aria-label", "Theme");
+    expect(container.querySelectorAll('[role="radio"]')).toHaveLength(3);
     expect(onRecoverableError).not.toHaveBeenCalled();
 
     // The one-tick correction (see ThemeProvider's own doc comment) has
     // now run, so the toggle reflects the stored "dark" preference even
     // though the server render — which has no localStorage — could not
     // have known about it.
-    expect(container.querySelector("button")?.getAttribute("aria-label")).toContain("Theme: Dark.");
+    expect(container.querySelector('[role="radio"][aria-label="Dark"]')).toHaveAttribute("aria-checked", "true");
+    expect(container.querySelector('[role="radio"][aria-label="System"]')).toHaveAttribute("aria-checked", "false");
 
     await act(async () => root?.unmount());
     container.remove();

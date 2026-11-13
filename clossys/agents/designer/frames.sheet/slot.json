@@ -1,0 +1,104 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.sheet",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.overlay-shells",
+    "l2": "overlay-shells-panels",
+    "order": 237
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "dialog",
+    "landmarks": [],
+    "slots": [
+      {
+        "id": "heading",
+        "required": true,
+        "accepts": "host-node"
+      },
+      {
+        "id": "body",
+        "required": true,
+        "accepts": "host-node"
+      },
+      {
+        "id": "footer",
+        "required": false,
+        "accepts": "host-node"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "placement.start",
+        "placement.end",
+        "placement.bottom",
+        "wide.dismiss",
+        "wide.sheet"
+      ]
+    },
+    "statePorts": [
+      {
+        "id": "open",
+        "type": "boolean"
+      }
+    ],
+    "rendering": "client",
+    "breakpoints": [
+      "sm",
+      "md",
+      "lg",
+      "xl",
+      "2xl"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.shadow",
+        "themes.spacing",
+        "themes.primary"
+      ],
+      "assets": [
+        "assets.icon-close"
+      ]
+    },
+    "composes": [
+      "components.dialog",
+      "components.button",
+      "components.card",
+      "components.icon",
+      "components.semantic-content",
+      "components.sheet"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-close",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.popover",
+    "themes.shadow",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.button",
+    "components.field",
+    "components.sheet",
+    "themes.input"
+  ]
+}

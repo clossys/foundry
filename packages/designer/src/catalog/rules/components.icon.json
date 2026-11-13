@@ -1,0 +1,16 @@
+{
+  "files": [
+    {
+      "content": "import { createElement, forwardRef, type ReactNode, type SVGProps } from \"react\";\nimport type { LucideIcon } from \"lucide-react\";\n\n/** Lucide glyph data: the `[tag, attrs]` tuples each Lucide icon is drawn from. */\nexport type IconNode = ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>;\ntype IconAccessibility = { decorative: true; label?: undefined } | { decorative?: false; label: string };\ntype IconContent = { glyph: IconNode | LucideIcon; children?: undefined } | { glyph?: undefined; children: ReactNode };\nexport type IconProps = IconAccessibility & IconContent & {\n  size?: \"sm\" | \"md\" | \"lg\";\n  mirrorInRtl?: boolean;\n  className?: string;\n} & Omit<SVGProps<SVGSVGElement>, \"children\" | \"aria-hidden\" | \"aria-label\" | \"role\" | \"className\" | \"width\" | \"height\">;\n\nconst SIZES = { sm: \"size-4\", md: \"size-6\", lg: \"size-8\" } as const;\n\n/**\n * A Lucide icon as stock shadcn renders it: 24px grid, 2px current-colour stroke, size-4 by default.\n * A lucide-react icon component (`import { XIcon } from \"lucide-react\"`) renders as itself; Lucide\n * glyph data renders the same SVG without lucide-react's client boundary, so server entries stay safe.\n */\nexport const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon({ size = \"sm\", mirrorInRtl = false, className, decorative, label, glyph, children, ...props }, ref) {\n  const component = glyph !== undefined && !Array.isArray(glyph);\n  const classes = [component ? undefined : \"lucide\", \"shrink-0\", /\\bsize-/.test(className ?? \"\") ? undefined : SIZES[size], mirrorInRtl ? \"rtl:-scale-x-100\" : undefined, className].filter(Boolean).join(\" \");\n  const access = decorative ? { \"aria-hidden\": true } : { role: \"img\", \"aria-label\": label };\n  if (component) return createElement(glyph as LucideIcon, { ref, ...props, ...access, className: classes });\n  return createElement(\"svg\", {\n    ref, xmlns: \"http://www.w3.org/2000/svg\", width: 24, height: 24, viewBox: \"0 0 24 24\", fill: \"none\", stroke: \"currentColor\",\n    strokeWidth: 2, strokeLinecap: \"round\", strokeLinejoin: \"round\", ...props, ...access, className: classes,\n  }, glyph ? (glyph as IconNode).map(([tag, attrs], index) => createElement(tag, { key: index, ...attrs })) : children);\n});\n",
+      "path": "components/icon/icon.tsx"
+    },
+    {
+      "content": "# components.icon (shadcn@aria, rule derive:icon@1)\n\n`components/icon/icon.tsx` is authored by Foundry under the MIT licence. It renders an\nicon the way stock shadcn renders Lucide icons: a 24px viewBox, a 2px `currentColor`\nstroke and a `size-4` class by default. A lucide-react icon component passed as the\nglyph renders as itself (lucide-react, ISC licence, https://lucide.dev/license).\n\nIt ships no glyph data. The consumer's selected assets supply each glyph through the\ngenerated `components/icon/index.ts` adapter. Lucide glyph data is published under the\nISC licence (https://lucide.dev/license).\n",
+      "path": "notices/icon.md"
+    }
+  ],
+  "id": "derive:icon@1",
+  "inputs": [],
+  "kind": "derive",
+  "slot": "components.icon"
+}

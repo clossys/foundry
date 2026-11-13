@@ -1,6 +1,6 @@
 /**
  * @clossys/designer/blocks/server — the server-safe subset of
- * `@clossys/designer/blocks`. See `atoms/server.ts`'s own header for the
+ * `@clossys/designer/blocks`. See `components/server.ts`'s own header for the
  * full #375 rationale this file shares: `blocks/index.ts` re-exports
  * every block eagerly from one module, so the interactive minority
  * (`DataTable`, `Form`, `ConfirmDialog`, `Toolbar`, `NavGrid`,
@@ -12,7 +12,7 @@
  * compiled file (`dist/blocks/<Name>.js`, never the barrel) under
  * `node --conditions=react-server`. `PricingTable` is included here even
  * though an earlier audit (see issue #375's own body) didn't list it as
- * safe: it imports only `Badge` and `Card` (both server-safe atoms) and
+ * safe: it imports only `Badge` and `Card` (both server-safe components) and
  * types from `react`, and the probe confirms it resolves cleanly — the
  * earlier list was a hypothesis, re-verified here, not a source of truth.
  * See `src/render-environment.ts` for the recorded verdict and
@@ -20,7 +20,7 @@
  * `blocks/index.ts` still fails the identical probe.
  *
  * ADDITIVE ONLY: every name below already ships from `blocks/index.ts`.
- * No wildcard subpath, no per-file deep export — see `atoms/server.ts`'s
+ * No wildcard subpath, no per-file deep export — see `components/server.ts`'s
  * header for why.
  */
 
@@ -29,7 +29,7 @@ import { assertPeerVersion } from "../internal/peer-version.js";
 import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
 
 /**
- * `react` guard only — see `atoms/server.ts`'s own header for why
+ * `react` guard only — see `components/server.ts`'s own header for why
  * `react-aria-components` is deliberately NOT guarded from this file:
  * none of the members below import it (confirmed by grep against each
  * one's own source), and guarding it here would make that peer
@@ -48,6 +48,12 @@ export type { DetailViewProps, DetailViewField } from "./DetailView.js";
 
 export { EmptyState } from "./EmptyState.js";
 export type { EmptyStateProps } from "./EmptyState.js";
+export { ErrorState } from "./ErrorState.js";
+export type { ErrorStateProps, ErrorStateKind } from "./ErrorState.js";
+export { StatGroup } from "./StatGroup.js";
+export type { StatGroupProps, StatGroupItem, StatGroupLayout } from "./StatGroup.js";
+export { CallToAction } from "./CallToAction.js";
+export type { CallToActionProps } from "./CallToAction.js";
 
 export { FeatureGrid } from "./FeatureGrid.js";
 export type {
@@ -55,8 +61,8 @@ export type {
   FeatureGridItem,
   FeatureGridHeadingLevel,
 } from "./FeatureGrid.js";
-export { Matrix } from "./Matrix.js";
-export type { MatrixProps, MatrixGridProps, MatrixQuadrantProps, MatrixCellData, MatrixSide, MatrixHeadingLevel } from "./Matrix.js";
+export { Matrix } from "./Matrix.server.js";
+export type { MatrixProps, MatrixGridProps, MatrixQuadrantProps, MatrixCellData, MatrixSide, MatrixHeadingLevel } from "./Matrix.server.js";
 export { Specimen } from "./specimen/Specimen.js";
 export type { SpecimenProps, SpecimenArrangement } from "./specimen/Specimen.js";
 export { SpecimenPanel } from "./specimen/SpecimenPanel.js";
@@ -116,9 +122,6 @@ export type {
 
 export { Faq } from "./Faq.server.js";
 export type { FaqProps, FaqItem, FaqHeadingLevel } from "./Faq.js";
-
-export { FieldGroup } from "./FieldGroup.js";
-export type { FieldGroupProps, FieldGroupLayout } from "./FieldGroup.js";
 
 export { Hero } from "./Hero.js";
 export type { HeroProps, HeroHeadingLevel, HeroComposition, HeroAlign } from "./Hero.js";
@@ -185,11 +188,19 @@ export type { AnatomyCalloutsProps, AnatomyCalloutsMarker } from "./AnatomyCallo
 export { Scene, layoutScene, sceneRelationText } from "./scene/index.js";
 export type { SceneProps, SceneInput, SceneConverge, SceneEvidenceTrail, SceneApprovalChain, SceneDisorder, SceneFormat, SceneDocument, SceneRow, SceneStatus, ScenePerson, SceneFinding, ScenePoint, ScenePart, SceneWire, SceneTerminal, SceneTag, SceneNode, ScenePersonLayout, SceneLayout } from "./scene/index.js";
 
-export { Item } from "./items/Item.js";
+export { StockItem } from "./items/StockItem.js";
+export type { StockItemProps } from "./items/StockItem.js";
+// The one shared, server-safe Item link-safety helper; Publisher view links call it before rendering.
+export { assertItemLink } from "./items/link-safety.js";
+export type { ItemLinkSlots } from "./items/link-safety.js";
 export { Tree } from "./tree/Tree.js";
 export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.server.js";
-export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
+export type { ItemData, ItemFigureData, ItemStatusData, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
 
 export { Lockup } from "./Lockup.js";
 export type { LockupProps } from "./Lockup.js";
+
+export { LogoHero, type LogoHeroProps } from "./LogoHero.js";
+
+export { LegalProse, type LegalProseProps, type LegalProseRevision } from "./LegalProse.js";

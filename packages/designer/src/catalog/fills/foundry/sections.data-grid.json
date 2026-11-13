@@ -1,0 +1,233 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.data-grid",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.data-grid",
+      "source": "foundry",
+      "sourceAddress": "./blocks#DataTable",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "data-grid": {
+      "composes": [
+        "components.button",
+        "components.checkbox",
+        "components.dialog",
+        "components.field",
+        "components.icon",
+        "components.popover",
+        "components.select",
+        "components.semantic-content",
+        "components.sheet",
+        "components.table",
+        "components.tag-group",
+        "components.text-field",
+        "sections.section-header"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.checkbox",
+          "components.dialog",
+          "components.field",
+          "components.icon",
+          "components.popover",
+          "components.select",
+          "components.semantic-content",
+          "components.sheet",
+          "components.table",
+          "components.tag-group",
+          "components.text-field",
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [
+            "assets.icon-chevron-down",
+            "assets.icon-chevron-right"
+          ],
+          "components": [
+            "components.button",
+            "components.checkbox",
+            "components.dialog",
+            "components.field",
+            "components.icon",
+            "components.popover",
+            "components.select",
+            "components.semantic-content",
+            "components.sheet",
+            "components.table",
+            "components.tag-group",
+            "components.text-field"
+          ],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/data-table/empty-columns.ts",
+            "sha256": "d6d0e7a54139024b417415e72035e31a126e182fdc220aba6de2f97b60b8bed4"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
+            "sha256": "649a588f4359073af9ba101b9c8f4a4c2a5a95c200b18d183497385ea90a1971"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
+            "sha256": "0eaeeb5dbf3d4fbf13034bb5c49f6a6f6225172d2d8593168ead0ea29146bfcc"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/messages.ts",
+            "sha256": "ff3887ed240d3f6588ddcd7f929a8b4a006641f3f786354552995a5e97c42574"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+            "sha256": "427ce186b9dfa602785340cdc31950783b303aebf64ff75ae367fee7f895efb5"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
+            "sha256": "9a960ecfb59ae3f6e8a4bb019727c73439f76571feab842b26d23c04f9d0e896"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/presentation.ts",
+            "sha256": "9e9a798d5186645619f200ea0ca029418ccd67c5d3a90c0bd1df3fbf63bfa125"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+            "sha256": "b4806634d3950d6c2195edef9148e5001d0bd618b1cc3d3b0cb963d741a6106b"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/view-model.ts",
+            "sha256": "49bb10250b1a5874c2251896f1503dc337e5ec5b7f8cd5599c23c533b3cdeb9f"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
+            "sha256": "5d6e56d231997411c386844b20b6896be222bad0331276dc9c831f9bd719e4e9"
+          },
+          {
+            "path": "packages/designer/src/blocks/DataTable.tsx",
+            "sha256": "df52d679fe7ade59ae3c782b344cdd25f321bf407ba2003d47879b15c592fbe1"
+          },
+          {
+            "path": "packages/designer/src/blocks/stock-select.tsx",
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
+          },
+          {
+            "path": "packages/designer/src/blocks/table-model/index.ts",
+            "sha256": "3afd372dce33c7a5b58c8265eb9f46ce3b50b7da0ecf2613cb9961bc0f5eb1ed"
+          },
+          {
+            "path": "packages/designer/src/blocks/table-model/model.ts",
+            "sha256": "e8f0636f9ef841c4b1bcb9b8d0fcbec41c495bdbca991a2688e117e45c6af260"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy-context.tsx",
+            "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy.ts",
+            "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../components/glyph-context.js#useGlyph",
+            "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+            "line": 5
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "DataTable",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Cells are rendered by the column definitions (cell renderers); pinning binds the view model's pinnedColumns, a leading prefix of at most three visible columns. Host supplies rowKey, label and onModelChange.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-right"
+        ],
+        "themes": []
+      },
+      "slot": "sections.data-grid",
+      "slotMap": {
+        "cells": "./blocks#DataTable.columns",
+        "pinning": "./blocks#DataTable.model.pinnedColumns",
+        "rows": "./blocks#DataTable.rows"
+      },
+      "source": "foundry"
+    }
+  }
+}

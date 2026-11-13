@@ -24,7 +24,7 @@ let dir: string;
 // Kept as the shared INNER lines (no `:root { ... }` wrapper) so a test
 // can drop the block into a light OR dark selector without fragile string
 // slicing.
-const LIGHT_PROPERTY_LINES = `  --color-focus-ring: var(--color-accent, oklch(0.4748 0 0));
+const LIGHT_PROPERTY_LINES = `  --color-focus-ring: var(--color-action, oklch(0.4748 0 0));
   --color-focus-ring-on-inverse: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   --color-overlay-surface: oklch(1 0 0);
   --color-ink-primary: oklch(0.2178 0 0);
@@ -36,6 +36,7 @@ const LIGHT_PROPERTY_LINES = `  --color-focus-ring: var(--color-accent, oklch(0.
   --color-ink-link: oklch(0.36 0 0);
   --color-ink-on-accent: oklch(0.9702 0 0);
   --color-accent: oklch(0.4748 0 0);
+  --color-action: oklch(0.4748 0 0);
   --color-accent-on-inverse: oklch(0.7763 0 0);
   --color-ink-on-inverse: oklch(0.9702 0 0);
   --color-ink-on-inverse-muted: oklch(0.7763 0 0);

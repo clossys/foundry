@@ -1,15 +1,15 @@
 /**
  * `assertTailwindMergeVersion` — the one #182 optional-peer guard in this
  * package that is NOT wired in automatically. `tailwind-merge` is
- * imported from exactly one file, `atoms/internal/cx.ts` — but that file
- * is transitively reachable from essentially every atom (`cx()` is this
- * package's shared class-merge helper; `atoms/internal/cx.test.ts`'s own
- * header notes "every atom in this package calls `cx(...)`"), and
+ * imported from exactly one file, `components/internal/cx.ts` — but that file
+ * is transitively reachable from essentially every component (`cx()` is this
+ * package's shared class-merge helper; `src/components/internal/cx.test.ts` (a repository-only test that
+ * does not ship) notes "every component in this package calls `cx(...)`"), and
  * `tailwind-merge` has neither an exported version constant NOR a
  * `"./package.json"` entry in its own `exports` map (confirmed by hand:
  * its `exports` field lists only `"."` and `"./es5"` — unlike
  * `react-aria-components`, which does expose `"./package.json"` and is
- * guarded automatically from `atoms/index.ts` for exactly that reason;
+ * guarded automatically from `components/index.ts` for exactly that reason;
  * see that file's own comment). That leaves no signal this guard could
  * read from `cx.ts` without importing `node:fs`/`node:module` —
  * confirmed empirically to fail an entire browser-platform bundle at
@@ -17,7 +17,7 @@
  * 'node:fs'"), not just at run time, and regardless of whether the
  * importing binding is ever actually called (module resolution runs
  * before tree-shaking). Wiring the Node-only resolver into `cx.ts` would
- * therefore break every consumer bundling any atom for the browser —
+ * therefore break every consumer bundling any component for the browser —
  * strictly worse than the silent-failure defect #182 exists to fix.
  *
  * So this guard ships as an explicit, opt-in, Node-only function instead

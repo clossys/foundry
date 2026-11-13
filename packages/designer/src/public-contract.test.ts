@@ -2,10 +2,33 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import ts from "typescript";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+// C5-DRT: file-level budget for this spawn-heavy contract file. Each test spawns node against the
+// real dist (or type-checks emitted barrels), ~1-5 s apiece under a loaded machine, so the 5 s default
+// timed out whichever tests landed on a busy moment. An explicit per-test budget still overrides it.
+vi.setConfig({ testTimeout: 30_000 });
+
+describe("source-owner closure public boundary", () => {
+  it("compiles the additive record API only through the existing catalog-bundles leaf", () => {
+    const filename = join(packageRoot, "source-owner-consumer.check.ts");
+    const consumer = `import {prepareSourceOwnerClosure, type SourceOwnerClosureResult, type SourceOwnerRecord} from "@clossys/designer/catalog-bundles";
+      const prepare: (input: Parameters<typeof prepareSourceOwnerClosure>[0]) => SourceOwnerClosureResult = prepareSourceOwnerClosure;
+      function inspect(result: SourceOwnerClosureResult): readonly SourceOwnerRecord[] { if (result.status === "associated") { const digest: string | undefined = result.sourceHashes[result.consumer]; } return result.records; }
+      void prepare; void inspect;`;
+    const options: ts.CompilerOptions = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, resolveJsonModule: true, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX, paths: { "@clossys/designer/catalog-bundles": [join(packageRoot, "src/catalog-bundles.ts")] } };
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+    const pkg = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
+    expect(pkg.exports["./catalog-bundles"]).toBeDefined();
+    expect(Object.keys(pkg.exports).some(key => key.includes("source-owner"))).toBe(false);
+    expect(readFileSync(join(packageRoot, "src/catalog-core/index.ts"), "utf8")).not.toContain("source-owner-closure");
+  }, 30_000);
+});
 
 describe("compiled evidence blocks public contract", () => {
   it("exports the three components and their host-facing types through the existing barrels", () => {
@@ -103,8 +126,8 @@ describe("compiled canvas public contract", () => {
 });
 
 describe("compiled record-list public contract", () => {
-  it("exports GridList through atoms and internal tooling, and ResourceList through blocks and internal tooling", async () => {
-    for (const entry of ["atoms/index.js", "index.js"]) {
+  it("exports GridList through components and internal tooling, and ResourceList through blocks and internal tooling", async () => {
+    for (const entry of ["components/index.js", "index.js"]) {
       const api = await import(pathToFileURL(join(packageRoot, "dist", entry)).href);
       expect(api.GridList).toBeTypeOf("function");
       expect(api.GridList.Item).toBeTypeOf("function");
@@ -116,11 +139,11 @@ describe("compiled record-list public contract", () => {
     }
     const server = await import(pathToFileURL(join(packageRoot, "dist/blocks/server.js")).href);
     expect(server).not.toHaveProperty("ResourceList");
-  });
+  }, 30_000); // planner:wd-reg: imports dist/index.js twice; cold-imports or type-checks the whole barrel (~5 s under load), like this file's sibling 30 s spawns.
 
   it("resolves record-list prop types through emitted barrel declarations", () => {
     const filename = join(packageRoot, "record-list-consumer.check.tsx");
-    const consumer = ["atoms/index.js", "index.js"].map((entry, index) => `
+    const consumer = ["components/index.js", "index.js"].map((entry, index) => `
       import type {GridListProps as Grid${index}, GridListItemProps as Item${index}, GridListSelectionCheckboxProps as Check${index}} from ${JSON.stringify(join(packageRoot, "dist", entry))};
       const grid${index}: Grid${index}<{id:string}> = {"aria-label":"Records", children:[]};
       const item${index}: Item${index} = {id:"one", textValue:"Planning note", children:"Planning note"};
@@ -168,6 +191,17 @@ describe("compiled task and event public contract", () => {
   });
 });
 
+describe("compiled section list blocks public contract", () => {
+  it.each(["blocks/index.js", "index.js"])("exports ActivityFeed, AuditLog, Timeline, UsageSummary and their public declarations from %s", entry => {
+    const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify([typeof api.ActivityFeed, typeof api.AuditLog, typeof api.Timeline, typeof api.UsageSummary]));`;
+    expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8" }))).toEqual(["function", "function", "function", "function"]);
+    const declaration = readFileSync(join(packageRoot, "dist", entry.replace(/\.js$/, ".d.ts")), "utf8");
+    for (const name of ["ActivityFeedProps", "ActivityFeedGroup", "AuditLogProps", "AuditLogEntry", "AuditLogLabels", "TimelineProps", "TimelineEvent", "TimelineHeadingLevel", "UsageSummaryProps", "UsageSummaryMeter"]) {
+      expect(declaration).toMatch(new RegExp(`\\b${name}\\b`));
+    }
+  });
+});
+
 describe("compiled AccessMatrix and ColumnMapper public contract", () => {
   it("exports both components and exact required props and value types from client barrels only", () => {
     const filename = join(packageRoot, "access-matrix-column-mapper-consumer.check.ts");
@@ -203,13 +237,13 @@ describe("compiled AccessMatrix and ColumnMapper public contract", () => {
       const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify(["AccessMatrix","ColumnMapper"].filter(name=>typeof api[name]==="function")));`;
       expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual(entry === "blocks/server.js" ? [] : ["AccessMatrix", "ColumnMapper"]);
     }
-  });
+  }, 30_000); // planner:wd-reg: type-checks both barrels; cold-imports or type-checks the whole barrel (~5 s under load), like this file's sibling 30 s spawns.
 });
 
 describe("compiled signature chart public contract", () => {
-  it.each(["index", "server"])("exports all three charts from the compiled charts/%s entry", async entry => {
+  it.each(["index", "server"])("exports the AreaChart signature chart from the compiled charts/%s entry", async entry => {
     const exports = await import(pathToFileURL(join(packageRoot, `dist/charts/${entry}.js`)).href);
-    for (const name of ["AreaChart", "Heatmap", "StatusStrip"]) expect(exports[name]).toBeTypeOf("function");
+    for (const name of ["AreaChart"]) expect(exports[name]).toBeTypeOf("function");
   });
 });
 
@@ -278,20 +312,46 @@ describe("graph-model public contract", () => {
   });
 });
 
-describe("compiled atom guidance public contract", () => {
-  it("intentionally exports the four atom metadata records from the existing client atoms barrel", () => {
-    const entry = join(packageRoot, "dist/atoms/index.js");
-    const script = `import * as atoms from ${JSON.stringify(entry)}; process.stdout.write(JSON.stringify(Object.keys(atoms).filter(key => /^ATOM_/.test(key)).sort()));`;
+describe("compiled component guidance public contract", () => {
+  it("keeps the three legacy metadata records in the foundational components barrel", () => {
+    const entry = join(packageRoot, "dist/components/index.js");
+    const script = `import * as components from ${JSON.stringify(entry)}; process.stdout.write(JSON.stringify(Object.keys(components).filter(key => /^COMPONENT_/.test(key)).sort()));`;
     const keys = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
-    expect(keys).toEqual(["ATOM_API_FACTS", "ATOM_COMPARISON", "ATOM_DISPLAY_GROUPS", "ATOM_GUIDANCE"]);
+    expect(keys).toEqual(["COMPONENT_API_FACTS", "COMPONENT_COMPARISON", "COMPONENT_GUIDANCE"]);
+  });
+  it("resolves IA navigation and all action aliases through the compiled public catalog entry", () => {
+    const entry = "@clossys/designer/catalog";
+    const script = `
+      import { COMPONENT_DISPLAY_TREE, componentSelection, resolveComponentId } from ${JSON.stringify(entry)};
+      const leaves = COMPONENT_DISPLAY_TREE.flatMap(group => group.children.flatMap(family => family.leaves));
+      const actions = ["act.native-action", "act.button", "act.icon-button", "act.menu", "act.toolbar", "act.toggle-button", "act.link", "act.breadcrumb", "act.navigation-tree"];
+      const alias = componentSelection("act.button"), canonical = componentSelection("components.button");
+      process.stdout.write(JSON.stringify({ registered: leaves.includes(resolveComponentId("act.button")), actionCount: actions.length, allActionsRegistered: actions.every(alias => leaves.includes(resolveComponentId(alias))), same: alias.guidance === canonical.guidance, exportName: canonical.facts.exportName }));
+    `;
+    expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ registered: true, actionCount: 9, allActionsRegistered: true, same: true, exportName: "Button" });
+  });
+  it("types the compiled catalog navigation and selection API through the public catalog subpath", () => {
+    const filename = join(packageRoot, "catalog-selection-consumer.check.ts");
+    const consumer = `
+      import { COMPONENT_DISPLAY_TREE, componentSelection, resolveComponentId, type ComponentDisplayTree } from "@clossys/designer/catalog";
+      const tree: ComponentDisplayTree = COMPONENT_DISPLAY_TREE;
+      const id: string = resolveComponentId("act.button");
+      const selection = componentSelection(id);
+      const name: string | undefined = selection?.facts?.exportName;
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
   });
   it("pins compiled comparison keys to the finite public API facts", () => {
-    const entry = join(packageRoot, "dist/atoms/index.js");
+    const entry = join(packageRoot, "dist/components/index.js");
     const script = `
-      import { ATOM_COMPARISON, ATOM_API_FACTS } from ${JSON.stringify(entry)};
+      import { COMPONENT_COMPARISON, COMPONENT_API_FACTS } from ${JSON.stringify(entry)};
       process.stdout.write(JSON.stringify({
-        actual: Object.keys(ATOM_COMPARISON).sort(),
-        expected: Object.entries(ATOM_API_FACTS).filter(([, fact]) => fact.options.length > 0).map(([id]) => id).sort()
+        actual: Object.keys(COMPONENT_COMPARISON).sort(),
+        expected: Object.entries(COMPONENT_API_FACTS).filter(([, fact]) => fact.options.length > 0).map(([id]) => id).sort()
       }));
     `;
     const keys = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
@@ -299,11 +359,11 @@ describe("compiled atom guidance public contract", () => {
     expect(keys.actual).toEqual(keys.expected);
   });
 
-  it("exports the compiled AtomComparison type through the existing atoms subpath", () => {
-    const filename = join(packageRoot, "atom-comparison-consumer.check.ts");
+  it("exports the compiled ComponentComparison type through the existing components subpath", () => {
+    const filename = join(packageRoot, "component-comparison-consumer.check.ts");
     const consumer = `
-      import { ATOM_COMPARISON, type AtomComparison } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
-      const comparison: AtomComparison = ATOM_COMPARISON["act.button"];
+      import { COMPONENT_COMPARISON, type ComponentComparison } from ${JSON.stringify(join(packageRoot, "dist/components/index.js"))};
+      const comparison: ComponentComparison = COMPONENT_COMPARISON["act.button"];
       const column: string = comparison.columns.option;
       const policy: "skip-violations" = comparison.constraintPolicy;
       const cap: number = comparison.maxCells;
@@ -323,14 +383,15 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
   dependencies?: Record<string, string>;
   peerDependencies: Record<string, string>;
   peerDependenciesMeta: Record<string, { optional?: boolean }>;
+  devDependencies: Record<string, string>;
 };
 
 const JS_SUBPATHS = [
   "./tokens",
   "./tokens/server",
   "./tokens/preview",
-  "./atoms",
-  "./atoms/server",
+  "./components",
+  "./components/server",
   "./icons",
   "./charts",
   "./charts/server",
@@ -341,10 +402,30 @@ const JS_SUBPATHS = [
   "./theme",
   "./theme/server",
   "./gate",
+  "./catalog",
+  "./catalog/server",
+  "./catalog/node",
+  "./catalog/dogfood/node",
+  "./studio",
+  "./studio/queries",
+  "./studio/state",
   "./render-environment",
+  "./catalog-bundles",
+  "./frames",
+  "./studio/route",
+  "./studio/route/server",
+  "./frames/error",
 ] as const;
-const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css"] as const;
-const COMPONENT_DIRS = ["atoms", "blocks", "charts", "shell", "theme"] as const;
+/** Gate scripts shipped as plain ESM with hand-written types (the pinned-candidate ref-verbatim gate). */
+// planner:wd-reg: 2825c2e66 shipped ./shadcn-flavor (scripts/ref-verbatim/flavor.mjs, the one components.json writer; producer imports it) as a scripts/ ESM subpath.
+const GATE_SCRIPT_SUBPATHS = ["./shadcn-flavor", "./ref-verbatim"] as const;
+const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css", "./specimen-frame.css"] as const;
+const COMPONENT_DIRS = ["components", "blocks", "charts", "shell", "theme"] as const;
+
+/** Source text with block and line comments blanked: comments render nothing, so they carry no utilities. */
+function withoutComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, " ")).replace(/(^|[^:"'`\\])\/\/[^\n]*/g, "$1");
+}
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -361,14 +442,25 @@ describe("public UI contract", () => {
       ...JS_SUBPATHS.slice(0, 3),
       ...CSS_SUBPATHS,
       ...JS_SUBPATHS.slice(3),
+      ...GATE_SCRIPT_SUBPATHS,
     ]);
+    expect(packageJson.exports["./studio/state"]).toEqual({ types: "./dist/studio/WholeStudioProvider.d.ts", import: "./dist/studio/WholeStudioProvider.js" });
     expect(packageJson.exports["."]).toBeUndefined();
+    expect(packageJson.exports["./atoms"]).toBeUndefined(); // rename-negative: no legacy client alias
+    expect(packageJson.exports["./atoms/server"]).toBeUndefined(); // rename-negative: no legacy server alias
     expect(packageJson.exports["./views"]).toBeUndefined();
 
     for (const subpath of JS_SUBPATHS) {
       const entry = packageJson.exports[subpath] as { types?: string; import?: string };
       expect(entry.types, `${subpath} needs public types`).toMatch(/^\.\/dist\/.+\.d\.ts$/);
       expect(entry.import, `${subpath} needs an ESM entry`).toMatch(/^\.\/dist\/.+\.js$/);
+    }
+
+    for (const subpath of GATE_SCRIPT_SUBPATHS) {
+      const entry = packageJson.exports[subpath] as { types?: string; import?: string };
+      expect(entry.types, `${subpath} needs public types`).toMatch(/^\.\/scripts\/.+\.d\.ts$/);
+      expect(entry.import, `${subpath} needs an ESM entry`).toMatch(/^\.\/scripts\/.+\.mjs$/);
+      expect(existsSync(join(packageRoot, entry.types as string)) && existsSync(join(packageRoot, entry.import as string))).toBe(true);
     }
 
     for (const subpath of CSS_SUBPATHS) {
@@ -379,11 +471,37 @@ describe("public UI contract", () => {
   });
 
   it("keeps token-only use free of component runtime installation", () => {
-    expect(packageJson.dependencies).toBeUndefined();
+    // G20 (planner decision): the rich-text editor (tiptap), charts (recharts), toasts (sonner), the media player
+    // (media-chrome) and @internationalized/date are optional peers, so a token-only install pulls none of
+    // them; a consumer of RichText, the charts, Toaster, MediaPlayer or the date components installs them.
+    // planner:r2f-52: lucide-react (ISC, the shadcn default icon set) joins as an optional peer for the stock Spinner and Icon.
+    // Owner D1 (2026-11-11): clsx (MIT) and tailwind-merge (MIT) back the stock shadcn@aria `cn`, which the
+    // stock components import statically, so they are real runtime dependencies and never optional peers.
+    expect(packageJson.dependencies).toEqual({
+      "class-variance-authority": "0.7.1",
+      "css-tree": "3.2.1",
+      "@clossys/director": "0.6.0",
+      "clsx": "2.1.1",
+      "tailwind-merge": "^3.7.0",
+    });
+    for (const dependency of ["clsx", "tailwind-merge"]) {
+      expect(packageJson.peerDependencies[dependency], `${dependency} is a runtime dependency, not a peer`).toBeUndefined();
+      expect(packageJson.peerDependenciesMeta[dependency], `${dependency} is a runtime dependency, not a peer`).toBeUndefined();
+      expect(packageJson.devDependencies[dependency], `${dependency} is declared once, as a runtime dependency`).toBeUndefined();
+    }
 
-    for (const dependency of ["@internationalized/date", "react", "react-dom", "react-aria-components", "tailwind-merge", "tailwindcss"]) {
-      expect(packageJson.peerDependencies[dependency]).toBeDefined();
-      expect(packageJson.peerDependenciesMeta[dependency]?.optional).toBe(true);
+    const optionalPeers = [
+      "@internationalized/date", "@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit",
+      "lucide-react", "media-chrome", "react", "react-dom", "react-aria-components", "recharts", "sonner", "tailwindcss",
+    ];
+    expect(Object.keys(packageJson.peerDependencies).sort()).toEqual([...optionalPeers].sort());
+    for (const dependency of optionalPeers) {
+      expect(packageJson.peerDependencies[dependency], dependency).toBeDefined();
+      expect(packageJson.peerDependenciesMeta[dependency]?.optional, dependency).toBe(true);
+      expect(packageJson.dependencies[dependency], `${dependency} must not be a runtime dependency`).toBeUndefined();
+    }
+    for (const dependency of ["@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit", "media-chrome", "recharts", "sonner"]) {
+      expect(packageJson.devDependencies[dependency], `${dependency} stays installed for Designer's own build and tests`).toBe(packageJson.peerDependencies[dependency]);
     }
   });
 
@@ -414,24 +532,14 @@ describe("public UI contract", () => {
   });
 
   it("honors reduced-motion preferences for every shipped animation or transition", () => {
-    // Scanned, not hand-listed: a hand-written file list can't notice a new
-    // motion site (see the package README and #907 — this is that
-    // mechanism). Every source file under the component layer directories
-    // is checked for a Tailwind `animate-*`/`transition-*` class literal;
-    // any file that has one must also carry a `motion-reduce:` override.
-    const MOTION_CLASS_RE = /\b(?:animate|transition)-[a-zA-Z[\]-]+/;
-
-    const motionFiles = [...COMPONENT_DIRS, "tokens/preview"].flatMap((dir) =>
-      sourceFiles(join(packageRoot, "src", dir))
-        .filter((file) => MOTION_CLASS_RE.test(readFileSync(file, "utf8")))
-        .map((file) => file.slice(packageRoot.length + 1)),
-    );
-
-    expect(motionFiles.length).toBeGreaterThan(0);
-
-    for (const file of motionFiles) {
-      const source = readFileSync(join(packageRoot, file), "utf8");
-      expect(source, `${file} must include a motion-reduce override`).toContain("motion-reduce:");
+    // Stock shadcn files stay unmodified, so the guarantee is one global
+    // rule every CSS path ships (theme-keys.css, inlined into theme.css and
+    // compiled.css). src/reduced-motion.browser.test.ts renders every moving
+    // utility of every scanned motion file in Chromium under the preference;
+    // this fast check only pins that the rule ships on each path.
+    const rule = /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\*,\s*::before,\s*::after,\s*::backdrop\s*\{\s*animation-duration: 0\.01ms !important;\s*animation-iteration-count: 1 !important;\s*transition-duration: 0\.01ms !important;/;
+    for (const sheet of ["styles/theme-keys.css", "styles/compiled.css"]) {
+      expect(readFileSync(join(packageRoot, sheet), "utf8"), `${sheet} ships the global reduced-motion rule`).toMatch(rule);
     }
   });
 
@@ -466,7 +574,10 @@ describe("public UI contract", () => {
       "(?:^|[\\s\"'`:])(" +
         [
           "(?:scroll-)?[mp][lr]-[a-z0-9[\\]./%-]+", // ml-auto, pr-2xl, scroll-pl-md
-          "(?:left|right)-[a-z0-9[\\]./%-]+", // left-0, right-md
+          // left-0, right-md, left-1/2, left-[3px], right-(--x): Tailwind's inset value grammar
+          // (number, fraction, px/full/auto, arbitrary, or a rung of the fixed spacing scale),
+          // so prose such as "right-to-left" and ids such as "left-sidebar" are not utilities.
+          "(?:left|right)-(?:[0-9][0-9./]*|px|full|auto|\\[[^\\]\\s]+\\]|\\([^)\\s]+\\)|[0-9]*x?s|sm|md|lg|[0-9]*x?l)(?![a-z0-9-])",
           "border-[lr](?![a-z])(?:-[0-9[][a-z0-9[\\]./%-]*)?", // border-l, border-r-2 — never border-line-base
           "text-(?:left|right)(?![a-z-])",
           "float-(?:left|right)(?![a-z-])",
@@ -483,18 +594,25 @@ describe("public UI contract", () => {
      * is five shell components, and says in as many words that it is "not a
      * general RTL audit"). This is a record of known debt, NOT a list of
      * approved exceptions — every entry below is a real right-to-left
-     * defect in `atoms/` or `blocks/` awaiting its own change. Two rules
+     * defect in `components/` or `blocks/` awaiting its own change. Two rules
      * keep it from rotting into an approval list: nothing may be ADDED to
      * it (a new instance fails this test), and an entry that no longer
      * matches fails too — so the list can only ever shrink.
      */
     const KNOWN_PHYSICAL_INLINE: string[] = [];
 
+    // The scanner itself: real physical utilities still match; comments and non-utility ids do not.
+    const hits = (text: string) => [...withoutComments(text).matchAll(PHYSICAL_INLINE_RE)].map((match) => match[1]);
+    expect(hits('className="left-0 focus:left-sm right-md left-1/2 left-[3px] right-(--x) ml-auto border-r rounded-l-md"')).toEqual(
+      ["left-0", "left-sm", "right-md", "left-1/2", "left-[3px]", "right-(--x)", "ml-auto", "border-r", "rounded-l-md"],
+    );
+    expect(hits('/** mirrored for right-to-left locales; ml-2 */\n// pr-4 in a comment\nconst ids = ["left-sidebar", "right-panel"];')).toEqual([]);
+
     const found = new Set<string>();
     for (const dir of COMPONENT_DIRS) {
       for (const file of sourceFiles(join(packageRoot, "src", dir))) {
         const relative = file.slice(packageRoot.length + 1);
-        for (const match of readFileSync(file, "utf8").matchAll(PHYSICAL_INLINE_RE)) {
+        for (const match of withoutComments(readFileSync(file, "utf8")).matchAll(PHYSICAL_INLINE_RE)) {
           found.add(`${relative} :: ${match[1]}`);
         }
       }
@@ -523,7 +641,7 @@ describe("public UI contract", () => {
     ).toEqual([]);
 
     // Shell carries none of this debt: #687's five are fixed and the list
-    // above names only `atoms/` and `blocks/`. Asserted rather than left
+    // above names only `components/` and `blocks/`. Asserted rather than left
     // implied, so a shell regression fails HERE with the issue named,
     // instead of as one anonymous line in the `added` diff above.
     expect([...found].filter((hit) => hit.startsWith("src/shell/")), "#687 regression in src/shell/").toEqual([]);
@@ -548,7 +666,6 @@ const PURE_TOKEN_VALUES = [
   "LOCKUP_WORDMARK_SIZE",
   "LOCKUP_WORDMARK_SIZE_RATIO",
   "MASTER_MARK_ICON_SHELL_STYLE",
-  "MarkGeometryError",
   "MasterMarkValidationError",
   "TOKENS",
   "TOKEN_DISPLAY_GROUPS",
@@ -564,7 +681,6 @@ const PURE_TOKEN_VALUES = [
   "checkClearSpace",
   "checkConsumerArtContract",
   "checkIdentityContrast",
-  "checkMarkConformance",
   "checkMinimumSize",
   "checkSingleColourLegibility",
   "checkTokenContrast",
@@ -584,8 +700,6 @@ const PURE_TOKEN_VALUES = [
   "isValidCssFontFamily",
   "judgeIdentityKit",
   "luminanceOf",
-  "measureMarkGeometry",
-  "normalizeMark",
   "oklchToLinearSRGB",
   "parseBrandDeclarations",
   "parseOklch",
@@ -616,7 +730,7 @@ describe("compiled catalog export cleanup", () => {
   it.each(["@clossys/designer/blocks", "@clossys/designer/blocks/server", pathToFileURL(join(packageRoot, "dist", "index.js")).href])("exposes the canonical catalog without retired wrappers through %s", subpath => {
     const script = `import * as blocks from ${JSON.stringify(subpath)}; process.stdout.write(JSON.stringify(Object.keys(blocks)));`;
     const keys: string[] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: packageRoot, encoding: "utf8", timeout: 10_000 }));
-    expect(keys.filter(key => ["Item", "Items", "Matrix"].includes(key)).sort()).toEqual(["Item", "Items", "Matrix"]);
+    expect(keys.filter(key => ["Item", "StockItem", "Items", "Matrix"].includes(key)).sort()).toEqual(["Items", "Matrix", "StockItem"]);
     expect(keys.filter(key => ["CardGrid", "TopicList", "LinkGrid", "Comparison", "LedgerTile"].includes(key))).toEqual([]);
     expect(keys.filter(key => ["ItemRenderer", "ItemsStatic", "renderNavItems", "MatrixRenderer"].includes(key))).toEqual([]);
   }, 15_000);
@@ -706,10 +820,10 @@ describe("compiled Tree public contract", () => {
 
 
 describe("compiled pane handle edge contract", () => {
-  it("accepts both edges through the emitted atom and block declarations", () => {
+  it("accepts both edges through the emitted component and block declarations", () => {
     const filename = join(packageRoot, "pane-edge-consumer.check.ts");
     const consumer = `
-      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
+      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/components/index.js"))};
       import { type ResizablePaneProps } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
       const start: ResizeHandleProps["edge"] = "start";
       const end: ResizablePaneProps["handleEdge"] = "end";
@@ -721,19 +835,19 @@ describe("compiled pane handle edge contract", () => {
     expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
   });
 
-  it("rejects unsupported edges with native diagnostics through the atom and block barrels", () => {
+  it("rejects unsupported edges with native diagnostics through the component and block barrels", () => {
     const filename = join(packageRoot, "pane-edge-negative-consumer.check.ts");
     const source = `
-      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/atoms/index.js"))};
+      import { type ResizeHandleProps } from ${JSON.stringify(join(packageRoot, "dist/components/index.js"))};
       import { type ResizablePaneProps } from ${JSON.stringify(join(packageRoot, "dist/blocks/index.js"))};
-      const invalidAtom: ResizeHandleProps["edge"] = "middle";
+      const invalidComponent: ResizeHandleProps["edge"] = "middle";
       const invalidPane: ResizablePaneProps["handleEdge"] = "middle";
     `;
     const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
     const host = ts.createCompilerHost(options); const original = host.getSourceFile.bind(host);
     host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, source, language, true) : original(path, language, error, fresh);
     const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host));
-    const cases = [{ binding: "invalidAtom", field: "edge" }, { binding: "invalidPane", field: "handleEdge" }];
+    const cases = [{ binding: "invalidComponent", field: "edge" }, { binding: "invalidPane", field: "handleEdge" }];
     expect(diagnostics).toHaveLength(2);
     for (const [index, diagnostic] of diagnostics.entries()) {
       const item = cases[index]!;
@@ -792,11 +906,11 @@ describe("compiled CatalogBrowser public contract", () => {
   const consumerFor = (entry: string, index: number) => `
     import { CatalogBrowser as Browser${index}, type CatalogBrowserProps as Props${index}, type CatalogBrowserKind as Kind${index}, type CatalogBrowserLabels as Labels${index}, type CatalogBrowserSelection as Selection${index} } from ${JSON.stringify(join(packageRoot, "dist", entry))};
     interface Entry${index} { id: string; label: string; l1: string; l2: string; lifecycle: "draft" | "stable" | "deprecated" | "parked"; tier: "core" | "role" }
-    const catalog${index} = { kind: "tokens" as const, groups: [{ id: "color", label: "Color", children: [{ id: "ink", label: "Ink" }] }], entries: [{ id: "--ink", label: "Ink", l1: "color", l2: "ink", lifecycle: "draft", tier: "role" }] satisfies Entry${index}[] };
+    const catalog${index} = { kind: "themes" as const, groups: [{ id: "color", label: "Color", children: [{ id: "ink", label: "Ink" }] }], entries: [{ id: "--ink", label: "Ink", l1: "color", l2: "ink", lifecycle: "draft", tier: "role" }] satisfies Entry${index}[] };
     const kind${index}: Kind${index}<Entry${index}> = { label: "Tokens", preview: (entry, context) => entry.tier + context.kind + String(context.config.tone), controls: () => [{ type: "toggle", id: "tone", label: "Tone", defaultValue: false }] };
     declare const labels${index}: Labels${index};
-    const selection${index}: Selection${index} = { catalog: "tokens", entryId: null };
-    const props${index}: Props${index}<typeof catalog${index}> = { catalogs: [catalog${index}], kinds: { tokens: kind${index} }, label: "Catalog", labels: labels${index}, defaultSelection: selection${index} };
+    const selection${index}: Selection${index} = { catalog: "themes", entryId: null };
+    const props${index}: Props${index}<typeof catalog${index}> = { catalogs: [catalog${index}], kinds: { themes: kind${index} }, label: "Catalog", labels: labels${index}, defaultSelection: selection${index} };
     const element${index} = Browser${index}(props${index});
   `;
   it("exports the block and its host-facing types from both existing barrels", () => {
@@ -842,7 +956,7 @@ describe("compiled DataTable saved-view public contract", () => {
       const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
       expect(result.keys).toEqual(values); expect(result.internal).toEqual([]); expect(result.model.density).toBe("compact"); expect(result.model.table.columns).toEqual([{ id: "value", kind: "number" }]);
     }
-  });
+  }, 30_000); // planner:wd-reg: spawns node on both barrels; cold-imports or type-checks the whole barrel (~5 s under load), like this file's sibling 30 s spawns.
   it("resolves the model, mode, density, sort and controlled props from emitted declarations", () => {
     const filename = join(packageRoot, "emitted-datatable-consumer.check.ts");
     const consumer = ["blocks/index.js", "index.js"].map((entry, index) => `
@@ -891,14 +1005,15 @@ describe("compiled DataTable saved-view public contract", () => {
   }, 30_000);
 });
 
-it("exports PageBar from the public root and blocks barrels with all seven public types", async () => {
+it("exports PageBar from the public root and blocks barrels with retained public types", async () => {
   const blocks = await import("./blocks/index.js");
   const root = await import("./index.js");
   expect((blocks as any).PageBar).toBeTypeOf("function");
   expect((root as any).PageBar).toBe((blocks as any).PageBar);
   for (const file of ["src/blocks/index.ts", "src/index.ts"]) {
     const source = readFileSync(join(packageRoot, file), "utf8");
-    for (const name of ["PageBarProps", "PageBarPage", "PageBarCrumb", "PageBarAction", "PageBarDestination", "PageBarLabels", "PageBarWidth"]) expect(source).toContain(name);
+    for (const name of ["PageBarProps", "PageBarPage", "PageBarCrumb", "PageBarAction", "PageBarDestination", "PageBarLabels"]) expect(source).toContain(name);
+    expect(source).not.toContain("PageBarWidth");
   }
 });
 
@@ -994,4 +1109,143 @@ describe("headless project model public contract", () => {
     host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
     expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
   });
+});
+
+
+describe("compiled control glyph bindings", () => {
+  // Retargeted (planner:C5-DREC, owner LAD-3 2026-11-11): GlyphProvider is removed (icons are lucide);
+  // before: the client entry exported it as a function; after: neither entry exports it.
+  it("exports no glyph provider from either components entry and keeps StatusMark server-safe", () => {
+    const clientScript = `import * as api from ${JSON.stringify(join(packageRoot, "dist/components/index.js"))}; process.stdout.write(JSON.stringify(typeof api.GlyphProvider));`;
+    expect(execFileSync(process.execPath, ["--input-type=module", "-e", clientScript], { encoding: "utf8", cwd: packageRoot })).toBe('"undefined"');
+    const serverScript = `import * as api from ${JSON.stringify(join(packageRoot, "dist/components/server.js"))}; const mark = api.StatusMark({ tone: "success", children: "Ready", glyphs: { "assets.icon-success": [["path", { d: "M1 2h3" }]] } }); let host = mark; while (typeof host.type === "function") host = host.type(host.props); process.stdout.write(JSON.stringify({ provider: "GlyphProvider" in api, mark: host.type }));`;
+    expect(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", serverScript], { encoding: "utf8", cwd: packageRoot }))).toEqual({ provider: false, mark: "span" });
+  });
+});
+
+describe("compiled composite component catalog contract", () => {
+  it("exposes one typed consumer composite from catalog and catalog/server", () => {
+    for (const entry of ["catalog-core/index.js", "catalog-core/server.js"]) {
+      const filename = join(packageRoot, "composite-consumer.check.ts");
+      const negativeFixture = readFileSync(join(packageRoot, "src/catalog-core/composite-change-set.check.ts"), "utf8");
+      const consumer = negativeFixture.replace('from "./index.js"', `from ${JSON.stringify(join(packageRoot, "dist", entry))}`) + `
+        import { check, resolve, emit, applyLibraryChange, libraryHash, materializeSourceFill,
+          type CompositeCatalogData, type CompositeLibraryData, type CompositeEngineInput,
+          type CompositeResolved, type CompositeCheckResult,
+          type CompositeEmitFile, type ComponentObservation, type SourceBundle,
+          buildComponentsConsumption, scanComponentReads, type ConsumptionInput, type ConsumptionFinding } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        declare const catalog: CompositeCatalogData;
+        declare const library: CompositeLibraryData;
+        declare const observation: ComponentObservation;
+        declare const bundle: SourceBundle;
+        const changes: CompositeChangeSet = { baseHash: libraryHash(library), bundles: [bundle], changes: [
+          {portion: "values", change: {op: "author", slot: "themes.foreground", tokens: {default: {$type: "color", $value: "#111111"}}}},
+          {portion: "components", change: {op: "adopt", slot: "components.button", source: "example"}},
+          {portion: "components", change: {op: "compose", slot: "components.select", rule: "compose:example@1"}}
+        ]};
+        const next: CompositeLibraryData = applyLibraryChange(catalog, library, changes);
+        const input: CompositeEngineInput = {catalog, library: next, componentOptions: {evidence: {observations: {"components.button": observation}, installedRac: {version: "1.21.1", instance: "one"}}}};
+        const checked: CompositeCheckResult = check(input);
+        const profile: CompositeResolved = resolve(input);
+        const files: CompositeEmitFile[] = emit(profile, ["css-brand", "component-index", "components-consumption", "notices"]);
+        void materializeSourceFill; void checked; void files;
+        declare const staticInput: ConsumptionInput;
+        const inventory = buildComponentsConsumption(staticInput);
+        const scan = scanComponentReads("", [], "");
+        void inventory; void scan;
+      `;
+      const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+      const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+      expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n")), entry).toEqual([]);
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))}; process.stdout.write(JSON.stringify(["check","resolve","emit","applyLibraryChange","libraryHash","materializeSourceFill","buildComponentsConsumption","scanComponentReads"].map(name=>typeof api[name])));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual(Array(8).fill("function"));
+    }
+  }, 30_000);
+});
+
+describe("compiled generic runtime assembly public contract", () => {
+  it("exports platform-neutral ports and producers through the existing catalog entry", async () => {
+    const filename = join(packageRoot, "runtime-ports-consumer.check.ts");
+    const consumer = `
+      import { prepareRuntimeAssembly, runRuntimeAssemblyEvidence, validateRuntimeAssemblyEvidence, checkConsumerRuntimePorts, type ConsumerRuntimePorts, type RuntimeAssemblyInput, type RuntimeMeasurementRunner, type RuntimeEvidenceResult } from ${JSON.stringify(join(packageRoot, "dist/catalog-core/index.js"))};
+      declare const ports: ConsumerRuntimePorts<string>;
+      declare const input: RuntimeAssemblyInput<string>;
+      declare const runner: RuntimeMeasurementRunner<string>;
+      const prepared = prepareRuntimeAssembly(input);
+      if (prepared.status === "ready") { const node: string = prepared.assembly.render(prepared.assembly.snapshot.cells[0]!); }
+      const evidence: Promise<RuntimeEvidenceResult> = runRuntimeAssemblyEvidence(input, runner);
+      const content = ports.resolveContent({kind:"copy",ref:"example.title"});
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
+    const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist/catalog-core/index.js"))}; process.stdout.write(JSON.stringify([typeof api.prepareRuntimeAssembly,typeof api.runRuntimeAssemblyEvidence,typeof api.validateRuntimeAssemblyEvidence,typeof api.checkConsumerRuntimePorts]));`;
+    expect(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual(["function", "function", "function", "function"]);
+    // Run bundler tooling in native Node; the surrounding suite uses a DOM realm.
+    const browserScript = `import { build } from "esbuild"; const bundle = await build({ entryPoints: [${JSON.stringify(join(packageRoot, "src/catalog-core/index.ts"))}], bundle: true, write: false, platform: "browser", format: "esm", metafile: true, logLevel: "silent" }); process.stdout.write(JSON.stringify({ inputs: Object.keys(bundle.metafile.inputs), imports: Object.values(bundle.metafile.outputs).flatMap(output => output.imports) }));`;
+    const browser = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", browserScript], { encoding: "utf8", cwd: packageRoot }));
+    expect(browser.inputs.some((path: string) => /(?:^|\/)(?:react|react-dom|publisher)(?:\/|$)/.test(path))).toBe(false);
+    expect(browser.imports).toEqual([]);
+  }, 30_000);
+});
+
+describe("compiled usage graph public contract", () => {
+  it("exports the usage graph API additively through catalog and catalog/server", () => {
+    for (const entry of ["catalog-core/index.js", "catalog-core/server.js"]) {
+      const filename = join(packageRoot, "usage-graph-consumer.check.ts");
+      const consumer = `
+        import { buildUsageGraph, uses, usedBy, closure, graphFindings, type UsageGraph, type UsageGraphInputs, type UsageEdge, type UsageNode, type UsageGraphFinding } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const input: UsageGraphInputs = { inventory: { themes: ["themes.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" },
+          components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { themes: ["themes.color"], assets: [] } }] } };
+        const graph: UsageGraph = buildUsageGraph(input);
+        const out: readonly UsageEdge[] = uses(graph, "components.button"), into: readonly UsageEdge[] = usedBy(graph, "themes.color");
+        const reach: readonly string[] = closure(graph, "themes.color", "usedBy");
+        const findings: readonly UsageGraphFinding[] = graphFindings(graph);
+        const node: UsageNode | undefined = graph.nodes[0];
+        void out; void into; void reach; void findings; void node;
+      `;
+      const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+      const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+      expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n")), entry).toEqual([]);
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const graph = api.buildUsageGraph({ inventory: { themes: ["themes.color"], components: ["components.button"] }, selection: { "components.button": "example/components.button" }, components: { fills: [{ id: "example/components.button", slot: "components.button", declaredReads: { themes: ["themes.color"], assets: [] } }] } });
+        process.stdout.write(JSON.stringify({ types: ["buildUsageGraph","uses","usedBy","closure","graphFindings"].map(name => typeof api[name]), usedBy: api.usedBy(graph, "themes.color").map(edge => edge.from), closure: api.closure(graph, "themes.color", "usedBy") }));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })), entry).toEqual({ types: Array(5).fill("function"), usedBy: ["components.button"], closure: ["components.button"] });
+    }
+  }, 30_000);
+});
+
+describe("compiled wiring public contract", () => {
+  it("exports the static wiring checks additively through catalog and catalog/server", () => {
+    for (const entry of ["catalog-core/index.js", "catalog-core/server.js"]) {
+      const filename = join(packageRoot, "wiring-consumer.check.ts");
+      const consumer = `
+        import { checkWiring, readWiringExceptions, wiringScope, foundryWiringExceptions, WIRING_REASON_CODES, WIRING_HEADLESS_MODULES, type WiringInput, type WiringResult, type WiringFinding, type WiringException, type WiringCode, type WiringReasonCode } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const input: WiringInput = { sources: [{ path: "frames/a.tsx", content: "export const A = 1;", layer: "frames" }], themes: [], exceptions: foundryWiringExceptions(), now: "2026-10-26" };
+        const result: WiringResult = checkWiring(input);
+        const findings: readonly WiringFinding[] = result.findings, code: WiringCode | undefined = findings[0]?.code;
+        const rows: readonly WiringException[] = readWiringExceptions([], [], "2026-10-26").exceptions.map(row => row.row);
+        const reason: WiringReasonCode = WIRING_REASON_CODES[0], scope: "components" | "above" = wiringScope("frames/a.tsx", []);
+        const engines: readonly string[] = WIRING_HEADLESS_MODULES;
+        void code; void rows; void reason; void scope; void engines;
+      `;
+      const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+      const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+      expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n")), entry).toEqual([]);
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const result = api.checkWiring({ sources: [{ path: "frames/a.tsx", content: "import { Button } from \\"react-aria-components\\";", layer: "frames" }], themes: [], exceptions: api.foundryWiringExceptions(), now: "2026-10-26" });
+        const rows = api.foundryWiringExceptions(), count = (Array.isArray(rows) ? rows : rows.exceptions).length;
+        const unavailable = result.findings.filter(row => row.code === "WL9" && /file unavailable/.test(row.evidence)).length;
+        process.stdout.write(JSON.stringify({ types: ["checkWiring","readWiringExceptions","wiringScope","foundryWiringExceptions"].map(name => typeof api[name]), codes: result.findings.map(row => row.code), count, unavailable, reasons: api.WIRING_REASON_CODES }));`;
+      // The committed Foundry exception list is empty (no layout read above Components is excepted), so the
+      // probe reports exactly the one WL3 headless import and no WL9 row.
+      const out = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
+      expect(out.count, entry).toBe(0);
+      expect(out, entry).toEqual({ types: Array(4).fill("function"), codes: ["WL3", ...Array(out.count).fill("WL9")], count: out.count, unavailable: out.count, reasons: ["layout-geometry", "surface-ground", "document-head", "motion-orchestration"] });
+    }
+  }, 30_000);
 });

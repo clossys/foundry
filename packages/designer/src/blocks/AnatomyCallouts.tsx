@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
-import { Item } from "./items/Item.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
+import { StockItem } from "./items/StockItem.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SpecimenPanel, assertSpecimenMarkerTargets, type SpecimenPanelContent } from "./specimen/SpecimenPanel.js";
 
@@ -78,7 +78,7 @@ export function AnatomyCallouts({ id, label, panel, markers, legendSide = "end",
     <ol id={keyId} aria-labelledby={keyNameId} className="m-0 min-w-0 list-none p-0 flex flex-col">
       {markers.map((marker, index) => <li key={marker.id} className={cx("grid anatomy-key-row min-w-0 wrap-anywhere gap-x-md gap-y-xs py-lg", index > 0 ? cx("border-t", colors.border) : "pt-0")} style={index > 0 ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined}>
         <span data-anatomy-key-number="" aria-hidden="true" className={cx(DISC_CLASSES, KEY_DISC_CLASSES[ground])}>{index + 1}</span>
-        <Item id={marker.id} heading={marker.heading} description={marker.description} treatment="plain" size="standard" ground={ground} headingLevel={headingLevel} />
+        <StockItem id={marker.id} heading={marker.heading} description={marker.description} ground={ground} headingLevel={headingLevel} />
       </li>)}
     </ol>
     </div>

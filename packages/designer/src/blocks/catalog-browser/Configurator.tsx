@@ -1,10 +1,10 @@
-import { Button } from "../../atoms/Button.js";
-import { Select } from "../../atoms/Select.js";
-import { Switch } from "../../atoms/Switch.js";
-import { TextField } from "../../atoms/TextField.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
+import { StockSelect } from "../stock-select.js";
+import { StockSwitch } from "../stock-switch.js";
+import { TextField } from "../../components/preview-runtime/components/text-field/text-field.js";
 import type { CatalogBrowserConfig, CatalogBrowserControl } from "./types.js";
 
-/** One labelled atom per control; every change reports the whole resolved configuration. */
+/** One labelled component per control; every change reports the whole resolved configuration. */
 export function Configurator({ controls, config, onChange, noControls, resetLabel }: {
   controls: readonly CatalogBrowserControl[]; config: CatalogBrowserConfig;
   onChange: (config: CatalogBrowserConfig) => void; noControls: string; resetLabel: string;
@@ -15,19 +15,19 @@ export function Configurator({ controls, config, onChange, noControls, resetLabe
     {controls.map(control => {
       const value = config[control.id];
       if (control.type === "choice") {
-        return <Select key={control.id} label={control.label} options={control.options}
-          value={typeof value === "string" ? value : control.defaultValue}
-          onChange={key => { if (key !== null) set(control.id, String(key)); }} />;
+        return <StockSelect key={control.id} label={control.label} options={control.options}
+          selectedKey={typeof value === "string" ? value : control.defaultValue}
+          onSelectionChange={key => { if (key !== null) set(control.id, String(key)); }} />;
       }
       if (control.type === "toggle") {
-        return <Switch key={control.id} isSelected={typeof value === "boolean" ? value : control.defaultValue}
-          onChange={selected => set(control.id, selected)}>{control.label}</Switch>;
+        return <StockSwitch key={control.id} isSelected={typeof value === "boolean" ? value : control.defaultValue}
+          onChange={selected => set(control.id, selected)}>{control.label}</StockSwitch>;
       }
       return <TextField key={control.id} label={control.label}
         value={typeof value === "string" ? value : control.defaultValue} onChange={text => set(control.id, text)} />;
     })}
     <div>
-      <Button variant="quiet" size="sm" trailingIcon={null}
+      <Button variant="link" size="sm"
         onPress={() => onChange(Object.fromEntries(controls.map(control => [control.id, control.defaultValue])))}>{resetLabel}</Button>
     </div>
   </div>;

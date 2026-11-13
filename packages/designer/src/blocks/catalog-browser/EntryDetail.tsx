@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../../atoms/Badge.js";
-import { Button } from "../../atoms/Button.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
+import { BADGE_TONE, type BadgeTone } from "../../components/surface-tones.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { DetailView } from "../DetailView.js";
 import { EmptyState } from "../EmptyState.js";
 import { SectionHeader } from "../SectionHeader.js";
@@ -9,7 +10,7 @@ import type {
   CatalogBrowserLabels, CatalogBrowserLifecycle, CatalogBrowserReference,
 } from "./types.js";
 
-const LIFECYCLE_TONE: Readonly<Record<CatalogBrowserLifecycle, BadgeVariant>> = {
+const LIFECYCLE_TONE: Readonly<Record<CatalogBrowserLifecycle, BadgeTone>> = {
   draft: "info", stable: "success", deprecated: "warning", parked: "neutral",
 };
 const HEADING = "text-body font-body text-ink-primary";
@@ -33,7 +34,7 @@ function References({ title, references, catalogs, onSelect }: {
         const target = catalogs.find(catalog => catalog.kind === reference.catalog)?.entries.find(entry => entry.id === reference.entryId);
         const name = reference.label ?? target?.label ?? reference.entryId;
         return <li key={`${reference.catalog}\u0000${reference.entryId}`}>
-          {target ? <Button variant="quiet" size="sm" trailingIcon={null} onPress={() => onSelect(reference)}>{name}</Button> :
+          {target ? <Button variant="link" size="sm" onPress={() => onSelect(reference)}>{name}</Button> :
             <span className="text-body-s text-ink-secondary">{name}</span>}
         </li>;
       })}
@@ -63,9 +64,9 @@ export function EntryDetail<E extends CatalogBrowserEntry>({ entry, catalog, cat
     <SectionHeader level={4} eyebrow={`${binding.label} / ${l1.label} / ${l2.label}`} title={entry.label}
       description={<code>{entry.id}</code>}
       actions={<>
-        <Badge variant={LIFECYCLE_TONE[entry.lifecycle]}>{labels.lifecycle[entry.lifecycle]}</Badge>
-        {notBuilt !== undefined ? <Badge variant="warning">{labels.notBuilt}</Badge> : null}
-        {(binding.badges?.(entry) ?? []).map((badge, index) => <Badge key={index} variant={badge.tone}>{badge.label}</Badge>)}
+        <Badge {...BADGE_TONE[LIFECYCLE_TONE[entry.lifecycle]]}>{labels.lifecycle[entry.lifecycle]}</Badge>
+        {notBuilt !== undefined ? <Badge {...BADGE_TONE.warning}>{labels.notBuilt}</Badge> : null}
+        {(binding.badges?.(entry) ?? []).map((badge, index) => <Badge key={index} {...BADGE_TONE[badge.tone ?? "neutral"]}>{badge.label}</Badge>)}
       </>} />
     <Section title={labels.livePreview}>
       {notBuilt !== undefined ? <EmptyState role="status" title={labels.notBuilt} description={notBuilt} /> :
@@ -75,7 +76,7 @@ export function EntryDetail<E extends CatalogBrowserEntry>({ entry, catalog, cat
     </Section>
     <Section title={labels.metadata}><DetailView fields={fields} /></Section>
     {states.length ? <Section title={labels.states}>
-      <ul className="flex flex-wrap gap-sm">{states.map(state => <li key={state}><Badge>{state}</Badge></li>)}</ul>
+      <ul className="flex flex-wrap gap-sm">{states.map(state => <li key={state}><Badge {...BADGE_TONE.neutral}>{state}</Badge></li>)}</ul>
     </Section> : null}
     {usage !== undefined && usage !== null ? <Section title={labels.usage}><div className="text-body text-ink-secondary">{usage}</div></Section> : null}
     <References title={labels.builtFrom} references={binding.builtFrom?.(entry) ?? []} catalogs={catalogs} onSelect={onSelect} />

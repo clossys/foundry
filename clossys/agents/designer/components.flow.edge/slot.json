@@ -1,0 +1,43 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.flow.edge",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.flow",
+    "l2": "flow-edges",
+    "order": 259
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "type.smoothstep"
+      ]
+    },
+    "props": [
+      "type"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.border",
+        "themes.muted-foreground"
+      ],
+      "assets": []
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": []
+}

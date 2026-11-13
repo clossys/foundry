@@ -1,0 +1,150 @@
+import type { SpecimenUnavailableReason } from "./preview-outcome.js";
+import { specimenDataset as d } from "./specimen-dataset.js";
+
+/**
+ * Where each Studio specimen's sample content comes from in the shared synthetic dataset (specimen-dataset.ts).
+ * Addresses only: every value here is a dataset node or a value read from one, never an inline array or
+ * literal (component-specimen-dataset.test.ts walks them). component-specimen-samples.tsx renders each bound
+ * implementation export with it. Foundry entries are keyed by the descriptor's `pin.export`.
+ */
+
+/** Sample keys whose dataset entry is a recipe the host's leaf sampler draws (componentSpecimenLeafSamples), never plain props. */
+export const componentSpecimenHostSampled: ReadonlySet<string> = new Set([
+  ...["SpecimenSwatch", "SpecimenLadder", "SpecimenPlayer", "SpecimenGrid", "SpecimenMatrix", "SpecimenViewport", "SpecimenPassage", "SpecimenCopyInContext"].map(name => `./components#${name}`),
+  "./components#MediaPlayer",
+]);
+
+/** Props objects for components whose whole input is data. */
+export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
+  "./components#Avatar": d.avatar,
+  // Recipes, not props: component-specimen-leaf-samples.tsx resolves each against the cell's selection (planner:R2F-48).
+  "./components#SpecimenSwatch": d.specimenLeaves.swatch,
+  "./components#SpecimenLadder": d.specimenLeaves.ladder,
+  "./components#SpecimenPlayer": d.specimenLeaves.player,
+  "./components#SpecimenGrid": d.specimenLeaves.grid,
+  "./components#SpecimenMatrix": d.specimenLeaves.matrix,
+  "./components#SpecimenViewport": d.specimenLeaves.viewport,
+  "./components#SpecimenPassage": d.specimenLeaves.passage,
+  "./components#SpecimenCopyInContext": d.specimenLeaves.copy,
+  "./components#MediaPlayer": d.mediaPlayer,
+  "./components#Alert": d.banner,
+  "./components#DateField": d.dates.field,
+  "./components#Icon": d.icon,
+  "./components#Logomark": d.logo,
+  "./components#Meter": d.meter,
+  "./components#NativeAction": d.nativeAction,
+  "./components#NumberField": d.numberField,
+  "./components#ProgressBar": d.progress,
+  "./components#ResizeHandle": d.resize,
+  "./components#RichText": d.richText,
+  "./components#SearchField": d.searchField,
+  "./components#SemanticContent": d.semantic,
+  "./components#Separator": d.separator,
+  "./components#Skeleton": d.skeleton,
+  "./components#Spinner": d.spinner,
+  "./components#StatusMark": d.statusMark,
+  "./components#TextField": d.textField,
+  "./charts#AreaChart": d.charts.area,
+  "./charts#BarChart": d.charts.bar,
+  "./charts#LineChart": d.charts.line,
+};
+
+/** Text content for components that draw their children. */
+export const componentSpecimenText: Readonly<Record<string, string>> = {
+  "./components#Badge": d.text.badge,
+  "./components#Alert": d.text.banner,
+  "./components#Button": d.text.action,
+  "./components#Checkbox": d.text.checkbox,
+  "./components#LinkButton": d.text.link,
+  "./components#NativeAction": d.text.draft,
+  "./components#SemanticContent": d.text.paragraph,
+  "./components#StatusMark": d.text.statusMark,
+  "./components#ToggleButton": d.text.toggle,
+};
+
+/** Labelled items for collection components, drawn with the component's own item parts. */
+export const componentSpecimenCollections = {
+  "./components#GridList": d.list,
+  "./components#Toolbar": d.toolbar,
+  "./components#Tree": d.tree,
+  "./components#NavigationTree": d.navigation,
+  "./components#Tabs": d.tabs,
+  "./components#TagGroup": d.tags,
+  "./components#ToggleGroup": d.toggles,
+  "./components#Accordion": d.disclosure,
+} as const;
+
+/** A sortable table: mixed-type rows under sortable columns, the first a row header. */
+export const componentSpecimenTable = d.table;
+
+/** Native media attributes for the SemanticContent void-tag samples. */
+export const componentSpecimenSemanticMedia = d.semanticMedia;
+
+/** A card's heading and body. */
+export const componentSpecimenCard = d.card;
+
+/** A link's destination and the pressable children of FileTrigger and Form. */
+export const componentSpecimenActions = { href: d.text.linkHref, upload: d.text.upload, submit: d.text.submit, field: d.textField } as const;
+
+/** A starting color and a few swatches to pick from. */
+export const componentSpecimenColor = d.color;
+
+/**
+ * Exports a preview cannot draw from sample data, and why. The brand lockup draws the host's own mark asset
+ * and wordmark.
+ */
+export const componentSpecimenUnavailable: Readonly<Record<string, SpecimenUnavailableReason>> = {
+  "./shell#Brandmark": "needs-brand-asset",
+};
+
+/** The Toaster's sample: its region label, the cell's show action and the one toast that action queues. */
+export const componentSpecimenToast = {
+  label: d.toaster.label,
+  trigger: d.toaster.trigger,
+  toast: { ...d.toasts[d.toaster.variant], variant: d.toaster.variant },
+} as const;
+
+/**
+ * Sample content for vendored shadcn@aria source components, keyed by the descriptor's `impl.entry#export`.
+ * Drawn with the component's own sibling parts from that module, never a stand-in.
+ */
+export const componentSpecimenSourceSamples = {
+  "components/command/command.tsx#Command": d.sections.command,
+  "components/dropdown-menu/dropdown-menu.tsx#DropdownMenu": d.menu,
+  "components/empty/empty.tsx#Empty": d.sections.emptyState,
+  "components/item/item.tsx#Item": d.card,
+  "components/scroll-area/scroll-area.tsx#ScrollArea": { label: d.list.label, text: d.text.paragraph },
+  "components/sheet/sheet.tsx#Sheet": d.dialog,
+  "components/sidebar/sidebar.tsx#Sidebar": d.navigation,
+  "components/breadcrumbs/breadcrumb.tsx#Breadcrumb": d.breadcrumbs,
+  "components/tabs/tabs.tsx#Tabs": d.tabs,
+  "components/radio-group/radio-group.tsx#RadioGroup": d.radio,
+  "components/disclosure/accordion.tsx#Accordion": d.disclosure,
+  "components/avatar/avatar.tsx#Avatar": d.people[0],
+  "components/card/card.tsx#Card": d.card,
+  "components/progress-bar/progress.tsx#Progress": d.progress,
+  "components/slider/slider.tsx#Slider": d.slider,
+  "components/popover/popover.tsx#Popover": { trigger: d.popover.trigger, title: d.popover.label, content: d.popover.content },
+  "components/menu/dropdown-menu.tsx#DropdownMenu": d.menu,
+  "components/tooltip/tooltip.tsx#Tooltip": d.tooltip,
+  "components/date-picker/date-picker.tsx#DatePicker": d.dates.picker,
+  "components/text-field/text-field.tsx#TextField": d.textField,
+  "components/field/field.tsx#Field": d.field,
+  "components/dialog/dialog.tsx#Dialog": { trigger: d.dialog.trigger, title: d.dialog.title, content: d.dialog.body },
+  "components/keyboard/kbd.tsx#Kbd": { text: d.text.keyboard },
+  "components/badge/badge.tsx#Badge": { text: d.text.badge },
+  "components/button/button.tsx#Button": { text: d.text.action },
+  "components/switch/switch.tsx#Switch": { text: d.text.switch },
+  "components/checkbox/checkbox.tsx#Checkbox": { text: d.text.checkbox },
+  "components/toggle-button/toggle.tsx#Toggle": { text: d.text.toggle },
+  "components/banner/alert.tsx#Alert": { text: d.text.banner },
+  "components/calendar/calendar.tsx#Calendar": d.dates.calendar,
+  "components/combo-box/combobox.tsx#Combobox": d.combobox,
+  "components/select/select.tsx#Select": d.select,
+  "components/skeleton/skeleton.tsx#Skeleton": { "aria-label": d.skeleton["aria-label"] },
+  "components/toggle-group/toggle-group.tsx#ToggleGroup": d.toggles,
+  "components/separator/separator.tsx#Separator": d.separator,
+  "components/chart-area/chart-area.tsx#ChartArea": { rows: d.charts.rows, categories: d.charts.area.x, series: d.charts.area.series },
+  "components/chart-bar/chart-bar.tsx#ChartBar": { rows: d.charts.rows, categories: d.charts.bar.categories, series: d.charts.bar.series },
+  "components/chart-line/chart-line.tsx#ChartLine": { rows: d.charts.rows, categories: d.charts.line.x, series: d.charts.line.series },
+} as const;

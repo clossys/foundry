@@ -1,0 +1,15 @@
+# Body substrate contract
+
+`CompositionBody<Section>` is finite, serializable composition data. It is independent of routing and Publisher. A flow body holds ordered Sections. A canvas body holds stable board ids, each containing a Section, and an explicit arrangement. `source` is static or a versioned derivation query. Neither shape contains a page callback or a raw content node.
+
+A Frame declares `stage: { accepts, scroll }`; a workspace stage accepts flow and canvas and scrolls as a region. This declaration is a contract, not proof of an implemented or qualified stage. Missing metadata is unspecified. There is one stage per Frame; body/view changes do not create another camera or scroll owner.
+
+A Section declares `substrates` and names its source render tests in `substrateTests`. It needs a render test for every substrate it declares. `bodySubstrateFindings` checks compatibility and named test coverage. Test source existence, current passing run receipts and selected-library runtime qualification still need independent checking; a string naming a test is not a passing result. Existing Sections gain no implicit support from this API.
+
+`arrangeCanvas(boards, measuredSizes, arrangement)` is pure. One stage-owned observer supplies content sizes keyed by stable board ids. Grid uses the maximum content size per column and row. Lanes require a groupKey; first occurrence orders groups, preserving input order within each group. gap.x separates boards and gap.y plus laneGap separates lanes. All gaps and column counts are explicit caller inputs; no pixel defaults are supplied here. Results carry positions, exact content bounds and readingOrder. Map, fit and Zoom consume these same bounds. Computed arrangements cannot carry stored positions.
+
+Graph requires edges and direction. Its future reading order must be topological with stable tie-breaking and textual edge alternatives. Freeform requires stable-id positions and an explicit orphan rule; missing positions are never invented. These two shapes are contract-only: arrangeCanvas returns unavailable and no geometry. Neither an engine nor a Connector/Edge Component is offered by this change.
+
+The stage renders canvas as list > listitem > labelled region. Arrow keys traverse boards in readingOrder; Tab enters the board's controls. Focus reveal respects dock/sheet occlusion and reduced motion. Pan, map and future freeform moves need keyboard and single-pointer alternatives. Below the body-selected consumer breakpoint, compare the measured **stage** width and render the same boards in readingOrder as flow; preserve current board and edit state, and hide Map/Zoom. The caller resolves the existing width token; this API adds no threshold.
+
+Stage-level scroll, pan/zoom and absolute placement belong to FrameStage. Wide table, code and Dialog scrolling inside a Section remain valid component behavior. Owning a body substrate does not authorize an arbitrary region callback, an old-page wrapper or a third substrate. FrameStage rendering and route emission are downstream implementation work, not supplied by these pure types and strategies.

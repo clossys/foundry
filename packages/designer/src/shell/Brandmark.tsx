@@ -1,5 +1,5 @@
-import { cx } from "../atoms/internal/cx.js";
-import { Logomark, type LogomarkProps } from "../atoms/Logomark.js";
+import { cx } from "../components/internal/cx.js";
+import { Logomark, type LogomarkProps } from "../components/Logomark.js";
 import { Lockup, internalLockupWithRootClass } from "../blocks/Lockup.js";
 import {
   BADGE_INSET_SHARE,
@@ -15,8 +15,8 @@ import {
   UI_BRANDMARK_WORDMARK_SIZE_SM,
 } from "../internal/brandmark.js";
 
-/** The two renderings: the mark alone, or the mark beside a live-text wordmark. */
-export const BRANDMARK_VARIANTS = ["mark", "lockup"] as const;
+/** Image mark, image lockup, or an explicit live-text identity. */
+export const BRANDMARK_VARIANTS = ["mark", "lockup", "text"] as const;
 export type BrandmarkVariant = (typeof BRANDMARK_VARIANTS)[number];
 
 /** The closed size set; each step maps to a height token and a gap token. */
@@ -119,11 +119,11 @@ interface BrandmarkBaseProps {
 }
 
 /**
- * `lockup` requires a `wordmark`; `mark` takes none. `href` and
- * `aria-label` are deliberately not props at all: the link goes to the
- * optional `origin`'s root (otherwise `"/"`) and is always named by `label`.
+ * Image `lockup` requires a `wordmark`; `mark` takes none. Image links go
+ * to the optional `origin`'s root (otherwise `"/"`), always named by `label`.
+ * Text identity instead requires an explicit `href` and displays `label`.
  */
-export type BrandmarkProps = BrandmarkBaseProps &
+type ImageBrandmarkProps = BrandmarkBaseProps &
   (
     | { variant: "mark"; wordmark?: never }
     | {
@@ -137,6 +137,34 @@ export type BrandmarkProps = BrandmarkBaseProps &
         wordmark: string;
       }
   );
+
+/** A text identity has no artwork or separate wordmark copy. */
+export type BrandmarkProps = ImageBrandmarkProps | {
+  variant: "text";
+  label: string;
+  href: string;
+  size: BrandmarkSize;
+  tone?: "auto" | "inverse";
+  className?: string;
+  origin?: never;
+  markSrc?: never;
+  wordmark?: never;
+  plate?: never;
+  markInk?: never;
+  presentation?: never;
+  geometry?: never;
+};
+
+function textHref(value: unknown): string {
+  if (typeof value === "string" && value.trim() === value && value !== "" && !/[\u0000-\u001F\u007F\\]/.test(value)) {
+    if (/^(?:\/(?!\/)|[?#])/.test(value)) return value;
+    try {
+      const url = new URL(value);
+      if (["https:", "http:", "mailto:", "tel:"].includes(url.protocol)) return url.href;
+    } catch { /* Refuse below without echoing the supplied destination. */ }
+  }
+  throw new Error("Brandmark: `href` must be a safe link destination.");
+}
 
 /**
  * The site's identity link: a mark image, optionally beside a live-text
@@ -178,16 +206,20 @@ export function Brandmark(props: BrandmarkProps) {
       'Brandmark: for variant="lockup", `label` must contain the visible `wordmark` text (WCAG 2.5.3, label in name).',
     );
   }
-  const href = homeHref(origin);
+  const href = variant === "text" ? textHref(props.href) : homeHref(origin);
 
   const linkClasses = cx(
     inverse
-      ? "inline-flex items-center no-underline text-ink-on-inverse"
+      ? "inline-flex items-center no-underline text-background"
       : "inline-flex items-center no-underline text-ink-primary",
     "focus-visible:outline-2 focus-visible:outline-offset-2",
-    inverse ? "focus-visible:outline-ink-on-inverse" : "focus-visible:outline-accent",
+    inverse ? "focus-visible:outline-background" : "focus-visible:outline-primary",
     className,
   );
+
+  if (variant === "text") {
+    return <a href={href} aria-label={label} className={cx(linkClasses, "font-display leading-none")} style={{ fontSize: vars.wordmark }}>{label}</a>;
+  }
 
   if (props.presentation !== undefined && props.geometry !== undefined) {
     const desktop = showWordmark
@@ -223,7 +255,7 @@ export function Brandmark(props: BrandmarkProps) {
     <span
       aria-hidden
       data-brand-mark={outermost ? "" : undefined}
-      className="inline-block shrink-0 bg-accent"
+      className="inline-block shrink-0 bg-primary"
       style={{
         height: side,
         width: side,

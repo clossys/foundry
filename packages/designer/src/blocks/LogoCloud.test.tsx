@@ -1,3 +1,4 @@
+import { SectionFrame as S4Frame } from "./SectionFrame.js";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -5,8 +6,19 @@ import { join } from "node:path";
 import type { CSSProperties } from "react";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { LogoCloud, type LogoCloudItem } from "./LogoCloud.js";
+import { selectChromium } from "../__fixtures__/chromium-discovery.js";
+
+// The visual-contract suite binds the compiled component namespace directly.
+// Consumer selection and overrides are exercised by LogoCloud.a270.test.tsx.
+// The factory imports the three leaf modules it returns, never the components
+// barrel: the barrel re-exports modules that import this mocked module, so
+// awaiting it here waits on itself and the file never loads.
+vi.mock("../runtime/component-leaf.js", async () => {
+  const [link, content, item] = await Promise.all([import("../components/preview-runtime/components/button/button.js"), import("../components/SemanticContent.js"), import("../components/item/item.js")]);
+  return { componentLeaf: (leaf: string, part?: string) => part ? item[part as keyof typeof item] : leaf === "components.link" ? link.LinkButton : content.SemanticContent };
+});
 
 type BrowserStep =
   | { viewport: number }
@@ -103,8 +115,7 @@ async function driveChromium() {
 const INPUT_CAPABILITIES = "primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4";
 
 function runInChromium(html: string, steps: readonly BrowserStep[]): Record<string, any> {
-  const browser = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]
-    .find(name => spawnSync(name, ["--version"], { stdio: "ignore" }).status === 0);
+  const browser = selectChromium(process.env.FOUNDRY_TEST_CHROME, (executable, args) => spawnSync(executable, args, { stdio: "ignore" }));
   if (!browser) throw new Error("Measured block tests require Chromium or Google Chrome on PATH.");
   const directory = mkdtempSync(join(tmpdir(), "block-measure-"));
   try {
@@ -143,7 +154,7 @@ describe("LogoCloud", () => {
       const logo = entry.querySelector("svg")?.parentElement;
       expect(logo).toHaveAttribute("aria-hidden", "true");
       expect(logo).toHaveClass("inline-flex", "h-8", "w-full", "max-w-40", "overflow-hidden", "tablet:h-10");
-      expect(entry).toHaveClass("flex", "min-h-[3rem]", "items-center", "justify-center");
+      expect(entry).toHaveClass("flex", "items-center", "justify-center");
     }
     expect(container.querySelector("ul")).toHaveClass("grid", "gap-x-xl", "gap-y-lg");
   });
@@ -157,7 +168,7 @@ describe("LogoCloud", () => {
       expect(link).not.toHaveAttribute("title");
       expect(within(link).getByText(item.name)).toHaveClass("sr-only");
       expect(link.style.minBlockSize).toBe("var(--ui-layout-tap-target, 44px)");
-      expect(link).toHaveClass("focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent");
+      expect(link).toHaveClass("focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-primary");
     }
   });
 
@@ -171,7 +182,7 @@ describe("LogoCloud", () => {
 
   it("defaults to grayscale and leaves original marks unchanged [mutant: omit grayscale]", () => {
     const mono = render(<LogoCloud items={items(3)} />);
-    for (const mark of mono.container.querySelectorAll('span[aria-hidden="true"]')) expect(mark).toHaveClass("grayscale");
+    for (const mark of mono.container.querySelectorAll('[data-slot="item-media"][aria-hidden="true"]')) expect(mark).toHaveClass("grayscale");
     expect(mono.container.innerHTML).not.toMatch(/opacity-|brightness-/);
     mono.unmount();
     const original = render(<LogoCloud items={items(3)} tone="original" />);
@@ -247,7 +258,7 @@ describe("LogoCloud measured in Chromium", () => {
       { eval: "all()", as: "rest" },
       { moveTo: "centre('#mono a', 1)" }, { eval: "all()", as: "hover" },
       { moveTo: "[2, 2]" }, { eval: "all()", as: "away" },
-      { moveTo: "centre('#plain span[aria-hidden]', 1)" }, { eval: "all()", as: "plainHover" },
+      { moveTo: "centre('#plain [aria-hidden]', 1)" }, { eval: "all()", as: "plainHover" },
       { moveTo: "[2, 2]" },
       { key: "Tab" }, { eval: "focused()", as: "tab1" },
       { key: "Tab" }, { eval: "focused()", as: "tab2" },
@@ -306,4 +317,22 @@ describe("LogoCloud measured in Chromium", () => {
     expect(second.mono.map(mark => mark.gray)).toEqual([1, 0, 1, 1]);
     expect(second.outline).not.toMatch(/^none/);
   });
+});
+
+it("S4-6 retains the bare root, direct children and host identity under one external band", () => {
+  let clicks = 0;
+  const view = render(<LogoCloud items={items(3)} id="bare" dir="rtl" data-host="bare" className="gap-xl" style={{ marginTop: 7 }} onClick={() => clicks++} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("UL");
+  expect(root).toHaveAttribute("id", "bare");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "bare");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root).toHaveClass("gap-xl");
+  expect(Array.from(root.children).every(child => child.tagName === "LI")).toBe(true);
+  expect(root.querySelector("section,header,h1,h2")).toBeNull();
+  root.click(); expect(clicks).toBe(1);
+  view.rerender(<S4Frame><LogoCloud items={items(3)} id="bare" /></S4Frame>);
+  expect(view.container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
+  expect(view.container.querySelector("#bare")?.tagName).toBe("UL");
 });

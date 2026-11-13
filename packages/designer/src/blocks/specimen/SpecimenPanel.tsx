@@ -1,10 +1,11 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../../atoms/Badge.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
+import { BADGE_TONE, CARD_SURFACE, type BadgeTone } from "../../components/surface-tones.js";
 import { hasContent } from "../items/policies.js";
-import { Card } from "../../atoms/Card.js";
-import { StatusMark } from "../../atoms/StatusMark.js";
-import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_ELEVATION_PANEL } from "../../atoms/internal/ui-vars.js";
+import { Card } from "../../components/preview-runtime/components/card/card.js";
+import { StatusMark } from "../../components/StatusMark.js";
+import { cx } from "../../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE, UI_ELEVATION_PANEL } from "../../components/internal/ui-vars.js";
 import { AnatomyMarker, SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./parts.js";
 
 /**
@@ -20,7 +21,7 @@ const TITLE_CLASSES = "m-0 text-body-l font-medium text-ink-primary text-balance
 const META_CLASSES = "m-0 text-body-s text-ink-secondary tabular-nums";
 /** The assignee's initials: a decorative disc (`aria-hidden`); the name beside it is the text. */
 const INITIALS_CLASSES =
-  "inline-flex size-2xl shrink-0 items-center justify-center rounded-pill bg-accent-tint text-body-s font-medium text-accent-text";
+  "inline-flex size-2xl shrink-0 items-center justify-center rounded-pill bg-accent text-body-s font-medium text-accent-text";
 
 const HAIRLINE_BLOCK_START: CSSProperties = { borderBlockStartWidth: UI_BORDER_HAIRLINE };
 /** Lifted off its ground: the outline hairline plus the floating elevation, so the panel reads as product UI on a stage, not a box drawn on the page. */
@@ -53,7 +54,7 @@ export interface SpecimenPanelContent {
   /** The record's state, beside the title. */
   status?: SpecimenStatus;
   /** A separate record label using the existing Badge tones. */
-  badge?: { label: ReactNode; tone?: BadgeVariant };
+  badge?: { label: ReactNode; tone?: BadgeTone };
   /** 1 to 3 parts, separated by hairlines. */
   parts: readonly SpecimenPart[];
   footer?: SpecimenFooter;
@@ -128,14 +129,14 @@ export function SpecimenPanel({ title, meta, status, badge, parts, footer, marke
   const headerMarker = markerAt("header");
   const footerMarker = markerAt("footer");
   const hasHeader = present(title) || present(meta) || status !== undefined || badge !== undefined;
-  const badgeElement = badge !== undefined ? <Badge variant={badge.tone}>{badge.label}</Badge> : null;
+  const badgeElement = badge !== undefined ? <Badge {...BADGE_TONE[badge.tone ?? "neutral"]}>{badge.label}</Badge> : null;
   // Status tint/text pairs are qualified over base, as in Item.
   const statusBadge = badge?.tone !== undefined && badge.tone !== "neutral";
   const assignee = footer?.assignee;
   const hasFooter = assignee !== undefined || present(footer?.note);
 
   return (
-    <Card {...rest} variant="outline" ground="base" data-specimen-panel="" className={cx(PANEL_CLASSES, className)} style={{ ...LIFTED, ...style }}>
+    <Card {...rest} data-specimen-panel="" className={cx(CARD_SURFACE.outline, PANEL_CLASSES, className)} style={{ ...LIFTED, ...style }}>
       <div data-specimen-panel-body="" className={PANEL_BODY_CLASSES}>
         {hasHeader ? (
           <div data-specimen-panel-header="" className={HEADER_CLASSES}>

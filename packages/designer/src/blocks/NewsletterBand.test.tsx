@@ -117,7 +117,8 @@ describe("NewsletterBand 3: failed", () => {
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input.getAttribute("aria-describedby")?.split(/\s+/)).toEqual(expect.arrayContaining([failed.id, hint.id]));
     expect(input).toHaveFocus();
-    expect(input).toHaveClass("border-status-danger");
+    // R2F-33d1: the input is the stock shadcn@aria input; its invalid border keys off aria-invalid.
+    expect(input).toHaveClass("aria-invalid:border-(--color-status-danger)");
     expect(failed.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     expect(failed).toHaveClass("text-status-danger-text");
     expect(failed.compareDocumentPosition(screen.getByText("E6")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

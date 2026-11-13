@@ -51,7 +51,7 @@ describe("FlowCanvas server rendering", () => {
     expect((blocks as any).FlowCanvas).toBe(FlowCanvas);
     const material = blocks.APP_FRAME_MATERIALS.find(entry => entry.id === "flow-canvas" as any);
     expect(material?.component).toBe(FlowCanvas);
-    for (const layer of ["atoms", "blocks", "shell"]) {
+    for (const layer of ["components", "blocks", "shell"]) {
       expect(readFileSync(resolve(import.meta.dirname, `../${layer}/server.ts`), "utf8")).not.toMatch(/FlowCanvas|flow-canvas/);
     }
   });

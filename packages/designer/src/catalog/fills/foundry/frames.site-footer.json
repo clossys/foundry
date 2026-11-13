@@ -1,0 +1,152 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.site-footer",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./shell/server#SiteFooter",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.site-footer",
+      "source": "foundry",
+      "sourceAddress": "./shell/server#SiteFooter",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "overlay.off",
+        "overlay.on",
+        "slot.legal",
+        "slot.links",
+        "slot.social"
+      ]
+    }
+  },
+  "frames": {
+    "site-footer": {
+      "composes": [
+        "components.button",
+        "components.icon",
+        "components.logo",
+        "components.semantic-content"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.icon",
+            "components.logo",
+            "components.semantic-content"
+          ],
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.ring",
+            "themes.sidebar"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/ground-paint.ts",
+            "sha256": "fa0ccf04c141467fffaf0ef138ca32ba86bf908f02b92161ad34237c3f62b0f7"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          },
+          {
+            "path": "packages/designer/src/shell/internal/shell-ground.ts",
+            "sha256": "cd78412977639b42fcf4bc1046b7a3e3c36a10398006bb0b529677667ab3a6b3"
+          },
+          {
+            "path": "packages/designer/src/shell/SiteFooter.tsx",
+            "sha256": "4d59cf6a0f83416b9dccbacab9c151dd11aba943f2f2d733d22ddd7a7b2e6e0d"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "SiteFooter",
+        "kind": "package",
+        "module": "@clossys/designer/shell/server"
+      },
+      "members": [
+        "ground.base",
+        "ground.inverse",
+        "rule.off",
+        "rule.on"
+      ],
+      "propMap": {
+        "ground.base": "ground=base",
+        "ground.inverse": "ground=inverse",
+        "rule.off": "rule=none",
+        "rule.on": "rule=top"
+      },
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.ring",
+          "themes.sidebar"
+        ]
+      },
+      "slot": "frames.site-footer",
+      "slots": {
+        "columns": "columns"
+      },
+      "statePorts": {}
+    }
+  }
+}

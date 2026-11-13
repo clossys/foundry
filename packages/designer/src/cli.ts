@@ -45,6 +45,7 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { cliErrorDetail, cliRemedy, type CliDiagnosticCategory } from "./cli-remedies.js";
 import { TOKENS, type TokenDefinition } from "./tokens/index.js";
 import { scanStyleSources, type StyleScanResult } from "./style-scan.js";
 import { checkTokenPurity, type TokenGateResult } from "./token-gate.js";
@@ -68,7 +69,9 @@ Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, n
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
-export class CliInputError extends Error {}
+export class CliInputError extends Error {
+  constructor(message: string, readonly diagnostic: CliDiagnosticCategory = "invalid-input") { super(message); }
+}
 
 interface ParsedArgs {
   scanDir?: string;
@@ -130,7 +133,7 @@ function loadTokensFile(path: string): Readonly<Record<string, TokenDefinition>>
   try {
     stat = statSync(resolved);
   } catch (error) {
-    throw new CliInputError(`cannot read --tokens file "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read --tokens file "${path}": ${cliErrorDetail(error)}`);
   }
   if (!stat.isFile()) throw new CliInputError(`--tokens file "${path}" is not a file`);
 
@@ -138,14 +141,14 @@ function loadTokensFile(path: string): Readonly<Record<string, TokenDefinition>>
   try {
     raw = readFileSync(resolved, "utf8");
   } catch (error) {
-    throw new CliInputError(`cannot read --tokens file "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read --tokens file "${path}": ${cliErrorDetail(error)}`);
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch (error) {
-    throw new CliInputError(`--tokens file "${path}" is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError("token registry is not valid JSON", "invalid-json");
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
@@ -173,7 +176,7 @@ function requireDirectory(label: string, path: string): void {
   try {
     stat = statSync(path);
   } catch (error) {
-    throw new CliInputError(`cannot read ${label} "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read ${label} "${path}": ${cliErrorDetail(error)}`);
   }
   if (!stat.isDirectory()) throw new CliInputError(`${label} "${path}" is not a directory`);
 }
@@ -293,19 +296,18 @@ export function main(argv: string[]): number {
   return result.findings.length > 0 ? 1 : 0;
 }
 
-function run(): void {
+/** Executable error boundary, also callable without changing the process exit code. */
+export function runCli(argv: string[]): number {
+  let code: number;
   try {
-    process.exitCode = main(process.argv.slice(2));
+    code = main(argv);
   } catch (error) {
-    if (error instanceof CliInputError) {
-      console.error(`designer-token-check: ${error.message}`);
-      console.error(`\n${USAGE}`);
-      process.exitCode = 2;
-    } else {
-      console.error(`designer-token-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
-      process.exitCode = 2;
-    }
+    console.error(`designer-token-check: ${cliErrorDetail(error, error instanceof CliInputError ? error.diagnostic : undefined)}`);
+    if (error instanceof CliInputError) console.error(`\n${USAGE}`);
+    code = 2;
   }
+  if (code !== 0) console.error(cliRemedy("designer-token-check"));
+  return code;
 }
 
 /**
@@ -327,5 +329,5 @@ function detectMainModule(): boolean {
 }
 
 if (detectMainModule()) {
-  run();
+  process.exitCode = runCli(process.argv.slice(2));
 }

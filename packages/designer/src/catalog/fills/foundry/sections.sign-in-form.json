@@ -1,0 +1,151 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.sign-in-form",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Form",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.sign-in-form",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Form",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "sign-in.password",
+        "sign-in.provider",
+        "sign-in.verify"
+      ]
+    }
+  },
+  "sections": {
+    "sign-in-form": {
+      "composes": [
+        "components.banner",
+        "components.field",
+        "components.form",
+        "components.link",
+        "components.semantic-content"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.banner",
+          "components.field",
+          "components.form",
+          "components.link",
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.banner",
+            "components.field",
+            "components.form",
+            "components.link",
+            "components.semantic-content"
+          ],
+          "themes": [
+            "themes.primary"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Form.tsx",
+            "sha256": "af4156aa3094cae665cc055dc0de8e4e2efec1d68aa08a79e224498f1d54e76c"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/action-row.ts",
+            "sha256": "a6a5d775bce9eabccdae57892d623363f081b31aa44bb64855b6f1844f4b3ea3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "Form",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Private sections.sign-in-form renderer composes public Form, ContentSection, TextField and Button. There is no public sign-in Block export.",
+        "Mapping identifies Form adaptation regions, not type-equivalent SignInForm props. Header.heading is rendered by the surrounding ContentSection heading and aria-labelledby on Form; providers, credential fields and verification fields are composed children.",
+        "Provider labels and every input/action/error string are host-authored passage content. Sensitive controlled values never enter runtime JSON content. Existing ConsumerRuntimePorts.sectionHosts carries phase, values, pending, onValueChange and onSubmit, plus onProvider/onBack/onResend for visible actions.",
+        "Credentials and code are bounded host-selected UI phases only. Provider actions delegate ids; form submission delegates the current phase. No authentication, auth-provider import, redirect, session check, completed state, account creation, invitation, or reset behavior is claimed.",
+        "Without a Section host the sample renders disabled controls. Pending blocks repeated submission and value changes. The host performs validation and authenticates; errors remain host-supplied copy.",
+        "Descriptor only; package fill coverage does not prove consumer runtime conformance.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Form",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.primary"
+        ]
+      },
+      "slot": "sections.sign-in-form",
+      "slotMap": {
+        "actions": "./blocks#Form.actions",
+        "credentials": "./blocks#Form.children",
+        "error": "./blocks#Form.submitError",
+        "header": "./blocks#Form.heading",
+        "providers": "./blocks#Form.children",
+        "verification": "./blocks#Form.children"
+      },
+      "source": "foundry"
+    }
+  }
+}

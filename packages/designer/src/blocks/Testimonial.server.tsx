@@ -1,8 +1,20 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import type { ReactNode } from "react";
-import { Avatar } from "../atoms/Avatar.server.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Avatar, AvatarFallback } from "../components/preview-runtime/components/avatar/avatar.js";
+import { avatarInitials } from "../components/avatar-initials.js";
+import { cx } from "../components/internal/cx.js";
 import type { TestimonialBaseProps, TestimonialProps } from "./Testimonial.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+
+/**
+ * The stock Avatar with a server-safe image child (the stock AvatarImage holds client
+ * load state), so both variants render identical markup; initials when there is no image.
+ */
+export function testimonialAvatar(alt: string, src: string | undefined): ReactNode {
+  return src
+    ? <Avatar><img src={src} alt={alt} className="h-full w-full rounded-full object-cover" /></Avatar>
+    : <Avatar role="img" aria-label={alt}><AvatarFallback aria-hidden="true">{avatarInitials(alt)}</AvatarFallback></Avatar>;
+}
 
 /** One markup recipe for both variants; each supplies its own Avatar. */
 export function renderTestimonial(
@@ -23,12 +35,12 @@ export function renderTestimonial(
       <blockquote className={cx("text-blockquote font-display", colors.primary)}>{quote}</blockquote>
       <figcaption className="flex items-center gap-sm">
         {avatar}
-        <div className="flex flex-col">
-          <span className={cx("text-body font-body font-medium", colors.primary)}>{attributorName}</span>
+        <SemanticContent as="div" className="flex flex-col">
+          <SemanticContent as="span" className={cx("text-body font-body font-medium", colors.primary)}>{attributorName}</SemanticContent>
           {attributorRole ? (
-            <span className={cx("text-body-s", colors.secondary)}>{attributorRole}</span>
+            <SemanticContent as="span" className={cx("text-body-s", colors.secondary)}>{attributorRole}</SemanticContent>
           ) : null}
-        </div>
+        </SemanticContent>
       </figcaption>
     </figure>
   );
@@ -38,6 +50,6 @@ export function renderTestimonial(
 export function Testimonial({ avatarSrc, avatarAlt, ...props }: TestimonialProps) {
   return renderTestimonial(
     props,
-    avatarAlt ? <Avatar alt={avatarAlt} src={avatarSrc} /> : null,
+    avatarAlt ? testimonialAvatar(avatarAlt, avatarSrc) : null,
   );
 }

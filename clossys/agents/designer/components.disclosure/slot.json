@@ -1,0 +1,59 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.disclosure",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.containment",
+    "l2": "containment-structure",
+    "order": 155
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Disclosure",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "scope.group"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.radius",
+        "themes.spacing",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": [
+        "assets.icon-chevron-down",
+        "assets.icon-chevron-up"
+      ]
+    },
+    "apg": "disclosure"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-chevron-down",
+    "assets.icon-chevron-up",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": []
+}

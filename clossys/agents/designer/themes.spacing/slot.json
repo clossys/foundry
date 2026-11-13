@@ -1,0 +1,45 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.spacing",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.space",
+    "l2": "space-rhythm",
+    "order": 40
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "dimension",
+    "emit": {
+      "default": "--spacing"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "tier": "scale"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [],
+  "notNeeded": {
+    "reason": "planner:DS-COMPLETE: Tailwind v4 default value supplies it unpinned; candidate v1 has no trusted registry:theme lineage, so it cannot be pinned. Earlier migrated evidence: no approved-registry source; W6 composition check (strict, spacing-v1.json unmodified) fails REF-COMP-PART: a token value, not code, so there are no parts to compose. Tailwind v4 default value: shadcn/neutral@4.23.0 and no vendored registry item defines it (references/manifest.json skipped: 'tailwind default'); candidate v1 fails REF-NO-SOURCE.",
+    "since": "2026-11-05",
+    "decidedBy": "planner:DS-COMPLETE"
+  }
+}

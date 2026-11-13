@@ -1,13 +1,13 @@
 /**
  * This file is NOT a public entry point — `package.json` deliberately
- * declares no `"."` export. Import from `@clossys/designer/atoms` or
+ * declares no `"."` export. Import from `@clossys/designer/components` or
  * `@clossys/designer/blocks` instead; see the README for why the ladder
- * (atoms → blocks, with shell, charts, and theme as sibling layers) is kept explicit at the import site rather than
+ * (components → blocks, with shell, charts, and theme as sibling layers) is kept explicit at the import site rather than
  * flattened through a root barrel. This barrel exists only so the same
  * names are reachable from one place for internal tooling (see
  * `scripts/check-readme-parity.mjs` in the repository root, which reads
  * `src/index.ts` as every package's canonical export list); it re-exports
- * exactly what `./atoms/index.js`, `./icons/index.js`, `./blocks/index.js`,
+ * exactly what `./components/index.js`, `./icons/index.js`, `./blocks/index.js`,
  * `./shell/index.js`, `./charts/index.js`, and `./theme/index.js` each
  * export, nothing more.
  */
@@ -21,120 +21,146 @@ export {
   Badge,
   Card,
   Breadcrumb,
-  Link,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbEllipsis,
+  LinkButton,
   Checkbox,
   Switch,
   Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
   Textarea,
   Avatar,
+  AvatarImage,
+  AvatarFallback,
   Spinner,
   Menu,
+  InlineMenu,
   Dialog,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
   Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
   Table,
+  TableHeader,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableFooter,
+  TableCaption,
   GridList,
   Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+  FieldTitle,
   Skeleton,
   Tooltip,
-  Banner,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  AlertAction,
+  BADGE_TONE,
+  ALERT_TONE,
+  CARD_SURFACE,
+  SKELETON_SHAPE,
+  TooltipTrigger,
   RadioGroup,
+  RadioGroupItem,
   Popover,
+  PopoverTrigger,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverDescription,
   DateField,
   ComboBox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
   SearchField,
   FileTrigger,
-  Disclosure,
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
   ProgressBar,
   Separator,
-  Chip,
   StatusMark,
   Meter,
-  mergeUiClasses,
-  buttonLinkClassName,
-  iconButtonClassName,
-  iconButtonLinkClassName,
-  IconButton,
-} from "./atoms/index.js";
+  cn,
+  buttonVariants,
+} from "./components/index.js";
 export type {
-  ControlGround,
-  IconButtonClassOptions,
-  IconButtonLinkGround,
-  IconButtonProps,
-  IconButtonShape,
-  IconButtonSize,
   ButtonProps,
   ButtonSize,
   ButtonVariant,
   IconProps,
   IconSize,
-  IconAccessibilityProps,
   IconNode,
   TextFieldProps,
   BadgeProps,
-  BadgeVariant,
+  BadgeTone,
+  BadgeToneProps,
+  AlertTone,
+  AlertToneProps,
+  CardSurface,
+  SkeletonShape,
   CardProps,
-  CardVariant,
-  CardGround,
   BreadcrumbProps,
   BreadcrumbItemProps,
-  LinkProps,
-  LinkVariant,
   CheckboxProps,
   SwitchProps,
   SelectProps,
-  SelectOption,
   TextareaProps,
   AvatarProps,
-  AvatarSize,
   SpinnerProps,
-  SpinnerSize,
   MenuProps,
-  MenuItemProps,
-  MenuSeparatorProps,
   DialogProps,
-  DialogSize,
-  DialogHeadingProps,
   TabsProps,
-  TabsListProps,
-  TabsTabProps,
-  TabsPanelProps,
   GridListProps,
   GridListItemProps,
   GridListSelectionCheckboxProps,
   TableProps,
-  TableHeaderProps,
-  TableColumnProps,
-  TableBodyProps,
-  TableRowProps,
-  TableCellProps,
-  TableSelectAllCheckboxProps,
-  TableSelectionCheckboxProps,
   FieldProps,
-  FieldRenderProps,
   SkeletonProps,
-  SkeletonShape,
   TooltipProps,
-  BannerProps,
-  BannerVariant,
+  AlertProps,
   RadioGroupProps,
-  RadioGroupRadioProps,
+  RadioGroupItemProps,
   PopoverProps,
   DateFieldProps,
   ComboBoxProps,
-  ComboBoxOption,
   SearchFieldProps,
   FileTriggerProps,
-  DisclosureProps,
+  AccordionProps,
   ProgressBarProps,
   SeparatorProps,
-  ChipProps,
   StatusMarkProps,
   StatusMarkTone,
   MeterProps,
   MeterTone,
   MeterDirection,
   MeterEmphasis,
-} from "./atoms/index.js";
+} from "./components/index.js";
 
 export {
   PageHeader,
@@ -148,7 +174,6 @@ export {
   UsageMeter,
   Form,
   useFormValidation,
-  FieldGroup,
   ConfirmDialog,
   CommandMenu,
   useCommandMenuShortcut,
@@ -172,6 +197,10 @@ export {
   OrderedStepSequence,
   StatusList,
   EventItem,
+  ActivityFeed,
+  AuditLog,
+  Timeline,
+  UsageSummary,
   TaskList,
   Faq,
   PricingTable,
@@ -184,6 +213,12 @@ export {
   SectionFrame,
   ConsentBanner,
   NewsletterBand,
+  ErrorState,
+  StatGroup,
+  RecordCards,
+  CallToAction,
+  NoticeList,
+  Gallery,
   SECTION_GROUND_CLASSES,
 } from "./blocks/index.js";
 export type {
@@ -224,8 +259,6 @@ export type {
   FormFieldProps,
   FormNativeInputProps,
   FormSubmitButtonProps,
-  FieldGroupProps,
-  FieldGroupLayout,
   ConfirmDialogProps,
   CommandMenuProps,
   CommandMenuItem,
@@ -307,6 +340,16 @@ export type {
   EventRecord,
   EventLabels,
   EventItemProps,
+  ActivityFeedProps,
+  ActivityFeedGroup,
+  AuditLogProps,
+  AuditLogEntry,
+  AuditLogLabels,
+  TimelineProps,
+  TimelineEvent,
+  TimelineHeadingLevel,
+  UsageSummaryProps,
+  UsageSummaryMeter,
   TaskStatus,
   TaskListItem,
   TaskListProps,
@@ -341,6 +384,19 @@ export type {
   ArticleBodyProps,
   SectionFrameProps,
   ConsentBannerProps,
+  ErrorStateProps,
+  ErrorStateKind,
+  StatGroupProps,
+  StatGroupItem,
+  StatGroupLayout,
+  RecordCardsProps,
+  RecordCardsRecord,
+  RecordCardsLayout,
+  CallToActionProps,
+  NoticeListProps,
+  NoticeListItem,
+  GalleryProps,
+  GalleryImage,
   NewsletterBandProps,
   NewsletterStatus,
   SectionMeasure,
@@ -377,7 +433,7 @@ export type {
 export type { BrandmarkPlate } from "./shell/index.js";
 export { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./shell/index.js";
 
-export { ChartFrame, BarChart, LineChart, WaterfallChart, Sparkline } from "./charts/index.js";
+export { ChartFrame, BarChart, LineChart } from "./charts/index.js";
 export type {
   ChartFrameProps,
   ChartMargin,
@@ -389,8 +445,6 @@ export type {
   BarChartSeries,
   LineChartProps,
   LineChartSeries,
-  WaterfallChartProps,
-  SparklineProps,
 } from "./charts/index.js";
 
 export { DEFAULT_STORAGE_KEY, THEME_PREFERENCES, ThemeProvider, ThemeToggle, useTheme, getThemeInitScript } from "./theme/index.js";
@@ -446,20 +500,19 @@ export {
   XCircle,
 } from "./icons/index.js";
 
-export { RangeChart } from "./charts/RangeChart.js";
-export type { RangeChartProps } from "./charts/RangeChart.js";
+export { AreaChart } from "./charts/index.js";
+export type { AreaChartProps, AreaChartSeries } from "./charts/index.js";
 
-export { ScatterChart } from "./charts/ScatterChart.js";
-export type { ScatterChartProps } from "./charts/ScatterChart.js";
-
-export { AreaChart, Heatmap, StatusStrip } from "./charts/index.js";
-export type { AreaChartProps, AreaChartSeries, HeatmapProps, StatusStripProps, StatusStripSegment } from "./charts/index.js";
-
-export { Item } from "./blocks/items/Item.js";
+export { StockItem } from "./blocks/items/StockItem.js";
+export type { StockItemProps } from "./blocks/items/StockItem.js";
+export { StockSelect } from "./blocks/stock-select.js";
+export type { StockSelectProps, StockSelectOption } from "./blocks/stock-select.js";
+export { StockCombobox } from "./blocks/stock-combobox.js";
+export type { StockComboboxProps, StockComboboxOption } from "./blocks/stock-combobox.js";
 export { AppNavigation } from "./blocks/AppNavigation.js";
 export type { AppNavigationProps } from "./blocks/AppNavigation.js";
 export { PageBar } from "./blocks/PageBar.js";
-export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./blocks/PageBar.js";
+export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarHeader, PageBarHeaderNav, PageBarHeaderActions } from "./blocks/PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./blocks/app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./blocks/app-navigation-tree.js";
 export { FlowCanvas } from "./blocks/FlowCanvas.js";
@@ -469,10 +522,10 @@ export type { FlowCanvasNode, FlowCanvasEdge, FlowCanvasOrientation, FlowCanvasL
 export { Items } from "./blocks/items/Items.js";
 export { RelationGraph } from "./blocks/RelationGraph.js";
 export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./blocks/relation-graph-types.js";
-export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
+export type { ItemData, ItemFigureData, ItemStatusData, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
 
-export { Logomark } from "./atoms/index.js";
-export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./atoms/index.js";
+export { Logomark } from "./components/index.js";
+export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./components/index.js";
 export { Lockup } from "./blocks/index.js";
 export type { LockupProps } from "./blocks/index.js";
 export { GroupedTable } from "./blocks/GroupedTable.js";
@@ -500,3 +553,20 @@ export { AccessMatrix } from "./blocks/AccessMatrix.js";
 export type { AccessCellValue, AccessRole, AccessPermission, AccessGroup, AccessMatrixValue, AccessMatrixChange, AccessMatrixLabels, AccessMatrixProps } from "./blocks/AccessMatrix.js";
 export { ColumnMapper } from "./blocks/ColumnMapper.js";
 export type { ColumnMapperTarget, ColumnMapperSource, ColumnMapping, ColumnMapperIssue, ColumnMapperLabels, ColumnMapperProps } from "./blocks/ColumnMapper.js";
+export { FilterBuilder } from "./blocks/FilterBuilder.js";
+export type { FilterBuilderField, FilterBuilderOperator, FilterBuilderCondition, FilterBuilderMatch, FilterBuilderGroup, FilterBuilderLabels, FilterBuilderProps } from "./blocks/FilterBuilder.js";
+export { SettingsSection } from "./blocks/SettingsSection.js";
+export type { SettingsSectionGroup, SettingsSectionLabels, SettingsSectionProps } from "./blocks/SettingsSection.js";
+export { FormWizard } from "./blocks/FormWizard.js";
+export type { FormWizardStep, FormWizardLabels, FormWizardProps } from "./blocks/FormWizard.js";
+
+export { AppFrame, APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./frames/index.js";
+export { InspectorFrame } from "./frames/index.js";
+export type { InspectorFrameProps, InspectorFramePresentation } from "./frames/index.js";
+export type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel, AppFrameLayout, AppFrameStage, AppFrameNotice, AppFrameDock } from "./frames/index.js";
+
+export { SemanticContent } from "./components/SemanticContent.js";
+export type { SemanticContentTag, SemanticContentProps } from "./components/SemanticContent.js";
+
+export { NativeAction } from "./components/NativeAction.js";
+export type { NativeActionProps } from "./components/NativeAction.js";

@@ -1,0 +1,77 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.producer.team-strip",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.producer",
+    "l2": "producer-pipeline",
+    "order": 265
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.producer.team-strip",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The system's team in one compact stock Card: one small stock outline LinkButton per seat holder in one wrapping line, with a small stock Avatar initial, its name and stock Badges for its seat kinds (You, AI, Code), AI tier and step count; its one line on what it does is the link's stock Tooltip. Each links to its lane on the workflow map (?seat=<id>); the highlighted holder shows the stock secondary LinkButton.",
+    "inputs": [
+      {
+        "name": "team",
+        "kind": "data",
+        "required": true,
+        "description": "The resolved team label and one card per roster entry (plus Unassigned while a step has no holder): id, name, initial, seat-kind labels, tier label, one-line description, step-count label, lane link, link label and whether its lane is highlighted."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "avatar",
+        "version": "4.23.0",
+        "hash": "sha256:32dcb71ec3c8218efde9067e5332f63cb3bc6d5ad4abc6a490db26e04ecd2f4a",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/avatar.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "badge",
+        "version": "4.23.0",
+        "hash": "sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/badge.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "button",
+        "version": "4.23.0",
+        "hash": "sha256:9e41c76cf882fc46d3518f621c87ac7e58ec381ea546fda891de2cabe95fc350",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/button.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "components.avatar",
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.tooltip"
+  ]
+}

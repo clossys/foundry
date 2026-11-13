@@ -1,0 +1,41 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "assets.pattern",
+  "agent": "designer",
+  "ia": {
+    "l0": "assets",
+    "l1": "assets.imagery",
+    "l2": "imagery-patterns",
+    "order": 93
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "asset",
+    "valueKind": "rules",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "dots",
+        "lines",
+        "grid",
+        "grain",
+        "noise",
+        "topo"
+      ]
+    },
+    "modes": [
+      "light"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": []
+}

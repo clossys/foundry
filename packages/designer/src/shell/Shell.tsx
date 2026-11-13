@@ -1,16 +1,9 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { MAIN_CONTENT_ID } from "./internal/main-content-id.js";
 import { SkipLink } from "./SkipLink.js";
 import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
-import {
-  UI_BORDER_HAIRLINE,
-  UI_LAYOUT_ASIDE_W,
-  UI_WIDTH_CONTENT_MAX,
-  UI_WIDTH_PAGE_PADDING_X,
-  UI_Z_ASIDE,
-  UI_Z_SHELL,
-} from "./internal/shell-vars.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
 
 export interface ShellProps extends HTMLAttributes<HTMLDivElement> {
   /**
@@ -29,7 +22,7 @@ export interface ShellProps extends HTMLAttributes<HTMLDivElement> {
  * The persistent application frame: a fixed set of named slots (`Header`,
  * `SideNav`, `Main`, `Rail`, `Footer`) that content fills, rather than the
  * other way around. See this package's README for the full rationale; in
- * short — content (`views`, and the blocks/atoms inside them) remounts per
+ * short — content (`views`, and the blocks/components inside them) remounts per
  * route and is many-per-app; `Shell` persists across navigation and is
  * exactly one-per-app. In a Next.js App Router application that maps
  * directly onto `layout.tsx` (this) vs. `page.tsx` (a view) — mounting
@@ -41,7 +34,7 @@ export interface ShellProps extends HTMLAttributes<HTMLDivElement> {
  * rendered landmark element (`<header>`, `<nav>`, `<main>`, `<aside>`,
  * `<footer>`) — `ShellRoot` below does not inspect, reorder, or wrap its
  * children to build them. Each slot places itself into a named area of
- * `ShellRoot`'s CSS Grid (`style={{ gridArea: "..." }}`), so:
+ * `ShellRoot`'s CSS Grid (the `shell-area-*` classes), so:
  *
  *   - slots can appear in any order in JSX and still render in the correct
  *     visual position (grid-area placement is order-independent, unlike a
@@ -63,10 +56,7 @@ function ShellRoot({ children, className, skipLinkLabel = "Skip to content", ...
   return (
     <div
       {...rest}
-      className={cx("grid min-h-dvh grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_minmax(0,1fr)_auto]", className)}
-      style={{
-        gridTemplateAreas: '"header header header" "sidenav main rail" "footer footer footer"',
-      }}
+      className={cx("shell-grid", className)}
     >
       <SkipLink targetId={MAIN_CONTENT_ID}>{skipLinkLabel}</SkipLink>
       {children}
@@ -83,27 +73,20 @@ export interface ShellHeaderProps extends HTMLAttributes<HTMLElement> {
 /**
  * The top chrome bar — a `<header>` landmark. Renders none of its own
  * content: a consumer composes their own brand mark, top-level nav, and
- * account menu from atoms and passes them in as children. Shipping a
+ * account menu from components and passes them in as children. Shipping a
  * pre-built `SiteHeader`/`AppHeader` here would recreate the `mode`-prop
  * problem this package's README warns against, one layer up — see
  * "Placement rules" there.
  */
-function ShellHeader({ children, className, style, ground = "base", ...rest }: ShellHeaderProps) {
+function ShellHeader({ children, className, ground = "base", ...rest }: ShellHeaderProps) {
   const colors = SHELL_GROUND_CLASSES[ground];
 
   return (
     <header
       {...rest}
-      className={cx(colors.surface, "py-sm border-b", colors.border, className)}
-      style={{
-        gridArea: "header",
-        position: "relative",
-        zIndex: UI_Z_SHELL,
-        borderBottomWidth: UI_BORDER_HAIRLINE,
-        ...style,
-      }}
+      className={cx(colors.surface, "shell-area-header relative layer-shell py-shell-chrome hairline-b", colors.border, className)}
     >
-      <div style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}>{children}</div>
+      <div className="page-inset-x">{children}</div>
     </header>
   );
 }
@@ -131,7 +114,6 @@ export interface ShellSideNavProps extends HTMLAttributes<HTMLElement> {
 function ShellSideNav({
   children,
   className,
-  style,
   "aria-label": ariaLabel = "Primary",
   ...rest
 }: ShellSideNavProps) {
@@ -140,22 +122,11 @@ function ShellSideNav({
       {...rest}
       aria-label={ariaLabel}
       className={cx(
-        "min-h-0 overflow-y-auto overflow-x-hidden py-lg border-e border-line-base",
-        // Literal arbitrary-value classes, not `shell-vars.ts` constants:
-        // Tailwind's build-time scanner needs this exact text in the
-        // source file to generate the `tablet:` media query; a JS
-        // identifier standing in for it would be invisible to that scan.
-        // See the note on this in `shell/internal/shell-vars.ts`.
-        "w-[var(--ui-layout-sidebar-rail-w,64px)] tablet:w-[var(--ui-layout-sidebar-w,256px)]",
+        "shell-area-sidenav relative layer-shell min-h-0 overflow-y-auto overflow-x-hidden py-shell-region hairline-e", GROUND_PAINT.page.border,
+        // The rail width below the tablet breakpoint, the full width from it up (theme-keys.css).
+        "shell-sidenav-width",
         className,
       )}
-      style={{
-        gridArea: "sidenav",
-        position: "relative",
-        zIndex: UI_Z_SHELL,
-        borderInlineEndWidth: UI_BORDER_HAIRLINE,
-        ...style,
-      }}
     >
       {children}
     </nav>
@@ -178,19 +149,15 @@ export interface ShellMainProps extends Omit<HTMLAttributes<HTMLElement>, "id"> 
  * it directly; a consumer may still override `tabIndex` for their own
  * reason (a route that manages its own initial focus, say).
  */
-function ShellMain({ children, className, style, tabIndex, ...rest }: ShellMainProps) {
+function ShellMain({ children, className, tabIndex, ...rest }: ShellMainProps) {
   return (
     <main
       {...rest}
       id={MAIN_CONTENT_ID}
       tabIndex={tabIndex ?? -1}
-      className={cx("min-h-0 min-w-0 overflow-y-auto", className)}
-      style={{ gridArea: "main", ...style }}
+      className={cx("shell-area-main min-h-0 min-w-0 overflow-y-auto", className)}
     >
-      <div
-        className="w-full mx-auto"
-        style={{ maxWidth: UI_WIDTH_CONTENT_MAX, paddingInline: UI_WIDTH_PAGE_PADDING_X }}
-      >
+      <div className="w-full mx-auto measure-content page-inset-x">
         {children}
       </div>
     </main>
@@ -203,28 +170,22 @@ export interface ShellRailProps extends HTMLAttributes<HTMLElement> {
 
 /**
  * The optional context panel — an `<aside>` landmark, styled with
- * `--color-surface-aside` (the token named specifically for this region).
+ * `--sidebar` (the token named specifically for this region).
  * Hidden below the `desktop` breakpoint entirely, CSS-only: a secondary
  * context panel is the first thing to go on a narrower viewport, and unlike
  * `Shell.SideNav` there's no primary-navigation reason it has to stay
  * present in some reduced form.
  */
-function ShellRail({ children, className, style, ...rest }: ShellRailProps) {
+function ShellRail({ children, className, ...rest }: ShellRailProps) {
   return (
     <aside
       {...rest}
       className={cx(
-        "hidden min-h-0 overflow-y-auto bg-surface-aside py-lg desktop:block border-s border-line-base",
+        "shell-area-rail shell-rail-width relative layer-aside hidden min-h-0 overflow-y-auto py-shell-region desktop:block hairline-s",
+        GROUND_PAINT.sidebar.surface,
+        GROUND_PAINT.page.border,
         className,
       )}
-      style={{
-        gridArea: "rail",
-        width: UI_LAYOUT_ASIDE_W,
-        position: "relative",
-        zIndex: UI_Z_ASIDE,
-        borderInlineStartWidth: UI_BORDER_HAIRLINE,
-        ...style,
-      }}
     >
       {children}
     </aside>
@@ -238,22 +199,15 @@ export interface ShellFooterProps extends HTMLAttributes<HTMLElement> {
 }
 
 /** The bottom chrome bar — a `<footer>` landmark. Optional, and empty of any built-in content, for the same reason `Shell.Header` is (see there). */
-function ShellFooter({ children, className, style, ground = "base", ...rest }: ShellFooterProps) {
+function ShellFooter({ children, className, ground = "base", ...rest }: ShellFooterProps) {
   const colors = SHELL_GROUND_CLASSES[ground];
 
   return (
     <footer
       {...rest}
-      className={cx(colors.surface, "py-sm border-t", colors.border, className)}
-      style={{
-        gridArea: "footer",
-        position: "relative",
-        zIndex: UI_Z_SHELL,
-        borderTopWidth: UI_BORDER_HAIRLINE,
-        ...style,
-      }}
+      className={cx(colors.surface, "shell-area-footer relative layer-shell py-shell-chrome hairline-t", colors.border, className)}
     >
-      <div style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}>{children}</div>
+      <div className="page-inset-x">{children}</div>
     </footer>
   );
 }

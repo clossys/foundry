@@ -1,0 +1,41 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.sidebar-ring",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.colors",
+    "l2": "colors-sidebar",
+    "order": 33
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "color",
+    "emit": {
+      "default": "--sidebar-ring"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "tier": "role"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": []
+}

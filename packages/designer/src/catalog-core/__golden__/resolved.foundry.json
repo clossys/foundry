@@ -1,0 +1,1755 @@
+{
+  "baseline": {
+    "--accent": {
+      "dark": "oklch(0.269 0 0)",
+      "light": "oklch(0.97 0 0)"
+    },
+    "--accent-foreground": {
+      "dark": "oklch(0.985 0 0)",
+      "light": "oklch(0.205 0 0)"
+    },
+    "--animate-marquee": {
+      "light": "marquee var(--duration) infinite linear"
+    },
+    "--animate-marquee-vertical": {
+      "light": "marquee-vertical var(--duration) linear infinite"
+    },
+    "--animate-shiny-text": {
+      "light": "shiny-text 8s infinite"
+    },
+    "--background": {
+      "dark": "oklch(0.145 0 0)",
+      "light": "oklch(1 0 0)"
+    },
+    "--border": {
+      "dark": "oklch(1 0 0 / 10%)",
+      "light": "oklch(0.922 0 0)"
+    },
+    "--card": {
+      "dark": "oklch(0.205 0 0)",
+      "light": "oklch(1 0 0)"
+    },
+    "--card-foreground": {
+      "dark": "oklch(0.985 0 0)",
+      "light": "oklch(0.145 0 0)"
+    },
+    "--chart-1": {
+      "dark": "oklch(0.87 0 0)",
+      "light": "oklch(0.87 0 0)"
+    },
+    "--chart-2": {
+      "dark": "oklch(0.556 0 0)",
+      "light": "oklch(0.556 0 0)"
+    },
+    "--chart-3": {
+      "dark": "oklch(0.439 0 0)",
+      "light": "oklch(0.439 0 0)"
+    },
+    "--chart-4": {
+      "dark": "oklch(0.371 0 0)",
+      "light": "oklch(0.371 0 0)"
+    },
+    "--chart-5": {
+      "dark": "oklch(0.269 0 0)",
+      "light": "oklch(0.269 0 0)"
+    },
+    "--destructive": {
+      "dark": "oklch(0.704 0.191 22.216)",
+      "light": "oklch(0.577 0.245 27.325)"
+    },
+    "--duration": {
+      "light": "40s"
+    },
+    "--font-heading": {
+      "light": "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji')"
+    },
+    "--font-mono": {
+      "light": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+    },
+    "--font-sans": {
+      "light": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
+    },
+    "--font-serif": {
+      "light": "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif"
+    },
+    "--foreground": {
+      "dark": "oklch(0.985 0 0)",
+      "light": "oklch(0.145 0 0)"
+    },
+    "--input": {
+      "dark": "oklch(1 0 0 / 15%)",
+      "light": "oklch(0.922 0 0)"
+    },
+    "--muted": {
+      "dark": "oklch(0.269 0 0)",
+      "light": "oklch(0.97 0 0)"
+    },
+    "--muted-foreground": {
+      "dark": "oklch(0.708 0 0)",
+      "light": "oklch(0.556 0 0)"
+    },
+    "--popover": {
+      "dark": "oklch(0.205 0 0)",
+      "light": "oklch(1 0 0)"
+    },
+    "--popover-foreground": {
+      "dark": "oklch(0.985 0 0)",
+      "light": "oklch(0.145 0 0)"
+    },
+    "--primary": {
+      "dark": "oklch(0.922 0 0)",
+      "light": "oklch(0.205 0 0)"
+    },
+    "--primary-foreground": {
+      "dark": "oklch(0.205 0 0)",
+      "light": "oklch(0.985 0 0)"
+    },
+    "--radius": {
+      "light": "0.625rem"
+    },
+    "--ring": {
+      "dark": "oklch(0.556 0 0)",
+      "light": "oklch(0.708 0 0)"
+    },
+    "--secondary": {
+      "dark": "oklch(0.269 0 0)",
+      "light": "oklch(0.97 0 0)"
+    },
+    "--secondary-foreground": {
+      "dark": "oklch(0.985 0 0)",
+      "light": "oklch(0.205 0 0)"
+    },
+    "--shadow-2xl": {
+      "light": "0 25px 50px -12px rgb(0 0 0 / 0.25)"
+    },
+    "--shadow-2xs": {
+      "light": "0 1px rgb(0 0 0 / 0.05)"
+    },
+    "--shadow-lg": {
+      "light": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
+    },
+    "--shadow-md": {
+      "light": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"
+    },
+    "--shadow-sm": {
+      "light": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)"
+    },
+    "--shadow-xl": {
+      "light": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+    },
+    "--shadow-xs": {
+      "light": "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+    },
+    "--sidebar": {
+      "dark": "oklch(0.205 0 0)",
+      "light": "oklch(0.985 0 0)"
+    },
+    "--sidebar-accent": {
+      "dark": "oklch(0.269 0 0)",
+      "light": "oklch(0.97 0 0)"
+    },
+    "--sidebar-accent-foreground": {
+      "dark": "oklch(0.985 0 0)",
+      "light": "oklch(0.205 0 0)"
+    },
+    "--sidebar-border": {
+      "dark": "oklch(1 0 0 / 10%)",
+      "light": "oklch(0.922 0 0)"
+    },
+    "--sidebar-foreground": {
+      "dark": "oklch(0.985 0 0)",
+      "light": "oklch(0.145 0 0)"
+    },
+    "--sidebar-primary": {
+      "dark": "oklch(0.488 0.243 264.376)",
+      "light": "oklch(0.205 0 0)"
+    },
+    "--sidebar-primary-foreground": {
+      "dark": "oklch(0.985 0 0)",
+      "light": "oklch(0.985 0 0)"
+    },
+    "--sidebar-ring": {
+      "dark": "oklch(0.556 0 0)",
+      "light": "oklch(0.708 0 0)"
+    },
+    "--spacing": {
+      "light": "0.25rem"
+    },
+    "--tracking-tight": {
+      "light": "-0.025em"
+    }
+  },
+  "consumer": "example",
+  "members": {
+    "themes.accent-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--accent-foreground",
+      "fill": "example/themes.accent-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.accent-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.accent-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "1f111a411406f99a3ab10b9410a1b07cb857191453120bcbd46636b58570b699",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.accent-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.accent.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "emit": "--accent",
+      "fill": "example/themes.accent",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.accent",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.accent.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "13cbb479b10d319410e795ddbeaca62c86cf300a6ff2471ed478521106fb6fc2",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.accent",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.animate-marquee-vertical.default": {
+      "$type": "duration",
+      "alias": {},
+      "css": {
+        "light": "marquee-vertical var(--duration) linear infinite"
+      },
+      "emit": "--animate-marquee-vertical",
+      "fill": "example/themes.animate-marquee-vertical",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "foundry/themes.animate-marquee-vertical",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.animate-marquee-vertical.default",
+        "sha256": "c38bcd6c14c96841a9971d2976b6cc1e6ba53c6198cf24ef01e529c52f4abf0d",
+        "source": "foundry"
+      },
+      "slot": "themes.animate-marquee-vertical",
+      "source": "example",
+      "value": {
+        "light": "marquee-vertical var(--duration) linear infinite"
+      },
+      "via": "adopted"
+    },
+    "themes.animate-marquee.default": {
+      "$type": "duration",
+      "alias": {},
+      "css": {
+        "light": "marquee var(--duration) infinite linear"
+      },
+      "emit": "--animate-marquee",
+      "fill": "example/themes.animate-marquee",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "foundry/themes.animate-marquee",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.animate-marquee.default",
+        "sha256": "6e3fff38b16b6939c86964fb85825d6fc47f087251b446de9bb4346ee4d30994",
+        "source": "foundry"
+      },
+      "slot": "themes.animate-marquee",
+      "source": "example",
+      "value": {
+        "light": "marquee var(--duration) infinite linear"
+      },
+      "via": "adopted"
+    },
+    "themes.animate-marquee.duration": {
+      "$type": "duration",
+      "alias": {},
+      "css": {
+        "light": "40s"
+      },
+      "emit": "--duration",
+      "fill": "example/themes.animate-marquee",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "foundry/themes.animate-marquee",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.animate-marquee.duration",
+        "sha256": "2fe190f7241b0d76b374fa74a8a29606ccae169154f8a8a7d94a13c52568ab0a",
+        "source": "foundry"
+      },
+      "slot": "themes.animate-marquee",
+      "source": "example",
+      "value": {
+        "light": "40s"
+      },
+      "via": "adopted"
+    },
+    "themes.animate-shiny-text.default": {
+      "$type": "duration",
+      "alias": {},
+      "css": {
+        "light": "shiny-text 8s infinite"
+      },
+      "emit": "--animate-shiny-text",
+      "fill": "example/themes.animate-shiny-text",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "foundry/themes.animate-shiny-text",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.animate-shiny-text.default",
+        "sha256": "74dbeb9a4df2e0bb4b27e72016860789644b713a41f9eafbf625d2143ebe4b27",
+        "source": "foundry"
+      },
+      "slot": "themes.animate-shiny-text",
+      "source": "example",
+      "value": {
+        "light": "shiny-text 8s infinite"
+      },
+      "via": "adopted"
+    },
+    "themes.background.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.145 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "emit": "--background",
+      "fill": "example/themes.background",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.background",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.background.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "b4cc53718aa44f22d6c1ce417af6d707c5f74ec6ce090ce1891728d90d01ff0c",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.background",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.145 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.border.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(1 0 0 / 10%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "emit": "--border",
+      "fill": "example/themes.border",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.border",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.border.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "9694682d81bfbba889490a00a216db5abdd426ab9af7213b1cb571c130cfb882",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.border",
+      "source": "example",
+      "value": {
+        "dark": "oklch(1 0 0 / 10%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.card-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "emit": "--card-foreground",
+      "fill": "example/themes.card-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.card-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.card-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "ffe43daffb7dfefd336aaeb03fa4672ec99eec131256e26daa8f0d7d35a82a49",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.card-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.card.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "emit": "--card",
+      "fill": "example/themes.card",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.card",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.card.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "2afbe0c1c3d23ff1bc22d6eaadaab82e6df28d7f6e001313acabe376ff91f503",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.card",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-1.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.87 0 0)",
+        "light": "oklch(0.87 0 0)"
+      },
+      "emit": "--chart-1",
+      "fill": "example/themes.chart-1",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.chart-1",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-1.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "7317a41fad1d83bb73cd13bfbbbccef43bb654ffcac9820415d00b89a48dbc0a",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-1",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.87 0 0)",
+        "light": "oklch(0.87 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-2.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.556 0 0)"
+      },
+      "emit": "--chart-2",
+      "fill": "example/themes.chart-2",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.chart-2",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-2.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "dc9d18b6ee9486cfd6b2f0907016363e74d773651d9b0e904422b8016bc077f5",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-2",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.556 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-3.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.439 0 0)",
+        "light": "oklch(0.439 0 0)"
+      },
+      "emit": "--chart-3",
+      "fill": "example/themes.chart-3",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.chart-3",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-3.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "4f86406a3d52d982df5e45db1ed29ed79c306de6c518a1095b109dcff27674c6",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-3",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.439 0 0)",
+        "light": "oklch(0.439 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-4.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.371 0 0)",
+        "light": "oklch(0.371 0 0)"
+      },
+      "emit": "--chart-4",
+      "fill": "example/themes.chart-4",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.chart-4",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-4.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "7422f8a792375d3c2a9e52a9d2080ed9183fc0b15a5146459873aa005b0c6cc2",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-4",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.371 0 0)",
+        "light": "oklch(0.371 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-5.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.269 0 0)"
+      },
+      "emit": "--chart-5",
+      "fill": "example/themes.chart-5",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.chart-5",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-5.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "6198133f91acf3eadf105b9c66c6f1666a8e758879e79d2615b7aceea9abb035",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-5",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.269 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.destructive.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.704 0.191 22.216)",
+        "light": "oklch(0.577 0.245 27.325)"
+      },
+      "emit": "--destructive",
+      "fill": "example/themes.destructive",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.destructive",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.destructive.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "352496b02736b7aa198059e1aea29473c640fba27d7b64bca587dd99ca0e1d05",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.destructive",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.704 0.191 22.216)",
+        "light": "oklch(0.577 0.245 27.325)"
+      },
+      "via": "adopted"
+    },
+    "themes.font-heading.default": {
+      "$type": "fontFamily",
+      "alias": {
+        "light": "themes.font-sans.default"
+      },
+      "css": {
+        "light": "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji')"
+      },
+      "emit": "--font-heading",
+      "fill": "example/themes.font-heading",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.font-heading",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.font-heading.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "dfbe8f6bf03e70ac7b879147e40bac6bcf08a04df0df6a4493224f412a769c2a",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.font-heading",
+      "source": "example",
+      "value": {
+        "light": [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Noto Sans",
+          "Arial",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji"
+        ]
+      },
+      "via": "adopted"
+    },
+    "themes.font-mono.default": {
+      "$type": "fontFamily",
+      "alias": {},
+      "css": {
+        "light": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+      },
+      "emit": "--font-mono",
+      "fill": "example/themes.font-mono",
+      "font": {
+        "kind": "system"
+      },
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.font-mono",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.font-mono.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "c518577ececf7f2bc35a92bf2e1a86d725d8661f240e5331cc7a0928f66f2ff3",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.font-mono",
+      "source": "example",
+      "value": {
+        "light": [
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          "Liberation Mono",
+          "Courier New",
+          "monospace"
+        ]
+      },
+      "via": "adopted"
+    },
+    "themes.font-sans.default": {
+      "$type": "fontFamily",
+      "alias": {},
+      "css": {
+        "light": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
+      },
+      "emit": "--font-sans",
+      "fill": "example/themes.font-sans",
+      "font": {
+        "kind": "system"
+      },
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.font-sans",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.font-sans.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "8de2ccb4d8990bca6ef843cade58ba74d64c3bed5a6a044a0d7e73125b7f7bcc",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.font-sans",
+      "source": "example",
+      "value": {
+        "light": [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Noto Sans",
+          "Arial",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji"
+        ]
+      },
+      "via": "adopted"
+    },
+    "themes.font-serif.default": {
+      "$type": "fontFamily",
+      "alias": {},
+      "css": {
+        "light": "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif"
+      },
+      "emit": "--font-serif",
+      "fill": "example/themes.font-serif",
+      "font": {
+        "kind": "system"
+      },
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.font-serif",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.font-serif.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "d059d056ed8577dbe53dd23789e2b802ea1e5016bbe9ff27fb9485e8df517caf",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.font-serif",
+      "source": "example",
+      "value": {
+        "light": [
+          "ui-serif",
+          "Georgia",
+          "Cambria",
+          "Times New Roman",
+          "Times",
+          "serif"
+        ]
+      },
+      "via": "adopted"
+    },
+    "themes.foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "emit": "--foreground",
+      "fill": "example/themes.foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "6964735584672ec061ab53cbc45e23faf50dbe8e64a5ce18ec756b685e8c12c2",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.input.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(1 0 0 / 15%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "emit": "--input",
+      "fill": "example/themes.input",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.input",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.input.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "0ed13dd608efeedd0f409c21864abbe05ab02cd43c6852c979de88ec465484e2",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.input",
+      "source": "example",
+      "value": {
+        "dark": "oklch(1 0 0 / 15%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.muted-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.708 0 0)",
+        "light": "oklch(0.556 0 0)"
+      },
+      "emit": "--muted-foreground",
+      "fill": "example/themes.muted-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.muted-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.muted-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "0654d740aaab664c6cd1ac292b746ee3f6d1fae4375fdbaa74c7f8aa47f5003c",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.muted-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.708 0 0)",
+        "light": "oklch(0.556 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.muted.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "emit": "--muted",
+      "fill": "example/themes.muted",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.muted",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.muted.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "b75ec25fbcd4ba028147b9f9f621fb4f1d5a6e2346ff3bb3ee2a2866523246b8",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.muted",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.popover-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "emit": "--popover-foreground",
+      "fill": "example/themes.popover-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.popover-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.popover-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "cac6348948e60c4e38a9db709a45b3261b69e32c9710969932be3f594ad27595",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.popover-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.popover.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "emit": "--popover",
+      "fill": "example/themes.popover",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.popover",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.popover.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "9707de586d22088d419733e05ee116a8577d65f2bc3a6ccd027b4f86369d7cd1",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.popover",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.primary-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "emit": "--primary-foreground",
+      "fill": "example/themes.primary-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.primary-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.primary-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "be339a490d9301737edab16d36b180714cf876374b7e3ebafe42a5ce34e8684c",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.primary-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.primary.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.922 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--primary",
+      "fill": "example/themes.primary",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.primary",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.primary.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "6fcf2eeb2c9aeaccf541e8d4d293f1a9acb73dd978f87b8b74e31dc6a4f0e6f0",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.primary",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.922 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.radius.default": {
+      "$type": "dimension",
+      "alias": {},
+      "css": {
+        "light": "0.625rem"
+      },
+      "emit": "--radius",
+      "fill": "example/themes.radius",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.radius",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.radius.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "89e01c7655f720d5bbf441d5f3c6963f73ca022933c33d3114b7cd78dfb99b4e",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.radius",
+      "source": "example",
+      "value": {
+        "light": {
+          "unit": "rem",
+          "value": 0.625
+        }
+      },
+      "via": "adopted"
+    },
+    "themes.ring.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.708 0 0)"
+      },
+      "emit": "--ring",
+      "fill": "example/themes.ring",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.ring",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.ring.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "52e2e971fcbd0081c94d4b7655f95229c563de0b385ad9bdd83594539dfc9097",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.ring",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.708 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.secondary-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--secondary-foreground",
+      "fill": "example/themes.secondary-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.secondary-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.secondary-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "d779a983ac536f2c4f92c07363db9e1b058cd727cb8e2fc482589f00a32597f6",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.secondary-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.secondary.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "emit": "--secondary",
+      "fill": "example/themes.secondary",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.secondary",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.secondary.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "7393550e940af3b2739ab84016343174830b288734e26a1a0bd597a490c71ba4",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.secondary",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.2xl": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 25px 50px -12px rgb(0 0 0 / 0.25)"
+      },
+      "emit": "--shadow-2xl",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.2xl",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "3f7bb255e18be7b6086997bd8026706b4fd74e56996bcee653a854c33caf4faa",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 25px 50px -12px rgb(0 0 0 / 0.25)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.2xs": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 1px rgb(0 0 0 / 0.05)"
+      },
+      "emit": "--shadow-2xs",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.2xs",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "0ce1f1c342e894c20989063268071c8b16d40d2e60d79ea88e77b31a37b7e9f4",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 1px rgb(0 0 0 / 0.05)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.lg": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
+      },
+      "emit": "--shadow-lg",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.lg",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "ffaf62224cb9889fe287e38fed90884345b6af9e65be3ec7456289382f9d3508",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.md": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"
+      },
+      "emit": "--shadow-md",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.md",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "542914a59cb2d8b6c0fbf2dc5ab1a388a09a2db63568fda5d262e4cae3421c85",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.sm": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)"
+      },
+      "emit": "--shadow-sm",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.sm",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "1bc0075d8a593cf567fb1555db082edae1994060275ac72a58921d9a0d0fc328",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.xl": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+      },
+      "emit": "--shadow-xl",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.xl",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "a4b991902d1a3c52562fb712f5a8a884e180a653b09d99ccec29b6bbf6069aff",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.xs": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+      },
+      "emit": "--shadow-xs",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.xs",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "a32abc76810d58fa442de5c9ab137577730eeeeeffb2404c2d1179ed3d46b4e0",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-accent-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--sidebar-accent-foreground",
+      "fill": "example/themes.sidebar-accent-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.sidebar-accent-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-accent-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "4170cbee6cef1f8e7b4b4d09565739e76a2a5f60160d6344503f478f8ad39e04",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-accent-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-accent.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "emit": "--sidebar-accent",
+      "fill": "example/themes.sidebar-accent",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.sidebar-accent",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-accent.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "0064e5e9d80b9e92ba5ed1cdeda4cd237880572bcf490c119bdb7ed4300b7ea6",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-accent",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-border.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(1 0 0 / 10%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "emit": "--sidebar-border",
+      "fill": "example/themes.sidebar-border",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.sidebar-border",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-border.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "4b77670ce1ef7676685c580dbb4636ffda8c99388c3aada1ac749021cf478c4b",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-border",
+      "source": "example",
+      "value": {
+        "dark": "oklch(1 0 0 / 10%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "emit": "--sidebar-foreground",
+      "fill": "example/themes.sidebar-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.sidebar-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "e3997577848c5eab0609b5580730265e490cd7babc3b30cd4d911e82f165d505",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-primary-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "emit": "--sidebar-primary-foreground",
+      "fill": "example/themes.sidebar-primary-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.sidebar-primary-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-primary-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "09095c53611f0cedec095e578d0450e8ea40b19703f6cba94effffb94f9bb1cb",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-primary-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-primary.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.488 0.243 264.376)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--sidebar-primary",
+      "fill": "example/themes.sidebar-primary",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.sidebar-primary",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-primary.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "7dc3a380ecd3876fea4688491aa65c148a0d4387caee9e46384bce714f5181f9",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-primary",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.488 0.243 264.376)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-ring.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.708 0 0)"
+      },
+      "emit": "--sidebar-ring",
+      "fill": "example/themes.sidebar-ring",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.sidebar-ring",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-ring.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "195f27c79430cf7170c98ad1e990be0874645a17e383ffc2ef0eee2fa21661d8",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-ring",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.708 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "emit": "--sidebar",
+      "fill": "example/themes.sidebar",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "shadcn@aria/themes.sidebar",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "a1afb25affbb944a00a99a3892b219d805b47360737d71a944b8f1ce6c8c6714",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.spacing.default": {
+      "$type": "dimension",
+      "alias": {},
+      "css": {
+        "light": "0.25rem"
+      },
+      "emit": "--spacing",
+      "fill": "example/themes.spacing",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.spacing",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.spacing.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "8aa15d2f10722a0cd127c4d6cddb3818e8d1a59a897fde77643ecd2b7e955972",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.spacing",
+      "source": "example",
+      "value": {
+        "light": {
+          "unit": "rem",
+          "value": 0.25
+        }
+      },
+      "via": "adopted"
+    },
+    "themes.tracking-tight.default": {
+      "$type": "number",
+      "alias": {},
+      "css": {
+        "light": "-0.025em"
+      },
+      "emit": "--tracking-tight",
+      "fill": "example/themes.tracking-tight",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "tailwind-default/themes.tracking-tight",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.tracking-tight.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "7e96cb4c5c951e6de9a9ceb084d58010cdc93ed870d4841c4206de48a28df288",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.tracking-tight",
+      "source": "example",
+      "value": {
+        "light": -0.025
+      },
+      "via": "adopted"
+    }
+  },
+  "notices": [],
+  "selectionHash": "fnv1a64:682598a635e315e3",
+  "version": 1
+}

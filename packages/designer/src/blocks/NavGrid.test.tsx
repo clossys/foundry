@@ -64,6 +64,13 @@ describe("NavGrid", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
+  it("lets an onSelect card's title and description wrap instead of inheriting the button label's nowrap", () => {
+    render(<NavGrid items={[{ id: "invite", title: "Invite teammates", description: "Send invitations to everyone on the workspace", onSelect: vi.fn() }]} />);
+    const card = screen.getByRole("button", { name: /Invite teammates/ });
+    expect(card).toHaveClass("whitespace-normal");
+    expect(card).not.toHaveClass("whitespace-nowrap");
+  });
+
   it("an href card: one anchor on the title alone (its name), the icon and description outside it, the hit area stretched over the tile", () => {
     const { container } = render(
       <NavGrid
@@ -83,7 +90,7 @@ describe("NavGrid", () => {
     expect(link).toHaveAttribute("data-card-link");
     expect(link).not.toHaveTextContent("Manage your plan and invoices.");
     expect(link.querySelector('[data-testid="billing-icon"]')).toBeNull();
-    expect(link).toHaveClass("after:absolute", "after:inset-0", "after:rounded-control", "focus-visible:after:outline-2", "focus-visible:after:outline-accent");
+    expect(link).toHaveClass("after:absolute", "after:inset-0", "after:rounded-control", "focus-visible:after:outline-2", "focus-visible:after:outline-primary");
     const tile = container.querySelector("[data-nav-grid-card]") as HTMLElement;
     expect(tile).toHaveClass("relative", "isolate");
     expect(tile).toHaveTextContent("Manage your plan and invoices.");

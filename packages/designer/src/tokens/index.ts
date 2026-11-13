@@ -105,10 +105,10 @@
  *
  * THE tailwind-merge PEER-VERSION CHECK. `react` and `react-aria-components`
  * — two more of this package's optional peers — are guarded automatically,
- * from every component subpath's own barrel (see `atoms/index.ts`'s own
+ * from every component subpath's own barrel (see `components/index.ts`'s own
  * comment). `tailwind-merge` cannot be: it has no exported version and no
  * `"./package.json"` `exports` entry, so checking it needs `node:fs` — and
- * `tailwind-merge` is imported from a file reachable by every atom, so
+ * `tailwind-merge` is imported from a file reachable by every component, so
  * wiring that check in automatically would break browser bundling for
  * every consumer. `assertTailwindMergeVersion` (`assert-tailwind-
  * merge-version.ts`) ships the same real version-range check as an
@@ -266,6 +266,3 @@ export type {
   ConsumerArtPosition, ConsumerArtAspect, ConsumerArtFormat, ConsumerArtPath,
   ConsumerArtSource, ConsumerArtContract, ConsumerArtFinding, ConsumerArtReport,
 } from "../backdrop/consumer-art.js";
-
-export { measureMarkGeometry, normalizeMark, checkMarkConformance, MarkGeometryError } from "./mark-normalize.js";
-export type { MarkBox, MarkGeometry, NormalizeMarkInput, MarkConformanceFinding } from "./mark-normalize.js";

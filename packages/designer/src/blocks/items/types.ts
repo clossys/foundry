@@ -1,12 +1,12 @@
 import type { AriaAttributes, ReactNode } from "react";
-import type { BadgeVariant } from "../../atoms/Badge.js";
-import type { StatusMarkTone } from "../../atoms/StatusMark.js";
+import type { BadgeTone } from "../../components/surface-tones.js";
+import type { StatusMarkTone } from "../../components/StatusMark.js";
 import type { SectionGround } from "../section-ground.js";
 
 export type ItemSize = "standard" | "display";
 export type ItemTreatment = "plain" | "rule" | "plate";
 export type ItemSpan = "third" | "half" | "two-thirds" | "full";
-export interface ItemBadge { label: ReactNode; tone?: BadgeVariant }
+export interface ItemBadge { label: ReactNode; tone?: BadgeTone }
 /** A focal measurement with authored delta copy and an optional direction. */
 export type ItemFigureData = { value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" };
 /** A shaped status mark with its visible state label. */
@@ -29,14 +29,6 @@ export interface ItemData {
   status?: ItemStatusData;
   /** Actor id in a connected sequence with two, three or four lanes. */
   lane?: string;
-}
-/** Standalone items explicitly select their frame's scale, treatment and ground. */
-export interface ItemProps extends ItemData {
-  treatment: ItemTreatment;
-  size: ItemSize;
-  ground: SectionGround;
-  /** A semantic heading when supplied; omission keeps a paragraph. */
-  headingLevel?: 3 | 4;
 }
 export type ItemsArrangement = "columns" | "rows" | "bento" | "stacked";
 export type ItemsColumns = 1 | 2 | 3;

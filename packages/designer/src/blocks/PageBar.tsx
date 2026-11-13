@@ -1,26 +1,46 @@
 "use client";
+import { useLocale } from "react-aria-components";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Button } from "../atoms/Button.js";
-import { Icon } from "../atoms/Icon.js";
-import { Link } from "../atoms/Link.js";
-import { Menu } from "../atoms/Menu.js";
-import { Popover } from "../atoms/Popover.js";
-import { Box } from "../icons/Box.js";
+import { useEffect, useRef, useState, type ComponentPropsWithRef, type ReactNode } from "react";
+
 import { ChevronDown } from "../icons/ChevronDown.js";
-import { ExternalLink } from "../icons/ExternalLink.js";
-import { CONTROL, TAP, PAGE_BAR_LAYOUT, pageBarDirection } from "./page-bar-layout.js";
+import type { FramePageHeader, FramePageHeaderNav, FramePageHeaderActions, FramePageHeaderDestination } from "../frame-page-header.js";
+import { Check } from "../icons/Check.js";
 
-export type PageBarWidth = "contained" | "full";
-export interface PageBarDestination { id: string; label: string; href: string }
+import { frameLinkNavigation, type FrameNavigate } from "./frame-navigation.js";
+import { frameHeaderOverflow } from "./frame-header-layout.js";
+import { CONTROL, TAP, PAGE_BAR_LAYOUT } from "./page-bar-layout.js";
+import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";
+
+import { componentLeaf } from "../runtime/component-leaf.js";
+import { MenuGroup, MenuItem, MenuLabel, MenuTrigger, PopupMenu } from "./shell-menu.js";
+
+type StockDialog = typeof import("../components/preview-runtime/components/dialog/dialog.js");
+type StockPopover = typeof import("../components/preview-runtime/components/popover/popover.js");
+type StockToggle = typeof import("../components/preview-runtime/components/toggle-button/toggle.js");
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+/** Stock anatomy (E2): the selected DialogTrigger opens the selected Popover, anchored to the bar by triggerRef. */
+const DialogTrigger = componentLeaf<StockDialog["DialogTrigger"]>("components.dialog", "DialogTrigger");
+const Popover = componentLeaf<StockPopover["Popover"]>("components.popover");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
+const ToggleButton = componentLeaf<StockToggle["Toggle"]>("components.toggle-button");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+
+const EMBEDDED_HEADER = "frame-header-row";
+const GLASS_SURFACE = "bg-surface-glass";
+const RAISED_SURFACE = "bg-surface-raised";
+
+export type PageBarDestination = FramePageHeaderDestination;
 export interface PageBarCrumb {
   id: string;
   label: string;
   href?: string;
-  /** Alternatives at this level, rendered with the existing Menu atom. */
+  /** Alternatives at this level, rendered with the existing Menu component. */
   siblings?: readonly PageBarDestination[];
 }
-export type PageBarAction = { id: string; label: string; primary?: boolean; isDisabled?: boolean } & (
+export type PageBarAction = { id: string; label: string; primary?: boolean; isDisabled?: boolean; icon?: ReactNode; isSelected?: boolean; onSelectedChange?: (selected: boolean) => void } & (
   | { href: string; onAction?: never }
   | { href?: never; onAction: () => void }
 );
@@ -36,28 +56,35 @@ export interface PageBarPage {
   /** Only the first primary request receives primary styling. */
   actions?: readonly PageBarAction[];
   scope?: ReactNode;
-  /** Carried for AppFrame's page default; PageBar renders its explicit width prop. */
-  width?: PageBarWidth;
 }
 export interface PageBarLabels {
   breadcrumb: string;
   collapsedBreadcrumb: string;
   pageInfo: string;
-  fullWidth: string;
-  containedWidth: string;
   pageActions: string;
 }
+export type PageBarHeaderNav = FramePageHeaderNav;
+export type PageBarHeaderActions = FramePageHeaderActions;
+export type PageBarHeader = FramePageHeader;
 export interface PageBarProps {
-  /** Trail root: a link or, with workspaces, a menu labelled by root.label. */
-  root: { label: string; href?: string };
-  width: PageBarWidth;
-  onWidthChange: (width: PageBarWidth) => void;
+  /** Frame-owned chrome remains in the stage track, including glass surfaces. */
+  embedded?: boolean;
+  start?: ReactNode;
+  end?: ReactNode;
+  /** Omission keeps the floating sticky bar. Explicit solid/transparent uses a full-width bar; solid adds a hairline. */
+  surface?: "solid" | "transparent" | "glass";
+  /** Static stays in document flow and reads no sticky layer. Glass is fixed and refuses static. */
+  position?: "sticky" | "static";
+  /** Optional trail root: a link or, with workspaces, a menu labelled by root.label. Omitted: the trail starts at page.breadcrumb. */
+  root?: { label: string; href?: string };
+  header?: PageBarHeader;
+  onNavigate?: FrameNavigate;
   labels: PageBarLabels;
-  /** Absent: brand slot and width control, without a trail. */
+  /** Absent: optional context slot, without a trail. */
   page?: PageBarPage;
   workspaces?: readonly PageBarDestination[];
-  /** Leading slot before the trail; AppFrame supplies its own brand renderer. */
-  brand?: ReactNode;
+  /** Optional app-header content at the start of the bar, before the page trail. */
+  context?: ReactNode;
   /** Collapse ancestors and overflow non-primary actions. @default false */
   narrow?: boolean;
   /** Reserve a tap target plus gap at the inline start. @default false */
@@ -68,19 +95,24 @@ export interface PageBarProps {
   onHeightChange?: (height: number) => void;
 }
 
-function PageAction({ label, href, onAction, isDisabled, primary }: PageBarAction) {
+function PageAction({ label, href, onAction, isDisabled, primary, icon, isSelected, onSelectedChange }: PageBarAction) {
+  if (isSelected !== undefined) return <ToggleButton aria-label={label} isSelected={isSelected} onChange={onSelectedChange ?? (() => onAction?.())} isDisabled={isDisabled}>{icon ?? label}</ToggleButton>;
+  if (icon) return href !== undefined ? <Link href={href} aria-label={label} variant="ghost" isDisabled={isDisabled}>{icon}</Link> : <Button aria-label={label} className={CONTROL} style={TAP} variant="ghost" onPress={onAction} isDisabled={isDisabled}>{icon}</Button>;
   return href !== undefined
-    ? <Link href={href} buttonVariant={primary ? "primary" : "ghost"} isDisabled={isDisabled} className="min-w-0 max-w-full"
-        data-application-frame-action={primary ? "primary" : "secondary"}><span className="min-w-0 truncate">{label}</span></Link>
+    ? <Link href={href} variant={primary ? "default" : "ghost"} isDisabled={isDisabled} className="min-w-0 max-w-full"
+        data-application-frame-action={primary ? "primary" : "secondary"}><SemanticContent as="span" className="min-w-0 truncate">{label}</SemanticContent></Link>
     : <Button variant={primary ? "primary" : "ghost"} onPress={onAction} isDisabled={isDisabled} className="min-w-0 max-w-full"
-        data-application-frame-action={primary ? "primary" : "secondary"}><span className="min-w-0 truncate">{label}</span></Button>;
+        data-application-frame-action={primary ? "primary" : "secondary"}><SemanticContent as="span" className="min-w-0 truncate">{label}</SemanticContent></Button>;
 }
 
 function CrumbMenu({ label, href, id, siblings }: PageBarCrumb) {
-  return <Menu trigger={<Button variant="ghost" className={CONTROL + " min-w-0 gap-xs"} style={TAP}><span className="truncate">{label}</span><Icon glyph={ChevronDown} decorative size="sm" /></Button>}>
-    {href && <Menu.Item id={id} href={href}>{label}</Menu.Item>}
-    {siblings?.map(item => <Menu.Item key={item.id} id={item.id} href={item.href}>{item.label}</Menu.Item>)}
-  </Menu>;
+  return <MenuTrigger>
+    <Button variant="ghost" className={CONTROL + " min-w-0 gap-xs"} style={TAP}><SemanticContent as="span" className="truncate">{label}</SemanticContent><Icon glyph={ChevronDown} decorative size="sm" /></Button>
+    <PopupMenu>
+      {href && <MenuItem id={id} href={href}>{label}</MenuItem>}
+      {siblings?.map(item => <MenuItem key={item.id} id={item.id} href={item.href}>{item.label}</MenuItem>)}
+    </PopupMenu>
+  </MenuTrigger>;
 }
 
 function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
@@ -90,36 +122,51 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
   const ancestors = current ? breadcrumb.slice(0, -1) : breadcrumb;
   return <nav aria-label={breadcrumbLabel} className="min-w-0 flex-1">
     <ol className="m-0 flex min-w-0 list-none items-center gap-xs p-0">
-      <li className="min-w-0 shrink-0">
+      {root && <SemanticContent as="li" className="min-w-0 shrink-0">
         {workspaces?.length ? <CrumbMenu id="workspace" label={root.label} siblings={workspaces} /> :
-          <Link href={root.href} variant="standalone" className={CONTROL} style={TAP}>{root.label}</Link>}
-      </li>
+          <Link href={root.href} variant="link" className={CONTROL} style={TAP}>{root.label}</Link>}
+      </SemanticContent>}
       {narrow && ancestors.length > 0
-        ? <li className="shrink-0"><Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><span aria-hidden="true">...</span></Button>}>
-            {ancestors.map(item => <Menu.Section key={item.id} heading={item.label}>
-              <Menu.Item id={JSON.stringify([item.id])} href={item.href}>{item.label}</Menu.Item>
-              {item.siblings?.map(sibling => <Menu.Item key={sibling.id} id={JSON.stringify([item.id, sibling.id])} href={sibling.href}>{sibling.label}</Menu.Item>)}
-            </Menu.Section>)}
-          </Menu></li>
-        : ancestors.map(item => <li key={item.id} className="min-w-0 shrink-0">
-            {item.siblings?.length ? <CrumbMenu {...item} /> : <Link href={item.href} variant="standalone" className={CONTROL} style={TAP}>{item.label}</Link>}
-          </li>)}
-      <li className="min-w-0 flex-1">
-        <h1 aria-current="page" className="m-0 truncate text-body font-semibold">{title}</h1>
+        ? <SemanticContent as="li" className="shrink-0"><MenuTrigger>
+            <Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><SemanticContent as="span" aria-hidden="true">...</SemanticContent></Button>
+            <PopupMenu>
+              {ancestors.map(item => <MenuGroup key={item.id} id={item.id} aria-label={item.label}>
+                <MenuLabel>{item.label}</MenuLabel>
+                <MenuItem id={JSON.stringify([item.id])} href={item.href}>{item.label}</MenuItem>
+                {item.siblings?.map(sibling => <MenuItem key={sibling.id} id={JSON.stringify([item.id, sibling.id])} href={sibling.href}>{sibling.label}</MenuItem>)}
+              </MenuGroup>)}
+            </PopupMenu>
+          </MenuTrigger></SemanticContent>
+        : ancestors.map(item => <SemanticContent as="li" key={item.id} className="min-w-0 shrink-0">
+            {item.siblings?.length ? <CrumbMenu {...item} /> : <Link href={item.href} variant="link" className={CONTROL} style={TAP}>{item.label}</Link>}
+          </SemanticContent>)}
+      <SemanticContent as="li" className="min-w-0 flex-1">
+        <SemanticContent as="h1" aria-current="page" className="m-0 truncate text-body font-semibold">{title}</SemanticContent>
         {current?.siblings?.length ? <CrumbMenu {...current} /> : null}
-      </li>
+      </SemanticContent>
     </ol>
   </nav>;
 }
 
-/** Draft standalone page trail, metadata, actions and stage-width controls. */
-export function PageBar({ root, brand, page, workspaces, width, onWidthChange, labels, narrow = false, reserveStart = false, reserveEnd = false, onHeightChange, dir }: PageBarProps) {
-  const { pageInfo: pageInfoLabel, fullWidth: fullWidthLabel, containedWidth: containedWidthLabel, pageActions: pageActionsLabel } = labels;
+/** Page header and metadata composition. The frame owns stage sizing. */
+export function PageBar({ root, context, page, workspaces, header, onNavigate, labels, embedded = false, start, end, narrow: suppliedNarrow = false, reserveStart = false, reserveEnd = false, onHeightChange, dir, position, surface }: PageBarProps) {
+  const resolvedPosition = resolveFrameHeaderOptions("frames.app-header", { position, surface }).position;
+  const headerPosition = embedded ? "relative" : resolvedPosition;
+  const legacy = !embedded && surface === undefined && position === undefined;
+  const { pageInfo: pageInfoLabel, pageActions: pageActionsLabel } = labels;
   const bar = useRef<HTMLElement>(null);
-  const [glass, setGlass] = useState(false);
+  const body = useRef<HTMLDivElement>(null);
+  const legacyActions = useRef<HTMLDivElement>(null);
+  const legacyIntrinsic = useRef({ nav: 0, actions: 0 });
+  const [frameCompact, setFrameCompact] = useState(false);
+  const narrow = embedded ? frameCompact : suppliedNarrow;
+
+  const [glassSupported, setGlass] = useState(false);
+  const glass = (legacy || surface === "glass") && glassSupported;
   const [infoOpen, setInfoOpen] = useState(false);
   const [barWidth, setBarWidth] = useState<number>();
-  const [direction, setDirection] = useState(dir);
+  const { direction: contextDirection } = useLocale();
+  const direction = dir ?? contextDirection;
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-transparency: reduce)");
     const forced = window.matchMedia("(forced-colors: active)");
@@ -133,39 +180,142 @@ export function PageBar({ root, brand, page, workspaces, width, onWidthChange, l
       const rect = bar.current.getBoundingClientRect();
       if (rect.height > 0) onHeightChange?.(rect.height);
       setBarWidth(rect.width || undefined);
-      setDirection(dir ?? pageBarDirection(bar.current));
     };
     measure();
     const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
     if (bar.current) observer?.observe(bar.current);
     window.addEventListener("resize", measure);
     return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
-  }, [dir, onHeightChange, page, narrow, width, infoOpen]);
+  }, [dir, onHeightChange, page, context, narrow, infoOpen, header]);
+  useEffect(() => {
+    if (!embedded || header || !page) return;
+    const measure = () => {
+      const root = body.current, actions = legacyActions.current;
+      if (!root || !actions || !root.clientWidth) return;
+      const nav = root.querySelector("nav");
+      const gap = Number.parseFloat(getComputedStyle(root).columnGap) || 0;
+      if (!frameCompact) {
+        legacyIntrinsic.current.actions = actions.scrollWidth;
+        const items = [...(nav?.querySelector("ol")?.children ?? [])];
+        legacyIntrinsic.current.nav = items.reduce((sum, item) => {
+          const heading = item.querySelector("h1");
+          if (!heading) return sum + item.getBoundingClientRect().width;
+          const range = document.createRange(); range.selectNodeContents(heading);
+          return sum + (typeof range.getBoundingClientRect === "function" ? range.getBoundingClientRect().width : heading.scrollWidth);
+        }, Math.max(0, items.length - 1) * gap);
+      }
+      const other = [...root.children].filter(node => node !== nav && node !== actions).reduce((sum, node) => sum + node.getBoundingClientRect().width + gap, 0);
+      const size = legacyIntrinsic.current;
+      const next = frameHeaderOverflow(root.clientWidth - other, 0, size.nav, size.actions, actions.scrollWidth, gap);
+      setFrameCompact(next.compactActions || next.compactNav);
+    };
+    measure();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
+    if (body.current) observer?.observe(body.current);
+    if (legacyActions.current) observer?.observe(legacyActions.current);
+    window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, [embedded, header, page, frameCompact]);
   const primary = page?.actions?.find(action => action.primary);
   const information = page && [page.status, page.description, page.updatedAt, page.meta, page.scope].some(value => value !== undefined && value !== null && value !== false);
-  return <header ref={bar} data-application-frame-region="bar" className={"relative flex min-w-0 flex-wrap items-center gap-xs rounded-control border border-line-base p-sm text-ink-primary " + (glass ? "bg-surface-glass" : "bg-surface-raised")}
-    style={{ position: "sticky", insetBlockStart: PAGE_BAR_LAYOUT.gutter, marginBlockStart: PAGE_BAR_LAYOUT.gutter, marginInline: PAGE_BAR_LAYOUT.gutter,
+  const content = header ? <HeaderSlots header={header} onNavigate={onNavigate} embedded={embedded} /> : <>
+    {context === undefined || context === null ? null : <SemanticContent as="div" data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</SemanticContent>}
+    {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
+    {information && <DialogTrigger isOpen={infoOpen} onOpenChange={setInfoOpen}>
+      <Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>
+      <Popover triggerRef={bar} className="text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0}
+        style={{ direction, inlineSize: barWidth, maxInlineSize: `calc(100vw - 2 * ${PAGE_BAR_LAYOUT.gutter})` }}>
+        <SemanticContent as="div" data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
+          <SemanticContent as="div">{page?.status}</SemanticContent><SemanticContent as="div">{page?.description}</SemanticContent><SemanticContent as="div">{page?.updatedAt}</SemanticContent><SemanticContent as="div">{page?.meta}</SemanticContent><SemanticContent as="div">{page?.scope}</SemanticContent>
+        </SemanticContent>
+      </Popover>
+    </DialogTrigger>}
+    <SemanticContent as="div" ref={legacyActions} data-application-frame-region="bar-actions" className={"ms-auto flex min-w-0 items-center justify-end gap-xs" + (embedded ? " shrink-0" : "")} style={{ flexBasis: narrow && !embedded ? "100%" : undefined }}>
+      {page?.actions?.map(action => (!narrow || action === primary) && <PageAction key={action.id} {...action} primary={action === primary} />)}
+      {narrow && page?.actions?.some(action => action !== primary) && <MenuTrigger>
+        <Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageActionsLabel}><Icon glyph={ChevronDown} decorative /></Button>
+        <PopupMenu>
+          {page.actions.filter(action => action !== primary).map(action => <MenuItem key={action.id} id={action.id} href={action.href} isDisabled={action.isDisabled} onAction={action.onAction}>{action.label}</MenuItem>)}
+        </PopupMenu>
+      </MenuTrigger>}
+    </SemanticContent>
+    </>;
+  return <header onClick={event => frameLinkNavigation(event, onNavigate)} ref={bar} data-application-frame-region="bar" className={legacy
+      ? "relative flex min-w-0 flex-wrap items-center gap-xs rounded-control border border-line-base p-sm text-ink-primary " + (glass ? GLASS_SURFACE : RAISED_SURFACE)
+      : "relative flex min-w-0 flex-wrap items-center gap-xs p-sm text-ink-primary "
+        + (surface === "transparent" ? "" : "border-b border-line-base ")
+        + (surface === "transparent" ? "" : glass ? GLASS_SURFACE : RAISED_SURFACE) + (embedded ? " " + EMBEDDED_HEADER : "")}
+    style={{ position: headerPosition, inlineSize: embedded ? "100%" : undefined, flexWrap: embedded ? "nowrap" : undefined,
+      ...(headerPosition === "sticky" ? { insetBlockStart: legacy ? PAGE_BAR_LAYOUT.gutter : 0 }
+        : headerPosition === "fixed" ? { insetBlockStart: 0, insetInline: 0 } : {}),
+      ...(legacy ? { marginBlockStart: PAGE_BAR_LAYOUT.gutter, marginInline: PAGE_BAR_LAYOUT.gutter }
+        : surface === "transparent" ? {} : { borderBottomWidth: PAGE_BAR_LAYOUT.hairline }),
       paddingInlineStart: reserveStart ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
       paddingInlineEnd: reserveEnd ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
-      backdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", zIndex: PAGE_BAR_LAYOUT.barLayer }}>
-    {brand}
-    {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
-    {information && <Popover anchorRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0} isOpen={infoOpen} onOpenChange={setInfoOpen}
-      trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>}
-      style={{ direction, inlineSize: barWidth, maxInlineSize: `calc(100vw - 2 * ${PAGE_BAR_LAYOUT.gutter})` }}>
-      <div data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
-        <div>{page?.status}</div><div>{page?.description}</div><div>{page?.updatedAt}</div><div>{page?.meta}</div><div>{page?.scope}</div>
-      </div>
-    </Popover>}
-    <div data-application-frame-region="bar-actions" className="ms-auto flex min-w-0 items-center justify-end gap-xs" style={{ flexBasis: narrow ? "100%" : undefined }}>
-      {page?.actions?.map(action => (!narrow || action === primary) && <PageAction key={action.id} {...action} primary={action === primary} />)}
-      {narrow && page?.actions?.some(action => action !== primary) && <Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageActionsLabel}><Icon glyph={ChevronDown} decorative /></Button>}>
-        {page.actions.filter(action => action !== primary).map(action => <Menu.Item key={action.id} id={action.id} href={action.href} isDisabled={action.isDisabled} onAction={action.onAction}>{action.label}</Menu.Item>)}
-      </Menu>}
-      <div className="ms-xs shrink-0 border-s border-line-base ps-xs">
-        {width === "full" ? <Button variant="ghost" className={CONTROL} style={TAP} aria-label={containedWidthLabel} aria-pressed={true} onPress={() => onWidthChange("contained")}><Icon glyph={Box} decorative /></Button> :
-          <Button variant="ghost" className={CONTROL} style={TAP} aria-label={fullWidthLabel} aria-pressed={false} onPress={() => onWidthChange("full")}><Icon glyph={ExternalLink} decorative /></Button>}
-      </div>
-    </div>
+      backdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none",
+      ...(headerPosition === "sticky" ? { zIndex: PAGE_BAR_LAYOUT.barLayer }
+        : headerPosition === "fixed" ? { zIndex: "var(--ui-z-shell)" } : {}) }}>
+    {embedded ? <>{start}<SemanticContent as="div" ref={body} className="flex min-w-0 flex-1 items-center gap-xs">{content}</SemanticContent>{end}</> : content}
   </header>;
+}
+
+function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBarHeader; onNavigate?: FrameNavigate; embedded?: boolean }) {
+  const root = useRef<HTMLDivElement>(null);
+  const nav = useRef<HTMLElement>(null);
+  const title = useRef<HTMLHeadingElement>(null);
+  const actions = useRef<HTMLDivElement>(null);
+  const intrinsic = useRef({ title: 0, nav: 0, actions: 0, compactActions: 0 });
+  const [overflow, setOverflow] = useState({ compactActions: false, compactNav: false });
+  useEffect(() => {
+    const measure = () => {
+      if (!root.current) return;
+      const size = intrinsic.current;
+      if (!embedded || !overflow.compactNav) size.nav = nav.current?.scrollWidth ?? 0;
+      if (!overflow.compactNav) size.title = title.current?.scrollWidth ?? 0;
+      if (overflow.compactActions) size.compactActions = actions.current?.scrollWidth ?? 0;
+      else size.actions = actions.current?.scrollWidth ?? 0;
+      const available = root.current.clientWidth;
+      if (!available) return;
+      const gap = Number.parseFloat(getComputedStyle(root.current).columnGap) || 0;
+      const tap = Number.parseFloat(getComputedStyle(root.current).getPropertyValue("--ui-layout-tap-target")) || 0;
+      const next = frameHeaderOverflow(available, Math.min(size.title, tap), size.nav, size.actions, size.compactActions, gap);
+      setOverflow(previous => previous.compactActions === next.compactActions && previous.compactNav === next.compactNav ? previous : next);
+    };
+    measure(); const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
+    if (root.current) observer?.observe(root.current);
+    if (nav.current) observer?.observe(nav.current);
+    if (actions.current) observer?.observe(actions.current);
+    window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, [header, overflow.compactActions, overflow.compactNav]);
+  const active = header.nav?.items.find(item => item.id === header.nav?.activeId);
+  return <SemanticContent as="div" ref={root} data-frame-header-overflow={overflow.compactNav ? "navigation" : overflow.compactActions ? "actions" : "none"}
+    className="frame-header-grid relative grid w-full min-w-0 items-center gap-xs" style={embedded ? { rowGap: 0 } : undefined}>
+    <SemanticContent as="div" className="w-full min-w-0 justify-self-start" style={embedded ? { gridColumn: 1, gridRow: 1 } : undefined}>
+      {overflow.compactNav && header.nav ? <MenuTrigger>
+        <Button variant="ghost" className="min-w-0 max-w-full gap-xs" style={TAP}><SemanticContent as="h1" className="m-0 truncate text-body font-semibold">{header.title}{active ? ` / ${active.label}` : ""}</SemanticContent><Icon glyph={ChevronDown} decorative /></Button>
+        <PopupMenu>
+          {header.nav.items.map(item => <MenuItem key={item.id} id={item.id} href={item.href} textValue={item.label}
+            render={props => {
+              // The stock item filters aria-current; its href branch renders this anchor, which keeps the
+              // current page and routes an ordinary activation through the host (the menu is portalled).
+              const anchorProps = props as ComponentPropsWithRef<"a">;
+              return <a {...anchorProps} aria-current={item.id === header.nav?.activeId ? "page" : undefined} onClick={event => { frameLinkNavigation(event, onNavigate); anchorProps.onClick?.(event); }} />;
+            }}>
+            {item.id === header.nav?.activeId && <Icon glyph={Check} decorative />}{item.label}
+          </MenuItem>)}
+        </PopupMenu>
+      </MenuTrigger> : <SemanticContent as="h1" ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</SemanticContent>}
+    </SemanticContent>
+    <nav ref={nav} aria-label={header.nav?.label} aria-hidden={overflow.compactNav || undefined} inert={overflow.compactNav}
+      className={(overflow.compactNav ? (embedded ? "invisible pointer-events-none " : "invisible pointer-events-none absolute ") : "") + "flex w-max min-w-0 items-center justify-center gap-xs"}
+      style={embedded && overflow.compactNav ? { gridColumn: "1 / -1", gridRow: 2, blockSize: 0, inlineSize: 0, overflow: "hidden" } : undefined}>
+      {header.nav?.items.map(item => {
+        const selected = item.id === header.nav?.activeId;
+        return <Link key={item.id} href={item.href} onClick={event => frameLinkNavigation(event, onNavigate)} aria-current={selected ? "page" : undefined} data-selected={selected || undefined} variant="ghost"
+          className={"whitespace-nowrap border-b-2 " + (selected ? "border-primary text-ink-primary" : "border-transparent")} style={TAP}>{item.label}</Link>;
+      })}
+    </nav>
+    <SemanticContent as="div" ref={actions} style={embedded ? { gridColumn: "-2 / -1", gridRow: 1 } : undefined} className="flex min-w-0 items-center justify-self-end" data-frame-header-actions="">{header.actions?.render({ compact: overflow.compactActions })}</SemanticContent>
+  </SemanticContent>;
 }

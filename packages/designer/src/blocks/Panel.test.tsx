@@ -12,10 +12,12 @@ describe("Panel", () => {
     expect((blocks as any).Panel).toBeTypeOf("function");
     const { container } = render(<Panel header="Heading" footer="Footer">Content</Panel>);
     const panel = container.querySelector("[data-panel]")!;
-    expect(panel).toHaveAttribute("data-variant", "outline");
+    // The stock Card (E2): its own hairline ring, no Foundry outline variant.
+    expect(panel).toHaveAttribute("data-slot", "card");
+    expect(panel).not.toHaveAttribute("variant");
     expect([...panel.children].map(node => node.getAttribute("data-panel-region"))).toEqual(["header", "content", "footer"]);
     expect(panel).toHaveTextContent("HeadingContentFooter");
-    expect(panel).toHaveStyle({ borderWidth: "var(--ui-border-panel, var(--ui-border-hairline, 1px))" });
+    expect(panel).toHaveClass("ring-(length:--ui-border-hairline)");
     expect(panel.className).not.toMatch(/transition|animate|forced-color-adjust-none/);
   });
 

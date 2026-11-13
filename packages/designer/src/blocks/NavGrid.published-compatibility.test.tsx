@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { NavGrid, type NavGridItem } from "./NavGrid.js";
-import { Item } from "./items/Item.js";
+import { StockItem as Item } from "./items/StockItem.js";
 import { Items } from "./items/Items.js";
 
 const linked = (count: number, description: NavGridItem["description"]): NavGridItem[] =>
@@ -77,7 +77,7 @@ describe("published NavGrid interactive descriptions", () => {
   });
   it("keeps canonical Item and Items refusals for the same interactive description", () => {
     const description = <button>Details</button>;
-    expect(() => renderToStaticMarkup(<Item id="one" heading="Topic" href="/topic" description={description} treatment="plain" size="standard" ground="base" />)).toThrow(TypeError);
+    expect(() => renderToStaticMarkup(<Item id="one" heading="Topic" href="/topic" description={description} ground="base" />)).toThrow(TypeError);
     expect(() => renderToStaticMarkup(<Items arrangement="rows" columns={1} treatment="plain" size="standard" scale="item" ground="base" items={[{ id: "one", heading: "Topic", href: "/topic", description }, { id: "two", heading: "Other", href: "/other" }]} />)).toThrow(TypeError);
   });
 });

@@ -1,0 +1,39 @@
+{
+  "candidate": "media-v4.json",
+  "sha256": "bb3977e18e3e17ef2247345b0b690b0089195353e7fcc646e52a6e88d77b80c0",
+  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:DESIGNER-FINDINGS, planner)",
+  "basis": "planner",
+  "at": "2026-11-12T00:01:56.959Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:06.819Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "designer:assets.image": 2,
+      "designer:assets.image-ratio": 3,
+      "director:focus.category.definition": 7,
+      "director:focus.segment.core": 3,
+      "director:identity.brand.essence": 6,
+      "director:identity.brand.personality": 5,
+      "director:identity.verbal.voice": 6,
+      "director:identity.visual.imagery": 4,
+      "director:identity.visual.style": 9,
+      "designer:themes.muted": 1,
+      "designer:themes.radius": 1
+    },
+    "proof": {
+      "director:advantage.proposition.promise": "sha256:3fe044e620b9e4c56919066eae4b9418d46a6671bbf0a29a6fb6f247bcce9e3a",
+      "designer:assets.image": "sha256:789c6582030b4a3998436ec5ec9b9a7dc3b7d0ffbc454d88d6d8a58687871a85",
+      "designer:assets.image-ratio": "sha256:660b6e199164fd1b6e75c228608cdb9555997329aa7f5b8b48e1d8a7fb1dfd48",
+      "director:focus.category.definition": "sha256:ec4d8412872247e6d756aabc0af1b69fcbef72549c355f01f952fa30f1b0f834",
+      "director:focus.segment.core": "sha256:ca76c0b03fe84f1615c91cf10b301b8ad6b95ef58f9162d46aacf4cd153c7b92",
+      "director:identity.brand.essence": "sha256:21f6219f338ebd90f557610f65c6f3c710cc3c524a0c918788f56a36d76231eb",
+      "director:identity.brand.personality": "sha256:b623ac395493d9154d0f61fdc705f6bb1098d1afba65da20c5d046629b2f40b9",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
+      "director:identity.visual.imagery": "sha256:884c4c8d26564bda85ecaaba5a59853a1db032490feca2b7f01f6ec2851c9eb1",
+      "director:identity.visual.style": "sha256:826860e265f470cc98adb36bff91937f9c417040cbd863831b40edc7edccc964",
+      "designer:themes.muted": "sha256:ea7c8671e550b54c9bcc2752a2a21038b87f3ca584bfac1bb8260363746aabfd",
+      "designer:themes.radius": "sha256:45221fc81fe9d6b92162a4f94d499d683cd18385b79dc5282d1bf9ee783e3e6d"
+    }
+  }
+}

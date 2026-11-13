@@ -1,0 +1,91 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import type { CopyResolver } from "@clossys/writer";
+import { AppFrame as ShellFixtureAppFrame } from "@clossys/designer/frames";
+import type { AppFrameProps } from "@clossys/designer/frames";
+import { SiteFrame } from "./SiteFrame.js";
+import { resolveShell } from "./internal/resolveShell.js";
+import { normalizeSiteFrameConfig, SITE_FRAME_CONTRACT } from "./site-frame-contract.js";
+import type { SiteFramePresentationConfig } from "./site-frame-contract.js";
+import type { SiteShellInput } from "./types.js";
+import { withShellCopy } from "../__fixtures__/shell-copy.js";
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
+
+const copy: CopyResolver = value => ({ ref: value, text: value.id, recordId: "fixture", entryId: value.id,
+  revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" } });
+const asset = () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Example" });
+const shell: SiteShellInput = { brand: { assetId: "mark", label: { id: "Example" }, variant: "mark", size: "md" }, skipLink: { id: "Skip" } };
+function site(header?: SiteShellInput["header"], presentation?: SiteFramePresentationConfig) {
+  return renderToStaticMarkup(<SiteFrame shell={{ ...shell, header }} presentation={presentation} resolveCopy={copy} resolveAsset={asset}><h1>Page</h1></SiteFrame>);
+}
+const app: AppFrameProps = {
+  brand: { markSrc: "/mark.svg", wordmark: "Workspace", label: "Workspace" },
+  navigation: { tree: [], label: "Navigation" }, account: { signedOutLabel: "Signed out", sections: [] },
+  commands: { heading: "Commands", triggerLabel: "Find commands", searchLabel: "Search commands", closeLabel: "Close commands", emptyMessage: "No commands", groups: [] }, children: <p>View</p>,
+};
+// GATES-RED G5: the site header's position and layer are named classes, not inline styles (WL4).
+const themeKeys = readFileSync(resolve(import.meta.dirname, "../../../styles/theme-keys.css"), "utf8");
+function headerClasses(html: string): string[] {
+  return (html.match(/<header\b[^>]*>/)?.[0].match(/\sclass="([^"]*)"/)?.[1] ?? "").split(/\s+/);
+}
+function bar(props: Partial<AppFrameProps> = {}) {
+  return renderToStaticMarkup(<AppFrame {...app} {...props} />).match(/<header\b[^>]*data-application-frame-region="bar"[^>]*>/)?.[0] ?? "";
+}
+
+describe("Publisher frame header member forwarding", () => {
+  it("preserves omitted site position and does not synthesize a member", () => {
+    expect(normalizeSiteFrameConfig()).not.toHaveProperty("headerPosition");
+    expect(headerClasses(site())).toContain("relative");
+    expect(site().match(/<header\b[^>]*>/)?.[0]).not.toContain("style=");
+  });
+  it("forwards sticky and gives instance static precedence over inherited sticky", () => {
+    expect(headerClasses(site({ position: "sticky" }))).toEqual(expect.arrayContaining(["sticky", "top-0", "layer-sticky"]));
+    expect(themeKeys).toContain("@utility layer-sticky { z-index: var(--ui-z-sticky, 10); }");
+    const header = headerClasses(site({ position: "sticky" }, { headerPosition: "static" }));
+    expect(header).toContain("static");
+    expect(header).not.toContain("layer-sticky");
+    expect(header).not.toContain("sticky");
+    expect(headerClasses(site({ position: "static" }, { headerPosition: "sticky" }))).toEqual(expect.arrayContaining(["sticky", "layer-sticky"]));
+  });
+  it("merges position independently of inherited surface and tone", () => {
+    expect(resolveShell({ ...shell, header: { surface: "transparent", tone: "inverse", position: "sticky" } }, copy, asset, { headerPosition: "static" }).header)
+      .toEqual({ surface: "transparent", tone: "inverse", position: "static" });
+  });
+  it("keeps glass fixed and rejects static glass across both input layers", () => {
+    expect(headerClasses(site({ surface: "glass", position: "sticky" }))).toEqual(expect.arrayContaining(["fixed", "top-0", "inset-x-0"]));
+    expect(() => site({ surface: "glass", position: "static" })).toThrow();
+    expect(() => site({ surface: "glass" }, { headerPosition: "static" })).toThrow();
+    expect(() => site({ position: "static" }, { headerSurface: "glass" })).toThrow();
+  });
+  it("refuses values outside the finite position vocabulary without echoing input", () => {
+    const attempt = () => normalizeSiteFrameConfig({ headerPosition: "PAYLOAD-SENTINEL" });
+    expect(attempt).toThrow();
+    try { attempt(); } catch (error) { expect(String(error)).not.toContain("PAYLOAD-SENTINEL"); }
+    expect(SITE_FRAME_CONTRACT.required).not.toContain("sticky-header");
+    expect(SITE_FRAME_CONTRACT.constituents.Header.config).toContain("headerPosition");
+  });
+  it("keeps AppFrame solid headers in reserved flow for omitted, sticky and static positions", () => {
+    expect(bar()).toContain("position:relative");
+    expect(bar()).not.toContain("rounded-control");
+    const sticky = bar({ headerPosition: "sticky", headerSurface: "solid" });
+    expect(sticky).toContain("position:relative");
+    expect(sticky).toContain("border-bottom-width:var(--ui-border-hairline, 1px)");
+    const flow = bar({ headerPosition: "static", headerSurface: "solid" });
+    expect(flow).toContain("position:relative");
+    expect(flow).not.toContain("--ui-z-sticky");
+  });
+  it("keeps the explicit static header in reserved flow without a sticky layer", () => {
+    const html = renderToStaticMarkup(<AppFrame {...app} headerPosition="static" headerSurface="solid" />);
+    expect(bar({ headerPosition: "static", headerSurface: "solid" })).toContain("position:relative");
+    expect(bar({ headerPosition: "static", headerSurface: "solid" })).not.toContain("--ui-z-sticky");
+    expect(html).toContain('data-application-frame-region="header"');
+    expect(html).toContain('data-application-frame-region="stage"');
+  });
+  it("keeps AppFrame glass in reserved flow and refuses static glass", () => {
+    expect(bar({ headerPosition: "sticky", headerSurface: "glass" })).toContain("position:relative");
+    expect(() => bar({ headerPosition: "static", headerSurface: "glass" })).toThrow();
+  });
+});

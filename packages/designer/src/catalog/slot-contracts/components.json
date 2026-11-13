@@ -1,0 +1,6692 @@
+[
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.avatar",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Avatar component (root presentational), under Display / Media.",
+    "inputs": [
+      {
+        "name": "size",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: sm | md | lg"
+      },
+      {
+        "name": "content",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: image | initials"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-user",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "size.sm,size.md,size.lg,content.image,content.initials",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "avatar",
+        "version": "4.23.0",
+        "hash": "sha256:32dcb71ec3c8218efde9067e5332f63cb3bc6d5ad4abc6a490db26e04ecd2f4a"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.badge",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Badge component (root presentational), under Display / Labels.",
+    "inputs": [
+      {
+        "name": "tone",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: neutral | danger"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "tone.neutral,tone.danger",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "badge",
+        "version": "4.23.0",
+        "hash": "sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.banner",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Banner component (root presentational), under Feedback / Messages.",
+    "inputs": [
+      {
+        "name": "tone",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: info | danger"
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-success",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-warning",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-danger",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-info",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.button",
+      "members": "tone.info,tone.danger",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "alert",
+        "version": "4.23.0",
+        "hash": "sha256:95a396b53c8c797b22ad5f7d00e281ef867e94723c7f3b21ae61b15c7a72a4ac"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.breadcrumbs",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Breadcrumbs component (root rac:Breadcrumbs; APG breadcrumb pattern), under Navigation / Links.",
+    "inputs": [
+      {
+        "name": "current",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "collapsed",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "breadcrumb",
+      "compose.components": "components.link",
+      "members": "current,collapsed",
+      "members.mode": "closed",
+      "root": "rac:Breadcrumbs"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "breadcrumb",
+        "version": "4.23.0",
+        "hash": "sha256:ef8b6b798149fd6567c0e1088d0c4fb8f87ff58c7ecd81fa2763852880a0b428"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.button",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Button component (root rac:Button; APG button pattern), under Actions / Buttons.",
+    "inputs": [
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: primary | secondary | ghost | danger | outline"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: hover | focus-visible | disabled"
+      },
+      {
+        "name": "size",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: sm | md | lg"
+      },
+      {
+        "name": "shape",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: text | icon-only"
+      },
+      {
+        "name": "ground",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: base"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "button",
+      "compose.components": "components.icon",
+      "members": "variant.primary,variant.secondary,variant.ghost,variant.danger,variant.outline,state.hover,state.focus-visible,state.disabled,size.sm,size.md,size.lg,shape.text,shape.icon-only,ground.base",
+      "members.mode": "closed",
+      "root": "rac:Button"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "button",
+        "version": "4.23.0",
+        "hash": "sha256:9e41c76cf882fc46d3518f621c87ac7e58ec381ea546fda891de2cabe95fc350"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.calendar",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Calendar component (root rac:Calendar; APG grid pattern), under Inputs / Date.",
+    "inputs": [
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: single | range"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-left",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "grid",
+      "compose.components": "components.button,components.select",
+      "members": "selection.single,selection.range",
+      "members.mode": "closed",
+      "root": "rac:Calendar"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "calendar",
+        "version": "4.23.0",
+        "hash": "sha256:73dab4e450a8b7495bae54c944003339e534f17599f59524674d5e603364e11c"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.card",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Card component (root presentational), under Containment / Structure.",
+    "inputs": [
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.chart-area",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Chart area component (root engine:none), under Display / Core charts.",
+    "inputs": [
+      {
+        "name": "series",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "legend",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "tooltip",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "series,axes,legend,tooltip",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "chart",
+        "version": "4.23.0",
+        "hash": "sha256:8aa2bb3c26cc72c551d96e47f1ea4314800c90760fedf693601aefc32802fc9d"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.chart-bar",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Chart bar component (root engine:none), under Display / Core charts.",
+    "inputs": [
+      {
+        "name": "series",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "legend",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "tooltip",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "series,axes,legend,tooltip",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "chart",
+        "version": "4.23.0",
+        "hash": "sha256:8aa2bb3c26cc72c551d96e47f1ea4314800c90760fedf693601aefc32802fc9d"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.chart-heatmap",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Chart heatmap component (root engine:none), under Display / Analytic charts.",
+    "inputs": [
+      {
+        "name": "series",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "legend",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "tooltip",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-1",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-2",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-3",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-4",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-5",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "series,axes,legend,tooltip",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.chart-line",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Chart line component (root engine:none), under Display / Core charts.",
+    "inputs": [
+      {
+        "name": "series",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "legend",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "tooltip",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "series,axes,legend,tooltip",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "chart",
+        "version": "4.23.0",
+        "hash": "sha256:8aa2bb3c26cc72c551d96e47f1ea4314800c90760fedf693601aefc32802fc9d"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.chart-range",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Chart range component (root engine:none), under Display / Analytic charts.",
+    "inputs": [
+      {
+        "name": "series",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "legend",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "tooltip",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-1",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-2",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-3",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-4",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-5",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "series,axes,legend,tooltip",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.chart-scatter",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Chart scatter component (root engine:none), under Display / Analytic charts.",
+    "inputs": [
+      {
+        "name": "series",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "legend",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "tooltip",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-1",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-2",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-3",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-4",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-5",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "series,axes,legend,tooltip",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.chart-sparkline",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Chart sparkline component (root engine:none), under Display / Compact charts.",
+    "inputs": [
+      {
+        "name": "series",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "legend",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "tooltip",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "series,axes,legend,tooltip",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "chart",
+        "version": "4.23.0",
+        "hash": "sha256:8aa2bb3c26cc72c551d96e47f1ea4314800c90760fedf693601aefc32802fc9d"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.chart-status-strip",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Chart status strip component (root engine:none), under Display / Compact charts.",
+    "inputs": [
+      {
+        "name": "series",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "legend",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "tooltip",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-1",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-2",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-3",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-4",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-5",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "series,axes,legend,tooltip",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.chart-waterfall",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Chart waterfall component (root engine:none), under Display / Analytic charts.",
+    "inputs": [
+      {
+        "name": "series",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "legend",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "tooltip",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-1",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-2",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-3",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-4",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.chart-5",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "series,axes,legend,tooltip",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.checkbox",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Checkbox component (root rac:Checkbox; APG checkbox pattern), under Inputs / Choice.",
+    "inputs": [
+      {
+        "name": "scope",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: single"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: checked | indeterminate | invalid"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-check",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "checkbox",
+      "members": "scope.single,state.checked,state.indeterminate,state.invalid",
+      "members.mode": "closed",
+      "root": "rac:Checkbox"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "checkbox",
+        "version": "4.23.0",
+        "hash": "sha256:00d5a564ff2680e0daade49b6ff6c368f3e7a72b24fce34941461e5f2ddcd802"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.color-picker",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Color picker component (root rac:ColorPicker), under Inputs / Color.",
+    "inputs": [
+      {
+        "name": "part",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: area | wheel | slider | field | swatch-picker"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "part.area,part.wheel,part.slider,part.field,part.swatch-picker",
+      "members.mode": "closed",
+      "root": "rac:ColorPicker"
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "color-picker",
+        "version": "04aad54",
+        "hash": "sha256:bd4a8d192035af22f3727b3c7a4dd554e80da8a178eaf79fd33c4278576f3033"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.combo-box",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Combo box component (root rac:ComboBox; APG combobox pattern), under Inputs / Choice.",
+    "inputs": [
+      {
+        "name": "allows-custom",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: invalid"
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-check",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "combobox",
+      "compose.components": "components.button,components.popover",
+      "members": "allows-custom,state.invalid",
+      "members.mode": "closed",
+      "root": "rac:ComboBox"
+    },
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "combobox",
+        "version": "4.23.0",
+        "hash": "sha256:b00108e37b6d691e0735dae4460702807fa27316fb880afa303a184737a1d9ec"
+      },
+      {
+        "registry": "shadcn",
+        "item": "combobox",
+        "version": "4.23.0",
+        "hash": "sha256:96e870e2dfce21be524cd17fec60df9bbb0065840690e3594c041a169ab351a4"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.date-field",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Date field component (root rac:DateField), under Inputs / Date.",
+    "inputs": [
+      {
+        "name": "content",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: date | time"
+      },
+      {
+        "name": "granularity",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: invalid"
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "content.date,content.time,granularity,state.invalid",
+      "members.mode": "closed",
+      "root": "rac:DateField"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.date-picker",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Date picker component (root rac:DatePicker; APG dialog-modal pattern), under Inputs / Date.",
+    "inputs": [
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: single | range"
+      },
+      {
+        "name": "assets.icon-date",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "dialog-modal",
+      "compose.components": "components.date-field,components.popover,components.calendar",
+      "members": "selection.single,selection.range",
+      "members.mode": "closed",
+      "root": "rac:DatePicker"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "calendar",
+        "version": "4.23.0",
+        "hash": "sha256:73dab4e450a8b7495bae54c944003339e534f17599f59524674d5e603364e11c"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.dialog",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Dialog component (root rac:Dialog; APG dialog-modal pattern), under Containment / Overlays.",
+    "inputs": [
+      {
+        "name": "role",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: modal"
+      },
+      {
+        "name": "dismissable",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "dialog-modal",
+      "members": "role.modal,dismissable",
+      "members.mode": "closed",
+      "root": "rac:Dialog"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "dialog",
+        "version": "4.23.0",
+        "hash": "sha256:48ec4fced8dc7d3d772e0966feaa43ef02a90c2754df8ce0d6e00955c6272db9"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.disclosure",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Disclosure component (root rac:Disclosure; APG disclosure pattern), under Containment / Structure.",
+    "inputs": [
+      {
+        "name": "scope",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: group"
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-up",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "disclosure",
+      "members": "scope.group",
+      "members.mode": "closed",
+      "root": "rac:Disclosure"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "collapsible",
+        "version": "4.23.0",
+        "hash": "sha256:4609e7d77ea3680af4da1bffb9024f4e5c36cf5eed33161c2cb5db67558204f2"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.field",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Field component (root rac:Label+Text+FieldError), under Inputs / Form.",
+    "inputs": [
+      {
+        "name": "part",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: label | description | error"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: required | invalid | disabled"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "part.label,part.description,part.error,state.required,state.invalid,state.disabled",
+      "members.mode": "closed",
+      "root": "rac:Label+Text+FieldError"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "field",
+        "version": "4.23.0",
+        "hash": "sha256:baaf0edbc3aa1799ab21ffc550ba83b49fbc4b990b1ad439417bea3512809f26"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.file-trigger",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "File trigger component (root rac:FileTrigger), under Inputs / Files.",
+    "inputs": [
+      {
+        "name": "multiple",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "accept",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "directory",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      }
+    ],
+    "limits": {
+      "members": "multiple,accept,directory",
+      "members.mode": "closed",
+      "root": "rac:FileTrigger"
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "file-upload",
+        "version": "04aad54",
+        "hash": "sha256:83a2b4cb7c920cc9ee5eadc8ff58c05d52f092ce31689252702b7e35b066344f"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.form",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Form component (root rac:Form), under Inputs / Form.",
+    "inputs": [
+      {
+        "name": "validation",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: native | aria"
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "validation.native,validation.aria",
+      "members.mode": "closed",
+      "root": "rac:Form"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "field",
+        "version": "4.23.0",
+        "hash": "sha256:baaf0edbc3aa1799ab21ffc550ba83b49fbc4b990b1ad439417bea3512809f26"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.grid-list",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Grid list component (root rac:GridList; APG grid pattern), under Display / Data.",
+    "inputs": [
+      {
+        "name": "layout",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: list | grid"
+      },
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "grid",
+      "compose.components": "components.checkbox",
+      "members": "layout.list,layout.grid,selection",
+      "members.mode": "closed",
+      "root": "rac:GridList"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "item",
+        "version": "4.23.0",
+        "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.icon",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Icon component (root presentational), under Display / Assets.",
+    "inputs": [
+      {
+        "name": "size",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: sm | md | lg"
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-up",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-left",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-arrow-right",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-external-link",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-home",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-search",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-check",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-settings",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-list-view",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-grid-view",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-theme-light",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-theme-dark",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-theme-system",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-success",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-warning",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-danger",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-info",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-user",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-team",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-organization",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-website",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-institution",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-guide",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-document",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-document-approved",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-folder",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-date",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-time",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-payment",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-receipt",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-business",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-security",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-locked",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-legal",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-package",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-layers",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-integration",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "size.sm,size.md,size.lg",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.keyboard",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Keyboard component (root rac:Keyboard), under Display / Labels.",
+    "inputs": [
+      {
+        "name": "scope",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: single | chord"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "scope.single,scope.chord",
+      "members.mode": "closed",
+      "root": "rac:Keyboard"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "kbd",
+        "version": "4.23.0",
+        "hash": "sha256:edac8ee76c99615ca21cea95cd004190113a9474ed67e9a012ad7ccdbeed3301"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.link",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Link component (root rac:Link; APG link pattern), under Navigation / Links.",
+    "inputs": [
+      {
+        "name": "appearance",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: inline | button"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "link",
+      "members": "appearance.inline,appearance.button",
+      "members.mode": "closed",
+      "root": "rac:Link"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "button",
+        "version": "4.23.0",
+        "hash": "sha256:9e41c76cf882fc46d3518f621c87ac7e58ec381ea546fda891de2cabe95fc350"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.logo",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Logo component (root presentational), under Display / Assets.",
+    "inputs": [
+      {
+        "name": "content",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: mark | lockup"
+      },
+      {
+        "name": "size",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: sm | md | lg"
+      },
+      {
+        "name": "ground",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: base | inverse"
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "assets.mark",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.lockup",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "content.mark,content.lockup,size.sm,size.md,size.lg,ground.base,ground.inverse",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.menu",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Menu component (root rac:Menu; APG menu pattern), under Actions / Menus.",
+    "inputs": [
+      {
+        "name": "presentation",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: popup | inline"
+      },
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: none | single | multiple"
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-check",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "menu",
+      "compose.components": "components.button,components.popover",
+      "members": "presentation.popup,presentation.inline,selection.none,selection.single,selection.multiple",
+      "members.mode": "closed",
+      "root": "rac:Menu"
+    },
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "dropdown-menu",
+        "version": "4.23.0",
+        "hash": "sha256:141fa0475d6b5895cdd74bf917e260727847ab8535a52993e4dd161691a64953"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.meter",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Meter component (root rac:Meter; APG meter pattern), under Display / Data.",
+    "inputs": [
+      {
+        "name": "tone",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "emphasis",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "meter",
+      "members": "tone,emphasis",
+      "members.mode": "closed",
+      "root": "rac:Meter"
+    },
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "progress",
+        "version": "4.23.0",
+        "hash": "sha256:2ef007dff770ff504801d9f844baadf008cef0fafafe86b54282d9753ce94a55"
+      },
+      {
+        "registry": "shadcn",
+        "item": "progress",
+        "version": "4.23.0",
+        "hash": "sha256:53e771e7368f56b5957ae4ce16e0a34e3f81f88647a7bb263df97b34b9c2f9b3"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.native-action",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Native action component (root engine:none; APG button pattern), under Actions / Buttons.",
+    "inputs": [
+      {
+        "name": "appearance",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: primary"
+      },
+      {
+        "name": "size",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: md"
+      },
+      {
+        "name": "ground",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: base"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: hover | pressed | focus-visible | disabled"
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-ring",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "button",
+      "members": "appearance.primary,size.md,ground.base,state.hover,state.pressed,state.focus-visible,state.disabled",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.navigation-tree",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Navigation tree component (root rac:NavigationTree; APG treeview pattern), under Navigation / Trees.",
+    "inputs": [
+      {
+        "name": "expand",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "current",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "part",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: item | item-content"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "treeview",
+      "members": "expand,current,part.item,part.item-content",
+      "members.mode": "closed",
+      "root": "rac:NavigationTree"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sidebar",
+        "version": "4.23.0",
+        "hash": "sha256:e75932364c73e302a667c8a7f67e4fc15628c84b946ca4fa2ef4b63717486067"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.number-field",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Number field component (root rac:NumberField; APG spinbutton pattern), under Inputs / Number.",
+    "inputs": [
+      {
+        "name": "format",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "step",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: invalid"
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-up",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "spinbutton",
+      "compose.components": "components.button",
+      "members": "format,step,state.invalid",
+      "members.mode": "closed",
+      "root": "rac:NumberField"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.popover",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Popover component (root rac:Popover), under Containment / Overlays.",
+    "inputs": [
+      {
+        "name": "placement",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "placement",
+      "members.mode": "closed",
+      "root": "rac:Popover"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "popover",
+        "version": "4.23.0",
+        "hash": "sha256:387ab173964f395464bfea99aa299e0af46fdd618d0ee3d9c8b270129b5e44e0"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.progress-bar",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Progress bar component (root rac:ProgressBar), under Feedback / Progress.",
+    "inputs": [
+      {
+        "name": "progress",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: determinate | indeterminate"
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "progress.determinate,progress.indeterminate",
+      "members.mode": "closed",
+      "root": "rac:ProgressBar"
+    },
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "progress",
+        "version": "4.23.0",
+        "hash": "sha256:2ef007dff770ff504801d9f844baadf008cef0fafafe86b54282d9753ce94a55"
+      },
+      {
+        "registry": "shadcn",
+        "item": "progress",
+        "version": "4.23.0",
+        "hash": "sha256:53e771e7368f56b5957ae4ce16e0a34e3f81f88647a7bb263df97b34b9c2f9b3"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.radio-group",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Radio group component (root rac:RadioGroup; APG radio pattern), under Inputs / Choice.",
+    "inputs": [
+      {
+        "name": "orientation",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: horizontal | vertical"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: invalid"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "radio",
+      "members": "orientation.horizontal,orientation.vertical,state.invalid",
+      "members.mode": "closed",
+      "root": "rac:RadioGroup"
+    },
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "radio-group",
+        "version": "4.23.0",
+        "hash": "sha256:7d37385e5e4da5aeb98dd7e94e7d94fc0b94e9edb2a23dcaa3bbfd4e90c50127"
+      },
+      {
+        "registry": "shadcn",
+        "item": "radio-group",
+        "version": "4.23.0",
+        "hash": "sha256:8a63e06ff75dfbf931d8a94d3734a0f6ad89d16c5d09d8bb62e4464a2e69ec6e"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.resize-handle",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Resize handle component (root engine:none; APG windowsplitter pattern), under Containment / Structure.",
+    "inputs": [
+      {
+        "name": "orientation",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: horizontal | vertical"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "windowsplitter",
+      "members": "orientation.horizontal,orientation.vertical",
+      "members.mode": "closed",
+      "root": "engine:none"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "resizable",
+        "version": "4.23.0",
+        "hash": "sha256:d0a0f1a4a61b426405c7d8cb3f3989d136a37bd3e18d8097bed8c875c6447948"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.search-field",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Search field component (root rac:SearchField), under Inputs / Text.",
+    "inputs": [
+      {
+        "name": "part",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: clear | submit"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: empty | filled"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-search",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.button",
+      "members": "part.clear,part.submit,state.empty,state.filled",
+      "members.mode": "closed",
+      "root": "rac:SearchField"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "input-group",
+        "version": "4.23.0",
+        "hash": "sha256:0151584192f3e7ee45db4cd81f0d822cd90401cde915f8df9023c659197a85b8"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.select",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Select component (root rac:Select; APG listbox pattern), under Inputs / Choice.",
+    "inputs": [
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: single"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: invalid"
+      },
+      {
+        "name": "size",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: sm | md | lg"
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-check",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-search",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "listbox",
+      "compose.components": "components.button,components.popover",
+      "members": "selection.single,state.invalid,size.sm,size.md,size.lg",
+      "members.mode": "closed",
+      "root": "rac:Select"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "select",
+        "version": "4.23.0",
+        "hash": "sha256:54a359906fb92a0ff987501dbf71a6082957ee66bbdafac13e317dfef5b381d5"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.semantic-content",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Semantic content component (root presentational), under Display / Content.",
+    "inputs": [
+      {
+        "name": "as",
+        "kind": "prop",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "as.article,as.aside,as.blockquote,as.code,as.dd,as.div,as.dl,as.dt,as.figcaption,as.figure,as.footer,as.h1,as.h2,as.h3,as.h4,as.h5,as.h6,as.img,as.li,as.main,as.nav,as.ol,as.p,as.picture,as.section,as.small,as.source,as.span,as.strong,as.sup,as.time,as.ul",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.separator",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Separator component (root rac:Separator), under Containment / Structure.",
+    "inputs": [
+      {
+        "name": "orientation",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: horizontal | vertical"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "orientation.horizontal,orientation.vertical",
+      "members.mode": "closed",
+      "root": "rac:Separator"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "separator",
+        "version": "4.23.0",
+        "hash": "sha256:5b065cf744e28c8bb5d0ddc5f70bb5245f4432ac7d2af026b12911385fc8944d"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.skeleton",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Skeleton component (root presentational), under Feedback / Progress.",
+    "inputs": [
+      {
+        "name": "shape",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: block"
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "shape.block",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "skeleton",
+        "version": "4.23.0",
+        "hash": "sha256:3f0ce327987c52c20f0be7e2394fa3cf29870d11037f47f88be80e305ae62408"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.slider",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Slider component (root rac:Slider; APG slider pattern), under Inputs / Number.",
+    "inputs": [
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: single | range"
+      },
+      {
+        "name": "orientation",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: horizontal | vertical"
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "slider",
+      "members": "selection.single,selection.range,orientation.horizontal,orientation.vertical",
+      "members.mode": "closed",
+      "root": "rac:Slider"
+    },
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "slider",
+        "version": "4.23.0",
+        "hash": "sha256:53d4b6ce82662fc0e9081b5a40d2eeb554796628188b0ea4e94d17a5f6fdb50b"
+      },
+      {
+        "registry": "shadcn",
+        "item": "slider",
+        "version": "4.23.0",
+        "hash": "sha256:1b2af3f0917356531fc894c84295c53d04433443fe9063070f0f23bfd941563b"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.spinner",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Spinner component (root rac:ProgressBar), under Feedback / Progress.",
+    "inputs": [
+      {
+        "name": "size",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: sm | md | lg"
+      }
+    ],
+    "limits": {
+      "members": "size.sm,size.md,size.lg",
+      "members.mode": "closed",
+      "root": "rac:ProgressBar"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "spinner",
+        "version": "4.23.0",
+        "hash": "sha256:69dde204a8fac215c247fa619015e99d9a2c5b22eea1d61bf6f5bdada36ba5d7"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.status-mark",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Status mark component (root presentational), under Feedback / Indicators.",
+    "inputs": [
+      {
+        "name": "tone",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: neutral | success | warning | danger | info"
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-success",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-warning",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-danger",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-info",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "tone.neutral,tone.success,tone.warning,tone.danger,tone.info",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "status",
+        "version": "04aad54",
+        "hash": "sha256:3ea06683ca5681b1550f3d8bab5deed735a46642b5dbe4896b78ac448ff77449"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.switch",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Switch component (root rac:Switch; APG switch pattern), under Inputs / Choice.",
+    "inputs": [
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: on | off | disabled"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "switch",
+      "members": "state.on,state.off,state.disabled",
+      "members.mode": "closed",
+      "root": "rac:Switch"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "switch",
+        "version": "4.23.0",
+        "hash": "sha256:4362c360807e1dd4dcda558baa2bd16fd788f3719d6b78b6db567eaaa9385988"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.table",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Table component (root rac:Table; APG table pattern), under Display / Data.",
+    "inputs": [
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "sort",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "table",
+      "compose.components": "components.checkbox",
+      "members": "selection,sort",
+      "members.mode": "closed",
+      "root": "rac:Table"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "table",
+        "version": "4.23.0",
+        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.tabs",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Tabs component (root rac:Tabs; APG tabs pattern), under Navigation / Panels.",
+    "inputs": [
+      {
+        "name": "orientation",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: horizontal | vertical"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "tabs",
+      "members": "orientation.horizontal,orientation.vertical",
+      "members.mode": "closed",
+      "root": "rac:Tabs"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "tabs",
+        "version": "4.23.0",
+        "hash": "sha256:3694a0147e4ed8eccfc7644b7cb5214b76f9e0f76780740faf9f1908cef3d0f7"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.tag-group",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Tag group component (root rac:TagGroup), under Inputs / Tags.",
+    "inputs": [
+      {
+        "name": "removable",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: none | single | multiple"
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "members": "removable,selection.none,selection.single,selection.multiple",
+      "members.mode": "closed",
+      "root": "rac:TagGroup"
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "tags-input",
+        "version": "04aad54",
+        "hash": "sha256:1b07b658eb734f77610da1410f6391babe7ca82ff0dcfae8a66343b0f5e28e31"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.text-field",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Text field component (root rac:TextField), under Inputs / Text.",
+    "inputs": [
+      {
+        "name": "line",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: single-line | multiline"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: invalid | disabled | read-only"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "line.single-line,line.multiline,state.invalid,state.disabled,state.read-only",
+      "members.mode": "closed",
+      "root": "rac:TextField"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "input",
+        "version": "4.23.0",
+        "hash": "sha256:fcb9a932c624fa0abe30e940c76d656323a66ed1304bb2b2d1e83c517f719169"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.toast",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Toast component (root rac:UNSTABLE_Toast), under Feedback / Messages.",
+    "inputs": [
+      {
+        "name": "tone",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: info | success | warning | danger"
+      },
+      {
+        "name": "action",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "timeout",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "assets.icon-success",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-warning",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-danger",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-info",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.button",
+      "members": "tone.info,tone.success,tone.warning,tone.danger,action,timeout",
+      "members.mode": "closed",
+      "root": "rac:UNSTABLE_Toast"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sonner",
+        "version": "4.23.0",
+        "hash": "sha256:72d9868323fe1deaaef319b195daf83dc6c0367511cea992859ac0c2766c6935"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.toggle-button",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Toggle button component (root rac:ToggleButton; APG button pattern), under Actions / Buttons.",
+    "inputs": [
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: ghost | outline"
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: hover | focus-visible | disabled | selected"
+      },
+      {
+        "name": "size",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: sm | md | lg"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "button",
+      "members": "variant.ghost,variant.outline,state.hover,state.focus-visible,state.disabled,size.sm,size.md,size.lg,state.selected",
+      "members.mode": "closed",
+      "root": "rac:ToggleButton"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "toggle",
+        "version": "4.23.0",
+        "hash": "sha256:effdc1bc0cd54d74ce86dafb2a343bafe1f8eb1f7d35fcf11e8b69aaca2e8e38"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.toggle-group",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Toggle group component (root rac:ToggleButtonGroup), under Inputs / Choice.",
+    "inputs": [
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: single | multiple"
+      },
+      {
+        "name": "orientation",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: horizontal | vertical"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.components": "components.toggle-button",
+      "members": "selection.single,selection.multiple,orientation.horizontal,orientation.vertical",
+      "members.mode": "closed",
+      "root": "rac:ToggleButtonGroup"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "toggle-group",
+        "version": "4.23.0",
+        "hash": "sha256:2e0038f8aba16ba91c3a5bdd4de956e04aa52d03123282e7a61d2fbc534c5c97"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.toolbar",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Toolbar component (root rac:Toolbar; APG toolbar pattern), under Actions / Toolbars.",
+    "inputs": [
+      {
+        "name": "orientation",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: horizontal | vertical"
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "toolbar",
+      "members": "orientation.horizontal,orientation.vertical",
+      "members.mode": "closed",
+      "root": "rac:Toolbar"
+    },
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "button-group",
+        "version": "4.23.0",
+        "hash": "sha256:213335bc93133b79d65ddcec9188e2ab5dbbf25f289e4679d549b412ebcd780e"
+      },
+      {
+        "registry": "shadcn",
+        "item": "button-group",
+        "version": "4.23.0",
+        "hash": "sha256:cde9f208aea097d875f16b5ed97207f0155357ce04d895cd20b207ac1b344878"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.tooltip",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Tooltip component (root rac:Tooltip; APG tooltip pattern), under Containment / Overlays.",
+    "inputs": [
+      {
+        "name": "placement",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "apg": "tooltip",
+      "members": "placement",
+      "members.mode": "closed",
+      "root": "rac:Tooltip"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "tooltip",
+        "version": "4.23.0",
+        "hash": "sha256:a4ada70243a8ff7bb5a15abc8d11f2d4559af3348893db0c437e9aef0435196f"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.tree",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Tree component (root rac:Tree; APG treeview pattern), under Display / Data.",
+    "inputs": [
+      {
+        "name": "selection",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "expand",
+        "kind": "prop",
+        "required": false,
+        "description": "member flag"
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "apg": "treeview",
+      "members": "selection,expand",
+      "members.mode": "closed",
+      "root": "rac:Tree"
+    },
+    "references": [
+      {
+        "registry": "magicui",
+        "item": "file-tree",
+        "version": "efe76fc",
+        "hash": "sha256:bfc08e38ed3b0ccc6b8f91d6834f803a31405bd05cd7894cff505d66672af97b"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.sidebar",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Sidebar component (root presentational), under Navigation / Trees.",
+    "inputs": [
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.sidebar-ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-panel-left",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.icon,components.sheet",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sidebar",
+        "version": "4.23.0",
+        "hash": "sha256:e75932364c73e302a667c8a7f67e4fc15628c84b946ca4fa2ef4b63717486067"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.command",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Command component (root rac:Autocomplete), under Actions / Menus.",
+    "inputs": [
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-check",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-search",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.icon",
+      "members": "",
+      "members.mode": "closed",
+      "root": "rac:Autocomplete"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "command",
+        "version": "4.23.0",
+        "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.sheet",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Sheet component (root rac:Dialog+Modal+ModalOverlay), under Containment / Overlays.",
+    "inputs": [
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.icon",
+      "members": "",
+      "members.mode": "closed",
+      "root": "rac:Dialog+Modal+ModalOverlay"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sheet",
+        "version": "4.23.0",
+        "hash": "sha256:faf68ebfa080e72f9f8c2f0a946c0a243f6fedf8d3a35cc71ba125a4436fe711"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.empty",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Empty component (root presentational), under Feedback / Messages.",
+    "inputs": [
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.tracking-tight",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "empty",
+        "version": "4.23.0",
+        "hash": "sha256:fc6a8c64f6c422c0ab8ed46e6e832f7b5536d06c787206dc54c56bfa1c841d23"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.item",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Item component (root presentational), under Display / Content.",
+    "inputs": [
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "item",
+        "version": "4.23.0",
+        "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.scroll-area",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Scroll area component (root presentational), under Containment / Structure.",
+    "inputs": [
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "scroll-area",
+        "version": "4.23.0",
+        "hash": "sha256:ebf805286284762c329b48209e8e2c07860073adef9459181c7f2ceb2fd0b67f"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.dropdown-menu",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Dropdown menu component (root rac:Menu), under Actions / Menus.",
+    "inputs": [
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.shadow",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-check",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.icon",
+      "members": "",
+      "members.mode": "closed",
+      "root": "rac:Menu"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "dropdown-menu",
+        "version": "4.23.0",
+        "hash": "sha256:b40ef3c7663c103fce8f1aeab0d613bdfabe8c67b8fe604927fc7e10a4ed3c83"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.rich-text",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Rich text component (root presentational), under Display / Content.",
+    "inputs": [
+      {
+        "name": "value",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "readOnly",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "onChange",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "className",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "id",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "dir",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "aria-label",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "aria-labelledby",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "state",
+        "kind": "prop",
+        "required": false,
+        "description": "member axis: read-only | editable"
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.badge,components.link,components.semantic-content,components.table",
+      "members": "value.markdown,value.json,state.read-only,state.editable",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.media-player",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Media player component (root presentational), under Display / Media.",
+    "inputs": [
+      {
+        "name": "video",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "poster",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "passage",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "captions",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "muted",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "autoplay",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "loop",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "controls",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "className",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "decorative",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.video",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.button,components.toggle-button,components.slider,components.icon,components.semantic-content",
+      "members": "controls.full,controls.minimal",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "media-player",
+        "version": "04aad54",
+        "hash": "sha256:05e18441a6e5a2276c6b40f8c6cd9e2cdd3aa296e971ad1de58a05dbf1bf23e9"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-swatch",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen swatch component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure",
+      "members": "variant.swatch,variant.color-ramp",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-ladder",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen ladder component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure",
+      "members": "variant.type,variant.spacing,variant.radius",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-player",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen player component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.button",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-grid",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen grid component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.logo,components.icon",
+      "members": "variant.asset,variant.icon",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-matrix",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen matrix component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.table,components.badge",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-viewport",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen viewport component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.table,components.badge",
+      "members": "variant.section,variant.frame,variant.page",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-passage",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen passage component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.rich-text",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-copy-in-context",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen copy in context component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.table,components.rich-text,components.button,components.navigation-tree",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.canvas-zoom",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Canvas zoom component (root presentational), under Navigation / Canvas.",
+    "inputs": [
+      {
+        "name": "value",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "min",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "max",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "onChange",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "onFit",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "formatValue",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.toolbar,components.button,components.icon,components.semantic-content",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.canvas-map",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Canvas map component (root presentational), under Navigation / Canvas.",
+    "inputs": [
+      {
+        "name": "label",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "bounds",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "viewport",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "viewSize",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "onViewportChange",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.button,components.semantic-content",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  }
+]

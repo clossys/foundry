@@ -1,0 +1,238 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.page-header",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.explain",
+    "l2": "explain-introductions",
+    "order": 181
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "title",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "description",
+        "type": "copy",
+        "required": false
+      },
+      {
+        "name": "breadcrumbs",
+        "type": "region",
+        "required": false
+      },
+      {
+        "name": "actions",
+        "type": "action",
+        "required": false,
+        "max": 2
+      },
+      {
+        "name": "meta",
+        "type": "region",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "config.standard",
+        "config.record",
+        "contact.header"
+      ]
+    },
+    "allowedComposes": [
+      "components.breadcrumbs",
+      "components.button",
+      "components.badge",
+      "components.tabs",
+      "components.card",
+      "components.empty"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "both",
+    "passageSchema": "passages.page-header",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "title",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "breadcrumbs.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "breadcrumbs.items[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "meta[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "meta[].value",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.accent-foreground",
+    "themes.animate-marquee",
+    "themes.animate-marquee-vertical",
+    "themes.animate-shiny-text",
+    "themes.background",
+    "themes.card",
+    "themes.card-foreground",
+    "themes.font-heading",
+    "themes.font-mono",
+    "themes.font-sans",
+    "themes.foreground",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.popover",
+    "themes.popover-foreground",
+    "themes.primary-foreground",
+    "themes.secondary",
+    "themes.secondary-foreground",
+    "themes.sidebar",
+    "themes.sidebar-accent",
+    "themes.sidebar-accent-foreground",
+    "themes.sidebar-foreground",
+    "themes.sidebar-primary-foreground",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.badge",
+    "components.breadcrumbs",
+    "components.button",
+    "components.card",
+    "components.empty"
+  ]
+}

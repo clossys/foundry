@@ -1,0 +1,97 @@
+{
+  "name": "module-outline",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Command, CommandGroup, CommandItem, CommandList } from '@clossys/designer-ui';\n\n/** One section of the open page and the selector that finds it in the page column. */\nexport interface OutlineItem { id: string; label: string; target: string }\n\n/** The `outline` input of `sections.module.outline`. `active` is the section in view; `onSelect` brings one into view. */\nexport interface OutlineInput { label: string; heading: string; items: readonly OutlineItem[]; active?: string; onSelect: (target: string) => void }\n\n/** `sections.module.outline`: the open page's own sections in page order; a click brings one into view. */\nexport default function OutlineSection({ outline }: { outline: OutlineInput }) {\n  const selected = outline.items.find(item => item.target === outline.active);\n  return <Command data-studio-section=\"module-outline\" className=\"rounded-none! bg-transparent p-0\">\n    <CommandList aria-label={outline.label} className=\"max-h-none\" selectionMode=\"single\" selectedKeys={selected ? [selected.id] : []}>\n      <CommandGroup id=\"outline\" heading={outline.heading}>\n        {outline.items.map(item => <CommandItem\n          key={item.id}\n          id={item.id}\n          textValue={item.label}\n          data-outline-target={item.target}\n          className=\"[&>svg:last-child]:hidden\"\n          shouldCloseOnSelect={false}\n          onAction={() => outline.onSelect(item.target)}\n        >{item.label}</CommandItem>)}\n      </CommandGroup>\n    </CommandList>\n  </Command>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n \"name\": \"module-outline\",\n \"type\": \"registry:block\",\n \"title\": \"Outline Module\",\n \"description\": \"The open page's own sections in page order; click brings one into view.\",\n \"author\": \"Clossys\",\n \"dependencies\": [],\n \"registryDependencies\": [\n  \"command\"\n ],\n \"files\": [\n  {\n   \"path\": \"index.tsx\",\n   \"type\": \"registry:component\",\n   \"target\": \"studio/sections/module-outline/index.tsx\",\n   \"content\": \"import { Command, CommandGroup, CommandItem, CommandList } from '@clossys/designer-ui';\\n\\n/** One section of the open page and the selector that finds it in the page column. */\\nexport interface OutlineItem { id: string; label: string; target: string }\\n\\n/** The `outline` input of `sections.module.outline`. `active` is the section in view; `onSelect` brings one into view. */\\nexport interface OutlineInput { label: string; heading: string; items: readonly OutlineItem[]; active?: string; onSelect: (target: string) => void }\\n\\n/** `sections.module.outline`: the open page's own sections in page order; a click brings one into view. */\\nexport default function OutlineSection({ outline }: { outline: OutlineInput }) {\\n  const selected = outline.items.find(item => item.target === outline.active);\\n  return <Command data-studio-section=\\\"module-outline\\\" className=\\\"rounded-none! bg-transparent p-0\\\">\\n    <CommandList aria-label={outline.label} className=\\\"max-h-none\\\" selectionMode=\\\"single\\\" selectedKeys={selected ? [selected.id] : []}>\\n      <CommandGroup id=\\\"outline\\\" heading={outline.heading}>\\n        {outline.items.map(item => <CommandItem\\n          key={item.id}\\n          id={item.id}\\n          textValue={item.label}\\n          data-outline-target={item.target}\\n          className=\\\"[&>svg:last-child]:hidden\\\"\\n          shouldCloseOnSelect={false}\\n          onAction={() => outline.onSelect(item.target)}\\n        >{item.label}</CommandItem>)}\\n      </CommandGroup>\\n    </CommandList>\\n  </Command>;\\n}\\n\"\n  }\n ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.module.outline",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.command",
+          "files": [
+            "registry/aria-nova/ui/command.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:b6e8a9d023b153bb3f1e816736446adb33e7fd48d5885bacd26e318ee92735b4",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "module-outline",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.module.outline",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FRAME-PANELS"
+      },
+      "reason": "FRAME-PANELS (foundry#2553 L6): rows keep their popover open on select (shouldCloseOnSelect false), so the header popover stays open with the chosen part highlighted.",
+      "createdAt": "2026-10-31T23:59:30Z",
+      "checks": [
+        {
+          "id": "lineage.reference",
+          "suite": "studio",
+          "type": "fixed",
+          "status": "pass",
+          "at": "2026-10-31T23:59:30Z"
+        },
+        {
+          "id": "studio.ds-only",
+          "suite": "studio",
+          "type": "fixed",
+          "status": "pass",
+          "at": "2026-10-31T23:59:30Z"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--popover",
+          "--muted",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

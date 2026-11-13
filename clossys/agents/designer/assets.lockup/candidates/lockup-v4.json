@@ -1,0 +1,57 @@
+{
+  "name": "lockup",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "lockup/positive.svg",
+      "type": "registry:file",
+      "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" aria-label=\"Clossys\" viewBox=\"0 0 148 48\" data-clear-space=\"0.2\"><svg x=\"0\" y=\"0\" width=\"48\" height=\"48\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"#0A0A0A\"/><g transform=\"translate(50 50)\" fill=\"#FAFAFA\"><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(0.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(72.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(144.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(216.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(288.0)\"/></g></svg><text x=\"56\" y=\"31\" font-size=\"22\" font-weight=\"600\" letter-spacing=\"-0.44\" font-family=\"&apos;Geist Variable&apos;, sans-serif\" fill=\"currentColor\">Clossys</text></svg>\n"
+    },
+    {
+      "path": "clossys/assets.lockup.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"lockup\": {\n      \"positive\": {\n        \"$type\": \"svg\",\n        \"$value\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" aria-label=\\\"Clossys\\\" viewBox=\\\"0 0 148 48\\\" data-clear-space=\\\"0.2\\\"><svg x=\\\"0\\\" y=\\\"0\\\" width=\\\"48\\\" height=\\\"48\\\" viewBox=\\\"0 0 100 100\\\"><rect width=\\\"100\\\" height=\\\"100\\\" rx=\\\"21.875\\\" fill=\\\"#0A0A0A\\\"/><g transform=\\\"translate(50 50)\\\" fill=\\\"#FAFAFA\\\"><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(0.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(72.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(144.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(216.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(288.0)\\\"/></g></svg><text x=\\\"56\\\" y=\\\"31\\\" font-size=\\\"22\\\" font-weight=\\\"600\\\" letter-spacing=\\\"-0.44\\\" font-family=\\\"&apos;Geist Variable&apos;, sans-serif\\\" fill=\\\"currentColor\\\">Clossys</text></svg>\\n\",\n        \"$extensions\": {\n          \"com.clossys.origin\": {\n            \"kind\": \"authored\",\n            \"license\": \"MIT\",\n            \"note\": \"create (PLACEHOLDER-IMG): composed from the Clossys asterisk mark and the Clossys wordmark text\"\n          }\n        }\n      },\n      \"reversed\": {\n        \"$type\": \"svg\",\n        \"$value\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" aria-label=\\\"Clossys\\\" viewBox=\\\"0 0 148 48\\\" data-clear-space=\\\"0.2\\\"><svg x=\\\"0\\\" y=\\\"0\\\" width=\\\"48\\\" height=\\\"48\\\" viewBox=\\\"0 0 100 100\\\"><rect width=\\\"100\\\" height=\\\"100\\\" rx=\\\"21.875\\\" fill=\\\"oklch(1 0 0)\\\"/><g transform=\\\"translate(50 50)\\\" fill=\\\"oklch(1 0 0)\\\"><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(0.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(72.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(144.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(216.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(288.0)\\\"/></g></svg><text x=\\\"56\\\" y=\\\"31\\\" font-size=\\\"22\\\" font-weight=\\\"600\\\" letter-spacing=\\\"-0.44\\\" font-family=\\\"&apos;Geist Variable&apos;, sans-serif\\\" fill=\\\"oklch(1 0 0)\\\">Clossys</text></svg>\"\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.lockup",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "packages/designer/src/catalog/fills/foundry/assets.lockup.json",
+        "clossys/agents/designer/assets.lockup/candidates/lockup-v3.json"
+      ],
+      "license": "MIT"
+    },
+    "element": {
+      "id": "lockup",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.lockup",
+      "kind": "registry:item",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "planner:INTEGRATE"
+      },
+      "reason": "ADOPT: derived from Foundry's own assets.lockup candidate, whose root source asset is packages/producer/studio/public/studio-mark.svg; reversed spelled out from Foundry's fill instead of aliasing the positive member; positive unchanged from lockup-v3.",
+      "createdAt": "2026-11-05T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "exempt",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

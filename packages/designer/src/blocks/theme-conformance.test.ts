@@ -9,7 +9,10 @@ import { mergeDeclarations, registryFromDeclarations } from "../tokens/internal/
 import { resolveTokenValue } from "../tokens/internal/resolve-token-value.js";
 import { checkTokenContrast } from "../tokens/contrast-gate.js";
 import { CONTRAST_PAIRS, contrastPairsForTheme } from "../tokens/contrast-pairs.js";
+import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "../catalog/blocks.js";
 import { BLOCK_THEME_CONFORMANCE, NON_BLOCK_THEME_EXPORTS, type BlockThemeRegistration } from "./theme-conformance.js";
+import { marketingComponentSelection } from "../studio/marketing-component-selection.js";
+import { STOCK_COLOR_BY_PROPERTY, STOCK_COLOR_KEYS, THEME_CONTRAST_PAIRS, shippedThemeCss } from "../catalog-core/theme-vocabulary.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");
 const blocksRoot = resolve(packageRoot, "src/blocks");
@@ -79,6 +82,9 @@ function colorUtility(candidate: string): { token?: string; invalid?: string } {
   if (!match) return {};
   const [, prefix, suffix] = match as unknown as [string, string, string];
   const property = `--color-${suffix}`;
+  // Stock wins: a generated shadcn key (`--color-primary: var(--primary)`) paints the themes variable.
+  const stock = STOCK_COLOR_KEYS.get(property);
+  if (stock) return { token: stock.property };
   if (TOKENS[property]) return { token: property };
   if (INHERITED_COLOR.has(suffix)) return {};
   if (prefix === "text" && (TOKENS[`--text-${suffix}`] || /^(?:left|right|start|end|center|justify|balance|pretty|wrap|nowrap|ellipsis|clip|xs|sm|base|lg|xl|[2-9]xl)$/.test(suffix))) return {};
@@ -87,6 +93,12 @@ function colorUtility(candidate: string): { token?: string; invalid?: string } {
   if (/^ring/.test(prefix) && /^(?:\d+|inset)$/.test(suffix)) return {};
   if (prefix === "stroke" && /^\d+$/.test(suffix)) return {};
   if (prefix === "shadow" && /^(?:xs|sm|md|lg|xl|2xl|inner)$/.test(suffix)) return {};
+  if (suffix.startsWith("(")) {
+    // Tailwind v4 variable shorthand: prefix-(--var), prefix-(color:--var), optional /opacity.
+    const variable = /^\((?:(color|length):)?(--[\w-]+)\)(?:\/\d+)?$/.exec(suffix);
+    if (variable?.[1] !== "length" && variable && variable[2]!.startsWith("--color-") && TOKENS[variable[2]!]) return { token: variable[2] };
+    if (variable?.[1] === "length" && /^(?:text|stroke|border(?:-[trblsexy])?|outline|ring(?:-offset)?)$/.test(prefix)) return {};
+  }
   if (suffix.startsWith("[")) {
     const value = suffix.slice(1, -1).replace(/^color:/, "");
     const variable = /^var\((--color-[\w-]+)\)$/.exec(value);
@@ -127,6 +139,9 @@ function sourceEvidence(file: string, source: string) {
     if (ts.isStringLiteralLike(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
       // A CSS property key is technical syntax, not a utility class value.
       if (ts.isCallExpression(node.parent) && node.parent.arguments[0] === node && ts.isPropertyAccessExpression(node.parent.expression) && node.parent.expression.name.text === "setProperty" && /\.style$/.test(node.parent.expression.expression.getText(ast))) return;
+      // A CSS box keyword as the value of a box property (boxSizing: "border-box") is not a border-color utility.
+      if (/^(?:border|padding|content)-box$/.test(node.text) && ts.isPropertyAssignment(node.parent) && node.parent.initializer === node
+        && /^(?:boxSizing|backgroundClip|backgroundOrigin)$/.test(normalizeProperty(node.parent.name.getText(ast).replace(/["']/g, "")))) return;
       if (namedColor(node.text)) findings.push(`${file}: named color ${node.text}`);
       for (const candidate of node.text.split(/\s+/)) {
         const color = colorUtility(candidate);
@@ -148,6 +163,9 @@ function blockSources(directory = blocksRoot): Map<string, string> {
   const sources = new Map<string, string>();
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = resolve(directory, entry.name);
+    // Test-code directories are not Block sources: the package files block never ships them, and no
+    // runtime module imports them (a Block that did would leave the owned graph and fail it).
+    if (entry.isDirectory() && /^__(?:fixtures|tests|mocks|snapshots)__$/.test(entry.name)) continue;
     if (entry.isDirectory()) for (const [file, source] of blockSources(path)) sources.set(file, source);
     else if (/\.tsx?$/.test(entry.name) && !/\.(?:test|check)\.tsx?$/.test(entry.name)) sources.set(relative(packageRoot, path), readFileSync(path, "utf8"));
   }
@@ -157,14 +175,24 @@ function blockSources(directory = blocksRoot): Map<string, string> {
 interface ConformanceInputs {
   sources: Map<string, string>;
   css: string;
+  /** The shipped themes fills' variables (light, OS dark, explicit dark), as emitted. */
+  themeCss: string;
   themeKeys: string;
   registrations: readonly BlockThemeRegistration[];
 }
 
+/*
+ * First authored class list in each exempt Block's own source. The Toolbar
+ * Block renders through the Foundry Toolbar (c866f93c5), so its first owned
+ * class list is a plain region string rather than a cx() call.
+ */
+const EXEMPT_CLASS_ANCHORS = [["Toolbar", 'className="']] as const;
+
 function realInputs(): ConformanceInputs {
   return {
-    sources: new Map([...blockSources(), ...blockSources(resolve(packageRoot, "src/atoms"))]),
+    sources: new Map([...blockSources(), ...blockSources(resolve(packageRoot, "src/components"))]),
     css: readFileSync(resolve(packageRoot, "styles/tokens.css"), "utf8"),
+    themeCss: shippedThemeCss(),
     themeKeys: readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8"),
     registrations: BLOCK_THEME_CONFORMANCE,
   };
@@ -205,9 +233,69 @@ function valueExports(file: string, source: string) {
 function ownedDependency(file: string, module: string, sources: ReadonlyMap<string, string>): string | undefined {
   if (!module.startsWith(".")) return;
   const path = posix.normalize(posix.join(posix.dirname(file), module)).replace(/\.js$/, "");
-  if (!/^src\/(?:blocks|atoms)\//.test(path)) return;
+  if (!/^src\/(?:blocks|components)\//.test(path)) return;
   for (const suffix of [".ts", ".tsx"]) if (sources.has(path + suffix)) return path + suffix;
   throw new Error(`${file}: missing owned dependency ${module}`);
+}
+
+/*
+ * A Block reaches a component through componentLeaf("components.x"), resolved at
+ * render time by the consumer's selection. The graph follows that edge to the
+ * leaf the test harness actually selects (its ambient marketing selection), so a
+ * delegated foreground is read from the selected stock or Foundry source rather
+ * than assumed. A leaf outside the selection, or an unknown implementation kind,
+ * is refused; packages outside the owned Block/component graph end the edge, as a
+ * non-owned import does.
+ */
+type SelectedImpl = { kind: "source"; entry: string } | { kind: "package"; module: string; export: string };
+let selectedImpls: Readonly<Record<string, SelectedImpl>> | undefined;
+function selectedLeafSource(leaf: string, file: string, sources: ReadonlyMap<string, string>): string | undefined {
+  selectedImpls ??= Object.fromEntries(Object.entries((marketingComponentSelection().profile.components as unknown as { components: Record<string, { impl: SelectedImpl }> }).components).map(([id, chosen]) => [id, chosen.impl]));
+  const impl = selectedImpls[leaf];
+  if (!impl) throw new Error(`${file}: component leaf ${leaf} is not in the harness selection`);
+  if (impl.kind === "source") {
+    const path = posix.join("src/components/preview-runtime", impl.entry);
+    if (!sources.has(path)) throw new Error(`${file}: selected source for ${leaf} is missing: ${path}`);
+    return path;
+  }
+  if (impl.kind === "package") return impl.module === "@clossys/designer/components" ? ownedExportSource(impl.export, "src/components/index.ts", sources) : undefined;
+  throw new Error(`${file}: unsupported implementation for ${leaf}`);
+}
+
+/**
+ * The owned source that defines an imported or selected value export. Unlike the
+ * barrel's valueExports, it reads stock part files' local `export { A, B }` lists.
+ * A re-export from a package (e.g. react-aria-components) ends outside the owned graph.
+ */
+function ownedExportSource(name: string, file: string, sources: ReadonlyMap<string, string>, visited = new Set<string>()): string | undefined {
+  if (visited.has(file)) throw new Error(`export cycle for ${name}`);
+  visited.add(file);
+  const source = sources.get(file);
+  if (source === undefined) throw new Error(`missing source ${file}`);
+  const stars: string[] = [];
+  for (const node of astOf(file, source).statements) {
+    if (ts.isExportDeclaration(node)) {
+      if (node.isTypeOnly) continue;
+      const module = node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined;
+      if (!node.exportClause) { if (module) stars.push(module); continue; }
+      if (!ts.isNamedExports(node.exportClause)) continue;
+      const item = node.exportClause.elements.find(element => !element.isTypeOnly && element.name.text === name);
+      if (!item) continue;
+      if (!module) return file;
+      const dependency = ownedDependency(file, module, sources);
+      return dependency ? ownedExportSource((item.propertyName ?? item.name).text, dependency, sources, visited) : undefined;
+    }
+    const modifiers = ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined;
+    if (!modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword)) continue;
+    if (ts.isVariableStatement(node) && node.declarationList.declarations.some(declaration => ts.isIdentifier(declaration.name) && declaration.name.text === name)) return file;
+    if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isEnumDeclaration(node)) && node.name?.text === name) return file;
+  }
+  for (const module of stars) {
+    const dependency = ownedDependency(file, module, sources);
+    if (!dependency) continue;
+    try { return ownedExportSource(name, dependency, sources, new Set(visited)); } catch { /* not exported there */ }
+  }
+  throw new Error(`${file}: no export ${name}`);
 }
 
 function sourceGraph(entry: string, sources: ReadonlyMap<string, string>): string[] {
@@ -224,6 +312,17 @@ function sourceGraph(entry: string, sources: ReadonlyMap<string, string>): strin
         const clause = node.importClause;
         if (clause?.isTypeOnly) continue;
         if (clause && !clause.name && clause.namedBindings && ts.isNamedImports(clause.namedBindings) && clause.namedBindings.elements.every(item => item.isTypeOnly)) continue;
+        // Named value imports reach only the sources that define those names, so a
+        // part importing one helper from a barrel does not inherit the whole barrel.
+        if (clause && !clause.name && clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+          const barrel = ownedDependency(file, node.moduleSpecifier.text, sources);
+          if (barrel) for (const item of clause.namedBindings.elements) {
+            if (item.isTypeOnly) continue;
+            const defining = ownedExportSource((item.propertyName ?? item.name).text, barrel, sources);
+            if (defining) visit(defining);
+          }
+          continue;
+        }
         module = node.moduleSpecifier.text;
       }
       if (ts.isExportDeclaration(node) && !node.isTypeOnly && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier)) {
@@ -234,6 +333,19 @@ function sourceGraph(entry: string, sources: ReadonlyMap<string, string>): strin
         const dependency = ownedDependency(file, module, sources);
         if (dependency) visit(dependency);
       }
+    }
+    const leaves = new Set<string>();
+    (function findLeaves(node: ts.Node) {
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "componentLeaf") {
+        const leaf = node.arguments[0];
+        if (!leaf || !ts.isStringLiteralLike(leaf)) throw new Error(`${file}: componentLeaf needs a literal leaf id`);
+        leaves.add(leaf.text);
+      }
+      ts.forEachChild(node, findLeaves);
+    })(ast);
+    for (const leaf of leaves) {
+      const dependency = selectedLeafSource(leaf, file, sources);
+      if (dependency) visit(dependency);
     }
   }
   visit(entry);
@@ -267,16 +379,18 @@ function conformanceFindings(input: ConformanceInputs): string[] {
   for (const [name, reason] of Object.entries(NON_BLOCK_THEME_EXPORTS)) if (!reason.trim() || registered.includes(name)) findings.push(`invalid non-Block classification ${name}`);
 
   const exemptions = input.registrations.filter(entry => "exemptionReason" in entry);
-  if (exemptions.length > 2) findings.push("Block exemption count grew above 2");
+  // Panel left the list when the stock Card began painting its ink (E4); the list only shrinks.
+  if (exemptions.length > 1) findings.push("Block exemption count grew above 1");
   for (const entry of exemptions) {
-    if (!["Panel", "Toolbar"].includes(entry.exportName)) findings.push(`new Block exemption ${entry.exportName}`);
+    if (!["Toolbar"].includes(entry.exportName)) findings.push(`new Block exemption ${entry.exportName}`);
     if (!entry.exemptionReason?.trim()) findings.push(`exemption without reason ${entry.exportName}`);
     if (entry.contrastPairs.length) findings.push(`stale exemption with contrast coverage ${entry.exportName}`);
   }
 
-  const light = parseRootDeclarations(input.css);
-  const darkExplicit = parseDeclarationsForSelector(input.css, ':root[data-theme="dark"]');
-  const darkOs = parseDeclarationsForSelector(input.css, ':root:not([data-theme="light"])');
+  // Foundry tokens come from tokens.css; stock themes variables from the shipped themes emit.
+  const light = mergeDeclarations(parseRootDeclarations(input.css), parseRootDeclarations(input.themeCss));
+  const darkExplicit = mergeDeclarations(parseDeclarationsForSelector(input.css, ':root[data-theme="dark"]'), parseDeclarationsForSelector(input.themeCss, ':root[data-theme="dark"]'));
+  const darkOs = mergeDeclarations(parseDeclarationsForSelector(input.css, ':root:not([data-theme="light"])'), parseDeclarationsForSelector(input.themeCss, ':root:not([data-theme="light"])'));
   const themeKeys = parseDeclarationsForSelector(input.themeKeys, "@theme inline");
   const themes = [
     { label: "light", policy: "light" as const, declarations: light },
@@ -297,7 +411,7 @@ function conformanceFindings(input: ConformanceInputs): string[] {
     const foreground = new Set<string>();
     for (const file of graph) {
       const data = evidence(file);
-      // Atoms retain their existing source rules; their real token roles are
+      // Components retain their existing source rules; their real token roles are
       // included only to prove a Block's delegated contrast registration.
       if (file.startsWith("src/blocks/")) findings.push(...data.findings);
       for (const property of data.tokens) used.add(property);
@@ -305,19 +419,21 @@ function conformanceFindings(input: ConformanceInputs): string[] {
       for (const property of data.foregroundTokens) foreground.add(property);
     }
     for (const property of used) {
-      if (!TOKENS[property] || !light.get(property)?.trim()) findings.push(`${entry.exportName}: missing light token ${property}`);
-      if (!themeKeys.get(property)?.includes(`var(${property},`)) findings.push(`${entry.exportName}: missing live utility token ${property}`);
+      const stock = STOCK_COLOR_BY_PROPERTY.get(property);
+      if ((!TOKENS[property] && !stock) || !light.get(property)?.trim()) findings.push(`${entry.exportName}: missing light token ${property}`);
+      // A stock utility must read its themes variable through the generated key; a Foundry one through its own fallback key.
+      if (stock ? themeKeys.get(stock.key)?.trim() !== `var(${property})` : !themeKeys.get(property)?.includes(`var(${property},`)) findings.push(`${entry.exportName}: missing live utility token ${property}`);
       for (const theme of themes) {
         const resolved = resolveTokenValue(property, theme.registry);
         if (!resolved.value || resolved.cycle || resolved.missingProperty) findings.push(`${entry.exportName}: unresolved ${theme.label} token ${property}`);
         for (const dependency of resolved.chain) {
-          if (TOKENS[dependency]?.themeDependent && (!darkExplicit.get(dependency)?.trim() || !darkOs.get(dependency)?.trim())) findings.push(`${entry.exportName}: missing dark value ${dependency}`);
+          if ((TOKENS[dependency]?.themeDependent || STOCK_COLOR_BY_PROPERTY.get(dependency)?.themeDependent) && (!darkExplicit.get(dependency)?.trim() || !darkOs.get(dependency)?.trim())) findings.push(`${entry.exportName}: missing dark value ${dependency}`);
         }
       }
     }
     if (!entry.exemptionReason?.trim() && !entry.contrastPairs.length) findings.push(`${entry.exportName}: no registered contrast pair or reason`);
     for (const id of entry.contrastPairs) {
-      const pair = CONTRAST_PAIRS.find(candidate => candidate.id === id);
+      const pair = [...CONTRAST_PAIRS, ...THEME_CONTRAST_PAIRS].find(candidate => candidate.id === id);
       if (!pair) findings.push(`${entry.exportName}: unknown contrast pair ${id}`);
       else if (!paint.has(pair.foreground)) findings.push(`${entry.exportName}: contrast foreground is not used or delegated ${id}`);
     }
@@ -328,7 +444,7 @@ function conformanceFindings(input: ConformanceInputs): string[] {
       continue;
     }
     for (const theme of themes) {
-      const pairs = contrastPairsForTheme(theme.policy).filter(pair => entry.contrastPairs.includes(pair.id));
+      const pairs = [...contrastPairsForTheme(theme.policy), ...THEME_CONTRAST_PAIRS].filter(pair => entry.contrastPairs.includes(pair.id));
       if (pairs.length !== entry.contrastPairs.length) findings.push(`${entry.exportName}: incomplete ${theme.label} pair registration`);
       const report = checkTokenContrast(pairs, { tokens: theme.registry });
       if (!report.ok) findings.push(`${entry.exportName}: ${theme.label} contrast failed ${JSON.stringify({ findings: report.findings, unchecked: report.unchecked })}`);
@@ -338,6 +454,15 @@ function conformanceFindings(input: ConformanceInputs): string[] {
 }
 
 describe("Block theme conformance", () => {
+  it("scans every shipped Block source and no test-code directory", () => {
+    const files = [...blockSources().keys()];
+    expect(files).toContain("src/blocks/Hero.tsx");
+    expect(files).toContain("src/blocks/hero/StillBackdrop.tsx");
+    expect(files.filter(file => /\/__(?:fixtures|tests|mocks|snapshots)__\//.test(file))).toEqual([]);
+    const manifest = JSON.parse(readFileSync(resolve(packageRoot, "package.json"), "utf8")) as { files: string[] };
+    for (const directory of ["__fixtures__", "__tests__", "__mocks__", "__snapshots__"]) expect(manifest.files).toContain(`!src/**/${directory}/**`);
+  });
+
   it("every Block source uses token colors without inline color", () => {
     const findings = [...blockSources()].flatMap(([file, source]) => sourceEvidence(file, source).findings);
     expect(findings).toEqual([]);
@@ -348,13 +473,42 @@ describe("Block theme conformance", () => {
     expect(conformanceFindings(input)).toEqual([]);
   });
 
+  it("registers canonical LegalProse once with its owned and delegated reading pairs", () => {
+    const input = realInputs();
+    const entries = input.registrations.filter(entry => entry.exportName === "LegalProse");
+    expect(entries).toHaveLength(1);
+    const entry = entries[0]!;
+    expect(CANONICAL_SECTION_BLOCK_REGISTRATIONS.filter(item => item.export === entry.exportName)).toEqual([
+      { id: "sections.legal-prose", export: "LegalProse", source: entry.source },
+    ]);
+    expect(entry.source).toBe("src/blocks/LegalProse.tsx");
+    expect(entry).not.toHaveProperty("exemptionReason");
+    expect(NON_BLOCK_THEME_EXPORTS).not.toHaveProperty("LegalProse");
+    expect(entry.contrastPairs).toEqual([
+      "ink-primary/surface-base", "ink-secondary/surface-base",
+      "ink-primary/surface-sunken", "ink-link/surface-base",
+    ]);
+    const graph = sourceGraph(entry.source, input.sources);
+    expect(graph).toContain("src/components/SemanticContent.tsx");
+    expect(graph).toContain("src/blocks/SectionHeader.tsx");
+    expect(graph).toContain("src/blocks/ArticleBody.tsx");
+    const source = input.sources.get(entry.source)!;
+    expect(source).toContain('dsAttrs("sections", "sections.legal-prose", "foundry/sections.legal-prose")');
+    expect(source).toContain('className="text-body-s text-ink-secondary"');
+    expect(sourceEvidence(entry.source, source).paintTokens).toContain("--color-ink-secondary");
+    const baseline = conformanceFindings(input);
+    expect(baseline.filter(finding => finding.includes(entry.exportName) || finding.includes(entry.source))).toEqual([]);
+    input.registrations = input.registrations.filter(item => item.exportName !== entry.exportName);
+    expect(conformanceFindings(input).sort()).toEqual([...baseline, "unregistered barrel export LegalProse"].sort());
+  });
+
   it("follows real re-exports and nested runtime render helpers", () => {
     const input = realInputs();
     expect(exportedSource("Scene", "src/blocks/index.ts", input.sources)).toBe("src/blocks/scene/Scene.tsx");
     for (const [name, dependency] of [
       ["Items", "src/blocks/items/render.tsx"], ["Specimen", "src/blocks/specimen/parts.tsx"],
-      ["Tree", "src/blocks/tree/policies.ts"], ["ResizablePane", "src/atoms/ResizeHandle.tsx"],
-      ["Panel", "src/atoms/Card.tsx"],
+      ["Tree", "src/blocks/tree/policies.ts"], ["ResizablePane", "src/components/ResizeHandle.tsx"],
+      ["Panel", "src/components/preview-runtime/components/card/card.tsx"],
     ]) {
       const entry = input.registrations.find(item => item.exportName === name)!;
       expect(sourceGraph(entry.source, input.sources), name).toContain(dependency);
@@ -369,6 +523,9 @@ describe("Block theme conformance", () => {
     for (const literal of ["red", "rebeccapurple", "Blue"]) expect(sourceEvidence("Example.tsx", `const paint = "${literal}";`).findings).toContain(`Example.tsx: named color ${literal}`);
     for (const utility of ["border-t-red", "bg-gray-500", "text-[#fff]", "[&_p]:text-rebeccapurple", "bg-[rgb(1,2,3)]"]) expect(sourceEvidence("Example.tsx", `const classes = "${utility}";`).findings.some(item => item.includes("color utility has no token"))).toBe(true);
     expect(sourceEvidence("Example.tsx", 'const paint = { color: "var(--color-ink-primary, currentColor)" };').findings).toContain("Example.tsx: inline color property color");
+    expect(sourceEvidence("Example.tsx", 'const box = { boxSizing: "border-box", "background-clip": "padding-box" };').findings).toEqual([]);
+    expect(sourceEvidence("Example.tsx", 'const classes = "border-box";').findings).toContain("Example.tsx: color utility has no token border-box");
+    expect(sourceEvidence("Example.tsx", 'const paint = { borderColor: "border-box" };').findings).toContain("Example.tsx: color utility has no token border-box");
   });
 
   it.each([
@@ -478,23 +635,24 @@ describe("Block theme conformance", () => {
     "text-line-base", "fill-line-base", "stroke-line-base",
     "hover:text-line-base", "[&_span]:text-line-base",
   ])("refuses a foreground-free exemption with authored foreground %s", utility => {
-    for (const name of ["Toolbar", "Panel"]) {
+    for (const [name, anchor] of EXEMPT_CLASS_ANCHORS) {
       const input = realInputs();
       const file = input.registrations.find(entry => entry.exportName === name)!.source;
       const source = input.sources.get(file)!;
-      expect(source).toContain('className={cx("');
-      input.sources.set(file, source.replace('className={cx("', `className={cx("${utility} `));
+      expect(source).toContain(anchor);
+      input.sources.set(file, source.replace(anchor, `${anchor}${utility} `));
       expect(conformanceFindings(input), `${name}: ${utility}`)
         .toContain(`${name}: stale exemption now owns or delegates a contrast foreground`);
     }
   });
 
   it("keeps structural text and surface or edge paint foreground-free", () => {
-    for (const name of ["Toolbar", "Panel"]) {
+    for (const [name, anchor] of EXEMPT_CLASS_ANCHORS) {
       const input = realInputs();
       const file = input.registrations.find(entry => entry.exportName === name)!.source;
       const source = input.sources.get(file)!;
-      input.sources.set(file, source.replace('className={cx("', 'className={cx("border-line-base bg-surface-base text-body-s stroke-2 '));
+      expect(source).toContain(anchor);
+      input.sources.set(file, source.replace(anchor, `${anchor}border-line-base bg-surface-base text-body-s stroke-2 `));
       expect(conformanceFindings(input), name).toEqual([]);
     }
   });
@@ -563,11 +721,11 @@ describe("Block theme conformance", () => {
 
   it("rejects an exemption without a reason and any growth or replacement", () => {
     const input = realInputs();
-    input.registrations = input.registrations.map(entry => entry.exportName === "Panel" ? { ...entry, exemptionReason: " " } : entry);
-    expect(conformanceFindings(input)).toContain("exemption without reason Panel");
+    input.registrations = input.registrations.map(entry => entry.exportName === "Toolbar" ? { ...entry, exemptionReason: " " } : entry);
+    expect(conformanceFindings(input)).toContain("exemption without reason Toolbar");
     input.registrations = input.registrations.map(entry => entry.exportName === "PageHeader" ? { ...entry, contrastPairs: [], exemptionReason: "Unjustified replacement" } : entry);
     const findings = conformanceFindings(input);
-    expect(findings).toContain("Block exemption count grew above 2");
+    expect(findings).toContain("Block exemption count grew above 1");
     expect(findings).toContain("new Block exemption PageHeader");
   });
 });
@@ -605,5 +763,63 @@ describe("raw inline custom color properties", () => {
       ? source.replace("<header {...rest}", `<header {...rest} ${fragment}`)
       : source + `\nfunction preserveLayout(element: HTMLElement) { ${fragment} }`);
     expect(conformanceFindings(input)).toEqual([]);
+  });
+});
+
+describe("stock shadcn colour vocabulary", () => {
+  it.each([
+    ["bg-primary", "--primary"], ["text-primary-foreground", "--primary-foreground"], ["bg-secondary", "--secondary"],
+    ["text-muted-foreground", "--muted-foreground"], ["hover:bg-accent", "--accent"], ["bg-destructive", "--destructive"],
+    ["border-border", "--border"], ["focus-visible:outline-ring", "--ring"], ["fill-chart-1", "--chart-1"], ["stroke-chart-5", "--chart-5"],
+  ])("resolves %s through its generated themes key to %s, stock winning over a Foundry name", (candidate, property) => {
+    expect(colorUtility(candidate)).toEqual({ token: property });
+    const key = STOCK_COLOR_BY_PROPERTY.get(property)!.key;
+    expect(parseDeclarationsForSelector(realInputs().themeKeys, "@theme inline").get(key)).toBe(`var(${property})`);
+  });
+
+  it("keeps Foundry tokens, variable shorthands and unknown names on their existing rules", () => {
+    expect(colorUtility("bg-surface-raised")).toEqual({ token: "--color-surface-raised" });
+    expect(colorUtility("bg-(--color-action)")).toEqual({ token: "--color-action" });
+    expect(colorUtility("bg-primary-imaginary")).toEqual({ invalid: "bg-primary-imaginary" });
+  });
+
+  const STOCK_BLOCK = "ResizablePane";
+  it(`checks ${STOCK_BLOCK}'s stock focus outline in light, OS dark and explicit dark`, () => {
+    const findings = conformanceFindings(realInputs()).filter(finding => finding.startsWith(`${STOCK_BLOCK}:`));
+    expect(findings).toEqual([]);
+  });
+
+  it("refuses a stock utility whose generated key is removed [mutant: drop --color-primary]", () => {
+    const input = realInputs();
+    expect(input.themeKeys).toContain("--color-primary: var(--primary);");
+    input.themeKeys = input.themeKeys.replace("--color-primary: var(--primary);", "");
+    expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing live utility token --primary`);
+  });
+
+  it("refuses a stock utility retargeted to a Foundry variable [mutant: --color-primary reads --color-action]", () => {
+    const input = realInputs();
+    input.themeKeys = input.themeKeys.replace("--color-primary: var(--primary);", "--color-primary: var(--color-action);");
+    expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing live utility token --primary`);
+  });
+
+  it("refuses a stock variable without its shipped dark value [mutant: drop dark --primary]", () => {
+    const input = realInputs();
+    const split = input.themeCss.indexOf("@media");
+    expect(split).toBeGreaterThan(0);
+    input.themeCss = input.themeCss.slice(0, split) + input.themeCss.slice(split).replace(/^\s*--primary:[^;]+;\n/gm, "");
+    expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing dark value --primary`);
+  });
+
+  it("refuses a stock variable without its shipped light value [mutant: drop every --primary]", () => {
+    const input = realInputs();
+    input.themeCss = input.themeCss.replace(/^\s*--primary:[^;]+;\n/gm, "");
+    expect(conformanceFindings(input)).toContain(`${STOCK_BLOCK}: missing light token --primary`);
+  });
+
+  it("contrast-checks the registered stock pair against the shipped values [mutant: light --primary on its plate]", () => {
+    const input = realInputs();
+    const raised = parseRootDeclarations(input.css).get("--color-surface-raised")!;
+    input.themeCss = input.themeCss.replace(/^(\s*--primary:)[^;]+;/m, `$1 ${raised};`);
+    expect(conformanceFindings(input).some(finding => finding.startsWith(`${STOCK_BLOCK}: light contrast failed`))).toBe(true);
   });
 });

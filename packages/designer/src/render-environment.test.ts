@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { RENDER_ENVIRONMENT } from "./render-environment.js";
 import ts from "typescript";
 
@@ -23,6 +23,11 @@ import ts from "typescript";
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = join(packageRoot, "dist");
 
+// C5-DRT: file-level budget for this spawn-heavy contract file. Each test spawns node against the
+// real dist (or type-checks emitted barrels), ~1-5 s apiece under a loaded machine, so the 5 s default
+// timed out whichever tests landed on a busy moment. An explicit per-test budget still overrides it.
+vi.setConfig({ testTimeout: 30_000 });
+
 if (!existsSync(distDir)) {
   throw new Error(
     `render-environment.test.ts requires a built dist/ (run "npm run build" in ${packageRoot} first) — ` +
@@ -32,6 +37,42 @@ if (!existsSync(distDir)) {
 }
 
 type ProbeResult = { ok: true } | { ok: false; message: string };
+
+/**
+ * Owner D3 (2026-11-11): a server-rendered graph gets its component selections from the pinned
+ * selection file, the same source the Studio client and the in-process Vitest harness use
+ * (studio/default-component-preview-profile.json, read through marketingComponentSelection). A
+ * spawned server render therefore wraps its tree in that selection's provider (`Pinned`). There is
+ * no implicit default: without the provider a leaf still refuses with "NEED component selection".
+ * Under react-server the graph emits selected-leaf references (resolved at the client boundary),
+ * so those proofs check every emitted leaf is chosen in the pinned file, then render the same
+ * props with the pinned selection to prove the semantic output.
+ */
+const PINNED_SELECTION_FILE = join(distDir, "studio/default-component-preview-profile.json");
+const PINNED_PROVIDER = `import {MarketingComponentProvider as Pinned} from ${JSON.stringify(join(distDir, "studio/marketing-component-selection.js"))};`;
+/** Leaf ids chosen in the pinned selection file. */
+function pinnedLeaves(): ReadonlySet<string> {
+  return new Set(Object.keys((JSON.parse(readFileSync(PINNED_SELECTION_FILE, "utf8")) as { components: Record<string, unknown> }).components));
+}
+/** Walks a react-server element tree: intrinsic nodes plus the component leaves it references. */
+const SERVER_WALK = `function walk(node, out = { nodes: [], leaves: [] }) { if (Array.isArray(node)) { for (const child of node) walk(child, out); return out; } if (!node || typeof node !== "object" || !node.props) return out; if (typeof node.type === "function") return walk(node.type(node.props), out); const leaf = node.type && typeof node.type.displayName === "string" && /^components\\./.test(node.type.displayName) ? node.type.displayName.split(".").slice(0, 2).join(".") : undefined; if (leaf) out.leaves.push(leaf); else if (typeof node.type === "string") out.nodes.push(node); walk(node.props.children, out); return out; }`;
+/** Asserts the react-server graph referenced only leaves the pinned selection file chooses. */
+function expectPinnedLeaves(leaves: readonly string[], expected: readonly string[]): void {
+  const pinned = pinnedLeaves();
+  expect([...new Set(leaves)].sort()).toEqual([...expected].sort());
+  for (const leaf of leaves) expect(pinned.has(leaf), `NEED component selection: ${leaf} is not chosen in the pinned selection file`).toBe(true);
+}
+
+it("resolves canonical Frames from its real compiled public entry and refuses the server condition", () => {
+  expect(RENDER_ENVIRONMENT["./frames"]).toBe("client-only");
+  expect(importKeysNormally("frames/index.js")).toEqual(expect.arrayContaining(["AppFrame", "APP_FRAME_CONTRACT"]));
+  expect(importKeysNormally("frames/index.js")).not.toContain("AppFrameSpecimen");
+  expect(importKeysNormally("index.js")).not.toContain("AppFrameSpecimen");
+  expect(importKeysNormally("studio/index.js")).toContain("AppFrameSpecimen");
+  expect(probeUnderReactServer("frames/index.js").ok).toBe(false);
+  // planner:wd-reg: six sequential compiled-entry spawns (~1 s each) cannot fit the 5 s default; same budget as the line-74 spawn test.
+}, 30_000);
+
 
 it("retains the AccountMenu client export and typed host-data contract without a server export", () => {
   expect(importKeysNormally("blocks/index.js")).toContain("AccountMenu");
@@ -91,22 +132,25 @@ function importKeysNormally(distRelPath: string): string[] {
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
     { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
-    { distRelPath: "atoms/server.js", expectedExports: ["Logomark", "Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
+    { distRelPath: "components/server.js", expectedExports: ["NativeAction", "SemanticContent", "Logomark", "Badge", "Alert", "AlertTitle", "AlertDescription", "AlertAction", "ALERT_TONE", "BADGE_TONE", "CARD_SURFACE", "SKELETON_SHAPE", "Card", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "INVERSE_CONTROL_INK", "cn", "LinkButton"] },
     {
       distRelPath: "blocks/server.js",
       expectedExports: [
         "Lockup",
         "AnatomyCallouts",
         "ArticleBody",
+        "CallToAction",
         "ContentSection",
         "DetailView",
         "EmptyState",
+        "ErrorState",
         "Faq",
         "FeatureGrid",
-        "FieldGroup",
         "Hero",
-        "Item",
+        "StockItem",
+        "assertItemLink",
         "Items",
+        "LegalProse",
         "RecordLedger",
         "Scene",
         "layoutScene",
@@ -124,6 +168,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "Specimen",
         "SpecimenPanel",
         "Stat",
+        "StatGroup",
         "StatusList",
         "TableOfContents",
         "TaskList",
@@ -131,14 +176,15 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "Testimonial",
         "TestimonialSet",
         "LogoCloud",
+        "LogoHero",
         "PeopleGrid",
         "Tree",
         "UsageMeter",
       ],
     },
     { distRelPath: "shell/server.js", expectedExports: ["BADGE_INSET_SHARE", "BADGE_RADIUS_SHARE", "Brandmark", "Shell", "SiteFooter", "SiteHeader", "SkipLink", "badgePlatePath"] },
-    { distRelPath: "charts/server.js", expectedExports: ["ChartFrame", "BarChart", "LineChart", "RangeChart", "ScatterChart", "Sparkline", "WaterfallChart", "AreaChart", "Heatmap", "StatusStrip"] },
-    { distRelPath: "theme/server.js", expectedExports: ["getThemeInitScript"] },
+    { distRelPath: "charts/server.js", expectedExports: ["ChartFrame", "BarChart", "LineChart", "AreaChart"] },
+    { distRelPath: "theme/server.js", expectedExports: ["getThemeInitScript", "applyThemeAttributes", "themeAttributes"] },
   ];
 
   for (const { distRelPath, expectedExports } of serverEntries) {
@@ -154,6 +200,25 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
   }
 });
 
+it("proves the actual emitted queries/state environments and exports", () => {
+  expect(RENDER_ENVIRONMENT["./studio/queries"]).toBe("server-safe");
+  const queries = probeUnderReactServer("studio/designer-layer-boards.js");
+  expect(queries.ok, queries.ok ? undefined : queries.message).toBe(true);
+  expect(importKeysNormally("studio/designer-layer-boards.js")).toContain("deriveDesignerLayerBoardsV1");
+  expect(RENDER_ENVIRONMENT["./studio/state"]).toBe("client-only");
+  expect(importKeysNormally("studio/WholeStudioProvider.js")).toEqual(expect.arrayContaining(["WholeStudioProvider", "useWholeStudio", "useDesignerPreparedLibraryBoards"]));
+  expect(readFileSync(join(distDir, "studio/WholeStudioProvider.js"), "utf8")).toMatch(/^"use client";/);
+  const state = probeUnderReactServer("studio/WholeStudioProvider.js");
+  expect(state.ok).toBe(false);
+  if (!state.ok) expect(state.message).toMatch(/react|useContext|useState|createContext/i);
+});
+
+it.each(["catalog-core/index.js", "catalog-core/server.js"])("imports the compiled %s catalog graph under react-server", entry => {
+  const result = probeUnderReactServer(entry);
+  expect(result.ok, result.ok ? undefined : result.message).toBe(true);
+  expect(importKeysNormally(entry)).toContain("loadCatalog");
+});
+
 it("imports and calls the compiled Testimonial server graph with an avatar under react-server", () => {
   const result = probeUnderReactServer("blocks/Testimonial.server.js");
   expect(result.ok, result.ok ? undefined : result.message).toBe(true);
@@ -167,23 +232,39 @@ it("imports and calls the compiled TableOfContents server graph under react-serv
   const result = probeUnderReactServer("blocks/TableOfContents.server.js");
   expect(result.ok, result.ok ? undefined : result.message).toBe(true);
   const absolute = join(distDir, "blocks/TableOfContents.server.js");
-  const script = `import {TableOfContents} from ${JSON.stringify(absolute)}; function nodes(node){if(Array.isArray(node))return node.flatMap(nodes);if(!node||typeof node!=="object"||!node.props)return [];if(typeof node.type==="function")return nodes(node.type(node.props));return [node,...nodes(node.props.children)];} const tree=nodes(TableOfContents({label:"On this page",items:[{id:"a",label:"One"},{id:"b",label:"Two"},{id:"c",label:"Three"}],currentId:"b"})); if(tree.filter(n=>n.type==="nav"&&n.props["aria-label"]==="On this page").length!==1||tree.filter(n=>n.type==="a").length!==3||tree.filter(n=>n.type==="a"&&n.props["aria-current"]==="location").length!==1)throw new Error("missing semantic table of contents");process.stdout.write("OK");`;
-  expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
+  const props = { label: "On this page", items: [{ id: "a", label: "One" }, { id: "b", label: "Two" }, { id: "c", label: "Three" }], currentId: "b" };
+  // planner:c5-drt (D3): react-server emits selected leaves (semantic-content nav, link anchors), never a default implementation.
+  const server = `import {TableOfContents} from ${JSON.stringify(absolute)}; ${SERVER_WALK} const out = walk(TableOfContents(${JSON.stringify(props)})); process.stdout.write(JSON.stringify(out.leaves));`;
+  expectPinnedLeaves(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", server], { encoding: "utf8", timeout: 10_000 })), ["components.link", "components.semantic-content"]);
+  const rendered = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {TableOfContents} from ${JSON.stringify(absolute)}; ${PINNED_PROVIDER} process.stdout.write(renderToStaticMarkup(h(Pinned, null, h(TableOfContents, ${JSON.stringify(props)}))));`;
+  const host = document.createElement("div");
+  host.innerHTML = execFileSync(process.execPath, ["--input-type=module", "-e", rendered], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });
+  expect(host.querySelectorAll('nav[aria-label="On this page"]')).toHaveLength(1);
+  expect(host.querySelectorAll("a")).toHaveLength(3);
+  expect(host.querySelectorAll('a[aria-current="location"]')).toHaveLength(1);
 }, 15_000);
 
 it("imports and calls TaskList and EventItem under react-server without browser globals", () => {
   const entry = join(distDir, "blocks/server.js");
+  const tasksProps = { "aria-label": "Tasks", items: [], statusLabels: { todo: "To do", "in-progress": "In progress", blocked: "Blocked", done: "Done" }, progressText: "No tasks", emptyState: { title: "No tasks" } };
+  const eventProps = { event: { id: "evt_1042", at: "2026-10-19T14:32:00Z", timeText: "Oct 19, 14:32 UTC", actor: { name: "Priya Nair" }, summary: "Priya Nair approved invoice 1042." }, labels: { unread: "Unread", changedFrom: "changed from", changedTo: "to", cleared: "cleared" } };
+  // planner:c5-drt (D3): the roots are selected semantic-content leaves (as section / div), resolved from the pinned selection.
   const script = `import {TaskList, EventItem} from ${JSON.stringify(entry)};
     if(typeof window!=="undefined")throw new Error("unexpected browser global");
-    const tasks=TaskList({"aria-label":"Tasks",items:[],statusLabels:{todo:"To do","in-progress":"In progress",blocked:"Blocked",done:"Done"},progressText:"No tasks",emptyState:{title:"No tasks"}});
-    const event=EventItem({event:{id:"evt_1042",at:"2026-10-19T14:32:00Z",timeText:"Oct 19, 14:32 UTC",actor:{name:"Priya Nair"},summary:"Priya Nair approved invoice 1042."},labels:{unread:"Unread",changedFrom:"changed from",changedTo:"to",cleared:"cleared"}});
-    if(tasks.type!=="section"||event.type!=="div"||event.props["data-event-item"]!=="")throw new Error("missing semantic task/event blocks");
-    process.stdout.write("OK");`;
-  expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
-});
+    const tasks=TaskList(${JSON.stringify(tasksProps)});
+    const event=EventItem(${JSON.stringify(eventProps)});
+    process.stdout.write(JSON.stringify({ tasks: [tasks.type.displayName, tasks.props.as], event: [event.type.displayName, event.props.as, event.props["data-event-item"]] }));`;
+  const roots = JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000 }));
+  expect(roots).toEqual({ tasks: ["components.semantic-content", "section"], event: ["components.semantic-content", "div", ""] });
+  expectPinnedLeaves([roots.tasks[0], roots.event[0]], ["components.semantic-content"]);
+  const rendered = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {TaskList, EventItem} from ${JSON.stringify(entry)}; ${PINNED_PROVIDER} process.stdout.write(JSON.stringify([renderToStaticMarkup(h(Pinned, null, h(TaskList, ${JSON.stringify(tasksProps)}))), renderToStaticMarkup(h(Pinned, null, h(EventItem, ${JSON.stringify(eventProps)})))]));`;
+  const [tasks, event] = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", rendered], { encoding: "utf8", timeout: 10_000, cwd: packageRoot })) as [string, string];
+  expect(tasks).toMatch(/^<section\b/);
+  expect(event).toMatch(/^<div\b[^>]*\bdata-event-item=""/);
+}, 15_000);
 
 it("keeps the interactive preview export exact and its emitted client boundary explicit", () => {
-  expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview"]);
+  expect(importKeysNormally("tokens/preview/index.js")).toEqual(["TokenPreview", "TokenValuePreview"]);
   expect(readFileSync(join(distDir, "tokens/preview/index.js"), "utf8")).toMatch(/^"use client";/);
   expect(RENDER_ENVIRONMENT["./tokens/preview"]).toBe("client-only");
 });
@@ -202,11 +283,11 @@ describe("compiled Tree server graph", () => {
   }, 15_000);
 });
 
-describe("pure Item and Items compiled graphs", () => {
-  it.each(["Item", "Items"])("imports and calls %s under react-server", (name) => {
+describe("pure StockItem and Items compiled graphs", () => {
+  it.each(["StockItem", "Items"])("imports and calls %s under react-server", (name) => {
     const absolute = join(distDir, "blocks", "items", `${name === "Items" ? "Items.server" : name}.js`);
-    const props = name === "Item"
-      ? { id: "one", heading: "Title", treatment: "plate", size: "standard", ground: "base", badge: { label: "Beta", tone: "info" }, meta: "Actor", visual: "Visual" }
+    const props = name === "StockItem"
+      ? { id: "one", heading: "Title", ground: "base", badge: { label: "Beta", tone: "info" }, meta: "Actor", visual: "Visual" }
       : { arrangement: "rows", items: [{ id: "one", heading: "One", badge: { label: "Beta" }, meta: "Actor" }, { id: "two", heading: "Two" }, { id: "three", heading: "Three" }, { id: "four", heading: "Four" }], groups: [{ id: "a", label: "Group A", items: ["one", "two"] }, { id: "b", label: "Group B", items: ["three", "four"] }] };
     const script = `import(${JSON.stringify(absolute)}).then(m => { const tree = m[${JSON.stringify(name)}](${JSON.stringify(props)}); if (!tree || typeof tree !== "object" || !tree.props) throw new Error("missing rendered tree"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
     expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
@@ -216,9 +297,9 @@ describe("pure Item and Items compiled graphs", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.message).toMatch(/react|useContext|useState|createContext/i);
   }, 15_000);
-  it("calls native disclosure and published FeatureGrid under react-server", () => {
+  it("calls the selected disclosure with every answer reachable and published FeatureGrid under react-server", () => {
     const absolute = join(distDir, "blocks", "server.js");
-    const script = `import(${JSON.stringify(absolute)}).then(m => { const items = [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, description: "Answer " + i })); function nativeNodes(node) { if(Array.isArray(node)) return node.flatMap(nativeNodes); if(!node || typeof node !== "object" || !node.props) return []; if(typeof node.type === "function") return nativeNodes(node.type(node.props)); return [node,...nativeNodes(node.props.children)]; } const rows=nativeNodes(m.Items({arrangement:"rows",reveal:"disclose",items})); if(rows.filter(n=>n.type==="details").length!==4 || rows.filter(n=>n.type==="summary").length!==4) throw new Error("native disclosure anatomy"); const canonical=nativeNodes(m.Items({arrangement:"columns",columns:3,items:items.slice(0,3)})); if(canonical.filter(n=>n.props["data-item"]!==undefined).length!==3 || canonical.filter(n=>n.type==="ul" && n.props["data-items"]!==undefined).length!==1) throw new Error("canonical Items catalog path missing"); const features=nativeNodes(m.FeatureGrid({heading:"Features",items:items.slice(0,3)})); if(features.filter(n=>n.type==="p" && /^Title /.test(n.props.children)).length!==3 || features.filter(n=>n.type==="h2" && n.props.children==="Features").length!==1) throw new Error("published FeatureGrid path missing"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
+    const script = `import(${JSON.stringify(absolute)}).then(m => { const items = [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, description: "Answer " + i })); function nativeNodes(node) { if(Array.isArray(node)) return node.flatMap(nativeNodes); if(!node || typeof node !== "object" || !node.props) return []; if(typeof node.type === "function") return nativeNodes(node.type(node.props)); return [node,...nativeNodes(node.props.children)]; } const parts=[]; function reach(node) { if(Array.isArray(node)) return node.map(reach).join(""); if(typeof node === "string") return node; if(!node || typeof node !== "object" || !node.props) return ""; if(typeof node.type === "function") return reach(node.type(node.props)); const text=reach(node.props.children); if(node.type && node.type.displayName) parts.push({ part: node.type.displayName, id: node.props.id, text }); return text; } reach(m.Items({arrangement:"rows",reveal:"disclose",items})); const disclosure=part=>parts.filter(p=>p.part==="components.disclosure."+part); if(JSON.stringify(disclosure("AccordionItem").map(p=>[p.id,p.text]))!==JSON.stringify(items.map(i=>[i.id,i.heading+i.description])) || JSON.stringify(disclosure("AccordionTrigger").map(p=>p.text))!==JSON.stringify(items.map(i=>i.heading)) || JSON.stringify(disclosure("AccordionContent").map(p=>p.text))!==JSON.stringify(items.map(i=>i.description))) throw new Error("selected disclosure must keep every question in its trigger and every answer in its panel"); const canonical=nativeNodes(m.Items({arrangement:"columns",columns:3,items:items.slice(0,3)})); if(canonical.filter(n=>n.props["data-item"]!==undefined).length!==3 || canonical.filter(n=>n.type==="ul" && n.props["data-items"]!==undefined).length!==1) throw new Error("canonical Items catalog path missing"); const tag=n=>typeof n.type==="string" ? n.type : n.type.displayName==="components.semantic-content" ? n.props.as : undefined; const features=nativeNodes(m.FeatureGrid({heading:"Features",items:items.slice(0,3)})); if(features.filter(n=>tag(n)==="p" && /^Title /.test(n.props.children)).length!==3 || features.filter(n=>tag(n)==="h2" && n.props.children==="Features").length!==1) throw new Error("published FeatureGrid path missing"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
     expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   }, 15_000);
 });
@@ -226,7 +307,7 @@ describe("pure Item and Items compiled graphs", () => {
 describe("compiled grouped Items SSR", () => {
   it.each(["Items", "Items.server"])("retains disclosure answers and local references across duplicate compiled %s instances", name => {
     const absolute = join(distDir, "blocks", "items", `${name}.js`);
-    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; const props={arrangement:"rows",reveal:"disclose",order:"numbered",items:[0,1,2,3].map(i=>({id:String(i),heading:"Question "+i,description:"Answer "+i})),groups:[{id:"a",label:"A",items:["2","0"]},{id:"b",label:"B",items:["3","1"]}]}; process.stdout.write(renderToStaticMarkup(h("div",null,h(Items,props),h(Items,props))));`;
+    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; ${PINNED_PROVIDER} const props={arrangement:"rows",reveal:"disclose",order:"numbered",items:[0,1,2,3].map(i=>({id:String(i),heading:"Question "+i,description:"Answer "+i})),groups:[{id:"a",label:"A",items:["2","0"]},{id:"b",label:"B",items:["3","1"]}]}; process.stdout.write(renderToStaticMarkup(h(Pinned,null,h("div",null,h(Items,props),h(Items,props)))));`;
     const html = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });
     const host = document.createElement("div"); host.innerHTML = html;
     const ids = [...host.querySelectorAll("[id]")].map(node => node.id);
@@ -238,13 +319,15 @@ describe("compiled grouped Items SSR", () => {
       expect(target).toHaveAttribute("aria-labelledby", trigger.id);
     }
     expect([...host.querySelectorAll("[data-item-ordinal]")].map(node => node.textContent)).toEqual(["1", "2", "3", "4", "1", "2", "3", "4"]);
-    if (name === "Items.server") expect(host.querySelectorAll("details:not([open]) > summary:first-child")).toHaveLength(8);
-    else expect(host.querySelectorAll("button[aria-expanded=false]")).toHaveLength(8);
+    // Both entries render the stock disclosure: a collapsed trigger per answer, no native details.
+    expect(host.querySelectorAll("details, summary")).toHaveLength(0);
+    expect(host.querySelectorAll('button[slot="trigger"][aria-expanded=false]')).toHaveLength(8);
+    for (const panel of host.querySelectorAll('[role="group"][aria-labelledby]')) if (panel.closest("li")) expect(panel).toHaveAttribute("hidden");
   }, 15_000);
   it("gives duplicate instances unique heading IDs and resolves every reference", () => {
     const absolute = join(distDir, "blocks", "items", "Items.server.js");
     const server = join(distDir, "blocks", "server.js");
-    const script = `import { createElement as h } from "react"; import { renderToStaticMarkup } from "react-dom/server"; import { Items } from ${JSON.stringify(absolute)}; import * as barrel from ${JSON.stringify(server)}; const props = { arrangement: "rows", items: [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, badge: { label: "Beta", tone: "info" }, meta: "Actor" })), groups: [{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }] }; if(barrel.Items !== Items) throw new Error("server barrel identity"); process.stdout.write(renderToStaticMarkup(h("div", null, h(Items, props), h(Items, props))));`;
+    const script = `import { createElement as h } from "react"; import { renderToStaticMarkup } from "react-dom/server"; import { Items } from ${JSON.stringify(absolute)}; import * as barrel from ${JSON.stringify(server)}; const props = { arrangement: "rows", items: [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, badge: { label: "Beta", tone: "info" }, meta: "Actor" })), groups: [{ id: "a", label: "A", items: ["1","0"] }, { id: "b", label: "B", items: ["3","2"] }] }; ${PINNED_PROVIDER} if(barrel.Items !== Items) throw new Error("server barrel identity"); process.stdout.write(renderToStaticMarkup(h(Pinned, null, h("div", null, h(Items, props), h(Items, props)))));`;
     const html = execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", timeout: 10_000, cwd: packageRoot });
     const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
     const references = [...html.matchAll(/aria-labelledby="([^"]+)"/g)].map((match) => match[1]);
@@ -262,7 +345,7 @@ describe("compiled grouped Items SSR", () => {
 });
 
 describe("negative control: the original barrels still fail under react-server (test 2)", () => {
-  const originalBarrels = ["tokens/preview/index.js", "atoms/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js"];
+  const originalBarrels = ["tokens/preview/index.js", "components/index.js", "blocks/index.js", "shell/index.js", "charts/index.js", "theme/index.js", "studio/index.js", "studio/WholeStudioProvider.js"];
 
   for (const distRelPath of originalBarrels) {
     it(`${distRelPath} still fails under --conditions=react-server (proves the server entry is doing real work)`, () => {
@@ -290,7 +373,8 @@ describe("no regression: every existing subpath still resolves normally (test 3)
 
   for (const [subpath, entry] of jsSubpaths) {
     it(`${subpath} still imports without throwing (no regression)`, () => {
-      const distRelPath = entry.import.replace(/^\.\/dist\//, "");
+      // planner:wd-reg: ./shadcn-flavor and ./ref-verbatim ship from scripts/, not dist/; resolve every entry from the package root.
+      const distRelPath = relative(distDir, join(packageRoot, entry.import));
       expect(() => importKeysNormally(distRelPath)).not.toThrow();
     });
   }
@@ -304,7 +388,7 @@ describe("no regression: every existing subpath still resolves normally (test 3)
   const barrelSpotChecks: Array<[string, string]> = [
     ["blocks/index.js", "CommandMenu"],
     ["blocks/index.js", "useCommandMenuShortcut"],
-    ["atoms/index.js", "Button"],
+    ["components/index.js", "Button"],
     ["blocks/index.js", "DataTable"],
     ["shell/index.js", "NavShell"],
     ["charts/index.js", "BarChart"],
@@ -341,13 +425,13 @@ describe("render-environment declaration exhaustiveness (test 4)", () => {
     }
   });
 
-  it("marks server subpaths server-safe and keeps the pure tokens entry server-safe", () => {
+  it("marks server subpaths and their pure paired roots server-safe", () => {
     const serverSubpaths = [...realSubpaths].filter((subpath) => subpath.endsWith("/server"));
     expect(serverSubpaths.length).toBeGreaterThan(0);
     for (const subpath of serverSubpaths) {
       expect(RENDER_ENVIRONMENT[subpath]).toBe("server-safe");
       const original = subpath.slice(0, -"/server".length);
-      expect(RENDER_ENVIRONMENT[original]).toBe(original === "./tokens" ? "server-safe" : "client-only");
+      expect(RENDER_ENVIRONMENT[original]).toBe(["./tokens", "./catalog"].includes(original) ? "server-safe" : "client-only");
     }
   });
 });
@@ -356,7 +440,7 @@ describe("render-environment declaration exhaustiveness (test 4)", () => {
 describe("compiled collection scale retirement", () => {
   it.each(["index.js", "blocks/index.js", "blocks/server.js"])("accepts scale and rejects own retired emphasis in %s", entry => {
     const absolute = join(distDir, entry);
-    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; const items=[0,1,2].map(i=>({id:String(i),heading:"Title "+i})); const props={arrangement:"columns",items}; const markup=renderToStaticMarkup(h(Items,{...props,scale:"statement"})); if(!markup.includes("text-h0")) throw new Error("scale statement lost"); renderToStaticMarkup(h(Items,{...props,scale:undefined})); for(const fields of [{emphasis:undefined},{emphasis:"item"},{emphasis:"statement",scale:"statement"}]) { let refused=false; try { renderToStaticMarkup(h(Items,{...props,...fields})); } catch(e) { if(e.message!=="Items: emphasis is retired; use scale instead.") throw e; refused=true; } if(!refused)throw new Error("retired emphasis accepted"); } process.stdout.write("OK");`;
+    const script = `import {createElement as h} from "react"; import {renderToStaticMarkup} from "react-dom/server"; import {Items} from ${JSON.stringify(absolute)}; ${PINNED_PROVIDER} const render=props=>renderToStaticMarkup(h(Pinned,null,h(Items,props))); const items=[0,1,2].map(i=>({id:String(i),heading:"Title "+i})); const props={arrangement:"columns",items}; const markup=render({...props,scale:"statement"}); if(!markup.includes("text-h0")) throw new Error("scale statement lost"); render({...props,scale:undefined}); for(const fields of [{emphasis:undefined},{emphasis:"item"},{emphasis:"statement",scale:"statement"}]) { let refused=false; try { render({...props,...fields}); } catch(e) { if(e.message!=="Items: emphasis is retired; use scale instead.") throw e; refused=true; } if(!refused)throw new Error("retired emphasis accepted"); } process.stdout.write("OK");`;
     expect(execFileSync(process.execPath, ["-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   }, 15_000);
 });
@@ -411,7 +495,7 @@ describe("native compiled collection scale boundary", () => {
   }, 15_000);
 });
 
-it("keeps PageBar client-only, emits all seven types and requires authored labels (M10)", () => {
+it("keeps PageBar client-only, emits all nine current types and requires authored labels (M10)", () => {
   expect(importKeysNormally("blocks/index.js")).toContain("PageBar");
   expect(importKeysNormally("index.js")).toContain("PageBar");
   expect(importKeysNormally("blocks/server.js")).not.toContain("PageBar");
@@ -426,16 +510,40 @@ it("keeps PageBar client-only, emits all seven types and requires authored label
   for (const entry of ["blocks/index.js", "index.js"]) {
     const prelude = `import type * as B from ${JSON.stringify(join(distDir, entry))};`;
     const valid = `${prelude}
-      const width: B.PageBarWidth = "full";
       const destination: B.PageBarDestination = {id:"projects",label:"Projects",href:"/projects"};
       const crumb: B.PageBarCrumb = {...destination,siblings:[destination]};
       const action: B.PageBarAction = {id:"share",label:"Share",onAction:()=>{}};
-      const page: B.PageBarPage = {title:"Quarterly report",breadcrumb:[crumb],actions:[action],width};
-      const labels: B.PageBarLabels = {breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",fullWidth:"Expand",containedWidth:"Contain",pageActions:"Actions"};
-      const props: B.PageBarProps = {root:{label:"Workspace"},page,width,onWidthChange:()=>{},labels};`;
+      const page: B.PageBarPage = {title:"Quarterly report",breadcrumb:[crumb],actions:[action]};
+      const labels: B.PageBarLabels = {breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",pageActions:"Actions"};
+      const nav:B.PageBarHeaderNav={label:"Pages",items:[destination],activeId:"projects"};
+      const actions:B.PageBarHeaderActions={render:({compact})=>compact?"Compact":"Full"};
+      const header:B.PageBarHeader={title:"Quarterly report",nav,actions};
+      const props: B.PageBarProps = {root:{label:"Workspace"},page,header,labels};`;
     const diagnostics = diagnosticsFor(valid);
     expect(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")), entry).toEqual([]);
-    const missing = diagnosticsFor(`${prelude} const props: B.PageBarProps = {root:{label:"Workspace"},width:"full",onWidthChange:()=>{}};`);
-    expect(missing.some(diagnostic => diagnostic.code === 2741 && /labels/.test(ts.flattenDiagnosticMessageText(diagnostic.messageText, " "))), entry).toBe(true);
+    const missing = diagnosticsFor(`${prelude} const props: B.PageBarProps = {root:{label:"Workspace"}};`);
+    expect(missing, entry).toHaveLength(1);
+    expect(missing[0]?.file?.fileName, entry).toBe(filename);
+    expect(missing[0]?.code, entry).toBe(2741);
+    expect(ts.flattenDiagnosticMessageText(missing[0]!.messageText, " "), entry).toContain("labels");
+    const removedAlias = diagnosticsFor(`${prelude}type Removed=B.PageBarWidth;`);
+    expect(removedAlias, entry).toHaveLength(1);
+    expect(removedAlias[0]?.file?.fileName, entry).toBe(filename);
+    expect(removedAlias[0]?.code, entry).toBe(2694);
+    expect(ts.flattenDiagnosticMessageText(removedAlias[0]!.messageText, " "), entry).toContain("PageBarWidth");
+    const labels = '{breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",pageActions:"Actions"}';
+    for (const [type, fields, retired] of [
+      ["PageBarPage", 'title:"Report",width:"full"', "width"],
+      ["PageBarProps", `root:{label:"Workspace"},labels:${labels},width:"full"`, "width"],
+      ["PageBarProps", `root:{label:"Workspace"},labels:${labels},onWidthChange:()=>{}`, "onWidthChange"],
+      ["PageBarLabels", 'breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",pageActions:"Actions",fullWidth:"Expand"', "fullWidth"],
+      ["PageBarLabels", 'breadcrumb:"Trail",collapsedBreadcrumb:"Levels",pageInfo:"Details",pageActions:"Actions",containedWidth:"Contain"', "containedWidth"],
+    ] as const) {
+      const diagnostics = diagnosticsFor(`${prelude}const retired:B.${type}={${fields}};`);
+      expect(diagnostics, `${entry} ${retired}`).toHaveLength(1);
+      expect(diagnostics[0]?.file?.fileName, entry).toBe(filename);
+      expect(diagnostics[0]?.code, entry).toBe(2353);
+      expect(ts.flattenDiagnosticMessageText(diagnostics[0]!.messageText, " "), entry).toContain(`'${retired}' does not exist`);
+    }
   }
 }, 30_000);

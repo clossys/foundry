@@ -1,0 +1,97 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.specimen-color-ramp",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.specimens",
+    "l2": "specimens-content",
+    "order": 163
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": null,
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "items",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "axes",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "context",
+        "type": "region",
+        "required": true
+      },
+      {
+        "name": "labels",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "renderParts",
+        "type": "region",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.semantic-content",
+      "components.grid-list",
+      "components.disclosure"
+    ],
+    "parts": [
+      "studio.specimen-swatch",
+      "studio.specimen-contrast"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "passageSchema": "passages.specimen-color-ramp",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "labels.show-all-variants",
+          "kind": "icu",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "components.button",
+    "components.item"
+  ]
+}

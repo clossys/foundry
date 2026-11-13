@@ -1,0 +1,84 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/themes.font-sans",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "same-contract",
+      "slot": "themes.font-sans",
+      "source": "example",
+      "sourceAddress": "tailwindcss/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "themes": {
+    "font-sans": {
+      "default": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
+          },
+          "com.clossys.font": {
+            "kind": "system"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/themes.font-sans",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "themes.font-sans.default",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "8de2ccb4d8990bca6ef843cade58ba74d64c3bed5a6a044a0d7e73125b7f7bcc",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "fontFamily",
+        "$value": [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Noto Sans",
+          "Arial",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji"
+        ]
+      }
+    }
+  }
+}

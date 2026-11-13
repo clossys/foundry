@@ -1,0 +1,137 @@
+{
+  "name": "producer-pipeline-flow",
+  "type": "registry:block",
+  "dependencies": [
+    "@xyflow/react"
+  ],
+  "registryDependencies": [
+    "components.badge",
+    "components.card",
+    "components.flow.base-node",
+    "components.flow.canvas",
+    "components.flow.labeled-handle"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\n---\n\nMIT License\n\nCopyright (c) 2019-2025 webkid GmbH\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "content": "'use client';\nimport { Badge, BaseNode, BaseNodeContent, BaseNodeFooter, BaseNodeHeader, BaseNodeHeaderTitle, Card, CardDescription, CardHeader, CardTitle, LabeledHandle, Position, ReactFlow, type Edge, type Node, type NodeProps } from '@clossys/designer-ui';\n\n/** The node kinds a pipeline step carries; graph.json names one per step. */\nexport type StepKind = 'plumb' | 'decide:creative' | 'decide:judgment';\n\n/** A step node's data as graph.json records it. Positions are graph.json's; this section computes no layout. */\nexport interface StepData {\n  [key: string]: unknown;\n  label: string;\n  kind: StepKind;\n  lane: string;\n  inputs: readonly string[];\n  outputs: readonly string[];\n}\n\n/** graph.json: the pipeline steps with their positions, and the edges between their handles. */\nexport interface PipelineGraph { nodes: readonly Node<StepData>[]; edges: readonly Edge[] }\n\n/** Writer copy of the flow (studio.pipeline.kind.*, studio.pipeline.lane.*, studio.pipeline.empty.*). */\nexport interface PipelineFlowCopy {\n  label: string;\n  kinds: Readonly<Record<StepKind, string>>;\n  lanes: Readonly<Record<string, string>>;\n  emptyTitle: string;\n  emptyDescription: string;\n}\n\n/** The `flow` input of `sections.producer.pipeline-flow`. */\nexport interface PipelineFlowInput { graph: PipelineGraph; copy: PipelineFlowCopy }\n\ntype StepNodeData = StepData & { kindLabel: string; laneLabel: string };\n\n/** Each kind's stock Badge variant; the legend uses the same mapping. */\nconst KIND_VARIANT = { plumb: 'outline', 'decide:creative': 'secondary', 'decide:judgment': 'default' } as const;\n\n/** One step: stock React Flow UI BaseNode with its header, one LabeledHandle per input and output, and its lane. */\nfunction StepNode({ data }: NodeProps<Node<StepNodeData, 'step'>>) {\n  return <BaseNode>\n    <BaseNodeHeader>\n      <BaseNodeHeaderTitle>{data.label}</BaseNodeHeaderTitle>\n      <Badge variant={KIND_VARIANT[data.kind]}>{data.kindLabel}</Badge>\n    </BaseNodeHeader>\n    <BaseNodeContent>\n      {data.inputs.map(id => <LabeledHandle key={`in:${id}`} id={id} title={id} type=\"target\" position={Position.Left} />)}\n      {data.outputs.map(id => <LabeledHandle key={`out:${id}`} id={id} title={id} type=\"source\" position={Position.Right} />)}\n    </BaseNodeContent>\n    <BaseNodeFooter>\n      <Badge variant=\"ghost\">{data.laneLabel}</Badge>\n    </BaseNodeFooter>\n  </BaseNode>;\n}\n\nconst NODE_TYPES = { step: StepNode };\nconst EDGE_OPTIONS = { type: 'smoothstep' };\n\n/** `sections.producer.pipeline-flow`: graph.json rendered by @xyflow/react with components.flow.* nodes and the built-in smoothstep edge; its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */\nexport default function PipelineFlowSection({ flow, onSelect, ...provenance }: { flow: PipelineFlowInput; onSelect?: (step: string) => void } & { [marker: `data-clossys-${string}`]: string }) {\n  const { graph, copy } = flow;\n  if (!graph.nodes.length) return <Card size=\"sm\" {...provenance}>\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{copy.emptyTitle}</CardTitle>\n      <CardDescription>{copy.emptyDescription}</CardDescription>\n    </CardHeader>\n  </Card>;\n  const nodes = graph.nodes.map(node => ({ ...node, type: 'step', data: { ...node.data, kindLabel: copy.kinds[node.data.kind], laneLabel: copy.lanes[node.data.lane] ?? node.data.lane } }));\n  return <ReactFlow {...provenance} aria-label={copy.label} nodes={nodes} edges={[...graph.edges]} nodeTypes={NODE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}\n    nodesDraggable={false} nodesConnectable={false} fitView onNodeClick={(_, node) => onSelect?.(node.id)} />;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"producer-pipeline-flow\",\n  \"type\": \"registry:block\",\n  \"title\": \"Pipeline Flow\",\n  \"description\": \"graph.json rendered by @xyflow/react: one components.flow.base-node per step with its header, labeled input and output handles and lane, joined by the built-in smoothstep edge; positions come from graph.json.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [\n    \"@xyflow/react\"\n  ],\n  \"registryDependencies\": [\n    \"components.badge\",\n    \"components.card\",\n    \"components.flow.base-node\",\n    \"components.flow.canvas\",\n    \"components.flow.labeled-handle\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/producer-pipeline-flow/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.producer.pipeline-flow",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.flow.base-node",
+          "files": [
+            "base-node.tsx"
+          ]
+        },
+        {
+          "slot": "components.flow.canvas",
+          "files": [
+            "flow-canvas.ts"
+          ]
+        },
+        {
+          "slot": "components.flow.labeled-handle",
+          "files": [
+            "labeled-handle.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:36fa61468fedca26dc1dd3e7457b7a4083fb954b178122e281e3a931b34abc22",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "producer-pipeline-flow",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.producer.pipeline-flow",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT; React Flow UI (xyflow/xyflow), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "PIPELINE-CANVAS"
+      },
+      "reason": "W6 composition for /producer/pipeline: graph.json rendered by @xyflow/react: one components.flow.base-node per step with its header, labeled input and output handles and lane, joined by the built-in smoothstep edge; positions come from graph.json. Places pinned parts only; copy arrives through Writer keys; the root spreads the generated data-clossys-* provenance markers. v3 drops the hand-typed --xy-* mapping: React Flow takes its theme from the generated studio-flow-theme.css (pinned themes.* tokens) and its stylesheet from the pinned components.flow.canvas part; planner decision 2026-11-03 (PIPELINE-CANVAS gap 2).",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {
+          "@xyflow/react": "12.12.1"
+        },
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.pipeline.flow-label",
+          "studio.pipeline.kind.plumb",
+          "studio.pipeline.kind.decide-creative",
+          "studio.pipeline.kind.decide-judgment",
+          "studio.pipeline.lane.director",
+          "studio.pipeline.lane.designer",
+          "studio.pipeline.lane.writer",
+          "studio.pipeline.lane.publisher",
+          "studio.pipeline.lane.producer",
+          "studio.pipeline.lane.code",
+          "studio.pipeline.lane.owner",
+          "studio.pipeline.empty.title",
+          "studio.pipeline.empty.description"
+        ],
+        "themeVars": [
+          "--background",
+          "--card",
+          "--card-foreground",
+          "--border",
+          "--radius",
+          "--muted-foreground",
+          "--ring",
+          "--secondary"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.action/1",
+  "id": "designer.compile",
+  "agent": "designer",
+  "kind": "plumb",
+  "stage": "publish.assemble",
+  "summary": "Print the pinned Designer projection (read-only; written only to --out).",
+  "run": "clossys design --out <file>",
+  "chain": "clossys design --out node_modules/.cache/clossys/chain/designer.json",
+  "inputs": [
+    {
+      "glob": "clossys/agents/designer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    },
+    {
+      "glob": "clossys/agents/director/*/pin.json",
+      "schema": "pin"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "arg:--out",
+      "schema": "agent-projection"
+    }
+  ],
+  "pass": {
+    "command": "clossys design --check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": []
+}

@@ -1,8 +1,16 @@
+import { componentLeaf } from "../runtime/component-leaf.js";
+import { TableOfContentsDisclosure } from "./TableOfContentsDisclosure.js";
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+import { articleTocCss, readingTarget } from "./ArticleReading.js";
 import type { ReactNode } from "react";
-import { UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
-import { cx } from "../atoms/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
+import { cx } from "../components/internal/cx.js";
 import { UI_BRANDMARK_HEIGHT_LG } from "../internal/brandmark.js";
 import type { TableOfContentsItem, TableOfContentsProps } from "./TableOfContents.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.table-of-contents", "foundry/sections.table-of-contents");
 
 const MIN_ITEMS = 2;
 const MAX_ITEMS = 30;
@@ -18,7 +26,7 @@ const SITE_HEADER_CLEARANCE =
 const Z_STICKY = "var(--ui-z-sticky, 10)";
 
 const BOX_CLASSES = "rounded-panel border border-line-base p-md";
-const FOCUS_CLASSES = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+const FOCUS_CLASSES = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 function fail(message: string): never {
   throw new TypeError("TableOfContents: " + message);
@@ -28,10 +36,10 @@ function fail(message: string): never {
 export function validateTableOfContents({
   label,
   items,
-  currentId,
-}: Pick<TableOfContentsProps, "label" | "items" | "currentId">): void {
+  currentId, nested,
+}: Pick<TableOfContentsProps, "label" | "items" | "currentId" | "nested">): void {
   if (typeof label !== "string" || label.trim().length === 0) fail("label must be a non-empty string.");
-  if (!Array.isArray(items) || items.length < MIN_ITEMS || items.length > MAX_ITEMS) {
+  if (!Array.isArray(items) || items.length < MIN_ITEMS || (!nested && items.length > MAX_ITEMS)) {
     fail("items must hold " + MIN_ITEMS + " to " + MAX_ITEMS + " entries.");
   }
   const seen = new Set<string>();
@@ -41,38 +49,41 @@ export function validateTableOfContents({
     }
     if (seen.has(item.id)) fail("duplicate item id: " + item.id);
     seen.add(item.id);
-    if (item.level !== undefined && item.level !== 2 && item.level !== 3) fail("item level must be 2 or 3.");
+    if (item.level !== undefined && item.level !== 2 && item.level !== 3 && item.level !== 4) fail("item level must be 2, 3 or 4.");
   }
   if (currentId !== undefined && !seen.has(currentId)) fail("currentId must be one of the item ids.");
 }
 
 /** The ordered list of in-page links; the current item carries the location value of aria-current. */
-export function renderTableOfContentsList(items: readonly TableOfContentsItem[], current: string | undefined): ReactNode {
+export function renderTableOfContentsList(items: readonly TableOfContentsItem[], current: string | undefined, onNavigate?: (id: string) => void, cssTracking = false, LinkComponent: typeof Link = Link): ReactNode {
   return (
-    <ol className="flex flex-col">
+    <SemanticContent as="ol" className="flex flex-col">
       {items.map((item) => {
         const isCurrent = item.id === current;
         return (
-          <li key={item.id}>
-            <a
+          <SemanticContent as="li" key={item.id}>
+            <LinkComponent
+              variant="link"
+              data-reading-target={cssTracking ? readingTarget(item.id).name : undefined}
               href={"#" + item.id}
+              onClick={onNavigate ? event => { event.preventDefault(); onNavigate(item.id); } : undefined}
               aria-current={isCurrent ? "location" : undefined}
               style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}
               className={cx(
-                "flex items-center border-s-2 pe-sm text-body-s",
-                item.level === 3 ? "ps-xl" : "ps-md",
+                "flex items-center border-s-2 pe-sm text-(length:--text-body-s)",
+                item.level === 4 ? "ps-2xl" : item.level === 3 ? "ps-xl" : "ps-md",
                 isCurrent
-                  ? "border-accent font-medium text-ink-primary forced-colors:border-current"
+                  ? "border-primary font-medium text-ink-primary forced-colors:border-current"
                   : "border-transparent text-ink-secondary hover:text-ink-primary",
                 FOCUS_CLASSES,
               )}
             >
               {item.label}
-            </a>
-          </li>
+            </LinkComponent>
+          </SemanticContent>
         );
       })}
-    </ol>
+    </SemanticContent>
   );
 }
 
@@ -82,49 +93,53 @@ export function renderTableOfContentsList(items: readonly TableOfContentsItem[],
  * of the viewport edge once the capped list scrolls on its own.
  */
 export function renderTableOfContentsSidebar(
-  { label, items, className, style }: Pick<TableOfContentsProps, "label" | "items" | "className" | "style">,
+  { label, items, className, style, onNavigate, trackCurrent }: Pick<TableOfContentsProps, "label" | "items" | "className" | "style" | "onNavigate" | "trackCurrent">,
   current: string | undefined,
+  LinkComponent: typeof Link = Link,
 ): ReactNode {
   return (
-    <nav
+    <SemanticContent as="nav"
+      {...SECTION_STAMP}
       aria-label={label}
       className={cx("desktop:sticky desktop:max-h-dvh desktop:overflow-y-auto", className)}
       style={{ insetBlockStart: SITE_HEADER_CLEARANCE, zIndex: Z_STICKY, ...style }}
     >
-      <p aria-hidden="true" className="pb-sm text-caption text-ink-muted">
+      <SemanticContent as="p" aria-hidden="true" className="pb-sm text-caption text-ink-muted">
         {label}
-      </p>
-      {renderTableOfContentsList(items, current)}
-      <div aria-hidden="true" className="hidden desktop:block" style={{ blockSize: SITE_HEADER_CLEARANCE }} />
-    </nav>
+      </SemanticContent>
+      {trackCurrent === "css" ? <style>{articleTocCss(items)}</style> : null}
+      {renderTableOfContentsList(items, current, onNavigate, trackCurrent === "css", LinkComponent)}
+      <SemanticContent as="div" aria-hidden="true" className="hidden desktop:block" style={{ blockSize: SITE_HEADER_CLEARANCE }} />
+    </SemanticContent>
   );
 }
 
 /** The inline presentation's navigation, without the sticky caption row. */
 export function renderTableOfContentsInlineNav(
-  { label, items }: Pick<TableOfContentsProps, "label" | "items">,
+  { label, items, onNavigate, trackCurrent }: Pick<TableOfContentsProps, "label" | "items" | "onNavigate" | "trackCurrent">,
   current: string | undefined,
+  LinkComponent: typeof Link = Link,
 ): ReactNode {
-  return <nav aria-label={label}>{renderTableOfContentsList(items, current)}</nav>;
+  return <SemanticContent as="nav" aria-label={label}>{trackCurrent === "css" ? <style>{articleTocCss(items)}</style> : null}
+      {renderTableOfContentsList(items, current, onNavigate, trackCurrent === "css", LinkComponent)}</SemanticContent>;
 }
 
 /**
  * Server-safe variant: no hooks, no client-only dependency. It marks only the
  * `currentId` the host passes; `trackCurrent` belongs to the client variant. The
- * inline presentation is a native `<details open>`.
+ * inline presentation is the selected disclosure leaf, expanded by default.
  */
 export function TableOfContents(props: TableOfContentsProps) {
   validateTableOfContents(props);
-  const { label, items, presentation = "sidebar", currentId, className, style } = props;
+  const { label, items, presentation = "sidebar", currentId, className, style, trackCurrent } = props;
   if (presentation === "inline") {
     return (
-      <details open className={cx(BOX_CLASSES, className)} style={style}>
-        <summary className={cx("cursor-pointer rounded-default py-sm text-body text-ink-primary", FOCUS_CLASSES)}>
-          {label}
-        </summary>
-        {renderTableOfContentsInlineNav({ label, items }, currentId)}
-      </details>
+      <SemanticContent as="div" {...SECTION_STAMP} className={cx(BOX_CLASSES, className)} style={style}>
+        <TableOfContentsDisclosure id="article-toc" title={label}>
+        {renderTableOfContentsInlineNav({ label, items, trackCurrent }, currentId)}
+        </TableOfContentsDisclosure>
+      </SemanticContent>
     );
   }
-  return renderTableOfContentsSidebar({ label, items, className, style }, currentId);
+  return renderTableOfContentsSidebar({ label, items, className, style, trackCurrent }, currentId);
 }

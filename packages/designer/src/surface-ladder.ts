@@ -21,12 +21,12 @@ const IMPORT_RE = /(?:\bimport\s*\(|\brequire\s*\(|\b(?:import|export)\b[^'"]*?\
 const CSS_IMPORT_RE = /@import\s+(?:url\()?["']?([^"');\s]+)/g;
 
 const DESIGNER_PRIMITIVE_RE =
-  /^@clossys\/designer\/(?:atoms|blocks|shell|tokens|theme)(?:\/|$)/;
+  /^@clossys\/designer\/(?:components|blocks|shell|tokens|theme)(?:\/|$)/;
 const DESIGNER_BLOCKS_RE = /^@clossys\/designer\/blocks(?:\/|$)/;
 const DESIGNER_PUBLISHER_WEB_RE = /^@clossys\/publisher\/web(?:\/|$)/;
 
-/** Another scoped package's atom/token/theme entrypoint — not Designer, not Publisher web. */
-const FOREIGN_PRIMITIVE_RE = /^@([a-z0-9-]+)\/([a-z0-9-]+)\/(?:atoms|tokens|theme)(?:\/|\.css|$)/;
+/** Another scoped package's component/token/theme entrypoint — not Designer, not Publisher web. */
+const FOREIGN_PRIMITIVE_RE = /^@([a-z0-9-]+)\/([a-z0-9-]+)\/(?:atoms|components|tokens|theme)(?:\/|\.css|$)/; // rename-negative: retain foreign entrypoint vocabulary
 
 const DESIGNER_TOKENS_CSS = /@clossys\/designer\/tokens\.css/;
 const DESIGNER_THEME_CSS = /@clossys\/designer\/theme\.css/;
@@ -103,7 +103,7 @@ export function checkSurfaceLadder(files: readonly string[], root = process.cwd(
           file: rel(abs),
           rule: "surface:dual-primitive-stack",
           message:
-            "This file imports @clossys/designer primitives and a second atom/token entrypoint. One visual ladder per route — adopt Designer or keep the prior stack, not both on the same mount.",
+            "This file imports @clossys/designer primitives and a second component/token entrypoint. One visual ladder per route — adopt Designer or keep the prior stack, not both on the same mount.",
         });
       }
     }

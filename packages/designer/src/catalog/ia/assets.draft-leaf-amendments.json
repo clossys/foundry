@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "layer": "assets",
+  "baseSignedHead": "581e4fd70589fe072d9ce38fa159306d473c1754",
+  "status": "pending-owner-ratification",
+  "addedLeafIds": [
+    "assets.icon-panel-left"
+  ],
+  "rejectedLeafIds": [
+    {
+      "id": "assets.backdrop-graphic",
+      "status": "rejected-by-owner",
+      "decidedAt": "2026-11-02"
+    }
+  ]
+}

@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { CATALOGS } from "./index.js";
+import componentIA from "./ia/components.json" with { type: "json" };
+import sectionIA from "./ia/sections.json" with { type: "json" };
+import { resolveComponentId } from "./component-aliases.js";
+import sectionHomes from "./maps/blocks-to-sections.json" with { type: "json" };
 
 /** Expected [L1, L2] group counts per catalog. */
 const GROUP_COUNTS: Record<(typeof CATALOGS)[number]["kind"], readonly [number, number]> = {
   tokens: [6, 31],
   assets: [3, 7],
   icons: [2, 11],
-  atoms: [4, 17],
-  blocks: [5, 33],
+  components: [componentIA.nodes.length, componentIA.nodes.flatMap(group => group.children).length],
+  blocks: [sectionIA.nodes.length, sectionIA.nodes.flatMap(group => group.children).length],
 };
 
 /** Every display string in a value: labels and notes, walked recursively. */
@@ -44,11 +48,21 @@ describe.each(CATALOGS.map((catalog) => [catalog.kind, catalog] as const))("%s c
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("places every entry in a group that exists", () => {
+  it("derives registered homes from IA and keeps unregistered legacy metadata outside display", () => {
     for (const entry of catalog.entries) {
-      const group = catalog.groups.find((candidate) => candidate.id === entry.l1);
-      expect(group, `${entry.id} l1`).toBeDefined();
-      expect(group?.children.some((child) => child.id === entry.l2), `${entry.id} l2`).toBe(true);
+      if (kind === "components" || kind === "blocks") {
+        const tree = kind === "components" ? componentIA.nodes : sectionIA.nodes;
+        const homes: Readonly<Record<string, string>> = sectionHomes;
+        const id = kind === "components" ? resolveComponentId(entry.id) : homes[entry.id] ?? entry.id;
+        const group = tree.find(group => group.children.some(family => family.leaves.includes(id)));
+        const family = group?.children.find(family => family.leaves.includes(id));
+        expect(entry.l1, entry.id).toBe(group?.id ?? null);
+        expect(entry.l2, entry.id).toBe(family?.id ?? null);
+      } else {
+        const group = catalog.groups.find(candidate => candidate.id === entry.l1);
+        expect(group, `${entry.id} l1`).toBeDefined();
+        expect(group?.children.some(child => child.id === entry.l2), `${entry.id} l2`).toBe(true);
+      }
     }
   });
 
@@ -65,7 +79,7 @@ describe.each(CATALOGS.map((catalog) => [catalog.kind, catalog] as const))("%s c
 
 describe("catalog entry rules", () => {
   it("covers all five catalogs once", () => {
-    expect(CATALOGS.map((catalog) => catalog.kind)).toEqual(["tokens", "assets", "icons", "atoms", "blocks"]);
+    expect(CATALOGS.map((catalog) => catalog.kind)).toEqual(["tokens", "assets", "icons", "components", "blocks"]);
   });
 
   it("gives every brand-optional token a fallback", () => {
@@ -81,10 +95,10 @@ describe("catalog entry rules", () => {
     expect(chevron?.nodes).toBe(ChevronRight);
   });
 
-  it("keeps parked atoms and parked status in step", () => {
-    for (const atom of CATALOGS[3].entries) {
-      expect(atom.status === "parked", atom.id).toBe(atom.lifecycle === "parked");
-      expect(atom.status === "in-flight", atom.id).toBe(atom.inFlight !== undefined);
+  it("keeps parked components and parked status in step", () => {
+    for (const component of CATALOGS[3].entries) {
+      expect(component.status === "parked", component.id).toBe(component.lifecycle === "parked");
+      expect(component.status === "in-flight", component.id).toBe(component.inFlight !== undefined);
     }
   });
 

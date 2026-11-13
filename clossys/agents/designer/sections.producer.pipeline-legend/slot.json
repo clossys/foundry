@@ -1,0 +1,61 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.producer.pipeline-legend",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.producer",
+    "l2": "producer-pipeline",
+    "order": 264
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.producer.pipeline-legend",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "One compact row: the step and edge counts, and one stock Badge per node kind (plumb, decide:creative, decide:judgment) with its meaning in a stock Tooltip.",
+    "inputs": [
+      {
+        "name": "legend",
+        "kind": "data",
+        "required": true,
+        "description": "One row per node kind with its Writer label and meaning, the resolved counts line and the untyped file count."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "badge",
+        "version": "4.23.0",
+        "hash": "sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/badge.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "components.badge",
+    "components.card",
+    "components.tooltip"
+  ]
+}

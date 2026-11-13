@@ -1,0 +1,96 @@
+{
+  "name": "color-picker",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn",
+    "react-aria-components"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2024 Sadman Sakib\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+    },
+    {
+      "path": "color-picker.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport type * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  ColorArea as ColorAreaPrimitive,\n  ColorField as ColorFieldPrimitive,\n  ColorPicker as ColorPickerPrimitive,\n  ColorSlider as ColorSliderPrimitive,\n  ColorSwatch as ColorSwatchPrimitive,\n  ColorSwatchPicker as ColorSwatchPickerPrimitive,\n  ColorSwatchPickerItem as ColorSwatchPickerItemPrimitive,\n  ColorThumb as ColorThumbPrimitive,\n  ColorWheel as ColorWheelPrimitive,\n  ColorWheelTrack,\n  Input,\n  Label,\n  SliderOutput,\n  SliderTrack,\n  type ColorAreaProps,\n  type ColorFieldProps,\n  type ColorPickerProps,\n  type ColorSliderProps,\n  type ColorSwatchPickerItemProps,\n  type ColorSwatchPickerProps,\n  type ColorSwatchProps,\n  type ColorThumbProps,\n  type ColorWheelProps,\n} from \"react-aria-components\"\n\ntype WithClassName<P> = Omit<P, \"className\"> & { className?: string }\n\n/** State root: React Aria ColorPicker shares one color value with every part below. */\nfunction ColorPicker(props: ColorPickerProps) {\n  return <ColorPickerPrimitive {...props} />\n}\n\nfunction ColorThumb({ className, ...props }: WithClassName<ColorThumbProps>) {\n  return (\n    <ColorThumbPrimitive\n      data-slot=\"color-picker-thumb\"\n      className={cn(\n        \"size-4 rounded-full border-2 border-white shadow-sm ring-1 ring-black/10 outline-none data-[dragging]:size-5 data-[focus-visible]:ring-3 data-[focus-visible]:ring-ring/50\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\n/** part.area: two-channel saturation/brightness plane. */\nfunction ColorPickerArea({ className, ...props }: WithClassName<ColorAreaProps>) {\n  return (\n    <ColorAreaPrimitive\n      data-slot=\"color-picker-area\"\n      className={cn(\n        \"aspect-square w-full max-w-56 shrink-0 rounded-lg border border-border data-[disabled]:opacity-50\",\n        className\n      )}\n      {...props}\n    >\n      <ColorThumb />\n    </ColorAreaPrimitive>\n  )\n}\n\n/** part.wheel: hue ring. */\nfunction ColorPickerWheel({\n  className,\n  outerRadius = 96,\n  innerRadius = 72,\n  ...props\n}: WithClassName<Omit<ColorWheelProps, \"outerRadius\" | \"innerRadius\">> & {\n  outerRadius?: number\n  innerRadius?: number\n}) {\n  return (\n    <ColorWheelPrimitive\n      data-slot=\"color-picker-wheel\"\n      outerRadius={outerRadius}\n      innerRadius={innerRadius}\n      className={cn(\"shrink-0 data-[disabled]:opacity-50\", className)}\n      {...props}\n    >\n      <ColorWheelTrack className=\"rounded-full\" />\n      <ColorThumb />\n    </ColorWheelPrimitive>\n  )\n}\n\n/** part.slider: one channel (hue, alpha, lightness...). */\nfunction ColorPickerSlider({\n  className,\n  label,\n  ...props\n}: WithClassName<ColorSliderProps> & { label?: React.ReactNode }) {\n  return (\n    <ColorSliderPrimitive\n      data-slot=\"color-picker-slider\"\n      className={cn(\"flex w-full flex-col gap-1.5 data-[disabled]:opacity-50\", className)}\n      {...props}\n    >\n      {label !== undefined && (\n        <div className=\"flex items-center justify-between text-xs font-medium text-muted-foreground\">\n          <Label>{label}</Label>\n          <SliderOutput className=\"tabular-nums\" />\n        </div>\n      )}\n      <SliderTrack className=\"h-3 w-full rounded-full border border-border\">\n        <ColorThumb className=\"top-1/2\" />\n      </SliderTrack>\n    </ColorSliderPrimitive>\n  )\n}\n\n/** part.field: typed hex (or one channel) value. */\nfunction ColorPickerField({\n  className,\n  label,\n  ...props\n}: WithClassName<ColorFieldProps> & { label?: React.ReactNode }) {\n  return (\n    <ColorFieldPrimitive\n      data-slot=\"color-picker-field\"\n      className={cn(\"flex w-full flex-col gap-1.5\", className)}\n      {...props}\n    >\n      {label !== undefined && <Label className=\"text-xs font-medium text-muted-foreground\">{label}</Label>}\n      <Input className=\"h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 font-mono text-sm uppercase outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:bg-input/30\" />\n    </ColorFieldPrimitive>\n  )\n}\n\nfunction ColorSwatch({ className, ...props }: WithClassName<ColorSwatchProps>) {\n  return (\n    <ColorSwatchPrimitive\n      data-slot=\"color-picker-swatch\"\n      className={cn(\"size-6 rounded-md shadow-[inset_0_0_0_1px_rgb(0_0_0/0.1)]\", className)}\n      {...props}\n    />\n  )\n}\n\n/** part.swatch-picker: preset colors. */\nfunction ColorPickerSwatches({ className, ...props }: WithClassName<ColorSwatchPickerProps>) {\n  return (\n    <ColorSwatchPickerPrimitive\n      data-slot=\"color-picker-swatches\"\n      className={cn(\"flex flex-wrap gap-1.5\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction ColorPickerSwatch({\n  className,\n  ...props\n}: WithClassName<ColorSwatchPickerItemProps>) {\n  return (\n    <ColorSwatchPickerItemPrimitive\n      data-slot=\"color-picker-swatch-item\"\n      className={cn(\n        \"rounded-md outline-none data-[focus-visible]:ring-3 data-[focus-visible]:ring-ring/50 data-[selected]:ring-2 data-[selected]:ring-ring data-[selected]:ring-offset-2 data-[selected]:ring-offset-background\",\n        className\n      )}\n      {...props}\n    >\n      <ColorSwatch />\n    </ColorSwatchPickerItemPrimitive>\n  )\n}\n\nexport {\n  ColorPicker,\n  ColorPickerArea,\n  ColorPickerWheel,\n  ColorPickerSlider,\n  ColorPickerField,\n  ColorPickerSwatches,\n  ColorPickerSwatch,\n  ColorSwatch,\n  ColorThumb,\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.color-picker",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "diceui/color-picker@04aad54",
+        "npm:react-aria-components@1.21.1#ColorPicker"
+      ],
+      "hash": "sha256:bd4a8d192035af22f3727b3c7a4dd554e80da8a178eaf79fd33c4278576f3033",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "color-picker",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.color-picker",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "Rebuilt the diceui color-picker (Radix popover + custom canvas) on React Aria ColorPicker, ColorArea, ColorWheel, ColorSlider, ColorField and ColorSwatchPicker in the aria-nova style; diceui is the design reference, RAC supplies behaviour and a11y.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "react-aria-components": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}

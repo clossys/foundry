@@ -1,0 +1,263 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.app-shell",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.page-shells",
+    "l2": "page-shells-workspaces",
+    "order": 230
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "div",
+    "landmarks": [
+      {
+        "slot": "header",
+        "role": "banner",
+        "topLevel": true,
+        "nameRequired": false
+      },
+      {
+        "slot": "sidebar",
+        "role": "navigation",
+        "topLevel": true,
+        "nameRequired": true
+      },
+      {
+        "slot": "main",
+        "role": "main",
+        "topLevel": true,
+        "nameRequired": false,
+        "id": "main-content",
+        "tabIndex": -1
+      },
+      {
+        "slot": "inspector",
+        "role": "complementary",
+        "topLevel": true,
+        "nameRequired": true
+      },
+      {
+        "slot": "toasts",
+        "role": "region",
+        "topLevel": true,
+        "nameRequired": true
+      }
+    ],
+    "slots": [
+      {
+        "id": "skip-link",
+        "required": true,
+        "accepts": "host-node"
+      },
+      {
+        "id": "progress",
+        "required": false,
+        "accepts": "components.progress-bar"
+      },
+      {
+        "id": "sidebar",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "header",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "main",
+        "required": true,
+        "accepts": "view"
+      },
+      {
+        "id": "inspector",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "command",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "page-module",
+        "required": false,
+        "accepts": "sections.*"
+      },
+      {
+        "id": "state",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "toasts",
+        "required": false,
+        "accepts": "components.toast"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "layout.standard",
+        "layout.immersive",
+        "stage.contained",
+        "stage.full",
+        "theme.system",
+        "theme.light",
+        "theme.dark"
+      ]
+    },
+    "statePorts": [
+      {
+        "id": "sidebar-collapsed",
+        "type": "boolean"
+      },
+      {
+        "id": "inspector-collapsed",
+        "type": "boolean"
+      },
+      {
+        "id": "width",
+        "type": "number"
+      },
+      {
+        "id": "theme",
+        "type": "string",
+        "values": [
+          "system",
+          "light",
+          "dark"
+        ]
+      },
+      {
+        "id": "navigating",
+        "type": "boolean"
+      },
+      {
+        "id": "main-state",
+        "type": "string",
+        "values": [
+          "ready",
+          "loading",
+          "error",
+          "not-found",
+          "forbidden"
+        ]
+      }
+    ],
+    "rendering": "client",
+    "breakpoints": [
+      "sm",
+      "md",
+      "lg",
+      "xl",
+      "2xl"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.spacing"
+      ],
+      "assets": [
+        "assets.icon-close",
+        "assets.icon-layers",
+        "assets.icon-list-view",
+        "assets.icon-search"
+      ]
+    },
+    "composes": [
+      "frames.app-header",
+      "frames.app-sidebar",
+      "frames.inspector",
+      "frames.sheet",
+      "frames.command",
+      "components.button",
+      "components.icon",
+      "components.menu",
+      "components.progress-bar",
+      "components.toast",
+      "components.skeleton",
+      "components.toggle-button",
+      "components.avatar",
+      "components.banner",
+      "components.card",
+      "components.logo",
+      "components.resize-handle",
+      "components.tabs",
+      "components.tooltip",
+      "components.dialog",
+      "components.link",
+      "components.popover",
+      "components.semantic-content"
+    ],
+    "skipTarget": "main-content",
+    "stage": {
+      "accepts": [
+        "flow",
+        "canvas"
+      ],
+      "scroll": "region"
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-layers",
+    "assets.icon-list-view",
+    "assets.icon-search",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.border",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.radius",
+    "themes.sidebar-accent",
+    "themes.sidebar-accent-foreground",
+    "themes.sidebar-foreground",
+    "themes.sidebar-primary-foreground",
+    "themes.spacing",
+    "assets.icon-close"
+  ],
+  "uses": [
+    "assets.icon-arrow-right",
+    "assets.icon-chevron-right",
+    "assets.icon-folder",
+    "assets.icon-guide",
+    "assets.icon-payment",
+    "components.avatar",
+    "components.dropdown-menu",
+    "components.separator",
+    "components.sidebar"
+  ]
+}

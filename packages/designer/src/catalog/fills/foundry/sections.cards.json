@@ -1,0 +1,144 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.cards",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#RecordCards",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.cards",
+      "source": "foundry",
+      "sourceAddress": "./blocks#RecordCards",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "cards": {
+      "composes": [
+        "components.badge",
+        "components.card",
+        "components.link",
+        "components.semantic-content"
+      ],
+      "configs": {
+        "case-study": "config=case-study",
+        "post": "config=post",
+        "post-featured": "config=post-featured"
+      },
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.badge",
+          "components.card",
+          "components.link",
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [
+            "assets.image"
+          ],
+          "components": [
+            "components.badge",
+            "components.card",
+            "components.link",
+            "components.semantic-content"
+          ],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "sha256": "f8319a480009478413ee4531b8ef51ed3b9d1d8194e9b121dfcae26d62d8a326"
+          },
+          {
+            "path": "packages/designer/src/blocks/RecordCards.tsx",
+            "sha256": "1f54c2f3430e2a7747e7855e778e42b836cc9007dbb33c55c2bcacc77591cea3"
+          },
+          {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/surface-tones.ts",
+            "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "RecordCards",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Editorial records use consumer-selected Card parts, Link, Badge and SemanticContent. Post, post-featured and case-study retain Writer labels and resolved assets.image; post-featured is full-width. Dates require the page locale; states remain host-owned.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#RecordCards",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.grid": "./blocks#RecordCards.layout=grid",
+        "layout.list": "./blocks#RecordCards.layout=list"
+      },
+      "reads": {
+        "assets": [
+          "assets.image"
+        ],
+        "themes": []
+      },
+      "slot": "sections.cards",
+      "slotMap": {
+        "records": "./blocks#RecordCards.records"
+      },
+      "source": "foundry"
+    }
+  }
+}

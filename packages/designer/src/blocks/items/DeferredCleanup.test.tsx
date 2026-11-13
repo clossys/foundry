@@ -1,14 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Item } from "./Item.js";
+import { StockItem as Item } from "./StockItem.js";
 import { Items } from "./Items.js";
 import { Items as NativeItems } from "./Items.server.js";
 import type { ItemData } from "./types.js";
 
 const questions = (icon?: ItemData["icon"]): ItemData[] => Array.from({ length: 4 }, (_, i) => ({ id: String(i), heading: `Question ${i}`, description: `Answer ${i}`, icon }));
 const graphic = <svg><use href="#check" /><image href="/example.svg" /><use xlinkHref="#check" /></svg>;
-const linked = (icon: ItemData["icon"]) => <Item id="one" heading="Title" icon={icon} href="/one" treatment="plain" size="standard" ground="base" />;
+const linked = (icon: ItemData["icon"]) => <Item id="one" heading="Title" icon={icon} href="/one" ground="base" />;
 
 describe("native SVG references in canonical supplied content", () => {
   it.each([Items, NativeItems])("accepts use and image resources in every trigger slot without creating targets", Component => {
@@ -65,9 +65,9 @@ describe("native disclosure typography baseline", () => {
   it.each([3, 4] as const)("sets the h%s baseline without flattening authored emphasis", headingLevel => {
     const items = questions().map(item => ({ ...item, meta: <>Actor <strong>Lead</strong></> }));
     const { container } = render(<NativeItems arrangement="rows" reveal="disclose" headingLevel={headingLevel} items={items} />);
-    expect(container.querySelectorAll(`summary > h${headingLevel}`)).toHaveLength(4);
-    for (const heading of container.querySelectorAll(`summary > h${headingLevel}`)) {
-      expect(heading).toHaveClass("font-medium");
+    expect(container.querySelectorAll(`h${headingLevel} > button`)).toHaveLength(4);
+    for (const heading of container.querySelectorAll(`h${headingLevel} > button`)) {
+      expect(heading.querySelector("[data-item-heading]")).toHaveClass("font-medium");
       expect(heading.querySelector('[data-item-meta] .text-caption')).toHaveClass("font-body");
       expect(heading.querySelector("strong")).toHaveTextContent("Lead");
     }

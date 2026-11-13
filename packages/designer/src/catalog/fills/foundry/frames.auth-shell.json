@@ -1,0 +1,130 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.auth-shell",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#AuthFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.auth-shell",
+      "source": "foundry",
+      "sourceAddress": "./frames#AuthFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "auth-shell": {
+      "composes": [
+        "components.link",
+        "components.semantic-content"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.link",
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.link",
+            "components.semantic-content"
+          ],
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.primary",
+            "themes.primary-foreground",
+            "themes.ring",
+            "themes.sidebar"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/ground-paint.ts",
+            "sha256": "fa0ccf04c141467fffaf0ef138ca32ba86bf908f02b92161ad34237c3f62b0f7"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/frames/AuthFrame.tsx",
+            "sha256": "10ec6162ab26e2347355391ddbb437beaebee1216154d913c360f79523ebbc48"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          },
+          {
+            "path": "packages/designer/src/shell/SkipLink.tsx",
+            "sha256": "5a179f1c44b24be92d3de21e71de9294cf7fb01434de25b7d61532e04244f86a"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "AuthFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [],
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.primary",
+          "themes.primary-foreground",
+          "themes.ring",
+          "themes.sidebar"
+        ]
+      },
+      "slot": "frames.auth-shell",
+      "slots": {
+        "main": "children",
+        "skip-link": "skipLabel"
+      },
+      "statePorts": {}
+    }
+  }
+}

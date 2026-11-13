@@ -1,5 +1,5 @@
-import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { cx } from "../../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
 
 // Clockwise quarters in a 16-unit drawing box; color repeats the geometry.

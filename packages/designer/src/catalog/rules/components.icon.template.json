@@ -1,0 +1,82 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.icon",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "derived"
+      ],
+      "relation": "same-contract",
+      "slot": "components.icon",
+      "source": "shadcn@aria",
+      "sourceAddress": "rules/components.icon.json#derive:icon@1",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "icon": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "ISC",
+          "name": "lucide-react",
+          "version": "1.65.0"
+        },
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        }
+      ],
+      "impl": {
+        "entry": "components/icon/icon.tsx",
+        "export": "Icon",
+        "kind": "source"
+      },
+      "license": "MIT",
+      "members": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ],
+      "notice": "notices/icon.md",
+      "outputSha256": [
+        {
+          "path": "components/icon/icon.tsx",
+          "sha256": "d678ecb857dbbe3dee720bb0b162c9ef80aed96b4f6a7d7e682fb16498f726cb"
+        },
+        {
+          "path": "notices/icon.md",
+          "sha256": "141eb6f2cf29983960d417a1c8d3729df6d05df71d860865a41f9bcb22b0bfff"
+        }
+      ],
+      "propMap": {
+        "size.lg": "Icon.size=lg",
+        "size.md": "Icon.size=md",
+        "size.sm": "Icon.size=sm"
+      },
+      "props": [
+        "children",
+        "className",
+        "decorative",
+        "glyph",
+        "label",
+        "size"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "root": "presentational",
+      "slot": "components.icon",
+      "source": "shadcn@aria"
+    }
+  }
+}

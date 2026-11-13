@@ -1,0 +1,62 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.studio.slot-groups",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 252
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.slot-groups",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The body of a Studio tab: its IA groups stacked, each a grid of stock shadcn slot cards linking to the slot's detail route.",
+    "inputs": [
+      {
+        "name": "groups",
+        "kind": "data",
+        "required": true,
+        "description": "The active tab's IA groups, each with its slot cards."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "badge",
+        "version": "4.23.0",
+        "hash": "sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/badge.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "text"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.field"
+  ]
+}

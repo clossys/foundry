@@ -180,7 +180,7 @@ export const invalidHeroSize = <Hero heading="Hero" size="small" />;
 
 
 // Existing public interfaces carry history, row caps and badges through both barrels.
-import { Meter as HistoryMeter, type MeterProps as HistoryMeterProps } from "../../atoms/server.js";
+import { Meter as HistoryMeter, type MeterProps as HistoryMeterProps } from "../../components/server.js";
 import type { SpecimenStatusRowsPart as HistoryStatusRowsPart, SpecimenMeterPart as HistoryMeterPart } from "../server.js";
 import type { SpecimenPanelContent as BadgedPanelContent } from "../index.js";
 

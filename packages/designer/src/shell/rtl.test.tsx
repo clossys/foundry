@@ -21,8 +21,9 @@ describe("shell RTL logical-direction utilities", () => {
     const links = container.querySelectorAll("a");
     expect(links).toHaveLength(2);
     for (const link of links) {
-      expect(link.style.zIndex).toBe("var(--ui-z-skip-link, 100)");
-      expect(link.style.zIndex).not.toContain("tooltip");
+      // The dedicated skip-link layer utility (--ui-z-skip-link), never the tooltip layer.
+      expect(link).toHaveClass("layer-skip-link");
+      expect(link.className).not.toContain("tooltip");
     }
   });
 
@@ -36,10 +37,10 @@ describe("shell RTL logical-direction utilities", () => {
     );
     const nav = screen.getByRole("navigation");
     const rail = screen.getByRole("complementary");
-    expect(nav.className).toContain("border-e");
-    expect(nav.style.borderInlineEndWidth).toBeTruthy();
-    expect(rail.className).toContain("border-s");
-    expect(rail.style.borderInlineStartWidth).toBeTruthy();
+    expect(nav.className.split(" ")).toContain("hairline-e");
+    expect(nav.className.split(" ")).not.toContain("hairline-s");
+    expect(rail.className.split(" ")).toContain("hairline-s");
+    expect(rail.className.split(" ")).not.toContain("hairline-e");
   });
 
   it("anchors the drawer at inline-start and places its divider at inline-end", async () => {
@@ -51,15 +52,20 @@ describe("shell RTL logical-direction utilities", () => {
     );
     await user.click(screen.getByRole("button", { name: "Menu" }));
     const dialog = await screen.findByRole("dialog");
-    expect(dialog.parentElement?.className).toContain("start-0");
-    expect(dialog.className).toContain("border-e");
+    // The stock Sheet surface owns the side: inline-start anchor and its inline-end divider.
+    const surface = dialog.closest<HTMLElement>('[data-slot="sheet-content"]')!;
+    expect(surface).toHaveAttribute("data-side", "left");
+    expect(surface.className.split(" ")).toEqual(expect.arrayContaining(["data-[side=left]:start-0", "data-[side=left]:border-e-(length:--ui-border-hairline)"]));
   });
 
-  it("anchors toasts at inline-end", () => {
+  it("anchors toasts at inline-end", async () => {
     const { unmount } = render(<Toaster />);
     act(() => toast.info("A notification"));
-    const region = screen.getByRole("region");
-    expect(region.className).toContain("end-md");
+    await screen.findByText("A notification");
+    // Sonner draws the list (`ol`) inside its labelled region; the inline end is the right in left-to-right.
+    const list = screen.getByRole("region", { name: "Notifications" }).querySelector("ol")!;
+    expect(list.className).toContain("end-md");
+    expect(list).toHaveAttribute("data-x-position", "right");
     act(() => toast.dismissAll());
     unmount();
   });
@@ -75,7 +81,7 @@ describe("shell RTL logical-direction utilities", () => {
       </>,
     );
     for (const link of container.querySelectorAll("a")) {
-      expect(link.className).toContain("focus:start-sm");
+      expect(link.className).toContain("focus:skip-link-inset");
       expect(link.className).not.toContain("focus:left-sm");
     }
   });

@@ -6,7 +6,7 @@ separate package", for the tree-shaking and upstream-churn/rename
 reasoning (this glyph set previously shipped as this scope's own standalone
 `icons` package; this notice, and the data it covers, moved into this
 package's own `./icons` subpath along with it — see this package's changelog).
-The 40 glyphs at `@clossys/designer/icons` are, however, **visually
+The 41 glyphs at `@clossys/designer/icons` are, however, **visually
 derived from [Lucide](https://lucide.dev)**: their SVG path data was
 copied from `lucide-react`'s published source (version 1.23.0 for the
 original 32; version 1.24.0 for `arrow-right`, `briefcase`, `file-check`,
@@ -87,7 +87,7 @@ SOFTWARE.
 SPDX-License-Identifier: MIT
 
 `styles/compiled.css` is output of a Tailwind CSS v4 `compile()` over the
-class names this package's atoms, blocks and shell use (see its header).
+class names this package's components, blocks and shell use (see its header).
 
 MIT License
 
@@ -110,3 +110,218 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+## shadcn/ui theme registry
+
+SPDX-License-Identifier: MIT
+
+The seven base-color preset values and the vendored registry snapshots
+`src/importers/vendor/shadcn-themes.ts.txt` and
+`src/importers/vendor/shadcn-base-colors.ts.txt` derive from shadcn/ui commit
+`96da9cc7f1aa10580a3741664e2a77c721206c00`. The MIT license and shadcn
+copyright notice reproduced below also apply to these registry files and values.
+
+## shadcn/ui Toggle and ToggleGroup
+
+SPDX-License-Identifier: MIT
+
+The adopted toggle modules derive from shadcn/ui commit
+`daaf156ee00ed91cc7e6bdd937c1b4973152d141`, Aria base, Nova style.
+Their design reads are rewritten onto the selected token contract; refs and
+render props continue to the React Aria primitives.
+
+Local divergence from the C15 source snapshot (`0d04b4c23`), approved by
+owner decision D7: Toggle and ToggleGroup use logical icon padding, inline
+corner radii and inline borders for right-to-left rendering. Vertical block
+edges, React Aria behavior and the upstream attribution remain unchanged.
+
+MIT License
+
+Copyright (c) 2023 shadcn
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+The draft `PanelLeft` glyph also uses the exact `panel-left` path nodes from
+`lucide-react` 1.24.0, under the ISC notice above. Its content pin is retained
+in the Lucide importer roster.
+
+The draft Aria rail additions use the official Aria source at commit
+`96da9cc7f1aa10580a3741664e2a77c721206c00`, under the shadcn MIT notice
+above. Individual fill descriptors retain the upstream addresses, file hashes,
+and the generated source license notice.
+
+## Tiptap 3 and ProseMirror
+
+The RichText component uses only Tiptap's open-source MIT document engine.
+React Aria has no rich-text editor; this is a per-component engine exception
+for `components.rich-text`. No Tiptap Pro or Cloud package is used.
+
+| Direct package | License | Purpose |
+| --- | --- | --- |
+| `@tiptap/react` | MIT | React editor lifecycle and ProseMirror schema |
+| `@tiptap/starter-kit` | MIT | Standard document nodes and marks |
+| `@tiptap/extension-table` | MIT | Document table schema |
+| `@tiptap/markdown` | MIT | Shared Markdown parser |
+
+Tiptap: Copyright (c) 2025, Tiptap GmbH.
+ProseMirror: Copyright (c) 2015-2017 by Marijn Haverbeke and others.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## Kibo UI
+
+SPDX-License-Identifier: MIT
+
+`src/components/partners/kibo-ui/` vendors Kibo UI registry source from
+shadcnblocks/kibo commit `3d63cdb15b79d972e3dc38a10997987672f9b263`. Local
+changes are limited to import paths and the colour classes, which read the
+Designer status and ink tokens.
+
+MIT License
+
+Copyright (c) 2023 — Present shadcnblocks
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## sonner
+
+SPDX-License-Identifier: MIT
+
+`sonner` 2.0.8 is the Toaster engine (store, stacking, timers and the polite
+`section` landmark). `src/components/partners/shadcn/sonner.tsx` is the stock
+shadcn/ui Sonner item from the shadcn@aria registry at 4.23.0, under the shadcn
+MIT notice above; its icons are this package's own Lucide glyph data.
+
+MIT License
+
+Copyright (c) 2023 Emil Kowalski
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## media-chrome
+
+SPDX-License-Identifier: MIT
+
+`media-chrome` 4.19.3 is the engine under the Kibo UI Video Player item
+(`src/components/partners/kibo-ui/video-player.tsx`), under the Kibo UI MIT
+notice above. It installs `ce-la-react` (next section).
+
+Copyright (c) 2020 Mux, Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## ce-la-react
+
+SPDX-License-Identifier: BSD-3-Clause
+
+`ce-la-react` 0.3.2 is installed by `media-chrome` for its React wrappers.
+
+BSD 3-Clause License
+
+Copyright (c) 2017 Google LLC. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

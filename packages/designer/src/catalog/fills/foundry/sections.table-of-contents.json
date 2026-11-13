@@ -1,0 +1,150 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.table-of-contents",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#TableOfContents",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.table-of-contents",
+      "source": "foundry",
+      "sourceAddress": "./blocks#TableOfContents",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "table-of-contents": {
+      "composes": [
+        "components.disclosure",
+        "components.link",
+        "components.semantic-content"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.disclosure",
+          "components.link",
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.disclosure",
+            "components.link",
+            "components.semantic-content"
+          ],
+          "themes": [
+            "themes.primary"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/ArticleReading.tsx",
+            "sha256": "a3790bfe3c086ea5158da1fafc73513ee017ae7a3da391669d0b0c2e080cb1e6"
+          },
+          {
+            "path": "packages/designer/src/blocks/TableOfContents.scroll-spy.ts",
+            "sha256": "3aa48106b768d662099c123984284a360dc7b0d723b64c0bfdc01025f41806b0"
+          },
+          {
+            "path": "packages/designer/src/blocks/TableOfContents.server.tsx",
+            "sha256": "39a14a5a0d9fa34d994bb1e20cc71f03fbf90a7a6cd09347229a29b627b672c6"
+          },
+          {
+            "path": "packages/designer/src/blocks/TableOfContents.tsx",
+            "sha256": "3e10079c7fcaf327dcf096c228a0cbf927e73892a613ce89a0b1f8fe62e1a8e5"
+          },
+          {
+            "path": "packages/designer/src/blocks/TableOfContentsDisclosure.tsx",
+            "sha256": "eec8eb6443e9906634ef6a9545641b46c4da40003ebc9450f0118496c8748d04"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          },
+          {
+            "path": "packages/designer/src/internal/brandmark.ts",
+            "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "TableOfContents",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies label. Items are heading ids/labels; optional scroll tracking is source behavior, not a conformance observation.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#TableOfContents",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "tracking.css": "./blocks#TableOfContents.trackCurrent=css"
+      },
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.primary"
+        ]
+      },
+      "slot": "sections.table-of-contents",
+      "slotMap": {
+        "active-id": "./blocks#TableOfContents.currentId",
+        "headings": "./blocks#TableOfContents.items",
+        "label": "./blocks#TableOfContents.label"
+      },
+      "source": "foundry"
+    }
+  }
+}

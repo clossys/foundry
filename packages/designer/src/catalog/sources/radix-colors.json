@@ -1,0 +1,15 @@
+{
+  "author": "third-party",
+  "homepage": "https://www.radix-ui.com/colors",
+  "id": "radix-colors",
+  "kind": "external",
+  "license": "MIT",
+  "pin": {
+    "commit": "dbdb85470547c7d34b9001f48fddb08ded335979",
+    "file": "src/light.ts + src/dark.ts",
+    "package": "@radix-ui/colors",
+    "sha256": "49f27121f8bd6bcba4b9ea9da2378950ac3096029bc9bb4cf402974a314654fa",
+    "url": "https://github.com/radix-ui/colors/tree/dbdb85470547c7d34b9001f48fddb08ded335979",
+    "version": "3.0.0"
+  }
+}

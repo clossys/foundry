@@ -5,11 +5,14 @@ import { FlatGrid } from "./data-table/FlatGrid.js";
 import { ModelTable } from "./data-table/ModelTable.js";
 import type { DataTableMessages } from "./data-table/messages.js";
 import type { DataTableViewModel, DataTableViewModelV1 } from "./data-table/view-model.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.data-table", "foundry/sections.data-table");
 
 export type DataTableSelectionMode = "none" | "single" | "multiple";
 
 export interface DataTableColumn<Row> {
-  /** Stable identifier, passed through to `Table.Column`'s own `id`. */
+  /** Stable identifier, passed through to `TableHead`'s own `id`. */
   id: string;
   /** Column header content. */
   header: ReactNode;
@@ -17,18 +20,23 @@ export interface DataTableColumn<Row> {
   cell: (row: Row) => ReactNode;
   /**
    * Makes this column's header clickable to sort — reported through
-   * `onSortChange`, the same as `Table.Column`'s own `allowsSorting`.
+   * `onSortChange`, the same as `TableHead`'s own `allowsSorting`.
    */
   allowsSorting?: boolean;
   /**
-   * Marks this column as the row's accessible name (`Table.Column`'s own
+   * Marks this column as the row's accessible name (`TableHead`'s own
    * `isRowHeader`). Exactly one column should set this — it's what a
-   * `Table.SelectionCheckbox` reads to announce "Select row Ada" instead of
+   * row's selection checkbox reads to announce "Select row Ada" instead of
    * just "Select row".
    */
   isRowHeader?: boolean;
   /** Fixed column width (`"120px"`, `"10rem"`, or a bare number of pixels). */
   width?: string | number;
+  /**
+   * `"id"` renders this column's cells through the `type-id` binding
+   * (`--font-mono` with tabular figures) — for identifiers, versions, digests and codes.
+   */
+  format?: "id";
 }
 
 export interface DataTableProps<Row> {
@@ -51,8 +59,8 @@ export interface DataTableProps<Row> {
   onSortChange?: (descriptor: SortDescriptor) => void;
   /**
    * Row selection. `"none"` (the default) renders no selection column at
-   * all. `"multiple"` renders `Table.SelectAllCheckbox`/
-   * `Table.SelectionCheckbox` as a leading column, including the select-all
+   * all. `"multiple"` renders select-all and per-row
+   * selection checkboxes as a leading column, including the select-all
    * indeterminate state for a partial selection. `"single"` relies on
    * `Table`'s own row-press selection, with no checkbox column.
    * @default "none"
@@ -75,6 +83,13 @@ export interface DataTableProps<Row> {
   emptyStateDescription?: ReactNode;
   /** Recovery-action slot for the empty-state region — e.g. a "Clear filters" `Button`. */
   emptyStateAction?: ReactNode;
+  /**
+   * Hides each column whose `cell` renders nothing (null, false, empty string or an
+   * empty fragment) for every row. Headers and the row-header column stay whenever any
+   * row fills them; with no rows every column stays.
+   * @default false
+   */
+  hideEmptyColumns?: boolean;
   /** Slot above the grid — a title, search, filters, bulk actions for the current selection. */
   toolbar?: ReactNode;
   /** Slot below the grid — typically a `Pagination` block. `DataTable` never paginates `rows` itself. */
@@ -94,5 +109,5 @@ export interface DataTableProps<Row> {
 
 /** Legacy controlled grid, or a saved local view over the same rows and column renderers. */
 export function DataTable<Row>(props: DataTableProps<Row>) {
-  return props.model ? <ModelTable {...props} {...props.messages} model={props.model} /> : <FlatGrid {...props} {...props.messages} />;
+  return props.model ? <ModelTable {...SECTION_STAMP} {...props} {...props.messages} model={props.model} /> : <FlatGrid {...SECTION_STAMP} {...props} {...props.messages} />;
 }

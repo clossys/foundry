@@ -1,0 +1,88 @@
+{
+  "name": "studio-options",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, BlockViewerIframe, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, SpecimenFigure, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';\n\n/**\n * What one version shows beside the others: a framed render (Designer items, Publisher pages),\n * its strings set against the active version (Writer, Director), or a note when it has neither.\n */\nexport type OptionPreview =\n  | { kind: 'frame'; src: string; viewport: 375 | 768 | 1280 }\n  | { kind: 'strings'; rows: readonly { key: string; text: string; change: 'added' | 'changed' | 'removed' | 'same' }[] }\n  | { kind: 'note'; text: string };\n\nexport interface OptionsCopy { title: string; key: string; text: string; changeLabels: Readonly<Record<'added' | 'changed' | 'removed' | 'same', string>> }\nexport interface OptionCopy { frameTitle: string; stringsLabel: string }\n\nexport interface OptionRow { version: number; pinned: boolean; label: string; reason: string; preview: OptionPreview }\n\n/** The `options` input of `sections.studio.options`: the pinned or active version first, then every newer unpinned version or draft. */\nexport interface OptionsInput { name: string; description: string; copy: OptionsCopy; rows: readonly (OptionRow & { copy: OptionCopy })[] }\n\nconst CHANGE_TONE = { added: 'secondary', changed: 'secondary', removed: 'destructive', same: 'ghost' } as const;\n\nfunction Preview({ name, row, copy }: { name: string; row: OptionRow & { copy: OptionCopy }; copy: OptionsCopy }) {\n  if (row.preview.kind === 'frame') return <BlockViewerIframe interactive viewport={row.preview.viewport} iframeKey={`${name}:${row.version}`} title={row.copy.frameTitle} src={row.preview.src} />;\n  if (row.preview.kind === 'note') return <CardDescription>{row.preview.text}</CardDescription>;\n  return <Table aria-label={row.copy.stringsLabel}>\n    <TableHeader>\n      <TableHead isRowHeader>{copy.key}</TableHead>\n      <TableHead>{copy.text}</TableHead>\n    </TableHeader>\n    <TableBody>\n      {row.preview.rows.map(line => <TableRow key={line.key} id={line.key}>\n        <TableCell>{line.key}</TableCell>\n        <TableCell>\n          {line.text}\n          {line.change !== 'same' && <Badge variant={CHANGE_TONE[line.change]}>{copy.changeLabels[line.change]}</Badge>}\n        </TableCell>\n      </TableRow>)}\n    </TableBody>\n  </Table>;\n}\n\n/** `sections.studio.options`: the pinned version (if any) beside every version waiting for the owner's approval. */\nexport default function OptionsSection({ options, ...provenance }: { options: OptionsInput } & { [marker: `data-clossys-${string}`]: string }) {\n  return <Card size=\"sm\" {...provenance}>\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{options.copy.title}</CardTitle>\n      <CardDescription>{options.description}</CardDescription>\n    </CardHeader>\n    <CardContent>\n      <CardGrid density=\"specimens\">\n        {options.rows.map(row => <SpecimenFigure key={row.version} caption={<>\n          <Badge variant={row.pinned ? 'secondary' : 'outline'}>{row.label}</Badge>\n          {row.reason}\n        </>}>\n          <Preview name={options.name} row={row} copy={options.copy} />\n        </SpecimenFigure>)}\n      </CardGrid>\n    </CardContent>\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-options\",\n  \"type\": \"registry:block\",\n  \"title\": \"Leaf Options\",\n  \"description\": \"Options pending approval, for every agent: the pinned or active version beside every newer unpinned version or draft, framed or as changed strings.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"card\"\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.options",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-app/block-viewer@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+        "shadcn-aria/table-example@4.23.0"
+      ],
+      "license": "MIT",
+      "hash": "sha256:ec4ab90e87520a0bd228193842558167c44e27ef48d359a20a86ad8fa94a66ba"
+    },
+    "element": {
+      "id": "studio-options",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.options",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE (R-DS-ONLY): v5 with the restyle attributes the ds-only rule refuses removed (6: <TableCell className>, <TableCell style>, <Badge className>, <CardContent className>); Designer components keep their variants and theme tokens only. Lineage re-derived from the trusted reference rows shadcn-app/block-viewer@b8d7baa15b1dca5716f13153e63795fc3d741f6b, shadcn-aria/table-example@4.23.0. DS-COMPLETE D5: source.ref cites reference-manifest row ids only (shadcn-app/block-viewer@b8d7baa15b1dca5716f13153e63795fc3d741f6b, shadcn-aria/table-example@4.23.0); the self-lineage entries v5 are dropped (pin history keeps them); the record-only registry-item.json lists no files. Code unchanged from studio-options-v6.",
+      "createdAt": "2026-11-05T11:33:16.297Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.options-title",
+          "studio.options-key",
+          "studio.options-text",
+          "studio.options-added",
+          "studio.options-changed",
+          "studio.options-removed",
+          "studio.options-same",
+          "studio.options-pinned-title",
+          "studio.options-option-title",
+          "studio.options-strings-label"
+        ],
+        "themeVars": [
+          "--card",
+          "--border",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

@@ -1,0 +1,31 @@
+[
+  {
+    "id": "components.icon-button",
+    "target": "components.button",
+    "memberMap": {
+      "shape": "shape.icon-only"
+    }
+  },
+  {
+    "id": "components.textarea",
+    "target": "components.text-field",
+    "memberMap": {
+      "line": "line.multiline"
+    }
+  },
+  {
+    "id": "components.chip",
+    "target": "components.tag-group"
+  },
+  {
+    "id": "components.logomark",
+    "target": "components.logo"
+  },
+  {
+    "id": "components.accordion",
+    "target": "components.disclosure",
+    "memberMap": {
+      "scope": "scope.group"
+    }
+  }
+]

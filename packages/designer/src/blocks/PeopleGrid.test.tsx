@@ -1,3 +1,4 @@
+import { SectionFrame as S4Frame } from "./SectionFrame.js";
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -7,6 +8,7 @@ import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PeopleGrid, type PeopleGridPerson } from "./PeopleGrid.js";
+import { selectChromium } from "../__fixtures__/chromium-discovery.js";
 
 type BrowserStep =
   | { viewport: number }
@@ -103,8 +105,7 @@ async function driveChromium() {
 const INPUT_CAPABILITIES = "primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4";
 
 function runInChromium(html: string, steps: readonly BrowserStep[]): Record<string, any> {
-  const browser = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]
-    .find(name => spawnSync(name, ["--version"], { stdio: "ignore" }).status === 0);
+  const browser = selectChromium(process.env.FOUNDRY_TEST_CHROME, (executable, args) => spawnSync(executable, args, { stdio: "ignore" }));
   if (!browser) throw new Error("Measured block tests require Chromium or Google Chrome on PATH.");
   const directory = mkdtempSync(join(tmpdir(), "block-measure-"));
   try {
@@ -245,7 +246,9 @@ describe("PeopleGrid measured in Chromium", () => {
     window.all = () => { const active = document.activeElement; const section = active.closest("section"); return { hoverMedia: matchMedia("(hover: hover)").matches,
       avatar: cards("avatar"), photo: cards("photo"), roomy: cards("roomy"), active: { section: section?.id ?? null, index: section ? [...section.querySelectorAll("a")].indexOf(active) : -1 } }; };
   `;
-  const page = `<!doctype html><meta charset="utf-8"><style>${css}body{margin:0}</style>${renderToStaticMarkup(<>
+  // Rendered in beforeAll, not while the suite is collected: the setup file loads the
+  // ambient component selection before hooks run, and a collection-time render precedes it.
+  const pageHtml = () => `<!doctype html><meta charset="utf-8"><style>${css}body{margin:0}</style>${renderToStaticMarkup(<>
     <section id="avatar"><PeopleGrid people={linked(4)} /></section>
     <section id="photo"><PeopleGrid people={linked(2)} media="photo" columns={2} /></section>
     <section id="roomy" style={{ "--ui-layout-tap-target": "96px" } as CSSProperties}><PeopleGrid people={linked(2)} /></section>
@@ -253,6 +256,7 @@ describe("PeopleGrid measured in Chromium", () => {
   let wide: Record<string, any>;
   let phone: Record<string, any>;
   beforeAll(() => {
+    const page = pageHtml();
     wide = runInChromium(page, [
       { viewport: 1280 },
       { eval: "all()", as: "rest" },
@@ -315,4 +319,22 @@ describe("PeopleGrid measured in Chromium", () => {
       for (const [position, card] of probe.avatar.entries()) if (position !== index) expect(card.ring).toMatch(/^none/);
     }
   });
+});
+
+it("S4-6 retains the bare root, direct children and host identity under one external band", () => {
+  let clicks = 0;
+  const view = render(<PeopleGrid people={people(2)} id="bare" dir="rtl" data-host="bare" className="gap-xl" style={{ marginTop: 7 }} onClick={() => clicks++} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("UL");
+  expect(root).toHaveAttribute("id", "bare");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "bare");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root).toHaveClass("gap-xl");
+  expect(Array.from(root.children).every(child => child.tagName === "LI")).toBe(true);
+  expect(root.querySelector("section,header,h1,h2")).toBeNull();
+  root.click(); expect(clicks).toBe(1);
+  view.rerender(<S4Frame><PeopleGrid people={people(2)} id="bare" /></S4Frame>);
+  expect(view.container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
+  expect(view.container.querySelector("#bare")?.tagName).toBe("UL");
 });

@@ -1,0 +1,118 @@
+{
+  "name": "studio-options",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, FieldDescription, FieldGroup, ScrollArea, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';\n\n/**\n * What one version shows beside the others: a framed render (Designer items, Publisher pages),\n * its strings set against the active version (Writer, Director), or a note when it has neither.\n */\nexport type OptionPreview =\n  | { kind: 'frame'; src: string; viewport: 375 | 768 | 1280 }\n  | { kind: 'strings'; rows: readonly { key: string; text: string; change: 'added' | 'changed' | 'removed' | 'same' }[] }\n  | { kind: 'note'; text: string };\n\nexport interface OptionsCopy { title: string; key: string; text: string; changeLabels: Readonly<Record<'added' | 'changed' | 'removed' | 'same', string>> }\nexport interface OptionCopy { frameTitle: string; stringsLabel: string }\n\nexport interface OptionRow { version: number; pinned: boolean; label: string; reason: string; preview: OptionPreview }\n\n/**\n * The `options` input of `sections.studio.options`: the pinned or active version first, then every newer unpinned version or draft.\n * `deferred` is true until Studio has mounted and resolved its theme; framed versions render without their frame until then.\n */\nexport interface OptionsInput { name: string; description: string; copy: OptionsCopy; rows: readonly (OptionRow & { copy: OptionCopy })[]; deferred?: boolean }\n\nconst CHANGE_TONE = { added: 'secondary', changed: 'secondary', removed: 'destructive', same: 'ghost' } as const;\n/** A viewport's frame height in CSS px: a phone, a tablet and a laptop screen. */\nconst FRAME_HEIGHT = { 375: 667, 768: 1024, 1280: 800 } as const;\n\n/** The two projected specimen route shapes: Producer's specimen frame and a Publisher page preview (a shape, not a route this section links to). */\nconst PROJECTED_ROUTE = /^\\/(?:__specimen$|preview\\/)/;\n\n/** Only already-projected, local specimen routes whose width matches the frame are framed; never arbitrary URLs. */\nfunction frameSource(src: string, viewport: 375 | 768 | 1280): string {\n  if (/[\\\\\\s\\u0000-\\u001f\\u007f]/.test(src) || !src.startsWith('/') || src.startsWith('//')) throw new Error('Expected a local specimen route');\n  const url = new URL(src, 'https://example.com');\n  if (!PROJECTED_ROUTE.test(url.pathname)) throw new Error('Expected a projected specimen route');\n  const widths = url.searchParams.getAll('width');\n  if (widths.length > 1 || (widths.length ? widths[0] !== String(viewport) : viewport !== 1280)) throw new Error('Specimen viewport does not match its projected source');\n  return src;\n}\n\n/** A framed version is keyed by its source (as stock block-viewer keys its iframe), so a theme change mounts a fresh frame. */\nfunction Preview({ row, copy, deferred }: { row: OptionRow & { copy: OptionCopy }; copy: OptionsCopy; deferred?: boolean }) {\n  if (row.preview.kind === 'frame') return <ScrollArea data-specimen-viewport={row.preview.viewport}>\n    {!deferred && <iframe key={frameSource(row.preview.src, row.preview.viewport)} src={frameSource(row.preview.src, row.preview.viewport)} title={row.copy.frameTitle} loading=\"lazy\" width={row.preview.viewport} height={FRAME_HEIGHT[row.preview.viewport]} />}\n  </ScrollArea>;\n  if (row.preview.kind === 'note') return <CardDescription>{row.preview.text}</CardDescription>;\n  return <Table aria-label={row.copy.stringsLabel}>\n    <TableHeader>\n      <TableHead isRowHeader>{copy.key}</TableHead>\n      <TableHead>{copy.text}</TableHead>\n    </TableHeader>\n    <TableBody>\n      {row.preview.rows.map(line => <TableRow key={line.key} id={line.key}>\n        <TableCell>{line.key}</TableCell>\n        <TableCell>\n          {line.text}\n          {line.change !== 'same' && <Badge variant={CHANGE_TONE[line.change]}>{copy.changeLabels[line.change]}</Badge>}\n        </TableCell>\n      </TableRow>)}\n    </TableBody>\n  </Table>;\n}\n\n/** `sections.studio.options`: the pinned version (if any) beside every version waiting for the owner's approval. */\nexport default function OptionsSection({ options, ...provenance }: { options: OptionsInput } & { [marker: `data-clossys-${string}`]: string }) {\n  return <Card size=\"sm\" {...provenance}>\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{options.copy.title}</CardTitle>\n      <CardDescription>{options.description}</CardDescription>\n    </CardHeader>\n    <CardContent>\n      <FieldGroup>\n        <Field orientation=\"responsive\">\n          {options.rows.map(row => <Field key={row.version} data-option-version={row.version}>\n            <Preview row={row} copy={options.copy} deferred={options.deferred} />\n            <FieldDescription>\n              <Badge variant={row.pinned ? 'secondary' : 'outline'}>{row.label}</Badge>\n              {row.reason}\n            </FieldDescription>\n          </Field>)}\n        </Field>\n      </FieldGroup>\n    </CardContent>\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-options\",\n  \"type\": \"registry:block\",\n  \"title\": \"Leaf Options\",\n  \"description\": \"Options pending approval, for every agent: the pinned or active version beside every newer unpinned version or draft, framed or as changed strings.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"badge\",\n    \"card\",\n    \"field\",\n    \"scroll-area\",\n    \"table\"\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.options",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.field",
+          "files": [
+            "registry/aria-nova/ui/field.tsx",
+            "registry/aria-nova/ui/label.tsx"
+          ]
+        },
+        {
+          "slot": "components.scroll-area",
+          "files": [
+            "registry/aria-nova/ui/scroll-area.tsx"
+          ]
+        },
+        {
+          "slot": "components.table",
+          "files": [
+            "registry/aria-nova/ui/table.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:a03d93209d703513df5918c6bb6a1c402a2cc17770048439599926878c10b0be",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-options",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.options",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "STUDIO-FRAMES"
+      },
+      "reason": "STUDIO-FRAMES: studio-options-v8 with its specimen frames left out until Studio has mounted and resolved its theme (a `deferred` input, true through the server render and hydration) and each frame keyed by its source as stock shadcn block-viewer keys its iframe, so no frame loads the server's light default, none is aborted by streaming or hydration, and a theme change mounts a fresh frame instead of keeping the stale document. Stock parts only: no hook, no react import, no raw markup.",
+      "createdAt": "2026-11-12T09:14:14.000Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.options-title",
+          "studio.options-key",
+          "studio.options-text",
+          "studio.options-added",
+          "studio.options-changed",
+          "studio.options-removed",
+          "studio.options-same",
+          "studio.options-pinned-title",
+          "studio.options-option-title",
+          "studio.options-strings-label"
+        ],
+        "themeVars": [
+          "--card",
+          "--border",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

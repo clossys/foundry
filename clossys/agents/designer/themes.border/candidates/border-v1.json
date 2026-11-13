@@ -1,0 +1,60 @@
+{
+  "name": "border",
+  "type": "registry:theme",
+  "cssVars": {
+    "light": {
+      "border": "#E5E5E5"
+    },
+    "dark": {
+      "border": "#262626"
+    }
+  },
+  "files": [
+    {
+      "path": "clossys/themes.border.json",
+      "type": "registry:file",
+      "content": "{\n  \"themes\": {\n    \"border\": {\n      \"default\": {\n        \"$type\": \"color\",\n        \"$value\": \"#E5E5E5\",\n        \"$extensions\": {\n          \"com.clossys.css\": {\n            \"raw\": \"#E5E5E5\"\n          },\n          \"com.clossys.modes\": {\n            \"dark\": \"#262626\"\n          },\n          \"com.clossys.provenance\": {\n            \"sourceLabel\": \"shadcn\",\n            \"sourceAddress\": \"apps/v4/registry/themes.ts#neutral\",\n            \"sourceVariable\": \"--border\",\n            \"brand\": \"foundry-default\",\n            \"brandAddress\": \"packages/designer/ui/src/index.css\"\n          }\n        }\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "themes.border",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn/neutral@4.23.0"
+      ],
+      "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "border",
+      "package": "designer",
+      "layer": "themes",
+      "slot": "themes.border",
+      "kind": "registry:theme",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "shadcn neutral --border mapped to the Foundry default brand value the Studio renders with (packages/designer/ui/src/index.css).",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code theme payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

@@ -1,0 +1,453 @@
+[
+  {
+    "leaf": "assets.icon-chevron-down",
+    "export": "ChevronDown",
+    "upstream": "chevron-down",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/ChevronDown.ts",
+      "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+    }
+  },
+  {
+    "leaf": "assets.icon-chevron-up",
+    "export": "ChevronUp",
+    "upstream": "chevron-up",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/ChevronUp.ts",
+      "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55"
+    }
+  },
+  {
+    "leaf": "assets.icon-chevron-left",
+    "export": "ChevronLeft",
+    "upstream": "chevron-left",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/ChevronLeft.ts",
+      "sha256": "3674c3670e0c34bdb78c075730560e17b6f6b698194010fd42efa76533415e4a"
+    }
+  },
+  {
+    "leaf": "assets.icon-chevron-right",
+    "export": "ChevronRight",
+    "upstream": "chevron-right",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/ChevronRight.ts",
+      "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+    }
+  },
+  {
+    "leaf": "assets.icon-arrow-right",
+    "export": "ArrowRight",
+    "upstream": "arrow-right",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/ArrowRight.ts",
+      "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+    }
+  },
+  {
+    "leaf": "assets.icon-external-link",
+    "export": "ExternalLink",
+    "upstream": "external-link",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/ExternalLink.ts",
+      "sha256": "1803843525669af0f404ee8a5640a2c219753f1dbb9e8f5711cde00581b8c9f9"
+    }
+  },
+  {
+    "leaf": "assets.icon-home",
+    "export": "Home",
+    "upstream": "house",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Home.ts",
+      "sha256": "aeb67ad2d4678f68249a344ebd5cefbb4a148a0039922413ac173092a57bfbd4"
+    }
+  },
+  {
+    "leaf": "assets.icon-search",
+    "export": "Search",
+    "upstream": "search",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Search.ts",
+      "sha256": "85a680f4b9b2a41659159f5c3a825fec027443760fc8527ca570c3ec646fa6a3"
+    }
+  },
+  {
+    "leaf": "assets.icon-close",
+    "export": "X",
+    "upstream": "x",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/X.ts",
+      "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+    }
+  },
+  {
+    "leaf": "assets.icon-check",
+    "export": "Check",
+    "upstream": "check",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Check.ts",
+      "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+    }
+  },
+  {
+    "leaf": "assets.icon-settings",
+    "export": "Settings",
+    "upstream": "settings",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Settings.ts",
+      "sha256": "3eccf9da3ebd4c7db312a650d60d41d0ce2fa5489086df235573934bbc0710a3"
+    }
+  },
+  {
+    "leaf": "assets.icon-list-view",
+    "export": "List",
+    "upstream": "list",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/List.ts",
+      "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2"
+    }
+  },
+  {
+    "leaf": "assets.icon-grid-view",
+    "export": "Grid3x3",
+    "upstream": "grid-3x3",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Grid3x3.ts",
+      "sha256": "0a77926c1da9c77b936a4ffb8a28d7b93733db4284de21f93f7aed1d4d56d332"
+    }
+  },
+  {
+    "leaf": "assets.icon-theme-light",
+    "export": "Sun",
+    "upstream": "sun",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Sun.ts",
+      "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f"
+    }
+  },
+  {
+    "leaf": "assets.icon-theme-dark",
+    "export": "Moon",
+    "upstream": "moon",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Moon.ts",
+      "sha256": "dc1db0aec557a9ca371734249fb9a84eedce7d41c0a5fdfd072979821039be9d"
+    }
+  },
+  {
+    "leaf": "assets.icon-theme-system",
+    "export": "Monitor",
+    "upstream": "monitor",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Monitor.ts",
+      "sha256": "1018ced79e3d8f50a4a74607ffc22ad99c7744c29c248824b8437fba65185148"
+    }
+  },
+  {
+    "leaf": "assets.icon-success",
+    "export": "CheckCircle",
+    "upstream": "circle-check-big",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/CheckCircle.ts",
+      "sha256": "e42486366da8ecf567b7550bb88078661910f893c0237d96b5812fb9dbb6060a"
+    }
+  },
+  {
+    "leaf": "assets.icon-warning",
+    "export": "AlertTriangle",
+    "upstream": "triangle-alert",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/AlertTriangle.ts",
+      "sha256": "5df01838b615e03b2e1d30618a1e3180cbbb82294bb2b32ec544e2bb3c127653"
+    }
+  },
+  {
+    "leaf": "assets.icon-danger",
+    "export": "XCircle",
+    "upstream": "circle-x",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/XCircle.ts",
+      "sha256": "3bd98a7d6021773683520cc577f0ee156d7d0bfd81527597cd77f7b1eb7ac263"
+    }
+  },
+  {
+    "leaf": "assets.icon-info",
+    "export": "Info",
+    "upstream": "info",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Info.ts",
+      "sha256": "ead0c9f1d9e45f0c181d93364f563f01876d03f27956565722b68dbc042388b5"
+    }
+  },
+  {
+    "leaf": "assets.icon-user",
+    "export": "User",
+    "upstream": "user",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/User.ts",
+      "sha256": "4713de5f47d186c42e871932ddc90f71f88e8edb927071b718830c7eeece9050"
+    }
+  },
+  {
+    "leaf": "assets.icon-team",
+    "export": "Users",
+    "upstream": "users",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Users.ts",
+      "sha256": "f5ba36adeb1462a29cfcf8edd3f7456756756449d73fdbb91948ce1ac4939104"
+    }
+  },
+  {
+    "leaf": "assets.icon-organization",
+    "export": "Building2",
+    "upstream": "building-2",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Building2.ts",
+      "sha256": "c774892a801f2765135e929313deb96d44b62ea6ad21d03178a261686ed655a0"
+    }
+  },
+  {
+    "leaf": "assets.icon-website",
+    "export": "Globe",
+    "upstream": "globe",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/Globe.ts",
+      "sha256": "fe5d866c8220c13289d604f83fca685f0cfe8b4bf66c17dbf66dc21ff2dcd8e2"
+    }
+  },
+  {
+    "leaf": "assets.icon-institution",
+    "export": "Landmark",
+    "upstream": "landmark",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/Landmark.ts",
+      "sha256": "defe18c0251260c4f6e44882f36756daba7aaa6544b5c35794c59e0baefeb384"
+    }
+  },
+  {
+    "leaf": "assets.icon-guide",
+    "export": "BookOpen",
+    "upstream": "book-open",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/BookOpen.ts",
+      "sha256": "918684990e3fad045cf89db5d13598ca76f0675dc9a07f7132374c583fb01068"
+    }
+  },
+  {
+    "leaf": "assets.icon-document",
+    "export": "FileText",
+    "upstream": "file-text",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/FileText.ts",
+      "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+    }
+  },
+  {
+    "leaf": "assets.icon-document-approved",
+    "export": "FileCheck",
+    "upstream": "file-check",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/FileCheck.ts",
+      "sha256": "93cb25323e680b6e02d37fe076b9672cc2cf91c4f7bb9cf9d41757ba16344f82"
+    }
+  },
+  {
+    "leaf": "assets.icon-folder",
+    "export": "Folder",
+    "upstream": "folder",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Folder.ts",
+      "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+    }
+  },
+  {
+    "leaf": "assets.icon-date",
+    "export": "Calendar",
+    "upstream": "calendar",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Calendar.ts",
+      "sha256": "a1e5fc91fbad729410ac3637f2be8a37951ddb30f4a552c5ff9f0b7430fe569a"
+    }
+  },
+  {
+    "leaf": "assets.icon-time",
+    "export": "Clock",
+    "upstream": "clock",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Clock.ts",
+      "sha256": "1c2f0abc0105b9902bfe89c3d79b7493f80b0d9aa2674a44b55909ae56306bfd"
+    }
+  },
+  {
+    "leaf": "assets.icon-payment",
+    "export": "CreditCard",
+    "upstream": "credit-card",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/CreditCard.ts",
+      "sha256": "c749d18fccbfd6915ad160c3934671fd2bd1d838731028a127f635fc914c1356"
+    }
+  },
+  {
+    "leaf": "assets.icon-receipt",
+    "export": "Receipt",
+    "upstream": "receipt",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Receipt.ts",
+      "sha256": "e718142acbdde5943a83cff95c85d38db1776c83bf406178ff549a94cde7d092"
+    }
+  },
+  {
+    "leaf": "assets.icon-business",
+    "export": "Briefcase",
+    "upstream": "briefcase",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/Briefcase.ts",
+      "sha256": "dab81f836f47fc08fa113053b3f8cbfd1331e3cce6485c42a71cf73311166394"
+    }
+  },
+  {
+    "leaf": "assets.icon-security",
+    "export": "ShieldCheck",
+    "upstream": "shield-check",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/ShieldCheck.ts",
+      "sha256": "17dd064d3a3c7cd9ab4d006dcea05d9127f5b248d13c164cf0dde2a7d24091a4"
+    }
+  },
+  {
+    "leaf": "assets.icon-locked",
+    "export": "Lock",
+    "upstream": "lock",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Lock.ts",
+      "sha256": "baaf147a4a1580802e2cecd2598df14c060fc829191a64af549a42ae175b15c2"
+    }
+  },
+  {
+    "leaf": "assets.icon-legal",
+    "export": "Scale",
+    "upstream": "scale",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/Scale.ts",
+      "sha256": "714f4f993e88b1f58945144d4767f9bec3876e52be5bdac1ae212a7ee5372df6"
+    }
+  },
+  {
+    "leaf": "assets.icon-package",
+    "export": "Box",
+    "upstream": "box",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Box.ts",
+      "sha256": "7b2e0c2bdbabaebc89ad2f3dddbd5f20b0645aa6d76af7ee9a1caec026cb535d"
+    }
+  },
+  {
+    "leaf": "assets.icon-layers",
+    "export": "Layers",
+    "upstream": "layers",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/Layers.ts",
+      "sha256": "b59dcca2c5d4bbea7050a85b895eff429370bf5bdd005189c75c0d648e92d59b"
+    }
+  },
+  {
+    "leaf": "assets.icon-integration",
+    "export": "Plug",
+    "upstream": "plug",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.23.0",
+      "file": "src/icons/Plug.ts",
+      "sha256": "7a8b54b6476e72844d33fcbb3753367f392b68600ef45406223142f65e5805bc"
+    }
+  },
+  {
+    "leaf": "assets.icon-panel-left",
+    "export": "PanelLeft",
+    "upstream": "panel-left",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/PanelLeft.ts",
+      "sha256": "dd3c0b171cb38e6c3c773aa6e1d9eb5eaf2d84f7ab983abb6dbef6bfa4d4e512"
+    }
+  }
+]

@@ -1,0 +1,563 @@
+{
+  "contract": "shadcn@aria",
+  "pin": {
+    "url": "https://github.com/shadcn-ui/ui",
+    "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+    "scan": "src/importers/__fixtures__/shadcn-aria/"
+  },
+  "kinds": {
+    "theme": "shadcn theme variable (filled by the chosen preset)",
+    "tailwind": "Tailwind v4 theme key (filled by the tailwind-default namespace)",
+    "component": "shadcn component variable (default from the upstream component)",
+    "style": "shadcn style axis: a fixed nova class bound to this variable with the style's own value",
+    "extension": "variable shadcn lacks, named by shadcn convention; default copied from today's fill",
+    "moved": "not a token contract key; lives on the named surface"
+  },
+  "decisions": [
+    "style-default",
+    "extension",
+    "moved"
+  ],
+  "leaves": {
+    "themes.accent": {
+      "kind": "theme",
+      "target": "--accent",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--accent",
+          "status": "live"
+        }
+      }
+    },
+    "themes.accent-foreground": {
+      "kind": "theme",
+      "target": "--accent-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--accent-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.animate-marquee": {
+      "kind": "tailwind",
+      "target": "--animate-marquee",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--animate-marquee",
+          "status": "live"
+        },
+        "duration": {
+          "kind": "tailwind",
+          "target": "--duration",
+          "status": "live"
+        }
+      }
+    },
+    "themes.animate-marquee-vertical": {
+      "kind": "tailwind",
+      "target": "--animate-marquee-vertical",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--animate-marquee-vertical",
+          "status": "live"
+        }
+      }
+    },
+    "themes.animate-shiny-text": {
+      "kind": "tailwind",
+      "target": "--animate-shiny-text",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--animate-shiny-text",
+          "status": "live"
+        }
+      }
+    },
+    "themes.background": {
+      "kind": "theme",
+      "target": "--background",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--background",
+          "status": "live"
+        }
+      }
+    },
+    "themes.border": {
+      "kind": "theme",
+      "target": "--border",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--border",
+          "status": "live"
+        }
+      }
+    },
+    "themes.card": {
+      "kind": "theme",
+      "target": "--card",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--card",
+          "status": "live"
+        }
+      }
+    },
+    "themes.card-foreground": {
+      "kind": "theme",
+      "target": "--card-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--card-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.chart-1": {
+      "kind": "theme",
+      "target": "--chart-1",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-1",
+          "status": "live"
+        }
+      }
+    },
+    "themes.chart-2": {
+      "kind": "theme",
+      "target": "--chart-2",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-2",
+          "status": "live"
+        }
+      }
+    },
+    "themes.chart-3": {
+      "kind": "theme",
+      "target": "--chart-3",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-3",
+          "status": "live"
+        }
+      }
+    },
+    "themes.chart-4": {
+      "kind": "theme",
+      "target": "--chart-4",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-4",
+          "status": "live"
+        }
+      }
+    },
+    "themes.chart-5": {
+      "kind": "theme",
+      "target": "--chart-5",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--chart-5",
+          "status": "live"
+        }
+      }
+    },
+    "themes.destructive": {
+      "kind": "theme",
+      "target": "--destructive",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--destructive",
+          "status": "live"
+        }
+      }
+    },
+    "themes.font-heading": {
+      "kind": "tailwind",
+      "target": "--font-heading",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--font-heading",
+          "status": "live"
+        }
+      }
+    },
+    "themes.font-mono": {
+      "kind": "tailwind",
+      "target": "--font-mono",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--font-mono",
+          "status": "live"
+        }
+      }
+    },
+    "themes.font-sans": {
+      "kind": "tailwind",
+      "target": "--font-sans",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--font-sans",
+          "status": "live"
+        }
+      }
+    },
+    "themes.font-serif": {
+      "kind": "tailwind",
+      "target": "--font-serif",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--font-serif",
+          "status": "live"
+        }
+      }
+    },
+    "themes.foreground": {
+      "kind": "theme",
+      "target": "--foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.input": {
+      "kind": "theme",
+      "target": "--input",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--input",
+          "status": "live"
+        }
+      }
+    },
+    "themes.muted": {
+      "kind": "theme",
+      "target": "--muted",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--muted",
+          "status": "live"
+        }
+      }
+    },
+    "themes.muted-foreground": {
+      "kind": "theme",
+      "target": "--muted-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--muted-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.popover": {
+      "kind": "theme",
+      "target": "--popover",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--popover",
+          "status": "live"
+        }
+      }
+    },
+    "themes.popover-foreground": {
+      "kind": "theme",
+      "target": "--popover-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--popover-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.primary": {
+      "kind": "theme",
+      "target": "--primary",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--primary",
+          "status": "live"
+        }
+      }
+    },
+    "themes.primary-foreground": {
+      "kind": "theme",
+      "target": "--primary-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--primary-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.radius": {
+      "kind": "theme",
+      "target": "--radius",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--radius",
+          "status": "live"
+        }
+      }
+    },
+    "themes.ring": {
+      "kind": "theme",
+      "target": "--ring",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--ring",
+          "status": "live"
+        }
+      }
+    },
+    "themes.secondary": {
+      "kind": "theme",
+      "target": "--secondary",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--secondary",
+          "status": "live"
+        }
+      }
+    },
+    "themes.secondary-foreground": {
+      "kind": "theme",
+      "target": "--secondary-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--secondary-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.shadow": {
+      "kind": "tailwind",
+      "target": "--shadow-*",
+      "status": "live",
+      "members": {
+        "2xs": {
+          "kind": "tailwind",
+          "target": "--shadow-2xs",
+          "status": "live"
+        },
+        "xs": {
+          "kind": "tailwind",
+          "target": "--shadow-xs",
+          "status": "live"
+        },
+        "sm": {
+          "kind": "tailwind",
+          "target": "--shadow-sm",
+          "status": "live"
+        },
+        "md": {
+          "kind": "tailwind",
+          "target": "--shadow-md",
+          "status": "live"
+        },
+        "lg": {
+          "kind": "tailwind",
+          "target": "--shadow-lg",
+          "status": "live"
+        },
+        "xl": {
+          "kind": "tailwind",
+          "target": "--shadow-xl",
+          "status": "live"
+        },
+        "2xl": {
+          "kind": "tailwind",
+          "target": "--shadow-2xl",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar": {
+      "kind": "theme",
+      "target": "--sidebar",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-accent": {
+      "kind": "theme",
+      "target": "--sidebar-accent",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-accent",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-accent-foreground": {
+      "kind": "theme",
+      "target": "--sidebar-accent-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-accent-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-border": {
+      "kind": "theme",
+      "target": "--sidebar-border",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-border",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-foreground": {
+      "kind": "theme",
+      "target": "--sidebar-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-primary": {
+      "kind": "theme",
+      "target": "--sidebar-primary",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-primary",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-primary-foreground": {
+      "kind": "theme",
+      "target": "--sidebar-primary-foreground",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-primary-foreground",
+          "status": "live"
+        }
+      }
+    },
+    "themes.sidebar-ring": {
+      "kind": "theme",
+      "target": "--sidebar-ring",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "theme",
+          "target": "--sidebar-ring",
+          "status": "live"
+        }
+      }
+    },
+    "themes.spacing": {
+      "kind": "tailwind",
+      "target": "--spacing",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--spacing",
+          "status": "live"
+        }
+      }
+    },
+    "themes.tracking-tight": {
+      "kind": "tailwind",
+      "target": "--tracking-tight",
+      "status": "live",
+      "members": {
+        "default": {
+          "kind": "tailwind",
+          "target": "--tracking-tight",
+          "status": "live"
+        }
+      }
+    }
+  },
+  "aliases": {}
+}

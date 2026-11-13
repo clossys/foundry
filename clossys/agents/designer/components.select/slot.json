@@ -1,0 +1,101 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.select",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-choice",
+    "order": 108
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Select",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "selection.single",
+        "state.invalid",
+        "size.sm",
+        "size.md",
+        "size.lg"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.shadow",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": [
+        "assets.icon-chevron-down",
+        "assets.icon-check",
+        "assets.icon-search"
+      ]
+    },
+    "composes": [
+      "components.button",
+      "components.popover"
+    ],
+    "apg": "listbox"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-check",
+    "assets.icon-chevron-down",
+    "assets.icon-search",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.accent-foreground",
+    "themes.border",
+    "themes.destructive",
+    "themes.foreground",
+    "themes.input",
+    "themes.muted-foreground",
+    "themes.popover",
+    "themes.popover-foreground",
+    "themes.radius",
+    "themes.ring",
+    "themes.shadow",
+    "themes.spacing"
+  ],
+  "uses": [
+    "assets.icon-check",
+    "assets.icon-chevron-down",
+    "assets.icon-search"
+  ]
+}

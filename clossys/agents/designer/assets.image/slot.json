@@ -1,0 +1,34 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "assets.image",
+  "agent": "designer",
+  "ia": {
+    "l0": "assets",
+    "l1": "assets.imagery",
+    "l2": "imagery-resources",
+    "order": 91
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "asset",
+    "valueKind": "rules",
+    "members": {
+      "mode": "open",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "modes": [
+      "light"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
+  "uses": []
+}

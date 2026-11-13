@@ -1,0 +1,71 @@
+{
+  "name": "home-grid",
+  "type": "registry:component",
+  "dependencies": [],
+  "registryDependencies": [
+    "badge",
+    "button",
+    "card"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "studio-home-stock.tsx",
+      "type": "registry:component",
+      "content": "import type { ReactNode } from \"react\"\nimport { Badge } from \"./ui/badge\"\nimport { Button } from \"./ui/button\"\nimport { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from \"./ui/card\"\n\n// Exact source/ranges, license and allowed data bindings: ../../studio-home-stock-source/provenance.json.\n// These are inner stock parts; no capped example-card geometry is claimed.\nexport function HomeStockGrid({ children }: { children: ReactNode }) {\n  return (\n    <div className=\"grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card\">\n      {children}\n    </div>\n  )\n}\n\nexport function HomeStockCensusCard(props: {\n  id: string; state: string; label: string; total: ReactNode; totalLabel: string;\n  candidates: ReactNode; candidatesLabel: string; pinnedLabel: string; icon: ReactNode; detail: string;\n}) {\n  return (\n    <Card className=\"@container/card\" data-home-agent={props.id} data-census-state={props.state}>\n      <CardHeader>\n        <CardDescription>{props.label}</CardDescription>\n        <CardTitle className=\"text-2xl font-semibold tabular-nums @[250px]/card:text-3xl\" aria-label={props.totalLabel}>\n          {props.total}\n        </CardTitle>\n        <CardAction>\n          <Badge variant=\"outline\" aria-label={props.candidatesLabel}>\n            {props.icon}\n            {props.candidates}\n          </Badge>\n        </CardAction>\n      </CardHeader>\n      <CardFooter className=\"flex-col items-start gap-1.5 text-sm\">\n        <div className=\"line-clamp-1 flex gap-2 font-medium\">\n          {props.pinnedLabel}{\" \"}\n          {props.icon}\n        </div>\n        <div className=\"text-muted-foreground\">\n          {props.detail}\n        </div>\n      </CardFooter>\n    </Card>\n  )\n}\n\nexport function HomeStockHeader(props: { id: string; title: string; description: string }) {\n  return (\n    <CardHeader>\n      <CardTitle id={props.id} role=\"heading\" aria-level={1}>{props.title}</CardTitle>\n      <CardDescription>\n        {props.description}\n      </CardDescription>\n    </CardHeader>\n  )\n}\n\nexport function HomeStockNeedsHeader(props: {\n  title: string; description: string; closeLabel: string; closeIcon?: ReactNode; onClose: () => void;\n}) {\n  return (\n    <CardHeader>\n      <CardTitle>{props.title}</CardTitle>\n      <CardDescription>\n        {props.description}\n      </CardDescription>\n      <CardAction>\n        <Button variant=\"outline\" size=\"sm\" aria-label={props.closeLabel} onPress={props.onClose}>\n          {props.closeIcon}\n          {props.closeLabel}\n        </Button>\n      </CardAction>\n    </CardHeader>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.studio.home-grid",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-aria/dashboard-01@4.23.0",
+        "shadcn-aria/card@4.23.0",
+        "shadcn-app/studio-home-section-cards@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+        "shadcn-app/card-example@b8d7baa15b1dca5716f13153e63795fc3d741f6b"
+      ],
+      "license": "MIT",
+      "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d"
+    },
+    "element": {
+      "id": "home-grid",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.studio.home-grid",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE round 3 (D1): the dashboard-01 section-cards grid and census card and the card-example headers, bound to Studio Home data (studio-home-stock-source/provenance.json); the generic Studio card grid stays its own slot (components.studio.card-grid), since Home and the specimen boards both place it. Created through the Designer create path as a component-layer slot that installs into @clossys/designer-ui (src/components/studio-home-stock.tsx); the Foundry extension under src/foundry re-exports it only. DS-COMPLETE D5: source.ref cites reference-manifest row ids only (shadcn-aria/dashboard-01@4.23.0, shadcn-aria/card@4.23.0, shadcn-app/studio-home-section-cards@b8d7baa15b1dca5716f13153e63795fc3d741f6b, shadcn-app/card-example@b8d7baa15b1dca5716f13153e63795fc3d741f6b). Code unchanged from home-grid-v1.",
+      "createdAt": "2026-11-05T11:33:16.120Z",
+      "deps": {
+        "npm": {
+          "react": "*"
+        },
+        "registry": [
+          "badge",
+          "button",
+          "card"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--card",
+          "--muted-foreground",
+          "--shadow",
+          "--spacing"
+        ]
+      }
+    }
+  }
+}

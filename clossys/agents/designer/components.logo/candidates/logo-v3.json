@@ -1,0 +1,86 @@
+{
+  "name": "logo",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn",
+    "class-variance-authority"
+  ],
+  "files": [
+    {
+      "path": "logo.tsx",
+      "type": "registry:ui",
+      "content": "import type * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"cn\"\n\n/**\n * Brand logo from the identity assets: content.mark is the assets.mark glyph\n * (the Studio mark), content.lockup is that mark beside the live-text wordmark\n * laid out as assets.lockup (rule identity-lockup@1). Pass `mark` to swap in a\n * consumer's own glyph; ground.inverse is for dark or brand-colored grounds.\n */\nconst logoVariants = cva(\"inline-flex shrink-0 items-center font-heading font-semibold tracking-tight\", {\n  variants: {\n    size: {\n      sm: \"h-5 gap-1.5 text-sm [&_[data-slot=logo-mark]]:size-5\",\n      md: \"h-7 gap-2 text-lg [&_[data-slot=logo-mark]]:size-7\",\n      lg: \"h-12 gap-3 text-3xl [&_[data-slot=logo-mark]]:size-12\",\n    },\n    ground: {\n      base: \"text-foreground [--logo-knockout:var(--background)]\",\n      inverse: \"text-background [--logo-knockout:var(--foreground)]\",\n    },\n  },\n  defaultVariants: { size: \"md\", ground: \"base\" },\n})\n\nfunction StudioMark(props: React.ComponentProps<\"svg\">) {\n  return (\n    <svg viewBox=\"0 0 100 100\" aria-hidden=\"true\" {...props}>\n      <rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"currentColor\" />\n      <g transform=\"translate(50 50)\" fill=\"var(--logo-knockout)\"><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(0.0)\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(72.0)\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(144.0)\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(216.0)\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(288.0)\" /></g>\n    </svg>\n  )\n}\n\nfunction Logo({\n  content = \"mark\",\n  name = \"Clossys\",\n  mark,\n  size,\n  ground,\n  className,\n  ...props\n}: React.ComponentProps<\"span\"> &\n  VariantProps<typeof logoVariants> & {\n    content?: \"mark\" | \"lockup\"\n    name?: string\n    mark?: React.ReactNode\n  }) {\n  return (\n    <span\n      data-slot=\"logo\"\n      data-content={content}\n      role=\"img\"\n      aria-label={name}\n      className={cn(logoVariants({ size, ground }), className)}\n      {...props}\n    >\n      <span data-slot=\"logo-mark\" className=\"flex shrink-0 [&>svg]:size-full\">\n        {mark ?? <StudioMark />}\n      </span>\n      {content === \"lockup\" && (\n        <span aria-hidden=\"true\" className=\"leading-none\">\n          {name}\n        </span>\n      )}\n    </span>\n  )\n}\n\nexport { Logo, logoVariants }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.logo",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "clossys/agents/designer/assets.mark/candidates/mark-v2.json",
+        "clossys/agents/designer/assets.logo"
+      ],
+      "license": "MIT"
+    },
+    "element": {
+      "id": "logo",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.logo",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "INTEGRATE-BRAND"
+      },
+      "reason": "INTEGRATE-BRAND: logo-v2 with the retired Studio \"C\" glyph replaced by the Clossys asterisk, geometry taken verbatim from the pinned assets.mark mark-v2 (ground fill -> currentColor, glyph fill -> --logo-knockout). One brand for Foundry and Clossys; everything else unchanged.",
+      "createdAt": "2026-11-03T17:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "exempt",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {
+          "class-variance-authority": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "logo.tsx",
+        "export": "Logo",
+        "props": {
+          "content": "lockup",
+          "size": "md"
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

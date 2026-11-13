@@ -1,0 +1,136 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.toggle-button",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Toggle",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.toggle-button",
+      "source": "foundry",
+      "sourceAddress": "./components#Toggle",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "toggle-button": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Toggle",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "state.selected",
+        "variant.ghost",
+        "variant.outline"
+      ],
+      "pin": {
+        "export": "./components#Toggle",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "size.lg": "./components#Toggle.size=lg",
+        "size.md": "./components#Toggle.size=default",
+        "size.sm": "./components#Toggle.size=sm",
+        "state.disabled": "./components#Toggle.isDisabled",
+        "state.focus-visible": "./components#Toggle[data-focus-visible]",
+        "state.hover": "./components#Toggle[data-hovered]",
+        "state.selected": "./components#Toggle.isSelected",
+        "variant.ghost": "./components#Toggle.variant=default",
+        "variant.outline": "./components#Toggle.variant=outline"
+      },
+      "props": [
+        "aria-label",
+        "children",
+        "className",
+        "defaultSelected",
+        "id",
+        "isDisabled",
+        "isSelected",
+        "onChange",
+        "size",
+        "variant"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [],
+        "themes": [
+          "themes.accent",
+          "themes.accent-foreground",
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.card-foreground",
+          "themes.destructive",
+          "themes.font-heading",
+          "themes.font-mono",
+          "themes.font-sans",
+          "themes.foreground",
+          "themes.input",
+          "themes.muted",
+          "themes.muted-foreground",
+          "themes.popover",
+          "themes.popover-foreground",
+          "themes.primary",
+          "themes.primary-foreground",
+          "themes.radius",
+          "themes.ring",
+          "themes.secondary",
+          "themes.secondary-foreground",
+          "themes.sidebar",
+          "themes.sidebar-accent",
+          "themes.sidebar-accent-foreground",
+          "themes.sidebar-border",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-ring",
+          "themes.spacing"
+        ]
+      },
+      "root": "rac:ToggleButton",
+      "slot": "components.toggle-button",
+      "source": "foundry"
+    }
+  }
+}

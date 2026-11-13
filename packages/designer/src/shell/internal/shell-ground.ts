@@ -1,3 +1,5 @@
+import { GROUND_PAINT } from "../../components/ground-paint.js";
+
 /** Shell chrome plates use a closed ground vocabulary — not structural modes. */
 export type ShellGround = "base" | "inverse";
 
@@ -9,23 +11,13 @@ export interface ShellGroundClasses {
 }
 
 /**
- * Token plate policy for persistent shell chrome. Matches the inverse
- * surface and ink tokens content blocks already use via `SECTION_GROUND_CLASSES`,
- * without pulling `blocks/` into `shell/`.
+ * Plate policy for persistent shell chrome: the base plate is the Components
+ * raised ground and the inverse plate the Components inverse ground, so the
+ * shell names no colour of its own.
  */
 export const SHELL_GROUND_CLASSES = {
-  base: {
-    surface: "bg-surface-raised",
-    primary: "text-ink-primary",
-    secondary: "text-ink-secondary",
-    border: "border-line-base",
-  },
-  inverse: {
-    surface: "bg-surface-inverse",
-    primary: "text-ink-on-inverse",
-    secondary: "text-ink-on-inverse-muted",
-    border: "border-line-on-inverse",
-  },
+  base: GROUND_PAINT.raised,
+  inverse: GROUND_PAINT.inverse,
 } as const satisfies Readonly<Record<ShellGround, ShellGroundClasses>>;
 
 /**

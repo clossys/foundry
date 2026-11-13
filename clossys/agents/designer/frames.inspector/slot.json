@@ -1,0 +1,121 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.inspector",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.regions",
+    "l2": "panels",
+    "order": 235
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "aside",
+    "landmarks": [
+      {
+        "slot": "content",
+        "role": "complementary",
+        "topLevel": true,
+        "nameRequired": true
+      }
+    ],
+    "slots": [
+      {
+        "id": "content",
+        "required": true,
+        "accepts": "host-node"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "presentation.docked",
+        "presentation.collapsed",
+        "presentation.overlay"
+      ]
+    },
+    "statePorts": [
+      {
+        "id": "collapsed",
+        "type": "boolean"
+      },
+      {
+        "id": "width",
+        "type": "number"
+      },
+      {
+        "id": "min",
+        "type": "number"
+      },
+      {
+        "id": "max",
+        "type": "number"
+      },
+      {
+        "id": "step",
+        "type": "number"
+      }
+    ],
+    "rendering": "client",
+    "breakpoints": [
+      "sm",
+      "md",
+      "lg",
+      "xl",
+      "2xl"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.primary",
+        "themes.spacing",
+        "themes.foreground",
+        "themes.muted-foreground",
+        "themes.ring"
+      ],
+      "assets": [
+        "assets.icon-layers"
+      ]
+    },
+    "composes": [
+      "components.resize-handle",
+      "components.button",
+      "frames.sheet",
+      "components.card",
+      "components.semantic-content"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-layers",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.border",
+    "themes.popover",
+    "themes.spacing",
+    "themes.foreground",
+    "themes.muted-foreground"
+  ],
+  "uses": [
+    "components.button",
+    "components.field",
+    "components.sheet",
+    "themes.input"
+  ]
+}

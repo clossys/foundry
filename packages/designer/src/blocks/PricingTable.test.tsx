@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { cloneElement, createElement, isValidElement, type ReactElement, type ReactNode } from "react";
+import { Matrix as OrdinaryMatrix } from "./Matrix.js";
+import { Matrix as ServerMatrix } from "./Matrix.server.js";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PricingTable, type PricingTableProps, type PricingTier } from "./PricingTable.js";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
+import { Badge as StockBadge } from "../components/preview-runtime/components/badge/badge.js";
 
 const TIERS: PricingTier[] = [
   {
@@ -173,7 +178,9 @@ describe("PricingTable interval prices", () => {
     expect(note).toHaveClass("text-body-s", "text-ink-secondary");
     expect(amount?.nextElementSibling).toBe(note);
     expect(screen.getAllByText("Selected note")).toHaveLength(1);
-    expect(screen.getByText("Amount b 1").parentElement?.nextElementSibling?.tagName).toBe("UL");
+    // Stock Card anatomy (78237484a): price and note close the CardHeader; the feature list is CardContent.
+    expect(screen.getByText("Amount b 1").parentElement?.nextElementSibling).toBeNull();
+    expect(screen.getByText("Feature three").closest("ul")?.parentElement).toHaveAttribute("data-slot", "card-content");
   });
 
   const invalidPrices = [
@@ -215,55 +222,55 @@ describe("PricingTable comparison", () => {
     expect(screen.getByRole("heading", { name: "Heading", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Group first", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Group second", level: 3 })).toBeInTheDocument();
-    const tables = screen.getAllByRole("table");
+    // Each group is the selected stock Table (a React Aria grid): the row-label column leads, then tiers in order.
+    const tables = screen.getAllByRole("grid");
     expect(tables).toHaveLength(2);
-    tables.forEach(table => {
+    tables.forEach((table, index) => {
       expect(within(table).getAllByRole("columnheader").map(header => header.textContent))
-        .toEqual(["Tier name one", "Tier name twoFeatured tier"]);
-      expect(within(table).getAllByRole("heading", { level: 4 })).toHaveLength(2);
+        .toEqual([`Group ${["first", "second"][index]}`, "Tier name one", "Tier name twoFeatured tier"]);
+      expect(within(table).getAllByRole("rowheader").map(header => header.textContent)).toEqual([`Row ${["first", "second"][index]} first`, `Row ${["first", "second"][index]} second`]);
     });
   });
 
   it.each([5, 6] as const)("caps comparison headings at h6 from h%s", headingLevel => {
     render(<PricingTable heading="Heading" headingLevel={headingLevel} tiers={TIERS} comparison={TEXT_COMPARISON} />);
     expect(screen.getByRole("heading", { name: "Group details", level: 6 })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Row details first", level: 6 })).toBeInTheDocument();
+    expect(screen.getByRole("rowheader", { name: "Row details first" })).toBeInTheDocument();
   });
 
   it("features the highlighted tier's column (mutant: wrong-featured-column)", () => {
     render(<PricingTable tiers={TIERS} comparison={TEXT_COMPARISON} />);
     const headers = screen.getAllByRole("columnheader");
-    expect(within(headers[0]).queryByText("Featured tier")).not.toBeInTheDocument();
-    expect(within(headers[1]).getByText("Featured tier")).toBeInTheDocument();
+    expect(headers.map(header => header.textContent)).toEqual(["Group details", "Tier name one", "Tier name twoFeatured tier"]);
+    expect(headers[1]).not.toHaveTextContent("Featured tier");
   });
 
   it("rejects multiple highlighted tiers", () => {
     expect(() => markup({ tiers: TIERS.map(tier => ({ ...tier, isHighlighted: true })), comparison: TEXT_COMPARISON })).toThrow(/^PricingTable:/);
   });
 
-  it("lets Matrix reject a highlighted tier without a featured label", () => {
-    expect(() => markup({ tiers: TIERS, comparison: { groups: [textGroup()] } })).toThrow(/Matrix: featuredLabel/);
+  it("rejects a highlighted tier without a featured label", () => {
+    expect(() => markup({ tiers: TIERS, comparison: { groups: [textGroup()] } })).toThrow(/^PricingTable: featuredLabel/);
   });
 
   it("maps included and excluded marks to four and zero (mutant: swapped-mark-values)", () => {
     render(<PricingTable tiers={TIERS} comparison={MARK_COMPARISON} />);
     const row = screen.getAllByRole("rowheader")[0].parentElement!;
-    const cells = within(row).getAllByRole("cell");
-    expect(within(cells[0]).getByText("Mark zero")).toHaveClass("sr-only");
-    expect(within(cells[1]).getByText("Mark four")).toHaveClass("sr-only");
-    expect(screen.getByRole("heading", { name: "Mark key", level: 4 })).toBeInTheDocument();
+    const cells = within(row).getAllByRole("gridcell");
+    expect(cells.map(cell => cell.textContent)).toEqual(["Mark zero", "Mark four"]);
+    expect(screen.getByText("Mark key").tagName).toBe("P");
   });
 
-  it("lets Matrix reject mark cells missing a key label", () => {
-    expect(() => markup({ tiers: TIERS, comparison: { ...MARK_COMPARISON, keyLabel: undefined } })).toThrow(/Matrix: keyLabel/);
+  it("rejects mark cells missing a key label", () => {
+    expect(() => markup({ tiers: TIERS, comparison: { ...MARK_COMPARISON, keyLabel: undefined } })).toThrow(/^PricingTable: mark cells need markLabels and keyLabel/);
   });
 
-  it("lets Matrix reject mark cells missing mark labels", () => {
-    expect(() => markup({ tiers: TIERS, comparison: { ...MARK_COMPARISON, markLabels: undefined } })).toThrow(/Matrix: markLabels/);
+  it("rejects mark cells missing mark labels", () => {
+    expect(() => markup({ tiers: TIERS, comparison: { ...MARK_COMPARISON, markLabels: undefined } })).toThrow(/^PricingTable: mark cells need markLabels/);
   });
 
-  it("lets Matrix reject mark labels when the comparison contains only text", () => {
-    expect(() => markup({ tiers: TIERS, comparison: { ...TEXT_COMPARISON, markLabels: MARK_LABELS } })).toThrow(/Matrix: markLabels/);
+  it("rejects mark labels when the comparison contains only text", () => {
+    expect(() => markup({ tiers: TIERS, comparison: { ...TEXT_COMPARISON, markLabels: MARK_LABELS } })).toThrow(/^PricingTable: unused markLabels/);
   });
 
   it("renders supplied text cells without a mark key (mutant: always-render-key)", () => {
@@ -276,8 +283,8 @@ describe("PricingTable comparison", () => {
 
   it("forwards mark labels only to the applicable groups in a mixed comparison", () => {
     render(<PricingTable tiers={TIERS} comparison={{ ...MARK_COMPARISON, groups: [markGroup(), textGroup()] }} />);
-    expect(screen.getAllByRole("table")).toHaveLength(2);
-    expect(screen.getAllByRole("heading", { name: "Mark key" })).toHaveLength(1);
+    expect(screen.getAllByRole("grid")).toHaveLength(2);
+    expect(screen.getAllByText("Mark key")).toHaveLength(1);
     expect(screen.getByText("First first")).toBeInTheDocument();
   });
 
@@ -289,10 +296,10 @@ describe("PricingTable comparison", () => {
     expect(() => markup({ tiers: TIERS, comparison: { ...TEXT_COMPARISON, groups } })).toThrow(/^PricingTable:/);
   });
 
-  it("lets Matrix reject cells that omit a tier id", () => {
+  it("rejects cells that omit a tier id", () => {
     const group = textGroup();
     const rows = group.rows.map(row => ({ ...row, cells: { starter: row.cells.starter } }));
-    expect(() => markup({ tiers: TIERS, comparison: { ...TEXT_COMPARISON, groups: [{ ...group, rows }] } })).toThrow(/Matrix: row cells/);
+    expect(() => markup({ tiers: TIERS, comparison: { ...TEXT_COMPARISON, groups: [{ ...group, rows }] } })).toThrow(/^PricingTable: row cells must match tier ids/);
   });
 });
 
@@ -302,7 +309,7 @@ describe("PricingTable composition", () => {
     expect(screen.getByRole("heading", { name: "Heading" })).toHaveClass("text-ink-on-inverse");
     expect(screen.getByText("Description")).toHaveClass("text-ink-on-inverse-muted");
     expect(screen.getByRole("heading", { name: "Group details" })).toHaveClass("text-ink-on-inverse");
-    expect(screen.getByRole("table")).toHaveClass("text-ink-on-inverse");
+    expect(screen.getByRole("grid")).toHaveClass("text-ink-on-inverse");
     expect(screen.getByText("Price one")).toHaveClass("text-ink-primary");
   });
 
@@ -325,23 +332,26 @@ describe("PricingTable composition", () => {
   it("adds no controls or comparison wrapper when omitted", () => {
     const { container } = render(<PricingTable heading="Heading" tiers={TIERS} />);
     expect(container.firstElementChild?.children).toHaveLength(2);
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByRole("grid")).not.toBeInTheDocument();
   });
 });
 
-// Captured from the unchanged fixed-price component on main 4174ef0e.
-const FIXED_HEADED_MARKUP = "<div id=\"tiers\" dir=\"rtl\" class=\"flex flex-col gap-lg\"><div class=\"flex flex-col gap-xs\"><h2 class=\"text-h2 font-display text-ink-primary\">Heading</h2><p class=\"text-body text-ink-secondary\">Description</p></div><div class=\"grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3\"><div class=\"rounded-control bg-surface-raised p-lg flex h-full flex-col items-start gap-md\" style=\"box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))\"><p class=\"text-body font-body font-medium text-ink-primary\">Tier name one</p><p class=\"text-h1 font-display text-ink-primary\">Price one</p><ul class=\"flex flex-1 flex-col gap-xs\"><li class=\"text-body-s text-ink-secondary\">Feature one</li><li class=\"text-body-s text-ink-secondary\">Feature two</li></ul><div class=\"w-full\"><button type=\"button\">CTA one</button></div></div><div class=\"rounded-control bg-surface-raised p-lg flex h-full flex-col items-start gap-md border-2 border-accent\" style=\"box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))\"><span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-info-tint text-status-info-text\">Badge text</span><p class=\"text-body font-body font-medium text-ink-primary\">Tier name two</p><p class=\"text-h1 font-display text-ink-primary\">Price two</p><ul class=\"flex flex-1 flex-col gap-xs\"><li class=\"text-body-s text-ink-secondary\">Feature three</li></ul><div class=\"w-full\"><button type=\"button\">CTA two</button></div></div></div></div>";
-const FIXED_BARE_MARKUP = "<div class=\"flex flex-col gap-lg\"><div class=\"grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3\"><div class=\"rounded-control bg-surface-raised p-lg flex h-full flex-col items-start gap-md\" style=\"box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))\"><p class=\"text-body font-body font-medium text-ink-primary\">Tier name one</p><p class=\"text-h1 font-display text-ink-primary\">Price one</p><ul class=\"flex flex-1 flex-col gap-xs\"><li class=\"text-body-s text-ink-secondary\">Feature one</li><li class=\"text-body-s text-ink-secondary\">Feature two</li></ul><div class=\"w-full\"><button type=\"button\">CTA one</button></div></div><div class=\"rounded-control bg-surface-raised p-lg flex h-full flex-col items-start gap-md border-2 border-accent\" style=\"box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))\"><span class=\"inline-flex items-center rounded-pill px-sm py-xs text-caption font-body tracking-meta bg-status-info-tint text-status-info-text\">Badge text</span><p class=\"text-body font-body font-medium text-ink-primary\">Tier name two</p><p class=\"text-h1 font-display text-ink-primary\">Price two</p><ul class=\"flex flex-1 flex-col gap-xs\"><li class=\"text-body-s text-ink-secondary\">Feature three</li></ul><div class=\"w-full\"><button type=\"button\">CTA two</button></div></div></div></div>";
+// The highlighted tier's badge is the stock Badge leaf: its bytes follow the stock component, rendered here, never a copied class list.
+const STOCK_BADGE_MARKUP = withoutDsAttrs(renderToStaticMarkup(<StockBadge>Badge text</StockBadge>));
+// Captured by rendering the fixed-price component after the stock Card adoption (78237484a): CardHeader/CardContent/CardFooter and the stock Badge;
+// the highlighted tier's border is the stock semantic primary (GATES-RED r3, 931102357), merged in R2F-06.
+const FIXED_HEADED_MARKUP = "<div id=\"tiers\" dir=\"rtl\" class=\"flex flex-col gap-lg\"><div class=\"flex flex-col gap-xs\"><h2 class=\"text-h2 font-display text-ink-primary\">Heading</h2><p class=\"text-body text-ink-secondary\">Description</p></div><div class=\"grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3\"><div data-slot=\"card\" data-size=\"default\" class=\"ring-(--color-ink-primary)/10 bg-(--color-surface-raised) text-(--color-ink-primary) gap-(--card-spacing) overflow-hidden rounded-(--radius-control) py-(--card-spacing) text-(length:--text-sm) ring-(length:--ui-border-hairline) [--card-spacing:var(--spacing-lg)] has-data-[slot=card-footer]:pb-0 has-[&gt;img:first-child]:pt-0 data-[size=sm]:[--card-spacing:var(--spacing-md)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-(--radius-control) *:[img:last-child]:rounded-b-(--radius-control) group/card flex h-full flex-col items-start gap-md\"><div data-slot=\"card-header\" class=\"gap-(--spacing-xs) rounded-t-(--radius-control) px-(--card-spacing) [.border-b]:pb-(--card-spacing) group/card-header @container/card-header grid auto-rows-min items-start has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto]\"><p class=\"text-body font-body font-medium text-ink-primary\">Tier name one</p><p class=\"text-h1 font-display text-ink-primary\">Price one</p></div><div data-slot=\"card-content\" class=\"px-(--card-spacing) flex-1\"><ul class=\"flex flex-col gap-xs\"><li class=\"text-body-s text-ink-secondary\">Feature one</li><li class=\"text-body-s text-ink-secondary\">Feature two</li></ul></div><div data-slot=\"card-footer\" class=\"bg-(--color-surface-sunken)/50 rounded-b-(--radius-control) border-t-(length:--ui-border-hairline) p-(--card-spacing) flex items-center w-full\"><button type=\"button\">CTA one</button></div></div><div data-slot=\"card\" data-size=\"default\" class=\"ring-(--color-ink-primary)/10 bg-(--color-surface-raised) text-(--color-ink-primary) gap-(--card-spacing) overflow-hidden rounded-(--radius-control) py-(--card-spacing) text-(length:--text-sm) ring-(length:--ui-border-hairline) [--card-spacing:var(--spacing-lg)] has-data-[slot=card-footer]:pb-0 has-[&gt;img:first-child]:pt-0 data-[size=sm]:[--card-spacing:var(--spacing-md)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-(--radius-control) *:[img:last-child]:rounded-b-(--radius-control) group/card flex h-full flex-col items-start gap-md border-2 border-primary\"><div data-slot=\"card-header\" class=\"gap-(--spacing-xs) rounded-t-(--radius-control) px-(--card-spacing) [.border-b]:pb-(--card-spacing) group/card-header @container/card-header grid auto-rows-min items-start has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto]\">" + STOCK_BADGE_MARKUP + "<p class=\"text-body font-body font-medium text-ink-primary\">Tier name two</p><p class=\"text-h1 font-display text-ink-primary\">Price two</p></div><div data-slot=\"card-content\" class=\"px-(--card-spacing) flex-1\"><ul class=\"flex flex-col gap-xs\"><li class=\"text-body-s text-ink-secondary\">Feature three</li></ul></div><div data-slot=\"card-footer\" class=\"bg-(--color-surface-sunken)/50 rounded-b-(--radius-control) border-t-(length:--ui-border-hairline) p-(--card-spacing) flex items-center w-full\"><button type=\"button\">CTA two</button></div></div></div></div>";
+const FIXED_BARE_MARKUP = "<div class=\"flex flex-col gap-lg\"><div class=\"grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3\"><div data-slot=\"card\" data-size=\"default\" class=\"ring-(--color-ink-primary)/10 bg-(--color-surface-raised) text-(--color-ink-primary) gap-(--card-spacing) overflow-hidden rounded-(--radius-control) py-(--card-spacing) text-(length:--text-sm) ring-(length:--ui-border-hairline) [--card-spacing:var(--spacing-lg)] has-data-[slot=card-footer]:pb-0 has-[&gt;img:first-child]:pt-0 data-[size=sm]:[--card-spacing:var(--spacing-md)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-(--radius-control) *:[img:last-child]:rounded-b-(--radius-control) group/card flex h-full flex-col items-start gap-md\"><div data-slot=\"card-header\" class=\"gap-(--spacing-xs) rounded-t-(--radius-control) px-(--card-spacing) [.border-b]:pb-(--card-spacing) group/card-header @container/card-header grid auto-rows-min items-start has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto]\"><p class=\"text-body font-body font-medium text-ink-primary\">Tier name one</p><p class=\"text-h1 font-display text-ink-primary\">Price one</p></div><div data-slot=\"card-content\" class=\"px-(--card-spacing) flex-1\"><ul class=\"flex flex-col gap-xs\"><li class=\"text-body-s text-ink-secondary\">Feature one</li><li class=\"text-body-s text-ink-secondary\">Feature two</li></ul></div><div data-slot=\"card-footer\" class=\"bg-(--color-surface-sunken)/50 rounded-b-(--radius-control) border-t-(length:--ui-border-hairline) p-(--card-spacing) flex items-center w-full\"><button type=\"button\">CTA one</button></div></div><div data-slot=\"card\" data-size=\"default\" class=\"ring-(--color-ink-primary)/10 bg-(--color-surface-raised) text-(--color-ink-primary) gap-(--card-spacing) overflow-hidden rounded-(--radius-control) py-(--card-spacing) text-(length:--text-sm) ring-(length:--ui-border-hairline) [--card-spacing:var(--spacing-lg)] has-data-[slot=card-footer]:pb-0 has-[&gt;img:first-child]:pt-0 data-[size=sm]:[--card-spacing:var(--spacing-md)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-(--radius-control) *:[img:last-child]:rounded-b-(--radius-control) group/card flex h-full flex-col items-start gap-md border-2 border-primary\"><div data-slot=\"card-header\" class=\"gap-(--spacing-xs) rounded-t-(--radius-control) px-(--card-spacing) [.border-b]:pb-(--card-spacing) group/card-header @container/card-header grid auto-rows-min items-start has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto]\">" + STOCK_BADGE_MARKUP + "<p class=\"text-body font-body font-medium text-ink-primary\">Tier name two</p><p class=\"text-h1 font-display text-ink-primary\">Price two</p></div><div data-slot=\"card-content\" class=\"px-(--card-spacing) flex-1\"><ul class=\"flex flex-col gap-xs\"><li class=\"text-body-s text-ink-secondary\">Feature three</li></ul></div><div data-slot=\"card-footer\" class=\"bg-(--color-surface-sunken)/50 rounded-b-(--radius-control) border-t-(length:--ui-border-hairline) p-(--card-spacing) flex items-center w-full\"><button type=\"button\">CTA two</button></div></div></div></div>";
 
 describe("PricingTable fixed-price byte preservation", () => {
   it("preserves the captured heading, description and native-attribute render bytes", () => {
     const props = { heading: "Heading", description: "Description", tiers: TIERS, id: "tiers", dir: "rtl" };
-    expect(markup(props)).toBe(FIXED_HEADED_MARKUP);
-    expect(markup({ ...props, ground: "base" })).toBe(FIXED_HEADED_MARKUP);
+    expect(withoutDsAttrs(markup(props))).toBe(FIXED_HEADED_MARKUP);
+    expect(withoutDsAttrs(markup({ ...props, ground: "base" }))).toBe(FIXED_HEADED_MARKUP);
   });
 
   it("preserves the captured headingless render bytes without optional wrappers", () => {
-    expect(markup({ tiers: TIERS })).toBe(FIXED_BARE_MARKUP);
+    expect(withoutDsAttrs(markup({ tiers: TIERS }))).toBe(FIXED_BARE_MARKUP);
   });
 });
 
@@ -361,4 +371,60 @@ describe("PricingTable inherited price contracts", () => {
     );
     expect(() => markup({ tiers: [inherited], interval: "b" })).toThrow("PricingTable: each tier needs one price form.");
   });
+});
+
+// S4-2/S4-4: preserve the owner's presence predicate and ground on the shared region.
+it("S4 preserves absent, supporting-only and falsy title regions with original root attributes", () => {
+  const view = render(<PricingTable tiers={TIERS} id="host" dir="rtl" data-host="yes" style={{ marginTop: 7 }} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("DIV");
+  expect(root).toHaveAttribute("id", "host");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "yes");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root.children).toHaveLength(1);
+  expect(root.querySelectorAll("#host")).toHaveLength(0);
+  for (const heading of [0, "", null, false]) {
+    view.rerender(<PricingTable tiers={TIERS} heading={heading} />);
+    expect(view.container.firstElementChild?.firstElementChild).toHaveClass("gap-xs");
+    expect(view.container.firstElementChild?.firstElementChild?.querySelector("h2")).toBeNull();
+  }
+  view.rerender(<PricingTable tiers={TIERS} description="Support" ground="inverse" />);
+  expect(view.getByText("Support")).toHaveClass("text-ink-on-inverse-muted");
+  view.rerender(<PricingTable tiers={TIERS} heading="Title" headingLevel={5} ground="inverse"  />);
+  expect(view.getByRole("heading", { name: "Title", level: 5 })).toHaveClass("text-h2", "text-ink-on-inverse");
+});
+
+// Retain the original grid-composition output independently of the server bridge.
+function originalGrid(node: ReactNode): ReactNode {
+  if (Array.isArray(node)) return node.map(originalGrid);
+  if (!isValidElement(node)) return node;
+  const element = node as ReactElement<Record<string, unknown>>;
+  if (element.type === ServerMatrix) return createElement(OrdinaryMatrix, element.props as never);
+  return cloneElement(element, { children: originalGrid(element.props.children as ReactNode) });
+}
+
+it("source PricingTable server bridge preserves original grid composition for fixed/interval prices and one to four groups", () => {
+  for (const ground of ["base", "sunken", "inverse"] as const) {
+    for (const count of [1, 2, 3, 4]) {
+      for (const interval of [undefined, "b"]) {
+        const props: PricingTableProps = {
+          heading: "Compare plans", headingLevel: 3, description: "Plan details", ground,
+          tiers: interval === undefined ? TIERS : INTERVAL_TIERS, interval,
+          comparison: { ...MARK_COMPARISON, groups: [markGroup(), ...Array.from({ length: count - 1 }, (_, i) => textGroup(`text-${i}`))] },
+          controls: <button type="button">Choose interval</button>, dir: "rtl", id: "plans",
+          "aria-label": "Plan comparison", className: "authored", style: { maxWidth: 900 },
+        };
+        const tree = PricingTable(props);
+        const actual = renderToStaticMarkup(tree);
+        expect(actual).toBe(renderToStaticMarkup(originalGrid(tree)));
+        expect((actual.match(/<table/g) ?? []).length).toBe(count);
+        expect(actual).toContain('id="plans"');
+        expect(actual).toContain('dir="rtl"');
+        expect(actual).toContain("Featured tier");
+        expect(actual).toContain("Mark four");
+        expect(actual).toContain(interval === undefined ? "Price one" : "Spoken b 0");
+      }
+    }
+  }
 });

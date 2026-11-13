@@ -3,19 +3,29 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Pagination } from "./Pagination.js";
 
+const copy = {
+  "aria-label": "Pagination",
+  previousPageLabel: "Previous page",
+  nextPageLabel: "Next page",
+  noResultsLabel: "No results",
+  rangeSummaryMessage: (start: number, end: number, total: number) => `Showing ${start}–${end} of ${total}`,
+  pageSummaryMessage: (page: number, count: number) => `Page ${page} of ${count}`,
+  pageSizeLabel: "Rows per page",
+};
+
 describe("Pagination", () => {
   it("renders a <nav> landmark", () => {
-    render(<Pagination page={1} pageCount={5} onPageChange={() => {}} />);
+    render(<Pagination {...copy} page={1} pageCount={5} onPageChange={() => {}} />);
     expect(screen.getByRole("navigation", { name: "Pagination" })).toBeInTheDocument();
   });
 
   it("accepts a custom aria-label for the nav landmark", () => {
-    render(<Pagination page={1} pageCount={5} onPageChange={() => {}} aria-label="Prompt pages" />);
+    render(<Pagination {...copy} page={1} pageCount={5} onPageChange={() => {}} aria-label="Prompt pages" />);
     expect(screen.getByRole("navigation", { name: "Prompt pages" })).toBeInTheDocument();
   });
 
   it("marks the current page with aria-current=\"page\", and no other page", () => {
-    render(<Pagination page={2} pageCount={4} onPageChange={() => {}} />);
+    render(<Pagination {...copy} page={2} pageCount={4} onPageChange={() => {}} />);
     const current = screen.getByRole("button", { name: "2" });
     expect(current).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("button", { name: "1" })).not.toHaveAttribute("aria-current");
@@ -25,7 +35,7 @@ describe("Pagination", () => {
   it("fires onPageChange with the requested page when a page number is clicked", async () => {
     const onPageChange = vi.fn();
     const user = userEvent.setup();
-    render(<Pagination page={1} pageCount={4} onPageChange={onPageChange} />);
+    render(<Pagination {...copy} page={1} pageCount={4} onPageChange={onPageChange} />);
     await user.click(screen.getByRole("button", { name: "3" }));
     expect(onPageChange).toHaveBeenCalledWith(3);
   });
@@ -33,22 +43,23 @@ describe("Pagination", () => {
   it("fires onPageChange with page + 1 / page - 1 from the next/previous controls", async () => {
     const onPageChange = vi.fn();
     const user = userEvent.setup();
-    render(<Pagination page={2} pageCount={4} onPageChange={onPageChange} />);
+    render(<Pagination {...copy} page={2} pageCount={4} onPageChange={onPageChange} />);
     await user.click(screen.getByRole("button", { name: "Next page" }));
     expect(onPageChange).toHaveBeenCalledWith(3);
     await user.click(screen.getByRole("button", { name: "Previous page" }));
     expect(onPageChange).toHaveBeenCalledWith(1);
   });
 
-  it("defaults the previous/next controls' accessible names to \"Previous page\"/\"Next page\"", () => {
-    render(<Pagination page={2} pageCount={4} onPageChange={() => {}} />);
+  it("reads previous/next accessible names from explicit copy", () => {
+    render(<Pagination {...copy} page={2} pageCount={4} onPageChange={() => {}} />);
     expect(screen.getByRole("button", { name: "Previous page" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next page" })).toBeInTheDocument();
   });
 
-  it("accepts custom previousPageLabel/nextPageLabel that replace the defaults", () => {
+  it("accepts localized previousPageLabel/nextPageLabel", () => {
     render(
       <Pagination
+        {...copy}
         page={2}
         pageCount={4}
         onPageChange={() => {}}
@@ -63,25 +74,25 @@ describe("Pagination", () => {
   });
 
   it("disables the previous control on the first page, and the next control on the last page", () => {
-    const { rerender } = render(<Pagination page={1} pageCount={4} onPageChange={() => {}} />);
+    const { rerender } = render(<Pagination {...copy} page={1} pageCount={4} onPageChange={() => {}} />);
     expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Next page" })).not.toBeDisabled();
 
-    rerender(<Pagination page={4} pageCount={4} onPageChange={() => {}} />);
+    rerender(<Pagination {...copy} page={4} pageCount={4} onPageChange={() => {}} />);
     expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Previous page" })).not.toBeDisabled();
   });
 
   it("never advances the page itself: rerendering with the same page after a click leaves aria-current unchanged", async () => {
     const user = userEvent.setup();
-    render(<Pagination page={1} pageCount={4} onPageChange={() => {}} />);
+    render(<Pagination {...copy} page={1} pageCount={4} onPageChange={() => {}} />);
     await user.click(screen.getByRole("button", { name: "3" }));
     // No onPageChange side effect applied `page` itself — still page 1.
     expect(screen.getByRole("button", { name: "1" })).toHaveAttribute("aria-current", "page");
   });
 
   it("shows every page number when pageCount is small", () => {
-    render(<Pagination page={1} pageCount={5} onPageChange={() => {}} />);
+    render(<Pagination {...copy} page={1} pageCount={5} onPageChange={() => {}} />);
     for (const n of [1, 2, 3, 4, 5]) {
       expect(screen.getByRole("button", { name: String(n) })).toBeInTheDocument();
     }
@@ -89,7 +100,7 @@ describe("Pagination", () => {
   });
 
   it("truncates with an ellipsis for a large page count, always keeping first, last, and the current page reachable", () => {
-    render(<Pagination page={10} pageCount={30} onPageChange={() => {}} />);
+    render(<Pagination {...copy} page={10} pageCount={30} onPageChange={() => {}} />);
     expect(screen.getByRole("button", { name: "1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "30" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "10" })).toHaveAttribute("aria-current", "page");
@@ -99,32 +110,32 @@ describe("Pagination", () => {
   });
 
   it("renders a plain \"Page X of Y\" range summary without totalItems", () => {
-    render(<Pagination page={2} pageCount={5} onPageChange={() => {}} />);
+    render(<Pagination {...copy} page={2} pageCount={5} onPageChange={() => {}} />);
     expect(screen.getByText("Page 2 of 5")).toBeInTheDocument();
   });
 
   it("renders a \"Showing X–Y of N\" range summary when totalItems and pageSize are given", () => {
     render(
-      <Pagination page={2} pageCount={5} onPageChange={() => {}} totalItems={42} pageSize={10} />,
+      <Pagination {...copy} page={2} pageCount={5} onPageChange={() => {}} totalItems={42} pageSize={10} />,
     );
     expect(screen.getByText("Showing 11–20 of 42")).toBeInTheDocument();
   });
 
   it("clamps the last page's range summary to totalItems", () => {
     render(
-      <Pagination page={5} pageCount={5} onPageChange={() => {}} totalItems={42} pageSize={10} />,
+      <Pagination {...copy} page={5} pageCount={5} onPageChange={() => {}} totalItems={42} pageSize={10} />,
     );
     expect(screen.getByText("Showing 41–42 of 42")).toBeInTheDocument();
   });
 
   it("renders the no-results label for zero totalItems even without pageSize", () => {
-    render(<Pagination page={1} pageCount={4} totalItems={0} onPageChange={() => {}} />);
+    render(<Pagination {...copy} page={1} pageCount={4} totalItems={0} onPageChange={() => {}} />);
     expect(screen.getByText("No results")).toBeInTheDocument();
     expect(screen.queryByText("Page 1 of 4")).not.toBeInTheDocument();
   });
 
   it("omits the page-size selector region when pageSizeOptions/onPageSizeChange are not both given", () => {
-    render(<Pagination page={1} pageCount={5} onPageChange={() => {}} />);
+    render(<Pagination {...copy} page={1} pageCount={5} onPageChange={() => {}} />);
     expect(screen.queryByText("Rows per page")).not.toBeInTheDocument();
   });
 
@@ -133,6 +144,7 @@ describe("Pagination", () => {
     const user = userEvent.setup();
     render(
       <Pagination
+        {...copy}
         page={1}
         pageCount={5}
         onPageChange={() => {}}
@@ -149,14 +161,14 @@ describe("Pagination", () => {
   });
 
   it("forwards className, and the consumer's conflicting class wins the merge", () => {
-    render(<Pagination page={1} pageCount={5} onPageChange={() => {}} className="gap-lg" />);
+    render(<Pagination {...copy} page={1} pageCount={5} onPageChange={() => {}} className="gap-lg" />);
     const nav = screen.getByRole("navigation");
     expect(nav.className).toContain("gap-lg");
     expect(nav.className).not.toContain("gap-md");
   });
 
   it("forwards a consumer style prop", () => {
-    render(<Pagination page={1} pageCount={5} onPageChange={() => {}} style={{ marginTop: "8px" }} />);
+    render(<Pagination {...copy} page={1} pageCount={5} onPageChange={() => {}} style={{ marginTop: "8px" }} />);
     const nav = screen.getByRole("navigation");
     expect(nav.style.marginTop).toBe("8px");
   });
@@ -164,6 +176,7 @@ describe("Pagination", () => {
   it("reads summaries and the page-size label from message props", () => {
     render(
       <Pagination
+        {...copy}
         page={2}
         pageCount={4}
         onPageChange={() => {}}

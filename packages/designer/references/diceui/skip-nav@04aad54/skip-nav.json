@@ -1,0 +1,16 @@
+{
+  "name": "skip-nav",
+  "type": "registry:component",
+  "dependencies": [
+    "cn",
+    "radix-ui"
+  ],
+  "files": [
+    {
+      "path": "components/skip-nav.tsx",
+      "type": "registry:component",
+      "content": "\"use client\";\n\nimport type * as React from \"react\";\n\nimport { cn } from \"cn\";\nimport { composeEventHandlers } from \"radix-ui/internal\";\n\nconst MAIN_CONTENT_ID = \"main-content\";\n\nfunction SkipNav(props: React.ComponentProps<\"a\">) {\n  const {\n    href = `#${MAIN_CONTENT_ID}`,\n    children = \"Skip to content\",\n    className,\n    onClick,\n    ...linkProps\n  } = props;\n\n  return (\n    <a\n      data-slot=\"skip-nav\"\n      {...linkProps}\n      href={href}\n      className={cn(\"sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-100 focus-visible:rounded-md focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:text-foreground focus-visible:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none\", className)}\n      onClick={composeEventHandlers(onClick, (event) =>\n        skipToTarget(event, href),\n      )}\n    >\n      {children}\n    </a>\n  );\n}\n\nfunction skipToTarget(\n  event: React.MouseEvent<HTMLAnchorElement>,\n  href: string,\n) {\n  const target = getTarget(href);\n  if (!target) return;\n\n  event.preventDefault();\n  if (target.tabIndex < 0 && !target.hasAttribute(\"tabindex\")) {\n    makeTemporarilyFocusable(target);\n  }\n  target.focus({ preventScroll: true });\n  target.scrollIntoView({ block: \"start\" });\n}\n\nfunction makeTemporarilyFocusable(target: HTMLElement) {\n  const outline = target.style.outline;\n\n  target.tabIndex = -1;\n  target.style.outline = \"none\";\n  target.addEventListener(\n    \"blur\",\n    () => {\n      target.removeAttribute(\"tabindex\");\n      target.style.outline = outline;\n    },\n    { once: true },\n  );\n}\n\nfunction getTarget(href: string) {\n  if (!href.startsWith(\"#\") || href.length < 2) return null;\n  return document.getElementById(decodeURIComponent(href.slice(1)));\n}\n\nexport { SkipNav, MAIN_CONTENT_ID };\n",
+      "target": ""
+    }
+  ]
+}

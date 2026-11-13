@@ -1,0 +1,180 @@
+{
+  "schema": "clossys.references-manifest/1",
+  "package": "designer",
+  "fetchedAt": "2026-10-31T05:41:01Z",
+  "fetchedWith": "shadcn CLI 4.23.0 registry endpoints and GitHub raw at pinned commits",
+  "hashAlgorithm": "sha256-tree/1",
+  "registries": {
+    "shadcn": {
+      "namespace": "@shadcn",
+      "source": "https://ui.shadcn.com/r/styles/radix-nova/{name}.json",
+      "version": "4.23.0",
+      "versionBasis": "registry endpoint used by shadcn CLI 4.23.0, served at fetchedAt; upstream source commit recorded in upstream",
+      "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "style": "radix-nova",
+      "license": "MIT",
+      "licenseFiles": [
+        "shadcn/LICENSE.md"
+      ]
+    }
+  },
+  "licenses": [
+    {
+      "path": "shadcn/LICENSE.md",
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f",
+      "bytes": 1063,
+      "sourceUrl": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/LICENSE.md"
+    }
+  ],
+  "items": [
+    {
+      "registry": "shadcn",
+      "name": "button",
+      "version": "4.23.0",
+      "dir": "shadcn/button@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/button.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.button",
+        "components.link"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:9e41c76cf882fc46d3518f621c87ac7e58ec381ea546fda891de2cabe95fc350",
+      "files": [
+        {
+          "path": "button.json",
+          "sha256": "c07a8feb7b7ed07ad5279023e45ce23ed7b5b94c7dba3de5c08f30a2aa037de3",
+          "bytes": 3984,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/button.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/button.tsx",
+          "sha256": "08e5f87833c5db8436e89337ebde0f776bcdbf649d3de69fb89be6441ca2e366",
+          "bytes": 3375,
+          "origin": "button.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/color-picker",
+        "@diceui/media-player",
+        "@diceui/stepper",
+        "@shadcn/calendar",
+        "@shadcn/carousel",
+        "@shadcn/combobox",
+        "@shadcn/dialog",
+        "@shadcn/input-group",
+        "@shadcn/login-03",
+        "@shadcn/pagination",
+        "@shadcn/sheet",
+        "@shadcn/sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "popover",
+      "version": "4.23.0",
+      "dir": "shadcn/popover@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/popover.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.popover"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:387ab173964f395464bfea99aa299e0af46fdd618d0ee3d9c8b270129b5e44e0",
+      "files": [
+        {
+          "path": "popover.json",
+          "sha256": "2d61356c065868ee9ef6b98ab280665ec5bca65eb6b9d9d92217df92d7578784",
+          "bytes": 3059,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/popover.json"
+        },
+        {
+          "path": "registry/radix-nova/ui/popover.tsx",
+          "sha256": "61be62a441fb6b90e26ceaf93353f57411a4d114f305e0417b8f1122750b9018",
+          "bytes": 2365,
+          "origin": "popover.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/color-picker",
+        "@diceui/faceted"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "resizable",
+      "version": "4.23.0",
+      "dir": "shadcn/resizable@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/resizable.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.resize-handle"
+      ],
+      "dependencies": [
+        "cn",
+        "react-resizable-panels"
+      ],
+      "hash": "sha256:d0a0f1a4a61b426405c7d8cb3f3989d136a37bd3e18d8097bed8c875c6447948",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/resizable.tsx",
+          "sha256": "c45c4e1a32aefb83d60406366e2368b9d8a6e772406f8b964154e7202d6304f7",
+          "bytes": 1661,
+          "origin": "resizable.json#files[0].content"
+        },
+        {
+          "path": "resizable.json",
+          "sha256": "9435a1280e02d9a42fb58d3cf740e83179b87029e4b90969882ba4bb598aacd3",
+          "bytes": 2321,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/resizable.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "tooltip",
+      "version": "4.23.0",
+      "dir": "shadcn/tooltip@4.23.0",
+      "type": "registry:ui",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/tooltip.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.tooltip"
+      ],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:a4ada70243a8ff7bb5a15abc8d11f2d4559af3348893db0c437e9aef0435196f",
+      "files": [
+        {
+          "path": "registry/radix-nova/ui/tooltip.tsx",
+          "sha256": "e94530dd6877132d5eda73f6fb0d217f345477232f140f2ca6e024d790177f6a",
+          "bytes": 2101,
+          "origin": "tooltip.json#files[0].content"
+        },
+        {
+          "path": "tooltip.json",
+          "sha256": "c639f7ee0511b6d2a1d12e25624952e07209a0d1ddaca47c52bd1e1183efdb89",
+          "bytes": 3191,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/tooltip.json"
+        }
+      ],
+      "requiredBy": [
+        "@diceui/media-player",
+        "@shadcn/sidebar"
+      ]
+    }
+  ],
+  "skipped": []
+}

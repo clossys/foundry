@@ -1,0 +1,180 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.pagination",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.parts",
+    "l2": "parts-navigation",
+    "order": 178
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "nav",
+    "anatomy": {
+      "band": null,
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "page",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "total",
+        "type": "records",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "mode.pages",
+        "mode.load-more",
+        "mode.cursor"
+      ]
+    },
+    "allowedComposes": [
+      "components.button",
+      "components.link",
+      "components.select",
+      "components.icon",
+      "components.semantic-content",
+      "components.field"
+    ],
+    "parts": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": [
+        "assets.icon-*",
+        "assets.icon-chevron-left",
+        "assets.icon-chevron-right"
+      ]
+    },
+    "data": "host-injected",
+    "surface": "both",
+    "passageSchema": "passages.pagination",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "page.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "page.previous-label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "page.next-label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "page.page-text",
+          "kind": "icu",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "total.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "page.no-results-label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "page.page-size-label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "total.range-text",
+          "kind": "icu",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-chevron-left",
+    "assets.icon-chevron-right",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.spacing"
+  ],
+  "uses": [
+    "assets.icon-chevron-left",
+    "assets.icon-chevron-right",
+    "components.button",
+    "components.field",
+    "components.select"
+  ]
+}

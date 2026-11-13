@@ -1,0 +1,200 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.account-summary",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.organize",
+    "l2": "organize-summaries",
+    "order": 205
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "heading",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "identity",
+        "type": "region",
+        "required": true
+      },
+      {
+        "name": "rows",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "actions",
+        "type": "action",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.avatar",
+      "components.link",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "passageSchema": "passages.account-summary",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "heading",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "identity.name",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "identity.name-label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "identity.email",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 320
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "identity.email-label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].value",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 1000
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.accent-foreground",
+    "themes.animate-marquee",
+    "themes.animate-marquee-vertical",
+    "themes.animate-shiny-text",
+    "themes.background",
+    "themes.card",
+    "themes.card-foreground",
+    "themes.foreground",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.popover",
+    "themes.popover-foreground",
+    "themes.primary-foreground",
+    "themes.secondary",
+    "themes.secondary-foreground",
+    "themes.sidebar",
+    "themes.sidebar-accent",
+    "themes.sidebar-accent-foreground",
+    "themes.sidebar-foreground",
+    "themes.sidebar-primary-foreground",
+    "themes.spacing"
+  ],
+  "uses": [],
+  "notNeeded": {
+    "reason": "planner:DS-COMPLETE: no pinned candidate, slot uses list or publication composes it; candidate v1 has no trusted-registry lineage. Earlier migrated evidence: no approved-registry source; W6 composition check (strict, account-summary-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 6 styled raw element attribute(s); imports outside the stock parts: @/components/ui/semantic-content (absent from the component layer). No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-05",
+    "decidedBy": "planner:DS-COMPLETE"
+  }
+}

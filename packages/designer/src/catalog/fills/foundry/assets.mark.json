@@ -1,0 +1,60 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "foundry/assets.mark",
+      "slot": "assets.mark",
+      "source": "foundry",
+      "mode": "derived",
+      "sourceAddress": "catalog-assets/identity.ts",
+      "relation": "derived",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "foundry",
+      "trust": "foundry",
+      "license": "MIT",
+      "status": "draft",
+      "reads": {
+        "themes": [
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
+        ],
+        "assets": [
+          "assets.mark"
+        ]
+      },
+      "pin": {
+        "file": "../producer/studio/public/studio-mark.svg",
+        "sha256": "c7ffabb58f629876555ea1ccdd40b9d804de59f0c6e78286ab3067b82f9e3c45"
+      },
+      "derivation": {
+        "from": "asset-identity#positive",
+        "rule": "identity-mark@1"
+      }
+    }
+  },
+  "assets": {
+    "mark": {
+      "positive": {
+        "$type": "svg",
+        "$value": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" width=\"100\" height=\"100\" role=\"img\" aria-label=\"Clossys\" data-clear-space=\"0.2\">\n  <rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"#0A0A0A\"/>\n  <g transform=\"translate(50 50)\" fill=\"#FAFAFA\"><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(0.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(72.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(144.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(216.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(288.0)\"/></g>\n</svg>\n"
+      },
+      "reversed": {
+        "$type": "svg",
+        "$value": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" width=\"100\" height=\"100\" role=\"img\" aria-label=\"Clossys\" data-clear-space=\"0.2\"><defs><mask id=\"recolor-868a410c-a\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"100\" height=\"100\"><rect x=\"0\" y=\"0\" width=\"100\" height=\"100\" fill=\"#fff\" /><g transform=\"translate(50 50)\"><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(0.0)\" fill=\"#000\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(72.0)\" fill=\"#000\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(144.0)\" fill=\"#000\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(216.0)\" fill=\"#000\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(288.0)\" fill=\"#000\" /></g></mask><mask id=\"recolor-868a410c-b\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"100\" height=\"100\"><rect x=\"0\" y=\"0\" width=\"100\" height=\"100\" fill=\"#fff\" /><rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"#000\" /></mask></defs><g mask=\"url(#recolor-868a410c-a)\"><rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"oklch(1 0 0)\" /></g><g mask=\"url(#recolor-868a410c-b)\"><g transform=\"translate(50 50)\"><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(0.0)\" fill=\"oklch(1 0 0)\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(72.0)\" fill=\"oklch(1 0 0)\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(144.0)\" fill=\"oklch(1 0 0)\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(216.0)\" fill=\"oklch(1 0 0)\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(288.0)\" fill=\"oklch(1 0 0)\" /></g></g></svg>"
+      },
+      "mono": {
+        "$type": "svg",
+        "$value": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" width=\"100\" height=\"100\" role=\"img\" aria-label=\"Clossys\" data-clear-space=\"0.2\"><defs><mask id=\"recolor-7e62981d-a\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"100\" height=\"100\"><rect x=\"0\" y=\"0\" width=\"100\" height=\"100\" fill=\"#fff\" /><g transform=\"translate(50 50)\"><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(0.0)\" fill=\"#000\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(72.0)\" fill=\"#000\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(144.0)\" fill=\"#000\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(216.0)\" fill=\"#000\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(288.0)\" fill=\"#000\" /></g></mask><mask id=\"recolor-7e62981d-b\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"100\" height=\"100\"><rect x=\"0\" y=\"0\" width=\"100\" height=\"100\" fill=\"#fff\" /><rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"#000\" /></mask></defs><g mask=\"url(#recolor-7e62981d-a)\"><rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"currentColor\" /></g><g mask=\"url(#recolor-7e62981d-b)\"><g transform=\"translate(50 50)\"><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(0.0)\" fill=\"currentColor\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(72.0)\" fill=\"currentColor\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(144.0)\" fill=\"currentColor\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(216.0)\" fill=\"currentColor\" /><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(288.0)\" fill=\"currentColor\" /></g></g></svg>"
+      }
+    }
+  }
+}

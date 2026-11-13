@@ -1,0 +1,162 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.features",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#FeatureGrid",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.features",
+      "source": "foundry",
+      "sourceAddress": "./blocks#FeatureGrid",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "about.features"
+      ]
+    }
+  },
+  "sections": {
+    "features": {
+      "composes": [
+        "components.icon",
+        "components.link",
+        "components.semantic-content",
+        "sections.section-header"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.icon",
+          "components.link",
+          "components.semantic-content",
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.icon",
+            "components.link",
+            "components.semantic-content"
+          ],
+          "themes": [
+            "themes.primary"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/FeatureGrid.tsx",
+            "sha256": "3125e9af4b0a7ace0d4d2ab4003611c580c096f4b7f848012e6efe907deb507a"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/anatomy.tsx",
+            "sha256": "8ca317930c5ff082b03ea9b016b5acd590921a2241edcaa8166ebce644b0965f"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/compat-features.tsx",
+            "sha256": "dde7091159c3f7f50c10ca635acfb81873a0f8d66c4dad29a53b0fe66cdaf166"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
+          },
+          {
+            "path": "packages/designer/src/blocks/stretched-link.tsx",
+            "sha256": "20c899ae1a637fe6ece7a4a7bca2f94065462d7fcb3a0d09a24fea28c275fd8f"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronRight.ts",
+            "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+            "file": "packages/designer/src/blocks/stretched-link.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "FeatureGrid",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Grid, list and split retain the public FeatureGrid.layout API. Header is spread across heading, eyebrow and description, the same SectionIntro props ContentSection maps. Bento, tabs, alternate and scroll are private registered renderFeaturesSection compositions of the mapped items, implemented by FeatureLayouts; they do not extend the public layout prop.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#FeatureGrid",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.alternating": "./blocks#FeatureGrid.items",
+        "layout.bento": "./blocks#FeatureGrid.items",
+        "layout.grid": "./blocks#FeatureGrid.layout=grid",
+        "layout.list": "./blocks#FeatureGrid.layout=list",
+        "layout.scroll": "./blocks#FeatureGrid.items",
+        "layout.split": "./blocks#FeatureGrid.layout=split",
+        "layout.tabs": "./blocks#FeatureGrid.items"
+      },
+      "reads": {
+        "assets": [],
+        "themes": [
+          "themes.primary"
+        ]
+      },
+      "slot": "sections.features",
+      "slotMap": {
+        "header": "./blocks#FeatureGrid.heading,eyebrow,description",
+        "items": "./blocks#FeatureGrid.items"
+      },
+      "source": "foundry"
+    }
+  }
+}

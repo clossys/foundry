@@ -1,0 +1,210 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.hero",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Hero",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.hero",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Hero",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "hero": {
+      "composes": [
+        "components.media-player",
+        "components.semantic-content"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.media-player",
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [
+            "assets.pattern"
+          ],
+          "components": [
+            "components.media-player",
+            "components.semantic-content"
+          ],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/backdrop/consumer-art.ts",
+            "sha256": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e"
+          },
+          {
+            "path": "packages/designer/src/backdrop/contract.ts",
+            "sha256": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8"
+          },
+          {
+            "path": "packages/designer/src/backdrop/still-backdrop-policy.ts",
+            "sha256": "fa4480c786198ee013a20fe7f711bbea7aaa1701ecd0b6961500b148e8c86c46"
+          },
+          {
+            "path": "packages/designer/src/blocks/Hero.tsx",
+            "sha256": "3521d1885b64c1e8803ebefc663321eefbe082efa0f8d365e19d3f3d88944363"
+          },
+          {
+            "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
+            "sha256": "7a3c2031e7a084536d96f49bcaef4110e834e7337b631c6e8c4b6e18db0780dd"
+          },
+          {
+            "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
+            "sha256": "003f4e26d28dd54cda9ed1098614f840a3219a7a0a79384ab88e0fb6c5b01bd7"
+          },
+          {
+            "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
+            "sha256": "7e4f970b58593caf96074a117298fd901901db942e38217c18b45e2789bafda5"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/block-vars.ts",
+            "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
+          },
+          {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
+            "path": "packages/designer/src/catalog-assets/pattern-backdrop.ts",
+            "sha256": "57796833cdf801f240f9d27e21eb74ddbd6068413e1c38c0d7058c5aaee6a95f"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
+          },
+          {
+            "path": "packages/designer/src/tokens/color.ts",
+            "sha256": "a749fc92783397477cb934cdeb87f12fd4710ebda014db6066fc0bf2e59db1c2"
+          },
+          {
+            "path": "packages/designer/src/tokens/contrast-pairs.ts",
+            "sha256": "e182d455492aa9ddb222a623655a8d5e4cc2229b2cd975444882c59375657b56"
+          },
+          {
+            "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
+            "sha256": "f275a93674312946c0fa1c73c827dae315d11578be1d2c675669924f3466dfc8"
+          },
+          {
+            "path": "packages/designer/src/tokens/pattern.ts",
+            "sha256": "134c14989995caef7187c918155225381180acda4d6fe663cdbf0c927027b015"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/backdrop/consumer-art.ts",
+            "line": 1
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/backdrop/contract.ts",
+            "line": 108
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/backdrop/still-backdrop-policy.ts",
+            "line": 9
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "Hero",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Header is a built-in SemanticContent intro keyed by the required heading, with eyebrow and description as supporting props; headingLevel permits h1.",
+        "Backdrop accepts the existing checked decorative lazy ConsumerArtContract, limited to static raster or token-painted SVG. Light and strong treatments render the media-scrim gradient below four or five scalar scrim passes. Static art is unchanged under reduced motion; source bytes remain consumer-declared, not fetched or measured.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Hero",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "backdrop.scrim.light": "./blocks#Hero.backdropScrim=light",
+        "backdrop.scrim.strong": "./blocks#Hero.backdropScrim=strong",
+        "ground.base": "./blocks#Hero.ground=base",
+        "ground.inverse": "./blocks#Hero.ground=inverse",
+        "layout.editorial": "./blocks#Hero.composition=editorial",
+        "layout.full-bleed": "./blocks#Hero.composition=full-bleed",
+        "layout.split": "./blocks#Hero.composition=split",
+        "size.compact": "./blocks#Hero.size=compact",
+        "size.default": "./blocks#Hero.size=default",
+        "size.display": "./blocks#Hero.size=display"
+      },
+      "reads": {
+        "assets": [
+          "assets.pattern"
+        ],
+        "themes": []
+      },
+      "slot": "sections.hero",
+      "slotMap": {
+        "actions": "./blocks#Hero.actions",
+        "backdrop": "./blocks#Hero.backdrop",
+        "header": "./blocks#Hero.heading",
+        "header.description": "./blocks#Hero.description",
+        "header.eyebrow": "./blocks#Hero.eyebrow",
+        "media": "./blocks#Hero.media"
+      },
+      "source": "foundry"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "foundry/assets.favicon",
+      "slot": "assets.favicon",
+      "source": "foundry",
+      "mode": "derived",
+      "sourceAddress": "catalog-assets/identity.ts",
+      "relation": "derived",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "foundry",
+      "trust": "foundry",
+      "license": "MIT",
+      "status": "draft",
+      "reads": {
+        "themes": [
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
+        ],
+        "assets": [
+          "assets.mark"
+        ]
+      },
+      "derivation": {
+        "from": "asset-identity#consumer-seed",
+        "rule": "identity-favicon@1"
+      }
+    }
+  },
+  "assets": {
+    "favicon": {
+      "vector": {
+        "$type": "svg",
+        "$value": "{{assets.mark.positive}}"
+      }
+    }
+  }
+}

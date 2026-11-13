@@ -1,0 +1,12 @@
+{
+  "candidate": "specimen-document-v5.json",
+  "sha256": "c6ac14d3c3975722b6bb056deafe08a5062f1ce9da956aba05e7900145311dd2",
+  "decidedBy": "agent:designer",
+  "basis": "agent",
+  "at": "2026-11-13T02:30:22.188Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6844299301",
+    "at": "2026-11-13T04:46:19.743Z"
+  }
+}

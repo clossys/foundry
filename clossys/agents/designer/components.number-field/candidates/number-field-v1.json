@@ -1,0 +1,99 @@
+{
+  "name": "number-field",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn",
+    "lucide-react",
+    "react-aria-components"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "number-field.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport type * as React from \"react\"\nimport { MinusIcon, PlusIcon } from \"lucide-react\"\nimport { cn } from \"cn\"\nimport {\n  Button,\n  FieldError,\n  Group,\n  Input,\n  Label,\n  NumberField as NumberFieldPrimitive,\n  Text,\n  type NumberFieldProps,\n} from \"react-aria-components\"\n\nconst stepperClassName =\n  \"flex h-full w-8 shrink-0 items-center justify-center text-muted-foreground outline-none hover:bg-muted hover:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[focus-visible]:ring-3 data-[focus-visible]:ring-ring/50 [&_svg]:size-3.5\"\n\n/**\n * React Aria NumberField in the aria-nova input-group look. format = formatOptions,\n * step = step, state.invalid = isInvalid / validation.\n */\nfunction NumberField({\n  className,\n  label,\n  description,\n  errorMessage,\n  placeholder,\n  ...props\n}: Omit<NumberFieldProps, \"className\"> & {\n  className?: string\n  label?: React.ReactNode\n  description?: React.ReactNode\n  errorMessage?: string\n  placeholder?: string\n}) {\n  return (\n    <NumberFieldPrimitive data-slot=\"number-field\" className={cn(\"group flex w-full flex-col gap-2\", className)} {...props}>\n      {label !== undefined && <Label className=\"text-sm leading-none font-medium select-none\">{label}</Label>}\n      <Group className=\"flex h-8 w-full min-w-0 items-center overflow-hidden rounded-lg border border-input bg-transparent transition-colors data-[disabled]:opacity-50 data-[focus-within]:border-ring data-[focus-within]:ring-3 data-[focus-within]:ring-ring/50 data-[invalid]:border-destructive data-[invalid]:ring-3 data-[invalid]:ring-destructive/20 dark:bg-input/30\">\n        <Button slot=\"decrement\" className={cn(stepperClassName, \"border-r border-input\")}>\n          <MinusIcon />\n        </Button>\n        <Input\n          placeholder={placeholder}\n          className=\"h-full min-w-0 flex-1 bg-transparent px-2.5 text-center text-base tabular-nums outline-none placeholder:text-muted-foreground md:text-sm\"\n        />\n        <Button slot=\"increment\" className={cn(stepperClassName, \"border-l border-input\")}>\n          <PlusIcon />\n        </Button>\n      </Group>\n      {description !== undefined && <Text slot=\"description\" className=\"text-sm text-muted-foreground\">{description}</Text>}\n      <FieldError className=\"text-sm text-destructive\">{errorMessage}</FieldError>\n    </NumberFieldPrimitive>\n  )\n}\n\nexport { NumberField }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.number-field",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "npm:react-aria-components@1.21.1#NumberField",
+        "shadcn-aria/input@4.23.0"
+      ],
+      "hash": "sha256:6866498415f95ef30d92f1040678545fd18e63b4588bfcc16f389d35a0345bb6",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "number-field",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.number-field",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "React Aria NumberField with stepper buttons styled as the aria-nova Input group.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "lucide-react": "*",
+          "react-aria-components": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--spacing",
+          "--destructive",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--ring"
+        ]
+      }
+    }
+  }
+}
