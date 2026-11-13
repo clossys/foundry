@@ -1,19 +1,7 @@
 {
-  "candidate": "studio-v1.md",
-  "sha256": "ab2c3402b5563e21609ac59641ddaabc6ac80b3a4876075769ed9cb4e81da86a",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z",
-  "recited": {
-    "by": "agent:producer",
-    "at": "2026-11-13T02:43:05.053Z",
-    "cites": {
-      "director:identity.verbal.voice": 6,
-      "director:capability.team.structure": 4
-    },
-    "proof": {
-      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
-      "director:capability.team.structure": "sha256:a34de5b2f3c561a9f25719c32a3b757adec705f6e363c186272957a2f0b0426f"
-    }
-  }
+  "candidate": "studio-redraft-v1.md",
+  "sha256": "2a2d100c6ec31b9a4a38a8c39caff7a859a0a6245c0433928d85913d5787e822",
+  "decidedBy": "owner:https://github.com/clossys/workspace/issues/46#issuecomment-6843163449",
+  "basis": "picked",
+  "at": "2026-11-13T03:45:26.727Z"
 }

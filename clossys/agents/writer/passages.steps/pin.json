@@ -1,21 +1,7 @@
 {
-  "candidate": "studio-v1.md",
-  "sha256": "c66c9d05b58b8fabc4033dc2a19df98f0f4f9e291864379ac7209bd590240913",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z",
-  "recited": {
-    "by": "agent:producer",
-    "at": "2026-11-13T02:43:04.117Z",
-    "cites": {
-      "director:focus.offer.included": 5,
-      "director:identity.verbal.voice": 6,
-      "director:capability.operation.delivery": 8
-    },
-    "proof": {
-      "director:focus.offer.included": "sha256:ce08fbf7f90b36db36ef467eb02a7a28d58e72a4802e28560ac2cb345f0a508b",
-      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
-      "director:capability.operation.delivery": "sha256:db71e66d9bf7184965ce8ee65a656d0db7e254b91f685c7e6087713a6bcdfbb8"
-    }
-  }
+  "candidate": "studio-redraft-v1.md",
+  "sha256": "4ad2276f547e7a27dc11aabb9db3d387af36a85ad9155e0ea63d7ecf36fcff2d",
+  "decidedBy": "owner:https://github.com/clossys/workspace/issues/46#issuecomment-6843163449",
+  "basis": "picked",
+  "at": "2026-11-13T03:45:26.015Z"
 }
