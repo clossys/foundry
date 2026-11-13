@@ -1,0 +1,59 @@
+{
+  "schema": "clossys.action/1",
+  "id": "writer.approve",
+  "agent": "owner",
+  "kind": "decide:judgment",
+  "stage": "design.pin",
+  "summary": "Owner approves a Writer slot's copy keys: the approved candidate is pinned (clossys approve).",
+  "run": "clossys approve writer/<slot> <candidate-id>",
+  "inputs": [
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/writer/*/pin.json",
+      "schema": "pin"
+    }
+  ],
+  "pass": {
+    "command": "clossys check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": [
+    "skill/SKILL.md"
+  ],
+  "decider": "owner",
+  "packet": {
+    "inputs": [
+      "clossys/agents/writer/*/candidates/*"
+    ],
+    "write": [
+      {
+        "glob": "clossys/agents/writer/*/pin.json",
+        "schema": "pin"
+      }
+    ],
+    "checks": [
+      "workspace"
+    ]
+  },
+  "skill": "skill.md",
+  "open": "writer-keys-unapproved"
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "clossys.action/1",
+  "id": "rules",
+  "agent": "owner",
+  "kind": "decide:judgment",
+  "stage": "direct.brief",
+  "summary": "Rule registry rows and gate yes/no.",
+  "run": "clossys rule <rule-id> --quote <text> --date <date> --status <status>",
+  "inputs": [],
+  "outputs": [
+    {
+      "glob": "scripts/rules/registry.json",
+      "schema": "rule-registry"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:rules -- node ../../scripts/check-rules.mjs",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "rules"
+  ],
+  "uses": [
+    "skill/SKILL.md"
+  ],
+  "decider": "owner",
+  "packet": {
+    "inputs": [],
+    "write": [
+      {
+        "glob": "scripts/rules/registry.json",
+        "schema": "rule-registry"
+      }
+    ],
+    "checks": [
+      "rules"
+    ]
+  },
+  "skill": "skill.md"
+}

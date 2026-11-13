@@ -1,0 +1,730 @@
+import type { JsonSchema } from "./schema.js";
+
+/**
+ * Record schemas for the slot engine. Every package (Director, Designer,
+ * Writer, Publisher, or a later agent) writes the same shapes; nothing here
+ * names a package-specific field. Package identity is data (`package`,
+ * `layer`, `kind`), never structure.
+ *
+ * On-disk layout in a consumer workspace:
+ *   library/<slot>/<element>/v<n>/element.json   immutable once written
+ *   library/<slot>/<element>/v<n>/preview.json   immutable once written
+ *   library/<slot>/<element>/v<n>/<payload...>   the record's native payload
+ *
+ * Pins live in the slot model (`agents/<agent>/<slot>/pin.json`), read only
+ * through records/slots.ts.
+ */
+
+const HASH = "^sha256:[0-9a-f]{64}$";
+const ID = "^[a-z0-9][a-z0-9-]*$";
+/** `<layer>.<leaf>`, for example `sections.hero` or `copy.home-hero`. */
+const SLOT = "^[a-z0-9][a-z0-9-]*\\.[a-z0-9][a-z0-9.-]*$";
+const ISO = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$";
+const REL_PATH = "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$";
+
+export const RECORD_SCHEMA_IDS = {
+  element: "clossys.element/1",
+  preview: "clossys.preview/1",
+  slotContract: "clossys.slot-contract/1",
+  referencesManifest: "clossys.references-manifest/1",
+} as const;
+
+const referenceRef: JsonSchema = {
+  type: "object",
+  required: ["registry", "item", "version"],
+  additionalProperties: false,
+  properties: {
+    registry: { type: "string", pattern: ID },
+    item: { type: "string", minLength: 1 },
+    version: { type: "string", minLength: 1 },
+    hash: { type: "string", pattern: HASH },
+    url: { type: "string", minLength: 1 },
+    files: {
+      type: "object",
+      description:
+        "Maps each payload file to the file inside the vendored reference item it was copied from (the ref-verbatim check diffs each pair).",
+      propertyNames: { type: "string", pattern: REL_PATH },
+      additionalProperties: { type: "string", pattern: REL_PATH },
+    },
+  },
+};
+
+/** Closed opt-in byte proof; the reference guard performs byte replay and closure checks. */
+const exactPartDefinitions: Readonly<Record<string, JsonSchema>> = {
+  "exactPartSource": {
+    "type": "object",
+    "required": [
+      "reference",
+      "path",
+      "upstream",
+      "fileSha256",
+      "start",
+      "endExclusive",
+      "sha256",
+      "license"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "reference": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "path": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+      },
+      "upstream": {
+        "type": "string",
+        "minLength": 1
+      },
+      "fileSha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "start": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "endExclusive": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "sha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "license": {
+        "type": "object",
+        "required": [
+          "path",
+          "sha256",
+          "payloadPath"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "payloadPath": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          }
+        }
+      }
+    }
+  },
+  "exactPartEdit": {
+    "type": "object",
+    "required": [
+      "kind",
+      "start",
+      "endExclusive",
+      "from",
+      "to"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "kind": {
+        "enum": [
+          "import",
+          "token",
+          "data"
+        ]
+      },
+      "start": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "endExclusive": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "from": {
+        "type": "string",
+        "minLength": 1
+      },
+      "to": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "exactPartSegment": {
+    "type": "object",
+    "required": [
+      "start",
+      "endExclusive",
+      "source",
+      "edits"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "start": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "endExclusive": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "source": {
+        "$ref": "#/$defs/exactPartSource"
+      },
+      "edits": {
+        "type": "array",
+        "minItems": 0,
+        "items": {
+          "$ref": "#/$defs/exactPartEdit"
+        }
+      }
+    }
+  },
+  "exactPartFile": {
+    "type": "object",
+    "required": [
+      "sha256",
+      "segments"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "sha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "segments": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "$ref": "#/$defs/exactPartSegment"
+        }
+      }
+    }
+  },
+  "exactPartTarget": {
+    "oneOf": [
+      {
+        "type": "object",
+        "required": [
+          "kind",
+          "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "payload"
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          }
+        }
+      },
+      {
+        "type": "object",
+        "required": [
+          "kind",
+          "package",
+          "version",
+          "entry",
+          "hash"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "npm"
+          },
+          "package": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "entry": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        }
+      },
+      {
+        "type": "object",
+        "required": [
+          "kind",
+          "slot",
+          "element",
+          "version",
+          "hash",
+          "entry"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "element"
+          },
+          "slot": {
+            "type": "string",
+            "minLength": 1
+          },
+          "element": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "entry": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          }
+        }
+      }
+    ]
+  },
+  "exactPartImport": {
+    "type": "object",
+    "required": [
+      "file",
+      "specifier",
+      "target"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "file": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+      },
+      "specifier": {
+        "type": "string",
+        "minLength": 1
+      },
+      "target": {
+        "$ref": "#/$defs/exactPartTarget"
+      }
+    }
+  }
+};
+
+const exactParts: JsonSchema = {
+  "type": "object",
+  "required": [
+    "schema",
+    "payload",
+    "files",
+    "closure"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "ref-exact-parts/1"
+    },
+    "payload": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "files": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/exactPartFile"
+      }
+    },
+    "closure": {
+      "type": "object",
+      "required": [
+        "roots",
+        "imports"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "roots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$"
+          }
+        },
+        "imports": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "$ref": "#/$defs/exactPartImport"
+          }
+        }
+      }
+    }
+  }
+};
+
+export const ELEMENT_SCHEMA: JsonSchema = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  $id: RECORD_SCHEMA_IDS.element,
+  title: "Element record (element.json)",
+  type: "object",
+  required: [
+    "schema", "id", "package", "layer", "slot", "kind", "version", "hash", "lineage",
+    "license", "creator", "reason", "createdAt", "checks", "deps", "reads",
+  ],
+  additionalProperties: false,
+  $defs: { referenceRef, ...exactPartDefinitions },
+  properties: {
+    schema: { const: RECORD_SCHEMA_IDS.element },
+    id: { type: "string", pattern: ID, description: "Element id, unique within its slot." },
+    package: { type: "string", pattern: ID, description: "The agent package that owns the slot." },
+    layer: { type: "string", pattern: ID },
+    slot: { type: "string", pattern: SLOT },
+    kind: { type: "string", minLength: 1, description: "Payload kind, for example registry:block or cell:md." },
+    version: { type: "integer", minimum: 1 },
+    hash: { type: "string", pattern: HASH, description: "Content hash of the payload files (see records/hash.ts)." },
+    lineage: {
+      type: "object",
+      required: ["mode"],
+      additionalProperties: false,
+      properties: {
+        mode: { enum: ["verbatim", "customized", "original"] },
+        path: { enum: ["pick", "adopt", "create"] },
+        ownerRequest: { type: "string", minLength: 1 },
+        adaptations: {
+          type: "array", items: {
+            type: "object", required: ["kind", "file", "reason"], additionalProperties: false,
+            properties: {
+              kind: { enum: ["import-paths", "token-mapping", "data-binding", "data-fit", "slot-bound-copy", "slot-bound-identity"] },
+              file: { type: "string", pattern: REL_PATH }, reason: { type: "string", minLength: 1 },
+              hash: { type: "string", pattern: HASH },
+              operation: { enum: ["single-option-static-row", "sidebar15-frame-split", "sidebar15-right-offcanvas", "sidebar07-single-option", "sidebar-mirrored-edge", "sidebar-resizable-panels"] },
+              sourceHash: { type: "string", pattern: HASH },
+              bindings: {
+                type: "object", additionalProperties: false,
+                properties: {
+                  region: { enum: ["app", "page"] }, side: { enum: ["left", "right"] }, collapsible: { const: "offcanvas" },
+                  input: { enum: ["teams", "user"] }, values: { type: "array", minItems: 1, items: { type: "object" } },
+                  orientation: { const: "horizontal" },
+                },
+              },
+              optionCount: { const: 1 }, menu: { type: "string", minLength: 1 },
+            },
+          },
+        },
+        exactParts,
+        source: { $ref: "#/$defs/referenceRef" },
+        parts: {
+          type: "array",
+          minItems: 1,
+          items: { $ref: "#/$defs/referenceRef" },
+          description: "Further trusted references the payload takes verbatim parts from, beside the source block.",
+        },
+        parent: {
+          type: "object",
+          required: ["version", "hash"],
+          additionalProperties: false,
+          properties: { version: { type: "integer", minimum: 1 }, hash: { type: "string", pattern: HASH } },
+        },
+      },
+    },
+    license: {
+      type: "object",
+      required: ["spdx"],
+      additionalProperties: false,
+      properties: {
+        spdx: { type: "string", minLength: 1 },
+        attribution: { type: "string", minLength: 1 },
+        file: { type: "string", pattern: REL_PATH },
+      },
+    },
+    creator: {
+      type: "object",
+      required: ["agent", "model"],
+      additionalProperties: false,
+      properties: {
+        agent: { type: "string", minLength: 1 },
+        model: { type: "string", minLength: 1 },
+        by: { type: "string", minLength: 1 },
+      },
+    },
+    reason: { type: "string", minLength: 1 },
+    createdAt: { type: "string", pattern: ISO },
+    checks: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["id", "type", "status"],
+        additionalProperties: false,
+        properties: {
+          id: { type: "string", minLength: 1 },
+          suite: { type: "string", minLength: 1 },
+          type: { enum: ["fixed", "measured", "judged"] },
+          status: { enum: ["pass", "fail", "warn", "skip"] },
+          detail: { type: "string" },
+          value: { type: ["number", "string", "boolean"] },
+          at: { type: "string", pattern: ISO },
+        },
+      },
+    },
+    deps: {
+      type: "object",
+      required: ["npm", "elements"],
+      additionalProperties: false,
+      properties: {
+        npm: { type: "object", additionalProperties: { type: "string", minLength: 1 } },
+        elements: {
+          type: "array",
+          uniqueItems: true,
+          items: {
+            type: "object",
+            required: ["slot", "element", "version", "hash"],
+            additionalProperties: false,
+            properties: {
+              slot: { type: "string", pattern: SLOT },
+              element: { type: "string", pattern: ID },
+              version: { type: "integer", minimum: 1 },
+              hash: { type: "string", pattern: HASH },
+            },
+          },
+        },
+      },
+    },
+    reads: {
+      type: "object",
+      required: ["copyKeys", "themeVars"],
+      additionalProperties: false,
+      properties: {
+        copyKeys: {
+          type: "array",
+          uniqueItems: true,
+          description: "What the element reads from Writer. An entry { slot, prop, previewKey } is a copy slot: a page binds `slot`, the text renders at `prop` (a dot path into the mounted props) and the specimen previews it with Writer key `previewKey`. A bare string is a Writer key the element reads through host data.",
+          items: {
+            oneOf: [
+              { type: "string", minLength: 1 },
+              {
+                type: "object",
+                required: ["slot", "prop", "previewKey"],
+                additionalProperties: false,
+                properties: {
+                  slot: { type: "string", pattern: "^[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
+                  prop: { type: "string", pattern: "^[A-Za-z_$][\\w$-]*(?:\\.(?:\\d+|[A-Za-z_$][\\w$-]*))*$" },
+                  previewKey: { type: "string", minLength: 1 },
+                },
+              },
+            ],
+          },
+        },
+        themeVars: { type: "array", uniqueItems: true, items: { type: "string", pattern: "^--?[a-z0-9][a-z0-9-]*$" } },
+      },
+    },
+    payload: {
+      type: "array",
+      uniqueItems: true,
+      items: { type: "string", pattern: REL_PATH },
+      description: "Payload files relative to the version directory; defaults to every file but element.json and preview.json.",
+    },
+  },
+};
+
+export const PREVIEW_SCHEMA: JsonSchema = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  $id: RECORD_SCHEMA_IDS.preview,
+  title: "Preview record (preview.json)",
+  type: "object",
+  required: ["schema", "fixtures", "copy", "container", "theme", "width"],
+  additionalProperties: false,
+  properties: {
+    schema: { const: RECORD_SCHEMA_IDS.preview },
+    fixtures: { type: "object", description: "Props or data the specimen renders with." },
+    copy: { type: "object", additionalProperties: { type: "string" }, description: "Copy key to sample or pinned text." },
+    container: { enum: ["canvas", "section-in-frame", "page"] },
+    theme: { enum: ["light", "dark"] },
+    width: { type: "integer", minimum: 240, maximum: 3840 },
+  },
+};
+
+export const SLOT_CONTRACT_SCHEMA: JsonSchema = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  $id: RECORD_SCHEMA_IDS.slotContract,
+  title: "Slot contract",
+  type: "object",
+  required: ["schema", "slot", "package", "layer", "purpose", "inputs", "limits", "references", "checkSuite", "specimenKind"],
+  additionalProperties: false,
+  $defs: { referenceRef },
+  properties: {
+    schema: { const: RECORD_SCHEMA_IDS.slotContract },
+    slot: { type: "string", pattern: SLOT },
+    package: { type: "string", pattern: ID },
+    layer: { type: "string", pattern: ID },
+    purpose: { type: "string", minLength: 1 },
+    inputs: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["name", "kind", "required"],
+        additionalProperties: false,
+        properties: {
+          name: { type: "string", minLength: 1 },
+          kind: { enum: ["copy", "prop", "asset", "theme", "data", "cell"] },
+          required: { type: "boolean" },
+          description: { type: "string" },
+        },
+      },
+    },
+    limits: { type: "object", additionalProperties: { type: ["number", "string", "boolean"] } },
+    references: { type: "array", items: { $ref: "#/$defs/referenceRef" } },
+    checkSuite: { type: "string", minLength: 1 },
+    specimenKind: { enum: ["visual", "text", "data", "media", "flow"] },
+  },
+};
+
+export const REFERENCES_MANIFEST_SCHEMA: JsonSchema = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  $id: RECORD_SCHEMA_IDS.referencesManifest,
+  title: "Package references manifest (references/manifest.json)",
+  type: "object",
+  required: ["schema", "package", "fetchedAt", "hashAlgorithm", "registries", "licenses", "items", "skipped"],
+  additionalProperties: false,
+  properties: {
+    schema: { const: RECORD_SCHEMA_IDS.referencesManifest },
+    package: { type: "string", pattern: ID },
+    fetchedAt: { type: "string", pattern: ISO },
+    fetchedWith: { type: "string" },
+    hashAlgorithm: { const: "sha256-tree/1" },
+    registries: {
+      type: "object",
+      propertyNames: { type: "string", pattern: ID },
+      additionalProperties: {
+        type: "object",
+        required: ["namespace", "source", "version", "license", "licenseFiles"],
+        additionalProperties: false,
+        properties: {
+          namespace: { type: "string", minLength: 1 },
+          source: { type: "string", minLength: 1 },
+          version: { type: "string", minLength: 1 },
+          versionBasis: { type: "string" },
+          upstream: { type: "string" },
+          style: { type: "string", pattern: ID, description: "shadcn style the registry serves (aria-nova, radix-nova, new-york, ...)." },
+          fetchedAt: { type: "string", pattern: ISO },
+          index: {
+            type: "object",
+            description: "The style's registry.json the generator vendored every listed item from (fetch-references.mjs).",
+            required: ["url", "sha256", "items"],
+            additionalProperties: false,
+            properties: {
+              url: { type: "string", minLength: 1 },
+              sha256: { type: "string", pattern: "^[0-9a-f]{64}$" },
+              items: { type: "integer", minimum: 0 },
+            },
+          },
+          license: { type: "string", minLength: 1 },
+          licenseFiles: { type: "array", minItems: 1, items: { type: "string", pattern: REL_PATH } },
+        },
+      },
+    },
+    licenses: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["path", "sha256", "bytes", "sourceUrl"],
+        additionalProperties: false,
+        properties: {
+          path: { type: "string", pattern: REL_PATH },
+          sha256: { type: "string", pattern: "^[0-9a-f]{64}$" },
+          bytes: { type: "integer", minimum: 0 },
+          sourceUrl: { type: "string", minLength: 1 },
+        },
+      },
+    },
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["registry", "name", "version", "dir", "type", "sourceUrl", "license", "direct", "slots", "hash", "files"],
+        additionalProperties: false,
+        properties: {
+          registry: { type: "string", pattern: ID },
+          name: { type: "string", minLength: 1 },
+          version: { type: "string", minLength: 1 },
+          dir: { type: "string", pattern: REL_PATH },
+          type: { type: "string", minLength: 1 },
+          sourceUrl: { type: "string", minLength: 1 },
+          license: { type: "string", minLength: 1 },
+          direct: { type: "boolean" },
+          slots: { type: "array", uniqueItems: true, items: { type: "string", pattern: SLOT } },
+          indexed: { type: "boolean", description: "Vendored because the registry index lists it, not because a slot maps it." },
+          requiredBy: { type: "array", uniqueItems: true, items: { type: "string", minLength: 1 } },
+          registryDependencies: { type: "array", items: { type: "string", minLength: 1 } },
+          adaptations: {
+            type: "array", minItems: 1, items: {
+              type: "object", required: ["kind", "reason", "approvedBy", "approvedAt", "upstream"], additionalProperties: false,
+              properties: {
+                kind: { const: "identity" }, reason: { type: "string", pattern: "\\S" },
+                approvedBy: { const: "owner" }, approvedAt: { type: "string", pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+                upstream: {
+                  type: "object", required: ["hash", "files"], additionalProperties: false,
+                  properties: {
+                    hash: { type: "string", pattern: HASH },
+                    files: { type: "array", minItems: 1, items: {
+                      type: "object", required: ["path", "sha256", "bytes", "origin"], additionalProperties: false,
+                      properties: { path: { type: "string", pattern: REL_PATH }, sha256: { type: "string", pattern: "^[0-9a-f]{64}$" }, bytes: { type: "integer", minimum: 0 }, origin: { type: "string", minLength: 1 } },
+                    } },
+                  },
+                },
+              },
+            },
+          },
+          dependencies: { type: "array", items: { type: "string", minLength: 1 } },
+          hash: { type: "string", pattern: HASH },
+          files: {
+            type: "array",
+            minItems: 1,
+            items: {
+              type: "object",
+              required: ["path", "sha256", "bytes", "origin"],
+              additionalProperties: false,
+              properties: {
+                path: { type: "string", pattern: REL_PATH },
+                sha256: { type: "string", pattern: "^[0-9a-f]{64}$" },
+                bytes: { type: "integer", minimum: 0 },
+                origin: { type: "string", minLength: 1 },
+              },
+            },
+          },
+        },
+      },
+    },
+    skipped: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["ref", "reason"],
+        additionalProperties: false,
+        properties: {
+          ref: { type: "string", minLength: 1 },
+          slots: { type: "array", items: { type: "string", pattern: SLOT } },
+          reason: { type: "string", minLength: 1 },
+        },
+      },
+    },
+  },
+};

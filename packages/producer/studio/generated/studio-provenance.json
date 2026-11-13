@@ -1,0 +1,92 @@
+{
+  "frames.studio-shell": {
+    "data-clossys-slot": "frames.studio-shell",
+    "data-clossys-candidate": "studio-shell-v21.json",
+    "data-clossys-hash": "sha256:dbdb2f92cf5fcbeffa47a7a775d8e2dbcba89ca75f5bfa3b9c12889a80c04069"
+  },
+  "sections.studio.page-header": {
+    "data-clossys-slot": "sections.studio.page-header",
+    "data-clossys-candidate": "studio-page-header-v5.json",
+    "data-clossys-hash": "sha256:f4aacf460c8a9c9a973c13a88b38df9e8b07ca050e7b9fe4bb6db599ed04b113"
+  },
+  "sections.module.checks": {
+    "data-clossys-slot": "sections.module.checks",
+    "data-clossys-candidate": "module-checks-v6.json",
+    "data-clossys-hash": "sha256:2627c9d6800742919132939e8b34f7daf4da1f24ee15f9979976acda8c793c3d"
+  },
+  "sections.studio.home": {
+    "data-clossys-slot": "sections.studio.home",
+    "data-clossys-candidate": "studio-home-v10.json",
+    "data-clossys-hash": "sha256:9e4a3d3fb38db3fb98fc169f22b3b611142117f2e4c735c894d0b94afd881af7"
+  },
+  "sections.producer.team-strip": {
+    "data-clossys-slot": "sections.producer.team-strip",
+    "data-clossys-candidate": "producer-team-strip-v3.json",
+    "data-clossys-hash": "sha256:1e1c2a19ab7444e2200fe015c8af6ea8f4f384c0564297ab39dff7f89a14b198"
+  },
+  "sections.producer.pipeline-legend": {
+    "data-clossys-slot": "sections.producer.pipeline-legend",
+    "data-clossys-candidate": "producer-pipeline-legend-v3.json",
+    "data-clossys-hash": "sha256:799312f4ec7c8eec2590a9434ea7ceb4f366f039eb3a5eeeceba2338a0bcd1da"
+  },
+  "sections.producer.pipeline-flow": {
+    "data-clossys-slot": "sections.producer.pipeline-flow",
+    "data-clossys-candidate": "producer-pipeline-flow-v14.json",
+    "data-clossys-hash": "sha256:8a910292e26fb910f3cff0636f293a2e691c00398651046e27ad2eb10170f58a"
+  },
+  "sections.module.outline": {
+    "data-clossys-slot": "sections.module.outline",
+    "data-clossys-candidate": "module-outline-v7.json",
+    "data-clossys-hash": "sha256:169e00b973e8965a17604f63643e804284ce4db0b6ca366d1ff3a651f5be7233"
+  },
+  "sections.studio.page-tabs": {
+    "data-clossys-slot": "sections.studio.page-tabs",
+    "data-clossys-candidate": "studio-page-tabs-v6.json",
+    "data-clossys-hash": "sha256:053dba3a950d20ddc866afa06c490c32dee7d6b648fb837c29cb45da526e221d"
+  },
+  "sections.studio.slot-groups": {
+    "data-clossys-slot": "sections.studio.slot-groups",
+    "data-clossys-candidate": "studio-slot-groups-v13.json",
+    "data-clossys-hash": "sha256:c6ea161d0b6ae17968c49b1cc422bdfe47933b6113b057ab96da99d9a19b6e4d"
+  },
+  "sections.producer.system-empty": {
+    "data-clossys-slot": "sections.producer.system-empty",
+    "data-clossys-candidate": "producer-system-empty-v1.json",
+    "data-clossys-hash": "sha256:158b602a8116c220e2a08d7361e3125d3cb3e493e2c87935a2b8d0ce1584e686"
+  },
+  "sections.studio.leaf-header": {
+    "data-clossys-slot": "sections.studio.leaf-header",
+    "data-clossys-candidate": "studio-leaf-header-v8.json",
+    "data-clossys-hash": "sha256:b7969ddcc06b6ef17e5aa1d9525075c0fd8e1da5d0fb7bb7de46295da64996cf"
+  },
+  "sections.studio.specimen": {
+    "data-clossys-slot": "sections.studio.specimen",
+    "data-clossys-candidate": "studio-specimen-v14.json",
+    "data-clossys-hash": "sha256:2d6f1164ceb49e67fe84302451d5e65ee39594fd170ea3a13f81966dd73e0574"
+  },
+  "sections.studio.options": {
+    "data-clossys-slot": "sections.studio.options",
+    "data-clossys-candidate": "studio-options-v9.json",
+    "data-clossys-hash": "sha256:c6c83425ce71d7a7adfd438a9b0fcf8a0910707a451cd845c2af51a1792b2374"
+  },
+  "sections.studio.checks": {
+    "data-clossys-slot": "sections.studio.checks",
+    "data-clossys-candidate": "studio-checks-v6.json",
+    "data-clossys-hash": "sha256:692ed6bff4456257de03048b5e63ca03b0f85355bff400ce16a1be0386db4cd6"
+  },
+  "sections.studio.contract": {
+    "data-clossys-slot": "sections.studio.contract",
+    "data-clossys-candidate": "studio-contract-v6.json",
+    "data-clossys-hash": "sha256:fd6365d9bd3549bba1d01705cc838d6c07cee3ee0b94dd36253f7e965c663bde"
+  },
+  "sections.studio.history": {
+    "data-clossys-slot": "sections.studio.history",
+    "data-clossys-candidate": "studio-history-v6.json",
+    "data-clossys-hash": "sha256:36ad3a47d865f769d24417a9ee6658cc2abd45a20f5ec67468033e7392667852"
+  },
+  "sections.studio.references": {
+    "data-clossys-slot": "sections.studio.references",
+    "data-clossys-candidate": "studio-references-v6.json",
+    "data-clossys-hash": "sha256:09b9178c559d983a8c57c59f8975cd1b63456f8c1745f313705a4cc68d8b177f"
+  }
+}

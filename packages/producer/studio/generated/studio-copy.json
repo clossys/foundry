@@ -1,0 +1,4091 @@
+{
+  "id": "studio-copy",
+  "locale": "en",
+  "revision": "567164f4c6d63fb28da3a8e8b6598d403ba2288795075dc3145a6238d759b534",
+  "source": {
+    "kind": "consumer",
+    "reference": "clossys/agents/writer"
+  },
+  "entries": [
+    {
+      "id": "studio.action.request-change",
+      "text": "Request change",
+      "context": "studio.action.request-change",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.copy-prompt",
+      "text": "Copy prompt",
+      "context": "studio.action.copy-prompt",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.open-detail",
+      "text": "Open detail",
+      "context": "studio.action.open-detail",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.compare",
+      "text": "Compare options",
+      "context": "studio.action.compare",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.toggle-theme",
+      "text": "Toggle theme",
+      "context": "studio.action.toggle-theme",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.copy-link",
+      "text": "Copy link",
+      "context": "studio.action.copy-link",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.home",
+      "text": "Home",
+      "context": "studio.nav.home",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.director",
+      "text": "Director",
+      "context": "studio.nav.director",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.designer",
+      "text": "Designer",
+      "context": "studio.nav.designer",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.writer",
+      "text": "Writer",
+      "context": "studio.nav.writer",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.publisher",
+      "text": "Publisher",
+      "context": "studio.nav.publisher",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.back-to-agent",
+      "text": "Back to {agent}",
+      "context": "studio.nav.back-to-agent",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-title",
+      "text": "Contract",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-description",
+      "text": "What this leaf promises and reads.",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-facts-label",
+      "text": "Contract facts",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-inputs-label",
+      "text": "Contract inputs",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-fact",
+      "text": "Fact",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-value",
+      "text": "Value",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-input",
+      "text": "Input",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-type",
+      "text": "Type",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-required",
+      "text": "Required",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-yes",
+      "text": "Yes",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-no",
+      "text": "No",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract-none",
+      "text": "None",
+      "context": "lib/contract-copy.ts, sections/studio-contract/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-title",
+      "text": "Uses and used by",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-uses",
+      "text": "Uses",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-used-by",
+      "text": "Used by",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-lineage",
+      "text": "Lineage",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-version",
+      "text": "Version",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-source",
+      "text": "Source",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-none",
+      "text": "None",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-title",
+      "text": "Checks",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-check",
+      "text": "Check",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-result",
+      "text": "Result",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-detail",
+      "text": "Detail",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-root",
+      "text": "Root",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-path",
+      "text": "Path",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-page",
+      "text": "Page",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-frame",
+      "text": "Frame",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-sections",
+      "text": "Sections",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-status",
+      "text": "Status",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-leaf",
+      "text": "Leaf",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-none",
+      "text": "None",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-one-route",
+      "text": "1 route",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-many-routes",
+      "text": "{count} routes",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications-routes-label",
+      "text": "{title} routes",
+      "context": "lib/publications-copy.ts, sections/studio-publications/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-title",
+      "text": "Options (pending approval)",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-key",
+      "text": "Key",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-text",
+      "text": "Text",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-pinned-title",
+      "text": "{name} v{version}, pinned",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-option-title",
+      "text": "{name} v{version}, option",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-strings-label",
+      "text": "{name} v{version} strings",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.finding",
+      "text": "Finding",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.agents",
+      "text": "Agents",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.library",
+      "text": "Library",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publications",
+      "text": "Publications",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.overview",
+      "text": "Overview",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen",
+      "text": "Specimen",
+      "context": "components/StudioPage.tsx, lib/designer-library.ts, lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options",
+      "text": "Options",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks",
+      "text": "Checks",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.contract",
+      "text": "Contract",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.history",
+      "text": "History",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references",
+      "text": "References",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.home",
+      "text": "Home",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.studio",
+      "text": "Studio",
+      "context": "components/StudioPage.tsx, components/StudioProviders.tsx, app/layout.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.site",
+      "text": "Site",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.frame",
+      "text": "Frame",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.sections",
+      "text": "Sections",
+      "context": "components/StudioPage.tsx, lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.designer",
+      "text": "Designer",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.root",
+      "text": "Root",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.uses",
+      "text": "Uses",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.director",
+      "text": "Director",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.direction",
+      "text": "Direction",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.writer",
+      "text": "Writer",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.strings",
+      "text": "Strings",
+      "context": "lib/agent-library.ts, lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publisher",
+      "text": "Publisher",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.voice",
+      "text": "Voice",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.claims",
+      "text": "Claims",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.names",
+      "text": "Names",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.intro",
+      "text": "Intro",
+      "context": "lib/agent-options.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.kind",
+      "text": "Kind",
+      "context": "lib/designer-library.ts, lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.composes",
+      "text": "Composes",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.desktop",
+      "text": "Desktop",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.tablet",
+      "text": "Tablet",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.mobile",
+      "text": "Mobile",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate",
+      "text": "Candidate",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.inputs",
+      "text": "Inputs",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.strategy-the-direction-reasoning-and-signals-the",
+      "text": "Strategy: the direction, reasoning and signals the business runs on.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.design-decisions-tokens-sections-and-frames-the",
+      "text": "Design decisions: tokens, sections and frames the product is built from.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.copy-the-voice-and-every-string-the",
+      "text": "Copy: the voice and every string the product shows.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pages-what-gets-published-where-and-its",
+      "text": "Pages: what gets published, where, and its preview state.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nothing-needs-attention-on-this-page",
+      "text": "Nothing needs attention on this page.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.failing-checks",
+      "text": "Failing checks",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-check-reports-a-finding",
+      "text": "No check reports a finding.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pending-options",
+      "text": "Pending options",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-option-waits-for-approval",
+      "text": "No option waits for approval.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.open-needs",
+      "text": "Open needs",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nothing-is-waiting-on-you",
+      "text": "Nothing is waiting on you.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.your-agents-and-what-they-have-written",
+      "text": "Your agents and what they have written for this workspace.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-publication-could-not-load",
+      "text": "The publication could not load.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-leaf-could-not-load",
+      "text": "This leaf could not load.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-leaf-could-not-load-61e548",
+      "text": "This leaf could not load",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-leaf-is-gone",
+      "text": "This leaf is gone",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-page-as-its-last-install-emitted",
+      "text": "The page as its last install emitted it, framed at each viewport.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nothing-matches",
+      "text": "Nothing matches.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.on-this-page",
+      "text": "On this page",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.recorded-versions",
+      "text": "Recorded versions",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-page-has-no-frame",
+      "text": "This page has no frame",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-page-cannot-load",
+      "text": "This page cannot load",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-is-unavailable",
+      "text": "Producer is unavailable.",
+      "context": "components/StudioProviders.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-library-could-not-load",
+      "text": "The library could not load.",
+      "context": "components/StudioRouteMap.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.copy-cells-and-their-keys-open-one",
+      "text": "Copy cells and their keys. Open one for its strings, bindings and history.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page-records-open-one-for-the-sections",
+      "text": "Page records. Open one for the sections it assembles and the copy it binds.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-agent-library-response-is-invalid",
+      "text": "The agent library response is invalid.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-agent-leaf-response-is-invalid",
+      "text": "The agent leaf response is invalid.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-returned-an-error",
+      "text": "Producer returned an error.",
+      "context": "lib/agent-library.ts, lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.rendered-page",
+      "text": "Rendered page",
+      "context": "lib/agent-library.ts, lib/gallery-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.publish-this-page-to-preview-it",
+      "text": "Publish this page to preview it.",
+      "context": "lib/agent-library.ts, lib/gallery-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.grouped-by-record-kind-this-agent-has",
+      "text": "Grouped by record kind: this agent has no IA data.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-note-recorded-for-this-version",
+      "text": "No note recorded for this version.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-cell-holds-no-records-yet-so",
+      "text": "This cell holds no records yet, so there is nothing to preview.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-record-holds-no-content-yet",
+      "text": "This record holds no content yet.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-version-changes-no-strings-against-the",
+      "text": "This version changes no strings against the active version.",
+      "context": "lib/agent-options.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.a-cell-in-the-response-is-invalid",
+      "text": "A cell in the response is invalid.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-cell-index-response-is-invalid",
+      "text": "The cell index response is invalid.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-agent-cell-index-is-invalid",
+      "text": "The agent cell index is invalid.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-cell-index-contains-duplicate-ids",
+      "text": "The cell index contains duplicate IDs.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-could-not-read-this-agent-s",
+      "text": "Producer could not read this agent’s cells.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-selected-cell-response-is-invalid",
+      "text": "The selected cell response is invalid.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-could-not-find-the-requested-cell",
+      "text": "Producer could not find the requested cell resource.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-requested-cell-version-is-invalid",
+      "text": "The requested cell version is invalid.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-returned-a-different-cell-version",
+      "text": "Producer returned a different cell version.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-cell-grouping-is-invalid",
+      "text": "The cell grouping is invalid.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.a-cell-group-is-invalid",
+      "text": "A cell group is invalid.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.a-cell-group-has-invalid-members",
+      "text": "A cell group has invalid members.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.a-cell-group-refers-to-an-unavailable",
+      "text": "A cell group refers to an unavailable or repeated cell.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-cell-grouping-does-not-place-every",
+      "text": "The cell grouping does not place every cell.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-cell-tree-contains-a-cycle",
+      "text": "The cell tree contains a cycle.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-cell-tree-refers-to-an-unavailable",
+      "text": "The cell tree refers to an unavailable parent.",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-designer-library-response-is-invalid",
+      "text": "The Designer library response is invalid.",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-designer-leaf-response-is-invalid",
+      "text": "The Designer leaf response is invalid.",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-designer-library-yet",
+      "text": "No Designer library yet",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-found-no-record-store-for-this",
+      "text": "Producer found no record store for this workspace.",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-designer-library-could-not-load",
+      "text": "The Designer library could not load",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-specimen-recorded-for-this-leaf-yet",
+      "text": "No specimen recorded for this leaf yet.",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nothing-to-preview-yet",
+      "text": "Nothing to preview yet",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.designer-library",
+      "text": "Designer library",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.copy-keys",
+      "text": "Copy keys",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.theme-variables",
+      "text": "Theme variables",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.depends-on",
+      "text": "Depends on",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-leaf-has-no-recorded-version-yet",
+      "text": "This leaf has no recorded version yet, so there is nothing to preview.",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-pinned-version-installed-and-bound-the",
+      "text": "The pinned version, installed and bound the way the site renders it.",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.not-a-producer-preview-url",
+      "text": "Not a Producer preview URL.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-returned-an-invalid-publication-response",
+      "text": "Producer returned an invalid publication response.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-returned-an-invalid-publication-state",
+      "text": "Producer returned an invalid publication state.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-returned-an-invalid-publication-descriptor",
+      "text": "Producer returned an invalid publication descriptor.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-returned-an-invalid-published-page",
+      "text": "Producer returned an invalid published page.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-returned-invalid-publication-metadata",
+      "text": "Producer returned invalid publication metadata.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-returned-invalid-publication-status",
+      "text": "Producer returned invalid publication status.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-emitted-content-map-has-invalid-identities",
+      "text": "The emitted content map has invalid identities.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-emitted-content-map-has-an-invalid",
+      "text": "The emitted content map has an invalid hierarchy.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.from-the-route-pack-origin",
+      "text": "From the route pack origin.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-slot-census-could-not-load",
+      "text": "The slot census could not load.",
+      "context": "lib/slot-census.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-slot-has-no-candidate-yet",
+      "text": "This slot has no candidate yet.",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.recorded-candidates-beside-the-pin",
+      "text": "Recorded candidates beside the pin.",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-pin-candidates-await-approval",
+      "text": "No pin. Candidates await approval.",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-pin-87eb19",
+      "text": "No pin.",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.recorded-source",
+      "text": "Recorded source",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-source-recorded",
+      "text": "No source recorded",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slot-detail-response-is-invalid",
+      "text": "Slot detail response is invalid.",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-configuration-unavailable",
+      "text": "Producer configuration unavailable",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.studio-could-not-read-the-producer-configuration",
+      "text": "Studio could not read the Producer configuration.",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.designer-selection-unavailable",
+      "text": "Designer selection unavailable",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-designer-selection-is-not-compiled",
+      "text": "The Designer selection is not compiled.",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.designer-selection-not-qualified",
+      "text": "Designer selection not qualified",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.consumer-theme-not-compiled",
+      "text": "Consumer theme not compiled",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-is-using-the-foundry-theme",
+      "text": "Producer is using the Foundry theme.",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-could-not-compile-these-cells",
+      "text": "Producer could not compile these cells.",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.browse-your-agent-cells",
+      "text": "Browse your agent cells.",
+      "context": "app/layout.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.open",
+      "text": "Open {value0}",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-longer-records",
+      "text": "{value0} no longer records {value1}.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.explorer",
+      "text": "{value0} explorer",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.search",
+      "text": "Search {value0}",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.outline",
+      "text": "{value0} outline",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.versions",
+      "text": "{value0} versions",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nothing-is-pinned-for",
+      "text": "Nothing is pinned for {value0}.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.studio-has-no-loader-named",
+      "text": "Studio has no loader named {value0}.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-could-not-load-its-configuration",
+      "text": "Producer could not load its configuration ({value0}).",
+      "context": "components/StudioProviders.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.branded-title",
+      "text": "{value0} Studio",
+      "context": "components/StudioProviders.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.studio-has-no-library-for",
+      "text": "Studio has no library for {value0}.",
+      "context": "components/StudioRouteMap.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-could-not-load-this-agent-library",
+      "text": "Producer could not load this agent library ({value0}).",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-records-yet",
+      "text": "No {value0} records yet",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-found-no-cells-in-this-workspace",
+      "text": "Producer found no {value0} cells in this workspace.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.agent-library-load-failed",
+      "text": "The {value0} library could not load",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.agent-library-title",
+      "text": "{value0} library",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.from-the-record-store",
+      "text": "{value0} from the record store. {value1}",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.active-v",
+      "text": "Active v{value0}",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.option-v",
+      "text": "Option v{value0}",
+      "context": "lib/agent-library.ts, lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.revises-v",
+      "text": "revises v{value0}",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.record",
+      "text": "{value0} record, {value1}",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-could-not-load-cells",
+      "text": "Producer could not load cells ({value0}).",
+      "context": "lib/cells-client.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-could-not-load-the-designer-library",
+      "text": "Producer could not load the Designer library ({value0}).",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.from-v",
+      "text": "from v{value0}",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pinned-v",
+      "text": "Pinned v{value0}",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-could-not-load-the-publication",
+      "text": "Producer could not load the publication ({value0}).",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pinned-candidate",
+      "text": "Pinned candidate: {value0}",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slot-detail-could-not-load",
+      "text": "Slot detail could not load ({value0}).",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.designer-selection-detail",
+      "text": "Designer selection not qualified: {value0}",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.newer-options-description",
+      "text": "{count, plural, one {# newer version is} other {# newer versions are}} not {noun, select, pinned {pinned} other {approved}}. The site keeps the {noun} version until one is approved.",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.unpinned-options-description",
+      "text": "Nothing is {noun} yet. {count, plural, one {# recorded version waits} other {# recorded versions wait}} for approval.",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.selection-fallback-detail",
+      "text": "{reason}. Studio renders with the stock component layer until the selection qualifies.",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.agent-compile-failed",
+      "text": "{agent} cells did not compile",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.leaf-count",
+      "text": "{count, plural, one {# leaf} other {# leaves}}",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.leaf-unit",
+      "text": "leaf",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.leaves-unit",
+      "text": "leaves",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page-attention-count",
+      "text": "{count, plural, one {# item needs attention on this page.} other {# items need attention on this page.}}",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.from-the-record-store-open-a-leaf",
+      "text": "{value0} from the record store. Open a leaf for its contract, lineage and versions.",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.first-recorded",
+      "text": "first recorded",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.local-preview",
+      "text": "local preview",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.clossys-com-is-set-at-release-promotion",
+      "text": "clossys.com is set at release promotion.",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.the-open-request",
+      "text": "the open request",
+      "context": "lib/studio-text.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-count",
+      "text": "{count, plural, one {# option} other {# options}}",
+      "context": "lib/gallery-layout.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slots-pinned",
+      "text": "{pinned} of {total} slots pinned",
+      "context": "lib/gallery-layout.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-label",
+      "text": "Sample tabs",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-overview",
+      "text": "Overview",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-activity",
+      "text": "Activity",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-settings",
+      "text": "Settings",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-overview-panel",
+      "text": "A summary of the project at a glance.",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-activity-panel",
+      "text": "Recent changes, newest first.",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-settings-panel",
+      "text": "Preferences for this project.",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.card-title",
+      "text": "Launch checklist",
+      "context": "agents/designer/components.card",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.card-description",
+      "text": "Four of six steps complete",
+      "context": "agents/designer/components.card",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.card-content",
+      "text": "Review the remaining steps before the site goes live.",
+      "context": "agents/designer/components.card",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.card-footer",
+      "text": "Updated today",
+      "context": "agents/designer/components.card",
+      "status": "draft"
+    },
+    {
+      "id": "studio.copied",
+      "text": "Copied",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.copy-prompt",
+      "text": "Copy prompt",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.find-a-page",
+      "text": "Find a page",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.search-studio-pages-and-commands",
+      "text": "Search Studio pages and this page's commands",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.search-pages-and-commands",
+      "text": "Search pages and commands",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pages",
+      "text": "Pages",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-matching-pages",
+      "text": "No matching pages",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-page",
+      "text": "This page",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.resize-chat",
+      "text": "Resize chat",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.toggle-sidebar",
+      "text": "Toggle Sidebar",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.toggle-theme",
+      "text": "Toggle theme",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.toggle-chat",
+      "text": "Toggle chat",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.chat",
+      "text": "Chat",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-conversation-yet",
+      "text": "No conversation yet",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.chat-empty-description",
+      "text": "Chat with {agents} will open here. Agents work through the CLI for now.",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.agent-list",
+      "text": "{head} and {last}",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.sidebar",
+      "text": "Sidebar",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.sidebar-sheet-description",
+      "text": "Displays the mobile sidebar.",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.chat-sheet-description",
+      "text": "Ask an agent about the open page.",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading-page",
+      "text": "Loading page",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.local-workspace",
+      "text": "Local workspace",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-on-this-machine",
+      "text": "Producer on this machine",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.local-workspace-initials",
+      "text": "LW",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.workspace-name",
+      "text": "Clossys Studio",
+      "context": "lib/shell-copy.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.history-count",
+      "text": "{count, plural, one {# recorded version} other {# recorded versions}}, newest first.",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.date",
+      "text": "Date",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.note",
+      "text": "Note",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.hash",
+      "text": "Hash",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.marks",
+      "text": "Marks",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.census-loading",
+      "text": "Loading",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slot-count",
+      "text": "{count} slots",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slot-census-loading",
+      "text": "{agent} slot census loading",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slot-census-unavailable",
+      "text": "{agent} slot census unavailable",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.slots-with-candidates",
+      "text": "{count} slots with candidates",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pinned-slots",
+      "text": "{count} pinned slots",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-frame-title",
+      "text": "{name} at {viewport} px",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-frame-title-light",
+      "text": "{name} at {viewport} px, light",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-frame-title-dark",
+      "text": "{name} at {viewport} px, dark",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.viewport-heading",
+      "text": "{viewport} px",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-table-label",
+      "text": "{name} specimen",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.key",
+      "text": "Key",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.content",
+      "text": "Content",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.version-label",
+      "text": "v{version}",
+      "context": "lib/slot-detail.ts, components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.severity-error",
+      "text": "Error",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.severity-warning",
+      "text": "Warning",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.severity-info",
+      "text": "Info",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.outline-label",
+      "text": "Outline",
+      "context": "agents/publisher/page.*",
+      "status": "draft"
+    },
+    {
+      "id": "studio.versions-label",
+      "text": "Versions",
+      "context": "agents/publisher/page.*",
+      "status": "draft"
+    },
+    {
+      "id": "studio.request-change",
+      "text": "Request change",
+      "context": "agents/publisher/page.*",
+      "status": "draft"
+    },
+    {
+      "id": "studio.request-change-prompt",
+      "text": "Ask {agent} to change {title} ({url}).\n\nWhat should change:",
+      "context": "agents/publisher/page.*",
+      "status": "draft"
+    },
+    {
+      "id": "studio.needs",
+      "text": "Needs",
+      "context": "agents/publisher/page.home",
+      "status": "draft"
+    },
+    {
+      "id": "studio.not-needed",
+      "text": "Not needed: {reason}",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-candidate-recorded",
+      "text": "Candidate recorded",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-candidate-count",
+      "text": "{count} candidates",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-pin-names-candidate",
+      "text": "Pin names a recorded candidate",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-pin-matches",
+      "text": "Pin matches candidate bytes",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-pin-hash-mismatch",
+      "text": "Pin hash does not match candidate bytes",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-candidate-format-valid",
+      "text": "Candidate format valid",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-slot-placed",
+      "text": "Slot record matches its IA position",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-slot-misplaced",
+      "text": "Slot record does not match its IA position",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-inputs-ready",
+      "text": "Inputs ready",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-inputs-blocked",
+      "text": "Inputs blocked",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-reference-resolves",
+      "text": "Slot reference resolves",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-reference-unknown",
+      "text": "Unknown slot reference",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.principles",
+      "text": "Principles",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.rule",
+      "text": "Rule",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.do",
+      "text": "Do",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.do-preferred-words",
+      "text": "Do: preferred words",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.dont-avoided-words",
+      "text": "Don't: avoided words",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.word",
+      "text": "Word",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.forms",
+      "text": "Forms",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.why",
+      "text": "Why",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.also-avoid",
+      "text": "Also avoid",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-reason-recorded",
+      "text": "No reason recorded",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.voice-summary",
+      "text": "{principles, plural, one {# principle} other {# principles}}, {preferred, plural, one {# preferred word} other {# preferred words}} and {avoided, plural, one {# avoided word} other {# avoided words}}.",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.avoid-terms",
+      "text": "Avoid: {terms}",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.citation-required-no-source",
+      "text": "Citation required, no source recorded",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-citation-required",
+      "text": "No citation required",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-phrasing-recorded",
+      "text": "No phrasing recorded",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.claim",
+      "text": "Claim",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.phrasing",
+      "text": "Phrasing",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.evidence",
+      "text": "Evidence",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.claims-summary",
+      "text": "{claims, plural, one {# claim} other {# claims}}: {cited} require a citation, {sourced} have a recorded Director source.",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.casing",
+      "text": "Casing: {casing}",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.usage-rule-casing",
+      "text": "{rule} Casing: {casing}",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-usage-rule-recorded",
+      "text": "No usage rule recorded",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.use",
+      "text": "Use",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.name",
+      "text": "Name",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.usage-rule",
+      "text": "Usage rule",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.naming-summary",
+      "text": "{names, plural, one {# name} other {# names}} across {rules, plural, one {# usage rule} other {# usage rules}}.",
+      "context": "../src/server/writer-specimen-kinds.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.title",
+      "text": "Pipeline",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.description",
+      "text": "Every step from brief to published page, the seat that runs it, and what it reads and writes.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.flow-label",
+      "text": "Pipeline steps",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.ia",
+      "text": "Shape the IA",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.evidence",
+      "text": "Record evidence",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.specimen.evidence",
+      "text": "Measure specimen evidence",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.workspace.config",
+      "text": "Configure the workspace",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.seats",
+      "text": "Assign seats",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.rules",
+      "text": "Approve rules",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.selection",
+      "text": "Frozen selection",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.writer.approve",
+      "text": "Approve copy",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.pin.director",
+      "text": "Pin Director cells",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.recite.direct",
+      "text": "Re-cite Director pins",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.pin.designer",
+      "text": "Pin Designer cells",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.pin.writer",
+      "text": "Pin Writer cells",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.recite.design",
+      "text": "Re-cite Designer and Writer pins",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.pin.publisher",
+      "text": "Pin Publisher cells",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.pick.director",
+      "text": "Pick Director options",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.pick.designer",
+      "text": "Pick Designer options",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.pick.writer",
+      "text": "Pick Writer options",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.pick.publisher",
+      "text": "Pick Publisher options",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.director.candidates",
+      "text": "Draft Director candidates",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.designer.candidates",
+      "text": "Draft Designer candidates",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.writer.candidates",
+      "text": "Draft Writer candidates",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.publisher.candidates",
+      "text": "Draft Publisher candidates",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.designer.library",
+      "text": "Version library elements",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.director.check",
+      "text": "Check direction",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.director.store",
+      "text": "Run Director commands",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.designer.brief",
+      "text": "Brief the Designer",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.designer.check",
+      "text": "Check design",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.designer.compile",
+      "text": "Compile design",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.writer.brief",
+      "text": "Brief the Writer",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.writer.check",
+      "text": "Check copy",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.writer.compile",
+      "text": "Compile copy",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.workspace.check",
+      "text": "Check the workspace",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.compile",
+      "text": "Compile decisions",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.options",
+      "text": "List options",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.decisions",
+      "text": "List decisions",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.studio.produce",
+      "text": "Serve Studio",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.publish.install",
+      "text": "Install pages",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.publish.page",
+      "text": "Check pages",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.specimen",
+      "text": "Render specimens",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.migrate",
+      "text": "Migrate records",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.pipeline",
+      "text": "Generate the pipeline graph",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.derive.uses",
+      "text": "Derive uses",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.studio.map",
+      "text": "Map Studio",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.build.receipt",
+      "text": "Write the build receipt",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.studio.compose",
+      "text": "Compose Studio",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.studio.checks",
+      "text": "Check Studio",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.capture",
+      "text": "Capture screenshots",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.director",
+      "text": "Director",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.designer",
+      "text": "Designer",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.writer",
+      "text": "Writer",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.publisher",
+      "text": "Publisher",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.producer",
+      "text": "Producer",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.kind.plumb",
+      "text": "Plumb",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.kind.decide-creative",
+      "text": "Decide: creative",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.kind.decide-judgment",
+      "text": "Decide: judgment",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.field",
+      "text": "Field",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.value",
+      "text": "Value",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.command",
+      "text": "Command",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.inputs",
+      "text": "Inputs",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.outputs",
+      "text": "Outputs",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.seat",
+      "text": "Seat",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.status",
+      "text": "Status",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.none",
+      "text": "None",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.empty-title",
+      "text": "No step selected",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.empty-description",
+      "text": "Select a step in the pipeline to see its command, inputs and outputs.",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.legend.title",
+      "text": "Legend",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.legend.kind",
+      "text": "Kind",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.legend.meaning",
+      "text": "Meaning",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.legend.plumb",
+      "text": "Deterministic code. No agent decides anything.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.legend.decide-creative",
+      "text": "An agent makes a creative choice: a candidate, a pin or copy.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.legend.decide-judgment",
+      "text": "A seat judges: a review, an approval or an IA call.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.empty.title",
+      "text": "No steps yet",
+      "context": "components/StudioPage.tsx, lib/pipeline-flow.ts, lib/studio-seed.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.empty.description",
+      "text": "The pipeline graph has no steps to show.",
+      "context": "components/StudioPage.tsx, lib/pipeline-flow.ts, lib/studio-seed.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.seat.open",
+      "text": "Open seat",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.owner",
+      "text": "Owner",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.code",
+      "text": "Code",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.counts.title",
+      "text": "Steps and edges",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.counts",
+      "text": "{steps, plural, one {# step} other {# steps}} joined by {edges, plural, one {# observed edge} other {# observed edges}}: {passed} passed, {failed} failed, {stale} stale, {never} never run, from {runs, plural, one {# run record} other {# run records}}.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.you",
+      "text": "You",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.checks",
+      "text": "Checks",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.unassigned",
+      "text": "Unassigned",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.brief",
+      "text": "Brief",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.select",
+      "text": "Select",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.make",
+      "text": "Make",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.pin",
+      "text": "Pin",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.assemble",
+      "text": "Assemble",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.check",
+      "text": "Check",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.publish",
+      "text": "Publish",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.round.direct",
+      "text": "Direct",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.round.design",
+      "text": "Design & Write",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.round.publish",
+      "text": "Publish",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.passed",
+      "text": "Passed",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.failed",
+      "text": "Failed",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.stale",
+      "text": "Stale",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.never-run",
+      "text": "Never run",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.not-run",
+      "text": "Not run",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.citation",
+      "text": "Run record",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.checks",
+      "text": "Checks",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.changed",
+      "text": "Changed since the run",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.changed-more",
+      "text": "{count, plural, one {and # more file} other {and # more files}}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.citation",
+      "text": "{store} line {line}, exit {exit}, {end}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.check",
+      "text": "Check {id}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.invocation",
+      "text": "{step} ({mode})",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.legend.untyped",
+      "text": "{count, plural, one {# declared step has} other {# declared steps have}} no command that runs {count, plural, one {it} other {them}} and {count, plural, one {is} other {are}} not drawn.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.holder",
+      "text": "Held by",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.round",
+      "text": "Round",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.stage",
+      "text": "Stage",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.seat.derived",
+      "text": "Derived from the step",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.seat.file",
+      "text": "Named in its seat file",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.label",
+      "text": "Team",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.kind.you",
+      "text": "You",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.kind.ai",
+      "text": "AI",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.kind.code",
+      "text": "Code",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.tier.low",
+      "text": "Low tier",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.tier.mid",
+      "text": "Mid tier",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.tier.high",
+      "text": "High tier",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.tier-open",
+      "text": "Tier open",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.steps",
+      "text": "{count, plural, one {# step} other {# steps}}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.show",
+      "text": "Show {name} on the map",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.you",
+      "text": "Sets the brief, chooses between options and approves what ships.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.director",
+      "text": "Drafts the direction every other agent works from.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.designer",
+      "text": "Makes the visual candidates: themes, components, sections and frames.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.writer",
+      "text": "Writes the copy candidates every page reads.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.publisher",
+      "text": "Assembles pinned parts into pages and serves them.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.checks",
+      "text": "Verifies each output before the next step reads it.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.unassigned",
+      "text": "Steps that no seat holds yet.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.content.description",
+      "text": "How the content system works together: who holds each step, and when.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.build.empty.title",
+      "text": "Build is not set up yet",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.build.empty.description",
+      "text": "This system will show how the product gets built once its team and steps are declared.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.run.empty.title",
+      "text": "Run is not set up yet",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.run.empty.description",
+      "text": "This system will show how the product is operated once its team and steps are declared.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.preview.frame-title",
+      "text": "{page} page preview",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.inputs-count",
+      "text": "Inputs {count}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.outputs-count",
+      "text": "Outputs {count}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.node-description",
+      "text": "Press enter or space to select a node. Press delete to remove it and escape to cancel.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.node-description-keyboard",
+      "text": "Press enter or space to select a node. You can then use the arrow keys to move the node around. Press delete to remove it and escape to cancel.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.node-moved",
+      "text": "Moved selected node {direction}. New position, x: {x}, y: {y}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.edge-description",
+      "text": "Press enter or space to select an edge. You can then press delete to remove it or escape to cancel.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.controls",
+      "text": "Control Panel",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.zoom-in",
+      "text": "Zoom In",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.zoom-out",
+      "text": "Zoom Out",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.fit-view",
+      "text": "Fit View",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.interactive",
+      "text": "Toggle Interactivity",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.minimap",
+      "text": "Mini Map",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.handle",
+      "text": "Handle",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.node-role",
+      "text": "node",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.edge-role",
+      "text": "edge",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.edge-label",
+      "text": "Edge from {source} to {target}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.attribution",
+      "text": "React Flow",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.attribution-label",
+      "text": "React Flow attribution",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.director",
+      "text": "D",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.designer",
+      "text": "D",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.writer",
+      "text": "W",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.publisher",
+      "text": "P",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.producer",
+      "text": "P",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.owner",
+      "text": "O",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.code",
+      "text": "C",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.you",
+      "text": "Y",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.checks",
+      "text": "C",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.unassigned",
+      "text": "U",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-inputs-undeclared",
+      "text": "This slot declares no inputs",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-invalid-pin",
+      "text": "Pin file is not a valid pin",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-missing-candidate",
+      "text": "Pinned candidate file is missing",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-invalid-slot",
+      "text": "Slot record is invalid or out of place",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-name",
+      "text": "File name is not valid: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-invalid",
+      "text": "Candidate does not match its slot contract: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-source",
+      "text": "Source record is missing or invalid: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-status",
+      "text": "Pin state belongs in the pin, not the candidate: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-candidate-identity",
+      "text": "Element identity differs from the candidate name or slot",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.theme-title",
+      "text": "Aa Theme",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.theme-text",
+      "text": "The quick brown fox jumps over the lazy dog. 0123456789",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.glyph",
+      "text": "Aa",
+      "context": "../src/server/installed-specimens.ts, ../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.font-text",
+      "text": "The quick brown fox",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.display",
+      "text": "Display",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-1",
+      "text": "Heading 1",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-2",
+      "text": "Heading 2",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-3",
+      "text": "Heading 3",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-4",
+      "text": "Heading 4",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-5",
+      "text": "Heading 5",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.body",
+      "text": "Body",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.small",
+      "text": "Small",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.pangram",
+      "text": "The quick brown fox jumps over the lazy dog",
+      "context": "../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.pangram-alt",
+      "text": "Sphinx of black quartz, judge my vow",
+      "context": "../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.characters",
+      "text": "0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      "context": "../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.motion",
+      "text": "Motion preview",
+      "context": "../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.play-motion",
+      "text": "Play motion",
+      "context": "studio.specimen.play-motion",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.reduced-motion",
+      "text": "Reduced motion is enabled.",
+      "context": "studio.specimen.reduced-motion",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.show-all-variants",
+      "text": "Show all ({count, number, integer})",
+      "context": "studio.specimen.show-all-variants",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.play",
+      "text": "Play",
+      "context": "studio.specimen-sample.media.play",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.pause",
+      "text": "Pause",
+      "context": "studio.specimen-sample.media.pause",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.mute",
+      "text": "Mute",
+      "context": "studio.specimen-sample.media.mute",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.unmute",
+      "text": "Unmute",
+      "context": "studio.specimen-sample.media.unmute",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.seek",
+      "text": "Seek",
+      "context": "studio.specimen-sample.media.seek",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.time",
+      "text": "{current} of {duration}",
+      "context": "studio.specimen-sample.media.time",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.captions-on",
+      "text": "Turn on captions",
+      "context": "studio.specimen-sample.media.captions-on",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.media.captions-off",
+      "text": "Turn off captions",
+      "context": "studio.specimen-sample.media.captions-off",
+      "status": "draft"
+    },
+    {
+      "id": "studio.compiled",
+      "text": "Compiled",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.unavailable",
+      "text": "Unavailable",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.emitted",
+      "text": "Emitted",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading",
+      "text": "Loading…",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.active",
+      "text": "Active",
+      "context": "lib/agent-library.ts, lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pinned",
+      "text": "Pinned",
+      "context": "lib/designer-library.ts, lib/leaf-status.ts, lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.confirm",
+      "text": "Pinned, to confirm",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.released",
+      "text": "Released",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.verified",
+      "text": "Verified",
+      "context": "lib/designer-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.missing",
+      "text": "Missing",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.failing",
+      "text": "Failing",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.stale",
+      "text": "Stale",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.unreleased",
+      "text": "Unreleased",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.draft",
+      "text": "Draft",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.retired",
+      "text": "Retired",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.included",
+      "text": "Included",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.excluded",
+      "text": "Excluded",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.unpinned",
+      "text": "Unpinned",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.from-records",
+      "text": "From records",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.not-emitted",
+      "text": "Not emitted",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-candidate",
+      "text": "No candidate",
+      "context": "lib/agent-library.ts, lib/designer-library.ts, lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.no-pin",
+      "text": "No pin",
+      "context": "lib/agent-library.ts, lib/designer-library.ts, lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading-preview",
+      "text": "Loading preview",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.preview-unavailable",
+      "text": "Preview unavailable",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pending-approval",
+      "text": "Pending approval",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.not-provided",
+      "text": "Not provided",
+      "context": "lib/publisher-preview.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pin-unavailable",
+      "text": "Pin unavailable",
+      "context": "lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-pass",
+      "text": "Pass",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-finding",
+      "text": "Finding",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-added",
+      "text": "Added",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-changed",
+      "text": "Changed",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-removed",
+      "text": "Removed",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.options-same",
+      "text": "Same",
+      "context": "lib/options-copy.ts, sections/studio-options/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.awaiting-owner-input",
+      "text": "awaiting owner input",
+      "context": "lib/studio-text.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.installed-by-publisher",
+      "text": "Installed by Publisher",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.not-filled-yet",
+      "text": "Not filled yet",
+      "context": "lib/gallery-layout.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-all-pass",
+      "text": "All {count} checks pass.",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.checks-findings",
+      "text": "{failing} of {count} checks report a finding.",
+      "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.count.candidates",
+      "text": "{count, plural, one {# candidate} other {# candidates}}",
+      "context": "studio.count.candidates",
+      "status": "draft"
+    },
+    {
+      "id": "studio.count.slots-filled",
+      "text": "{filled} of {total} slots filled",
+      "context": "studio.count.slots-filled",
+      "status": "draft"
+    },
+    {
+      "id": "studio.count.needs",
+      "text": "{count, plural, one {# need} other {# needs}}",
+      "context": "studio.count.needs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.count.findings",
+      "text": "{count, plural, one {# finding} other {# findings}}",
+      "context": "studio.count.findings",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.slot-unreadable",
+      "text": "This slot could not be read. Run clossys check --slots to see why.",
+      "context": "studio.error.slot-unreadable",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.candidate-invalid",
+      "text": "This candidate does not match its slot contract. Ask the owning agent for a new version.",
+      "context": "studio.error.candidate-invalid",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.producer-offline",
+      "text": "Studio cannot reach Producer. Restart clossys produce and reload.",
+      "context": "studio.error.producer-offline",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.request-failed",
+      "text": "Request could not be completed",
+      "context": "src/server/index.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.studio-not-ready",
+      "text": "Studio child is not ready",
+      "context": "src/server/index.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.studio-unavailable",
+      "text": "Studio child is unavailable",
+      "context": "src/server/index.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-read-only",
+      "text": "Publication preview is read-only",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-unavailable",
+      "text": "Publication preview is unavailable",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-page-unavailable",
+      "text": "Publication page is unavailable",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-content-type",
+      "text": "Unsupported preview content type",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-not-rendered",
+      "text": "Publication preview could not be rendered",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-asset-unavailable",
+      "text": "Publication asset is unavailable",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-stylesheet-unavailable",
+      "text": "Publication stylesheet is unavailable",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.warning.unpinned",
+      "text": "This candidate is unpinned. Treat it as a draft, not approved direction.",
+      "context": "studio.warning.unpinned",
+      "status": "draft"
+    },
+    {
+      "id": "studio.warning.need",
+      "text": "This candidate has open needs. They wait for evidence.",
+      "context": "studio.warning.need",
+      "status": "draft"
+    },
+    {
+      "id": "studio.warning.stale",
+      "text": "An upstream slot changed since this candidate was written.",
+      "context": "studio.warning.stale",
+      "status": "draft"
+    },
+    {
+      "id": "studio.confirm.prompt-copied",
+      "text": "Prompt copied. Paste it into your coding agent.",
+      "context": "studio.confirm.prompt-copied",
+      "status": "draft"
+    },
+    {
+      "id": "studio.confirm.link-copied",
+      "text": "Link copied.",
+      "context": "studio.confirm.link-copied",
+      "status": "draft"
+    },
+    {
+      "id": "studio.confirm.theme-changed",
+      "text": "Theme changed for this browser.",
+      "context": "studio.confirm.theme-changed",
+      "status": "draft"
+    },
+    {
+      "id": "studio.empty.no-candidates",
+      "text": "No candidate yet. Ask the owning agent to fill this slot.",
+      "context": "studio.empty.no-candidates",
+      "status": "draft"
+    },
+    {
+      "id": "studio.empty.no-pin",
+      "text": "No pin yet. The owner pins one candidate after review.",
+      "context": "studio.empty.no-pin",
+      "status": "draft"
+    },
+    {
+      "id": "studio.empty.no-uses",
+      "text": "Nothing uses this slot yet.",
+      "context": "studio.empty.no-uses",
+      "status": "draft"
+    },
+    {
+      "id": "studio.empty.no-history",
+      "text": "No earlier versions.",
+      "context": "studio.empty.no-history",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading.slots",
+      "text": "Loading slots",
+      "context": "studio.loading.slots",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading.preview",
+      "text": "Loading preview",
+      "context": "studio.loading.preview",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading.checks",
+      "text": "Running checks",
+      "context": "studio.loading.checks",
+      "status": "draft"
+    },
+    {
+      "id": "studio.tagline.primary",
+      "text": "Pick, never invent.",
+      "context": "studio.tagline.primary",
+      "status": "draft"
+    },
+    {
+      "id": "studio.tagline.secondary",
+      "text": "Every slot shows where it came from.",
+      "context": "studio.tagline.secondary",
+      "status": "draft"
+    },
+    {
+      "id": "studio.legal.license",
+      "text": "Clossys Foundry is open source under the MIT license.",
+      "context": "studio.legal.license",
+      "status": "draft"
+    },
+    {
+      "id": "studio.legal.copyright",
+      "text": "© 2026 Clossys",
+      "context": "studio.legal.copyright",
+      "status": "draft"
+    },
+    {
+      "id": "studio.alt.brandmark",
+      "text": "Clossys Studio brandmark",
+      "context": "studio.alt.brandmark",
+      "status": "draft"
+    },
+    {
+      "id": "studio.alt.specimen",
+      "text": "Live preview of the active candidate",
+      "context": "studio.alt.specimen",
+      "status": "draft"
+    },
+    {
+      "id": "studio.caption.specimen",
+      "text": "The active candidate, rendered from the workspace.",
+      "context": "studio.caption.specimen",
+      "status": "draft"
+    },
+    {
+      "id": "studio.transcript.walkthrough",
+      "text": "Clossys Studio in 60 seconds. You start with a brief. Director turns it into direction: brand, voice, audience and proposition, each as a slot. Designer picks visuals from trusted references, and Writer writes copy that cites the brief. Publisher assembles each page from a frame and sections. Then the page is published. In Studio, every slot shows its candidates, its pin and where it came from.",
+      "context": "studio.transcript.walkthrough",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.home",
+      "text": "Clossys Studio",
+      "context": "studio.title.home",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.director",
+      "text": "Director · Clossys Studio",
+      "context": "studio.title.director",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.designer",
+      "text": "Designer · Clossys Studio",
+      "context": "studio.title.designer",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.writer",
+      "text": "Writer · Clossys Studio",
+      "context": "studio.title.writer",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.publisher",
+      "text": "Publisher · Clossys Studio",
+      "context": "studio.title.publisher",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.slot",
+      "text": "{slot} · {agent} · Clossys Studio",
+      "context": "studio.title.slot",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.home",
+      "text": "Home",
+      "context": "studio.page.home",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-context",
+      "text": "Context",
+      "context": "studio.page.director-context",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-aspiration",
+      "text": "Aspiration",
+      "context": "studio.page.director-aspiration",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-focus",
+      "text": "Focus",
+      "context": "studio.page.director-focus",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-advantage",
+      "text": "Advantage",
+      "context": "studio.page.director-advantage",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-identity",
+      "text": "Identity",
+      "context": "studio.page.director-identity",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-capability",
+      "text": "Capability",
+      "context": "studio.page.director-capability",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-execution",
+      "text": "Execution",
+      "context": "studio.page.director-execution",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-themes",
+      "text": "Themes",
+      "context": "studio.page.designer-themes",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-assets",
+      "text": "Assets",
+      "context": "studio.page.designer-assets",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-components",
+      "text": "Components",
+      "context": "studio.page.designer-components",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-sections",
+      "text": "Sections",
+      "context": "studio.page.designer-sections",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-frames",
+      "text": "Frames",
+      "context": "studio.page.designer-frames",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-lexicon",
+      "text": "Lexicon",
+      "context": "studio.page.writer-lexicon",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-strings",
+      "text": "Strings",
+      "context": "studio.page.writer-strings",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-patterns",
+      "text": "Patterns",
+      "context": "studio.page.writer-patterns",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-passages",
+      "text": "Passages",
+      "context": "studio.page.writer-passages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-narratives",
+      "text": "Narratives",
+      "context": "studio.page.writer-narratives",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.publisher-studio",
+      "text": "Studio",
+      "context": "studio.page.publisher-studio",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.producer-pipeline",
+      "text": "Overview",
+      "context": "studio.page.producer-pipeline",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.build-overview",
+      "text": "Overview",
+      "context": "studio.page.build-overview",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.run-overview",
+      "text": "Overview",
+      "context": "studio.page.run-overview",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.studio",
+      "text": "Studio",
+      "context": "studio.nav.studio",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.studio.pages",
+      "text": "Pages",
+      "context": "studio.nav.studio.pages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.content",
+      "text": "Content",
+      "context": "studio.nav.content",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.content.pages",
+      "text": "Pages",
+      "context": "studio.nav.content.pages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.build",
+      "text": "Build",
+      "context": "studio.nav.build",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.run",
+      "text": "Run",
+      "context": "studio.nav.run",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-context",
+      "text": "Context · Director · Clossys Studio",
+      "context": "studio.meta-title.director-context",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-aspiration",
+      "text": "Aspiration · Director · Clossys Studio",
+      "context": "studio.meta-title.director-aspiration",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-focus",
+      "text": "Focus · Director · Clossys Studio",
+      "context": "studio.meta-title.director-focus",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-advantage",
+      "text": "Advantage · Director · Clossys Studio",
+      "context": "studio.meta-title.director-advantage",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-identity",
+      "text": "Identity · Director · Clossys Studio",
+      "context": "studio.meta-title.director-identity",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-capability",
+      "text": "Capability · Director · Clossys Studio",
+      "context": "studio.meta-title.director-capability",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.director-execution",
+      "text": "Execution · Director · Clossys Studio",
+      "context": "studio.meta-title.director-execution",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-themes",
+      "text": "Themes · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-themes",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-assets",
+      "text": "Assets · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-assets",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-components",
+      "text": "Components · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-components",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-sections",
+      "text": "Sections · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-sections",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.designer-frames",
+      "text": "Frames · Designer · Clossys Studio",
+      "context": "studio.meta-title.designer-frames",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-lexicon",
+      "text": "Lexicon · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-lexicon",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-strings",
+      "text": "Strings · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-strings",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-patterns",
+      "text": "Patterns · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-patterns",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-passages",
+      "text": "Passages · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-passages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.writer-narratives",
+      "text": "Narratives · Writer · Clossys Studio",
+      "context": "studio.meta-title.writer-narratives",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.publisher-studio",
+      "text": "Studio · Publisher · Clossys Studio",
+      "context": "studio.meta-title.publisher-studio",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.producer-pipeline",
+      "text": "Content overview · Clossys Studio",
+      "context": "studio.meta-title.producer-pipeline",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.build-overview",
+      "text": "Build overview · Clossys Studio",
+      "context": "studio.meta-title.build-overview",
+      "status": "draft"
+    },
+    {
+      "id": "studio.meta-title.run-overview",
+      "text": "Run overview · Clossys Studio",
+      "context": "studio.meta-title.run-overview",
+      "status": "draft"
+    },
+    {
+      "id": "studio.every-publication-with-the-root-its-config",
+      "text": "Every publication with the root its config names and every route after it: the page that renders each path, its frame and sections, and the leaf that records it.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.strategy-records-grouped-by-the-strategy-catalog",
+      "text": "Strategy records, grouped by the strategy catalog. Open one for its direction, checks and lineage.",
+      "context": "lib/agent-library.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.this-leaf-is-not-pinned-yet-the",
+      "text": "This leaf is not pinned yet. The preview shows the newest option, installed and bound the way the site renders it.",
+      "context": "lib/leaf-status.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.producer-supplied-no-designer-selection-studio-renders",
+      "text": "Producer supplied no Designer selection. Studio renders with the stock component layer.",
+      "context": "lib/studio-report.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.references-description",
+      "text": "Links to the other agents' leaves, in both directions, and where each version came from.",
+      "context": "lib/references-copy.ts, sections/studio-references/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-context",
+      "text": "The market, customers, competitors and company the strategy starts from.",
+      "context": "publisher:page.director-context",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-aspiration",
+      "text": "What the business sets out to become: its purpose, culture and goals.",
+      "context": "publisher:page.director-aspiration",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-focus",
+      "text": "Where the business plays: its category, segments, offers, reach and customer lifecycle.",
+      "context": "publisher:page.director-focus",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-advantage",
+      "text": "Why customers choose this business: its proposition, what defends it and the model behind it.",
+      "context": "publisher:page.director-advantage",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-identity",
+      "text": "Who the business is: its brand, names, and verbal and visual identity.",
+      "context": "publisher:page.director-identity",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-capability",
+      "text": "What the business needs to deliver: competencies, sourcing, operations, team and resources.",
+      "context": "publisher:page.director-capability",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-execution",
+      "text": "How the strategy runs: priorities, roadmap, measures and risks.",
+      "context": "publisher:page.director-execution",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-themes",
+      "text": "The tokens every surface reads: colors, shape, typography, space, depth and motion.",
+      "context": "publisher:page.designer-themes",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-assets",
+      "text": "The logo, app identity, icons and media the product shows.",
+      "context": "publisher:page.designer-assets",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-components",
+      "text": "The building blocks sections and frames are composed from: actions, inputs, display, feedback, navigation and containment.",
+      "context": "publisher:page.designer-components",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-sections",
+      "text": "The page sections Publisher places, each composed from pinned components.",
+      "context": "publisher:page.designer-sections",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-frames",
+      "text": "The shells pages sit in: page shells, regions and overlays.",
+      "context": "publisher:page.designer-frames",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-lexicon",
+      "text": "The voice and the words: tone, terminology, claims and formats.",
+      "context": "publisher:page.writer-lexicon",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-strings",
+      "text": "Every short string the product shows: interface, feedback, identity, media text and metadata.",
+      "context": "publisher:page.writer-strings",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-patterns",
+      "text": "Reusable copy shapes: headings, actions, messages, forms, lists and attribution.",
+      "context": "publisher:page.writer-patterns",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-passages",
+      "text": "The copy each kind of section carries, written to its structure.",
+      "context": "publisher:page.writer-passages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-narratives",
+      "text": "The stories told end to end: on the web, in documents and in communications.",
+      "context": "publisher:page.writer-narratives",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-publisher-studio",
+      "text": "The pages Studio publishes, each a pinned frame and its sections, and the publication they make.",
+      "context": "publisher:page.publisher-studio",
+      "status": "draft"
+    },
+    {
+      "id": "studio.share.slot",
+      "text": "See where this {agent} slot came from in Clossys Studio.",
+      "context": "studio.share.slot",
+      "status": "draft"
+    },
+    {
+      "id": "studio.email.subject.fill-ready",
+      "text": "Your workspace is filled and ready to review",
+      "context": "studio.email.subject.fill-ready",
+      "status": "draft"
+    },
+    {
+      "id": "studio.email.preheader.fill-ready",
+      "text": "Every slot now holds a candidate for your review.",
+      "context": "studio.email.preheader.fill-ready",
+      "status": "draft"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "synthetic#canonical-library",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "strings",
+      "label": "Strings",
+      "children": [
+        {
+          "id": "sample",
+          "label": "Sample",
+          "slots": [
+            "strings.sample"
+          ]
+        }
+      ]
+    }
+  ]
+}

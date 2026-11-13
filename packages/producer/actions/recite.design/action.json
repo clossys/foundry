@@ -1,0 +1,56 @@
+{
+  "schema": "clossys.action/1",
+  "id": "recite.design",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "design.pin",
+  "summary": "After Designer and Writer pins: re-cite in place every record whose cited content hashes the same; a changed meaning opens that slot's candidates.",
+  "run": "clossys migrate recite --cascade",
+  "inputs": [
+    {
+      "glob": "clossys/agents/designer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/writer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/pin.json",
+      "schema": "pin"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/designer/*/pin.json#recited",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/writer/*/pin.json#recited",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/pin.json#recited",
+      "schema": "pin"
+    }
+  ],
+  "pass": {
+    "command": "clossys migrate recite --cascade --check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": []
+}

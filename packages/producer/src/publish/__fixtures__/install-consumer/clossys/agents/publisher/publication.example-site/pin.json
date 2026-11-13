@@ -1,0 +1,7 @@
+{
+  "candidate": "publication-v2.json",
+  "sha256": "cdfaa702006d8d0641bc78f768b7bd6b0e596013f0b8b91e3acf864d9dcc7eb3",
+  "decidedBy": "planner:COPY-SLOT-CONTRACT",
+  "basis": "planner",
+  "at": "2026-11-05T18:27:00Z"
+}

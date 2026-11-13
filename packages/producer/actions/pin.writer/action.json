@@ -1,0 +1,77 @@
+{
+  "schema": "clossys.action/1",
+  "id": "pin.writer",
+  "agent": "owner",
+  "kind": "decide:judgment",
+  "stage": "design.pin",
+  "summary": "Pin one candidate per Writer L3 slot, or mark the slot not needed.",
+  "run": "clossys pin writer/<slot> <candidate-id>",
+  "inputs": [
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    },
+    {
+      "glob": "clossys/agents/writer/*/slot.json",
+      "schema": "slot"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/writer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/writer/*/slot.json#notNeeded",
+      "schema": "slot"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:slot-pins -- npm run check:slot-pins",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "decisions",
+    "slot-state",
+    "slot-pins",
+    "pin-propagation",
+    "every-candidate-previewable"
+  ],
+  "uses": [
+    "skill/SKILL.md"
+  ],
+  "decider": "owner",
+  "packet": {
+    "inputs": [
+      "clossys/agents/writer/*/candidates/*",
+      "clossys/agents/writer/*/slot.json"
+    ],
+    "write": [
+      {
+        "glob": "clossys/agents/writer/*/pin.json",
+        "schema": "pin"
+      },
+      {
+        "glob": "clossys/agents/writer/*/slot.json#notNeeded",
+        "schema": "slot"
+      }
+    ],
+    "checks": [
+      "slot-pins",
+      "decisions"
+    ]
+  },
+  "skill": "skill.md",
+  "open": "slots-undecided:writer"
+}

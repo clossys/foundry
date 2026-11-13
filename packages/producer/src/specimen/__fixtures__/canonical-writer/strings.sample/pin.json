@@ -1,0 +1,7 @@
+{
+  "candidate": "sample-v1.md",
+  "sha256": "22ee89c1df78a9c2fcfc6b2612d602e909299b9d74c7d3242407be205d70db44",
+  "decidedBy": "migration:SLOT-MODEL",
+  "basis": "bulk",
+  "at": "2026-11-03T00:00:00Z"
+}

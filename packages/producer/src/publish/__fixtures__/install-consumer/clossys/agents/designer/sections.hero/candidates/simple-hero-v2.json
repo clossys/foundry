@@ -1,0 +1,70 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "simple-hero",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "registry/sections/simple-hero.tsx",
+      "type": "registry:component",
+      "target": "components/sections/simple-hero.tsx",
+      "content": "export function SimpleHero({ heading, body }: { heading: string; body: string }) {\n  return (\n    <section data-section=\"hero\">\n      <h1 data-copy=\"hero.heading\">{heading}</h1>\n      <p data-copy=\"hero.body\">{body}</p>\n    </section>\n  );\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.hero",
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "hash": "sha256:2d539177db39a16205ed4b039ebd8f8c4bd795c8a664575b7995060fdaa4b285",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "simple-hero",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.hero",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "fixture"
+      },
+      "reason": "fixture: install-and-bind; INTEGRATE-R2 (DS-COMPLETE D4): no copy snapshot, the preview reads pinned fixture Writer keys home.hero.body, home.hero.heading through meta.preview.inputs.copy. Code unchanged from simple-hero-v1.",
+      "createdAt": "2026-11-05T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "hero.heading",
+          "hero.body"
+        ],
+        "themeVars": []
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "heading": {
+          "$copy": "home.hero.heading"
+        },
+        "body": {
+          "$copy": "home.hero.body"
+        }
+      },
+      "inputs": {
+        "copy": [
+          "home.hero.body",
+          "home.hero.heading"
+        ]
+      },
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

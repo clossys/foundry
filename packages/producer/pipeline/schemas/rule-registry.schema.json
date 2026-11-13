@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/rule-registry.schema.json",
+  "title": "Rule registry (scripts/rules/registry.json)",
+  "description": "The owner rule rows and gates check:rules reads; scripts/rules/registry.schema.json holds the full row contract.",
+  "type": "object",
+  "required": [
+    "schema",
+    "rules"
+  ],
+  "properties": {
+    "schema": {
+      "const": "foundry.rule-registry/1"
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^R-[A-Z0-9-]+$"
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "exemptions": {
+      "type": "array"
+    }
+  }
+}

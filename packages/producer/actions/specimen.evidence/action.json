@@ -1,0 +1,44 @@
+{
+  "schema": "clossys.action/1",
+  "id": "specimen.evidence",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.assemble",
+  "summary": "Measure every native specimen section with the installed build and write its compiler evidence.",
+  "run": "clossys pipeline trace specimen.evidence -- npm run generate:specimen-evidence",
+  "inputs": [
+    {
+      "glob": "clossys/agents/designer/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "packages/designer/dist/catalog/native-specimen-evidence.json",
+      "schema": "specimen-evidence"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:specimen-evidence -- npm run check:specimen-evidence",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "specimen-evidence"
+  ],
+  "uses": []
+}

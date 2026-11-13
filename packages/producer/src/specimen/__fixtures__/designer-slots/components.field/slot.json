@@ -1,0 +1,55 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.field",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-form",
+    "order": 98
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Label+Text+FieldError",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "part.label",
+        "part.description",
+        "part.error",
+        "state.required",
+        "state.invalid",
+        "state.disabled"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono",
+        "themes.background",
+        "themes.muted",
+        "themes.primary",
+        "themes.radius",
+        "themes.ring"
+      ],
+      "assets": []
+    }
+  },
+  "inputs": [],
+  "uses": []
+}

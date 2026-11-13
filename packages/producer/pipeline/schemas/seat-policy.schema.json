@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/seat-policy.schema.json",
+  "title": "Seat policy (clossys/seat-policy.json): the model id each seat tier uses",
+  "description": "Derived from src/pipeline/seat-policy.ts SeatPolicy. Seat answers fill <model:tier> from it; a human-only policy offers no llm seat.",
+  "type": "object",
+  "required": [
+    "schema",
+    "models",
+    "humanOnly"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.seat-policy/1"
+    },
+    "models": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "low": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^<>\\s]+$"
+        },
+        "mid": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^<>\\s]+$"
+        },
+        "high": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^<>\\s]+$"
+        }
+      }
+    },
+    "humanOnly": {
+      "type": "boolean"
+    }
+  }
+}

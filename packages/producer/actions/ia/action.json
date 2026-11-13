@@ -1,0 +1,60 @@
+{
+  "schema": "clossys.action/1",
+  "id": "ia",
+  "agent": "owner",
+  "kind": "decide:judgment",
+  "stage": "direct.brief",
+  "summary": "Place every L3 slot: the agent IA tree and each slot's contract (clossys ia).",
+  "run": "clossys ia <agent>/<slot> --under <l1>/<l2> --contract <file>",
+  "inputs": [],
+  "outputs": [
+    {
+      "glob": "clossys/agents/*/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    }
+  ],
+  "pass": {
+    "command": "clossys check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": [
+    "skill/SKILL.md"
+  ],
+  "decider": "owner",
+  "packet": {
+    "inputs": [],
+    "write": [
+      {
+        "glob": "clossys/agents/*/ia.json",
+        "schema": "ia"
+      },
+      {
+        "glob": "clossys/agents/*/*/slot.json",
+        "schema": "slot"
+      }
+    ],
+    "checks": [
+      "workspace"
+    ]
+  },
+  "skill": "skill.md",
+  "open": "slots-without-slot-json"
+}

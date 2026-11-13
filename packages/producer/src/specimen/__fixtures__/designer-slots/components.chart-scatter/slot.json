@@ -1,0 +1,63 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.chart-scatter",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.display",
+    "l2": "charts-analytic",
+    "order": 131
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "engine:none",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "series",
+        "axes",
+        "legend",
+        "tooltip"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.chart-1",
+        "themes.chart-2",
+        "themes.chart-3",
+        "themes.chart-4",
+        "themes.chart-5",
+        "themes.radius",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    }
+  },
+  "inputs": [],
+  "uses": []
+}

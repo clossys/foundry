@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/action-manifest.schema.json",
+  "title": "Per-agent manifest (pipeline/manifest.json)",
+  "description": "Per agent: its steps, clossys verbs, standalone commands, skill files, bound code and exceptions; generated from the registry and the bindings.",
+  "type": "object",
+  "required": [
+    "schema",
+    "agents"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.action-manifest/1"
+    },
+    "agents": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "packages",
+          "steps",
+          "verbs",
+          "commands",
+          "skills",
+          "code",
+          "exceptions"
+        ]
+      }
+    }
+  }
+}

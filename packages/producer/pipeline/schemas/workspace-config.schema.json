@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/workspace-config.schema.json",
+  "title": "Workspace config (clossys/clossys.config.ts)",
+  "description": "The workspace marker the CLI discovers (src/cli/root.ts). A TypeScript module, validated as text: it must default-export the config object.",
+  "x-format": "text",
+  "type": "string",
+  "pattern": "export default"
+}

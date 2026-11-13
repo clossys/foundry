@@ -1,0 +1,62 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "sample-button",
+  "type": "registry:ui",
+  "dependencies": [
+    "class-variance-authority"
+  ],
+  "files": [
+    {
+      "path": "registry/ui/sample-button.tsx",
+      "type": "registry:ui",
+      "content": "import * as React from \"react\";\nimport { cva, type VariantProps } from \"class-variance-authority\";\nimport { cn } from \"@/lib/utils\";\n\nconst buttonVariants = cva(\n  \"inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-primary text-primary-foreground hover:bg-primary/90\",\n        outline: \"border bg-background hover:bg-accent hover:text-accent-foreground\",\n      },\n      size: { default: \"h-9 px-4 py-2\", sm: \"h-8 px-3\" },\n    },\n    defaultVariants: { variant: \"default\", size: \"default\" },\n  },\n);\n\nexport function SampleButton({ className, variant, size, ...props }: React.ComponentProps<\"button\"> & VariantProps<typeof buttonVariants>) {\n  return <button data-slot=\"button\" className={cn(buttonVariants({ variant, size }), className)} {...props} />;\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.button",
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "hash": "sha256:8177fc6c4d6dba3e6af863ad3177a06d96b8e9bca147fad86e62a75d4839ff39",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "sample-button",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.button",
+      "kind": "registry:ui",
+      "license": {
+        "spdx": "MIT"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "fixture"
+      },
+      "reason": "fixture: a button component",
+      "createdAt": "2026-10-30T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {
+          "class-variance-authority": "^0.7.0"
+        },
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "registry/ui/sample-button.tsx",
+        "children": "Continue"
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 320
+    }
+  }
+}

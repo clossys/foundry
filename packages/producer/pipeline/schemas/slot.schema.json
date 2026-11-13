@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/slot.schema.json",
+  "title": "L3 slot (slot.json)",
+  "description": "Derived from src/records/slot-model/validate.ts validateSlotDoc and SlotDoc (types.ts).",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "agent",
+    "ia",
+    "kind",
+    "contract",
+    "inputs",
+    "uses"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.slot/1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}$"
+    },
+    "agent": {
+      "enum": [
+        "director",
+        "designer",
+        "writer",
+        "publisher"
+      ]
+    },
+    "ia": {
+      "type": "object",
+      "required": [
+        "l1",
+        "l2",
+        "order"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "l0": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "l1": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "l2": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "kind": {
+      "enum": [
+        "brief",
+        "element",
+        "strings",
+        "page",
+        "publication"
+      ]
+    },
+    "contract": {
+      "type": "object"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}$"
+      }
+    },
+    "uses": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}$"
+      }
+    },
+    "notNeeded": {
+      "type": "object",
+      "required": [
+        "reason",
+        "since",
+        "decidedBy"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "since": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+        },
+        "decidedBy": {
+          "type": "string",
+          "pattern": "^(?:(?:owner|planner|migration)(?::\\S.*)?|migrated)$"
+        }
+      }
+    },
+    "options": {
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "varyOn": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "agent": {
+          "const": "director"
+        },
+        "kind": {
+          "const": "brief"
+        }
+      }
+    },
+    {
+      "properties": {
+        "agent": {
+          "const": "designer"
+        },
+        "kind": {
+          "const": "element"
+        }
+      }
+    },
+    {
+      "properties": {
+        "agent": {
+          "const": "writer"
+        },
+        "kind": {
+          "const": "strings"
+        }
+      }
+    },
+    {
+      "properties": {
+        "agent": {
+          "const": "publisher"
+        },
+        "kind": {
+          "enum": [
+            "page",
+            "publication"
+          ]
+        }
+      }
+    }
+  ],
+  "not": {
+    "required": [
+      "options"
+    ],
+    "properties": {
+      "options": {
+        "enum": [
+          2,
+          3
+        ]
+      }
+    },
+    "not": {
+      "required": [
+        "varyOn"
+      ]
+    }
+  }
+}

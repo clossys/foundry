@@ -1,0 +1,77 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "sample-card",
+  "type": "registry:block",
+  "registryDependencies": [
+    "sample-button"
+  ],
+  "files": [
+    {
+      "path": "registry/blocks/sample-card.tsx",
+      "type": "registry:block",
+      "content": "import * as React from \"react\";\nimport { cn } from \"@/lib/utils\";\nimport { SampleButton } from \"@/components/ui/sample-button\";\n\nexport function SampleCard({ title, body, action, className }: { title: string; body: string; action: string; className?: string }) {\n  return (\n    <div data-slot=\"card\" className={cn(\"flex flex-col gap-4 rounded-xl border bg-card p-6 text-card-foreground shadow-sm\", className)}>\n      <div className=\"flex flex-col gap-1.5\">\n        <h3 className=\"text-lg leading-none font-semibold\">{title}</h3>\n        <p className=\"text-sm text-muted-foreground\">{body}</p>\n      </div>\n      <div className=\"flex justify-end gap-2\">\n        <SampleButton variant=\"outline\" size=\"sm\">Later</SampleButton>\n        <SampleButton size=\"sm\">{action}</SampleButton>\n      </div>\n    </div>\n  );\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.card",
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "hash": "sha256:9785fb0ce1a108bb2e8389dd6851ce4ff46f20b16809ec4f8b13a882e12f209e",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "sample-card",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.card",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "fixture"
+      },
+      "reason": "fixture: a card composing the button record",
+      "createdAt": "2026-10-30T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "card.title",
+          "card.body",
+          "card.action"
+        ],
+        "themeVars": []
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "title": {
+          "$copy": "card.title"
+        },
+        "body": {
+          "$copy": "card.body"
+        },
+        "action": {
+          "$copy": "card.action"
+        }
+      },
+      "inputs": {
+        "copy": [
+          "card.action",
+          "card.body",
+          "card.title"
+        ]
+      },
+      "container": "canvas",
+      "theme": "light",
+      "width": 480
+    }
+  }
+}

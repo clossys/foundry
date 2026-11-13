@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.capture-studio-gates/1",
+  "summary": "How capture:studio counts its wording and visual finding types. block: a finding fails its shot and the run. report: the finding stays on its shot and is counted under the manifest's reportsByType, and does not fail the run. Only the types listed here can be set to report; every other type is wiring and always blocks (console errors, failed requests, unresolved copy, empty specimens, readiness timeouts, probe errors). A missing or invalid entry in this file fails the run at setup.",
+  "gates": [
+    {
+      "type": "id-label",
+      "mode": "report",
+      "owner": "designer",
+      "reason": "Wording/visual, the same class as studio:check's raw-cell-id: a heading, label or button whose text shows a cell id. The Producer skill rule 'Only wiring blocks' makes a wording or visual finding a report. Each finding (route, element, id) goes to the Designer and Writer as a later-polish item."
+    },
+    {
+      "type": "overflow",
+      "mode": "report",
+      "owner": "designer",
+      "reason": "Visual: the page is wider than its viewport and scrolls sideways (wide tables on Director and Writer leaves); nothing is clipped, every part stays reachable. The Producer skill rule 'Only wiring blocks' makes a visual finding a report. Each route and width goes to the Designer as a later-polish item."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schema": "clossys.element/1",
+  "id": "sample-card",
+  "package": "designer",
+  "layer": "components",
+  "slot": "components.card",
+  "kind": "registry:block",
+  "lineage": {
+    "mode": "original"
+  },
+  "license": {
+    "spdx": "MIT"
+  },
+  "creator": {
+    "agent": "designer",
+    "model": "fixture"
+  },
+  "reason": "fixture: a card composing the button record",
+  "createdAt": "2026-10-30T00:00:00Z",
+  "checks": [],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [
+      "card.title",
+      "card.body",
+      "card.action"
+    ],
+    "themeVars": []
+  },
+  "version": 1,
+  "hash": "sha256:9785fb0ce1a108bb2e8389dd6851ce4ff46f20b16809ec4f8b13a882e12f209e",
+  "payload": [
+    "sample-card.json"
+  ]
+}

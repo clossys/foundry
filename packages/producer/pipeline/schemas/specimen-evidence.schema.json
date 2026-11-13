@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/specimen-evidence.schema.json",
+  "title": "Native specimen compiler evidence",
+  "description": "Written by packages/designer/scripts/generate-specimen-surface-evidence.mjs into the installed Designer build it certifies.",
+  "type": "object",
+  "required": [
+    "version",
+    "packages",
+    "dependencies",
+    "compiler",
+    "command",
+    "certificates"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "packages": {
+      "type": "array"
+    },
+    "dependencies": {
+      "type": "array"
+    },
+    "compiler": {
+      "type": "object"
+    },
+    "command": {
+      "type": "object"
+    },
+    "certificates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "slot",
+          "source",
+          "compiled",
+          "checks"
+        ]
+      }
+    }
+  }
+}

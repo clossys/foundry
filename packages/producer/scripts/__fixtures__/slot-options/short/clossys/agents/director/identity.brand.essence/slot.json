@@ -1,0 +1,16 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.brand.essence",
+  "agent": "director",
+  "ia": {
+    "l1": "identity",
+    "l2": "identity.brand",
+    "order": 0
+  },
+  "kind": "brief",
+  "contract": {},
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

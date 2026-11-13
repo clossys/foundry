@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/specimen-thumbnail.schema.json",
+  "title": "Specimen thumbnail cache entry",
+  "description": "A rendered specimen PNG and its health JSON (src/specimen/thumbnails.ts), cached under node_modules/.cache; opaque bytes, never committed.",
+  "x-format": "binary"
+}

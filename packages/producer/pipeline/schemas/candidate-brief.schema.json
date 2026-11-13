@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/candidate-brief.schema.json",
+  "title": "Director brief candidate frontmatter (.md)",
+  "description": "Derived from src/records/slot-model/validate.ts validateCandidate/validateBrief (frontmatter fields; body headings are checked by clossys check).",
+  "type": "object",
+  "required": [
+    "slot",
+    "source",
+    "feeds",
+    "functions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "slot": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}$"
+    },
+    "source": {
+      "$ref": "source.schema.json"
+    },
+    "feeds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "functions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "note": {
+      "type": "string"
+    },
+    "vary": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      }
+    }
+  }
+}

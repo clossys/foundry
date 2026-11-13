@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "publication.example-site",
+  "agent": "publisher",
+  "ia": {
+    "l1": "example-site",
+    "l2": "publication",
+    "order": 2
+  },
+  "kind": "publication",
+  "contract": {},
+  "inputs": [
+    "page.about",
+    "page.home"
+  ],
+  "uses": [
+    "page.about",
+    "page.home"
+  ]
+}

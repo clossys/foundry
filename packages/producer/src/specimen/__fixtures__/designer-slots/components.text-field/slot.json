@@ -1,0 +1,61 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.text-field",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-text",
+    "order": 100
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:TextField",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "line.single-line",
+        "line.multiline",
+        "state.invalid",
+        "state.disabled",
+        "state.read-only"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.ring"
+      ],
+      "assets": []
+    }
+  },
+  "inputs": [],
+  "uses": []
+}

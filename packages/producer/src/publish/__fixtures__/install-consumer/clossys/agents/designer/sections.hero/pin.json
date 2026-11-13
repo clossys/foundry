@@ -1,0 +1,7 @@
+{
+  "candidate": "simple-hero-v3.json",
+  "sha256": "ce90f7bd470a181dba9f8571107e1d91bc940ed511f80ea8b1e488badefbfa57",
+  "decidedBy": "planner:COPY-SLOT-CONTRACT",
+  "basis": "planner",
+  "at": "2026-11-05T18:26:59Z"
+}

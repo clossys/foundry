@@ -1,0 +1,60 @@
+{
+  "schema": "clossys.action/1",
+  "id": "seats",
+  "agent": "owner",
+  "kind": "decide:judgment",
+  "stage": "direct.brief",
+  "summary": "Who decides each decide step: an llm seat, a human seat, or both.",
+  "run": "clossys seat <step> --by <who> --procedure <text> --command <verb>",
+  "inputs": [],
+  "outputs": [
+    {
+      "glob": "clossys/agents/producer/*/candidates/*",
+      "schema": "seat"
+    },
+    {
+      "glob": "clossys/agents/producer/*/pin.json",
+      "schema": "pin"
+    }
+  ],
+  "pass": {
+    "command": "clossys pipeline trace check:pipeline -- npm run check:pipeline",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "pipeline"
+  ],
+  "uses": [
+    "skill/SKILL.md"
+  ],
+  "decider": "owner",
+  "packet": {
+    "inputs": [],
+    "write": [
+      {
+        "glob": "clossys/agents/producer/*/candidates/*",
+        "schema": "seat"
+      },
+      {
+        "glob": "clossys/agents/producer/*/pin.json",
+        "schema": "pin"
+      }
+    ],
+    "checks": [
+      "pipeline"
+    ]
+  },
+  "skill": "skill.md",
+  "open": "seats-open"
+}

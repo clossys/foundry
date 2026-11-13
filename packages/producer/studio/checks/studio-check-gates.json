@@ -1,0 +1,18 @@
+{
+  "schema": "clossys.studio-check-gates/1",
+  "summary": "How studio:check counts its wording and visual rules. block: a finding fails the route/theme/viewport check. report: the finding is listed under the check's reports (and the run's reports) and does not fail it. Only the rules listed here can be set to report; every other rule is wiring and always blocks (unresolved copy, NEED markers, console and page errors, request failures without a completed retry, navigation and settle errors, uncovered routes, unexpected redirects, initial-data mismatches). A missing or invalid entry in this file fails the check at setup.",
+  "gates": [
+    {
+      "rule": "raw-cell-id",
+      "mode": "report",
+      "owner": "designer",
+      "reason": "Wording/visual: a cell id shown as text (slot card identity lines, leaf headers, Publisher reference tables, open-request commands, citations). The Producer skill rule 'Only wiring blocks' makes a wording or visual finding a report. Ids stay on screen; each finding (route, ids) goes to the Designer and Writer as a later-polish item."
+    },
+    {
+      "rule": "aborted-reload",
+      "mode": "report",
+      "owner": "designer",
+      "reason": "Visual cost, not wiring: streamed segments that React moves into place abort and reload their iframes. A request counts here only when it was aborted (or orphaned in a detached frame) and a later request for the same URL on the same page finished OK; an abort with no completed retry stays a blocking request-failed. The per-page reload count goes to the Designer and Publisher as the later-polish item 'deferred-loading iframe part (option A)'."
+    }
+  ]
+}
