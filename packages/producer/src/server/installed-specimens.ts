@@ -40,6 +40,8 @@ import { isAbsent } from "../errors.js";
 /** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`). */
 const SPECIMEN_FORMAT = "studio-specimens/10";
 const SITE_PREFIX = "/__specimen-site/";
+/** The specimen frame route; the only path a specimen-site page may frame (specimenSiteCsp). */
+const SPECIMEN_FRAME_ROUTE = "/__specimen";
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
   ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".ico": "image/x-icon",
@@ -405,8 +407,17 @@ const LOCAL_ORIGIN = /^http:\/\/(?:127\.0\.0\.1|localhost):\d{1,5}$/;
  * The policy every `/__specimen-site/<key>/` response carries. The built page loads only its own
  * build: script, stylesheets, fonts and images from `<origin>/__specimen-site/<key>/` (a path
  * source, so neither Studio's routes nor another build qualify), inline styles for the
- * components that inject them, and `data:` fonts and images. It has nothing to fetch, frame,
- * submit or embed (`connect-src`, `frame-src`, `form-action`, `object-src` fall to `'none'`).
+ * components that inject them, and `data:` fonts and images. It has nothing to fetch, submit or
+ * embed (`connect-src`, `form-action`, `object-src` fall to `'none'`).
+ *
+ * It frames one path: `<origin>/__specimen` (any query), the specimen frame route, for components
+ * that preview another specimen in an iframe (`components.studio.block-viewer-iframe`). The path
+ * source only limits which URL the page may frame; it is not a boundary of its own. In Studio's
+ * cards the page keeps Studio's origin (`allow-same-origin`), so its script already has the
+ * same-origin access Studio's own pages have, and that existing access is the real limit. Framed
+ * by a served preview the page is opaque, and the framed `/__specimen` (SPECIMEN_FRAME_CSP,
+ * `frame-ancestors 'self'`) refuses it. The header is per build, not per page (every page of a
+ * build is the one `index.html?page=`), so every page of the build carries it.
  *
  * Its own sandbox (`allow-scripts allow-same-origin`, no `allow-top-navigation`, `allow-popups`,
  * `allow-forms` or `allow-modals`) keeps the bundle from navigating the top window, opening
@@ -418,10 +429,12 @@ const LOCAL_ORIGIN = /^http:\/\/(?:127\.0\.0\.1|localhost):\d{1,5}$/;
  * matches an opaque ancestor. That parent (`/__specimen`) carries `frame-ancestors 'self'`.
  */
 export function specimenSiteCsp(origin: string, build: string): string {
-  const site = LOCAL_ORIGIN.test(origin) && /^[a-z0-9]+(?:-[a-f0-9]{12})?$/.test(build) ? `${origin}${SITE_PREFIX}${build}/` : "'none'";
+  const local = LOCAL_ORIGIN.test(origin) && /^[a-z0-9]+(?:-[a-f0-9]{12})?$/.test(build);
+  const site = local ? `${origin}${SITE_PREFIX}${build}/` : "'none'";
+  const frame = local ? `${origin}${SPECIMEN_FRAME_ROUTE}` : "'none'";
   return [
     "sandbox allow-scripts allow-same-origin", "default-src 'none'", `script-src ${site}`, `style-src ${site} 'unsafe-inline'`,
-    `font-src ${site} data:`, `img-src ${site} data:`, "connect-src 'none'", "base-uri 'none'", "form-action 'none'",
+    `font-src ${site} data:`, `img-src ${site} data:`, `frame-src ${frame}`, "connect-src 'none'", "base-uri 'none'", "form-action 'none'",
   ].join("; ");
 }
 
@@ -468,7 +481,7 @@ export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | u
   return {
     ready,
     async handle(request, response, pathname) {
-      if (pathname === "/__specimen") {
+      if (pathname === SPECIMEN_FRAME_ROUTE) {
         const params = new URL(request.url ?? "", "http://studio.invalid").searchParams;
         const [slot, element] = (params.get("element") ?? "").split("/");
         const given = await inputs;

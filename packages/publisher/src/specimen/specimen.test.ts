@@ -105,9 +105,18 @@ describe("rendering", () => {
 describe("specimen page policy", () => {
   it("runs script only from its own bundles and nonce, fetches nothing and cannot navigate the top window", async () => {
     const origin = "http://127.0.0.1:4621";
-    expect(specimenCsp("n0nce", origin)).toBe(`sandbox allow-scripts allow-same-origin; default-src 'none'; script-src ${origin}/__specimen/assets/ 'nonce-n0nce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self' http://127.0.0.1:* http://localhost:*`);
-    // Without a usable origin the script source falls back to 'self', never wider.
-    for (const bad of [undefined, "*", "http://a b", "javascript:alert(1)"]) expect(specimenCsp("n", bad)).toContain("; script-src 'self' 'nonce-n'; ");
+    expect(specimenCsp("n0nce", origin)).toBe(`sandbox allow-scripts allow-same-origin; default-src 'none'; script-src ${origin}/__specimen/assets/ 'nonce-n0nce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' data: blob:; frame-src ${origin}/__specimen; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self' http://127.0.0.1:* http://localhost:*`);
+    // It frames exactly one path, the specimen route (block-viewer-iframe previews a specimen in an iframe):
+    // one host-source with a path and no trailing slash, never 'self', a wildcard, a scheme or a second source.
+    const frameSrc = specimenCsp("n0nce", origin).split("; ").filter(part => part.startsWith("frame-src "));
+    expect(frameSrc).toEqual([`frame-src ${origin}/__specimen`]);
+    expect(frameSrc[0]).not.toMatch(/'self'|\*|\s(?:https?|data|blob):(?:\s|$)|\/$/);
+    expect(specimenCsp("n0nce", origin)).not.toMatch(/child-src|'unsafe-eval'/);
+    // Without a usable origin the script source falls back to 'self', never wider, and nothing can be framed.
+    for (const bad of [undefined, "*", "http://a b", "javascript:alert(1)"]) {
+      expect(specimenCsp("n", bad)).toContain("; script-src 'self' 'nonce-n'; ");
+      expect(specimenCsp("n", bad)).toContain("; frame-src 'none'; ");
+    }
     const handle = createSpecimenHandler({ source, builder: { build: async () => { throw new Error("no build"); }, asset: async () => undefined } as never });
     const server = createServer((req, res) => { void handle(req, res).then(handled => { if (!handled) res.writeHead(404).end(); }); });
     await new Promise<void>(accept => server.listen(0, "127.0.0.1", accept));
@@ -119,6 +128,10 @@ describe("specimen page policy", () => {
       });
       expect(csp).toMatch(new RegExp(`^sandbox allow-scripts allow-same-origin; default-src 'none'; script-src http://127\\.0\\.0\\.1:${port}/__specimen/assets/ 'nonce-[A-Za-z0-9+/=]+'; `));
       expect(csp).toContain("connect-src 'none'");
+      expect(csp).toContain(`; frame-src http://127.0.0.1:${port}/__specimen; `);
+      // The sent frame-src is that one path source: never 'self' or a wildcard.
+      expect(csp.split("; ").filter(part => part.startsWith("frame-src "))).toEqual([`frame-src http://127.0.0.1:${port}/__specimen`]);
+      expect(csp.split("; ").find(part => part.startsWith("frame-src "))).not.toMatch(/'self'|\*/);
       expect(csp).not.toMatch(/allow-top-navigation|allow-popups|allow-forms/);
     } finally { await new Promise(accept => server.close(accept)); }
   });
