@@ -108,6 +108,22 @@ export function validateReferencesManifest(value: unknown): Validation<Reference
         if (treeHash(adaptation.upstream.files) !== adaptation.upstream.hash) issues.push({ path: `${where}.adaptations[${n}].upstream.hash`, message: "does not match its upstream files" });
       });
     });
+    const ids = new Set<string>();
+    manifest.packages?.forEach((row, index) => {
+      const where = `$.packages[${index}]`;
+      if (row.id !== `npm/${row.package}@${row.version}`) issues.push({ path: `${where}.id`, message: `must be npm/${row.package}@${row.version}` });
+      if (ids.has(row.id)) issues.push({ path: `${where}.id`, message: "duplicate package reference" });
+      ids.add(row.id);
+      const item = manifest.items.find(candidate => candidate.dir === row.source);
+      if (!item) issues.push({ path: `${where}.source`, message: `no vendored item ${row.source}` });
+      else {
+        if (item.version !== row.version) issues.push({ path: `${where}.source`, message: `vendored item is ${item.version}, not ${row.version}` });
+        if (item.license !== row.license) issues.push({ path: `${where}.license`, message: `vendored item is licensed ${item.license}` });
+        for (const key of ["baseFrom", "modifiersFrom"] as const) {
+          if (!item.files.some(file => file.path === row.classes[key])) issues.push({ path: `${where}.classes.${key}`, message: `not a file of ${row.source}` });
+        }
+      }
+    });
     return issues;
   });
 }

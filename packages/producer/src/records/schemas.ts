@@ -21,6 +21,9 @@ const ID = "^[a-z0-9][a-z0-9-]*$";
 const SLOT = "^[a-z0-9][a-z0-9-]*\\.[a-z0-9][a-z0-9.-]*$";
 const ISO = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$";
 const REL_PATH = "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$";
+const NPM_NAME = "^(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$";
+const EXACT_VERSION = "^[0-9]+\\.[0-9]+\\.[0-9]+$";
+const NPM_REF = "^npm/(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*@[0-9]+\\.[0-9]+\\.[0-9]+$";
 
 export const RECORD_SCHEMA_IDS = {
   element: "clossys.element/1",
@@ -710,6 +713,36 @@ export const REFERENCES_MANIFEST_SCHEMA: JsonSchema = {
               },
             },
           },
+        },
+      },
+    },
+    packages: {
+      type: "array",
+      description: "npm packages consumed as a class contract: the vendored item at the same version proves the recorded classes (check-references.mjs, check-ref-verbatim.mjs).",
+      items: {
+        type: "object",
+        required: ["id", "kind", "package", "version", "integrity", "license", "source", "classes", "slots"],
+        additionalProperties: false,
+        properties: {
+          id: { type: "string", pattern: NPM_REF },
+          kind: { const: "npm" },
+          package: { type: "string", pattern: NPM_NAME },
+          version: { type: "string", pattern: EXACT_VERSION },
+          integrity: { type: "string", pattern: "^sha512-[A-Za-z0-9+/]+={0,2}$" },
+          license: { type: "string", minLength: 1 },
+          source: { type: "string", pattern: REL_PATH },
+          classes: {
+            type: "object",
+            required: ["base", "baseFrom", "modifiers", "modifiersFrom"],
+            additionalProperties: false,
+            properties: {
+              base: { type: "string", pattern: "^[a-z][a-z0-9-]*$" },
+              baseFrom: { type: "string", pattern: REL_PATH },
+              modifiers: { type: "array", minItems: 1, uniqueItems: true, items: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" } },
+              modifiersFrom: { type: "string", pattern: REL_PATH },
+            },
+          },
+          slots: { type: "array", minItems: 1, uniqueItems: true, items: { type: "string", pattern: SLOT } },
         },
       },
     },

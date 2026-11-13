@@ -9,6 +9,8 @@
 @import "tailwindcss";
 @import "@clossys/designer/theme.css";
 @import "../../../clossys/designer/brand.css";
+/* @tailwindcss/typography: the `prose` classes npm class-contract candidates render with. */
+@plugin "@tailwindcss/typography";
 
 @source "../node_modules/@clossys/designer/dist";
 @source "../node_modules/@clossys/publisher/dist";

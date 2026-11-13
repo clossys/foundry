@@ -140,6 +140,32 @@ export function checkReferences(root) {
     }
   }
 
+  // npm package references: each row names an exact package version, its lockfile integrity and a vendored
+  // item of the same version holding the source its class contract is read from (check-ref-verbatim proves the contract).
+  if (manifest.packages !== undefined && !Array.isArray(manifest.packages)) add(MANIFEST, "packages must be a list");
+  const packageIds = new Set();
+  for (const [index, row] of (Array.isArray(manifest.packages) ? manifest.packages : []).entries()) {
+    const where = `${MANIFEST}#packages[${index}]`;
+    if (!row || typeof row !== "object") { add(where, "not an object"); continue; }
+    if (row.kind !== "npm") add(where, "kind must be npm");
+    if (typeof row.package !== "string" || !/^\d+\.\d+\.\d+$/.test(row.version ?? "")) add(where, "package and an exact version are required");
+    if (row.id !== `npm/${row.package}@${row.version}`) add(where, `id must be npm/${row.package}@${row.version}`);
+    if (packageIds.has(row.id)) add(where, "duplicate package id");
+    packageIds.add(row.id);
+    if (typeof row.integrity !== "string" || !/^sha512-[A-Za-z0-9+/]+={0,2}$/.test(row.integrity)) add(where, "integrity must be the lockfile sha512 integrity");
+    const item = (manifest.items ?? []).find((entry) => entry.dir === row.source);
+    if (!item) add(where, `source ${row.source} is not a vendored item`);
+    else {
+      if (item.version !== row.version) add(where, `source version ${item.version} differs from ${row.version}`);
+      if (item.license !== row.license) add(where, `license ${row.license} differs from the source item's ${item.license}`);
+      const paths = new Set((item.files ?? []).map((file) => file.path));
+      for (const field of ["baseFrom", "modifiersFrom"]) if (!paths.has(row.classes?.[field])) add(where, `classes.${field} must name a file of ${row.source}`);
+    }
+    if (typeof row.classes?.base !== "string" || !Array.isArray(row.classes?.modifiers) || row.classes.modifiers.some((m) => typeof m !== "string")) add(where, "classes needs a base and a modifiers list");
+    // The slots a class-contract candidate may cite the row from (check-ref-verbatim fails any other slot).
+    if (!Array.isArray(row.slots) || !row.slots.length || row.slots.some((slot) => typeof slot !== "string" || !/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(slot)) || new Set(row.slots).size !== row.slots.length) add(where, "slots must be a non-empty list of distinct slot ids");
+  }
+
   for (const entry of walk(root)) {
     if (!entry.file) add(entry.path, "not a regular file");
     else if (!tracked.has(entry.path)) add(entry.path, "not listed in the manifest");

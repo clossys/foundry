@@ -69,6 +69,45 @@ describe("publishing substrate CommonJS interop", () => {
     expect(readFileSync(join(dir, "lib", "utils.ts"), "utf8")).toBe("export { cn } from \"./installed\"\n");
   });
 
+  it("loads @tailwindcss/typography at the reference version, and gives an older substrate the plugin once", async () => {
+    const dir = temp();
+    await ensureSubstrate(dir);
+    const css = () => readFileSync(join(dir, "app.css"), "utf8");
+    const pkgJson = () => JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+    expect(css().split("\n").slice(0, 3)).toEqual(['@import "tailwindcss";', '@import "tw-animate-css";', '@plugin "@tailwindcss/typography";']);
+    expect(pkgJson().devDependencies["@tailwindcss/typography"]).toBe("0.5.20");
+    const manifest = pkgJson();
+    delete manifest.devDependencies["@tailwindcss/typography"];
+    writeFileSync(join(dir, "package.json"), JSON.stringify(manifest));
+    writeFileSync(join(dir, "app.css"), css().replace('@plugin "@tailwindcss/typography";\n', ""));
+    await ensureSubstrate(dir);
+    await ensureSubstrate(dir);
+    expect(css().split("\n").filter(line => line === '@plugin "@tailwindcss/typography";')).toHaveLength(1);
+    expect(css().indexOf("@plugin")).toBeGreaterThan(css().lastIndexOf("@import"));
+    expect(pkgJson().devDependencies["@tailwindcss/typography"]).toBe("0.5.20");
+  });
+
+  it("inserts the typography plugin after the last @import, else after @charset, else first (R2F-TYPO fix 8)", async () => {
+    const dir = temp();
+    await ensureSubstrate(dir);
+    const PLUGIN = '@plugin "@tailwindcss/typography";';
+    const rewrite = async (css: string) => {
+      writeFileSync(join(dir, "app.css"), css);
+      await ensureSubstrate(dir);
+      return readFileSync(join(dir, "app.css"), "utf8");
+    };
+    // No @import at all: the plugin is the first line, before the rules.
+    expect(await rewrite(".x { color: red; }\n")).toBe(`${PLUGIN}\n.x { color: red; }\n`);
+    // No @import, a leading @charset: the charset stays first.
+    expect(await rewrite('@charset "UTF-8";\n.x { color: red; }\n')).toBe(`@charset "UTF-8";\n${PLUGIN}\n.x { color: red; }\n`);
+    // A leading comment, blank line and a multi-line @import: after the import's last line, never before an @import.
+    expect(await rewrite('/* app */\n\n@import "tailwindcss";\n@import "tw-animate-css"\n  layer(utilities);\n.x { color: red; }\n'))
+      .toBe(`/* app */\n\n@import "tailwindcss";\n@import "tw-animate-css"\n  layer(utilities);\n${PLUGIN}\n.x { color: red; }\n`);
+    // Already present: untouched.
+    const present = `@import "tailwindcss";\n.x { color: red; }\n${PLUGIN}\n`;
+    expect(await rewrite(present)).toBe(present);
+  });
+
   it("a default import of next/image built in the substrate is a component React can render (no #130)", async () => {
     const dir = temp();
     await ensureSubstrate(dir);

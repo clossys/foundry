@@ -184,6 +184,13 @@ function resolveFrom(id: string, workspace: string): string {
  * `data-horizontal`, ... variants). Each is included when the workspace has it.
  */
 const APP_LAYERS = ["tw-animate-css", "shadcn/tailwind.css"];
+/**
+ * The Tailwind plugins the app stylesheet loads after its layers: `@tailwindcss/typography`'s `prose`
+ * classes, which npm class-contract candidates (check-ref-verbatim) render with. Each is required: it
+ * resolves from the workspace, else from this package (which depends on it), and a specimen build never
+ * drops one silently, since a wrapper styled only by `prose` would render unstyled and still "pass".
+ */
+export const APP_PLUGINS: readonly string[] = ["@tailwindcss/typography"];
 
 /** A stylesheet id as Tailwind resolves it: a file export, else the package's `style` export condition. */
 function resolveStyle(id: string, workspace: string): string {
@@ -206,6 +213,16 @@ function resolvable(id: string, workspace: string): boolean {
   try { resolveStyle(id, workspace); return true; } catch { return false; }
 }
 
+/** The `@plugin` lines for APP_PLUGINS; a plugin that resolves from neither the workspace nor this package throws. */
+export function appPluginDirectives(workspace: string, resolver: (id: string, workspace: string) => string = resolveFrom): string[] {
+  return APP_PLUGINS.map(id => {
+    try { resolver(id, workspace); } catch (error) {
+      throw new Error(`specimen stylesheet needs the Tailwind plugin ${id}, which resolves from neither ${workspace} nor @clossys/publisher: ${(error as Error).message}`);
+    }
+    return `@plugin "${id}";`;
+  });
+}
+
 /** Per workspace: the Tailwind entry and every stylesheet it loads, resolved and read once. */
 const tailwindInputs = new Map<string, { entry: string; sheets: Map<string, Promise<{ path: string; base: string; content: string }>> }>();
 function tailwindInputsOf(workspace: string) {
@@ -218,6 +235,7 @@ function tailwindInputsOf(workspace: string) {
       '@import "tailwindcss/utilities.css" layer(utilities);',
       // The app build imports shadcn's layer; without it a React Aria `data-orientation` never meets `data-horizontal:`.
       ...APP_LAYERS.filter(id => resolvable(id, workspace)).map(id => `@import "${id}";`),
+      ...appPluginDirectives(workspace),
       SHADCN_THEME_INLINE,
     ].join("\n");
     inputs = { entry, sheets: new Map() };
@@ -239,6 +257,12 @@ async function compileCss(sources: readonly { content: string; extension: string
       const tailwind = await import("tailwindcss") as { compile: (css: string, options: Record<string, unknown>) => Promise<{ build(candidates: string[]): string }> };
       const compiled = await tailwind.compile(inputs.entry, {
         base: workspace,
+        // `@plugin` ids (APP_PLUGINS only) resolve from the workspace, as the app build resolves them.
+        loadModule: async (id: string, _base: string, hint: string) => {
+          if (hint !== "plugin" || !APP_PLUGINS.includes(id)) throw new Error(`specimen stylesheet loads no ${hint} module ${id}`);
+          const path = resolveFrom(id, workspace);
+          return { path, base: dirname(path), module: requireHere(path) };
+        },
         loadStylesheet: (id: string) => {
           let sheet = inputs.sheets.get(id);
           if (!sheet) {

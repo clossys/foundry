@@ -34,9 +34,24 @@ const SPECIMENS: readonly [string, number][] = [
   ["components.studio.specimen-frame/specimen-frame", 1],
   ["components.studio.sidebar-static-row/sidebar-static-row", 2],
   ["components.flow.canvas/canvas", 1],
+  ["components.flow.node-header/node-header", 2],
+  ["components.semantic-content/semantic-content", 3],
   ["components.resize-handle/resize-handle", 1],
   ["sections.wizard/wizard", 1],
   ["sections.column-mapper/column-mapper", 1],
+  // R2F-TYPO: thin @tailwindcss/typography wrappers (npm class-contract references).
+  ["components.semantic-content/semantic-content", 4],
+  ["sections.article/article", 3],
+  ["sections.sectioned-document/sectioned-document", 3],
+  ["sections.legal-prose/legal-prose", 2],
+];
+
+/** The prose wrappers above, each against the candidate it replaces (the vendored plugin source, or authored code). */
+const PROSE: readonly { id: string; version: number; replaces: number }[] = [
+  { id: "components.semantic-content/semantic-content", version: 4, replaces: 2 },
+  { id: "sections.article/article", version: 3, replaces: 2 },
+  { id: "sections.sectioned-document/sectioned-document", version: 3, replaces: 2 },
+  { id: "sections.legal-prose/legal-prose", version: 2, replaces: 1 },
 ];
 
 /** Browser APIs layout-measuring libraries read on mount that jsdom does not ship. */
@@ -76,6 +91,7 @@ async function mount(id: string, version: number) {
     const health = dom.window.__clossysSpecimen.health() as { errors: { items: { source: string; message: string }[] } };
     const root = dom.window.document.getElementById("specimen-root");
     return {
+      css: build.css,
       buildErrors: build.errors,
       errors: [...health.errors.items.map(item => `${item.source}: ${item.message}`), ...thrown],
       fallback: root?.querySelector("[data-specimen-error]")?.textContent ?? null,
@@ -87,8 +103,21 @@ async function mount(id: string, version: number) {
 describe("canonical specimens mount without runtime errors", () => {
   for (const [id, version] of SPECIMENS) {
     it(`${id}@v${version}`, async () => {
-      const result = await mount(id, version);
+      const { css: _css, ...result } = await mount(id, version);
       expect(result).toEqual({ buildErrors: [], errors: [], fallback: null, empty: false });
+    }, 60_000);
+  }
+});
+
+describe("prose wrappers mount styled by the typography plugin, unlike the candidates they replace", () => {
+  for (const { id, version, replaces } of PROSE) {
+    it(`${id}@v${version} (mutation: v${replaces})`, async () => {
+      const { css, ...result } = await mount(id, version);
+      expect(result).toEqual({ buildErrors: [], errors: [], fallback: null, empty: false });
+      // The specimen stylesheet loads @tailwindcss/typography: the wrapper's prose class is compiled.
+      expect(css).toMatch(/\.prose\s*\{/);
+      const { css: _old, ...old } = await mount(id, replaces);
+      expect(old).not.toEqual({ buildErrors: [], errors: [], fallback: null, empty: false });
     }, 60_000);
   }
 });

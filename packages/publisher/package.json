@@ -482,6 +482,7 @@
     "@clossys/designer": "^0.12.0",
     "@clossys/controller": "^0.10.0",
     "@clossys/director": "0.6.0",
+    "@tailwindcss/typography": "0.5.20",
     "typescript": "~6.0.0"
   },
   "peerDependencies": {

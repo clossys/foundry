@@ -231,5 +231,20 @@ export type ReferencesManifest = {
   >;
   readonly licenses: readonly { readonly path: string; readonly sha256: string; readonly bytes: number; readonly sourceUrl: string }[];
   readonly items: readonly ReferenceItem[];
+  /** npm packages consumed as a class contract, proved by the vendored item at the same version. */
+  readonly packages?: readonly ReferencePackage[];
   readonly skipped: readonly { readonly ref: string; readonly slots?: readonly string[]; readonly reason: string }[];
+};
+
+export type ReferencePackage = {
+  readonly id: string;
+  readonly kind: "npm";
+  readonly package: string;
+  readonly version: string;
+  readonly integrity: string;
+  readonly license: string;
+  /** Directory of the vendored item (same package, same version) the contract is derived from. */
+  readonly source: string;
+  readonly classes: { readonly base: string; readonly baseFrom: string; readonly modifiers: readonly string[]; readonly modifiersFrom: string };
+  readonly slots: readonly string[];
 };
