@@ -5,13 +5,17 @@
   "basis": "bulk",
   "at": "2026-11-03T08:58:39Z",
   "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:35.530Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:06.089Z",
     "cites": {
       "director:advantage.proposition.promise": 4,
-      "director:identity.brand.personality": 3,
-      "director:identity.verbal.narrative": 4
+      "director:identity.brand.personality": 5,
+      "director:identity.verbal.narrative": 6
     },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+    "proof": {
+      "director:advantage.proposition.promise": "sha256:3fe044e620b9e4c56919066eae4b9418d46a6671bbf0a29a6fb6f247bcce9e3a",
+      "director:identity.brand.personality": "sha256:b623ac395493d9154d0f61fdc705f6bb1098d1afba65da20c5d046629b2f40b9",
+      "director:identity.verbal.narrative": "sha256:207bc340516fce3d734696ebb40535613d2d13db1153cefabe6b99edad9f1aa4"
+    }
   }
 }

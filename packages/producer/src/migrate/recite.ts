@@ -8,7 +8,7 @@
  * Meaning is proved by hash, never by a reason string (meaningHash): a Director cell means its
  * `## Direction` section (and its Direction line numbers must not move); any other candidate means its
  * bytes with the frontmatter `note:` line and every ref's version set aside. A moved ref (`<agent>:<slot>@N`
- * to the pinned M) is proved when N and M hash the same. An input the candidate cites without a version
+ * to the pinned M, or from the version `recited.cites` last recorded) is proved when N and M hash the same. An input the candidate cites without a version
  * (a slot.json input pinned after it) is proved against the meaning the record last cited: `recited.proof`,
  * the version `recited.cites` names, or the upstream pin in force at this pin's `at` (its git history).
  * Each recite records `recited.proof` so the next one compares hashes. An unproved citation is a meaning
@@ -148,13 +148,17 @@ export async function recite(consumer: string, options: ReciteOptions): Promise<
       const to = candidateVersion(upstream.pin.candidate);
       cites[key] = to;
       proof[key] = meaningOf(upstream, upstream.pin.candidate);
-      if (base.recited?.cites[key] === to) continue;
-      for (const from of versions) {
+      // The baseline is the version this record last recited (and the meaning it proved then), not the
+      // version its text names: a recited record already moved past its text's refs.
+      const last = base.recited?.cites[key];
+      if (last === to) continue;
+      for (const from of last !== undefined ? [last] : versions) {
         if (from === to) continue;
         changes.push(`${key}@${from} -> @${to}`);
         const name = upstream.candidates.find(each => candidateVersion(each) === from);
         if (!name) { blocked = `${key}@${from} has no candidate`; break; }
-        if (meaningOf(upstream, name) !== proof[key]) { unproved.push(`${key}@${from} -> @${to} (${upstream.agent === "director" ? "Direction" : "content"} changed)`); continue; }
+        const prior = (last !== undefined ? base.recited?.proof?.[key] : undefined) ?? meaningOf(upstream, name);
+        if (prior !== proof[key]) { unproved.push(`${key}@${from} -> @${to} (${upstream.agent === "director" ? "Direction" : "content"} changed)`); continue; }
         if (upstream.agent !== "director") continue;
         const before = readCandidate(consumer, upstream.agent, upstream.id, name).bytes;
         const after = readCandidate(consumer, upstream.agent, upstream.id, upstream.pin.candidate).bytes;

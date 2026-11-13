@@ -5,12 +5,15 @@
   "basis": "bulk",
   "at": "2026-11-03T08:58:39Z",
   "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:32.408Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:01.839Z",
     "cites": {
-      "director:advantage.proposition.proof": 4,
+      "director:advantage.proposition.proof": 6,
       "director:context.competition.alternative": 5
     },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+    "proof": {
+      "director:advantage.proposition.proof": "sha256:e85d6d8a3ec86a30510f76d8136c8a2b1442c4083a996570e0533ee30c685e29",
+      "director:context.competition.alternative": "sha256:eed0389cb2a1593c63555d7748f7239b97759fce7fa7517e1a22caee07549f0e"
+    }
   }
 }

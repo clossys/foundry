@@ -10,13 +10,17 @@
     "at": "2026-11-11T23:18:49.665Z"
   },
   "recited": {
-    "by": "agent:director",
-    "at": "2026-11-12T00:35:24.800Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:00.932Z",
     "cites": {
-      "director:capability.operation.delivery": 7,
-      "director:execution.priority.bet": 6,
-      "director:execution.measure.north-star": 4
+      "director:capability.operation.delivery": 8,
+      "director:execution.priority.bet": 10,
+      "director:execution.measure.north-star": 6
     },
-    "reason": "owner r9: Delivery v7 keeps the pinned v4 meaning, only re-addressed (clossys/workspace#46 issuecomment-6810103642)"
+    "proof": {
+      "director:capability.operation.delivery": "sha256:db71e66d9bf7184965ce8ee65a656d0db7e254b91f685c7e6087713a6bcdfbb8",
+      "director:execution.priority.bet": "sha256:0f4b101eca664a50ee75b185802f5eb1307637dfa677cf8ca1a5bed6efa66823",
+      "director:execution.measure.north-star": "sha256:3871bc0c2481012c71c8062f189a86067f9f3fc45e1ba4491101ee331965718e"
+    }
   }
 }

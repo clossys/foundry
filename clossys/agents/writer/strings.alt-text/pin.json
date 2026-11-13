@@ -5,12 +5,15 @@
   "basis": "bulk",
   "at": "2026-11-03T08:58:39Z",
   "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:33.033Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:02.329Z",
     "cites": {
       "director:identity.visual.imagery": 4,
-      "director:identity.naming.name": 3
+      "director:identity.naming.name": 5
     },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+    "proof": {
+      "director:identity.visual.imagery": "sha256:884c4c8d26564bda85ecaaba5a59853a1db032490feca2b7f01f6ec2851c9eb1",
+      "director:identity.naming.name": "sha256:056b3f10e9ea77e7545cd808f375995779ee595bfc0f6bb5844728bf20e0e098"
+    }
   }
 }

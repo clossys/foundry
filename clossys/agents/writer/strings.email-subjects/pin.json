@@ -5,12 +5,15 @@
   "basis": "bulk",
   "at": "2026-11-03T08:58:39Z",
   "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:33.185Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:02.532Z",
     "cites": {
       "director:focus.lifecycle.retention": 5,
-      "director:identity.verbal.voice": 4
+      "director:identity.verbal.voice": 6
     },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+    "proof": {
+      "director:focus.lifecycle.retention": "sha256:147a10f5fde7cc5dfa7bc28bc76c5c911306894478dd06322b3dff9c63196509",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013"
+    }
   }
 }
