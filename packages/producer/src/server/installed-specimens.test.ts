@@ -12,7 +12,8 @@ import { resolveSampleCopy } from './specimen-state.js';
 import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';
 import { createServer, request } from 'node:http';
 import { hostOnlyFinding, installedSpecimenRoutes, specimenSiteCsp, type SiteInputs } from './installed-specimens.js';
-import { SPECIMEN_FRAME_CSP } from './specimen-frame.js';
+import { SPECIMEN_FRAME_CSP, SPECIMEN_FRAME_SCRIPT_HASH } from './specimen-frame.js';
+import { PREVIEW_PAGE_CSP, specimenHostCsp } from './publication.js';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const designer = join(repo, 'clossys/agents/designer');
@@ -110,7 +111,7 @@ describe('specimen route policies', () => {
       req.on('error', reject); req.end();
     });
     try {
-      const expected = `sandbox allow-scripts allow-same-origin; default-src 'none'; script-src ${origin}/__specimen-site/0123abcd/; style-src ${origin}/__specimen-site/0123abcd/ 'unsafe-inline'; font-src ${origin}/__specimen-site/0123abcd/ data:; img-src ${origin}/__specimen-site/0123abcd/ data:; connect-src 'none'; base-uri 'none'; form-action 'none'`;
+      const expected = `sandbox allow-scripts allow-same-origin; default-src 'none'; script-src ${origin}/__specimen-site/0123abcd/; style-src ${origin}/__specimen-site/0123abcd/ 'unsafe-inline'; font-src ${origin}/__specimen-site/0123abcd/ data:; img-src ${origin}/__specimen-site/0123abcd/ data:; frame-src ${origin}/__specimen; connect-src 'none'; base-uri 'none'; form-action 'none'`;
       for (const path of ['/__specimen-site/0123abcd/index.html?page=specimen-components-button-v2', '/__specimen-site/0123abcd/', '/__specimen-site/0123abcd/assets/index.js']) {
         const response = await get(path);
         expect(response.status, path).toBe(200);
@@ -121,7 +122,11 @@ describe('specimen route policies', () => {
       expect(policy.get('script-src')).toBe(`${origin}/__specimen-site/0123abcd/`);
       expect(policy.get('connect-src')).toBe("'none'");
       expect(policy.get('sandbox')!.split(' ').sort()).toEqual(['allow-same-origin', 'allow-scripts']);
-      expect(expected).not.toMatch(/'self'|\*|'unsafe-eval'|allow-top-navigation|allow-popups|allow-forms|frame-src|frame-ancestors/);
+      // It frames exactly one path, the specimen frame route (block-viewer-iframe previews a specimen in an
+      // iframe): one host-source with a path and no trailing slash, never 'self', a wildcard or a scheme.
+      expect(policy.get('frame-src')).toBe(`${origin}/__specimen`);
+      expect([...policy.keys()]).toEqual(['sandbox', 'default-src', 'script-src', 'style-src', 'font-src', 'img-src', 'frame-src', 'connect-src', 'base-uri', 'form-action']);
+      expect(expected).not.toMatch(/'self'|\*|'unsafe-eval'|allow-top-navigation|allow-popups|allow-forms|frame-ancestors|child-src|object-src|http:(?:;|\s|$)/);
       // The frame page that loads it runs only its hashed script and may be framed only by Studio's origin.
       const frame = await get('/__specimen?element=components.button%2Fbutton&v=2&width=375');
       expect(frame.status).toBe(200);
@@ -138,8 +143,19 @@ describe('specimen route policies', () => {
     for (const [origin, build] of [['http://example.test', '0123abcd'], ['http://127.0.0.1:1', '../x'], ['http://127.0.0.1:1 *', '0123abcd'], ['http://', '0123abcd']]) {
       const policy = specimenSiteCsp(origin!, build!);
       expect(policy, `${origin} ${build}`).toContain("script-src 'none';");
+      expect(policy, `${origin} ${build}`).toContain("frame-src 'none';");
       expect(policy).not.toContain(origin!.length > 7 ? origin! : 'http://');
     }
+  });
+});
+
+describe('policies outside the specimen site', () => {
+  // The specimen-site frame-src (R2F-C11) is the only change: every other route's policy stays byte for byte.
+  it('keeps the frame, preview and served-page policies unchanged', () => {
+    expect(SPECIMEN_FRAME_CSP).toBe(`default-src 'none'; script-src '${SPECIMEN_FRAME_SCRIPT_HASH}'; style-src 'self'; frame-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'`);
+    expect(PREVIEW_PAGE_CSP).toBe("sandbox allow-same-origin; default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'self'; base-uri 'none'; form-action 'none'; connect-src 'none'");
+    const origin = 'http://127.0.0.1:4711';
+    expect(specimenHostCsp(origin, 'studio')).toBe(`sandbox allow-same-origin allow-scripts; default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-src ${origin}/__specimen ${origin}/preview/studio/pages/; frame-ancestors 'self'; base-uri 'none'; form-action 'none'; connect-src 'none'`);
   });
 });
 
