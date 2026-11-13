@@ -11,7 +11,7 @@ import { listSlots, pinStamp, readCandidate, readSlot, readSlotEntry, type SlotE
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { RecordError } from "../records/validate.js";
 import { dependencyPart, fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues, treeDependencyParts } from "../server/specimen-tree.js";
-import { specimenStateOf, VISIBLE_STATE_CSS } from "../server/specimen-state.js";
+import { installedCode, itemSpecimenState, specimenStateOf, VISIBLE_STATE_CSS } from "../server/specimen-state.js";
 import { firstComponentSource } from "../publish/component-export.js";
 
 const SEGMENT = /^[a-z0-9][a-z0-9.-]*$/;
@@ -32,6 +32,14 @@ export interface LibrarySourceOptions {
    * refreshes when Writer changes. Without it each candidate load scans Writer.
    */
   readonly writerCopy?: WriterCopy;
+  /**
+   * Whether a slot's declared specimen state (server/specimen-state.ts) joins the record as a
+   * generated `specimen/state.tsx` entry. The host specimen mount renders the record as it is, so
+   * the record carries the state (the default). The installed specimen path installs the item's
+   * own registry files only and mounts the state in its component page, so it passes false:
+   * exactly one layer applies the state.
+   */
+  readonly slotStates?: boolean;
 }
 
 /** A Writer copy snapshot, or a getter of the current one. */
@@ -150,7 +158,7 @@ function pinFingerprint(roots: readonly string[]): string {
 }
 
 /** Every byte and the pin come from the common model reader. No store fallback. */
-export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string; readonly writerCopy?: WriterCopy } = {}): SpecimenRecordStore {
+export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string; readonly writerCopy?: WriterCopy; readonly slotStates?: boolean } = {}): SpecimenRecordStore {
   const roots = rootsIn.map(root => resolve(root));
   if (options.writerCopy && roots.length !== 1) throw new Error("a Writer copy snapshot belongs to exactly one consumer root");
   let cached: { at: number; fingerprint: string; index: InstallIndex } | undefined;
@@ -195,7 +203,8 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
         id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
         files: [{ path: `${element}.json`, content: read.bytes }], preview: specimen.preview, contentHash: read.sha256,
       };
-      return withSlotState(slot, item, withSlotInputs(`${slot}/${candidate.name}`, specimen, withDependencyParts(row)));
+      const mounted = withSlotInputs(`${slot}/${candidate.name}`, specimen, withDependencyParts(row));
+      return options.slotStates === false ? mounted : withSlotState(slot, item, mounted);
     },
   };
   return store;
@@ -447,9 +456,8 @@ const CODE_FILE = /\.(?:[cm]?[jt]sx?)$/;
  * shown revealed). The candidate bytes are unchanged; the module joins the record's files and
  * becomes the preview entry. A slot with no declared state is returned as it is.
  */
-function withSlotState(slot: string, item: { files?: { path?: unknown; type?: unknown }[] }, row: SpecimenElementVersion): SpecimenElementVersion {
-  const state = specimenStateOf(slot);
-  if (!state) return row;
+function withSlotState(slot: string, item: { type?: unknown; files?: { path?: unknown; type?: unknown; target?: unknown; content?: unknown }[] }, row: SpecimenElementVersion): SpecimenElementVersion {
+  if (!specimenStateOf(slot)) return row;
   const preview = (row.preview && typeof row.preview === "object" ? row.preview : {}) as Record<string, unknown>;
   const fixtures = preview.fixtures && typeof preview.fixtures === "object" ? preview.fixtures as Record<string, unknown> : undefined;
   const descriptor = !!fixtures && typeof fixtures.file === "string" && typeof fixtures.export === "string";
@@ -457,6 +465,10 @@ function withSlotState(slot: string, item: { files?: { path?: unknown; type?: un
   const entry = descriptor ? fixtures!.file as string : typeof preview.entry === "string" ? preview.entry : (code.find(file => typeof file.type === "string" && /registry:(?:ui|component|block|page)/.test(file.type)) ?? code[0])?.path;
   if (!entry) return row;
   const exported = descriptor ? fixtures!.export as string : typeof preview.export === "string" ? preview.export : undefined;
+  // The state this candidate mounts in: a provider wraps only an item that reads it and is not it.
+  const installed = installedCode({ ...item, files: (item.files ?? []).filter(file => file.path === entry) })[0];
+  const state = itemSpecimenState(slot, installedCode(item), { file: installed?.path ?? entry, export: exported });
+  if (!state) return row;
   const props = descriptor ? fixtures!.props : fixtures;
   const target = posix.relative(posix.dirname(SPECIMEN_STATE_FILE), entry.replace(CODE_FILE, ""));
   const open = state.state === "open" ? state : undefined;
@@ -473,7 +485,7 @@ function withSlotState(slot: string, item: { files?: { path?: unknown; type?: un
     "export function SpecimenState(props) {",
     `  const Root = pick(${JSON.stringify(exported ?? "")});`,
     ...(open ? [`  useEffect(() => { openSpecimen(${JSON.stringify(open.sample)}, { duration: Infinity }); }, []);`] : []),
-    `  return createElement("div", { "data-specimen-state": ${JSON.stringify(state.state)} }, ${state.state === "visible" ? `createElement("style", null, ${JSON.stringify(VISIBLE_STATE_CSS)}), ` : ""}${provider ? "createElement(SpecimenProvider, null, createElement(Root, props))" : "createElement(Root, props)"});`,
+    `  return createElement("div", { "data-specimen-state": ${JSON.stringify(state.state)} }, ${state.state === "visible" ? `createElement("style", null, ${JSON.stringify(VISIBLE_STATE_CSS)}), ` : ""}${provider ? `createElement(SpecimenProvider, ${JSON.stringify(provider.props ?? null)}, createElement(Root, props))` : "createElement(Root, props)"});`,
     "}",
     "",
   ].join("\n");
@@ -527,7 +539,7 @@ export function pinnedLibraryTheme(rootsIn: readonly string[]): SpecimenTheme | 
  * `themes`) gets every pinned theme variable, light and dark, not one `themes.*` leaf.
  */
 export function libraryRecordSource(options: LibrarySourceOptions): SpecimenRecordSource {
-  const base = recordStoreSource(libraryRecordStore(options.roots, { ...(options.registryBase ? { registryBase: options.registryBase } : {}), ...(options.writerCopy ? { writerCopy: options.writerCopy } : {}) }), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
+  const base = recordStoreSource(libraryRecordStore(options.roots, { ...(options.registryBase ? { registryBase: options.registryBase } : {}), ...(options.writerCopy ? { writerCopy: options.writerCopy } : {}), ...(options.slotStates === false ? { slotStates: false } : {}) }), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
   return {
     ...base,
     async theme(id) {

@@ -78,6 +78,22 @@ describe("canonical specimen records through the common slot reader", () => {
     expect(card?.files.some(file => file.path === SPECIMEN_STATE_FILE)).toBe(false);
   });
 
+  it("adds no state module for a candidate that is its slot's provider or never reads it, and none on the installed path", async () => {
+    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const host = libraryRecordStore([consumer]), installed = libraryRecordStore([consumer], { slotStates: false });
+    const stateOf = (row: Awaited<ReturnType<typeof host.load>>) => row?.files.some(file => file.path === SPECIMEN_STATE_FILE);
+    // sidebar-v2's fixture is SidebarProvider itself; navigation-tree-v1 never imports the sidebar module.
+    expect(stateOf(await host.load("components.sidebar/sidebar", 2))).toBe(false);
+    expect(stateOf(await host.load("components.navigation-tree/navigation-tree", 1))).toBe(false);
+    // The pinned navigation-tree-v2 reads the sidebar context: the host mount wraps it, the installed path never.
+    const pinned = await host.load("components.navigation-tree/navigation-tree", 2);
+    expect(stateOf(pinned)).toBe(true);
+    expect(pinned!.preview).toMatchObject({ entry: SPECIMEN_STATE_FILE, export: "SpecimenState" });
+    const bare = await installed.load("components.navigation-tree/navigation-tree", 2);
+    expect(stateOf(bare)).toBe(false);
+    expect(bare!.preview).not.toMatchObject({ entry: SPECIMEN_STATE_FILE });
+  });
+
   it.each(["frames.studio-shell/studio-shell", "sections.studio.home/studio-home", "sections.studio.checks/studio-checks"])("reads actual canonical Studio %s from its pin or remains unresolved", async id => {
     const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
     const source = libraryRecordSource({ roots: [consumer] });

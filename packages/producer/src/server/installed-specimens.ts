@@ -28,8 +28,9 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { dirname, extname, join, relative, resolve, sep, isAbsolute } from "node:path";
 import { specimenSubstrate } from "./specimen-substrate.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
-import { resolveSampleCopy, SLOT_SPECIMEN_STATES, specimenStateOf, type SpecimenState } from "./specimen-state.js";
+import { installedCode, itemSpecimenState, resolveSampleCopy, SLOT_SPECIMEN_STATES, type SpecimenState } from "./specimen-state.js";
 import { fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "./specimen-tree.js";
+import type { SpecimenRecordSource } from "@clossys/publisher/specimen";
 import { bindPage, installPage, isBlocking, reconcileInstalled, substrateDependencies, type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
@@ -37,8 +38,8 @@ import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 import { isAbsent } from "../errors.js";
 
-/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds). */
-const SPECIMEN_FORMAT = "studio-specimens/11";
+/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds; 12: records without the slot state module, which component pages apply). */
+const SPECIMEN_FORMAT = "studio-specimens/12";
 const SITE_PREFIX = "/__specimen-site/";
 /** The specimen frame route; the only path a specimen-site page may frame (specimenSiteCsp). */
 const SPECIMEN_FRAME_ROUTE = "/__specimen";
@@ -155,7 +156,25 @@ function fontPage(variable: string, family: string, text: { sample: string; labe
   ].join("\n");
 }
 
-/** Component leaf: the bound item centred on the page ground, in its slot's declared specimen state. */
+/**
+ * Component leaf page for one candidate: `module` (its bound page module) centred on the page
+ * ground, in the state that candidate mounts in (itemSpecimenState). `item` is the candidate's
+ * registry item and `entry` the installed file and export its page module mounts.
+ */
+export function componentSpecimenPage(module: string, slot: string, item: unknown, entry: { readonly file: string; readonly export?: string | undefined }): string {
+  return componentPage(module, itemSpecimenState(slot, installedCode(item), entry));
+}
+
+/**
+ * The records the installed path resolves pages from. Each slot's specimen state stays out of the
+ * record (no `specimen/state.tsx` entry, which the installer never installs and would answer with
+ * `no-entry`): componentSpecimenPage applies it, the one layer that wraps the installed item.
+ */
+export function installedRecordSource(library: string, pinnedCopy: Readonly<Record<string, string>>): SpecimenRecordSource {
+  return libraryRecordSource({ roots: [library], writerCopy: pinnedCopy, slotStates: false });
+}
+
+/** Component leaf: the bound item centred on the page ground, in its specimen state. */
 function componentPage(item: string, state?: SpecimenState): string {
   const open = state?.state === "open" ? state : undefined;
   const provider = state?.state === "provider" ? state.provider : undefined;
@@ -167,7 +186,7 @@ function componentPage(item: string, state?: SpecimenState): string {
     `import Item from ${JSON.stringify(item)};`,
     "export default function Page() {",
     ...(open ? [`  useEffect(() => { openSpecimen(${JSON.stringify(open.sample)}, { duration: Infinity }); }, []);`] : []),
-    `  return <ComponentSpecimen state={${JSON.stringify(state?.state ?? "rest")}}>${provider ? "<SpecimenProvider><Item /></SpecimenProvider>" : "<Item />"}</ComponentSpecimen>;`,
+    `  return <ComponentSpecimen state={${JSON.stringify(state?.state ?? "rest")}}>${provider ? `<SpecimenProvider {...${JSON.stringify(provider.props ?? {})}}><Item /></SpecimenProvider>` : "<Item />"}</ComponentSpecimen>;`,
     "}",
     "",
   ].join("\n");
@@ -221,7 +240,7 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
   await mkdir(join(substrate, "components"), { recursive: true });
   await writeFile(join(substrate, "components", SPECIMEN_DOCUMENT), await specimenDocument());
   // One Writer snapshot: a Writer scan per candidate load held the server's event loop for minutes.
-  const source = libraryRecordSource({ roots: [library], writerCopy: options.pinnedCopy });
+  const source = installedRecordSource(library, options.pinnedCopy);
   const runner = shadcnRunner(process.env, options.signal);
   const include = Object.keys(pins).filter(slot => slot.startsWith("themes.")).sort();
   const findings: InstallFinding[] = [];
@@ -265,7 +284,7 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
     const blocking = result.findings.filter(isBlocking);
     if (!result.page || blocking.length) { findings.push(...blocking); continue; }
     // A specimen frames one item: only a frame composes the (empty) section list as children.
-    const state = specimenStateOf(slot), props = result.page.frame.props as Record<string, unknown>;
+    const props = result.page.frame.props as Record<string, unknown>;
     if (!slot.startsWith("frames.")) {
       delete props.children;
       // Every other item renders the sample children its candidate's preview fixture declares:
@@ -287,7 +306,10 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
     if (slot.startsWith("components.")) {
       // A component is a small part of a page: centre it on the page ground instead of pinning it to the top-left corner.
       await writeFile(join(pagesDir, `${page}--item.tsx`), pageModule(result.page, substrate, { host: false }));
-      await writeFile(join(pagesDir, `${page}.tsx`), componentPage(`./${page}--item`, state));
+      const mounted = result.slots.find(row => row.slot === slot && row.mounted)?.record;
+      let item: unknown;
+      try { item = mounted ? JSON.parse(mounted.payload.raw) : undefined; } catch { item = undefined; }
+      await writeFile(join(pagesDir, `${page}.tsx`), componentSpecimenPage(`./${page}--item`, slot, item, result.page.frame.entry));
     } else await writeFile(join(pagesDir, `${page}.tsx`), pageModule(result.page, substrate, { host: false }));
     pages.set(pageKey(slot, pin.element, pin.version), { page, element: pin.element, version: pin.version, build: build.key });
   }
