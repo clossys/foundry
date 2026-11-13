@@ -1,15 +1,7 @@
 {
-  "candidate": "studio-v1.md",
-  "sha256": "7bb14545ecfaeb66fe6ab2840d8197d029e85b7f6a38ae18a381fee2347297af",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z",
-  "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:32.240Z",
-    "cites": {
-      "director:identity.verbal.voice": 4
-    },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
-  }
+  "candidate": "studio-v3-v1.md",
+  "sha256": "361e2b1deba43448a70fd9475691ab26c684c1f7fe8dc1bf49712ba2c290d507",
+  "decidedBy": "agent:writer",
+  "basis": "agent",
+  "at": "2026-11-13T01:49:45.208Z"
 }

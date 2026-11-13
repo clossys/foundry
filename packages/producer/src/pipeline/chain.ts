@@ -310,8 +310,8 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
     add(owner ? "You decide; a high-tier llm drafts the recommendation." : `The ${target.agent} agent does it at high tier.`, seatArgs("high", "<model:high>"));
     add("Human only, no llm: the seat stays listed open until an llm part is added.", ["clossys", "seat", item, "--by", by, "--no-llm", "--procedure", procedure, "--command", command]);
   } else if (step.id === "ia" && !item.includes("/")) {
-    add(`Adopt the Foundry ${item} IA: its tree and every slot's contract, inputs and uses.`, ["clossys", "ia", item, "--adopt"]);
-    add(`Start an empty ${item} IA and place each slot yourself with clossys ia ${item}/<slot> --under <l1>/<l2>.`, ["clossys", "ia", item, "--start"]);
+    add(`Adopt the Foundry IA for ${item}: its tree and every slot's contract, inputs and uses.`, ["clossys", "ia", item, "--adopt"]);
+    add(`Start an empty IA for ${item} and place each slot yourself (clossys ia ${item}/<slot> --under <l1>/<l2>).`, ["clossys", "ia", item, "--start"]);
   } else if (step.id === "ia") {
     const [agent, slot] = [item.slice(0, item.indexOf("/")), item.slice(item.indexOf("/") + 1)];
     add(`Keep ${slot} where ia.json places it and give it its contract.`, ["clossys", "ia", item, "--contract", "<contract.json>"]);
