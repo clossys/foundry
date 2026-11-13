@@ -38,8 +38,8 @@ import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 import { isAbsent } from "../errors.js";
 
-/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds; 12: records without the slot state module, which component pages apply). */
-const SPECIMEN_FORMAT = "studio-specimens/12";
+/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds; 12: records without the slot state module, which component pages apply; 13: records without the generated parts and inputs modules, which the page module mounts). */
+const SPECIMEN_FORMAT = "studio-specimens/13";
 const SITE_PREFIX = "/__specimen-site/";
 /** The specimen frame route; the only path a specimen-site page may frame (specimenSiteCsp). */
 const SPECIMEN_FRAME_ROUTE = "/__specimen";
@@ -166,9 +166,11 @@ export function componentSpecimenPage(module: string, slot: string, item: unknow
 }
 
 /**
- * The records the installed path resolves pages from. Each slot's specimen state stays out of the
- * record (no `specimen/state.tsx` entry, which the installer never installs and would answer with
- * `no-entry`): componentSpecimenPage applies it, the one layer that wraps the installed item.
+ * The records the installed path resolves pages from: the item's own registry files and fixtures,
+ * with no generated specimen module (`specimen/state.tsx`, `parts.tsx`, `inputs.tsx`), which the
+ * installer never installs and would answer with `no-entry`. The installed page module mounts the
+ * fixture tree's dependency parts and input slots, and componentSpecimenPage applies the slot's
+ * state: the one layer that wraps or mounts the installed item.
  */
 export function installedRecordSource(library: string, pinnedCopy: Readonly<Record<string, string>>): SpecimenRecordSource {
   return libraryRecordSource({ roots: [library], writerCopy: pinnedCopy, slotStates: false });

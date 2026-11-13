@@ -138,7 +138,7 @@ export async function planNextBind(options: { root: string; site: string; map: C
   }
   const pins = designerPins(root);
   const copy = await writerCopy(root);
-  const source = libraryRecordSource({ roots: specimenRoots(root, options.bind.records ? [...options.bind.records] : undefined) });
+  const source = libraryRecordSource({ roots: specimenRoots(root, options.bind.records ? [...options.bind.records] : undefined), slotStates: false });
   const entries = map.entries.filter((entry): entry is ContentMapEntry => entry.kind === "page");
   const homeId = (entries.find(entry => contentMapPath(entry) === "/") ?? entries[0])?.id;
   const records: InstallPageRecord[] = [];

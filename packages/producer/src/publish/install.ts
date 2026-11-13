@@ -451,7 +451,7 @@ export async function publishInstall(options: PublishInstallOptions): Promise<Pu
   const substrate = join(out, "substrate");
   await ensureSubstrate(substrate);
 
-  const source = libraryRecordSource({ roots: specimenRoots(root, options.records) });
+  const source = libraryRecordSource({ roots: specimenRoots(root, options.records), slotStates: false });
   // The substrate under clossys-written output (`MARKER`): replaced files are removed.
   const result = await installAndBind({ page, pins, source, substrate, runner: options.runner ?? shadcnRunner(), copy, ownedSubstrate: true });
   const findings: InstallFinding[] = [...result.findings];

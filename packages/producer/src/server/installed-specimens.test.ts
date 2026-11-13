@@ -11,10 +11,10 @@ import { pageModule } from '../publish/install.js';
 import { firstComponentSource } from '../publish/component-export.js';
 import { installedCode, resolveSampleCopy, SLOT_SPECIMEN_STATES, specimenStateOf, type SpecimenState } from './specimen-state.js';
 import { createRequire } from 'node:module';
-import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';
+import { fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';
 import { createServer, request } from 'node:http';
 import { slotInstallInputs } from '../specimen/slot-install-inputs.js';
-import { SPECIMEN_STATE_FILE } from '../specimen/library-source.js';
+import { SPECIMEN_INPUTS_FILE, SPECIMEN_PARTS_FILE, SPECIMEN_STATE_FILE } from '../specimen/library-source.js';
 import { componentSpecimenPage, hostOnlyFinding, installedRecordSource, installedSpecimenRoutes, specimenSiteCsp, type SiteInputs } from './installed-specimens.js';
 import { SPECIMEN_FRAME_CSP, SPECIMEN_FRAME_SCRIPT_HASH } from './specimen-frame.js';
 import { PREVIEW_PAGE_CSP, specimenHostCsp } from './publication.js';
@@ -274,6 +274,27 @@ describe('a component slot that reads a context', () => {
     expect(mounted.standIns, `${slot} provider ${provider.module}`).not.toContain(provider.module);
     await expect(renderMounted(slot, row!.entry!, files, { props: props ?? {}, item, bare: true }), `${slot} needs its provider`).rejects.toThrow(CONTEXT_ERROR);
     if (mounted.providerTag) expect(mounted.markup.split(mounted.providerTag).length - 1, `${slot} rendered wrappers`).toBe(1);
+  }, 60_000);
+
+  it.each(['components.chart-area', 'components.chart-bar', 'components.chart-line', 'components.tooltip', 'components.toast', 'components.flow.labeled-handle'])('resolves the pinned %s through the installed record source to its own registry file, with no generated specimen module', async slot => {
+    const library = join(repo, 'clossys');
+    const { pins } = slotInstallInputs(library)!;
+    const copy = pinnedWriterCopy(library);
+    // The production path: installed records -> resolvePage -> the build pass's tree check -> componentSpecimenPage.
+    const { slots, findings } = await resolvePage({ id: 'specimen-installed', frame: slot, sections: [] }, pins, installedRecordSource(library, copy));
+    expect(findings.filter(finding => finding.slot === slot), slot).toEqual([]);
+    const row = slots.find(row => row.slot === slot && row.mounted);
+    expect(row?.entry, `${slot} resolves to a mounted entry`).toBeDefined();
+    // The installer installs the item's own files: a generated module would be a `no-entry`.
+    const generated = [SPECIMEN_STATE_FILE, SPECIMEN_PARTS_FILE, SPECIMEN_INPUTS_FILE];
+    for (const files of [row!.record.payload.files, row!.record.sources ?? []]) expect(files.map(file => file.path).filter(path => generated.includes(path)), slot).toEqual([]);
+    const item = JSON.parse(row!.record.payload.raw);
+    const entry = installedCode(item).find(file => file.path === row!.entry!.file);
+    expect(entry, `${slot} mounts one of its own installed files`).toBeDefined();
+    // The fixture tree names the entry's own exports and `<package>.<Export>` parts the page module imports.
+    const tree = fixtureChildren(row!.record.preview.fixtures);
+    if (tree !== undefined) expect(specimenTreeIssues(tree, moduleExports(entry!.content), copy, itemDependencies(item)), slot).toEqual([]);
+    expect(componentSpecimenPage('./item--item', slot, item, row!.entry!)).not.toContain('specimen/');
   }, 60_000);
 });
 

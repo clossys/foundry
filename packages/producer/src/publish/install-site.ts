@@ -166,7 +166,7 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
   if (plan) {
     await ensureSubstrate(substrate);
     const pins: InstallPins = designerPins(root);
-    const source = libraryRecordSource({ roots: specimenRoots(root, options.records) });
+    const source = libraryRecordSource({ roots: specimenRoots(root, options.records), slotStates: false });
     const copy = await writerCopy(root);
     const runner = options.runner ?? shadcnRunner();
     const slots: Parameters<typeof substrateDependencies>[0][number][] = [];
