@@ -144,6 +144,10 @@ describe("loopback Producer", () => {
     await cp(childEntry, join(runtime, "dist/studio/standalone/apps/studio/server.js"));
     await writeFile(join(runtime, "dist/studio/manifest.json"), JSON.stringify({ schemaVersion: 1, serverEntry: "standalone/apps/studio/server.js", staticDir: "standalone/apps/studio/.next/static", publicDir: null }));
     await writeFile(join(root, "clossys/clossys.config.ts"), "export default {};\n");
+    // Without a Designer slot model /api/config compiles the whole Foundry default fill
+    // (226 s measured 2026-11-12 at load 6-17, 37.8 s on 2026-11-06), which this CLI
+    // lifecycle test does not exercise; the pinless model keeps every compile input a gap.
+    await designerModel();
     const bin = join(root, "bin"); await mkdir(bin);
     const opened = join(root, "browser-opened");
     // A browser launch would invoke this marker program, even without a desktop.
@@ -161,7 +165,7 @@ describe("loopback Producer", () => {
       expect((await fetch(`${url}/api/cells`)).status).toBe(404);
       const exited = once(cli, "exit"); cli.kill("SIGTERM");
       expect((await exited)[0]).toBe(0); expect(stderr).toBe("");
-      expect(stdout).toContain("Producer stopped; director: missing, designer: missing, writer: missing, publisher: missing");
+      expect(stdout).toContain("Producer stopped; director: missing, designer: slot model, writer: missing, publisher: missing");
       expect(stdout).not.toContain(config.token); expect(stdout).not.toContain("token=");
       await expect(stat(opened)).rejects.toMatchObject({ code: "ENOENT" });
       await expect(fetch(`${url}/api/health`)).rejects.toThrow();

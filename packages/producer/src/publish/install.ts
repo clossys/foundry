@@ -62,22 +62,22 @@ export interface PublishInstallResult {
   readonly html?: string;
 }
 
-/** The shadcn CLI from this workspace, run with the current Node; arguments only, never a shell. */
-export function shadcnRunner(env: NodeJS.ProcessEnv = process.env): ShadcnRunner {
+/** The shadcn CLI from this workspace, run with the current Node; arguments only, never a shell. `signal` stops a running call. */
+export function shadcnRunner(env: NodeJS.ProcessEnv = process.env, signal?: AbortSignal): ShadcnRunner {
   let bin: string;
   try { bin = requireHere.resolve("shadcn"); } catch { throw new Error("publish --install: the shadcn CLI is not installed in this workspace"); }
   return (args, { cwd }) => new Promise(done => {
-    execFile(process.execPath, [bin, ...args], { cwd, env, timeout: 120_000, maxBuffer: 8 * 1024 * 1024 }, (error, stdout, stderr) => {
+    execFile(process.execPath, [bin, ...args], { cwd, env, timeout: 120_000, maxBuffer: 8 * 1024 * 1024, ...(signal ? { signal } : {}) }, (error, stdout, stderr) => {
       done({ code: error ? (typeof error.code === "number" ? error.code : 1) : 0, stdout: String(stdout), stderr: String(stderr) });
     });
   });
 }
 
-/** npm, run with arguments only and never a shell. */
-export function npmRunner(env: NodeJS.ProcessEnv = process.env): ShadcnRunner {
+/** npm, run with arguments only and never a shell. `signal` stops a running call. */
+export function npmRunner(env: NodeJS.ProcessEnv = process.env, signal?: AbortSignal): ShadcnRunner {
   const bin = process.platform === "win32" ? "npm.cmd" : "npm";
   return (args, { cwd }) => new Promise(done => {
-    execFile(bin, [...args], { cwd, env, timeout: 600_000, maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
+    execFile(bin, [...args], { cwd, env, timeout: 600_000, maxBuffer: 16 * 1024 * 1024, ...(signal ? { signal } : {}) }, (error, stdout, stderr) => {
       done({ code: error ? (typeof error.code === "number" ? error.code : 1) : 0, stdout: String(stdout), stderr: String(stderr) });
     });
   });

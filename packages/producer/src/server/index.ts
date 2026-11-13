@@ -77,13 +77,14 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
   const library = resolve(options.root, options.library ?? "clossys");
   const hasLibrary = hasAgentModel(library, "designer");
   // Pinned items render through the install pipeline; the record handler stays for other versions.
-  const installed = hasLibrary ? installedSpecimens({ root: options.root, library }) : undefined;
+  // close() aborts it: background specimen builds and their children stop with the server.
+  const aborter = new AbortController();
+  const installed = hasLibrary ? installedSpecimens({ root: options.root, library, signal: aborter.signal }) : undefined;
   // No default theme id: a specimen that names none renders in the consumer's whole pinned theme.
   // One Writer scan per Writer change, not per specimen request: the watcher below refreshes it.
   const writer = writerSnapshot(library);
   const specimen = hasLibrary ? await specimenMount({ records: [library], workspace: specimenNpmRoot(library), writerCopy: writer.read }) : undefined;
   const token = randomBytes(32).toString("base64url");
-  const aborter = new AbortController();
   const streams = new Set<ServerResponse>();
   let port = 0, child: StudioChild | undefined, stopWatch: (() => void) | undefined;
   let closing: Promise<void> | undefined;
