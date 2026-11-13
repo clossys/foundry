@@ -1,12 +1,13 @@
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import type { BoundPage } from '@clossys/publisher/install';
+import { installedPath } from '@clossys/publisher/specimen';
 import { pageModule } from '../publish/install.js';
 import { firstComponentSource } from '../publish/component-export.js';
 import { resolveSampleCopy, specimenStateOf } from './specimen-state.js';
@@ -97,39 +98,72 @@ describe('specimen element trees', () => {
 });
 
 /**
- * One item's page module with no declared export, rendered to static markup inside its slot's
- * declared provider (as componentPage mounts it), or bare with `bare`. `files` are written into
- * the substrate, `@/` resolving against its root as the substrate's tsconfig does.
+ * One item's page module rendered to static markup, mounted as componentPage mounts it: inside its
+ * slot's declared provider, or bare with `bare`. `entry.export` unset takes the first component
+ * export. `files` are the substrate: `@/<path>` resolves to a file there (`.tsx`, `.ts`), and an
+ * `@/` module the substrate lacks is a stand-in whose parts render their children and whose
+ * hooks return `false`, so only the item's own context dependency is under test.
  */
-async function renderMounted(slot: string, file: string, files: Record<string, string>, bare = false): Promise<string> {
+async function renderMounted(slot: string, entry: { readonly file: string; readonly export?: string }, files: Readonly<Record<string, string>>, options: { readonly props?: Record<string, unknown>; readonly bare?: boolean } = {}): Promise<string> {
   const substrate = mkdtempSync(join(tmpdir(), 'specimen-mount-'));
   try {
     for (const [path, content] of Object.entries(files)) { mkdirSync(join(substrate, dirname(path)), { recursive: true }); writeFileSync(join(substrate, path), content); }
     mkdirSync(join(substrate, 'clossys/pages'), { recursive: true });
-    const frame = { slot, key: slot, role: 'frame', id: `${slot}/item`, version: 1, entry: { file }, props: {}, copy: {}, text: {}, assets: {} } as const;
+    const frame = { slot, key: slot, role: 'frame', id: `${slot}/item`, version: 1, entry, props: options.props ?? {}, copy: {}, text: {}, assets: {} } as const;
     const page = { schema: 'clossys.bound-page/1', id: 'specimen-mount', frame, sections: [], parts: [] } as unknown as BoundPage;
-    const entry = join(substrate, 'clossys/pages/specimen.tsx');
-    writeFileSync(entry, pageModule(page, substrate, { host: false }));
-    const external = ['react', 'react/jsx-runtime', 'react-dom', '@xyflow/react'];
-    const alias = { name: 'substrate-alias', setup(on: any) { on.onResolve({ filter: /^@\// }, (args: { path: string }) => ({ path: ['.tsx', '.ts'].map(ext => join(substrate, args.path.slice(2)) + ext).find(path => existsSync(path)) })); } };
-    const out = await build({ entryPoints: [entry], bundle: true, write: false, format: 'cjs', platform: 'node', jsx: 'automatic', external, plugins: [alias], logLevel: 'silent' });
+    writeFileSync(join(substrate, 'clossys/pages/item.tsx'), pageModule(page, substrate, { host: false }));
+    // The provider comes from the same bundle as the item, so a substrate provider shares its context.
+    const state = options.bare ? undefined : specimenStateOf(slot);
+    const provider = state?.state === 'provider' ? state.provider : undefined;
+    writeFileSync(join(substrate, 'clossys/pages/specimen.tsx'), [
+      'import { createElement } from "react";',
+      'import Item from "./item";',
+      ...(provider ? [`import { ${provider.export} as Provider } from ${JSON.stringify(provider.module)};`] : []),
+      `export default function Specimen() { return ${provider ? 'createElement(Provider, null, createElement(Item))' : 'createElement(Item)'}; }`,
+      '',
+    ].join('\n'));
+    const standIn = (importer: string, path: string): string => {
+      const names = [...readFileSync(importer, 'utf8').matchAll(/import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/g)].filter(match => match[2] === path)
+        .flatMap(match => match[1]!.split(',').map(name => name.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]!).filter(Boolean));
+      return ['import { createElement } from "react";', ...[...new Set(names)].map(name => /^use[A-Z]/.test(name)
+        ? `export const ${name} = () => false;`
+        : `export const ${name} = (props: any) => createElement("div", { "data-stand-in": ${JSON.stringify(name)} }, props.children);`)].join('\n');
+    };
+    const alias = { name: 'substrate-alias', setup(on: any) {
+      on.onResolve({ filter: /^@\// }, (args: { path: string; importer: string }) => {
+        const file = ['.tsx', '.ts'].map(ext => join(substrate, args.path.slice(2)) + ext).find(path => existsSync(path));
+        return file ? { path: file } : { path: args.path, namespace: 'stand-in', pluginData: standIn(args.importer, args.path) };
+      });
+      on.onLoad({ filter: /.*/, namespace: 'stand-in' }, (args: { pluginData: string }) => ({ contents: args.pluginData, loader: 'tsx', resolveDir: substrate }));
+    } };
+    const out = await build({ entryPoints: [join(substrate, 'clossys/pages/specimen.tsx')], bundle: true, write: false, format: 'cjs', platform: 'node', jsx: 'automatic', packages: 'external', plugins: [alias], logLevel: 'silent' });
     const module = { exports: {} as Record<string, any> };
     const requireHere = createRequire(import.meta.url);
-    new Function('require', 'module', 'exports', out.outputFiles[0]!.text)((id: string) => { if (external.includes(id)) return id === 'react' ? React : requireHere(id); throw new Error(id); }, module, module.exports);
-    const state = specimenStateOf(slot);
-    const item = React.createElement(module.exports.default);
-    if (bare || state?.state !== 'provider') return renderToStaticMarkup(item);
-    const provider = requireHere(state.provider.module)[state.provider.export];
-    return renderToStaticMarkup(React.createElement(provider, null, item));
+    new Function('require', 'module', 'exports', out.outputFiles[0]!.text)((id: string) => id === 'react' ? React : requireHere(id), module, module.exports);
+    return renderToStaticMarkup(React.createElement(module.exports.default));
   } finally { rmSync(substrate, { recursive: true, force: true }); }
 }
 
-/** A pinned candidate's code files, at the paths their imports name (`@/components/<file>`). */
-function pinnedCode(slot: string): Record<string, string> {
-  const pin = JSON.parse(readFileSync(join(designer, slot, 'pin.json'), 'utf8'));
-  const item = JSON.parse(readFileSync(join(designer, slot, 'candidates', pin.candidate), 'utf8'));
-  return Object.fromEntries(item.files.filter((row: { path: string }) => /\.[jt]sx?$/.test(row.path)).map((row: { path: string; content: string }) => [`components/${row.path}`, row.content]));
+type RecordedItem = { readonly type?: string; readonly files: readonly { readonly path: string; readonly type?: string; readonly target?: string; readonly content: string }[]; readonly meta?: { readonly preview?: { readonly fixtures?: { readonly file?: string; readonly export?: string; readonly props?: Record<string, unknown> } } } };
+
+/** A recorded candidate's code files at their installed paths (as the shadcn CLI writes them). */
+function installedCode(item: RecordedItem): Record<string, string> {
+  return Object.fromEntries(item.files.filter(file => /\.[jt]sx?$/.test(file.path)).flatMap(file => {
+    const path = installedPath({ ...file, type: file.type ?? item.type });
+    return path ? [[path, file.content] as const] : [];
+  }));
 }
+
+/** Every component slot's recorded candidates (Studio previews each), the pinned one first. */
+const recordedComponents: ReadonlyMap<string, readonly { readonly candidate: string; readonly item: RecordedItem; readonly code: Readonly<Record<string, string>> }[]> = new Map(
+  readdirSync(designer).filter(slot => slot.startsWith('components.') && existsSync(join(designer, slot, 'pin.json'))).sort().map(slot => {
+    const pinned = JSON.parse(readFileSync(join(designer, slot, 'pin.json'), 'utf8')).candidate as string;
+    const candidates = readdirSync(join(designer, slot, 'candidates')).filter(name => name.endsWith('.json')).sort((x, y) => Number(y === pinned) - Number(x === pinned) || x.localeCompare(y));
+    return [slot, candidates.map(candidate => {
+      const item = JSON.parse(readFileSync(join(designer, slot, 'candidates', candidate), 'utf8')) as RecordedItem;
+      return { candidate, item, code: installedCode(item) };
+    })] as const;
+  }));
 
 describe('a specimen with no declared export', () => {
   const pick = new Function('mod', `return ${firstComponentSource('mod')}`) as (mod: Record<string, unknown>) => unknown;
@@ -152,17 +186,54 @@ describe('a specimen with no declared export', () => {
       'export function useCanvas() { return { zoom: 1 }; }',
       '',
     ].join('\n');
-    expect(await renderMounted('components.sample', 'lib/canvas.ts', { 'lib/canvas.ts': source })).toBe('<div data-part="canvas"></div>');
+    expect(await renderMounted('components.sample', { file: 'lib/canvas.ts' }, { 'lib/canvas.ts': source })).toBe('<div data-part="canvas"></div>');
   });
 
-  it('every pinned React Flow part mounts inside ReactFlowProvider and renders', async () => {
-    // The flavor's cn stands in for lib/utils: only the flow store dependency is under test.
-    const utils = { 'lib/utils.ts': 'export const cn = (...names: unknown[]) => names.filter(Boolean).join(" ");\n' };
-    for (const [slot, uses] of [['components.flow.canvas', []], ['components.flow.base-handle', []], ['components.flow.labeled-handle', ['components.flow.base-handle']]] as const) {
-      const files = { ...utils, ...Object.assign({}, ...uses.map(pinnedCode)), ...pinnedCode(slot) } as Record<string, string>;
-      const file = Object.keys(pinnedCode(slot))[0]!;
-      await expect(renderMounted(slot, file, files, true), slot).rejects.toThrow(/ReactFlowProvider/);
-      expect(await renderMounted(slot, file, files), slot).toMatch(/react-flow__/);
+});
+
+/** A context hook called outside its provider: a shadcn guard, or React Flow's store. */
+const CONTEXT_ERROR = /must be used within|provider as an ancestor/i;
+
+describe('a component slot that reads a context', () => {
+  // A slot is context-bound when a recorded candidate throws a guard (`useSidebar must be used
+  // within a SidebarProvider`), calls a guarded hook a recorded file defines, or reads the React
+  // Flow store: derived from the records alone, never from the state table.
+  const sources = [...recordedComponents.values()].flatMap(candidates => candidates.flatMap(({ code }) => Object.values(code)));
+  const guardHooks = new Set(sources.flatMap(source => [...source.matchAll(/must be used within/g)].flatMap(match => {
+    const defined = [...source.slice(0, match.index).matchAll(/function\s+(use[A-Z]\w*)|const\s+(use[A-Z]\w*)\s*=/g)].at(-1);
+    return defined ? [defined[1] ?? defined[2]!] : [];
+  })));
+  const readsContext = (source: string) => /must be used within|from\s+["']@xyflow\/react["']/.test(source) || [...guardHooks].some(hook => new RegExp(`\\b${hook}\\s*\\(`).test(source));
+  const guarded = [...recordedComponents].filter(([, candidates]) => candidates.some(({ code }) => Object.values(code).some(readsContext))).map(([slot]) => slot);
+  // The pinned components are the rest of the substrate, so a provider resolves to its real module.
+  const substrate = Object.assign({}, ...[...recordedComponents.values()].map(candidates => candidates[0]!.code)) as Record<string, string>;
+  const cnStub = { 'lib/utils.ts': 'export const cn = (...names: unknown[]) => names.filter(Boolean).join(" ");\n' };
+
+  it('derives the guarded slots from the records', () => {
+    expect([...guardHooks].sort()).toEqual(['useChart', 'useMeter', 'useProgress', 'useSidebar']);
+    expect(guarded).toEqual(expect.arrayContaining(['components.chart-area', 'components.chart-bar', 'components.chart-line', 'components.meter', 'components.progress-bar', 'components.navigation-tree', 'components.sidebar', 'components.studio.sidebar-static-row', 'components.flow.canvas', 'components.flow.base-handle', 'components.flow.labeled-handle']));
+  });
+
+  it('mounts every candidate as Studio does and renders; a slot declares a provider only when a candidate throws without it', async () => {
+    for (const slot of guarded) {
+      const throwsBare: string[] = [];
+      for (const [index, { candidate, item, code }] of recordedComponents.get(slot)!.entries()) {
+        const own = Object.keys(code);
+        if (!own.length) continue;
+        const fixtures = item.meta?.preview?.fixtures;
+        const file = (fixtures?.file && own.find(path => path.endsWith(`/${fixtures.file}`))) || own[0]!;
+        const entry = fixtures?.export ? { file, export: fixtures.export } : { file };
+        const files = { ...substrate, ...code, ...cnStub }, props = fixtures?.props ?? {};
+        const failure = (options: { bare?: boolean }) => renderMounted(slot, entry, files, { props, ...options }).then(markup => markup ? undefined : 'rendered nothing', (error: Error) => error.message);
+        const bare = await failure({ bare: true });
+        if (bare !== undefined && CONTEXT_ERROR.test(bare)) throwsBare.push(candidate);
+        if (specimenStateOf(slot)?.state !== 'provider') expect(bare ?? '', `${slot} ${candidate} reads a context its slot declares no provider for`).not.toMatch(CONTEXT_ERROR);
+        const mounted = await failure({});
+        // The pinned candidate renders; another recorded one never fails for want of its context.
+        if (index === 0) expect(mounted, `${slot} ${candidate}`).toBeUndefined();
+        else expect(mounted ?? '', `${slot} ${candidate}`).not.toMatch(CONTEXT_ERROR);
+      }
+      if (specimenStateOf(slot)?.state === 'provider') expect(throwsBare, `${slot} declares a provider no candidate needs`).not.toEqual([]);
     }
   });
 });

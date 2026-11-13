@@ -28,7 +28,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { dirname, extname, join, relative, resolve, sep, isAbsolute } from "node:path";
 import { specimenSubstrate } from "./specimen-substrate.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
-import { resolveSampleCopy, specimenStateOf, type SpecimenState } from "./specimen-state.js";
+import { resolveSampleCopy, SLOT_SPECIMEN_STATES, specimenStateOf, type SpecimenState } from "./specimen-state.js";
 import { fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "./specimen-tree.js";
 import { bindPage, installPage, isBlocking, reconcileInstalled, substrateDependencies, type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
@@ -319,7 +319,8 @@ async function siteInputs(root: string, library: string): Promise<SiteInputs | u
   // Compiled Writer copy wins; the pinned Writer slots fill a consumer that has not compiled yet.
   const copy = { ...pinnedCopy, ...await writerCopy(root).catch(() => ({} as Record<string, string>)) };
   const { records, findings: recordFindings } = await pageRecords(root, inputs.pins);
-  const key = hash(SPECIMEN_FORMAT, await specimenDocument(), root, inputs.fingerprint, JSON.stringify(copy), JSON.stringify(records), JSON.stringify(recordFindings)).slice(0, 16);
+  // The slot states shape every generated page (componentPage), so a changed state is a new build.
+  const key = hash(SPECIMEN_FORMAT, await specimenDocument(), root, inputs.fingerprint, JSON.stringify(SLOT_SPECIMEN_STATES), JSON.stringify(copy), JSON.stringify(records), JSON.stringify(recordFindings)).slice(0, 16);
   const substrate = specimenSubstrate(root);
   return { root, library, key, substrate, base: dirname(substrate), pins: inputs.pins, unpinned: inputs.unpinned, options: inputs.options, hostOnly: inputs.hostOnly, records, recordFindings, copy, pinnedCopy };
 }

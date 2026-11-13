@@ -18,11 +18,16 @@ export type SpecimenState =
   | { readonly state: "provider"; readonly provider: { readonly module: string; readonly export: string } };
 
 const REACT_FLOW: SpecimenState = { state: "provider", provider: { module: "@xyflow/react", export: "ReactFlowProvider" } };
+const SIDEBAR: SpecimenState = { state: "provider", provider: { module: "@/components/ui/sidebar", export: "SidebarProvider" } };
 
 export const SLOT_SPECIMEN_STATES: Readonly<Record<string, SpecimenState>> = {
   "components.toast": { state: "open", opener: { module: "sonner", export: "toast" }, sample: "Changes saved" },
   "components.skip-nav": { state: "visible" },
-  "components.studio.sidebar-static-row": { state: "provider", provider: { module: "@/components/ui/sidebar", export: "SidebarProvider" } },
+  // Sidebar parts call `useSidebar`, which throws outside `SidebarProvider`: every slot with a
+  // recorded candidate that mounts one bare. (The chart and progress slots mount their own provider.)
+  "components.sidebar": SIDEBAR,
+  "components.navigation-tree": SIDEBAR,
+  "components.studio.sidebar-static-row": SIDEBAR,
   // React Flow parts read the flow store (`Handle`, `Background`), which throws outside `ReactFlowProvider`.
   "components.flow.canvas": REACT_FLOW,
   "components.flow.base-handle": REACT_FLOW,
