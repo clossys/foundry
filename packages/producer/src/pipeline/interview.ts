@@ -46,6 +46,7 @@ import type { SlotAgent } from "../records/slot-model/types.js";
 import { directorStoreReader, listSlots, readCandidate, readiness, readSlot, slotIndex } from "../records/slots.js";
 import type { SlotEntry } from "../records/slots.js";
 import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
+import { writerWording, type WordingRow } from "../records/writer-wording.js";
 import { staleCitations } from "../records/stale-citations.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
@@ -214,7 +215,7 @@ const sharedPrefix = (a: string, b: string): number => {
 
 // ---------------------------------------------------------------- gaps
 /** Every gap of the workspace (unscoped) and the notes on empty request pairs. */
-function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes: string[]; director: DirectorContent | null; unclear: ReadonlyMap<string, string> } {
+function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes: string[]; director: DirectorContent | null; unclear: ReadonlyMap<string, string>; wording: readonly WordingRow[] } {
   const steps = options.steps ?? STEPS;
   const packageRoot = options.packageRoot ?? PACKAGE_ROOT;
   const consumer = join(root, "clossys");
@@ -358,6 +359,18 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
         message: `${plural(need.length, "pinned Publisher record")} (${listed(need)}) name ${plural(keys.length, "Writer key")} writer/${slot}'s pinned copy lacks: ${listed(keys)}` });
     }
   }
+  // The Writer's own wording findings (its slot suite's voice, brand and headroom checks) on pinned copy the
+  // owner has not settled: asked with the Writer's re-draft as the rewrite; with none, the Writer drafts first.
+  const wording = writerWording(consumer, director.model?.cells ?? []);
+  if (wording.unavailable) notes.push(`no writer wording findings read: ${wording.unavailable}`);
+  for (const row of wording.rows) {
+    const checks = [...new Set(row.findings.map(finding => finding.check))].join(", ");
+    const records = [...new Set(row.findings.map(finding => finding.record))];
+    gaps.push({ kind: "coverage", code: "writer.wording", agent: "writer", item: `writer/${row.slot}`, step: "pin.writer", decider: row.rewrite ? "owner" : "agent",
+      message: row.rewrite
+        ? `writer/${row.slot}: ${plural(row.findings.length, "wording finding")} (${checks}) on ${listed(records)}; the Writer's rewrite is ${row.rewrite.candidate}`
+        : `writer/${row.slot}: ${plural(row.findings.length, "wording finding")} (${checks}) on ${listed(records)}; the Writer drafts a rewrite first (clossys options writer/${row.slot} --redraft, then clossys next writer/${row.slot} --submit)` });
+  }
   // Open Director request records (requests/*.json) raised downstream.
   for (const request of director.model?.requests ?? []) {
     if (request.status !== "open" && request.status !== "drafted") continue;
@@ -379,7 +392,7 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
 
   const order = (gap: Gap) => [INTERVIEW_AGENTS.indexOf(gap.agent), GAP_KINDS.indexOf(gap.kind)];
   gaps.sort((a, b) => { const [x, y] = [order(a), order(b)]; return x[0]! - y[0]! || x[1]! - y[1]!; });
-  return { gaps, notes, director: content, unclear: director.unclear };
+  return { gaps, notes, director: content, unclear: director.unclear, wording: wording.rows };
 }
 
 /** One agent's gaps (its own and the requests it raised); every gap when no agent is named. */
@@ -690,6 +703,28 @@ function confirmQuestion(gap: Gap, reason: string, root: string): Built {
   };
 }
 
+/** A wording finding on one Writer slot: the Writer's rewrite (recommended), keep the copy as is, or own words. */
+const WORDING_REASON = "a wording finding is about this slot's own copy, so no policy covers it";
+const quoted = (text: string, max = 80) => `"${text.length > max ? `${text.slice(0, max - 1)}\u2026` : text}"`;
+function wordingQuestion(row: WordingRow): Built {
+  const item = `writer/${row.slot}`, rewrite = row.rewrite!;
+  const first = row.findings[0]!;
+  const records = [...new Set(row.findings.map(finding => `${finding.record} [${finding.locale}]`))];
+  const keep = row.pin.basis === "agent" && !row.pin.confirmed
+    ? ["clossys", "pin", item, row.pin.candidate, "--confirm", "--ref", CONFIRM_REF]
+    : ["clossys", "pin", item, row.pin.candidate, "--basis", "picked", "--by", `owner:${CONFIRM_REF}`];
+  const more = records.length > 1 ? ` (+${records.length - 1} more)` : "";
+  const options = optionsFrom([
+    { label: `Rewrite (Recommended): ${quoted(rewrite.texts[0]!.text)}${more} (${rewrite.candidate}).`, calls: [["clossys", "pin", item, rewrite.candidate, "--basis", "picked", "--by", `owner:${CONFIRM_REF}`]] },
+    { label: `Keep as is: ${quoted(first.current)}${more} (${row.pin.candidate}).`, calls: [keep] },
+  ], {}).map(option => ({ ...option, fill: { ...option.fill, [CONFIRM_REF]: "where your words are recorded (the ledger comment with your answer)" } }));
+  return {
+    id: `writer.wording:${item}`, agent: "writer", step: "pin.writer", header: "Wording", items: [item], reason: WORDING_REASON,
+    question: `${item} ${records[0]}: ${quoted(first.current)}. ${first.check}: ${first.message}${records.length > 1 ? ` Also ${listed(records.slice(1), 3)}.` : ""} Rewrite, keep as is, or say it in your own words? Asked on its own: ${WORDING_REASON}.`,
+    options, freeText: { id: "other", label: FREE_LABEL, verb: "clossys evidence", ...ownWords(item) }, after: [], requestedBy: [],
+  };
+}
+
 /** Questions into rounds of at most ROUND_SIZE, each after every question it waits on. */
 export function roundsOf(questions: readonly Question[]): Question[][] {
   const rounds: Question[][] = [];
@@ -728,6 +763,7 @@ export function interviewOf(root: string, options: InterviewOptions & { readonly
   const covered = new Set(policy_.questions.flatMap(question => question.items));
   const reasons = new Map(policy_.perSlot.map(row => [row.gap.item, row.reason]));
   for (const row of policy_.perSlot) if (row.gap.code === "agent-pick.unconfirmed") questions.push(confirmQuestion(row.gap, row.reason, root));
+  for (const row of all.wording) if (row.rewrite && asked.some(gap => gap.code === "writer.wording" && gap.item === `writer/${row.slot}`)) questions.push(wordingQuestion(row));
   const packets = asked.filter(gap => gap.code.startsWith("open.") && gap.code !== "open.seats" && !covered.has(gap.item) && !(gap.code === "open.pin.director" && contentItems.has(gap.item))).map(gap => {
     const step = steps.find(each => each.id === gap.step)!;
     return packetOf(step, gap.item, 1, context, { packageRoot });
@@ -740,7 +776,7 @@ export function interviewOf(root: string, options: InterviewOptions & { readonly
   const agentHeld = new Set(content?.agentPicks.map(pick => pick.item) ?? []);
   const unblocks = new Map<string, Map<string, Set<string>>>();
   for (const gap of asked.filter(each => each.kind === "request")) {
-    const merged = questions.find(question => question.id !== AGENT_PICKS_QUESTION && question.items.includes(gap.item) && question.agent === gap.agent);
+    const merged = questions.find(question => question.id !== AGENT_PICKS_QUESTION && !question.id.startsWith("writer.wording:") && question.items.includes(gap.item) && question.agent === gap.agent);
     if (merged) {
       merged.requestedBy = [...new Set([...merged.requestedBy, gap.from!])];
       const byAgent = unblocks.get(merged.id) ?? new Map<string, Set<string>>();
