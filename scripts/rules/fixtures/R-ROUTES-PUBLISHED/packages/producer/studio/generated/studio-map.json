@@ -1,0 +1,109 @@
+{
+  "publicationId": "fixture",
+  "homeId": "home",
+  "map": {
+    "version": 1,
+    "publicationId": "fixture",
+    "format": "web.page.responsive",
+    "entries": [
+      {
+        "id": "home",
+        "order": 0,
+        "title": "Home",
+        "kind": "page",
+        "path": "/",
+        "pin": {
+          "nav": true
+        },
+        "source": {
+          "frameId": "frames.fixture",
+          "sectionIds": [
+            "sections.fixture"
+          ]
+        }
+      },
+      {
+        "id": "docs",
+        "order": 1,
+        "title": "Docs",
+        "kind": "page",
+        "path": "/docs",
+        "pin": {
+          "nav": true
+        },
+        "source": {
+          "frameId": "frames.fixture",
+          "sectionIds": [
+            "sections.fixture"
+          ]
+        }
+      },
+      {
+        "id": "orphan",
+        "order": 2,
+        "title": "Orphan",
+        "kind": "page",
+        "path": "/orphan",
+        "pin": {
+          "nav": true
+        },
+        "source": {
+          "frameId": "frames.fixture",
+          "sectionIds": [
+            "sections.fixture"
+          ]
+        }
+      }
+    ],
+    "redirects": []
+  },
+  "pages": [
+    {
+      "id": "home",
+      "path": "/",
+      "title": "Home"
+    },
+    {
+      "id": "docs",
+      "path": "/docs",
+      "title": "Docs"
+    },
+    {
+      "id": "orphan",
+      "path": "/orphan",
+      "title": "Orphan"
+    }
+  ],
+  "leaves": [],
+  "tabs": [],
+  "landings": {},
+  "trails": {
+    "home": [
+      {
+        "id": "home",
+        "title": "Home",
+        "href": "/"
+      }
+    ],
+    "docs": [
+      {
+        "id": "docs",
+        "title": "Docs",
+        "href": "/docs"
+      },
+      {
+        "id": "gone",
+        "title": "Gone",
+        "href": "/gone"
+      }
+    ],
+    "orphan": [
+      {
+        "id": "orphan",
+        "title": "Orphan",
+        "href": "/orphan"
+      }
+    ]
+  },
+  "redirects": []
+}

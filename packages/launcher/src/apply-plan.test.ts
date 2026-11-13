@@ -55,14 +55,14 @@ const VALID_BRIEF: EngagementBrief = {
   problem: "Our site doesn't explain what we do.",
   roles: [
     {
-      role: "strategist",
+      role: "director",
       why: "Directly confirmed: it clarifies positioning and claims.",
       goal: { metric: "message-clarity-score", direction: "increase" },
       inputsFrom: [],
       outputsTo: ["writer", "designer"],
     },
   ],
-  sequence: ["strategist", "writer", "designer"],
+  sequence: ["director", "writer", "designer"],
   deliverables: ["A positioning brief every later role reads first."],
 };
 
@@ -72,7 +72,7 @@ const OTHER_SUBJECT = `sha256:${"cd".repeat(32)}`;
 const VALID_PLAN: AdvisorPlan = {
   schemaVersion: 1,
   asOf: "2026-09-22T00:00:00Z",
-  mandate: { problem: "Our site doesn't explain what we do.", primaryProblemId: "unclear-positioning", roles: ["strategist", "writer", "designer"] },
+  mandate: { problem: "Our site doesn't explain what we do.", primaryProblemId: "unclear-positioning", roles: ["director", "writer", "designer"] },
   whereWeAre: ["Fit and readiness both satisfied."],
   recommendedNext: null,
   decisions: [{ at: "2026-09-20T00:00:00Z", recommended: "compose from confirmed problems", chosen: "approved", by: "sponsor" }],
@@ -445,7 +445,7 @@ describe("applyEngagementBrief", () => {
 
   it("refuses, and writes nothing, when the plan breaks a code rule", () => {
     const host = fakeHost();
-    const plan = { ...VALID_PLAN, staffing: [{ repository: "example-owner/site", roles: ["strategist", "writer", "designer"] }, { repository: "Example-Owner/Site", roles: ["writer"] }] };
+    const plan = { ...VALID_PLAN, staffing: [{ repository: "example-owner/site", roles: ["director", "writer", "designer"] }, { repository: "Example-Owner/Site", roles: ["writer"] }] };
     const result = applyEngagementBrief(host, "/repo", plan, VALID_BRIEF, "clossys/brief.json");
     expect(result).toEqual({ state: "refused", reason: "plan does not validate: plan.staffing[1].repository names the same repository as staffing[0].repository (repository ids compare case-insensitively) (rule R1)" });
     expect(Object.keys(host.written)).toHaveLength(0);

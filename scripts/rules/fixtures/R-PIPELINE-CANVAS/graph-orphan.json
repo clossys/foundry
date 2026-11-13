@@ -1,0 +1,57 @@
+{
+  "schema": "clossys.pipeline-graph/1",
+  "nodes": [
+    {
+      "id": "design.hero",
+      "kind": "decide:creative",
+      "stage": "make",
+      "layout": {
+        "lane": "designer",
+        "stage": "make",
+        "rank": 0
+      }
+    },
+    {
+      "id": "publish.compile",
+      "kind": "plumb",
+      "stage": "publish",
+      "layout": {
+        "lane": "publisher",
+        "stage": "publish",
+        "rank": 1
+      }
+    }
+  ],
+  "edges": [],
+  "untyped": [],
+  "layout": {
+    "lanes": [
+      {
+        "id": "designer",
+        "index": 0
+      },
+      {
+        "id": "publisher",
+        "index": 1
+      }
+    ],
+    "stages": [
+      {
+        "id": "make",
+        "index": 0
+      },
+      {
+        "id": "publish",
+        "index": 1
+      }
+    ]
+  },
+  "roster": [
+    {
+      "id": "designer"
+    },
+    {
+      "id": "publisher"
+    }
+  ]
+}

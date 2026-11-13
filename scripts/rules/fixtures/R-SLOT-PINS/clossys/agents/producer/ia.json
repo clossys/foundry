@@ -1,0 +1,8 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "@clossys/producer#steps",
+  "extensions": [],
+  "nodes": [
+    { "id": "direct", "label": "Direct", "children": [ { "id": "direct.pin", "label": "Pin", "slots": ["pin.director"] } ] }
+  ]
+}

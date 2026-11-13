@@ -30,9 +30,9 @@ test("precisionRecall: both empty scores 1/1 rather than dividing by zero", () =
 test("scoreScenario: composed result matching expect passes with no findings", () => {
   const scenario = {
     id: "fixture-a",
-    expect: { state: "composed", mustIncludeRoles: ["strategist"], mustExcludeRoles: ["designer"], maxRoles: 1, sequence: ["strategist"], unsatisfiedNeeds: [] },
+    expect: { state: "composed", mustIncludeRoles: ["director"], mustExcludeRoles: ["designer"], maxRoles: 1, sequence: ["director"], unsatisfiedNeeds: [] },
   };
-  const result = { state: "composed", roles: [{ role: "strategist" }], sequence: ["strategist"], unsatisfiedNeeds: [] };
+  const result = { state: "composed", roles: [{ role: "director" }], sequence: ["director"], unsatisfiedNeeds: [] };
   const scored = scoreScenario(scenario, result);
   assert.equal(scored.passed, true);
   assert.deepEqual(scored.findings, []);
@@ -41,24 +41,24 @@ test("scoreScenario: composed result matching expect passes with no findings", (
 });
 
 test("scoreScenario: missing expected role is a finding", () => {
-  const scenario = { id: "fixture-b", expect: { state: "composed", mustIncludeRoles: ["strategist", "designer"], mustExcludeRoles: [] } };
-  const result = { state: "composed", roles: [{ role: "strategist" }], sequence: ["strategist"], unsatisfiedNeeds: [] };
+  const scenario = { id: "fixture-b", expect: { state: "composed", mustIncludeRoles: ["director", "designer"], mustExcludeRoles: [] } };
+  const result = { state: "composed", roles: [{ role: "director" }], sequence: ["director"], unsatisfiedNeeds: [] };
   const scored = scoreScenario(scenario, result);
   assert.equal(scored.passed, false);
   assert.ok(scored.findings.some((f) => f.rule === "composition-missing-expected-role"));
 });
 
 test("scoreScenario: excluded role present is a finding", () => {
-  const scenario = { id: "fixture-c", expect: { state: "composed", mustIncludeRoles: ["strategist"], mustExcludeRoles: ["designer"] } };
-  const result = { state: "composed", roles: [{ role: "strategist" }, { role: "designer" }], sequence: ["strategist", "designer"], unsatisfiedNeeds: [] };
+  const scenario = { id: "fixture-c", expect: { state: "composed", mustIncludeRoles: ["director"], mustExcludeRoles: ["designer"] } };
+  const result = { state: "composed", roles: [{ role: "director" }, { role: "designer" }], sequence: ["director", "designer"], unsatisfiedNeeds: [] };
   const scored = scoreScenario(scenario, result);
   assert.equal(scored.passed, false);
   assert.ok(scored.findings.some((f) => f.rule === "composition-unexpected-role"));
 });
 
 test("scoreScenario: unlisted extra role is a finding even when not in mustExcludeRoles", () => {
-  const scenario = { id: "fixture-d", expect: { state: "composed", mustIncludeRoles: ["strategist"], mustExcludeRoles: [] } };
-  const result = { state: "composed", roles: [{ role: "strategist" }, { role: "controller" }], sequence: ["strategist", "controller"], unsatisfiedNeeds: [] };
+  const scenario = { id: "fixture-d", expect: { state: "composed", mustIncludeRoles: ["director"], mustExcludeRoles: [] } };
+  const result = { state: "composed", roles: [{ role: "director" }, { role: "controller" }], sequence: ["director", "controller"], unsatisfiedNeeds: [] };
   const scored = scoreScenario(scenario, result);
   assert.equal(scored.passed, false);
   assert.ok(scored.findings.some((f) => f.rule === "composition-unaccounted-role"));

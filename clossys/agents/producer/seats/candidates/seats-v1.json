@@ -1,0 +1,12 @@
+{
+  "by": "owner",
+  "llm": {
+    "model": "claude-opus-5-5",
+    "tier": "mid",
+    "promptFile": "packages/producer/actions/seats/skill.md"
+  },
+  "human": {
+    "procedure": "Decide who holds each decide step: an llm seat (model and prompt file), a human seat (procedure and the clossys command that records it), or both.",
+    "command": "clossys seat"
+  }
+}

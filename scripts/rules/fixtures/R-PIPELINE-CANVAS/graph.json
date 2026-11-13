@@ -1,0 +1,11 @@
+{
+  "schema": "clossys.pipeline-graph/1",
+  "nodes": [
+    { "id": "design.hero", "kind": "decide:creative" },
+    { "id": "publish.compile", "kind": "plumb" }
+  ],
+  "edges": [
+    { "from": "design.hero", "to": "publish.compile", "via": [{ "output": "clossys/agents/designer/*/pin.json", "input": "clossys/agents/designer/*/pin.json" }] }
+  ],
+  "untyped": []
+}

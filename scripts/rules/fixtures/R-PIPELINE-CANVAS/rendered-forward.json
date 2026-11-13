@@ -1,0 +1,61 @@
+{
+  "//": "A page that draws both steps in their own stage columns, but the graph has an edge from the publish stage back into the earlier make stage.",
+  "nodes": [
+    "design.hero",
+    "publish.compile"
+  ],
+  "edges": [
+    "design.hero->publish.compile",
+    "publish.compile->design.hero"
+  ],
+  "boxes": [
+    {
+      "id": "make",
+      "kind": "stage",
+      "x": 120,
+      "y": -40,
+      "width": 60,
+      "height": 20
+    },
+    {
+      "id": "publish",
+      "kind": "stage",
+      "x": 420,
+      "y": -40,
+      "width": 60,
+      "height": 20
+    },
+    {
+      "id": "designer",
+      "kind": "lane",
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 20
+    },
+    {
+      "id": "publisher",
+      "kind": "lane",
+      "x": 0,
+      "y": 200,
+      "width": 80,
+      "height": 20
+    },
+    {
+      "id": "design.hero",
+      "kind": "step",
+      "x": 130,
+      "y": 10,
+      "width": 200,
+      "height": 100
+    },
+    {
+      "id": "publish.compile",
+      "kind": "step",
+      "x": 430,
+      "y": 210,
+      "width": 200,
+      "height": 100
+    }
+  ]
+}

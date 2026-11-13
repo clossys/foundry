@@ -52,7 +52,7 @@ const skeletonRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "skelet
 const PLAN = {
   schemaVersion: 1,
   asOf: "2026-09-22T00:00:00Z",
-  mandate: { problem: "x", primaryProblemId: "unclear-positioning", roles: ["strategist"] },
+  mandate: { problem: "x", primaryProblemId: "unclear-positioning", roles: ["director"] },
   whereWeAre: ["Fit and readiness both satisfied."],
   recommendedNext: null,
   decisions: [{ at: "2026-09-20T00:00:00Z", recommended: "compose", chosen: "approved", by: "sponsor" }],
@@ -61,8 +61,8 @@ const PLAN = {
 const BRIEF = {
   schemaVersion: 1,
   problem: "x",
-  roles: [{ role: "strategist", why: "y", goal: { metric: "m", direction: "increase" }, inputsFrom: [], outputsTo: [] }],
-  sequence: ["strategist"],
+  roles: [{ role: "director", why: "y", goal: { metric: "m", direction: "increase" }, inputsFrom: [], outputsTo: [] }],
+  sequence: ["director"],
   deliverables: ["z"],
 };
 const SNAPSHOTS = JSON.parse(readFileSync(new URL("../../../docs/contracts/registry-snapshot.fixture.json", import.meta.url), "utf8")) as { digests: { name: string; snapshot: RegistrySnapshot }[] };

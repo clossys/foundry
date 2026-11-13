@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "synthetic#rules-fixture",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "components.display",
+      "label": "components.display",
+      "children": [
+        {
+          "id": "display-labels",
+          "label": "display-labels",
+          "slots": [
+            "components.badge"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -25,7 +25,7 @@ const STARTER = `${SCOPE}/starter`;
 const PLAN: AdvisorPlan = {
   schemaVersion: 1,
   asOf: "2026-09-24T12:00:00Z",
-  mandate: { problem: "FOUNDER-PROSE our story is unclear", primaryProblemId: "strategist-unclear-direction", roles: ["writer", "designer"] },
+  mandate: { problem: "FOUNDER-PROSE our story is unclear", primaryProblemId: "director-unclear-direction", roles: ["writer", "designer"] },
   whereWeAre: ["FOUNDER-PROSE a status line"],
   recommendedNext: { action: "FOUNDER-PROSE approve the plan", owner: "sponsor" },
   decisions: [],

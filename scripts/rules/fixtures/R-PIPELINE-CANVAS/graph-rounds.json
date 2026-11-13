@@ -1,0 +1,125 @@
+{
+  "schema": "clossys.pipeline-graph/1",
+  "nodes": [
+    {
+      "id": "ia",
+      "kind": "plumb",
+      "stage": "direct.brief",
+      "layout": {
+        "lane": "owner",
+        "stage": "direct.brief",
+        "rank": 0
+      }
+    },
+    {
+      "id": "pin.director",
+      "kind": "decide:judgment",
+      "stage": "direct.pin",
+      "layout": {
+        "lane": "owner",
+        "stage": "direct.pin",
+        "rank": 1
+      }
+    },
+    {
+      "id": "designer.candidates",
+      "kind": "decide:creative",
+      "stage": "design.make",
+      "layout": {
+        "lane": "designer",
+        "stage": "design.make",
+        "rank": 2
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "ia",
+      "to": "pin.director",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json",
+          "input": "clossys/agents/director/*/pin.json"
+        }
+      ]
+    },
+    {
+      "from": "pin.director",
+      "to": "designer.candidates",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json",
+          "input": "clossys/agents/director/*/pin.json"
+        }
+      ]
+    },
+    {
+      "from": "designer.candidates",
+      "to": "ia",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json",
+          "input": "clossys/agents/director/*/pin.json"
+        }
+      ]
+    }
+  ],
+  "untyped": [],
+  "layout": {
+    "lanes": [
+      {
+        "id": "owner",
+        "index": 0
+      },
+      {
+        "id": "designer",
+        "index": 1
+      }
+    ],
+    "stages": [
+      {
+        "id": "direct.brief",
+        "index": 0,
+        "round": "direct",
+        "name": "brief"
+      },
+      {
+        "id": "direct.pin",
+        "index": 1,
+        "round": "direct",
+        "name": "pin"
+      },
+      {
+        "id": "design.make",
+        "index": 2,
+        "round": "design",
+        "name": "make"
+      }
+    ],
+    "rounds": [
+      {
+        "id": "direct",
+        "index": 0,
+        "stages": [
+          "direct.brief",
+          "direct.pin"
+        ]
+      },
+      {
+        "id": "design",
+        "index": 1,
+        "stages": [
+          "design.make"
+        ]
+      }
+    ]
+  },
+  "roster": [
+    {
+      "id": "owner"
+    },
+    {
+      "id": "designer"
+    }
+  ]
+}

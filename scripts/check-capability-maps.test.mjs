@@ -441,7 +441,7 @@ test("validateAllowlist accepts an allowlist naming only currently active roles"
 
 test("validateAllowlist rejects an allowlist entry that is not a currently active role", () => {
   assert.throws(
-    () => validateAllowlist(["@clossys/strategst"], ["@clossys/strategist", "@clossys/designer"]),
+    () => validateAllowlist(["@clossys/strategst"], ["@clossys/director", "@clossys/designer"]),
     /allowlist names role\(s\) that are not currently active: @clossys\/strategst/,
   );
 });
@@ -452,3 +452,18 @@ test("validateAllowlist names every unknown entry, not just the first", () => {
     /@scope\/typo-one, @scope\/typo-two/,
   );
 });
+
+const NATIVE_OUTPUT_ROLES = ["director", "writer", "designer", "publisher"];
+const INVALID_OWNED_OUTPUTS = [["alpha", "clossys/agents/alpha/report.json"], ["customer", "clossys/agents/customer/report.json"], ["advisor", "clossys/agents/advisor/report.json"], ["writer", "clossys/agents/publisher/report.json"], ["writer", "clossys/publisher/report.json"], ["writer", "clossys/agents/writer-other/report.json"], ["writer", "clossys/agents/writer/../publisher/report.json"], ["writer", "clossys/writer/../publisher/report.json"], ["writer", "/clossys/agents/writer/report.json"], ["writer", "C:/clossys/agents/writer/report.json"], ["writer", "clossys/agents/writer\\../publisher/report.json"], ["writer", "clossys/agents/writer/"], ["agents", "clossys/agents/writer/report.json"]];
+for (const short of NATIVE_OUTPUT_ROLES) {
+  test(`capability outputs accept both declaration roots for ${short}`, () => {
+    for (const path of [`clossys/${short}/report.json`, `clossys/agents/${short}/cells/`]) {
+      assert.deepEqual(validateCapabilityShape(capability({ outputs: [path] }), `@scope/${short}`), [], path);
+    }
+  });
+}
+for (const [short, path] of INVALID_OWNED_OUTPUTS) {
+  test(`capability outputs refuse ${short}: ${path}`, () => {
+    assert.deepEqual(validateCapabilityShape(capability({ outputs: [path] }), `@scope/${short}`).map(item => item.rule), ["capability-output-outside-role-folder"]);
+  });
+}

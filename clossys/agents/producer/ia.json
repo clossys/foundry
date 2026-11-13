@@ -1,0 +1,85 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "@clossys/producer#src/pipeline/steps/decisions.ts",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "direct",
+      "label": "Direct",
+      "children": [
+        {
+          "id": "direct.brief",
+          "label": "Brief",
+          "slots": [
+            "ia",
+            "evidence",
+            "workspace.config",
+            "seats",
+            "rules"
+          ]
+        },
+        {
+          "id": "direct.make",
+          "label": "Make",
+          "slots": [
+            "director.candidates"
+          ]
+        },
+        {
+          "id": "direct.pin",
+          "label": "Pin",
+          "slots": [
+            "pin.director",
+            "pick.director"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "design",
+      "label": "Design",
+      "children": [
+        {
+          "id": "design.make",
+          "label": "Make",
+          "slots": [
+            "designer.candidates",
+            "writer.candidates"
+          ]
+        },
+        {
+          "id": "design.pin",
+          "label": "Pin",
+          "slots": [
+            "pin.designer",
+            "pick.designer",
+            "pin.writer",
+            "pick.writer",
+            "writer.approve"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "publish",
+      "label": "Publish",
+      "children": [
+        {
+          "id": "publish.make",
+          "label": "Make",
+          "slots": [
+            "publisher.candidates"
+          ]
+        },
+        {
+          "id": "publish.pin",
+          "label": "Pin",
+          "slots": [
+            "pin.publisher",
+            "pick.publisher"
+          ]
+        }
+      ]
+    }
+  ]
+}

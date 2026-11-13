@@ -1,4 +1,5 @@
 import { ARCHETYPES, parseStrictJson } from "./candidate-qualification.mjs";
+import { publishedName } from "./package-renames.mjs";
 
 const DIMENSIONS = ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"];
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -94,17 +95,19 @@ export function selectPolicyPackage(policy, packageKey) {
   return matches.length === 1 ? { name: matches[0][0], entry: matches[0][1] } : null;
 }
 
-/** Prove the policy and release target close over the same exact source inventory. */
+/** Prove qualification covers the source inventory and release members belong to it. */
 export function validateReleaseQualificationPortfolio({ policy, manifests, releasePackages }) {
   const findings = [];
-  const source = Array.isArray(manifests) ? manifests.filter((item) => item?.private !== true) : [];
+  // The policy and the release catalog are dated records keyed by each package's published
+  // spelling (scripts/lib/package-renames.mjs); a renamed workspace manifest joins them under it.
+  const source = Array.isArray(manifests) ? manifests.filter((item) => item?.private !== true).map((item) => (typeof item?.name === "string" ? { ...item, name: publishedName(item.name) } : item)) : [];
   const sourceNames = source.map((item) => item?.name).sort();
   const policyNames = Object.keys(policy?.packages ?? {}).sort();
   if (sourceNames.length === 0 || sourceNames.some((name) => !PACKAGE.test(name))) finding(findings, "portfolio-source", "publishable source manifests must have namespace-qualified package names.");
   if (JSON.stringify(sourceNames) !== JSON.stringify(policyNames)) finding(findings, "portfolio-policy", "qualification policy must exactly cover every publishable source manifest.");
   const sourceKeys = source.map((item) => item.name?.split("/")[1]).sort();
   const targetKeys = Array.isArray(releasePackages) ? [...releasePackages].sort() : [];
-  if (JSON.stringify(sourceKeys) !== JSON.stringify(targetKeys)) finding(findings, "portfolio-catalog", "release target must exactly cover every publishable source manifest.");
+  if (targetKeys.length === 0 || new Set(targetKeys).size !== targetKeys.length || targetKeys.some((key) => !sourceKeys.includes(key))) finding(findings, "portfolio-catalog", "release target must select a non-empty unique subset of publishable source manifests.");
   return findings;
 }
 

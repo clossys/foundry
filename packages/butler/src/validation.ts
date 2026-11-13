@@ -2,7 +2,7 @@
  * Shared, dependency-free validation primitives for `schema.ts`. This
  * package hand-rolls its entity validation rather than depending on a
  * schema library — see `schema.ts`'s top-level doc comment for why, and
- * `@clossys/strategist`'s `validation.ts` for the precedent this
+ * `@clossys/director`'s `validation.ts` for the precedent this
  * file follows: plain type guards over `unknown`, accumulating findings
  * into an array, never throwing.
  *

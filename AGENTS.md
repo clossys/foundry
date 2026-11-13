@@ -86,7 +86,10 @@ after the fact is never applied to anything already public.
 the current denylist (and on demand, for the full pass that belongs right
 after a denylist change), labels findings, and likewise never comments. It
 is the only path here that can catch what the event gate structurally
-cannot; do not remove it as a duplicate. The issue templates
+cannot; do not remove it as a duplicate. To re-scan locally, run
+`npm run check:conversation -- --require-denylist` (needs
+`PUBLIC_SAFETY_DENYLIST` or `--denylist <file>`, plus an authenticated
+`gh`). The issue templates
 under `.github/ISSUE_TEMPLATE/` and `.github/PULL_REQUEST_TEMPLATE.md`
 carry the same "never post this" list up front, before a contributor has
 typed anything, because that is the only point where prevention is

@@ -13,7 +13,7 @@ const BLOCKER: AdvisorPlanBlocker = {
 const BASE_PLAN: AdvisorPlan = {
   schemaVersion: 1,
   asOf: "2026-09-22T00:00:00Z",
-  mandate: { problem: "Our site doesn't explain what we do.", primaryProblemId: "strategist-unclear-direction", roles: ["strategist", "writer"] },
+  mandate: { problem: "Our site doesn't explain what we do.", primaryProblemId: "director-unclear-direction", roles: ["director", "writer"] },
   whereWeAre: ["Fit and readiness both satisfied."],
   recommendedNext: { action: "Approve the first-wave plan.", owner: "sponsor", due: "2026-09-29T00:00:00Z" },
   decisions: [{ at: "2026-09-20T00:00:00Z", recommended: "compose from confirmed problems", chosen: "approved", by: "sponsor" }],
@@ -30,7 +30,7 @@ describe("renderAdvisorStatus (issue #1175)", () => {
   it("Mandate carries the problem and staffed roles", () => {
     const markdown = renderAdvisorStatus(BASE_PLAN);
     expect(markdown).toContain("Our site doesn't explain what we do.");
-    expect(markdown).toContain("Staffed roles: strategist, writer.");
+    expect(markdown).toContain("Staffed roles: director, writer.");
   });
 
   it("Recommended next renders null as 'Nothing pending.'", () => {

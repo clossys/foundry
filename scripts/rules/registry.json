@@ -1,0 +1,1027 @@
+{
+  "$schema": "./registry.schema.json",
+  "schema": "foundry.rule-registry/1",
+  "about": "Owner rules as code: each rule names the checks that enforce it and a violation fixture each check must fail on. check:rules (scripts/check-rules.mjs) enforces this file.",
+  "rules": [
+    {
+      "id": "R-ASSEMBLE-ONLY",
+      "audit_rule": 1,
+      "owner_words": {
+        "quote": "every page = frame + sections; Publisher never writes or designs",
+        "date": "2026-10-30"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:assemble-only",
+        "check:studio#producer check-no-page-jsx"
+      ],
+      "related": [
+        "packages/producer#test:assemble-only",
+        "packages/producer#check:studio-routes",
+        "check:studio#producer studio/checks/check-no-page-jsx.test.cjs",
+        "check:studio#producer studio/checks/check-studio-routes.test.cjs",
+        "check:studio#producer scripts/studio-payload.test.mjs",
+        "check:studio#producer scripts/generate-studio-map.test.mjs",
+        "check:studio#producer scripts/compose-studio.test.mjs",
+        "check:studio#designer page-dogfood --check"
+      ],
+      "fixture": "scripts/rules/fixtures/R-ASSEMBLE-ONLY",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:assemble-only",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-assemble-only.mjs --root {fixture}",
+          "expect": "^app-route\\s+app/probe/page\\.tsx"
+        },
+        {
+          "check": "check:studio#producer check-no-page-jsx",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-no-page-jsx.cjs --root {fixture}",
+          "expect": "\"rule\": \"page-jsx\""
+        }
+      ],
+      "note": "Static class checks over the Studio app and Publisher page records; the hand-built StudioPage.tsx branches the audit found are W1/W2 fix units."
+    },
+    {
+      "id": "R-DS-ONLY",
+      "audit_rule": 2,
+      "owner_words": {
+        "quote": "all views use Designer's shadcn components only",
+        "date": "2026-10-31"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#test",
+        "check:studio#producer check-rendered-provenance (live)"
+      ],
+      "related": [
+        "check:studio#producer derive-element-deps",
+        "check:studio#producer studio vitest",
+        "check:studio#producer studio/checks/check-no-handrolling.test.cjs",
+        "check:studio#producer check-no-handrolling (live)",
+        "check:studio#producer studio/frames/studio-shell/stock-frame.test.cjs",
+        "check:studio#producer studio/frames/studio-shell/app-sidebar.rail.test.cjs",
+        "check:studio#designer check:studio-page-modules",
+        "check:studio#designer test:studio-page-modules",
+        "check:studio#designer-ui stock-frame-picks.b6a.test.mjs",
+        "check:studio#designer-ui studio-home-stock-reference.test.mjs",
+        "check:studio#designer-ui studio-home-stock.source.test.mjs",
+        "check:studio#designer-ui vitest"
+      ],
+      "fixture": "scripts/rules/fixtures/R-DS-ONLY",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#test",
+          "cwd": "packages/producer",
+          "run": "DS_ONLY_SECTIONS_ROOT={fixture}/sections npx vitest run src/studio/designer-views.ds-only.test.ts",
+          "expect": "probe-section/index\\.tsx: imports other-ui"
+        },
+        {
+          "check": "check:studio#producer check-rendered-provenance (live)",
+          "cwd": "packages/producer",
+          "run": "node {fixture}/rendered/serve.mjs {out} & server=$!; i=0; while [ ! -s {out}/port ] && [ $i -lt 100 ]; do sleep 0.1; i=$((i+1)); done; node studio/checks/check-rendered-provenance.mjs \"http://127.0.0.1:$(cat {out}/port)\" --only /; code=$?; kill $server; exit $code",
+          "expect": "\"rule\":\"element-without-provenance\""
+        }
+      ],
+      "note": "Two gates: (1) the ds-only vitest (packages/producer#test) scans sections, frames, renderers, every app/ file, every Foundry component-layer file under designer-ui/src/foundry and every src/server emitter, and flags inline style and injected HTML on any element and any className on a Designer component other than a forwarded className prop, a stock size-N icon class or a pair the pinned lineage's reference block carries; (2) check-rendered-provenance (live) fails any rendered element on any Studio map route outside a root carrying the current pin's generated provenance. Its fixture is a stand-in Studio (rendered/serve.mjs) whose one route renders an unmarked hand-rolled view; it needs the installed Chrome, like R-PIPELINE-CANVAS."
+    },
+    {
+      "id": "R-SHADCN-STOCK",
+      "audit_rule": 3,
+      "owner_words": {
+        "quote": "stock shadcn unmodified, tokens to shadcn vars",
+        "date": "2026-10-30"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/designer#check:ref-verbatim"
+      ],
+      "related": [
+        "packages/designer#check:compiled-css",
+        "packages/designer#test:section-tokens",
+        "check:studio#designer check-section-tokens",
+        "check:studio#designer check-rendered-class-rules",
+        "check:studio#designer scripts/ref-verbatim/adaptations.test.mjs",
+        "check:studio#designer scripts/ref-verbatim/data-fit.test.mjs",
+        "check:studio#producer studio/checks/p0-propagate.test.mjs"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SHADCN-STOCK",
+      "fixture_runs": [
+        {
+          "check": "packages/designer#check:ref-verbatim",
+          "cwd": "packages/designer",
+          "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
+          "expect": "REF-HUNK-CLASS components\\.badge"
+        },
+        {
+          "check": "packages/designer#check:ref-verbatim",
+          "cwd": "packages/designer",
+          "fixture": "scripts/rules/fixtures/R-SHADCN-STOCK-NPM-VERSION",
+          "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
+          "expect": "REF-NPM-VERSION components\\.flow\\.canvas"
+        },
+        {
+          "check": "packages/designer#check:ref-verbatim",
+          "cwd": "packages/designer",
+          "fixture": "scripts/rules/fixtures/R-SHADCN-STOCK-NPM-CODE",
+          "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
+          "expect": "REF-NPM-CODE components\\.flow\\.canvas"
+        },
+        {
+          "check": "packages/designer#check:ref-verbatim",
+          "cwd": "packages/designer",
+          "fixture": "scripts/rules/fixtures/R-SHADCN-STOCK-NPM-ASSET",
+          "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
+          "expect": "REF-NPM-ASSET components\\.flow\\.canvas"
+        }
+      ],
+      "note": "Code-level gate: every pinned Designer candidate ships the vendored reference file plus only allowed hunks; an npm candidate ships only named re-exports of the package version package-lock.json resolves, and any other file it ships is that package's own file byte for byte."
+    },
+    {
+      "id": "R-VENDORED-SOURCES",
+      "audit_rule": 4,
+      "owner_words": {
+        "quote": "DS exclusively shadcn plus trusted free registries",
+        "date": "2026-10-30"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/designer#check:provenance"
+      ],
+      "related": [
+        "packages/designer#check:references",
+        "packages/designer#test:references",
+        "packages/designer#check:default-candidates",
+        "packages/designer#check:process",
+        "packages/designer#test:process",
+        "check:studio#designer check-fill-source-imports",
+        "check:studio#designer check-surface-source-identity",
+        "check:studio#designer scripts/surface-source-identity.test.mjs",
+        "check:studio#designer scripts/surface-source-runtime.test.mjs",
+        "check:studio#designer check:surface-leaves",
+        "check:studio#designer test:surface-leaves",
+        "check:studio#designer check-one-leaf-source",
+        "check:studio#designer check-surface-history-continuity",
+        "check:studio#designer scripts/surface-history-continuity.test.mjs"
+      ],
+      "fixture": "scripts/rules/fixtures/R-VENDORED-SOURCES",
+      "fixture_runs": [
+        {
+          "check": "packages/designer#check:provenance",
+          "cwd": "packages/designer",
+          "run": "node scripts/check-provenance.mjs --scan {fixture}",
+          "expect": "probe/element\\.json: original item in sections\\.probe"
+        }
+      ],
+      "note": "Record-level gate: lineage must name a trusted manifest item; scans Foundry packages, not the consumer pins (consumer pins are R-SHADCN-STOCK)."
+    },
+    {
+      "id": "R-WRITER-COPY",
+      "audit_rule": 5,
+      "owner_words": {
+        "quote": "visual to Designer, copy to Writer, assembly only to Publisher",
+        "date": "2026-10-31"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:copy-source",
+        "check:studio#producer check-copy-rendered (live)"
+      ],
+      "related": [
+        "check:studio#producer scripts/check-copy-rendered.test.mjs",
+        "check:studio#producer scripts/studio-copy.test.mjs",
+        "check:studio#producer scripts/studio-checks-copy.test.mjs",
+        "check:studio#producer scripts/studio-contract-copy.test.mjs",
+        "check:studio#producer scripts/studio-options-copy.test.mjs",
+        "check:studio#producer scripts/studio-references-copy.test.mjs",
+        "check:studio#designer generate-copy-ports --check",
+        "check:studio#designer check:copy-port-ids",
+        "check:studio#designer test:copy-port-ids"
+      ],
+      "fixture": "scripts/rules/fixtures/R-WRITER-COPY",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^jsx\\s+packages/producer/studio/components/Probe\\.tsx:9: JSX text \"Hand written\""
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^record\\s+page\\.probe/page-v1\\.json \\$\\.title: literal title \"Probe page\""
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^names\\s+writer slot strings\\.unnamed: no Writer name for writer\\.item\\.strings\\.unnamed"
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^keys\\s+packages/producer/studio/components/Probe\\.tsx:8: studio\\.probe\\.missing is no record"
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^message\\s+packages/producer/studio/components/Probe\\.tsx:6: error\\.message"
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^lang\\s+packages/producer/studio/components/Probe\\.tsx:9: a literal <html lang>"
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^row\\s+packages/producer/src/server/slot-detail\\.ts:5: issue\\.message becomes row text"
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^row\\s+packages/producer/src/server/slot-detail\\.ts:6: a row pushes the literal \"candidate-identity"
+        },
+        {
+          "check": "check:studio#producer check-copy-rendered (live)",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-copy-rendered.mjs --root {fixture} --pages {fixture}/pages",
+          "expect": "^text\\s+\"Hand written\" \\(p\\)"
+        },
+        {
+          "check": "check:studio#producer check-copy-rendered (live)",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-copy-rendered.mjs --root {fixture} --pages {fixture}/pages",
+          "expect": "^lang\\s+\"de\" \\(html\\[lang\\]\\)"
+        }
+      ],
+      "note": "Every string a person sees in Studio is Writer copy or registry data. check:copy-source fails on JSX text or a literal copy attribute (aria-*, title, placeholder, alt, label) or copy property in Studio, Designer Studio frames and the server rows; a literal label, prompt, title, message or tree name in a pinned Publisher record; an id turned into a label outside src/records/slot-labels.ts; a slot or IA node, group or layer with no pinned strings.names record; a Writer key no pinned record holds; Studio reading a thrown or served .message/.error (so Producer JSON errors never render); a literal <html lang>; and a server row that pushes a literal or joins a finding's .message/.code into text instead of passing it as a Writer copy value. check-copy-rendered opens every route Publisher installed in one built Studio and fails on any rendered text, copy attribute, title or meta description that is neither pinned Writer text (ICU templates matched) nor pinned registry data, and on an <html lang> that is not the Writer source locale. The fixture breaks each rule once."
+    },
+    {
+      "id": "R-CONTENT-MAP",
+      "audit_rule": 6,
+      "owner_words": {
+        "quote": "consumer owns nav and routing data per publication",
+        "date": "2026-10-28"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:studio-map"
+      ],
+      "related": [
+        "check:studio#producer studio/checks/check-studio-map.test.cjs",
+        "check:studio#producer studio/checks/studio-navigation.test.cjs",
+        "check:studio#producer studio-dom-check (live)",
+        "check:studio#producer studio-modules-check (live)",
+        "check:studio#producer p0-studio-check (live)",
+        "check:studio#producer studio/checks/p0-studio-check.test.cjs",
+        "check:studio#producer p0-studio-mutations",
+        "check:studio#producer studio/checks/p0-studio-mutations.test.cjs"
+      ],
+      "fixture": "scripts/rules/fixtures/R-CONTENT-MAP",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:studio-map",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-studio-map.cjs --root {fixture}",
+          "expect": "\"rule\": \"shell-projection-not-publisher\""
+        }
+      ],
+      "note": "Nav, commands and breadcrumbs must be Publisher projections of the pinned content map; the icon map overriding pins is a W-unit defect."
+    },
+    {
+      "id": "R-FLAT-SLOTS",
+      "audit_rule": 7,
+      "owner_words": {
+        "quote": "agents/<agent>/<slot-id>/ flat; grouping only in ia.json data",
+        "date": "2026-11-02"
+      },
+      "status": "enforced",
+      "note": "check:flat-slots runs from root check and fails when a legacy store is kept, read or shipped: clossys/{library,cells,tree.json} or an agent folder holding library, cells or tree.json; an agent folder entry other than ia.json and slot folders, or a slot folder nesting a directory other than candidates/; a code file naming a legacy store path or joining cells, tree.json or library onto a root; a package manifest or the pipeline graph declaring one. clossys/library was retired (git rm) after Designer ref-verbatim --pinned gave identical output with and without it. Red on the real tree until the Director, Designer library-cli, Publisher content-map and Writer cells stores move to flat slot folders (engine gap). The fixture keeps clossys/library, a grouping folder and a tree.json reader.",
+      "related": [
+        ".#check:no-selection-store"
+      ],
+      "checks": [
+        ".#check:flat-slots"
+      ],
+      "fixture": "scripts/rules/fixtures/R-FLAT-SLOTS",
+      "fixture_runs": [
+        {
+          "check": ".#check:flat-slots",
+          "cwd": ".",
+          "run": "node scripts/check-flat-slots.mjs --root {fixture}",
+          "expect": "^\\s+clossys/library \\[store\\]"
+        },
+        {
+          "check": ".#check:flat-slots",
+          "cwd": ".",
+          "run": "node scripts/check-flat-slots.mjs --root {fixture}",
+          "expect": "^\\s+packages/probe/src/store\\.mjs:4 \\[reader\\]"
+        }
+      ]
+    },
+    {
+      "id": "R-SLOT-PINS",
+      "audit_rule": 8,
+      "owner_words": {
+        "quote": "every L3 is a slot, candidates are files, one pinned",
+        "date": "2026-10-31"
+      },
+      "status": "enforced",
+      "related": [
+        "packages/designer#check:slot-contracts"
+      ],
+      "note": "check:slot-pins runs the clossys check slot resolver from root check through check:studio and fails on a needed slot with no pin, more than one pin, a pin off its candidate bytes or an unvendored pinned source; a not-needed slot holds no pin. Producer seats ride the same contract (candidate file plus one pin.json, sha256 checked); an open seat, a drifted pin or a retired seat.json fails. The fixture is a needed Director slot with one candidate and no pin, and a Producer seat still holding a retired seat.json.",
+      "checks": [
+        "packages/producer#check:slot-pins"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SLOT-PINS",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:slot-pins",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-pins.mjs --root {fixture}",
+          "expect": "^\\s+director:identity\\.brand\\.essence \\[no-pin\\]"
+        },
+        {
+          "check": "packages/producer#check:slot-pins",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-pins.mjs --root {fixture}",
+          "expect": "^\\s+agents/producer/pin\\.director \\[seat-rejected\\]"
+        }
+      ]
+    },
+    {
+      "id": "R-ONE-BRAND",
+      "audit_rule": 9,
+      "owner_words": {
+        "quote": "Studio previews the consumer workspace in the consumer brand; never greyscale",
+        "date": "2026-10-29"
+      },
+      "status": "enforced",
+      "related": [
+        "check:studio#producer check-theme-parity (live)",
+        "check:studio#producer studio/checks/check-theme-parity.test.cjs"
+      ],
+      "note": "check:one-brand runs the Studio theme and brand code over the consumer store from root check through check:studio: the theme compiles from the consumer's pinned themes.* (the Foundry theme or a theme error fails), the name, mark, favicon, app icon and lockup resolve from its pinned assets.*, and no asset token points at a file. The fixture drifts the themes.background pin and points assets.mark at a Foundry file.",
+      "checks": [
+        "packages/producer#check:one-brand"
+      ],
+      "fixture": "scripts/rules/fixtures/R-ONE-BRAND",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:one-brand",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-one-brand.mjs --root {fixture}",
+          "expect": "^\\s+theme \\[error\\] Consumer theme could not be compiled: themes\\.background"
+        },
+        {
+          "check": "packages/producer#check:one-brand",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-one-brand.mjs --root {fixture}",
+          "expect": "^\\s+assets\\.mark \\[points-outside\\] positive\\.\\$value = \"packages/designer/assets/foundry-mark\\.svg\""
+        }
+      ]
+    },
+    {
+      "id": "R-STUDIO-CARD-DETAIL",
+      "audit_rule": 10,
+      "owner_words": {
+        "quote": "read-only Studio; the card shows active state and links to the L3 route",
+        "date": "2026-10-31"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:studio-template"
+      ],
+      "related": [
+        "check:studio#producer studio/checks/studio-overflow.test.mjs"
+      ],
+      "fixture": "scripts/rules/fixtures/R-STUDIO-CARD-DETAIL",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:studio-template",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-studio-template.mjs --root {fixture}",
+          "expect": "^FAIL specimen"
+        }
+      ],
+      "note": "Class checks for the slot card and detail template; the read-only 405 API is covered by producer src tests."
+    },
+    {
+      "id": "R-REAL-SPECIMENS",
+      "audit_rule": 11,
+      "owner_words": {
+        "quote": "Studio previews what cells produce, not file text",
+        "date": "2026-10-29"
+      },
+      "status": "enforced",
+      "related": [
+        "check:studio#producer publisher-preview (live)",
+        "check:studio#designer check-specimen-token-host-parts",
+        "check:studio#designer generate-specimen-surface-evidence --check",
+        "check:studio#designer generate-default-component-preview --check",
+        "check:studio#designer components-coverage --check",
+        "check:studio#designer sections-frames-coverage --check",
+        "check:studio#designer scripts/sections-frames-source.test.mjs",
+        "check:studio#producer test:studio-capture"
+      ],
+      "note": "No Studio slot detail, specimen or slot-groups code path, nor the server slot detail, gallery and specimen builders, renders candidate file contents as text (check:slot-state raw-candidate-text). The fixture is a server slot detail whose row text is the candidate file content.",
+      "checks": [
+        "packages/producer#check:slot-state"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REAL-SPECIMENS",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:slot-state",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-state.mjs --repo {fixture}",
+          "expect": "^\\s+packages/producer/src/server/slot-detail\\.ts:\\d+ \\[raw-candidate-text\\]"
+        }
+      ]
+    },
+    {
+      "id": "R-USAGE-GRAPH",
+      "audit_rule": 12,
+      "owner_words": {
+        "quote": "all layers link uses and used-by; DOM provenance",
+        "date": "2026-10-26"
+      },
+      "status": "enforced",
+      "related": [
+        "check:studio#designer check (usage-graph)",
+        "check:studio#designer test:usage-graph",
+        "check:studio#designer generate-surface-consumption --check"
+      ],
+      "note": "check:generated-derived runs from root check through check:studio: every slot.json uses equals what its pinned candidate imports or references (R-USES-COMPUTED, so used-by is the inverse), and the DOM data-clossys-slot/candidate/hash markers come from the generated provenance the assembly bindings apply (R-PROVENANCE-GENERATED). The fixture is a pinned hero section importing button with uses [] and no generated bindings.",
+      "checks": [
+        "packages/producer#check:generated-derived"
+      ],
+      "fixture": "scripts/rules/fixtures/R-USAGE-GRAPH",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:generated-derived",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-generated-derived.mjs --root {fixture}",
+          "expect": "^R-USES-COMPUTED clossys/agents/designer/sections\\.hero/slot\\.json: uses \\[\\] != computed \\[\"components\\.button\"\\]"
+        },
+        {
+          "check": "packages/producer#check:generated-derived",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-generated-derived.mjs --root {fixture}",
+          "expect": "^R-PROVENANCE-GENERATED packages/producer/studio/generated/assembly-bindings\\.ts: assembly bindings do not apply the generated provenance markers"
+        }
+      ]
+    },
+    {
+      "id": "R-CLI-DETERMINISTIC",
+      "audit_rule": 13,
+      "owner_words": {
+        "quote": "clossys verbs = brief, check, compile only",
+        "date": "2026-10-29"
+      },
+      "status": "enforced",
+      "note": "check:cli-verbs runs every read-only clossys verb (direct, design and write --brief and --check, publish, decisions, options --classes --check) twice on the real store from root check through check:studio: each exits 0 with byte-identical output, and clossys check exits 0 only (a finding, exit 1, is a red verb) and repeats byte for byte. The fixture is a consumer store holding only a Director IA.",
+      "checks": [
+        "packages/producer#check:cli-verbs"
+      ],
+      "related": [
+        ".#check:compile-pure",
+        "packages/producer#check:slot-pins"
+      ],
+      "fixture": "scripts/rules/fixtures/R-CLI-DETERMINISTIC",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:cli-verbs",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-cli-verbs.mjs --root {fixture}",
+          "expect": "^\\s+clossys design --check \\[exit\\] exited 2"
+        }
+      ]
+    },
+    {
+      "id": "R-CHECKS-WIRED",
+      "audit_rule": 14,
+      "owner_words": {
+        "quote": "rules must become code, not prose",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:orphan-checks",
+        ".#check:rules"
+      ],
+      "fixture": "scripts/rules/fixtures/R-CHECKS-WIRED",
+      "fixture_runs": [
+        {
+          "check": ".#check:orphan-checks",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-CHECKS-WIRED/orphan",
+          "run": "node scripts/check-orphan-checks.mjs --root {fixture}",
+          "expect": "^orphan\\s+packages/producer/scripts/check-probe\\.mjs"
+        },
+        {
+          "check": ".#check:rules",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-CHECKS-WIRED/registry",
+          "run": "node scripts/check-rules.mjs --root {fixture}",
+          "expect": "^unenforced\\s+R-PROBE"
+        }
+      ],
+      "note": "Every check file is reachable from root check or test, and every rule has a check that fails on its fixture."
+    },
+    {
+      "id": "R-NO-HIDDEN-FALLBACKS",
+      "audit_rule": 15,
+      "owner_words": {
+        "quote": "no temp solutions; delete shims, never extend",
+        "date": "2026-10-23"
+      },
+      "status": "enforced",
+      "related": [
+        "check:studio#producer scripts/preview-studio-config.test.mjs",
+        "check:studio#producer scripts/studio-draft-items.test.mjs",
+        "check:studio#producer scripts/pack-five.test.mjs",
+        "check:studio#producer scripts/build-studio.test.mjs"
+      ],
+      "note": "check:no-hidden-fallbacks parses shipped Producer code (src, bin, Studio app, lib, components, frames, sections) with TypeScript and fails on a catch that swallows its error: no throw, no use of the error, no report, no error record or error state handed on, and not the bare `return false` of a yes/no probe. The fixture is a theme loader that falls back to the Foundry theme in a catch. The real tree is red on 1 of the original 55 catch sites: studio/frames/studio-shell/index.tsx:85 (the popover target selector catch), which is the pinned Designer frame payload studio-shell v12 and changes only through a new Designer candidate and pin; the other 54 surface their failure (NO-FALLBACKS).",
+      "checks": [
+        "packages/producer#check:no-hidden-fallbacks"
+      ],
+      "fixture": "scripts/rules/fixtures/R-NO-HIDDEN-FALLBACKS",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:no-hidden-fallbacks",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-no-hidden-fallbacks.mjs --root {fixture}",
+          "expect": "^\\s+src/theme\\.ts:7 \\[silent-catch\\]"
+        }
+      ]
+    },
+    {
+      "id": "R-SLOT-STATE",
+      "owner_words": {
+        "quote": "shadcn item, else a composition of pinned parts, else mark unneeded",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "note": "Every Director, Designer and Writer slot is pinned or marked not-needed (records/slots rejectedSlots), checked by check:slot-state from root check through check:studio. The fixture is a Director slot holding one candidate and no pin.",
+      "checks": [
+        "packages/producer#check:slot-state"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SLOT-STATE",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:slot-state",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-state.mjs --repo {fixture}",
+          "expect": "^\\s+director/identity\\.brand\\.essence \\[no-pin\\]"
+        }
+      ]
+    },
+    {
+      "id": "R-COMPILE-PURE",
+      "owner_words": {
+        "quote": "the rendering itself is just the same deterministic plumbing that works everytime without llm token spend",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:compile-pure"
+      ],
+      "note": "compile reads only the decision files packages/producer/decision-inputs.json lists, offline, with no model client or agent binary reachable from the built CLI, byte-identical across runs; a root of only the decision files compiles to the same bytes, non-decision edits change nothing, and re-pinning a Writer slot whose keys the compiled copy renders changes the output. The fixture is a built CLI whose compile verb imports a model client.",
+      "fixture": "scripts/rules/fixtures/R-COMPILE-PURE",
+      "fixture_runs": [
+        {
+          "check": ".#check:compile-pure",
+          "cwd": ".",
+          "run": "cp -R {fixture}/repo {out}/repo && cp -R {fixture}/built {out}/repo/packages/producer/dist && node packages/producer/scripts/check-compile-pure.mjs --root {out}/repo",
+          "expect": "^\\s+purity: packages/producer/dist/cli/index\\.js imports the agent or model client openai"
+        }
+      ]
+    },
+    {
+      "id": "R-DECISIONS-BY-CLI",
+      "owner_words": {
+        "quote": "process driven by code and identifiers so that we decide which candidate goes in which slot",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:decisions"
+      ],
+      "fixture": "scripts/rules/fixtures/R-DECISIONS-BY-CLI",
+      "fixture_runs": [
+        {
+          "check": ".#check:decisions",
+          "cwd": ".",
+          "run": "node scripts/check-decisions.mjs --repo {fixture}",
+          "expect": "\\[pin-shape\\] missing decidedBy"
+        }
+      ],
+      "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; check:decisions fails on any hand-edited decision record (pin shape, candidate, hash, both, not-needed shape).",
+      "related": [
+        "check:studio#designer check:designer-receipt"
+      ]
+    },
+    {
+      "id": "R-GIT-CMS",
+      "owner_words": {
+        "quote": "ok clean up and harden",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:git-cms"
+      ],
+      "fixture": "scripts/rules/fixtures/R-GIT-CMS",
+      "fixture_runs": [
+        {
+          "check": ".#check:git-cms",
+          "cwd": ".",
+          "run": "node scripts/check-git-cms.mjs --repo {fixture}",
+          "expect": "FAIL stray-entry designer/_evidence"
+        },
+        {
+          "check": ".#check:git-cms",
+          "cwd": ".",
+          "run": "node scripts/check-git-cms.mjs --repo {fixture}",
+          "expect": "FAIL pin-attribution designer/components\\.button/pin\\.json: pin has no basis"
+        },
+        {
+          "check": ".#check:git-cms",
+          "cwd": ".",
+          "run": "node scripts/check-git-cms.mjs --repo {fixture}",
+          "expect": "FAIL missing-ia notes/ia\\.json"
+        },
+        {
+          "check": ".#check:git-cms",
+          "cwd": ".",
+          "run": "node scripts/check-git-cms.mjs --repo {fixture}",
+          "expect": "FAIL no-candidates designer/components\\.card"
+        }
+      ],
+      "note": "Agent trees under clossys/agents/<agent>/ hold only ia.json and slot folders; a slot folder holds only slot.json, candidates/ and pin.json, matches ia.json, has a candidate, and a pin names an existing candidate by exact sha256 with decidedBy and basis (picked | bulk | planner). Evidence lives in clossys/evidence/. No agent is exempt."
+    },
+    {
+      "id": "R-SLOT-OPTIONS",
+      "owner_words": {
+        "quote": "add some variety to the candidate generation so end user have a choice",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:slot-options"
+      ],
+      "related": [
+        ".#check:decisions",
+        ".#check:git-cms"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SLOT-OPTIONS",
+      "fixture_runs": [
+        {
+          "check": ".#check:slot-options",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-options.mjs --repo {fixture}",
+          "expect": "^options-short\\s+director/identity\\.brand\\.essence"
+        }
+      ],
+      "note": "Every Director and Writer slot is classed by the committed option-class mapping (records/slot-model/option-classes.ts); its slot.json options and varyOn match its class, and a choice slot holds at least that many candidates that differ on varyOn, each tagged with a distinct allowed value. An agent seat's pick (clossys pick --by agent:<seat>, basis agent) may replace a bulk, planner or agent pin, never an owner pick. The fixture is a three-option slot holding one untagged candidate."
+    },
+    {
+      "id": "R-PIPELINE-IS-CODE",
+      "owner_words": {
+        "quote": "anything that is deterministic need to be process driven by code and identifiers",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:pipeline"
+      ],
+      "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/repo-write",
+      "fixture_runs": [
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --scan {fixture}",
+          "expect": "^FAIL decide\\.foreign-writer: workspace\\.config \\(decide\\) owns clossys/clossys\\.config\\.ts, but scripts/rules/fixtures/R-PIPELINE-IS-CODE/repo-write/write-workspace-config\\.mjs can write it"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/path-impostor",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --scan {fixture}",
+          "expect": "^FAIL decide\\.foreign-writer: workspace\\.config \\(decide\\) owns clossys/clossys\\.config\\.ts, but scripts/rules/fixtures/R-PIPELINE-IS-CODE/path-impostor/env-tmpdir\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/path-impostor/local-tmpdir\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/path-impostor/shadowed-join\\.mjs can write it"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/copy-in",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --scan {fixture}",
+          "expect": "^FAIL decide\\.foreign-writer: workspace\\.config \\(decide\\) owns clossys/clossys\\.config\\.ts, but scripts/rules/fixtures/R-PIPELINE-IS-CODE/copy-in/copy-file\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/copy-in/rename-file\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/copy-in/stage-tree\\.mjs can write it"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/reassigned",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --scan {fixture}",
+          "expect": "^FAIL decide\\.foreign-writer: workspace\\.config \\(decide\\) owns clossys/clossys\\.config\\.ts, but scripts/rules/fixtures/R-PIPELINE-IS-CODE/reassigned/destructured\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/reassigned/loop-target\\.mjs can write it"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/stage-missing",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --steps {fixture}/steps.mjs",
+          "expect": "^FAIL stage\\.missing: step \"ia\": names no stage"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/lane-unrostered",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --steps {fixture}/steps.mjs",
+          "expect": "^FAIL lane\\.unrostered: step \"auditor\\.candidates\": its holder auditor .* is not a roster entry"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/stage-orphan",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --steps {fixture}/steps.mjs",
+          "expect": "^FAIL stage\\.orphan: step \"capture\" \\(publish\\.check\\): no derived edge feeds it"
+        }
+      ],
+      "note": "Every pipeline step is a defineStep call; check:pipeline fails when a decide step's output can be written inside the repository by code outside its declared entry (a write that resolves outside the repository root, such as a scratch copy under os.tmpdir(), is not a repository write). Every step names a stage from define.ts STAGES (stage.missing) and a holder that is a roster.ts ROSTER entry (lane.unrostered), and every step outside the first stage (direct.brief, the Direct round's brief) is fed by a derived edge (stage.orphan: only a direct.brief step may start the flow); the stage-missing, lane-unrostered and stage-orphan fixtures are the real steps with one stage removed, one step held by an unrostered agent and the capture step stripped of its inputs."
+    },
+    {
+      "id": "R-PIPELINE-CANVAS",
+      "owner_words": {
+        "quote": "anything that is deterministic need to be process driven by code and identifiers",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:pipeline-canvas"
+      ],
+      "related": [
+        "packages/designer#check:ref-verbatim"
+      ],
+      "fixture": "scripts/rules/fixtures/R-PIPELINE-CANVAS",
+      "fixture_runs": [
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph.json --rendered {fixture}/rendered.json",
+          "expect": "^FAIL edge-ids: edge missing from the page: design\\.hero->publish\\.compile"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph.json --rendered {fixture}/rendered-badge.json",
+          "expect": "^FAIL contain: the badge of step design\\.hero .* overflows its node"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-swimlane.json --rendered {fixture}/rendered-swimlane.json",
+          "expect": "^FAIL stage: step publish\\.compile is outside the publish stage column"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-roster.json --rendered {fixture}/rendered-roster.json",
+          "expect": "^FAIL roster: graph\\.json lanes \\(designer, publisher\\) are not the roster"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-forward.json --rendered {fixture}/rendered-forward.json",
+          "expect": "^FAIL flow: edge publish\\.compile->design\\.hero runs backward"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-rank.json --rendered {fixture}/rendered-rank.json",
+          "expect": "^FAIL flow: edge design\\.hero->design\\.card inside the make stage does not run left to right"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-rank.json --rendered {fixture}/rendered-rank.json",
+          "expect": "^FAIL rank: in the make stage, step design\\.hero \\(rank 0\\) is not left of design\\.card \\(rank 1\\)"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-orphan.json --rendered {fixture}/rendered-orphan.json",
+          "expect": "^FAIL orphan: step publish\\.compile \\(publish\\) has no edge into it"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-rounds.json --rendered {fixture}/rendered-rounds.json",
+          "expect": "^FAIL flow: edge designer\\.candidates->ia runs backward: designer\\.candidates \\(design\\.make\\) feeds ia \\(direct\\.brief\\)"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-rounds.json --rendered {fixture}/rendered-rounds-span.json",
+          "expect": "^FAIL stage: stage design\\.make's header is outside the design round"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --wiring {fixture}/wiring-status.json --rendered {fixture}/rendered-status.json",
+          "expect": "^FAIL status: step designer\\.check shows passed, but its latest run record says failed"
+        }
+      ],
+      "note": "The Studio Content overview (/content) draws the active wiring only (W1b, 2026-11-10: the steps that exist and the run records they left, from /api/pipeline/wiring; its fixtures may be a declared graph of the same shape): check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied, no two node boxes (steps and lane labels) intersecting at the initial view in 1440x900, one label per lane, every step inside its lane's swim row and its stage's column (one header per stage, and, when the stages are grouped in rounds, one header per round above and spanning its stages' headers), the drawn lane rows equal to graph.json's roster (plus unassigned while a step has no holder), every edge flowing forward (never into an earlier stage in (round, stage) order, and left to right inside one stage), ranks left to right inside each stage column, every step outside the first stage fed by an edge, every step title at 12px or more on screen at the initial view, the canvas filling the window's remaining height, the legend inside the viewport, every step's kind badge and title inside its node box, and (in the browser) a click on a step node or Enter on the focused step opening its sheet. The fixtures are recorded renderings: one drops an edge, one draws a kind badge past its node's right edge, one draws a step outside its stage column, one draws lanes that leave out a roster entry, one has an edge back into an earlier stage, one draws a rank-1 step left of the rank-0 step that feeds it in one stage, one has a later-stage step no edge feeds, one has an edge from the design round back into the direct round, one draws a stage header outside its round, and one shows a failed step as passed (every drawn status badge must be its latest run record's state)."
+    },
+    {
+      "id": "R-ROUTES-PUBLISHED",
+      "owner_words": {
+        "quote": "make sure all pages/routes are built via publisher itself officially",
+        "date": "2026-11-04"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:routes-published",
+        "packages/producer#check:studio-routes",
+        "packages/producer#check:route-parity"
+      ],
+      "related": [
+        "packages/producer#check:assemble-only",
+        "check:studio#producer scripts/check-route-parity.test.mjs"
+      ],
+      "fixture": "scripts/rules/fixtures/R-ROUTES-PUBLISHED",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^route-unpublished\\s+app/probe/page\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^record-unserved\\s+orphan"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^link-unpublished\\s+docs > gone"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^shell-unpublished\\s+app/layout\\.tsx\\s+mounts something other than the publication's document"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^shell-unpublished\\s+app/not-found\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:studio-routes",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-studio-routes.cjs --root {fixture}",
+          "expect": "\"kind\": \"not-found\",\\s*\"file\": \"app/not-found\\.tsx\""
+        },
+        {
+          "check": "packages/producer#check:studio-routes",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-studio-routes.cjs --root {fixture}",
+          "expect": "\"rule\": \"route-not-installed\",\\s*\"file\": \"app/probe/page\\.tsx\"|\"rule\": \"stale-installed-route\",\\s*\"file\": \"app/probe/page\\.tsx\""
+        },
+        {
+          "check": "packages/producer#check:route-parity",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-route-parity.mjs --root {fixture}",
+          "expect": "^route-drift\\s+app/layout\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:route-parity",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-route-parity.mjs --root {fixture}",
+          "expect": "^route-not-installed\\s+app/probe/page\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:route-parity",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-route-parity.mjs --root {fixture} --surface site-template",
+          "expect": "^route-not-installed\\s+site/app/pack/page\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:route-parity",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-route-parity.mjs --root {fixture} --surface site-template",
+          "expect": "^route-not-installed\\s+site/app/robots\\.ts"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture} --surface site-template",
+          "expect": "^route-unpublished\\s+site/app/pack/page\\.tsx\\s+mounts no record id"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture} --surface site-template",
+          "expect": "^route-unpublished\\s+site/app/robots\\.ts\\s+is an App Router file no publication installs"
+        }
+      ],
+      "note": "Every Studio route, nav link, command, breadcrumb, tab, landing and redirect target comes from the Publisher projection (studio/generated/studio-map.json), and every file under studio/app is what Publisher installs: check:routes-published fails on an installed app/**/page.tsx that mounts no published page record or sits off its record's path, a leaf template slug that is no published leaf, a published record or leaf set with no installed route, any link to a path that is no published page or leaf, breadcrumbs, tabs or landings missing from the projection, a root layout or loading/not-found/error/global-error file that is missing, unmarked or mounts anything but the publication's document or state, and any other App Router file; check:studio-routes fails on a content-map page, leaf template or shell file without Publisher's install, and on any other route file; check:route-parity reinstalls publication.studio into a temp directory and fails on any file under studio/app that a fresh install does not write or writes with other bytes (a hand edit under a copied marker) and on any file it writes that app/ lacks. The fixture serves an unpublished probe route, leaves an orphan record unserved, links a breadcrumb to an unpublished path, lacks the not-found and other state files, and hand-writes the root layout under a copied marker. The site template (packages/publisher/templates/site) is a Publisher install too: it ships no route file and its publish:site script (run by predev and prebuild) is `clossys publish --install --next app --bind`, which writes every route file, the assembly, the states and the page modules from the consumer's pinned page records. check:route-parity --surface site-template fails on code or a name-served App Router file under the template's app/, a publish:site/predev/prebuild that is not that install, an install Publisher refuses, and a reinstall that drifts; check:routes-published --surface site-template installs the template for the fixture consumer and fails, over the installed output, on a route mounting no projected page, a projected page with no route or page module, a shell file not installed or mounting anything else, and any other App Router file. The fixture's site template ships a hand-written app/pack/page.tsx with a raw link and a hand-written app/robots.ts."
+    },
+    {
+      "id": "R-SINGLE-READER",
+      "owner_words": {
+        "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:single-reader"
+      ],
+      "related": [
+        ".#check:no-selection-store",
+        ".#check:git-cms"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SINGLE-READER",
+      "fixture_runs": [
+        {
+          "check": ".#check:single-reader",
+          "cwd": ".",
+          "run": "node scripts/check-single-reader.mjs --root {fixture}",
+          "expect": "leak\\.mjs:\\d+: readFileSync opens a slot-model path outside the reader"
+        }
+      ],
+      "note": "Shipped code opens the slot model (ia.json, slot.json, pin.json, candidates) only through packages/producer/src/records/slots.ts and writes it only through records/slot-write.ts. The fixture is a package source file that reads a Designer pin.json by hand."
+    },
+    {
+      "id": "R-PIN-PROPAGATION",
+      "owner_words": {
+        "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:pin-propagation"
+      ],
+      "related": [
+        ".#check:single-reader"
+      ],
+      "fixture": "scripts/rules/fixtures/R-PIN-PROPAGATION",
+      "fixture_runs": [
+        {
+          "check": ".#check:pin-propagation",
+          "cwd": ".",
+          "run": "cp -R {fixture}/repo {out}/repo && mkdir -p {out}/repo/packages/producer {out}/repo/packages/publisher && cp {fixture}/built/stub.mjs {out}/repo/packages/stub.mjs && cp -R {fixture}/built/producer {out}/repo/packages/producer/dist && cp -R {fixture}/built/publisher {out}/repo/packages/publisher/dist && CLOSSYS_CHECK_REPO={out}/repo node --test packages/producer/scripts/check-pin-propagation.test.mjs",
+          "expect": "drift: Studio detail flags the pin hash mismatch"
+        }
+      ],
+      "note": "A pin is the one wire from a slot to everything that renders it: drifting a pinned candidate byte is flagged by Studio detail and refused by the page and specimen builds, and a repin changes Studio, the specimen inputs and Publisher output. The fixture is a built surface (stub modules over a two-slot model) whose Studio slot detail never compares the pin sha256 with the candidate bytes; with that defect removed the same fixture passes."
+    },
+    {
+      "id": "R-EVERY-CANDIDATE-PREVIEWABLE",
+      "owner_words": {
+        "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:every-candidate-previewable"
+      ],
+      "related": [
+        ".#check:pin-propagation"
+      ],
+      "fixture": "scripts/rules/fixtures/R-EVERY-CANDIDATE-PREVIEWABLE",
+      "fixture_runs": [
+        {
+          "check": ".#check:every-candidate-previewable",
+          "cwd": ".",
+          "run": "cp -R {fixture}/repo {out}/repo && mkdir -p {out}/repo/packages/producer {out}/repo/packages/publisher && cp {fixture}/built/stub.mjs {out}/repo/packages/stub.mjs && cp -R {fixture}/built/producer {out}/repo/packages/producer/dist && cp -R {fixture}/built/publisher {out}/repo/packages/publisher/dist && CLOSSYS_CHECK_REPO={out}/repo node --test packages/producer/scripts/check-every-candidate-previewable.test.mjs",
+          "expect": "the specimen route does not accept this \\(slot, candidate\\)"
+        }
+      ],
+      "note": "Every placed, valid candidate renders from its own bytes and only the valid pin is used by pages: an unpinned Designer candidate is a specimen option the route accepts. The fixture is a built surface (stub modules over a two-slot model) whose specimen inputs list no options; with that defect removed the same fixture passes."
+    }
+  ],
+  "exemptions": [
+    {
+      "check": "check:studio#designer check:page-overflow",
+      "reason": "Render probe for a served published-site install (needs --url); site layout quality, not a Studio owner rule."
+    },
+    {
+      "check": "check:studio#producer studio/checks/studio-upgrade.test.cjs",
+      "reason": "Producer server WebSocket upgrade transport test: infrastructure correctness, not an owner rule."
+    }
+  ]
+}

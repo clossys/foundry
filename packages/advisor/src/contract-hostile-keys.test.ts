@@ -46,7 +46,7 @@ const SNAPSHOT = SNAPSHOTS.digests.find((entry) => entry.name === "base")!.snaps
 const PLAN: AdvisorPlan = {
   schemaVersion: 1,
   asOf: "2026-09-24T12:00:00Z",
-  mandate: { problem: "We cannot explain our product.", primaryProblemId: "strategist-unclear-direction", roles: ["writer", "designer"] },
+  mandate: { problem: "We cannot explain our product.", primaryProblemId: "director-unclear-direction", roles: ["writer", "designer"] },
   whereWeAre: [],
   recommendedNext: null,
   decisions: [],
@@ -60,8 +60,8 @@ const PLAN: AdvisorPlan = {
 const BRIEF: EngagementBrief = {
   schemaVersion: 1,
   problem: "Our site doesn't explain what we do.",
-  roles: [{ role: "strategist", why: "Directly confirmed.", goal: { metric: "message-clarity-score", direction: "maintain" }, inputsFrom: [], outputsTo: ["writer"] }],
-  sequence: ["strategist"],
+  roles: [{ role: "director", why: "Directly confirmed.", goal: { metric: "message-clarity-score", direction: "maintain" }, inputsFrom: [], outputsTo: ["writer"] }],
+  sequence: ["director"],
   deliverables: ["A positioning brief every later role reads first."],
 };
 

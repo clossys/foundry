@@ -1,0 +1,5 @@
+{
+  "schema": "clossys.element/1",
+  "slot": "sections.probe",
+  "lineage": { "mode": "original" }
+}

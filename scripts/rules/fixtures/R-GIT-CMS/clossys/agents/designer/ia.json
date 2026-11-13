@@ -1,0 +1,6 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "synthetic#R-GIT-CMS",
+  "extensions": [],
+  "nodes": [{ "id": "components", "label": "Components", "children": [{ "id": "group", "label": "Group", "slots": ["components.button", "components.card"] }] }]
+}

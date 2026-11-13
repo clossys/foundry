@@ -60,8 +60,8 @@ export const GATE_TEST_EXCLUSIONS = Object.freeze({
     "imports the real, built @clossys/observer package by bare specifier -- needs `npm run build` first. Wired as its own `node --test` step in ci.yml's build job, after build.",
   "scripts/check-fleet-coverage.test.mjs":
     "imports the real, built @clossys/observer package by bare specifier, same as gate-run-history.test.mjs above -- needs `npm run build` first (see the file's own header: 'it is not part of check:gates, which runs in the dependency-free safety job before any workspace build exists'). Wired as its own `node --test` step in ci.yml's build job.",
-  "scripts/check-strategist-subject.test.mjs":
-    "runs the real, compiled packages/strategist/dist/cli.js against fixture docs trees -- needs `npm run build` first. Run by `npm run check:strategist-subject` itself (the test, then the gate), which ci.yml's `prose quality` job invokes after its own minimal `npm run build --workspace=packages/strategist` (moved there from the build job in issue #1420 review round 3 -- it reads prose-tier docs/PUBLISHING.md, which the build job is skipped for on the 'prose' tier).",
+  "scripts/check-director-subject.test.mjs":
+    "runs the real, compiled `clossys director check` (packages/producer/dist/cli/index.js) against fixture docs trees -- needs `npm run build` first. Run by `npm run check:director-subject` itself (the test, then the gate), which ci.yml's `prose quality` job invokes after its own minimal `npm run build --workspace=packages/director` (moved there from the build job in issue #1420 review round 3 -- it reads prose-tier docs/PUBLISHING.md, which the build job is skipped for on the 'prose' tier).",
   "scripts/consent-port-conformance.test.mjs":
     "type-checks scripts/fixtures/consent-port-conformance/ against the built Butler, Observer and Publisher declarations (and imports typescript, which needs `npm ci`) -- needs `npm run build` first. Run by its own check:consent-port-conformance script, after build in the root check chain and as its own step in ci.yml's build job.",
   "scripts/check-publication-map.test.mjs":
@@ -72,12 +72,8 @@ export const GATE_TEST_EXCLUSIONS = Object.freeze({
     "already covered by its own check:verify-inputs script (`node --test .github/scripts/assemble-verify-inputs.test.mjs`), which per package.json's `//check-verify-inputs` comment runs after the built inspector bin is available -- the opposite precondition from check:gates' pre-build, dependency-free safety job. Running it again here would run it twice with no added coverage.",
   "scripts/check-public-npm-provenance.test.mjs":
     "already run transitively -- scripts/publish-workflow.test.mjs, which check:gates does run, imports this file directly (`import \"./check-public-npm-provenance.test.mjs\"`). Listing it again here would run its tests a second time.",
-  "scripts/lib/public-npm-aggregate-canary.test.mjs":
-    "already covered by its own check:public-npm-aggregate-canary script, which chains the canary/closure/transcript checks before this test (`node scripts/check-public-npm-aggregate-canary.mjs && ... && node --test scripts/lib/public-npm-aggregate-canary.test.mjs`). Running it again here would run it a second time, in isolation from that chain.",
   "scripts/lib/import-purity.test.mjs":
     "imports scripts/lib/import-purity.mjs, which parses sources with the TypeScript compiler API -- needs `npm ci` for typescript, which check:gates' dependency-free safety job never runs. Already covered by its own check:import-purity script, which ci.yml's build job runs after `npm ci`.",
-  "scripts/lib/public-npm-aggregate-canary-v2.test.mjs":
-    "already covered by its own check:public-npm-aggregate-canary-v2 script, same reason as the v1 canary test above.",
 });
 
 function walk(dir, scanRoot, out) {

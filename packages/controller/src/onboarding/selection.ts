@@ -12,7 +12,7 @@ import type { OnboardingFinding, OnboardingRequest, RoleSelection, SelectionRule
 
 /** The roles the operating model binds to a fixed rule rather than to a consumer request. */
 export const ENGAGEMENT_BASELINE_ROLE = "@clossys/advisor";
-export const DIRECTION_ROLE = "@clossys/strategist";
+export const DIRECTION_ROLE = "@clossys/director";
 export const OPERATING_SYSTEM_ROLE = "@clossys/architect";
 export const INDEPENDENT_OUTCOME_ROLE = "@clossys/observer";
 

@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "@clossys/writer#leaf-freeze:fixture",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "strings.interface",
+      "label": "Interface",
+      "children": [
+        {
+          "id": "interface-copy",
+          "label": "Copy",
+          "slots": [
+            "strings.names",
+            "strings.common",
+            "strings.unnamed"
+          ]
+        }
+      ]
+    }
+  ]
+}

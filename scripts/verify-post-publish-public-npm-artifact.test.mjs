@@ -28,7 +28,7 @@ test("post-publish anonymous verifier preserves missing and exact-byte failure d
 });
 
 test("an exhausted observation window is indeterminate; a real byte mismatch is still a failure (issue #790)", () => {
-  // controller@0.9.2 and strategist@0.1.3 both published correctly on
+  // controller@0.9.2 and director@0.1.3 both published correctly on
   // 2026-09-03, then this exact call threw a plain Error when its anonymous
   // visibility window ran out on a slow CDN edge, aborting the `publish` job
   // on an upload that had already, immutably, succeeded, and skipping the

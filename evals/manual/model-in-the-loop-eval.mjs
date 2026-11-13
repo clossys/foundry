@@ -30,7 +30,7 @@
 //
 //   node evals/manual/model-in-the-loop-eval.mjs <role> [--host claude-code|cursor]
 //
-// <role> is a packages/*/skill directory name, e.g. "strategist".
+// <role> is a packages/*/skill directory name, e.g. "director".
 //
 // This is deliberately NOT a graded pass/fail gate: model output is not
 // reproducible run to run, so a scripted assertion over it would be
@@ -43,7 +43,7 @@ const HOST = hostArgIndex === -1 ? "claude-code" : (process.argv[hostArgIndex + 
 
 if (!ROLE) {
   console.error("usage: node evals/manual/model-in-the-loop-eval.mjs <role> [--host claude-code|cursor]");
-  console.error("example: node evals/manual/model-in-the-loop-eval.mjs strategist");
+  console.error("example: node evals/manual/model-in-the-loop-eval.mjs director");
   process.exit(2);
 }
 

@@ -40,8 +40,8 @@
     ],
     "needs": [
       {
-        "producerRole": "@clossys/strategist",
-        "artifact": "audience-understanding"
+        "producerRole": "@clossys/director",
+        "artifact": "strategy-brief"
       },
       {
         "producerRole": "@clossys/publisher",
@@ -65,8 +65,8 @@
         "worldClass": "Every candidate gets one independently observed, first-person, append-only keep-or-fail verdict from someone actually inhabiting the named audience — never a self-assessment by the role that built it, never overwritten once recorded.",
         "inputs": [
           {
-            "producerRole": "@clossys/strategist",
-            "artifact": "audience-understanding"
+            "producerRole": "@clossys/director",
+            "artifact": "strategy-brief"
           },
           {
             "producerRole": "@clossys/publisher",
@@ -167,6 +167,7 @@
     "!src/**/*.test.ts",
     "skill",
     "fit-signals.json",
+    "strategy-brief.json",
     "README.md",
     "LICENSE"
   ],

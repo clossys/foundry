@@ -1,0 +1,6 @@
+{
+  "//": "A page that draws both steps but shows the failed step as passed: the drawn status is not its latest run record's.",
+  "nodes": ["designer.check", "writer.check"],
+  "edges": [],
+  "statuses": { "designer.check": "passed", "writer.check": "never-run" }
+}

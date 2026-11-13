@@ -31,7 +31,7 @@ function catalogue(overrides = {}) {
         { artifact: "designer-package", role: "designer", source: "fallback-runtime-dependency" },
       ], feeds: [] },
       { role: "influencer", scopeName: "@clossys/influencer", jobQuestion: "influencer job", primaryMode: "optimize", metric: { name: "qualified response yield per thousand", direction: "increase" }, boundary: { owns: "reach", excludes: [] }, solves: solvesFor("influencer", "influencer-audience-response"), fit: [], needs: [{ artifact: "publisher-sequence-gate", role: "publisher", source: "fallback-non-runtime-order" }], feeds: [] },
-      { role: "strategist", scopeName: "@clossys/strategist", jobQuestion: "strategist job", primaryMode: "reconcile", metric: { name: "strategy traceability rate", direction: "increase" }, boundary: { owns: "strategy", excludes: [] }, solves: solvesFor("strategist", "strategist-unclear-direction"), fit: [], needs: [], feeds: [] },
+      { role: "director", scopeName: "@clossys/director", jobQuestion: "director job", primaryMode: "reconcile", metric: { name: "strategy traceability rate", direction: "increase" }, boundary: { owns: "strategy", excludes: [] }, solves: solvesFor("director", "director-unclear-direction"), fit: [], needs: [], feeds: [] },
       { role: "customer", scopeName: "@clossys/customer", jobQuestion: "customer job", primaryMode: "interact", metric: { name: "customer keep rate", direction: "increase" }, boundary: { owns: "keep", excludes: [] }, solves: solvesFor("customer", "customer-would-they-keep-it"), fit: [], needs: [], feeds: [] },
       { role: "orphan", scopeName: "@clossys/orphan", jobQuestion: "unreachable need", primaryMode: "assure", metric: { name: "orphan rate", direction: "increase" }, boundary: { owns: "x", excludes: [] }, solves: [], fit: [], needs: [{ artifact: "missing-thing", role: undefined, source: "manifest" }], feeds: [] },
     ],
@@ -258,7 +258,7 @@ test("composeKitFromProblems enforces the first-engagement role cap unless overC
     { id: "designer-interface-quality" },
     { id: "publisher-verified-release" },
     { id: "influencer-audience-response" },
-    { id: "strategist-unclear-direction" },
+    { id: "director-unclear-direction" },
     { id: "customer-would-they-keep-it" },
   ];
   const overCap = composeKitFromProblems({ confirmedProblems, catalogue: catalogue() });
@@ -283,15 +283,15 @@ test("validateKitProposal drops a role that links to no confirmed problem and is
       problem: "Our words don't sound like us.",
       roles: [
         { role: "writer", why: "writer job" },
-        { role: "strategist", why: "seemed related" },
+        { role: "director", why: "seemed related" },
       ],
     },
     confirmedProblems,
     catalogue: catalogue(),
   });
   assert.equal(result.state, "indeterminate");
-  assert.deepEqual(result.removalCandidates, ["strategist"]);
-  assert.equal(result.findings.some((f) => f.rule === "ungrounded-role" && f.role === "strategist"), true);
+  assert.deepEqual(result.removalCandidates, ["director"]);
+  assert.equal(result.findings.some((f) => f.rule === "ungrounded-role" && f.role === "director"), true);
 });
 
 test("validateKitProposal accepts every role the deterministic composition itself justifies, including a dependency-closure role", () => {

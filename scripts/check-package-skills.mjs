@@ -91,29 +91,14 @@ function validateSkillName(name, expectedName, packageDir) {
   return findings;
 }
 
-const CUSTOMER_SESSION_WAVE = new Set(["designer", "writer", "publisher", "strategist"]);
-/** Expression-wave skills own the pre-auth page contract. Frontmatter-only was not enough. */
-const PRE_AUTH_EXPRESSION_WAVE = new Set(["designer", "writer", "publisher"]);
-const PRE_AUTH_HEADING = /^## Pre-auth page[ \t]*$/m;
-const PUBLISHER_PRE_AUTH_MARKETING_VIEW = /MarketingView/;
-const PRE_AUTH_QUALITY_REF = /PRE-AUTH-QUALITY(?:\.md)?/;
-const PRE_AUTH_EXCEPTIONAL = /\bexceptional\b/i;
-const PRE_AUTH_SYNTHETIC_USER = /synthetic user/i;
-const PRE_AUTH_NO_AUTHOR_KEEP = /does not author keep-review|do not author keep-review/i;
-const PRE_AUTH_TASTE_FOLD_GREEN = /after [`']?designer-fold-check[`']? is green|designer-fold-check[`']? is green/i;
-const PRE_AUTH_TASTE_BOUND =
-  /at most 3 inhabit rounds|3 inhabit rounds or 45 minutes|whichever first/i;
-const PRE_AUTH_NO_SELF_CERTIFY = /does not self-certify exceptional keep|do not self-certify exceptional keep/i;
-const STRATEGIST_GATES_PROVE_3 = /prove 3 only/i;
-const STRATEGIST_NO_GATE_KEEP = /never treat gate-green as keep/i;
-const STRATEGIST_STOP_AT_3_DEFECT = /stops at 3 is a defect/i;
+/**
+ * The four content agents (Director = director, Designer, Writer, Publisher) each ship
+ * one loop skill: numbered steps under `## Loop` and an exact `## Done when` check.
+ */
+const CONTENT_AGENT_LOOP = new Set(["director", "designer", "writer", "publisher"]);
+const LOOP_HEADING = /^## Loop\b.*$/m;
+const DONE_HEADING = /^## Done when[ \t]*$/m;
 const INSPECTOR_USER_BOUNDARY = /synthetic user/i;
-const STRATEGIST_BRAND_COVERAGE_NECESSARY = /necessary,\s*not sufficient/i;
-const STRATEGIST_BRAND_DO_NOT_SURFACES = /do-not language|--surfaces/i;
-const STRATEGIST_BRAND_NOT_KEEP = /\bnot keep\b/i;
-const STRATEGIST_OUTPUT_FILES =
-  /facts\.json|audiences\.json|positioning\.json|claims\.json|constraints\.json|brand\.json|direction\.json/i;
-const STRATEGIST_HANDOFF_SUBCOMMAND = /strategist-check handoff/i;
 
 // Advisor's degraded-mode section (issue #1507): scoped extraction, not a
 // whole-file search. A whole-file search made two of the original checks
@@ -336,7 +321,7 @@ function validateSkillBody(packageDir, text) {
       }
     }
   }
-  if (CUSTOMER_SESSION_WAVE.has(packageDir) || packageDir === "inspector") {
+  if (packageDir === "inspector") {
     if (!/clossys-customer/.test(text)) {
       findings.push({
         rule: "expression-customer-session",
@@ -427,72 +412,13 @@ export function evaluatePackageSkills(packages) {
           });
         }
         pkgFindings.push(...validateSkillBody(packageDir, text));
-        if (PRE_AUTH_EXPRESSION_WAVE.has(packageDir) && !PRE_AUTH_HEADING.test(text)) {
-          pkgFindings.push({
-            rule: "pre-auth-page-heading",
-            packageDir,
-            message: "expression-wave skill must contain a '## Pre-auth page' heading — the brief the packed skill carries",
-          });
-        }
-        if (PRE_AUTH_EXPRESSION_WAVE.has(packageDir) && PRE_AUTH_HEADING.test(text)) {
-          if (!PRE_AUTH_QUALITY_REF.test(text)) {
-            pkgFindings.push({
-              rule: "pre-auth-quality-ref",
-              packageDir,
-              message: "expression-wave skill must reference PRE-AUTH-QUALITY (see packages/designer/PRE-AUTH-QUALITY.md)",
-            });
+        if (CONTENT_AGENT_LOOP.has(packageDir)) {
+          if (!LOOP_HEADING.test(text)) {
+            pkgFindings.push({ rule: "content-agent-loop", packageDir, message: "content-agent skill must have a '## Loop' section with the agent's steps" });
           }
-          if (!PRE_AUTH_EXCEPTIONAL.test(text)) {
-            pkgFindings.push({
-              rule: "pre-auth-exceptional",
-              packageDir,
-              message: "expression-wave skill must state that done is exceptional (5), not good (3)",
-            });
+          if (!DONE_HEADING.test(text)) {
+            pkgFindings.push({ rule: "content-agent-done", packageDir, message: "content-agent skill must have a '## Done when' section" });
           }
-          if (!PRE_AUTH_SYNTHETIC_USER.test(text)) {
-            pkgFindings.push({
-              rule: "pre-auth-synthetic-user",
-              packageDir,
-              message: "expression-wave skill must name a synthetic user as the keep, not a hired QA or a self-review",
-            });
-          }
-          if (!PRE_AUTH_NO_AUTHOR_KEEP.test(text)) {
-            pkgFindings.push({
-              rule: "pre-auth-no-author-keep",
-              packageDir,
-              message: "expression-wave skill must say this role does not author keep-review evidence",
-            });
-          }
-          if (!PRE_AUTH_TASTE_FOLD_GREEN.test(text)) {
-            pkgFindings.push({
-              rule: "pre-auth-taste-fold-precondition",
-              packageDir,
-              message:
-                "expression-wave skill must state bounded taste starts only after designer-fold-check is green",
-            });
-          }
-          if (!PRE_AUTH_TASTE_BOUND.test(text)) {
-            pkgFindings.push({
-              rule: "pre-auth-taste-bound",
-              packageDir,
-              message:
-                "expression-wave skill must cap taste at 3 inhabit rounds or a wall-clock stop (whichever first)",
-            });
-          }
-          if (!PRE_AUTH_NO_SELF_CERTIFY.test(text)) {
-            pkgFindings.push({
-              rule: "pre-auth-no-self-certify",
-              packageDir,
-              message: "expression-wave skill must say the doer walk does not self-certify exceptional keep",
-            });
-          }
-        }
-        if (packageDir === "publisher" && PRE_AUTH_HEADING.test(text) && !PUBLISHER_PRE_AUTH_MARKETING_VIEW.test(text)) {
-          pkgFindings.push({
-            rule: "publisher-pre-auth-marketing-view",
-            packageDir,
-            message: "publisher skill Pre-auth page section must name MarketingView as the pre-auth template",
-          });
         }
         if (packageDir === "inspector" && !INSPECTOR_USER_BOUNDARY.test(text)) {
           pkgFindings.push({
@@ -500,82 +426,6 @@ export function evaluatePackageSkills(packages) {
             packageDir,
             message: "inspector skill must cede target-audience keep to a synthetic user — Inspector judges rules, not a person landing on the page",
           });
-        }
-        if (packageDir === "strategist") {
-          if (!PRE_AUTH_QUALITY_REF.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-pre-auth-quality-ref",
-              packageDir,
-              message: "strategist skill must reference PRE-AUTH-QUALITY (see packages/designer/PRE-AUTH-QUALITY.md)",
-            });
-          }
-          if (!PRE_AUTH_EXCEPTIONAL.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-pre-auth-exceptional",
-              packageDir,
-              message: "strategist skill must state that done is exceptional (5), not good (3)",
-            });
-          }
-          if (!STRATEGIST_GATES_PROVE_3.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-gates-prove-3",
-              packageDir,
-              message: "strategist skill must state that mechanical gates prove good (3) only",
-            });
-          }
-          if (!STRATEGIST_NO_GATE_KEEP.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-no-gate-keep",
-              packageDir,
-              message: "strategist skill must say never treat gate-green as keep",
-            });
-          }
-          if (!STRATEGIST_STOP_AT_3_DEFECT.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-stop-at-3-defect",
-              packageDir,
-              message: "strategist skill must say a walk that stops at 3 is a defect",
-            });
-          }
-          if (!STRATEGIST_BRAND_COVERAGE_NECESSARY.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-brand-coverage-necessary",
-              packageDir,
-              message:
-                "strategist skill must state brand-coverage slot N/N is necessary, not sufficient for keep",
-            });
-          }
-          if (!STRATEGIST_BRAND_DO_NOT_SURFACES.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-brand-surfaces-do-not",
-              packageDir,
-              message:
-                "strategist skill must name --surfaces / do-not language for Designer-facing surfaces",
-            });
-          }
-          if (!STRATEGIST_BRAND_NOT_KEEP.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-brand-not-keep",
-              packageDir,
-              message:
-                "strategist skill must state N/N slot coverage is not keep without Designer-facing do-not language",
-            });
-          }
-          if (!STRATEGIST_OUTPUT_FILES.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-output-files",
-              packageDir,
-              message:
-                "strategist skill must list strategy directory output files (facts, audiences, positioning, claims, constraints, brand, direction)",
-            });
-          }
-          if (!STRATEGIST_HANDOFF_SUBCOMMAND.test(text)) {
-            pkgFindings.push({
-              rule: "strategist-handoff-subcommand",
-              packageDir,
-              message: "strategist skill must name strategist-check handoff",
-            });
-          }
         }
       }
       if (cataloguePath !== undefined || catalogueText !== undefined) {

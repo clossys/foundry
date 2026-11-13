@@ -271,7 +271,7 @@ per package will be off by one.
 | `@clossys/locksmith` | steward | `controlled key rate` | ratio / increase |
 | `@clossys/integrator` | reconcile | `package currency rate` | ratio / increase |
 | `@clossys/observer` | optimize | `unobserved outcome rate` | ratio / decrease |
-| `@clossys/strategist` | assure | `strategy traceability rate` | ratio / increase |
+| `@clossys/director` | assure | `strategy traceability rate` | ratio / increase |
 | `@clossys/writer` | assure | `approved copy coverage rate` | ratio / increase |
 | `@clossys/designer` | assure | `design conformance rate` | ratio / increase |
 | `@clossys/publisher` | fulfill | `verified publication rate` | ratio / increase |
@@ -319,7 +319,7 @@ it. Across the family there are **33 installed executables**.
 | `@clossys/observer` | 0.2.3 | 1 | `observer-coverage-check` |
 | `@clossys/publisher` | 0.1.10 | 2 | `publisher-media-check`, `publisher-record-check` |
 | `@clossys/starter` | 0.1.4 | 1 | `foundry-starter` |
-| `@clossys/strategist` | 0.1.1 | 1 | `strategist-check` |
+| `@clossys/director` | 0.1.1 | 1 | `director-check` |
 | `@clossys/writer` | 0.3.2 | 1 | `writer-check` |
 
 Evidence: the `bin` key of each published `package.json`, read from the
@@ -362,7 +362,7 @@ be corrected in place, so the producer's disposition is a replacement version.
 | `@clossys/controller` | 0.8.23 | 0.8.24 | `repository`, `bugs`, `homepage`, `_from`, `_resolved` |
 | `@clossys/starter` | 0.1.2 | 0.1.5 | `repository`, `bugs`, `homepage`, `_from`, `_resolved` |
 | `@clossys/starter` | 0.1.4 | 0.1.5 | `repository`, `bugs`, `homepage`, `_from`, `_resolved` |
-| `@clossys/strategist` | 0.1.1 | 0.1.2 | `repository`, `bugs`, `homepage`, `_from`, `_resolved` |
+| `@clossys/director` | 0.1.1 | 0.1.2 | `repository`, `bugs`, `homepage`, `_from`, `_resolved` |
 
 Verified independently: of the 19 published packages, exactly these four carry
 a `repository.url` still pointing at the historical producer repository
@@ -401,7 +401,7 @@ drift", now demonstrated rather than predicted. Re-derive again before you pin.
 | `@clossys/observer` | 0.2.4 | no | floor `^0.2.4` |
 | `@clossys/publisher` | 0.2.1 | no | floor `^0.2.1` |
 | `@clossys/starter` | 0.1.5 | yes, 0.1.5 | floor `^0.1.5`, now published |
-| `@clossys/strategist` | 0.1.2 | yes, 0.1.2 | floor `^0.1.2`, now published |
+| `@clossys/director` | 0.1.2 | yes, 0.1.2 | floor `^0.1.2`, now published |
 | `@clossys/writer` | 0.3.3 | no | floor `^0.3.3` |
 
 All four replacement versions named in 4a have now published, and each behaves
@@ -410,7 +410,7 @@ tarball SHA-512 confirmed against `dist.integrity`: `repository`, `bugs`, and
 `homepage` corrected to `clossys/foundry`, executable count unchanged from the
 version it replaces, provenance attestation present. That held for
 `@clossys/advisor@0.1.6`, `@clossys/controller@0.8.24`,
-`@clossys/strategist@0.1.2`, and `@clossys/starter@0.1.5`.
+`@clossys/director@0.1.2`, and `@clossys/starter@0.1.5`.
 
 Two claims elsewhere in this document rest on Controller specifically, and both
 were re-verified against `0.8.24` rather than assumed to carry over. The role

@@ -275,7 +275,7 @@
           ]
         }
       },
-      "@clossys/strategist": {
+      "@clossys/director": {
         "jobQuestion": "Is the business direction true, current, and recognizably ours?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -374,7 +374,7 @@
           "reconcile"
         ],
         "boundary": {
-          "owns": "The v0 Launch pack's definition, inventory, and readiness; rendering approved named surfaces for channels, including the channel templates that place Designer's image assets; and sealing -- proving the exact audience release against an immutable publication record. Content and judgments (strategy, copy, identity, the keep) stay with Strategist, Designer, Writer, and Customer -- Publisher assembles and ships what they produce, never authors it.",
+          "owns": "The v0 Launch pack's definition, inventory, and readiness; rendering approved named surfaces for channels, including the channel templates that place Designer's image assets; and sealing -- proving the exact audience release against an immutable publication record. Content and judgments (strategy, copy, identity, the keep) stay with Director, Designer, Writer, and Customer -- Publisher assembles and ships what they produce, never authors it.",
           "excludes": [
             "selecting a template from business intent",
             "authoring strategy or copy",

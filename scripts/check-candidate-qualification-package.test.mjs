@@ -31,6 +31,7 @@ import test from "node:test";
 import { promisify } from "node:util";
 
 import { qualificationPath } from "./lib/candidate-qualification.mjs";
+import { TRIO_PUBLICATION_PATH } from "./lib/release-publication-cohort.mjs";
 
 const execFile = promisify(execFileCallback);
 const SCRIPT = join(process.cwd(), "scripts/check-candidate-qualification.mjs");
@@ -121,6 +122,8 @@ async function recordingGit(parent) {
   await chmod(join(bin, "git"), 0o755);
   return {
     env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+    legacyTailWalks: () => (existsSync(log) ? readFileSync(log, "utf8") : "").split("\n")
+      .filter((line) => /^log --full-history --format= --name-only \S+\.\.HEAD --$/.test(line)).length,
     // Structural match, not a regex built from `path`: a fixed pattern
     // isolates the `show <sha40>:<rest>` shape, then the remainder after the
     // colon is compared to `path` with plain string equality.
@@ -148,6 +151,7 @@ test("--package re-derives the package's current record, observed through git, a
   assert.ok(git.introductionBlobReads(chosen.current) >= 1, `${chosen.current} was never re-derived`);
   assert.equal(git.introductionBlobReads(chosen.older), 0, `${chosen.older} was re-derived under --package`);
   assert.ok(!result.stderr.includes(chosen.older), result.stderr);
+  assert.equal(git.legacyTailWalks(), 0, "a valid publication must use post-closure validation");
 });
 
 test("--package refuses the package's record when its retained bytes were rewritten and a join no longer matches its reviewed commit", async (t) => {
@@ -180,12 +184,69 @@ test("--package refuses a missing record for the current version unless --allow-
 });
 
 test("--package still runs the cross-record checks in full: a rewritten record a retained cohort binds is refused", async (t) => {
-  const { root, chosen } = await withClone(t);
+  const { parent, root, chosen } = await withClone(t);
   assert.ok(chosen.cohortBound, "a retained cohort binds a qualification record's bytes");
   await rewriteBytesOnly(join(root, chosen.cohortBound));
-  const result = await run(root, ["--package", chosen.key]);
+  const git = await recordingGit(parent);
+  const result = await run(root, ["--package", chosen.key], git.env);
   assert.equal(result.code, 1, result.stdout);
   assert.match(result.stderr, /\[record-digest\] governance\/release-qualification-cohorts\//);
+  assert.match(result.stderr, /\[invalid-publication-state\]/);
+  assert.equal(git.legacyTailWalks(), 0, "invalid present publication must not walk legacy source history");
+});
+
+// Limit the tail of these deliberately invalid records to this fixture's own
+// commits. A removed phase guard must fail an invocation assertion, without
+// walking the real repository's entire source history during the mutation.
+async function bindReviewToFixtureHead(root, chosen) {
+  const record = JSON.parse(readFileSync(join(root, chosen.current), "utf8"));
+  assert.equal(record.timing, "pre-publication");
+  record.reviewedCommit = (await execFile("git", ["rev-parse", "HEAD"], { cwd: root })).stdout.trim();
+  record.candidateReview.headSha = record.reviewedCommit;
+  await writeFile(join(root, chosen.current), `${JSON.stringify(record, null, 2)}\n`);
+}
+
+test("a malformed present publication is refused without entering legacy source history", async (t) => {
+  const { parent, root, chosen } = await withClone(t);
+  await bindReviewToFixtureHead(root, chosen);
+  await writeFile(join(root, TRIO_PUBLICATION_PATH), "{\n");
+  const git = await recordingGit(parent);
+  const result = await run(root, ["--package", chosen.key], git.env);
+  assert.equal(result.code, 1, result.stdout);
+  assert.match(result.stderr, /Cannot read governance\/release-publications\/clossys-npmjs-trio\.json/);
+  assert.match(result.stderr, /\[invalid-publication-state\]/);
+  assert.equal(git.legacyTailWalks(), 0, "malformed present publication must not walk legacy source history");
+});
+
+test("a missing publication still runs legacy tail history and refuses a touched-then-restored path", async (t) => {
+  const { parent, root, chosen } = await withClone(t);
+  await bindReviewToFixtureHead(root, chosen);
+  await rm(join(root, TRIO_PUBLICATION_PATH));
+  const readme = readFileSync(join(root, "README.md"), "utf8");
+  for (const [bytes, message] of [[`${readme}\nChanged fixture tail.\n`, "touch fixture source"], [readme, "restore fixture source"]]) {
+    await writeFile(join(root, "README.md"), bytes);
+    await execFile("git", ["add", "--", "README.md"], { cwd: root });
+    await execFile("git", ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "-c", "core.hooksPath=/dev/null", "commit", "--quiet", "-m", message], { cwd: root });
+  }
+  const git = await recordingGit(parent);
+  const result = await run(root, ["--package", chosen.key], git.env);
+  assert.equal(result.code, 1, result.stdout);
+  assert.doesNotMatch(result.stderr, /\[invalid-publication-state\]/);
+  assert.match(result.stderr, /\[pr-tail-history\]/);
+  assert.ok(git.legacyTailWalks() > 0, "absent publication must retain legacy source history validation");
+});
+
+test("a present publication still requires its exact validated closure", async (t) => {
+  const { parent, root, chosen } = await withClone(t);
+  const publication = JSON.parse(readFileSync(join(root, TRIO_PUBLICATION_PATH), "utf8"));
+  publication.transition.baseCommit = "0".repeat(40);
+  await writeFile(join(root, TRIO_PUBLICATION_PATH), `${JSON.stringify(publication, null, 2)}\n`);
+  const git = await recordingGit(parent);
+  const result = await run(root, ["--package", chosen.key], git.env);
+  assert.equal(result.code, 1, result.stdout);
+  assert.match(result.stderr, /\[publication-transition/);
+  assert.match(result.stderr, /\[invalid-publication-state\]/);
+  assert.equal(git.legacyTailWalks(), 0, "an invalid closure must not fall back to legacy source history");
 });
 
 test("--package on an unknown package directory is indeterminate, not a pass", async (t) => {

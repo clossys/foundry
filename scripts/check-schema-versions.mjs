@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * check-schema-versions (issue #1224) — invokes the compiled controller
- * migrate CLI by dist path (mirrors scripts/check-strategist-subject.mjs's
+ * migrate CLI by dist path (mirrors scripts/check-director-subject.mjs's
  * own thin-wrapper pattern, and gives package-evidence a
  * packages/controller/dist/migrate site) against THIS repository's own
  * clossys/ tree. Report-only (no --apply): a schema-version regression in

@@ -10,7 +10,8 @@
 // package and fails ONLY when a role's own declared `capabilities` is
 // malformed -- a missing or wrong-typed field on one entry, an id repeated
 // within the same role, an output path outside the role's own
-// `clossys/<role>/` folder, a `proofCase` that is non-null while `maturity`
+// `clossys/<role>/` or implemented native `clossys/agents/<role>/` folder,
+// a `proofCase` that is non-null while `maturity`
 // is `planned` (or null while `maturity` is `built`/`partial`), a
 // `proofCase` that does not name a case in this role's own retained
 // qualification adapter (governance/release-qualification-adapters/<role>/
@@ -121,8 +122,9 @@
 // check-package-framework.mjs.
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
-import { dirname, join, isAbsolute } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isOwnedOutputPath } from "./check-package-framework.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -143,10 +145,6 @@ export const CAPABILITY_MATURITIES = Object.freeze(["built", "partial", "planned
 function isRecord(value) { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function isText(value) { return typeof value === "string" && value.trim() !== ""; }
 function isNonEmptyArray(value) { return Array.isArray(value) && value.length > 0; }
-function isSafeRelativePath(value) {
-  if (!isText(value) || isAbsolute(value)) return false;
-  return !value.split("/").includes("..");
-}
 const roleShortName = (role) => role.split("/").pop();
 
 function isCapabilityInputEntry(value) {
@@ -173,12 +171,11 @@ export function validateCapabilityShape(capability, role, knownProofCaseIds) {
   if (!Array.isArray(capability.inputs) || !capability.inputs.every(isCapabilityInputEntry)) {
     fail("invalid-capability-inputs", `capability "${capability.id}" inputs must be an array of { producerRole, artifact } (may be empty)`);
   }
-  const expectedPrefix = `clossys/${roleShortName(role)}/`;
   if (!isNonEmptyArray(capability.outputs) || !capability.outputs.every((path) => typeof path === "string")) {
     fail("invalid-capability-outputs", `capability "${capability.id}" outputs must be a non-empty array of path strings`);
   } else {
-    const outside = capability.outputs.filter((path) => !isSafeRelativePath(path) || !path.startsWith(expectedPrefix));
-    if (outside.length > 0) fail("capability-output-outside-role-folder", `capability "${capability.id}" every output must start with "${expectedPrefix}" — found: ${outside.join(", ")}`);
+    const outside = capability.outputs.filter((path) => !isOwnedOutputPath(role, path));
+    if (outside.length > 0) fail("capability-output-outside-role-folder", `capability "${capability.id}" every output must be a safe descendant of this role's own legacy or supported native cell folder — found: ${outside.join(", ")}`);
   }
   const maturityIsPlanned = capability.maturity === "planned";
   if (typeof capability.maturity !== "string" || !CAPABILITY_MATURITIES.includes(capability.maturity)) {

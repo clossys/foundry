@@ -103,8 +103,13 @@ let controlTailAuthorization = null;
 try { controlTailAuthorization = { path: TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, bytes: readFileSync(TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, "utf8"), value: parseStrictJson(readFileSync(TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, "utf8")) }; }
 catch (error) { if (error?.code !== "ENOENT") { console.error("Cannot read " + TRIO_CONTROL_TAIL_AUTHORIZATION_PATH + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; } }
 let publication = null;
-try { publication = { path: TRIO_PUBLICATION_PATH, bytes: readFileSync(TRIO_PUBLICATION_PATH, "utf8"), value: parseStrictJson(readFileSync(TRIO_PUBLICATION_PATH, "utf8")) }; }
-catch (error) { console.error("Cannot read " + TRIO_PUBLICATION_PATH + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
+let publicationPresent = false;
+try {
+  const bytes = readFileSync(TRIO_PUBLICATION_PATH, "utf8");
+  publicationPresent = true;
+  publication = { path: TRIO_PUBLICATION_PATH, bytes, value: parseStrictJson(bytes) };
+}
+catch (error) { publicationPresent ||= error?.code !== "ENOENT"; console.error("Cannot read " + TRIO_PUBLICATION_PATH + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
 let sealedQualificationPaths = new Set();
 try { sealedQualificationPaths = sealedQualificationPathsAtTransitionBase(process.cwd()); }
 catch (error) { console.error("Cannot read sealed qualification paths: " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
@@ -161,6 +166,14 @@ const publicationClosureFindings = publication ? validateTrioPublicationClosure(
 for (const item of publicationClosureFindings) console.error("[" + item.rule + "] " + TRIO_PUBLICATION_PATH + ": " + item.message);
 failed ||= publicationClosureFindings.length > 0;
 const publicationStateValid = publication !== null && publicationFindings.length === 0 && publicationClosureFindings.length === 0;
+// Invalid retained publication evidence is a refusal, not a return to the
+// prepublication phase. Keep every finding above without walking the legacy
+// source tail; only an absent publication can enter that phase.
+const publicationStateInvalid = publicationPresent && !publicationStateValid;
+if (publicationStateInvalid) {
+  console.error("[invalid-publication-state] " + TRIO_PUBLICATION_PATH + ": present publication evidence must pass publication and closure validation before qualification tail validation.");
+  failed = true;
+}
 const history = publicationStateValid ? createQualificationHistory() : null;
 try { readValidatedLaterPublishedPackages(process.cwd()); }
 catch (error) { console.error("[later-publication-records] " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
@@ -178,7 +191,7 @@ if (publication && publicationClosureFindings.length > 0) {
 }
 for (const [index, { path, record }] of records.entries()) {
   const findings = recordFindings.get(path) ?? [];
-  if (selectedForRederivation(index, path, { shard, packageRecordPath }) && record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid, history }));
+  if (!publicationStateInvalid && selectedForRederivation(index, path, { shard, packageRecordPath }) && record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid, history }));
   for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
   failed ||= findings.length > 0;
 }

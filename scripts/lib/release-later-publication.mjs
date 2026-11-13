@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { comparableTranscriptSha256, currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification } from "./candidate-qualification.mjs";
+import { assertAncestor, commitParentLine, pathBlobOid, pathContent, pathHasHistory, pathIntroductions, pathRangeTouches } from "./git-history-index.mjs";
 import { publicNpmPackageUrl, publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
 import { TRIO } from "./release-qualification-trio.mjs";
 
@@ -88,8 +88,8 @@ function trustedProvenance(value, candidate, provenanceSourceValid) {
 export function trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt = currentQualificationJoins } = {}) {
   if (!SHA1.test(sourceSha ?? "") || sourceSha === qualificationIntroduction || sourceSha === publicationIntroduction) return false;
   try {
-    execFileSync("git", ["merge-base", "--is-ancestor", qualificationIntroduction, sourceSha], { cwd: root, stdio: "ignore" });
-    execFileSync("git", ["merge-base", "--is-ancestor", sourceSha, publicationIntroduction], { cwd: root, stdio: "ignore" });
+    assertAncestor(root, qualificationIntroduction, sourceSha);
+    assertAncestor(root, sourceSha, publicationIntroduction);
     const candidate = qualification?.candidate;
     const joins = joinsAt(root, candidate, sourceSha, { schemaVersion: qualification?.schemaVersion });
     return [
@@ -181,8 +181,8 @@ export function trustedReplaySourceEvidence(root, qualification, qualificationIn
   }
   try {
     if (selected?.sha === qualificationIntroduction || (!allowSourceAtPublication && selected?.sha === publicationIntroduction)) throw new Error("source must strictly sit between introductions");
-    execFileSync("git", ["merge-base", "--is-ancestor", qualificationIntroduction, selected?.sha], { cwd: root, stdio: "ignore" });
-    execFileSync("git", ["merge-base", "--is-ancestor", selected?.sha, publicationIntroduction], { cwd: root, stdio: "ignore" });
+    assertAncestor(root, qualificationIntroduction, selected?.sha);
+    assertAncestor(root, selected?.sha, publicationIntroduction);
     const joins = joinsAt(root, qualification?.candidate, selected?.sha, { schemaVersion: qualification?.schemaVersion });
     if (joins.rootPackageJsonSha256 !== selected?.rootPackageJsonSha256 || joins.rootPackageLockSha256 !== selected?.rootPackageLockSha256 || ![
       ["packageTreeSha1", qualification?.candidate?.packageTreeSha1],
@@ -199,34 +199,19 @@ export function trustedReplaySourceEvidence(root, qualification, qualificationIn
   return { valid: findings.length === 0, findings };
 }
 function gitBlob(root, ref, path) {
-  return execFileSync("git", ["show", `${ref}:${path}`], { cwd: root, encoding: "utf8" });
+  return pathContent(root, ref, path);
 }
 
 function gitBlobOid(root, ref, path) {
-  try {
-    return execFileSync("git", ["rev-parse", "--verify", `${ref}:${path}`], {
-      cwd: root,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-  } catch {
-    return null;
-  }
+  return pathBlobOid(root, ref, path);
 }
 
 function hasPathHistory(root, ref, path) {
-  return execFileSync("git", ["log", "--full-history", "-1", "--format=%H", ref, "--", path], {
-    cwd: root,
-    encoding: "utf8",
-  }).trim() !== "";
+  return pathHasHistory(root, ref, path);
 }
 
 function gitCommitParents(root, commit) {
-  const [resolved, ...parents] = execFileSync(
-    "git",
-    ["rev-list", "--parents", "-n", "1", commit],
-    { cwd: root, encoding: "utf8" },
-  ).trim().split(" ");
+  const [resolved, ...parents] = commitParentLine(root, commit);
   if (resolved !== commit) throw new Error("retained path history resolved an unexpected commit");
   return parents;
 }
@@ -291,20 +276,16 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
 }
 
 export function immutableSingleIntroduction(root, path) {
-  const commits = execFileSync("git", ["log", "--full-history", "--diff-filter=A", "--format=%H", "HEAD", "--", path], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  const commits = pathIntroductions(root, "HEAD", path);
   if (commits.length !== 1) throw new Error("must have one immutable introduction commit");
   const introduced = gitBlob(root, commits[0], path);
   const retained = readFileSync(join(root, path), "utf8");
   if (digest(introduced) !== digest(retained)) throw new Error("retained bytes differ from their introduction blob");
   const introducedBlob = gitBlobOid(root, commits[0], path);
-  const traversed = execFileSync(
-    "git",
-    // The path limiter chooses relevant commit IDs only. Asking this command
-    // for parents would return history-simplified parents, not the commit's
-    // real topology, and can collapse a two-parent synthetic merge to one.
-    ["rev-list", "--full-history", `${commits[0]}..HEAD`, "--", path],
-    { cwd: root, encoding: "utf8" },
-  ).trim().split("\n").filter(Boolean);
+  // The path limiter chooses relevant commit IDs only. Asking this command
+  // for parents would return history-simplified parents, not the commit's
+  // real topology, and can collapse a two-parent synthetic merge to one.
+  const traversed = pathRangeTouches(root, commits[0], "HEAD", path, { command: "rev-list" });
   for (const commit of traversed) {
     const parents = gitCommitParents(root, commit);
     // Only a merge may reconcile a branch forked before the introduction.
@@ -332,7 +313,7 @@ export function strictQualificationIntroductionAncestor(root, qualificationIntro
   if (!SHA1.test(qualificationIntroduction ?? "") || !SHA1.test(publicationIntroduction ?? "")) throw new Error("qualification and publication introductions must be commit hashes");
   if (qualificationIntroduction === publicationIntroduction) throw new Error("qualification introduction must strictly precede the later-publication introduction");
   try {
-    execFileSync("git", ["merge-base", "--is-ancestor", qualificationIntroduction, publicationIntroduction], { cwd: root, stdio: "ignore" });
+    assertAncestor(root, qualificationIntroduction, publicationIntroduction);
   } catch {
     throw new Error("qualification introduction must be an ancestor of the later-publication introduction");
   }

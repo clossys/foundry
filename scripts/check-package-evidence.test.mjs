@@ -26,9 +26,16 @@ import {
 } from "./check-package-evidence.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_PATHS } from "./lib/release-publication-cohort.mjs";
 import { LATER_PUBLICATION_DIRECTORY, validateRetainedLaterPublications } from "./lib/release-later-publication.mjs";
+import { withGitHistoryIndex } from "./lib/git-history-index.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const script = join(repoRoot, "scripts/check-package-evidence.mjs");
+
+// Each retained-record validation below answers its history questions from one
+// batched `git log` (the same index the CLI runs under) instead of one
+// `git log --full-history` per record. The scope is this one call, so a fixture
+// repository changed between two validations is never read through a stale view.
+const indexed = (root, read) => withGitHistoryIndex(root, () => read(root));
 
 // Two layers, matching this repo's existing split: the pure evaluator is
 // exercised with hand-built observations so a verdict is testable without a
@@ -172,8 +179,8 @@ test("current-scope publication requires the exact validated first-publication r
   assert.ok(rules(withoutPublication).includes("state-ahead-of-evidence"));
   const recorded = recordedPublishedIdentities(repoRoot);
   assert.equal(new Set(recorded).size, recorded.length, "each recorded publication identity must be unique");
-  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), recorded);
-  assert.deepEqual([...readValidatedPublishedPackageNames(repoRoot)].sort(), namesOf(recorded));
+  assert.deepEqual([...indexed(repoRoot, readValidatedPublishedPackages)].sort(), recorded);
+  assert.deepEqual([...indexed(repoRoot, readValidatedPublishedPackageNames)].sort(), namesOf(recorded));
 });
 
 test("no publication record retained on this history has been deleted", () => {
@@ -290,20 +297,20 @@ test("(d) a malformed later-publication record fails closed rather than silently
     // Read before the malformed record exists: these are the genuine records.
     const genuine = retainedLaterIdentities(fixtureRoot);
     assert.ok(genuine.length > 0);
-    const malformedPath = join(fixtureRoot, "governance/release-publications/later/strategist-9.9.9.json");
+    const malformedPath = join(fixtureRoot, "governance/release-publications/later/director-9.9.9.json");
     writeFileSync(malformedPath, "{ this is not valid json");
-    execFileSync("git", ["add", "governance/release-publications/later/strategist-9.9.9.json"], { cwd: fixtureRoot });
+    execFileSync("git", ["add", "governance/release-publications/later/director-9.9.9.json"], { cwd: fixtureRoot });
     execFileSync("git", ["commit", "-m", "fixture: introduce a malformed later-publication record"], { cwd: fixtureRoot, stdio: "ignore" });
 
-    const { names, identities, findings } = validateRetainedLaterPublications(fixtureRoot);
+    const { names, identities, findings } = indexed(fixtureRoot, validateRetainedLaterPublications);
     assert.ok(findings.some((item) => item.rule === "retained-record"), "the malformed record must be reported, not skipped");
     // Every genuine record still validates individually...
     assert.deepEqual([...identities].sort(), genuine);
     assert.deepEqual([...names].sort(), namesOf(genuine));
     // ...but the gate is fail-closed as a whole: one invalid record among
     // many zeroes the entire published set rather than admitting the rest.
-    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
-    assert.deepEqual([...readValidatedPublishedPackageNames(fixtureRoot)], []);
+    assert.deepEqual([...indexed(fixtureRoot, readValidatedPublishedPackages)], []);
+    assert.deepEqual([...indexed(fixtureRoot, readValidatedPublishedPackageNames)], []);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -314,7 +321,7 @@ test("(e) the retained-record immutability and qualification joins still reject 
   // dedicated gate for this; this asserts the same thing at the library
   // level so it is covered here alongside the other four controls, not only
   // by a separate CLI invocation.
-  const { findings, names, identities } = validateRetainedLaterPublications(repoRoot);
+  const { findings, names, identities } = indexed(repoRoot, validateRetainedLaterPublications);
   assert.deepEqual(findings, []);
   const recorded = retainedLaterIdentities(repoRoot);
   assert.ok(recorded.length > 0);
@@ -380,9 +387,9 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
     rewritten.members[0].publication.publishedAt = "2026-08-30T06:31:59.838Z";
     const rewrittenBytes = `${JSON.stringify(rewritten, null, 2)}\n`;
 
-    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), recordedPublishedIdentities(fixtureRoot));
+    assert.deepEqual([...indexed(fixtureRoot, readValidatedPublishedPackages)].sort(), recordedPublishedIdentities(fixtureRoot));
     writeFileSync(publicationPath, rewrittenBytes);
-    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
+    assert.deepEqual([...indexed(fixtureRoot, readValidatedPublishedPackages)], []);
 
     execFileSync("git", ["add", "governance/release-publications/clossys-npmjs-trio.json"], { cwd: fixtureRoot });
     execFileSync("git", ["commit", "-m", "fixture: rewrite publication"], { cwd: fixtureRoot, stdio: "ignore" });
@@ -391,7 +398,7 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
     execFileSync("git", ["commit", "-m", "fixture: restore publication"], { cwd: fixtureRoot, stdio: "ignore" });
 
     assert.equal(readFileSync(publicationPath, "utf8"), originalBytes);
-    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
+    assert.deepEqual([...indexed(fixtureRoot, readValidatedPublishedPackages)], []);
 
     // Assert the SPECIFIC finding, not merely a nonzero exit code -- a
     // nonzero exit proves only that *some* finding fired, and independent
@@ -810,7 +817,7 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
   try {
     const contract = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-evidence.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
     for (const p of contract.packages) {
-      if (p.name !== "@clossys/strategist") continue;
+      if (p.name !== "@clossys/director") continue;
       p.state = "staged";
       // The real contract may acknowledge a staging shortfall with `gaps`,
       // or support it with a recorded red/control `stagedBy` run. Remove

@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, TRIO_PUBLICATION_TRANSITION_PATHS, validateTrioPublicationTransition } from "./release-publication-cohort.mjs";
+import { assertAncestor, commitParentLine, pathBlobOid, pathContent, pathIntroductions, pathRangeTouches } from "./git-history-index.mjs";
 import { TRIO, TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, TRIO_CONTROL_TAIL_BASE_COMMIT, TRIO_CONTROL_TAIL_PATHS, TRIO_QUARANTINE_PATH, isTrioCandidate, validateTrioPartialFailureQuarantine } from "./release-qualification-trio.mjs";
 
 export const ARCHETYPES = ["current-direct", "prior-minor", "oldest-supported", "control-plane"];
@@ -181,7 +182,7 @@ export function parseStrictJson(input) {
   val(); ws(); if (i !== s.length) throw new SyntaxError("trailing JSON"); return JSON.parse(s);
 }
 const git = (root, args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
-const blob = (root, ref, path) => execFileSync("git", ["show", ref + ":" + path], { cwd: root, encoding: "utf8" });
+const blob = (root, ref, path) => pathContent(root, ref, path);
 const content = (root, ref, path) => ref === "WORKTREE" ? readFileSync(join(root, path)) : blob(root, ref, path);
 // --- artifact-scoped digests (schemaVersion 3; issue #879) ---------------
 //
@@ -364,13 +365,12 @@ export function packageManifestDigest(manifestBytes, schemaVersion = 2) {
   return schemaVersion === 3 ? artifactManifestDigest(manifestBytes) : digest(manifestBytes);
 }
 function commitParents(root, commit) {
-  const [resolved, ...parents] = execFileSync("git", ["rev-list", "--parents", "-n", "1", commit], { cwd: root, encoding: "utf8" }).trim().split(/\s+/);
+  const [resolved, ...parents] = commitParentLine(root, commit);
   if (resolved !== commit) throw new Error("git returned an unexpected commit for its own rev-list lookup");
   return parents;
 }
 export function blobOid(root, ref, path) {
-  try { return execFileSync("git", ["rev-parse", "--verify", `${ref}:${path}`], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
-  catch { return null; }
+  return pathBlobOid(root, ref, path);
 }
 /**
  * `git log --full-history` reports a merge commit for `path` whenever the
@@ -389,7 +389,8 @@ export function blobOid(root, ref, path) {
  * missing blob) for free.
  */
 export function realPathTouches(root, range, path, introducedBlob) {
-  const commits = git(root, ["log", "--full-history", "--format=%H", range, "--", path]).split("\n").filter(Boolean);
+  const bounds = /^([^.]+)\.\.([^.]+)$/.exec(range);
+  const commits = bounds ? pathRangeTouches(root, bounds[1], bounds[2], path) : git(root, ["log", "--full-history", "--format=%H", range, "--", path]).split("\n").filter(Boolean);
   return commits.filter((commit) => blobOid(root, commit, path) !== introducedBlob);
 }
 const POLICY_PATH = "governance/release-qualification-policy.json";
@@ -467,7 +468,7 @@ export function qualificationPath(root, candidate, ref = "WORKTREE") {
 }
 export function qualificationIntroductionCommit(root, candidate, head = "HEAD", recordPath = qualificationPath(root, candidate)) {
   const path = recordPath;
-  const commits = git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", head, "--", path]).split("\n").filter(Boolean);
+  const commits = pathIntroductions(root, head, path);
   if (commits.length !== 1 || !SHA1.test(commits[0])) throw new Error("qualification record must have one introduction commit");
   return commits[0];
 }
@@ -498,8 +499,8 @@ export function validateRetainedCandidateQualification(r, { root = process.cwd()
   if (history.introducedRecordSha256 !== history.retainedRecordSha256) fail(findings, "record-history-join", "retained record bytes differ from their exact introduction blob.");
   if (sealedBase) {
     try {
-      execFileSync("git", ["merge-base", "--is-ancestor", introductionCommit, sealedBase], { cwd: root, stdio: "ignore" });
-      execFileSync("git", ["merge-base", "--is-ancestor", sealedBase, head], { cwd: root, stdio: "ignore" });
+      assertAncestor(root, introductionCommit, sealedBase);
+      assertAncestor(root, sealedBase, head);
       if (digest(content(root, sealedBase, path)) !== history.introducedRecordSha256) fail(findings, "sealed-record-bytes", "sealed predecessor bytes must match their introduction and transition-base blobs.");
       const laterTouches = realPathTouches(root, `${introductionCommit}..${head}`, path, blobOid(root, introductionCommit, path));
       if (laterTouches.length > 0) fail(findings, "sealed-record-touches", "sealed predecessor record was touched after its introduction.");
@@ -728,7 +729,7 @@ export function validateTrioControlTailAuthorization(authorization, { root = pro
     } catch { fail(a, "control-tail-file-digest", `authorization cannot read control file: ${files[index].path}`); }
   }
   try {
-    const introductions = git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", head, "--", TRIO_CONTROL_TAIL_AUTHORIZATION_PATH]).split("\n").filter(Boolean);
+    const introductions = pathIntroductions(root, head, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH);
     if (introductions.length !== 1 || !SHA1.test(introductions[0])) fail(a, "control-tail-history", "authorization must have one immutable introduction commit.");
     else {
       const introduction = introductions[0];
@@ -762,7 +763,7 @@ export function validateTrioControlTailAuthorization(authorization, { root = pro
 export function validateTrioPublicationClosure(publication, { root = process.cwd(), head = "HEAD", trioRecords = [], cohortBytes, controlTailAuthorization = null } = {}) {
   const a = [];
   const headSha = git(root, ["rev-parse", head]);
-  const introductions = git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", head, "--", TRIO_PUBLICATION_PATH]).split("\n").filter(Boolean);
+  const introductions = pathIntroductions(root, head, TRIO_PUBLICATION_PATH);
   let transitionCommit = null;
   let fileBytes;
 
@@ -837,7 +838,7 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
   }
 
   try {
-    const ancestry = git(root, ["rev-list", "--parents", "-n", "1", introduction]).split(/\s+/);
+    const ancestry = commitParentLine(root, introduction);
     if (ancestry.length !== 2 || ancestry[0] !== introduction || ancestry[1] !== r.reviewedCommit) fail(a, "forward-record-parent", "a new qualification record must be introduced by the direct single-parent child of its reviewed commit.");
 
     const jointPaths = [];
@@ -890,11 +891,11 @@ export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "
     try { path = recordPath ?? qualificationPath(root, r.candidate); }
     catch (error) { fail(a, "forward-record-history", error instanceof Error ? error.message : "qualification record path could not be resolved."); return a; }
     if (sealedPaths.has(path)) return a;
-    try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); }
+    try { assertAncestor(root, r.reviewedCommit, head); }
     catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }
     return validateForwardQualificationIntroduction(r, { root, head, trioRecords: forwardRecords, sealedPaths, history });
   }
-  try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); }
+  try { assertAncestor(root, r.reviewedCommit, head); }
   catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }
   const changed = git(root, ["diff", "--name-only", r.reviewedCommit + ".." + head]).split("\n").filter(Boolean).sort();
   let allowed = [qualificationPath(root, r.candidate, r.reviewedCommit)];
@@ -918,11 +919,11 @@ export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "
         else {
           if (controlTailAuthorization) {
             try {
-              const controlIntroductions = git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", head, "--", TRIO_CONTROL_TAIL_AUTHORIZATION_PATH]).split("\n").filter(Boolean);
-              const quarantineIntroductions = git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", head, "--", TRIO_QUARANTINE_PATH]).split("\n").filter(Boolean);
+              const controlIntroductions = pathIntroductions(root, head, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH);
+              const quarantineIntroductions = pathIntroductions(root, head, TRIO_QUARANTINE_PATH);
               if (controlIntroductions.length !== 1 || quarantineIntroductions.length !== 1 || controlIntroductions[0] === quarantineIntroductions[0]) fail(a, "trio-quarantine-history", "quarantine must have one future introduction after the exact control-tail authorization.");
               else {
-                try { execFileSync("git", ["merge-base", "--is-ancestor", controlIntroductions[0], quarantineIntroductions[0]], { cwd: root, stdio: "ignore" }); }
+                try { assertAncestor(root, controlIntroductions[0], quarantineIntroductions[0]); }
                 catch { fail(a, "trio-quarantine-history", "quarantine introduction must descend from the exact control-tail authorization introduction."); }
                 const laterTouches = realPathTouches(root, `${quarantineIntroductions[0]}..${head}`, TRIO_QUARANTINE_PATH, blobOid(root, quarantineIntroductions[0], TRIO_QUARANTINE_PATH));
                 if (laterTouches.length > 0) fail(a, "trio-quarantine-history", "quarantine must remain immutable after its valid descendant introduction.");

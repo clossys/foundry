@@ -3,7 +3,7 @@
 **Historical record — not current package architecture or consumer
 instruction.** This document preserves the earlier `strategy`/`copy`/`ui`/
 `surface` package pipeline. Those package names are retired; the current
-catalogue, lifecycle records, and the individual Strategist, Writer, Designer,
+catalogue, lifecycle records, and the individual Director, Writer, Designer,
 and Publisher package READMEs are authoritative.
 
 Foundry separates governed intent, reusable presentation, audience language,

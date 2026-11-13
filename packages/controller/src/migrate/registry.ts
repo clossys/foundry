@@ -10,8 +10,8 @@
  * `@clossys/observer`).
  *
  * This is an EXTENSION POINT, not a closed list: a package like
- * Strategist registers its own table (for example a
- * `strategist-strategy-bundle` kind covering `clossys/strategist/*.json`)
+ * Director registers its own table (for example a
+ * `director-strategy-bundle` kind covering `clossys/agents/director/*.json`)
  * into its own registry instance when IT adopts this engine. Neither
  * that table nor any other future kind is declared here -- doing so
  * would make this package's own release the only place a new record

@@ -18,8 +18,8 @@ describe("first-day role selection", () => {
   });
 
   it("opens the direction role only when a direction subject is declared unresolved", () => {
-    expect(selected(request())).not.toContain("@clossys/strategist");
-    expect(selected(request({ unresolved: ["causal-metric-tree"] }))).toContain("@clossys/strategist");
+    expect(selected(request())).not.toContain("@clossys/director");
+    expect(selected(request({ unresolved: ["causal-metric-tree"] }))).toContain("@clossys/director");
   });
 
   it("opens the operating-system role only when an architecture subject is declared unmapped", () => {

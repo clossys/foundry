@@ -1,0 +1,12 @@
+{
+  "by": "agent:writer",
+  "llm": {
+    "model": "claude-opus-5-5",
+    "tier": "mid",
+    "promptFile": "packages/writer/actions/pick.writer/skill.md"
+  },
+  "human": {
+    "procedure": "Record a judge seat's choice among the slot's options with clossys pick writer/<slot> <candidate-id> --by agent:<seat>; it replaces a bulk, planner or agent pin, never an owner pick, and shows as confirm until you pin.",
+    "command": "clossys pick"
+  }
+}

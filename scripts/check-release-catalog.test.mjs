@@ -133,6 +133,23 @@ test("the post-recut catalogue preserves the sealed Trio prefix and exact depend
   assert.throws(() => resolveReleaseTarget(document, currentIdentity, "current-github-packages"), /historical/);
 });
 
+test("the committed catalogue loads and selects the approved release target", () => {
+  const document = loadReleaseCatalog({ path: fileURLToPath(new URL("../governance/release-catalog.json", import.meta.url)) });
+  const target = resolveReleaseTarget(document, cutoverIdentity);
+  assert.equal(target.id, "clossys-npmjs");
+  assert.deepEqual(target.packages, launchPackages);
+  assert.throws(() => assertPackageAuthorized(target, "producer"), /not authorized/);
+});
+
+test("the committed catalogue rejects an appended package", () => {
+  const committed = JSON.parse(readFileSync(new URL("../governance/release-catalog.json", import.meta.url), "utf8"));
+  for (const directory of ["producer", "not-a-package"]) {
+    const document = structuredClone(committed);
+    document.targets.find((target) => target.id === "clossys-npmjs").packages.push(directory);
+    assert.throws(() => load(document), /candidate state must retain the exact dependency-ordered all-package public-npm allowlist/);
+  }
+});
+
 // The gate no longer carries its own literal for the retired producer identity;
 // it reads governance/package-identity-transition.json. That removes a
 // duplicated literal, but it would be worthless if nothing checked that the

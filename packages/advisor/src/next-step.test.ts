@@ -3,8 +3,8 @@ import { nextStepInstruction } from "./index.js";
 
 describe("nextStepInstruction (issue #1180, Advisor side)", () => {
   it("Claude Code opens with a slash command and the loop keyword (#1194)", () => {
-    expect(nextStepInstruction("strategist", { tool: "claude-code", repositoryLabel: "your marketing site repository" })).toBe(
-      'Open your marketing site repository in Claude Code and type "/clossys-strategist loop".',
+    expect(nextStepInstruction("director", { tool: "claude-code", repositoryLabel: "your marketing site repository" })).toBe(
+      'Open your marketing site repository in Claude Code and type "/clossys-director loop".',
     );
   });
 
@@ -34,7 +34,7 @@ describe("nextStepInstruction (issue #1180, Advisor side)", () => {
 
   it("never ships the bare loop skill name (#1194: 'Never ship a skill named bare loop')", () => {
     for (const tool of ["claude-code", "cursor", "codex", "unknown"] as const) {
-      const text = nextStepInstruction("strategist", { tool, repositoryLabel: "x" });
+      const text = nextStepInstruction("director", { tool, repositoryLabel: "x" });
       expect(text).not.toMatch(/[/@]loop\b/);
     }
   });

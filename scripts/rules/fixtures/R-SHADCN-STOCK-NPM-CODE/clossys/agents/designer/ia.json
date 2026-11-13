@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "synthetic#rules-fixture",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "components.flow",
+      "label": "components.flow",
+      "children": [
+        {
+          "id": "flow-canvas",
+          "label": "flow-canvas",
+          "slots": [
+            "components.flow.canvas"
+          ]
+        }
+      ]
+    }
+  ]
+}

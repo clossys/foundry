@@ -1,0 +1,95 @@
+{
+  "//": "Stages grouped in rounds, but the design round's make stage header is drawn left of the design round's header, inside the direct round.",
+  "nodes": [
+    "ia",
+    "pin.director",
+    "designer.candidates"
+  ],
+  "edges": [
+    "ia->pin.director",
+    "pin.director->designer.candidates",
+    "designer.candidates->ia"
+  ],
+  "boxes": [
+    {
+      "id": "direct",
+      "kind": "round",
+      "x": 120,
+      "y": -80,
+      "width": 60,
+      "height": 20
+    },
+    {
+      "id": "design",
+      "kind": "round",
+      "x": 720,
+      "y": -80,
+      "width": 60,
+      "height": 20
+    },
+    {
+      "id": "direct.brief",
+      "kind": "stage",
+      "x": 120,
+      "y": -40,
+      "width": 60,
+      "height": 20
+    },
+    {
+      "id": "direct.pin",
+      "kind": "stage",
+      "x": 420,
+      "y": -40,
+      "width": 60,
+      "height": 20
+    },
+    {
+      "id": "design.make",
+      "kind": "stage",
+      "x": 500,
+      "y": -40,
+      "width": 60,
+      "height": 20
+    },
+    {
+      "id": "owner",
+      "kind": "lane",
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 20
+    },
+    {
+      "id": "designer",
+      "kind": "lane",
+      "x": 0,
+      "y": 200,
+      "width": 80,
+      "height": 20
+    },
+    {
+      "id": "ia",
+      "kind": "step",
+      "x": 130,
+      "y": 10,
+      "width": 200,
+      "height": 100
+    },
+    {
+      "id": "pin.director",
+      "kind": "step",
+      "x": 430,
+      "y": 10,
+      "width": 200,
+      "height": 100
+    },
+    {
+      "id": "designer.candidates",
+      "kind": "step",
+      "x": 730,
+      "y": 210,
+      "width": 200,
+      "height": 100
+    }
+  ]
+}

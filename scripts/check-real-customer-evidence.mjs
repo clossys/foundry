@@ -261,7 +261,7 @@ export function evaluateRealCustomerEvidenceRecord({ record, contract, lifecycle
     findings.push(finding("unreadable-retention", "retention", `must contain exactly: ${RETENTION_FIELDS.join(", ")}`, true));
   } else {
     if (record.retention.holder !== "keeper") {
-      findings.push(finding("invalid-retention-holder", "retention.holder", "must be \"keeper\" -- Strategist and Customer cite a record, they do not hold it"));
+      findings.push(finding("invalid-retention-holder", "retention.holder", "must be \"keeper\" -- Director and Customer cite a record, they do not hold it"));
     }
     if (!isNonemptyString(record.retention.scheduleRef)) findings.push(finding("invalid-retention-schedule", "retention.scheduleRef", "must point at the governing Keeper retention schedule"));
     if (!isNonemptyString(record.retention.reviewBy)) findings.push(finding("invalid-retention-review-by", "retention.reviewBy", "must name the next retention review date"));
@@ -272,7 +272,7 @@ export function evaluateRealCustomerEvidenceRecord({ record, contract, lifecycle
 }
 
 /**
- * Real evidence never outranks Strategist's or Customer's own judgment; this
+ * Real evidence never outranks Director's or Customer's own judgment; this
  * only states how much of a claim's citation base is real rather than
  * synthetic-only, for a surface such as STATUS.md to report. `context-only`
  * evidence corroborates but is not counted toward the real share on its own.

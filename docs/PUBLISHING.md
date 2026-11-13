@@ -233,11 +233,7 @@ written; `npm install` got the right tarball, the following `import` line
       `scripts/lib/packed-consumer-readiness.mjs` for every optional peer —
       `npm run check:packed-consumer -- --package <name>` names exactly which
       one is missing, and that table's own header comment says how to measure
-      it. **Never** `governance/public-npm-aggregate-canary.json`: that file
-      is frozen, immutable measurement of already-published tarballs
-      (`docs/DECISIONS.md` entry 26), and its own `optional-peer-manifest`
-      rule stops asking anything of a package once its version has moved past
-      what a frozen row measured — which every unpublished new subpath has.
+      it.
 - [ ] **A subpath that refuses a condition by design** (it throws at import
       under that condition whatever is installed) is declared in
       `BY_DESIGN_REFUSALS` in `scripts/lib/packed-consumer-readiness.mjs`.

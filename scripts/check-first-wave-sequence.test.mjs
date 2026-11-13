@@ -57,7 +57,7 @@ function contract(overrides = {}) {
         id: "strategy-and-expression",
         kind: "frontend-expression",
         job: "expression last",
-        packages: ["strategist", "writer", "designer", "customer", "publisher", "influencer"],
+        packages: ["director", "writer", "designer", "customer", "publisher", "influencer"],
       },
     ],
     productizationCriteria: [
@@ -80,7 +80,7 @@ function allManifests(overrides = {}) {
   const directories = [
     "advisor", "starter", "controller", "observer", "architect", "inspector", "builder",
     "locksmith", "integrator", "bouncer", "butler", "messenger", "giver", "keeper",
-    "strategist", "writer", "designer", "customer", "publisher", "influencer",
+    "director", "writer", "designer", "customer", "publisher", "influencer",
   ];
   const deps = {
     builder: { "@clossys/controller": "~0.9.0" },
@@ -103,8 +103,9 @@ test("the committed repository contract passes", () => {
   const result = loadAndEvaluate(repoRoot);
   assert.deepEqual(result.findings, []);
   assert.deepEqual(result.sequence.slice(0, 3), ["advisor", "starter", "controller"]);
-  assert.equal(result.sequence.at(-2), "publisher");
-  assert.equal(result.sequence.at(-1), "influencer");
+  assert.equal(result.sequence.at(-3), "publisher");
+  assert.equal(result.sequence.at(-2), "influencer");
+  assert.equal(result.sequence.at(-1), "producer");
 });
 
 test("the fixture matching the contract and runtime graph passes", () => {
@@ -128,7 +129,7 @@ test("putting an expression package before operating control is a finding", () =
 
 test("publisher before writer is a runtime-order finding even inside expression", () => {
   const drifted = contract();
-  drifted.waves[6].packages = ["strategist", "publisher", "writer", "designer", "influencer"];
+  drifted.waves[6].packages = ["director", "publisher", "writer", "designer", "influencer"];
   assert.equal(
     rules(evaluateFirstWaveSequence({ contract: drifted, manifestsByDirectory: allManifests() })).includes("runtime-order-violation"),
     true,
@@ -137,7 +138,7 @@ test("publisher before writer is a runtime-order finding even inside expression"
 
 test("influencer before publisher violates the closed-loop non-runtime constraint", () => {
   const drifted = contract();
-  drifted.waves[6].packages = ["strategist", "writer", "designer", "influencer", "publisher"];
+  drifted.waves[6].packages = ["director", "writer", "designer", "influencer", "publisher"];
   assert.equal(
     rules(evaluateFirstWaveSequence({ contract: drifted, manifestsByDirectory: allManifests() })).includes("non-runtime-order-violation"),
     true,

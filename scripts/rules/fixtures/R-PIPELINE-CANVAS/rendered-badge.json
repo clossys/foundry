@@ -1,0 +1,15 @@
+{
+  "//": "A page that draws the whole graph, but the kind badge of design.hero runs past its node's right edge (a long title pushing the badge out of the card).",
+  "nodes": ["design.hero", "publish.compile"],
+  "edges": ["design.hero->publish.compile"],
+  "boxes": [
+    { "id": "design.hero", "kind": "step", "x": 40, "y": 40, "width": 206, "height": 103 },
+    { "id": "publish.compile", "kind": "step", "x": 315, "y": 40, "width": 206, "height": 103 }
+  ],
+  "parts": [
+    { "id": "design.hero", "part": "title", "x": 52, "y": 50, "width": 150, "height": 17 },
+    { "id": "design.hero", "part": "badge", "x": 210, "y": 50, "width": 96, "height": 18 },
+    { "id": "publish.compile", "part": "title", "x": 327, "y": 50, "width": 110, "height": 17 },
+    { "id": "publish.compile", "part": "badge", "x": 450, "y": 50, "width": 50, "height": 18 }
+  ]
+}

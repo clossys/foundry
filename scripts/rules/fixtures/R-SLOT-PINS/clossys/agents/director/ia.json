@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "synthetic#R-SLOT-PINS",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "identity",
+      "label": "Identity",
+      "children": [
+        {
+          "id": "identity.brand",
+          "label": "Brand",
+          "slots": [
+            "identity.brand.essence"
+          ]
+        }
+      ]
+    }
+  ]
+}
