@@ -16,7 +16,12 @@
       "mode": "closed",
       "names": []
     },
-    "props": [],
+    "props": [
+      "src",
+      "title",
+      "viewport",
+      "iframeKey"
+    ],
     "install": {
       "layer": "@clossys/designer-ui",
       "alias": "components",

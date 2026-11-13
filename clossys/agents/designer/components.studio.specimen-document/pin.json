@@ -1,7 +1,7 @@
 {
-  "candidate": "specimen-document-v4.json",
-  "sha256": "79ee8be0369c528b5f6fdf7eef81c24f3bedf8b4a0418f205ad16c18cabc6493",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-03, planner)",
-  "basis": "planner",
-  "at": "2026-11-12T00:01:37.569Z"
+  "candidate": "specimen-document-v5.json",
+  "sha256": "c6ac14d3c3975722b6bb056deafe08a5062f1ce9da956aba05e7900145311dd2",
+  "decidedBy": "agent:designer",
+  "basis": "agent",
+  "at": "2026-11-13T02:30:22.188Z"
 }

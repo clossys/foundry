@@ -1,7 +1,7 @@
 {
-  "candidate": "block-viewer-iframe-v3.json",
-  "sha256": "80777485721dce2ebb74cd2653c272e801f4db24f1660963f10cc56678eb2071",
-  "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-03, planner)",
-  "basis": "planner",
-  "at": "2026-11-12T00:01:35.424Z"
+  "candidate": "block-viewer-iframe-v4.json",
+  "sha256": "074fbf0978257e731c2e98adcf870890d5b4239a28f61f221441b980a7f1ca32",
+  "decidedBy": "agent:designer",
+  "basis": "agent",
+  "at": "2026-11-13T02:46:54.911Z"
 }
