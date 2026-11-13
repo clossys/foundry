@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-// Deterministic Studio page acceptance: start the built producer, capture every route the
+// Deterministic Studio page acceptance: start the built producer, capture the routes the
 // generated Studio map publishes at 375/768/1280 in light and dark, record mechanical findings
-// per shot, and exit 1 when any failing finding exists. A browser is never downloaded: the run
+// per shot, and exit 1 when any failing finding exists. By default only Designer slot pages and
+// routes whose inputs changed since the last green capture are shot; the rest reuse that capture's
+// shots, marked `reused` in the manifest (see selectCapture). --full shoots every route. A browser is never downloaded: the run
 // uses an already-installed Chromium/Chrome and reports BLOCKED (exit 2) when none exists.
 // --servers K (or CAPTURE_STUDIO_SERVERS; default min(3, (cpus-2)/2)) shards routes across K producers
 // sharing --concurrency shots in flight; the report and exit code equal the serial run's.
@@ -14,6 +16,7 @@ import { availableParallelism, homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { inflateSync } from "node:zlib";
+import routeScope from "../studio/checks/route-scope.cjs";
 
 const producerDir = fileURLToPath(new URL("../", import.meta.url));
 const repoRoot = resolve(producerDir, "../..");
@@ -28,6 +31,10 @@ export const FAILING = Object.freeze(["console-error", "failed-request", "unreso
 export const GATES_FILE = fileURLToPath(new URL("./capture-studio-gates.json", import.meta.url));
 // Only wording/visual types may report (Producer skill, "Only wiring blocks"); every other type is wiring and blocks.
 export const REPORTABLE = Object.freeze(["id-label", "overflow"]);
+/** The last green capture's route inputs and shots, in the ignored cache (never the checkout). */
+export const DEFAULT_STATE = join(repoRoot, "node_modules/.cache/clossys/capture-studio/last-green.json");
+/** Files whose change changes what a capture finds: a reused result is valid only under the same checker. */
+const CHECKER = ["packages/producer/scripts/capture-studio.mjs", "packages/producer/scripts/capture-studio-gates.json", "packages/producer/studio/checks/route-scope.cjs"];
 
 /** Read and validate the gate config; a missing or invalid gate throws (the run fails at setup). */
 export function readGates(text) {
@@ -67,6 +74,39 @@ export function enumerateRoutes(map) {
   for (const route of map.routes) add(route.path, route.label, "page", route.instanceId);
   for (const leaf of map.leaves ?? []) add(leaf.path, leaf.title, "leaf", `${leaf.page}/${leaf.slug}`);
   return routes;
+}
+
+// ---------------------------------------------------------------- route selection
+
+/**
+ * Which routes this run shoots (owner, clossys/workspace#46 issuecomment-6840407560): Designer slot
+ * pages always, plus routes whose inputs changed since the last green capture; every other route
+ * reuses that capture's shots. No last green state, a changed build, frame or checker, `--full`, or
+ * an explicit route filter (`--only`, `--scope`) shoots every selected route.
+ */
+export function selectCapture({ routes, inputs, last, full = false, explicit = false }) {
+  const paths = routes.map(route => route.path);
+  if (full || explicit) return { mode: full ? "full" : "explicit", reason: full ? "--full" : "explicit route filter", capture: routes, reuse: [] };
+  const changed = routeScope.changedRoutes(inputs, last, paths);
+  if (changed.all) return { mode: "full", reason: changed.reason, capture: routes, reuse: [] };
+  const leaves = new Set(routes.filter(route => route.kind === "leaf").map(route => route.path));
+  const fresh = new Set(changed.changed);
+  const previous = new Map();
+  for (const shot of last.shots ?? []) previous.set(shot.route, [...(previous.get(shot.route) ?? []), shot]);
+  const capture = [], reuse = [];
+  for (const route of routes) {
+    const shots = previous.get(route.path) ?? [];
+    // A route the last green run has no complete set of shots for is shot again.
+    if (fresh.has(route.path) || routeScope.isDesignerSlotRoute(route.path, leaves) || shots.length !== WIDTHS.length * THEMES.length || !shots.every(shot => shot.reusedFrom?.out)) capture.push(route);
+    else reuse.push({ route, shots });
+  }
+  return { mode: "scoped", reason: changed.reason, capture, reuse, changed: changed.changed.length };
+}
+
+/** A reused shot, marked as such, its file pointing at the green run that took it. */
+export function reusedShot(shot) {
+  const { diff, diffFlag, diffError, ...kept } = shot;
+  return { ...kept, file: shot.file.startsWith("/") ? shot.file : join(shot.reusedFrom.out, shot.file), reused: true };
 }
 
 // ---------------------------------------------------------------- in-page probe
@@ -786,7 +826,7 @@ figcaption{margin-top:4px;color:var(--muted)}ul{margin:4px 0 0;padding-left:16px
 // ---------------------------------------------------------------- run
 
 export function parseArgs(argv, env = process.env) {
-  const args = { port: DEFAULT_PORT, map: DEFAULT_MAP, root: repoRoot, concurrency: 4, servers: env.CAPTURE_STUDIO_SERVERS ? Number(env.CAPTURE_STUDIO_SERVERS) : defaultServers(), timeoutMs: 60_000, routes: undefined, scope: "all" };
+  const args = { port: DEFAULT_PORT, map: DEFAULT_MAP, root: repoRoot, concurrency: 4, servers: env.CAPTURE_STUDIO_SERVERS ? Number(env.CAPTURE_STUDIO_SERVERS) : defaultServers(), timeoutMs: 60_000, routes: undefined, scope: "all", full: false, state: DEFAULT_STATE };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     const value = () => { const next = argv[++i]; if (next === undefined) throw new Error(`${flag} needs a value`); return next; };
@@ -800,6 +840,8 @@ export function parseArgs(argv, env = process.env) {
     else if (flag === "--timeout") args.timeoutMs = Number(value());
     else if (flag === "--only") args.routes = value().split(",");
     else if (flag === "--scope") args.scope = value();
+    else if (flag === "--full") args.full = true;
+    else if (flag === "--state") args.state = resolve(value());
     else throw new Error(`unknown flag ${flag}`);
   }
   // A check run with no --out writes to a fresh temporary directory (printed in the result).
@@ -822,17 +864,21 @@ export async function run(args) {
   // --scope pages captures the content map's page routes; leaves are each page's [slug] instances.
   if (args.scope !== "all") routes = routes.filter(route => route.kind === (args.scope === "pages" ? "page" : "leaf"));
   if (args.routes) routes = routes.filter(route => args.routes.includes(route.path));
+  const explicit = Boolean(args.routes) || args.scope !== "all";
+  const inputs = routeScope.routeInputs({ repositoryRoot: args.root, map, checker: CHECKER });
+  const selection = selectCapture({ routes, inputs, last: routeScope.readState(args.state), full: args.full, explicit });
+  const reused = selection.reuse.flatMap(entry => entry.shots.map(reusedShot));
   const executable = findBrowser();
   if (!executable) return { exitCode: 2, status: "BLOCKED", message: "no installed Chromium/Chrome found; not downloading one" };
   await mkdir(join(args.out, "shots"), { recursive: true });
   const jobs = [];
-  for (const route of routes) for (const theme of THEMES) for (const width of WIDTHS) jobs.push({ ...route, route: route.path, width, theme, file: `shots/${fileName(route.path, width, theme)}`, timeoutMs: args.timeoutMs });
+  for (const route of selection.capture) for (const theme of THEMES) for (const width of WIDTHS) jobs.push({ ...route, route: route.path, width, theme, file: `shots/${fileName(route.path, width, theme)}`, timeoutMs: args.timeoutMs });
   let done = 0;
   const cache = specimenCache(args.root);
   // A cold specimen cache is built once, by one server, rather than K times at once.
   // More servers than shots in flight would leave servers idle.
-  const servers = existsSync(join(cache, "substrate")) ? Math.min(args.servers ?? 1, args.concurrency, Math.max(1, routes.length)) : 1;
-  if (servers < (args.servers ?? 1) && routes.length > 1) process.stderr.write("capture-studio: specimen cache is cold; capturing on one server\n");
+  const servers = existsSync(join(cache, "substrate")) ? Math.min(args.servers ?? 1, args.concurrency, Math.max(1, selection.capture.length)) : 1;
+  if (servers < (args.servers ?? 1) && selection.capture.length > 1) process.stderr.write("capture-studio: specimen cache is cold; capturing on one server\n");
   const runDir = servers > 1 ? await mkdtemp(join(tmpdir(), "capture-studio-shards-")) : undefined;
   const serverLogs = Array.from({ length: servers }, () => []);
   const producers = [];
@@ -890,7 +936,7 @@ export async function run(args) {
     if (runDir) rmSync(runDir, { recursive: true, force: true });
     await writeFile(join(args.out, "producer.log"), servers === 1 ? serverLogs[0].join("") : serverLogs.map((log, index) => `--- server ${index + 1}/${servers} (port ${args.port + index})\n${log.join("")}`).join("\n"));
   }
-  const summary = summarize(captured, { gates, routes });
+  const summary = summarize([...captured, ...reused], { gates, routes });
   const { shots, failingShots, findingsByType, reportsByType } = summary;
   const manifest = {
     schemaVersion: 1,
@@ -904,6 +950,8 @@ export async function run(args) {
     pageRoutes: summary.pageRoutes,
     leafRoutes: summary.leafRoutes,
     shotCount: summary.shotCount,
+    // Which routes were shot and which reused the last green capture's result (shots marked `reused`).
+    selection: { mode: selection.mode, reason: selection.reason, state: args.state, capturedRoutes: selection.capture.length, reusedRoutes: selection.reuse.length, changedRoutes: selection.changed, capturedShots: captured.length, reusedShots: reused.length },
     failingShots,
     reportsByType,
     gates,
@@ -914,6 +962,12 @@ export async function run(args) {
   };
   await writeFile(join(args.out, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFile(join(args.out, "contact-sheet.html"), contactSheet(manifest));
+  // A green run over every route becomes the next run's reference; an explicit filter never does.
+  if (manifest.exitCode === 0 && selection.mode !== "explicit") {
+    await mkdir(dirname(args.state), { recursive: true });
+    const shotsOf = shots.map(shot => shot.reused ? shot : { ...shot, reusedFrom: { generatedAt: manifest.generatedAt, out: args.out } });
+    await writeFile(args.state, `${JSON.stringify({ ...inputs, generatedAt: manifest.generatedAt, shots: shotsOf })}\n`);
+  }
   return { exitCode: manifest.exitCode, status: failingShots ? "FAIL" : "PASS", routeCount: manifest.routeCount, shotCount: manifest.shotCount, failingShots, findingsByType, reportsByType, diff: manifest.diff, out: args.out };
 }
 

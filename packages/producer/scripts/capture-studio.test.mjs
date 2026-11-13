@@ -6,7 +6,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { deflateSync } from "node:zlib";
 import { JSDOM } from "jsdom";
-import { DEFAULT_MAP, FAILING, GATES_FILE, THEMES, WIDTHS, blocks, defaultServers, orderShots, planShards, runShards, shardTmpdir, summarize, readGates, seedShard, specimenCache, captureWithRetry, contactSheet, createBrowserPool, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, severityOf } from "./capture-studio.mjs";
+import { DEFAULT_MAP, FAILING, GATES_FILE, THEMES, WIDTHS, blocks, defaultServers, orderShots, planShards, runShards, shardTmpdir, summarize, readGates, seedShard, specimenCache, captureWithRetry, contactSheet, createBrowserPool, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, reusedShot, selectCapture, severityOf } from "./capture-studio.mjs";
+import routeScope from "../studio/checks/route-scope.cjs";
 
 const FIXTURE = `<!doctype html><html><head><title>Studio</title></head><body>
 <h1>Market size</h1>
@@ -377,4 +378,61 @@ test("a shard starts from the serial run's specimen cache, never cold", async ()
   const tree = dir => readdirSync(dir, { recursive: true }).sort();
   assert.deepEqual(tree(target), tree(source));
   assert.equal(readFileSync(join(target, "substrate", "node_modules", "font", "index.css"), "utf8"), "a");
+});
+
+/** A fixture repository: Home, a Designer tab with two slot leaves, a Writer tab with one leaf. */
+function scopeFixture() {
+  const root = mkdtempSync(join(tmpdir(), "capture-scope-"));
+  const write = (file, text) => { mkdirSync(dirname(join(root, file)), { recursive: true }); writeFileSync(join(root, file), text); };
+  for (const [agent, slot] of [["designer", "frames.shell"], ["designer", "themes.x"], ["designer", "themes.y"], ["writer", "strings.hello"], ["writer", "strings.bye"]]) {
+    write(`clossys/agents/${agent}/${slot}/pin.json`, `{"candidate":"${slot}-v1.json"}`);
+    write(`clossys/agents/${agent}/${slot}/candidates/${slot}-v1.json`, "{}");
+  }
+  write("packages/producer/studio/app/page.tsx", "export default () => null;\n");
+  const page = (id, path, loader) => ({ id, path, frameId: "frames.shell", sectionIds: [], data: { loader } });
+  const map = {
+    pages: [page("home", "/", "home"), page("designer-colors", "/designer/colors", "slot-groups"), page("writer-strings", "/writer/strings", "slot-groups")],
+    routes: [{ path: "/", instanceId: "home" }, { path: "/designer/colors", instanceId: "designer-colors" }, { path: "/writer/strings", instanceId: "writer-strings" }],
+    leaves: [["designer-colors", "themes.x"], ["designer-colors", "themes.y"], ["writer-strings", "strings.hello"], ["writer-strings", "strings.bye"]].map(([pageId, slug]) => ({ page: pageId, slug, title: slug, path: `${pageId === "home" ? "" : map0(pageId)}/${slug}` })),
+  };
+  function map0(pageId) { return pageId === "designer-colors" ? "/designer/colors" : "/writer/strings"; }
+  return { root, map, write, routes: enumerateRoutes(map) };
+}
+const greenState = (inputs, routes) => ({ ...inputs, generatedAt: "t0", shots: routes.flatMap(route => THEMES.flatMap(theme => WIDTHS.map(width => ({ route: route.path, width, theme, file: `shots/${width}-${theme}.png`, findings: [], severity: 0, reusedFrom: { generatedAt: "t0", out: "/green" } })))) });
+const pathsOf = list => list.map(route => route.path);
+
+test("capture shoots Designer slot pages and changed routes; every other route reuses the last green capture", () => {
+  const { root, map, write, routes } = scopeFixture();
+  const inputs = routeScope.routeInputs({ repositoryRoot: root, map });
+  // No green capture yet: everything (7 routes x 6 shots).
+  const first = selectCapture({ routes, inputs, last: undefined });
+  assert.deepEqual([first.mode, first.reason, first.capture.length * WIDTHS.length * THEMES.length], ["full", "no previous green run", 42]);
+  const last = greenState(inputs, routes);
+  // Nothing changed: only the two Designer slot pages are shot (12 shots); 5 routes (30 shots) reused.
+  const quiet = selectCapture({ routes, inputs, last });
+  assert.deepEqual(pathsOf(quiet.capture), ["/designer/colors/themes.x", "/designer/colors/themes.y"]);
+  assert.equal(quiet.reuse.flatMap(entry => entry.shots).length, 30);
+  // One Writer candidate changes: only the routes that use it are added.
+  write("clossys/agents/writer/strings.hello/candidates/strings.hello-v2.json", "{}");
+  const changed = selectCapture({ routes, inputs: routeScope.routeInputs({ repositoryRoot: root, map }), last });
+  assert.deepEqual(pathsOf(changed.capture), ["/", "/writer/strings", "/designer/colors/themes.x", "/designer/colors/themes.y", "/writer/strings/strings.hello"]);
+  assert.deepEqual(pathsOf(changed.reuse.map(entry => entry.route)), ["/designer/colors", "/writer/strings/strings.bye"]);
+  // Reused shots say so and point at the green run that took them.
+  const reused = reusedShot(changed.reuse[0].shots[0]);
+  assert.deepEqual([reused.reused, reused.file, reused.reusedFrom.out], [true, "/green/shots/375-light.png", "/green"]);
+});
+
+test("a frame or build change, --full or an explicit filter shoots every selected route", () => {
+  const { root, map, write, routes } = scopeFixture();
+  const inputs = routeScope.routeInputs({ repositoryRoot: root, map });
+  const last = greenState(inputs, routes);
+  assert.equal(selectCapture({ routes, inputs, last, full: true }).capture.length, 7);
+  assert.equal(selectCapture({ routes: routes.slice(0, 1), inputs, last, explicit: true }).mode, "explicit");
+  write("clossys/agents/designer/frames.shell/candidates/frames.shell-v2.json", "{}");
+  const framed = routeScope.routeInputs({ repositoryRoot: root, map });
+  assert.deepEqual([selectCapture({ routes, inputs: framed, last }).reason, selectCapture({ routes, inputs: framed, last }).capture.length], ["frame changed", 7]);
+  write("packages/producer/studio/app/page.tsx", "export default () => 1;\n");
+  const built = selectCapture({ routes, inputs: routeScope.routeInputs({ repositoryRoot: root, map }), last: greenState(framed, routes) });
+  assert.deepEqual([built.reason, built.capture.length, built.reuse.length], ["build changed", 7, 0]);
+  assert.equal(parseArgs(["--full", "--out", "/tmp/x"]).full, true);
 });
