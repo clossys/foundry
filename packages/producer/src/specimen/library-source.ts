@@ -32,6 +32,14 @@ export interface LibrarySourceOptions {
    * refreshes when Writer changes. Without it each candidate load scans Writer.
    */
   readonly writerCopy?: WriterCopy;
+  /**
+   * Whether a slot's declared specimen state (server/specimen-state.ts) joins the record as a
+   * generated `specimen/state.tsx` entry. The host specimen mount renders the record as it is, so
+   * the record carries the state (the default). The installed specimen path installs the item's
+   * own registry files only and mounts the state in its component page, so it passes false:
+   * exactly one layer applies the state.
+   */
+  readonly slotStates?: boolean;
 }
 
 /** A Writer copy snapshot, or a getter of the current one. */
@@ -150,7 +158,7 @@ function pinFingerprint(roots: readonly string[]): string {
 }
 
 /** Every byte and the pin come from the common model reader. No store fallback. */
-export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string; readonly writerCopy?: WriterCopy } = {}): SpecimenRecordStore {
+export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string; readonly writerCopy?: WriterCopy; readonly slotStates?: boolean } = {}): SpecimenRecordStore {
   const roots = rootsIn.map(root => resolve(root));
   if (options.writerCopy && roots.length !== 1) throw new Error("a Writer copy snapshot belongs to exactly one consumer root");
   let cached: { at: number; fingerprint: string; index: InstallIndex } | undefined;
@@ -195,7 +203,8 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
         id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
         files: [{ path: `${element}.json`, content: read.bytes }], preview: specimen.preview, contentHash: read.sha256,
       };
-      return withSlotState(slot, item, withSlotInputs(`${slot}/${candidate.name}`, specimen, withDependencyParts(row)));
+      const mounted = withSlotInputs(`${slot}/${candidate.name}`, specimen, withDependencyParts(row));
+      return options.slotStates === false ? mounted : withSlotState(slot, item, mounted);
     },
   };
   return store;
@@ -530,7 +539,7 @@ export function pinnedLibraryTheme(rootsIn: readonly string[]): SpecimenTheme | 
  * `themes`) gets every pinned theme variable, light and dark, not one `themes.*` leaf.
  */
 export function libraryRecordSource(options: LibrarySourceOptions): SpecimenRecordSource {
-  const base = recordStoreSource(libraryRecordStore(options.roots, { ...(options.registryBase ? { registryBase: options.registryBase } : {}), ...(options.writerCopy ? { writerCopy: options.writerCopy } : {}) }), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
+  const base = recordStoreSource(libraryRecordStore(options.roots, { ...(options.registryBase ? { registryBase: options.registryBase } : {}), ...(options.writerCopy ? { writerCopy: options.writerCopy } : {}), ...(options.slotStates === false ? { slotStates: false } : {}) }), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
   return {
     ...base,
     async theme(id) {

@@ -30,6 +30,7 @@ import { specimenSubstrate } from "./specimen-substrate.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 import { installedCode, itemSpecimenState, resolveSampleCopy, SLOT_SPECIMEN_STATES, type SpecimenState } from "./specimen-state.js";
 import { fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "./specimen-tree.js";
+import type { SpecimenRecordSource } from "@clossys/publisher/specimen";
 import { bindPage, installPage, isBlocking, reconcileInstalled, substrateDependencies, type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
@@ -37,8 +38,8 @@ import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 import { isAbsent } from "../errors.js";
 
-/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds). */
-const SPECIMEN_FORMAT = "studio-specimens/11";
+/** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds; 12: records without the slot state module, which component pages apply). */
+const SPECIMEN_FORMAT = "studio-specimens/12";
 const SITE_PREFIX = "/__specimen-site/";
 /** The specimen frame route; the only path a specimen-site page may frame (specimenSiteCsp). */
 const SPECIMEN_FRAME_ROUTE = "/__specimen";
@@ -164,6 +165,15 @@ export function componentSpecimenPage(module: string, slot: string, item: unknow
   return componentPage(module, itemSpecimenState(slot, installedCode(item), entry));
 }
 
+/**
+ * The records the installed path resolves pages from. Each slot's specimen state stays out of the
+ * record (no `specimen/state.tsx` entry, which the installer never installs and would answer with
+ * `no-entry`): componentSpecimenPage applies it, the one layer that wraps the installed item.
+ */
+export function installedRecordSource(library: string, pinnedCopy: Readonly<Record<string, string>>): SpecimenRecordSource {
+  return libraryRecordSource({ roots: [library], writerCopy: pinnedCopy, slotStates: false });
+}
+
 /** Component leaf: the bound item centred on the page ground, in its specimen state. */
 function componentPage(item: string, state?: SpecimenState): string {
   const open = state?.state === "open" ? state : undefined;
@@ -230,7 +240,7 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
   await mkdir(join(substrate, "components"), { recursive: true });
   await writeFile(join(substrate, "components", SPECIMEN_DOCUMENT), await specimenDocument());
   // One Writer snapshot: a Writer scan per candidate load held the server's event loop for minutes.
-  const source = libraryRecordSource({ roots: [library], writerCopy: options.pinnedCopy });
+  const source = installedRecordSource(library, options.pinnedCopy);
   const runner = shadcnRunner(process.env, options.signal);
   const include = Object.keys(pins).filter(slot => slot.startsWith("themes.")).sort();
   const findings: InstallFinding[] = [];

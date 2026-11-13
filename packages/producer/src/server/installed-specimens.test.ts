@@ -6,14 +6,16 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
-import type { BoundPage } from '@clossys/publisher/install';
+import { resolvePage, type BoundPage } from '@clossys/publisher/install';
 import { pageModule } from '../publish/install.js';
 import { firstComponentSource } from '../publish/component-export.js';
 import { installedCode, resolveSampleCopy, SLOT_SPECIMEN_STATES, specimenStateOf, type SpecimenState } from './specimen-state.js';
 import { createRequire } from 'node:module';
 import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';
 import { createServer, request } from 'node:http';
-import { componentSpecimenPage, hostOnlyFinding, installedSpecimenRoutes, specimenSiteCsp, type SiteInputs } from './installed-specimens.js';
+import { slotInstallInputs } from '../specimen/slot-install-inputs.js';
+import { SPECIMEN_STATE_FILE } from '../specimen/library-source.js';
+import { componentSpecimenPage, hostOnlyFinding, installedRecordSource, installedSpecimenRoutes, specimenSiteCsp, type SiteInputs } from './installed-specimens.js';
 import { SPECIMEN_FRAME_CSP, SPECIMEN_FRAME_SCRIPT_HASH } from './specimen-frame.js';
 import { PREVIEW_PAGE_CSP, specimenHostCsp } from './publication.js';
 
@@ -247,7 +249,31 @@ describe('a component slot that reads a context', () => {
       }
       if (provider) expect(throwsBare, `${slot} declares a provider no candidate needs`).not.toEqual([]);
     }
-    // Two esbuild bundles per recorded candidate of each context-bound slot.
+  }, 60_000);
+
+  it.each(['components.navigation-tree', 'components.flow.canvas', 'components.flow.base-handle'])('resolves the pinned %s through the installed record source and mounts it inside exactly one provider', async slot => {
+    const library = join(repo, 'clossys');
+    const { pins } = slotInstallInputs(library)!;
+    const provider = (specimenStateOf(slot) as Extract<SpecimenState, { state: 'provider' }>).provider;
+    // The production path: installed records -> resolvePage -> componentSpecimenPage.
+    const { slots, findings } = await resolvePage({ id: 'specimen-provider', frame: slot, sections: [] }, pins, installedRecordSource(library, pinnedWriterCopy(library)));
+    expect(findings.filter(finding => finding.slot === slot), slot).toEqual([]);
+    const row = slots.find(row => row.slot === slot && row.mounted);
+    expect(row?.entry, `${slot} resolves to a mounted entry`).toBeDefined();
+    // The record carries no state module: the component page is the one layer that wraps.
+    expect(row!.record.payload.files.map(file => file.path)).not.toContain(SPECIMEN_STATE_FILE);
+    expect((row!.record.sources ?? []).map(file => file.path)).not.toContain(SPECIMEN_STATE_FILE);
+    const item = JSON.parse(row!.record.payload.raw);
+    const page = componentSpecimenPage('./item--item', slot, item, row!.entry!);
+    expect(page.split('<SpecimenProvider').length - 1, `${slot} page wrappers`).toBe(1);
+    const fixtures = row!.record.preview.fixtures as Record<string, unknown> | undefined;
+    const props = (typeof fixtures?.file === 'string' ? fixtures.props : fixtures) as Record<string, unknown> | undefined;
+    const files = { ...substrate, ...Object.fromEntries(installedCode(item).map(file => [file.path, file.content])), ...cnStub };
+    const mounted = await renderMounted(slot, row!.entry!, files, { props: props ?? {}, item });
+    expect(mounted.markup, slot).not.toBe('');
+    expect(mounted.standIns, `${slot} provider ${provider.module}`).not.toContain(provider.module);
+    await expect(renderMounted(slot, row!.entry!, files, { props: props ?? {}, item, bare: true }), `${slot} needs its provider`).rejects.toThrow(CONTEXT_ERROR);
+    if (mounted.providerTag) expect(mounted.markup.split(mounted.providerTag).length - 1, `${slot} rendered wrappers`).toBe(1);
   }, 60_000);
 });
 
