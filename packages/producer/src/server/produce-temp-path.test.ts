@@ -32,6 +32,7 @@ describe("clossys produce temporary projection paths", () => {
 
     const runtime = join(directory, "runtime");
     await cp(join(repository, "packages/producer/dist"), join(runtime, "dist"), { recursive: true });
+    await cp(join(repository, "packages/producer/pipeline"), join(runtime, "pipeline"), { recursive: true });
     await writeFile(join(runtime, "package.json"), '{"type":"module"}\n');
     await symlink(join(repository, "node_modules"), join(runtime, "node_modules"), "dir");
     await mkdir(join(runtime, "dist/studio"), { recursive: true });

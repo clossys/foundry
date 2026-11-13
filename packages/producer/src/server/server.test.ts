@@ -137,6 +137,7 @@ describe("loopback Producer", () => {
   it("runs the installed CLI with initial compile gaps, honors no-open, and stops on SIGTERM", async () => {
     const runtime = join(root, "runtime");
     await cp(join(repo, "packages/producer/dist"), join(runtime, "dist"), { recursive: true });
+    await cp(join(repo, "packages/producer/pipeline"), join(runtime, "pipeline"), { recursive: true });
     await writeFile(join(runtime, "package.json"), '{"type":"module"}\n');
     await symlink(join(repo, "node_modules"), join(runtime, "node_modules"));
     await mkdir(join(runtime, "dist/studio/standalone/apps/studio"), { recursive: true });
