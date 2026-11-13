@@ -176,7 +176,8 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
       if (cell.frame !== route.frame || JSON.stringify(cell.sections) !== JSON.stringify(route.sections)) {
         findings.push({ code: "site-cell-mismatch", severity: "info", detail: `${route.id}: page cell lists ${cell.frame} [${cell.sections.join(", ")}]; the site mounts ${route.frame} [${route.sections.join(", ")}]` });
       }
-      const result = await installAndBind({ page: { ...cell, frame: route.frame, sections: route.sections }, pins, source, substrate, runner, copy });
+      // The substrate under clossys-written output (`INSTALL_MARKER`): replaced files are removed.
+      const result = await installAndBind({ page: { ...cell, frame: route.frame, sections: route.sections }, pins, source, substrate, runner, copy, ownedSubstrate: true });
       findings.push(...result.findings);
       installed.push(...result.installed.filter(row => !installed.some(seen => seen.slot === row.slot)));
       slots.push(...result.slots);

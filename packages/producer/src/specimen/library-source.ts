@@ -12,6 +12,7 @@ import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/s
 import { RecordError } from "../records/validate.js";
 import { dependencyPart, fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues, treeDependencyParts } from "../server/specimen-tree.js";
 import { specimenStateOf, VISIBLE_STATE_CSS } from "../server/specimen-state.js";
+import { firstComponentSource } from "../publish/component-export.js";
 
 const SEGMENT = /^[a-z0-9][a-z0-9.-]*$/;
 export interface LibrarySourceOptions {
@@ -468,7 +469,7 @@ function withSlotState(slot: string, item: { files?: { path?: unknown; type?: un
     `import * as Item from ${JSON.stringify(target.startsWith(".") ? target : `./${target}`)};`,
     // The item's own exports stay reachable for a fixture element tree.
     `export * from ${JSON.stringify(target.startsWith(".") ? target : `./${target}`)};`,
-    "const pick = (name) => (name && Item[name]) || Item.default || Object.entries(Item).find(([key, value]) => /^[A-Z]/.test(key) && (typeof value === \"function\" || (!!value && typeof value === \"object\" && \"$$typeof\" in value)))?.[1];",
+    `const pick = (name) => (name && Item[name]) || (${firstComponentSource("Item")});`,
     "export function SpecimenState(props) {",
     `  const Root = pick(${JSON.stringify(exported ?? "")});`,
     ...(open ? [`  useEffect(() => { openSpecimen(${JSON.stringify(open.sample)}, { duration: Infinity }); }, []);`] : []),

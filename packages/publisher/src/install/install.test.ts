@@ -6,7 +6,7 @@
  * stub, so the test makes no outside network request.
  */
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { createRequire } from "node:module";
@@ -288,11 +288,13 @@ describe("a slot installed at another version", () => {
   const v1: InstallPins = { "sections.article": { element: "article", version: 1 }, "sections.document": { element: "document", version: 1 } };
   const v2: InstallPins = { ...v1, "sections.article": { element: "article", version: 2 } };
 
-  it("removes a file the previous version wrote that the new one no longer ships", async () => {
+  const install = (page: InstallPageRecord, pins: InstallPins, dir: string, ownedSubstrate = true) => installPage({ page, pins, source: libSource, substrate: dir, runner: writeRunner, ownedSubstrate });
+
+  it("removes a file the previous version wrote that the new one no longer ships, in a substrate clossys owns", async () => {
     const dir = await substrate();
-    await installPage({ page: articlePage, pins: v1, source: libSource, substrate: dir, runner: writeRunner });
+    await install(articlePage, v1, dir);
     expect(existsSync(join(dir, "lib", "utils.js"))).toBe(true);
-    const again = await installPage({ page: articlePage, pins: v2, source: libSource, substrate: dir, runner: writeRunner });
+    const again = await install(articlePage, v2, dir);
     expect(again.findings).toEqual([]);
     expect(existsSync(join(dir, "lib", "typography", "utils.js"))).toBe(true);
     expect(existsSync(join(dir, "lib", "utils.js"))).toBe(false);
@@ -300,36 +302,56 @@ describe("a slot installed at another version", () => {
     expect(Object.keys(manifest.items["sections.article"].files)).toEqual(["lib/typography/utils.js"]);
   });
 
+  it("only reports a replaced file in a consumer's own project, even with the recorded bytes", async () => {
+    const dir = await substrate();
+    await install(articlePage, v1, dir, false);
+    const again = await install(articlePage, v2, dir, false);
+    expect(again.findings).toEqual([expect.objectContaining({ code: "replaced-file", slot: "sections.article", severity: "info" })]);
+    expect(again.findings.every(finding => !isBlocking(finding))).toBe(true);
+    expect(await readFile(join(dir, "lib", "utils.js"), "utf8")).toBe("module.exports = { isObject() {} }\n");
+  });
+
+  it("never removes a replaced file whose real path leaves the substrate", async () => {
+    const dir = await substrate(), elsewhere = await substrate();
+    // lib/ is a link to a directory outside the substrate: v1's lib/utils.js lands there, with the recorded bytes.
+    await mkdir(join(elsewhere, "lib"), { recursive: true });
+    await symlink(join(elsewhere, "lib"), join(dir, "lib"));
+    await install(articlePage, v1, dir);
+    expect(existsSync(join(elsewhere, "lib", "utils.js"))).toBe(true);
+    const again = await install(articlePage, v2, dir);
+    expect(again.findings).toEqual([expect.objectContaining({ code: "replaced-file", slot: "sections.article", detail: expect.stringContaining("outside the substrate") })]);
+    expect(existsSync(join(elsewhere, "lib", "utils.js"))).toBe(true);
+  });
+
   it("keeps a replaced file another installed item claims, or one changed since install", async () => {
     const dir = await substrate();
-    await installPage({ page: articlePage, pins: v1, source: libSource, substrate: dir, runner: writeRunner });
-    await installPage({ page: documentPage, pins: v1, source: libSource, substrate: dir, runner: writeRunner });
-    expect((await installPage({ page: articlePage, pins: v2, source: libSource, substrate: dir, runner: writeRunner })).findings).toEqual([]);
+    await install(articlePage, v1, dir);
+    await install(documentPage, v1, dir);
+    expect((await install(articlePage, v2, dir)).findings).toEqual([]);
     expect(existsSync(join(dir, "lib", "utils.js"))).toBe(true);
 
     const other = await substrate();
-    await installPage({ page: articlePage, pins: v1, source: libSource, substrate: other, runner: writeRunner });
+    await install(articlePage, v1, other);
     await writeFile(join(other, "lib", "utils.js"), "export const edited = true;\n");
-    const again = await installPage({ page: articlePage, pins: v2, source: libSource, substrate: other, runner: writeRunner });
+    const again = await install(articlePage, v2, other);
     expect(again.findings).toEqual([expect.objectContaining({ code: "hash-mismatch", slot: "sections.article" })]);
     expect(await readFile(join(other, "lib", "utils.js"), "utf8")).toBe("export const edited = true;\n");
   });
 
-  it("reconciles a substrate to new pins before any page reinstalls, leaving current and unpinned slots", async () => {
+  it("reconciles a substrate to new pins before any page reinstalls: a slot at another version or no longer pinned goes", async () => {
     const dir = await substrate();
-    await installPage({ page: articlePage, pins: v1, source: libSource, substrate: dir, runner: writeRunner });
-    await mkdir(join(dir, "lib", "extra"), { recursive: true });
-    await writeFile(join(dir, "lib", "extra", "keep.js"), "export {}\n");
-    const before = JSON.parse(await readFile(join(dir, ".clossys", "install.json"), "utf8"));
-    await writeFile(join(dir, ".clossys", "install.json"), JSON.stringify({ ...before, items: { ...before.items, "sections.extra": { id: "sections.extra/extra", version: 1, itemHash: "", files: { "lib/extra/keep.js": "x" } } } }));
+    await install(articlePage, v1, dir);
+    await install(documentPage, v1, dir);
     // Current pins: nothing to do.
-    expect(await reconcileInstalled(dir, { ...v1, "sections.extra": { element: "extra", version: 1 } })).toEqual([]);
+    expect(await reconcileInstalled(dir, v1)).toEqual([]);
     expect(existsSync(join(dir, "lib", "utils.js"))).toBe(true);
-    // sections.article moves to v2 and sections.extra has no pin: only the article entry and its file go.
+    // sections.article moves to v2: its entry goes, and lib/utils.js stays while sections.document claims it.
     expect(await reconcileInstalled(dir, v2)).toEqual([]);
+    expect(existsSync(join(dir, "lib", "utils.js"))).toBe(true);
+    // sections.document's pin is removed: nothing claims lib/utils.js any more.
+    expect(await reconcileInstalled(dir, { "sections.article": v2["sections.article"]! })).toEqual([]);
     expect(existsSync(join(dir, "lib", "utils.js"))).toBe(false);
-    expect(existsSync(join(dir, "lib", "extra", "keep.js"))).toBe(true);
     const manifest = JSON.parse(await readFile(join(dir, ".clossys", "install.json"), "utf8"));
-    expect(Object.keys(manifest.items).sort()).toEqual(["sections.extra"]);
+    expect(manifest.items).toEqual({});
   });
 });
