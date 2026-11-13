@@ -1069,7 +1069,7 @@ export const NPM_CONTRACT_FILE_DIRS = Object.freeze({ "registry:ui": "components
 export const NPM_CONTRACT_ITEM_KEYS = Object.freeze(["name", "type", "title", "description", "dependencies", "registryDependencies", "files", "meta"]);
 /**
  * Comment syntax: a class-contract file carries no comment at all. Comments are where compilers read
- * file-level directives (`@jsx`, `@jsxImportSource`, `@jsxRuntime`, `@jsxFrag`, `/// <reference>`,
+ * file-level directives (the JSX factory pragma, `@jsxImportSource`, `@jsxRuntime`, `@jsxFrag`, `/// <reference>`,
  * `@ts-nocheck`, bundler magic comments), and each tool's pragma grammar differs; a wrapper needs none,
  * so the closed rule is byte-level: no `//`, `/*`, HTML-like `<!--`/`-->` or hashbang anywhere in the text.
  */
@@ -1164,7 +1164,7 @@ function vendoredContract(ts, baseText, modifiersText, baseFile, modifiersFile) 
 function checkNpmContractItem(root, slot, candidate, row, options = {}) {
   const opts = defaults(options);
   const element = candidate.name ?? "unknown";
-  const key = `${slot}/${element}@v1`;
+  const key = `${slot}/${element}\x40v1`;
   const findings = [];
   const files = [];
   const fail = (code, detail, extra = {}) => findings.push({ element: key, code, detail, ...extra });
@@ -1270,7 +1270,7 @@ function checkNpmContractItem(root, slot, candidate, row, options = {}) {
     const at = node => parsed.getLineAndCharacterOfPosition(node.getStart(parsed)).line + 1;
     const bad = (node, why) => fail("REF-NPM-CODE", `${file}:${at(node)}: ${why}; a class-contract candidate holds only exported element wrappers`, { file });
     if (parsed.parseDiagnostics?.length) fail("REF-NORMALIZE", `${file} does not parse`, { file });
-    // No comment anywhere: a pragma (`@jsxImportSource`, `@jsx`, `@jsxRuntime`, `@jsxFrag`, ...) would redirect compilation.
+    // No comment anywhere: a pragma (`@jsxImportSource`, the JSX factory pragma, `@jsxRuntime`, `@jsxFrag`, ...) would redirect compilation.
     const comment = NPM_CONTRACT_COMMENT.exec(text);
     if (comment) fail("REF-NPM-CODE", `${file}:${text.slice(0, comment.index).split("\n").length}: carries a comment (${comment[0]}); a class-contract file has none, so no pragma can redirect its compilation`, { file });
     // No module reference hides in a type: `import("...")` types name another package.
@@ -1467,7 +1467,7 @@ function moduleExports(file, cache) {
 function checkComposition(root, slot, candidate, options = {}) {
   const opts = defaults(options);
   const element = candidate.name ?? "unknown";
-  const key = `${slot}/${element}@v1`;
+  const key = `${slot}/${element}\x40v1`;
   const findings = [];
   const files = [];
   const fail = (code, detail, extra = {}) => findings.push({ element: key, code, detail, ...extra });
@@ -1613,7 +1613,7 @@ export function loadBaseline(options = {}) {
   const ceiling = new Set(opts.ceiling);
   for (const row of rows) {
     if (!ceiling.has(baselineKey(row))) {
-      findings.push({ element: `${row.slot}/${row.element}@v${row.version}`, code: "REF-BASELINE", detail: `baseline row ${baselineKey(row)} is not in BASELINE_CEILING; the baseline may only shrink` });
+      findings.push({ element: `${row.slot}/${row.element}\x40v${row.version}`, code: "REF-BASELINE", detail: `baseline row ${baselineKey(row)} is not in BASELINE_CEILING; the baseline may only shrink` });
     }
   }
   return { rows, findings };

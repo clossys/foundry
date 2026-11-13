@@ -994,7 +994,7 @@ describe("npm class-contract reference (R2F-TYPO)", () => {
     const variants = [
       PROSE.replace('import type { ComponentProps } from "react"', 'import { useState } from "react"'),
       PROSE.replace('import type { ComponentProps } from "react"', 'import type { ComponentProps } from "react"\nimport { cn } from "@/lib/utils"'),
-      `${PROSE}export const tint = "var(--ring)"\n`,
+      `${PROSE}export const tint = "red"\n`,
       PROSE.replace("  return", '  console.log("x")\n  return'),
       PROSE.replace(" {...props} />", " {...props} style={{ color: \"red\" }} />"),
       PROSE.replace('className="prose prose-neutral dark:prose-invert"', 'className={"prose"}'),
@@ -1037,13 +1037,13 @@ describe("npm class-contract reference (R2F-TYPO)", () => {
   it("fails any comment in a wrapper file, so no JSX pragma can redirect its compilation (R2F-TYPO fix 1)", () => {
     for (const text of [
       `/** @jsxImportSource evil-pkg */\n${PROSE}`,
-      `/** @jsxRuntime classic */\n/** @jsx globalThis.eval */\n${PROSE}`,
+      `/** @jsxRuntime classic */\n/** \x40jsx globalThis.eval */\n${PROSE}`,
       `// @jsxImportSource evil-pkg\n${PROSE}`,
       `/* @jsxFrag evil.Fragment */\n${PROSE}`,
       `/// <reference types="evil-pkg" />\n${PROSE}`,
       `${PROSE}// trailing\n`,
       PROSE.replace("{...props}", "{/* @jsxImportSource evil-pkg */...props}"),
-      PROSE.replace("  return", "  /* @jsx h */ return"),
+      PROSE.replace("  return", "  /* \x40jsx h */ return"),
       `#!/usr/bin/env node\n${PROSE}`,
     ]) expect(check(proseItem(text)), text).toEqual(["REF-NPM-CODE"]);
     // Module references hidden in types, and an empty value import, are not type-only react imports.
