@@ -100,7 +100,7 @@ describe("publishing substrate CommonJS interop", () => {
     expect(await rewrite(".x { color: red; }\n")).toBe(`${PLUGIN}\n.x { color: red; }\n`);
     // No @import, a leading @charset: the charset stays first.
     expect(await rewrite('@charset "UTF-8";\n.x { color: red; }\n')).toBe(`@charset "UTF-8";\n${PLUGIN}\n.x { color: red; }\n`);
-    // A leading comment, blank line and a multi-line @import: after the import's last line, never before an @import.
+    // A leading comment, blank line and a multi-line @import: after the import's last line, never before any @import line.
     expect(await rewrite('/* app */\n\n@import "tailwindcss";\n@import "tw-animate-css"\n  layer(utilities);\n.x { color: red; }\n'))
       .toBe(`/* app */\n\n@import "tailwindcss";\n@import "tw-animate-css"\n  layer(utilities);\n${PLUGIN}\n.x { color: red; }\n`);
     // Already present: untouched.
