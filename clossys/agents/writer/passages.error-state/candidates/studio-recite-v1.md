@@ -1,0 +1,19 @@
+---
+slot: "passages.error-state"
+locales: ["en"]
+source: {"kind":"derived","ref":["director:identity.brand.personality@5","director:identity.verbal.voice@6"]}
+---
+
+## en
+
+### studio.error.header.heading
+<!-- {"id":"studio.error.header.heading","bindings":[]} -->
+This slot could not load
+
+### studio.error.header.description
+<!-- {"id":"studio.error.header.description","bindings":[]} -->
+Ask the owning agent to check its slots, then reload.
+
+### studio.error.retry.label
+<!-- {"id":"studio.error.retry.label","bindings":[]} -->
+Reload
