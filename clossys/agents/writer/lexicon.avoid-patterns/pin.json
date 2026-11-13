@@ -3,5 +3,15 @@
   "sha256": "361e2b1deba43448a70fd9475691ab26c684c1f7fe8dc1bf49712ba2c290d507",
   "decidedBy": "agent:writer",
   "basis": "agent",
-  "at": "2026-11-13T01:49:45.208Z"
+  "at": "2026-11-13T01:49:45.208Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:48:02.379Z",
+    "cites": {
+      "director:identity.verbal.voice": 6
+    },
+    "proof": {
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013"
+    }
+  }
 }
