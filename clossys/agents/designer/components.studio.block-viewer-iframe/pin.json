@@ -1,7 +1,7 @@
 {
-  "candidate": "block-viewer-iframe-v4.json",
-  "sha256": "074fbf0978257e731c2e98adcf870890d5b4239a28f61f221441b980a7f1ca32",
+  "candidate": "block-viewer-iframe-v5.json",
+  "sha256": "9f0a8ac0d8da6a9d548b667f0b78311f691b81c30a9ba3a29378076e5e97ac68",
   "decidedBy": "agent:designer",
   "basis": "agent",
-  "at": "2026-11-13T02:46:54.911Z"
+  "at": "2026-11-13T03:47:54.055Z"
 }
