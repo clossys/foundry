@@ -10,12 +10,15 @@
     "at": "2026-11-12T01:19:38.794Z"
   },
   "recited": {
-    "by": "agent:writer",
-    "at": "2026-11-12T00:36:32.351Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:13.980Z",
     "cites": {
-      "director:advantage.proposition.proof": 4,
+      "director:advantage.proposition.proof": 6,
       "director:execution.measure.driver": 8
     },
-    "reason": "CASCADE 33f7e2b9a: the planner re-cited this copy at the current Director pins with the copy unchanged (clossys/workspace#46)"
+    "proof": {
+      "director:advantage.proposition.proof": "sha256:e85d6d8a3ec86a30510f76d8136c8a2b1442c4083a996570e0533ee30c685e29",
+      "director:execution.measure.driver": "sha256:0c27d3f3f7a747bc68cbd778c6030beff0c0bbf8d86640aa66736f7ecdbb2e38"
+    }
   }
 }

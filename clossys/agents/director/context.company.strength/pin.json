@@ -3,5 +3,10 @@
   "sha256": "0f6b8f5846cb68d69df70444561cd8900fc9a6429ef10821f16d86dee160408a",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-13T01:43:21.993Z"
+  "at": "2026-11-13T01:43:21.993Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6841911551",
+    "at": "2026-11-13T02:23:39.707Z"
+  }
 }

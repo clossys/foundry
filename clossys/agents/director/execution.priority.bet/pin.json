@@ -1,15 +1,17 @@
 {
-  "candidate": "studio-bet-v6.md",
-  "sha256": "d8083ac2b12d9185cfa3d7c823ccf8d0666ef4851ea07e12cb7abb11dd03a2f7",
-  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
+  "candidate": "studio-bet-v10.md",
+  "sha256": "40e3e3d409168c48a7b1449476baa3a2ef6d5075cf2fe5f42b5f6b1827225802",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6841911551 (OWNER WORDS 2026-11-12 R2F-L2 Director round, option a)",
   "basis": "picked",
-  "at": "2026-11-11T22:38:22.077Z",
+  "at": "2026-11-13T02:23:37.378Z",
   "recited": {
-    "by": "agent:director",
-    "at": "2026-11-12T00:35:24.974Z",
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.205Z",
     "cites": {
-      "director:capability.operation.delivery": 7
+      "director:capability.operation.delivery": 8
     },
-    "reason": "owner r9: Delivery v7 keeps the pinned v4 meaning, only re-addressed (clossys/workspace#46 issuecomment-6810103642)"
+    "proof": {
+      "director:capability.operation.delivery": "sha256:db71e66d9bf7184965ce8ee65a656d0db7e254b91f685c7e6087713a6bcdfbb8"
+    }
   }
 }

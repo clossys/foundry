@@ -8,5 +8,19 @@
     "by": "owner",
     "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
     "at": "2026-11-12T01:19:42.757Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:15.256Z",
+    "cites": {
+      "director:identity.brand.personality": 5,
+      "director:identity.verbal.voice": 6,
+      "director:context.company.constraint": 4
+    },
+    "proof": {
+      "director:identity.brand.personality": "sha256:b623ac395493d9154d0f61fdc705f6bb1098d1afba65da20c5d046629b2f40b9",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
+      "director:context.company.constraint": "sha256:6689f572e5acc0b90d60f148ded517844c09a0189b67f5f9f9c561a00dcd70b9"
+    }
   }
 }

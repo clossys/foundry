@@ -1,7 +1,17 @@
 {
-  "candidate": "studio-voice-v4.md",
-  "sha256": "6215cc4c9658065ad52339ea3b485e746a6b1a6c227647388ef7460bfa3ba540",
-  "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
+  "candidate": "studio-voice-v6.md",
+  "sha256": "3ed92ee19031a98f80b9ec24f97faa3ed29ae352f844e40365c429430c82fc70",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6841911551 (OWNER WORDS 2026-11-12 R2F-L2 Director round, option a)",
   "basis": "picked",
-  "at": "2026-11-11T22:38:20.809Z"
+  "at": "2026-11-13T02:23:35.822Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.120Z",
+    "cites": {
+      "director:identity.brand.essence": 6
+    },
+    "proof": {
+      "director:identity.brand.essence": "sha256:21f6219f338ebd90f557610f65c6f3c710cc3c524a0c918788f56a36d76231eb"
+    }
+  }
 }

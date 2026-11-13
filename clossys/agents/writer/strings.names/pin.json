@@ -6,10 +6,10 @@
   "at": "2026-11-12T00:09:47.998Z",
   "recited": {
     "by": "agent:producer",
-    "at": "2026-11-13T01:43:59.239Z",
+    "at": "2026-11-13T02:24:14.413Z",
     "cites": {
       "director:identity.naming.architecture": 6,
-      "director:identity.naming.name": 3
+      "director:identity.naming.name": 5
     },
     "proof": {
       "director:identity.naming.architecture": "sha256:193e19225ff0a078b76e1c68a47b7ef576f97b84bf494cf4ec60fbebe01062cd",

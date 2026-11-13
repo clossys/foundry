@@ -11,14 +11,14 @@
   },
   "recited": {
     "by": "agent:producer",
-    "at": "2026-11-13T01:43:59.402Z",
+    "at": "2026-11-13T02:24:14.608Z",
     "cites": {
       "director:advantage.proposition.promise": 4,
-      "director:aspiration.purpose.mission": 3,
-      "director:identity.brand.essence": 4,
-      "director:identity.verbal.narrative": 4,
+      "director:aspiration.purpose.mission": 5,
+      "director:identity.brand.essence": 6,
+      "director:identity.verbal.narrative": 6,
       "director:identity.naming.architecture": 6,
-      "director:focus.category.definition": 5
+      "director:focus.category.definition": 7
     },
     "proof": {
       "director:advantage.proposition.promise": "sha256:3fe044e620b9e4c56919066eae4b9418d46a6671bbf0a29a6fb6f247bcce9e3a",

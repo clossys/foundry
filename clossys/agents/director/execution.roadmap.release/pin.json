@@ -8,5 +8,19 @@
     "by": "owner",
     "ref": "clossys/workspace#46 issuecomment-6809267928",
     "at": "2026-11-11T23:18:53.724Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.250Z",
+    "cites": {
+      "director:focus.lifecycle.acquisition": 4,
+      "director:focus.reach.channel": 3,
+      "director:focus.offer.included": 5
+    },
+    "proof": {
+      "director:focus.lifecycle.acquisition": "sha256:d7ac0175e90357f4e6211f3f158729061b6d9f0da41a9bdd5c5dcd1941ff9a64",
+      "director:focus.reach.channel": "sha256:6e212d8345e0bc6ea6e1dc21570959394f4f538834c05e986e0df2ad1b5e37dc",
+      "director:focus.offer.included": "sha256:ce08fbf7f90b36db36ef467eb02a7a28d58e72a4802e28560ac2cb345f0a508b"
+    }
   }
 }

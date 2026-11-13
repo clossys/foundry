@@ -3,5 +3,45 @@
   "sha256": "147e2a93e07f7ffbca6c1944a396e4e2c6dea763d24314b6e9ea29eebb451eab",
   "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:COPY-SLOT-CONTRACT, planner)",
   "basis": "planner",
-  "at": "2026-11-12T00:01:47.067Z"
+  "at": "2026-11-12T00:01:47.067Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:24:08.830Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "designer:assets.icon-close": 1,
+      "designer:assets.lockup": 4,
+      "designer:assets.mark": 4,
+      "director:focus.category.definition": 7,
+      "director:focus.segment.core": 3,
+      "director:identity.brand.essence": 6,
+      "director:identity.brand.personality": 5,
+      "director:identity.verbal.voice": 6,
+      "director:identity.visual.imagery": 4,
+      "director:identity.visual.style": 9,
+      "designer:themes.accent-foreground": 1,
+      "designer:themes.background": 1,
+      "designer:themes.border": 1,
+      "designer:themes.muted-foreground": 1,
+      "designer:themes.radius": 1
+    },
+    "proof": {
+      "director:advantage.proposition.promise": "sha256:3fe044e620b9e4c56919066eae4b9418d46a6671bbf0a29a6fb6f247bcce9e3a",
+      "designer:assets.icon-close": "sha256:f79daa997ca233d1bc0dfe0506caddd8a29a1934d77a4c71a9d6af7663bec731",
+      "designer:assets.lockup": "sha256:4964ef422182a9ad58f45301512abb777c5f326cbe16a122e9c37921113a5c0b",
+      "designer:assets.mark": "sha256:235de802ff04413ffcbadb021c5799eb6145ded4f241ec6bd40056abc881a8b1",
+      "director:focus.category.definition": "sha256:ec4d8412872247e6d756aabc0af1b69fcbef72549c355f01f952fa30f1b0f834",
+      "director:focus.segment.core": "sha256:ca76c0b03fe84f1615c91cf10b301b8ad6b95ef58f9162d46aacf4cd153c7b92",
+      "director:identity.brand.essence": "sha256:21f6219f338ebd90f557610f65c6f3c710cc3c524a0c918788f56a36d76231eb",
+      "director:identity.brand.personality": "sha256:b623ac395493d9154d0f61fdc705f6bb1098d1afba65da20c5d046629b2f40b9",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013",
+      "director:identity.visual.imagery": "sha256:884c4c8d26564bda85ecaaba5a59853a1db032490feca2b7f01f6ec2851c9eb1",
+      "director:identity.visual.style": "sha256:826860e265f470cc98adb36bff91937f9c417040cbd863831b40edc7edccc964",
+      "designer:themes.accent-foreground": "sha256:33e07a5b40c9c94faba73b1da444981335a188009f93a7f2f6fb0dde62648681",
+      "designer:themes.background": "sha256:0cc766b7cd1fde764588f5d36c87ff2facc5bf3d4604ef1750221490458963b6",
+      "designer:themes.border": "sha256:031a38f01ac58ffa51c92898f5aa59a78a8e7a205ca045005474a63fa753b7fe",
+      "designer:themes.muted-foreground": "sha256:48b094e6eaa1b4ae1dd9b50d3964492249e2a603bcfa3a3ae2d6470c6c1ca0ab",
+      "designer:themes.radius": "sha256:45221fc81fe9d6b92162a4f94d499d683cd18385b79dc5282d1bf9ee783e3e6d"
+    }
+  }
 }
