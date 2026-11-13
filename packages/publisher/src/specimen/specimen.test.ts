@@ -129,6 +129,9 @@ describe("specimen page policy", () => {
       expect(csp).toMatch(new RegExp(`^sandbox allow-scripts allow-same-origin; default-src 'none'; script-src http://127\\.0\\.0\\.1:${port}/__specimen/assets/ 'nonce-[A-Za-z0-9+/=]+'; `));
       expect(csp).toContain("connect-src 'none'");
       expect(csp).toContain(`; frame-src http://127.0.0.1:${port}/__specimen; `);
+      // The sent frame-src is that one path source: never 'self' or a wildcard.
+      expect(csp.split("; ").filter(part => part.startsWith("frame-src "))).toEqual([`frame-src http://127.0.0.1:${port}/__specimen`]);
+      expect(csp.split("; ").find(part => part.startsWith("frame-src "))).not.toMatch(/'self'|\*/);
       expect(csp).not.toMatch(/allow-top-navigation|allow-popups|allow-forms/);
     } finally { await new Promise(accept => server.close(accept)); }
   });

@@ -401,12 +401,13 @@ const LOCAL_ORIGIN = /^http:\/\/(?:127\.0\.0\.1|localhost):\d{1,5}$/;
  * embed (`connect-src`, `form-action`, `object-src` fall to `'none'`).
  *
  * It frames one path: `<origin>/__specimen` (any query), the specimen frame route, for components
- * that preview another specimen in an iframe (`components.studio.block-viewer-iframe`). That is a
- * host-source with a path, narrower than `'self'`: `'self'` would admit every Studio route (the
- * app shell, `/api/*`) and every other build. Without a trailing slash a CSP path matches exactly.
- * The header is per build, not per page (every page of a build is the one `index.html?page=`), so
- * every page of the build carries it. The framed `/__specimen` keeps its own policy
- * (SPECIMEN_FRAME_CSP: `frame-ancestors 'self'`).
+ * that preview another specimen in an iframe (`components.studio.block-viewer-iframe`). The path
+ * source only limits which URL the page may frame; it is not a boundary of its own. In Studio's
+ * cards the page keeps Studio's origin (`allow-same-origin`), so its script already has the
+ * same-origin access Studio's own pages have, and that existing access is the real limit. Framed
+ * by a served preview the page is opaque, and the framed `/__specimen` (SPECIMEN_FRAME_CSP,
+ * `frame-ancestors 'self'`) refuses it. The header is per build, not per page (every page of a
+ * build is the one `index.html?page=`), so every page of the build carries it.
  *
  * Its own sandbox (`allow-scripts allow-same-origin`, no `allow-top-navigation`, `allow-popups`,
  * `allow-forms` or `allow-modals`) keeps the bundle from navigating the top window, opening

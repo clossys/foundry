@@ -116,6 +116,10 @@ describe('specimen route policies', () => {
         const response = await get(path);
         expect(response.status, path).toBe(200);
         expect(response.headers['content-security-policy'], path).toBe(expected);
+        // The header the server sends frames by one path source: never 'self' or a wildcard, in any directive.
+        const sent = String(response.headers['content-security-policy']);
+        expect(sent.split('; ').filter(part => part.startsWith('frame-src ')), path).toEqual([`frame-src ${origin}/__specimen`]);
+        expect(sent, path).not.toMatch(/'self'|\*/);
       }
       const policy = new Map(expected.split('; ').map(part => [part.split(' ')[0]!, part.slice(part.indexOf(' ') + 1)]));
       // Script only from this build's own files; nothing to fetch; no top navigation, popups or forms (the sandbox grants none).

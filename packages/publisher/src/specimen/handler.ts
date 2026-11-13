@@ -43,9 +43,11 @@ const ORIGIN = /^https?:\/\/(?:[A-Za-z0-9.-]+|\[[0-9A-Fa-f:]+\])(?::\d{1,5})?$/;
  * (`<origin>/__specimen/assets/`, a path source; `'self'` when the origin is not known) or this
  * response's nonce. A specimen fetches and submits nothing (`connect-src`, `form-action` are
  * `'none'`). It frames one path, `<origin>/__specimen` (any query), for components that preview
- * another specimen in an iframe (`components.studio.block-viewer-iframe`): a host-source with a
- * path and no trailing slash, so it matches that one path exactly and is narrower than `'self'`;
- * `frame-src 'none'` when the origin is not known. Its sandbox (`allow-scripts allow-same-origin`, nothing else)
+ * another specimen in an iframe (`components.studio.block-viewer-iframe`); `frame-src 'none'` when
+ * the origin is not known. The path source only limits which URL the page may frame; it is not a
+ * boundary of its own: with `allow-same-origin` the page already has Studio's same-origin access,
+ * and that existing access is the real limit. Framed by an opaque (sandboxed) frame, the framed
+ * specimen's `frame-ancestors` refuses it. Its sandbox (`allow-scripts allow-same-origin`, nothing else)
  * keeps it from navigating the top window, opening windows or submitting forms. Framed by a
  * frame that is itself sandboxed without `allow-same-origin`, it inherits that opaque origin.
  */
