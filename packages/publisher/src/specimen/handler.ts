@@ -41,16 +41,21 @@ const ORIGIN = /^https?:\/\/(?:[A-Za-z0-9.-]+|\[[0-9A-Fa-f:]+\])(?::\d{1,5})?$/;
 /**
  * The page's security policy. Script runs only from this handler's own bundles
  * (`<origin>/__specimen/assets/`, a path source; `'self'` when the origin is not known) or this
- * response's nonce. A specimen fetches, frames and submits nothing (`connect-src`, `frame-src`,
- * `form-action` are `'none'`), and its sandbox (`allow-scripts allow-same-origin`, nothing else)
+ * response's nonce. A specimen fetches and submits nothing (`connect-src`, `form-action` are
+ * `'none'`). It frames one path, `<origin>/__specimen` (any query), for components that preview
+ * another specimen in an iframe (`components.studio.block-viewer-iframe`): a host-source with a
+ * path and no trailing slash, so it matches that one path exactly and is narrower than `'self'`;
+ * `frame-src 'none'` when the origin is not known. Its sandbox (`allow-scripts allow-same-origin`, nothing else)
  * keeps it from navigating the top window, opening windows or submitting forms. Framed by a
  * frame that is itself sandboxed without `allow-same-origin`, it inherits that opaque origin.
  */
 export function specimenCsp(nonce: string, origin?: string): string {
-  const assets = origin !== undefined && ORIGIN.test(origin) ? `${origin}${SPECIMEN_PATH}/assets/` : "'self'";
+  const known = origin !== undefined && ORIGIN.test(origin);
+  const assets = known ? `${origin}${SPECIMEN_PATH}/assets/` : "'self'";
+  const frames = known ? `${origin}${SPECIMEN_PATH}` : "'none'";
   return [
     "sandbox allow-scripts allow-same-origin", "default-src 'none'", `script-src ${assets} 'nonce-${nonce}'`, "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https:", "font-src 'self' data:", "media-src 'self' data: blob:", "connect-src 'none'", "object-src 'none'", "base-uri 'none'", "form-action 'none'",
+    "img-src 'self' data: blob: https:", "font-src 'self' data:", "media-src 'self' data: blob:", `frame-src ${frames}`, "connect-src 'none'", "object-src 'none'", "base-uri 'none'", "form-action 'none'",
     "frame-ancestors 'self' http://127.0.0.1:* http://localhost:*",
   ].join("; ");
 }
