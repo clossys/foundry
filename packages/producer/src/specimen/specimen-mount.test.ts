@@ -34,6 +34,8 @@ const SPECIMENS: readonly [string, number][] = [
   ["components.studio.specimen-frame/specimen-frame", 1],
   ["components.studio.sidebar-static-row/sidebar-static-row", 2],
   ["components.flow.canvas/canvas", 1],
+  ["components.flow.node-header/node-header", 2],
+  ["components.semantic-content/semantic-content", 3],
   ["components.resize-handle/resize-handle", 1],
   ["sections.wizard/wizard", 1],
   ["sections.column-mapper/column-mapper", 1],
