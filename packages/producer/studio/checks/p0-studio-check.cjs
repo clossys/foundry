@@ -8,6 +8,7 @@ const { launchChrome } = require('./chrome-launch.cjs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { studioOrigin, specimensReady } = require('./studio-origin.mjs');
+const routeScope = require('./route-scope.cjs');
 
 const studioRoot = path.resolve(__dirname, '..');
 const repositoryRoot = path.resolve(studioRoot, '../../..');
@@ -358,6 +359,18 @@ async function settle(page, ledger, timeout) {
   }
   throw new Error(`Page resource requests did not settle before timeout: ${ledger.waiting().slice(0, 3).map(entry => entry.url).join(', ')}`);
 }
+const GREEN_INPUTS = 'green-inputs.json';
+/** Routes with changed inputs since the last green run go first; the set of routes is unchanged. */
+function scopeRoutes(routes, plan, options, screenshotRoot) {
+  try {
+    const root = options.studioRoot ?? studioRoot, repository = options.repositoryRoot ?? repositoryRoot;
+    const map = readJson(path.join(root, 'generated/studio-map.json'));
+    const checker = ['p0-studio-check.cjs', 'studio-check-gates.json', 'route-scope.cjs'].map(file => path.relative(repository, path.join(__dirname, file)));
+    const inputs = routeScope.routeInputs({ repositoryRoot: repository, map, checker });
+    const changed = routeScope.changedRoutes(inputs, routeScope.readState(path.join(screenshotRoot, GREEN_INPUTS)), routes);
+    return { ordered: routeScope.changedFirst(routes, changed.changed), changed: changed.changed, reason: changed.reason, inputs };
+  } catch (error) { return { ordered: routes, changed: [], reason: `inputs unavailable: ${error.message}` }; }
+}
 async function runStudioCheck(options = {}) {
   const origin = new URL(options.origin ?? studioOrigin({})).origin;
   const plan = options.plan ?? await discoverRoutePlan(options);
@@ -371,12 +384,17 @@ async function runStudioCheck(options = {}) {
   try {
     const coverage = { routes: [...plan.routes, ...(plan.leafRoutes ?? []).filter(route => !plan.routes.includes(route))], cellIds: [] };
     const expectedPaths = new Set([...coverage.routes, ...(plan.leaves ?? [])].map(route => new URL(route, origin).pathname));
+    // Owner-approved scope: every route once at desktop light, Designer slot pages at every viewport and theme (--full: all).
+    const scope = scopeRoutes(coverage.routes, plan, options, screenshotRoot);
+    const matrix = routeScope.studioCheckMatrix(scope.ordered, { leaves: plan.leaves ?? [], variants, full: Boolean(options.full) });
     for (const variant of variants) for (const theme of ['light', 'dark']) {
+      const routes = matrix.filter(job => job.variant === variant && job.theme === theme).map(job => job.route);
+      if (!routes.length) continue;
       // Firefox supports the mobile viewport but has no Playwright isMobile emulation.
       const emulation = browser.browserType().name() === 'firefox' ? {} : { isMobile: variant.isMobile };
       const context = await browser.newContext({ viewport: variant.viewport, ...emulation, colorScheme: theme });
       try {
-        for (const route of coverage.routes) {
+        for (const route of routes) {
           const page = await context.newPage(), errors = [];
           const resource = initialResource(plan, route), observed = {};
           const initialClientRequest = request => resource && ['fetch', 'xhr'].includes(request.resourceType())
@@ -439,12 +457,16 @@ async function runStudioCheck(options = {}) {
           const result = { route, viewport: variant.name, theme, screenshot, findings: gated.findings, reports: gated.reports };
           checks.push(result);
           if (result.findings.length) failures.push(result);
+          // The first failing render is reported at once; the run continues so the report stays complete.
+          if (result.findings.length && failures.length === 1) (options.log ?? console.error)(`studio:check FIRST-FAILURE ${route} ${variant.name} ${theme}: ${[...new Set(result.findings.map(finding => finding.rule))].join(', ')} (continuing)`);
           await page.close();
         }
       } finally { await context.close(); }
     }
-    const report = { check: 'studio:check', status: failures.length ? 'FAIL' : 'PASS', phase: 'render', executed: true, origin, templates: plan.templates, routes: coverage.routes, ...gateReports(checks, gates), checks };
+    const report = { check: 'studio:check', status: failures.length ? 'FAIL' : 'PASS', phase: 'render', executed: true, origin, templates: plan.templates, routes: coverage.routes,
+      matrix: { full: Boolean(options.full), renders: matrix.length, designerSlotRoutes: coverage.routes.filter(route => routeScope.isDesignerSlotRoute(route, new Set(plan.leaves ?? []))), changedFirst: scope.changed.length, order: scope.reason }, ...gateReports(checks, gates), checks };
     fs.writeFileSync(path.join(screenshotRoot, 'report.json'), JSON.stringify(report, null, 2) + '\n');
+    if (!failures.length && scope.inputs) fs.writeFileSync(path.join(screenshotRoot, GREEN_INPUTS), JSON.stringify(scope.inputs) + '\n');
     if (failures.length) {
       const error = new Error(`studio:check failed in ${failures.length}/${checks.length} route/theme/viewport checks: ${[...new Set(failures.flatMap(check => check.findings.map(finding => finding.rule)))].join(', ')}`);
       error.report = report;
@@ -495,8 +517,10 @@ function parseArgs(args) {
   const options = {};
   const flags = new Map([['--origin', 'origin'], ['--screenshots', 'screenshotRoot'], ['--studio-root', 'studioRoot'], ['--repository-root', 'repositoryRoot']]);
   for (let index = 0; index < args.length; index++) {
+    // --full renders every route at every viewport and theme (the pre-scope matrix).
+    if (args[index] === '--full' && !options.full) { options.full = true; continue; }
     const name = flags.get(args[index]);
-    if (!name || !args[index + 1] || args[index + 1].startsWith('--') || options[name]) throw new Error('Usage: studio:check [--origin URL] [--screenshots DIRECTORY] [--studio-root DIRECTORY] [--repository-root DIRECTORY]');
+    if (!name || !args[index + 1] || args[index + 1].startsWith('--') || options[name]) throw new Error('Usage: studio:check [--full] [--origin URL] [--screenshots DIRECTORY] [--studio-root DIRECTORY] [--repository-root DIRECTORY]');
     options[name] = args[++index];
   }
   return options;
