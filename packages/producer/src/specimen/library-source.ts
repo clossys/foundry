@@ -33,11 +33,14 @@ export interface LibrarySourceOptions {
    */
   readonly writerCopy?: WriterCopy;
   /**
-   * Whether a slot's declared specimen state (server/specimen-state.ts) joins the record as a
-   * generated `specimen/state.tsx` entry. The host specimen mount renders the record as it is, so
-   * the record carries the state (the default). The installed specimen path installs the item's
-   * own registry files only and mounts the state in its component page, so it passes false:
-   * exactly one layer applies the state.
+   * Whether the record carries the generated specimen modules the host specimen mount renders
+   * through: the slot's declared state (`specimen/state.tsx`, server/specimen-state.ts), the
+   * fixture tree's dependency parts (`specimen/parts.tsx`) and its input slots
+   * (`specimen/inputs.tsx`). The host mount renders the record as it is, so it carries them (the
+   * default). An installed path (Studio's installed specimens, a real site install) installs the
+   * item's own registry files only, which never include a generated module, so it passes false:
+   * the installed page module mounts dependency parts and input slots itself, and the installed
+   * component page applies the state. Exactly one layer wraps or mounts each.
    */
   readonly slotStates?: boolean;
 }
@@ -203,8 +206,8 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
         id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
         files: [{ path: `${element}.json`, content: read.bytes }], preview: specimen.preview, contentHash: read.sha256,
       };
-      const mounted = withSlotInputs(`${slot}/${candidate.name}`, specimen, withDependencyParts(row));
-      return options.slotStates === false ? mounted : withSlotState(slot, item, mounted);
+      if (options.slotStates === false) return row;
+      return withSlotState(slot, item, withSlotInputs(`${slot}/${candidate.name}`, specimen, withDependencyParts(row)));
     },
   };
   return store;
@@ -449,7 +452,8 @@ export const SPECIMEN_STATE_FILE = "specimen/state.tsx";
 const CODE_FILE = /\.(?:[cm]?[jt]sx?)$/;
 
 /**
- * An item in its slot's declared specimen state, as the installed path shows it: a slot whose
+ * An item in its slot's declared specimen state, for the host specimen mount (the installed
+ * component page applies the same state itself, from itemSpecimenState): a slot whose
  * resting render is empty or hidden (a toast region, a skip link) mounts every item through one
  * generated module that renders the item's own entry export with its fixtures and applies the
  * state, `open` (the slot's opener shows one sample surface) or `visible` (focus-only content

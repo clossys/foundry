@@ -19,7 +19,7 @@ import { readPinnedPublication } from "./pinned-publication.js";
 import { hasSlotModel } from "../records/slots.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenRoots } from "./publish.js";
-import { designerPins, ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageRecordFromCell, renderBoundPage, selectionModule, shadcnRunner, writeSubstrateHost, writerCopy } from "./install.js";
+import { designerPins, ensureSubstrate, NEXT_IMAGE_VITE_DEFINE, substrateViteAlias, ensureSubstrateDependencies, npmRunner, pageRecordFromCell, renderBoundPage, selectionModule, shadcnRunner, writeSubstrateHost, writerCopy } from "./install.js";
 import { installOutRoot, INSTALL_MARKER } from "./install-out.js";
 
 export interface PublishSiteOptions {
@@ -120,12 +120,14 @@ export const SITE_VITE_CONFIG = [
   'import { fileURLToPath } from "node:url";',
   'import tailwindcss from "@tailwindcss/vite";',
   'import { defineConfig } from "vite";',
+  NEXT_IMAGE_VITE_DEFINE,
   "",
   'const here = fileURLToPath(new URL(".", import.meta.url));',
   'const site = JSON.parse(readFileSync(join(here, "clossys", "site.json"), "utf8")) as { routes: { path: string }[] };',
   "",
   "export default defineConfig({",
   '  base: "/",',
+  "  define: nextImageDefine(),",
   "  plugins: [tailwindcss(), {",
   '    name: "clossys-site-routes", apply: "build",',
   "    closeBundle() {",
@@ -134,7 +136,7 @@ export const SITE_VITE_CONFIG = [
   "    },",
   "  }],",
   '  oxc: { jsx: { runtime: "automatic", importSource: "react" } },',
-  '  resolve: { alias: { "@": here } },',
+  `  resolve: { alias: ${substrateViteAlias("here")} },`,
   "});",
   "",
 ].join("\n");
@@ -166,7 +168,7 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
   if (plan) {
     await ensureSubstrate(substrate);
     const pins: InstallPins = designerPins(root);
-    const source = libraryRecordSource({ roots: specimenRoots(root, options.records) });
+    const source = libraryRecordSource({ roots: specimenRoots(root, options.records), slotStates: false });
     const copy = await writerCopy(root);
     const runner = options.runner ?? shadcnRunner();
     const slots: Parameters<typeof substrateDependencies>[0][number][] = [];
