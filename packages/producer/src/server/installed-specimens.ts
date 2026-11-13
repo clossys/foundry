@@ -252,7 +252,7 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
       continue;
     }
     const record: InstallPageRecord = { id: page, frame: slot, sections: [], ...(include.length ? { include } : {}), copy: copyFor(slot, records) };
-    const installed = await installPage({ page: record, pins, source, substrate, runner });
+    const installed = await installPage({ page: record, pins, source, substrate, runner, ownedSubstrate: true });
     let result: typeof installed & { page?: BoundPage } = installed;
     if (!installed.findings.some(isBlocking)) {
       // A specimen binds each copy slot explicitly to the Writer key its element previews it with
@@ -394,21 +394,26 @@ export async function buildSite(inputs: SiteInputs, steps: SiteBuildSteps = SITE
 /**
  * One recorded candidate that is not the pin, rendered from its own bytes: the slot swaps in this
  * (element, version) and every other slot keeps its pin. Built when Studio first asks for it.
+ * The substrate is shared with the pinned build and every other option, so it is first brought
+ * to exactly this build's selection (`prepare`): an earlier option's files (sections.article
+ * v1's lib/utils.js) never reach this bundle, and the next build reconciles away this one's.
  */
-async function buildOption(inputs: SiteInputs, slot: string, option: { element: string; version: number }, signal?: AbortSignal): Promise<{ build?: SpecimenBuild; page?: SpecimenPage; findings: InstallFinding[] }> {
+export async function buildOption(inputs: SiteInputs, slot: string, option: { element: string; version: number }, steps: SiteBuildSteps = SITE_STEPS, signal?: AbortSignal): Promise<{ build?: SpecimenBuild; page?: SpecimenPage; findings: InstallFinding[] }> {
   const { base, substrate, pins, unpinned, library, records, copy, pinnedCopy } = inputs;
   const key = `${inputs.key}-${hash(slot, option.element, String(option.version)).slice(0, 12)}`;
   const manifest = join(base, `site-${key}.json`);
   const saved = await savedSite(manifest);
   if (saved) return { ...(saved.builds[0] ? { build: saved.builds[0] } : {}), ...(saved.pages.get(pageKey(slot, option.element, option.version)) ? { page: saved.pages.get(pageKey(slot, option.element, option.version))! } : {}), findings: saved.findings };
-  await ensureSubstrate(substrate);
+  const selection: InstallPins = { ...unpinned, ...pins, [slot]: option };
+  const prepared = await steps.prepare(substrate, selection) ?? [];
   const build = { key, dist: join(base, `dist-${key}`) };
-  const result = await buildPass({ library, substrate, pins: { ...unpinned, ...pins, [slot]: option }, slots: [slot], records, copy, pinnedCopy, hostOnly: inputs.hostOnly, build, ...(signal ? { signal } : {}) });
+  const result = await steps.pass({ library, substrate, pins: selection, slots: [slot], records, copy, pinnedCopy, hostOnly: inputs.hostOnly, build, ...(signal ? { signal } : {}) });
   signal?.throwIfAborted();
   const builds = result.built ? [build] : [];
-  await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(result.built ? result.pages : []), findings: result.findings }, null, 2)}\n`);
+  const findings = [...prepared, ...result.findings];
+  await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(result.built ? result.pages : []), findings }, null, 2)}\n`);
   const page = result.built ? result.pages.get(pageKey(slot, option.element, option.version)) : undefined;
-  return { ...(result.built ? { build } : {}), ...(page ? { page } : {}), findings: result.findings };
+  return { ...(result.built ? { build } : {}), ...(page ? { page } : {}), findings };
 }
 
 const LOCAL_ORIGIN = /^http:\/\/(?:127\.0\.0\.1|localhost):\d{1,5}$/;
@@ -481,7 +486,7 @@ export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | u
     const name = pageKey(slot, element, version);
     let pending = optionBuilds.get(name);
     if (!pending) {
-      pending = queue.then(() => buildOption(site, slot, { element, version }, signal)).then(result => { if (result.build) builtOptions.push(result.build); return result; }, error => { warn(error); return {}; });
+      pending = queue.then(() => buildOption(site, slot, { element, version }, SITE_STEPS, signal)).then(result => { if (result.build) builtOptions.push(result.build); return result; }, error => { warn(error); return {}; });
       optionBuilds.set(name, pending);
       queue = pending;
     }

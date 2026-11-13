@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +8,7 @@ import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import type { BoundPage } from '@clossys/publisher/install';
 import { pageModule } from '../publish/install.js';
+import { firstComponentSource } from '../publish/component-export.js';
 import { resolveSampleCopy, specimenStateOf } from './specimen-state.js';
 import { createRequire } from 'node:module';
 import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';
@@ -96,21 +97,22 @@ describe('specimen element trees', () => {
 });
 
 /**
- * One pinned item's page module with no declared export, rendered to static markup inside its
- * slot's declared provider (as componentPage mounts it), or bare with `bare`.
+ * One item's page module with no declared export, rendered to static markup inside its slot's
+ * declared provider (as componentPage mounts it), or bare with `bare`. `files` are written into
+ * the substrate, `@/` resolving against its root as the substrate's tsconfig does.
  */
-async function renderMounted(slot: string, file: string, source: string, bare = false): Promise<string> {
+async function renderMounted(slot: string, file: string, files: Record<string, string>, bare = false): Promise<string> {
   const substrate = mkdtempSync(join(tmpdir(), 'specimen-mount-'));
   try {
-    mkdirSync(join(substrate, dirname(file)), { recursive: true });
+    for (const [path, content] of Object.entries(files)) { mkdirSync(join(substrate, dirname(path)), { recursive: true }); writeFileSync(join(substrate, path), content); }
     mkdirSync(join(substrate, 'clossys/pages'), { recursive: true });
-    writeFileSync(join(substrate, file), source);
     const frame = { slot, key: slot, role: 'frame', id: `${slot}/item`, version: 1, entry: { file }, props: {}, copy: {}, text: {}, assets: {} } as const;
     const page = { schema: 'clossys.bound-page/1', id: 'specimen-mount', frame, sections: [], parts: [] } as unknown as BoundPage;
     const entry = join(substrate, 'clossys/pages/specimen.tsx');
     writeFileSync(entry, pageModule(page, substrate, { host: false }));
     const external = ['react', 'react/jsx-runtime', 'react-dom', '@xyflow/react'];
-    const out = await build({ entryPoints: [entry], bundle: true, write: false, format: 'cjs', platform: 'node', jsx: 'automatic', external, logLevel: 'silent' });
+    const alias = { name: 'substrate-alias', setup(on: any) { on.onResolve({ filter: /^@\// }, (args: { path: string }) => ({ path: ['.tsx', '.ts'].map(ext => join(substrate, args.path.slice(2)) + ext).find(path => existsSync(path)) })); } };
+    const out = await build({ entryPoints: [entry], bundle: true, write: false, format: 'cjs', platform: 'node', jsx: 'automatic', external, plugins: [alias], logLevel: 'silent' });
     const module = { exports: {} as Record<string, any> };
     const requireHere = createRequire(import.meta.url);
     new Function('require', 'module', 'exports', out.outputFiles[0]!.text)((id: string) => { if (external.includes(id)) return id === 'react' ? React : requireHere(id); throw new Error(id); }, module, module.exports);
@@ -122,26 +124,45 @@ async function renderMounted(slot: string, file: string, source: string, bare = 
   } finally { rmSync(substrate, { recursive: true, force: true }); }
 }
 
+/** A pinned candidate's code files, at the paths their imports name (`@/components/<file>`). */
+function pinnedCode(slot: string): Record<string, string> {
+  const pin = JSON.parse(readFileSync(join(designer, slot, 'pin.json'), 'utf8'));
+  const item = JSON.parse(readFileSync(join(designer, slot, 'candidates', pin.candidate), 'utf8'));
+  return Object.fromEntries(item.files.filter((row: { path: string }) => /\.[jt]sx?$/.test(row.path)).map((row: { path: string; content: string }) => [`components/${row.path}`, row.content]));
+}
+
 describe('a specimen with no declared export', () => {
-  it('mounts the first component export, a memo or forwardRef among them, never a hook', async () => {
+  const pick = new Function('mod', `return ${firstComponentSource('mod')}`) as (mod: Record<string, unknown>) => unknown;
+
+  it('takes the first component export: never a hook, a context, its provider or an enum, whatever their order', () => {
+    const Canvas = React.memo(() => null), Context = React.createContext(null);
+    expect(pick({ useCanvas: () => ({ zoom: 1 }), CanvasContext: Context, CanvasProvider: Context.Provider, CanvasConsumer: Context.Consumer, Position: { Top: 'top' }, Canvas, Other: () => null })).toBe(Canvas);
+    const Plain = () => null, Forwarded = React.forwardRef(() => null), Lazy = React.lazy(async () => ({ default: Plain }));
+    expect(pick({ helper: () => 1, Plain })).toBe(Plain);
+    expect(pick({ Forwarded })).toBe(Forwarded);
+    expect(pick({ Lazy })).toBe(Lazy);
+    expect(pick({ default: Plain, Canvas })).toBe(Plain);
+    expect(pick({ useCanvas: () => 1, Context })).toBeUndefined();
+  });
+
+  it('mounts that export through the page module', async () => {
     const source = [
       'import { createElement, memo } from "react";',
       'export const Canvas = memo(() => createElement("div", { "data-part": "canvas" }));',
       'export function useCanvas() { return { zoom: 1 }; }',
       '',
     ].join('\n');
-    expect(await renderMounted('components.sample', 'lib/canvas.ts', source)).toBe('<div data-part="canvas"></div>');
+    expect(await renderMounted('components.sample', 'lib/canvas.ts', { 'lib/canvas.ts': source })).toBe('<div data-part="canvas"></div>');
   });
 
   it('every pinned React Flow part mounts inside ReactFlowProvider and renders', async () => {
-    for (const slot of ['components.flow.canvas', 'components.flow.base-handle']) {
-      const pin = JSON.parse(readFileSync(join(designer, slot, 'pin.json'), 'utf8'));
-      const item = JSON.parse(readFileSync(join(designer, slot, 'candidates', pin.candidate), 'utf8'));
-      const code = item.files.find((row: { path: string }) => /\.[jt]sx?$/.test(row.path));
-      // The part's own `@/` imports are stubbed: only the flow store dependency is under test.
-      const source = code.content.replace(/import \{ cn \} from "@\/lib\/utils";\n/, 'const cn = (...names: unknown[]) => names.filter(Boolean).join(" ");\n');
-      await expect(renderMounted(slot, `components/${code.path}`, source, true), slot).rejects.toThrow(/ReactFlowProvider/);
-      expect(await renderMounted(slot, `components/${code.path}`, source), slot).toMatch(/react-flow__/);
+    // The flavor's cn stands in for lib/utils: only the flow store dependency is under test.
+    const utils = { 'lib/utils.ts': 'export const cn = (...names: unknown[]) => names.filter(Boolean).join(" ");\n' };
+    for (const [slot, uses] of [['components.flow.canvas', []], ['components.flow.base-handle', []], ['components.flow.labeled-handle', ['components.flow.base-handle']]] as const) {
+      const files = { ...utils, ...Object.assign({}, ...uses.map(pinnedCode)), ...pinnedCode(slot) } as Record<string, string>;
+      const file = Object.keys(pinnedCode(slot))[0]!;
+      await expect(renderMounted(slot, file, files, true), slot).rejects.toThrow(/ReactFlowProvider/);
+      expect(await renderMounted(slot, file, files), slot).toMatch(/react-flow__/);
     }
   });
 });

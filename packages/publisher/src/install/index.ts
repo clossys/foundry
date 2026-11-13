@@ -19,9 +19,9 @@
  * its own key (`sectionInstances`) and its own copy binding.
  */
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, relative, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
 import { installedPath } from "../specimen/installed-path.js";
 
@@ -60,7 +60,9 @@ export type InstallFindingCode =
   | "need-component-selection"
   // Site mode (`./site.ts`): the content map and route pack disagree, or a link leads nowhere.
   | "site-contract" | "site-route-missing" | "site-route-duplicate" | "site-route-extra" | "site-path-mismatch"
-  | "site-sections-mismatch" | "site-frame-mismatch" | "site-inactive-slot" | "site-cell-mismatch" | "site-dead-link" | "build-failed";
+  | "site-sections-mismatch" | "site-frame-mismatch" | "site-inactive-slot" | "site-cell-mismatch" | "site-dead-link" | "build-failed"
+  // A slot reinstalled at another version left files its previous version wrote (see `dropReplaced`).
+  | "replaced-file";
 /** `info` findings are reported but never stop a page; every other finding does. */
 export interface InstallFinding { readonly code: InstallFindingCode; readonly slot?: string; readonly detail: string; readonly severity?: "info" }
 /** Whether a finding stops the page (everything but `info`). */
@@ -386,6 +388,11 @@ export interface InstallOptions {
   /** The publishing substrate (a shadcn project: `components.json` at its root). */
   readonly substrate: string;
   readonly runner: ShadcnRunner;
+  /**
+   * The substrate is one clossys created and owns (the specimen substrate, publish --install
+   * output): files a reinstalled slot no longer ships are removed. Unset, they are reported only.
+   */
+  readonly ownedSubstrate?: boolean;
 }
 export interface InstallResult {
   readonly slots: readonly ResolvedSlot[];
@@ -396,29 +403,41 @@ export interface InstallResult {
 /**
  * A slot installed at another version leaves the substrate as that version alone would: a file
  * the previous version wrote, which the new one does not ship and no other installed item
- * claims, is removed while it still holds the recorded bytes (a file changed since is left, as
- * a hash-mismatch). Kept, a replaced file still resolves: sections.article v1 put the
- * typography plugin's utils.js at lib/utils.js, which shadows the flavor's lib/utils.ts.
+ * claims, still resolves if kept (sections.article v1 put the typography plugin's utils.js at
+ * lib/utils.js, which shadows the flavor's lib/utils.ts). Only a substrate clossys owns
+ * (`owned`: the specimen substrate, publish --install output) has it removed, and only while it
+ * still holds the recorded bytes and its real path stays inside the substrate. Anywhere else,
+ * a consumer's own project among them, every such file is reported and left in place.
  */
-async function dropReplaced(substrate: string, slotId: string, previous: ManifestEntry, items: Readonly<Record<string, ManifestEntry>>, findings: InstallFinding[]): Promise<void> {
+async function dropReplaced(substrate: string, slotId: string, previous: ManifestEntry, items: Readonly<Record<string, ManifestEntry>>, findings: InstallFinding[], owned: boolean): Promise<void> {
   // Every installed item's files, this slot's new version among them.
   const kept = new Set(Object.values(items).flatMap(entry => Object.keys(entry.files)));
-  const changed: string[] = [];
+  const changed: string[] = [], left: string[] = [], outside: string[] = [];
+  const root = owned ? await realpath(substrate) : substrate;
   for (const [path, hash] of Object.entries(previous.files)) {
     if (kept.has(path)) continue;
     const now = await fileHash(substrate, path);
     if (now === undefined) continue;
     if (now !== hash) { changed.push(path); continue; }
+    if (!owned) { left.push(path); continue; }
+    const real = await realpath(resolve(substrate, path));
+    const inside = relative(root, real);
+    if (!inside || inside.startsWith("..") || isAbsolute(inside)) { outside.push(path); continue; }
     await unlink(resolve(substrate, path));
   }
-  if (changed.length) findings.push({ code: "hash-mismatch", slot: slotId, detail: `${previous.id}@v${previous.version}: replaced ${changed.join(", ")} changed since install and were left in place` });
+  const label = `${previous.id}@v${previous.version}`;
+  if (changed.length) findings.push({ code: "hash-mismatch", slot: slotId, detail: `${label}: replaced ${changed.join(", ")} changed since install and were left in place` });
+  if (outside.length) findings.push({ code: "replaced-file", slot: slotId, detail: `${label}: replaced ${outside.join(", ")} resolve outside the substrate and were left in place` });
+  if (left.length) findings.push({ code: "replaced-file", slot: slotId, severity: "info", detail: `${label}: ${left.join(", ")} are no longer shipped by the installed version and were left in place; remove them if nothing else imports them` });
 }
 
 /**
- * Bring a shared substrate to `pins` before anything builds in it: every installed slot pinned
- * at another version drops its replaced files (as `dropReplaced`) and its manifest entry, so its
- * next install starts clean. Installs run per page, and a substrate builds several bundles in
- * turn; without this a bundle built before the slot reinstalls still resolves the old files.
+ * Bring a substrate clossys owns to `pins` before anything builds in it: every installed slot
+ * pinned at another version, or no longer pinned, drops its replaced files (as `dropReplaced`,
+ * owned) and its manifest entry, so its next install starts clean. Installs run per page, and a
+ * substrate builds several bundles in turn; without this a bundle built after another selection
+ * (an earlier layer, an option build, a removed pin) still resolves that selection's files.
+ * Never for a consumer's own project.
  */
 export async function reconcileInstalled(substrate: string, pins: InstallPins): Promise<InstallFinding[]> {
   const root = resolve(substrate);
@@ -427,11 +446,11 @@ export async function reconcileInstalled(substrate: string, pins: InstallPins): 
   const findings: InstallFinding[] = [];
   const stale = Object.entries(items).filter(([slot, entry]) => {
     const pin = pins[slot];
-    return pin !== undefined && (entry.id !== `${slot}/${pin.element}` || entry.version !== pin.version);
+    return pin === undefined || entry.id !== `${slot}/${pin.element}` || entry.version !== pin.version;
   });
   if (!stale.length) return findings;
   for (const [slot] of stale) delete items[slot];
-  for (const [slot, entry] of stale) await dropReplaced(root, slot, entry, items, findings);
+  for (const [slot, entry] of stale) await dropReplaced(root, slot, entry, items, findings, true);
   await writeFile(join(root, INSTALL_MANIFEST), `${JSON.stringify({ schema: MANIFEST_SCHEMA, items }, null, 2)}\n`);
   return findings;
 }
@@ -470,7 +489,7 @@ export async function installPage(options: InstallOptions): Promise<InstallResul
       }
       if (missing.length) { findings.push({ code: "install-failed", slot: slot.slot, detail: `shadcn add ${id}@v${version} did not write ${missing.join(", ")}` }); continue; }
       items[slot.slot] = { id, version, itemHash: slot.itemHash, files: hashes };
-      if (previous) await dropReplaced(substrate, slot.slot, previous, items, findings);
+      if (previous) await dropReplaced(substrate, slot.slot, previous, items, findings, options.ownedSubstrate === true);
       installed.push({ slot: slot.slot, id, version, status: "installed", files: slot.files });
     }
   } finally {

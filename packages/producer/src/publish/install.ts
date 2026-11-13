@@ -27,6 +27,7 @@ import {
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { isHostPackage } from "../specimen/host-packages.js";
 import { dependencyPart, treeDependencyParts } from "../server/specimen-tree.js";
+import { firstComponentSource } from "./component-export.js";
 import { hasSlotModel, readCandidate, readIa, readPin, readSlot } from "../records/slots.js";
 import { slotPositions, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
@@ -256,8 +257,7 @@ export function pageModule(page: BoundPage, substrate: string, options: { readon
     "function mount(name: string, keyed = false): ReactNode {",
     "  const slot = slots[name], mod = modules[name];",
     "  if (!slot || !mod) throw new Error(`clossys page: no bound slot ${name}`);",
-    // With no declared export: the default, else the first component export (a capitalised function, memo or forwardRef), never a hook.
-    '  const component = slot.export ? mod[slot.export] : mod.default ?? Object.entries(mod).find(([name, value]) => /^[A-Z]/.test(name) && (typeof value === "function" || (!!value && typeof value === "object" && "$$typeof" in value)))?.[1];',
+    `  const component = slot.export ? mod[slot.export] : ${firstComponentSource("mod")};`,
     '  if (typeof component !== "function" && typeof component !== "object") throw new Error(`clossys page: ${slot.id} exports no component ${slot.export ?? ""}`);',
     "  const props = resolve(slot.props, mod) as Record<string, unknown>;",
     "  if (slot.copyKeys) {",
@@ -452,7 +452,8 @@ export async function publishInstall(options: PublishInstallOptions): Promise<Pu
   await ensureSubstrate(substrate);
 
   const source = libraryRecordSource({ roots: specimenRoots(root, options.records) });
-  const result = await installAndBind({ page, pins, source, substrate, runner: options.runner ?? shadcnRunner(), copy });
+  // The substrate under clossys-written output (`MARKER`): replaced files are removed.
+  const result = await installAndBind({ page, pins, source, substrate, runner: options.runner ?? shadcnRunner(), copy, ownedSubstrate: true });
   const findings: InstallFinding[] = [...result.findings];
   if (result.page && !options.selection) findings.push(needComponentSelection(page.id));
   if (result.page) {
