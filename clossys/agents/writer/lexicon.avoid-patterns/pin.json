@@ -4,6 +4,11 @@
   "decidedBy": "agent:writer",
   "basis": "agent",
   "at": "2026-11-13T01:49:45.208Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6842596596",
+    "at": "2026-11-13T03:07:52.863Z"
+  },
   "recited": {
     "by": "agent:producer",
     "at": "2026-11-13T02:48:02.379Z",
