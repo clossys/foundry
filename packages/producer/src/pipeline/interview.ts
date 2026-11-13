@@ -384,7 +384,7 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
     const [from, to] = pair.split(">") as [string, string];
     const waits = waiting.get(pair) ?? 0;
     notes.push(waits
-      ? `no ${from} request to the ${to}: ${plural(waits, "citation")} of the ${count} name ${to} slots with no candidates yet, from ${from} slots not drafted either (chain order, not a request)`
+      ? `no ${from} request to the ${to}: ${waits} of the ${plural(count, "citation")} name ${to} slots with no candidates yet, from ${from} slots not drafted either (chain order, not a request)`
       : `no ${from} request to the ${to}: every one of the ${plural(count, "citation")} of ${to} slots in ${from} slot inputs is pinned${to === "director" ? ", free of TODO-OWNER lines and clear of blocking Director checks" : ""}, and none is not-needed`);
   }
   if (copy && !requested.has("publisher>writer")) notes.push(`no publisher request to the writer: all ${plural(keysChecked, "Writer key")} the pinned Publisher records name are held by the pinned Writer copy`);
