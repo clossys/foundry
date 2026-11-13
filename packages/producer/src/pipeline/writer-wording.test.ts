@@ -88,4 +88,26 @@ describe("Writer wording findings reach the Writer's owner questions (R2F-W1)", 
     expect(gap).toMatchObject({ decider: "agent" });
     expect(gap.message).toContain(`clossys options ${ITEM} --redraft`);
   });
+
+  it("a narrative (JSON block) record reads its title and block text: a redraft that differs is offered", () => {
+    const root = workspace();
+    const consumer = join(root, "clossys");
+    const slot = "narratives.article";
+    const pin = JSON.parse(readFileSync(join(consumer, "agents", "writer", slot, "pin.json"), "utf8")) as { candidate: string };
+    const bytes = readCandidate(consumer, "writer", slot, pin.candidate).bytes;
+    const fixture = bytes.replace("A change is a new version, so history is git.", "A change is a new version, so history is git!");
+    expect(fixture).not.toBe(bytes);
+    const written = writeCandidate(consumer, "writer", slot, "studio", fixture);
+    writePin(consumer, "writer", slot, written.name, { decidedBy: "owner", basis: "bulk", at: "2026-11-12T00:00:00.000Z" });
+
+    const row = writerWording(consumer).rows.find(each => each.slot === slot)!;
+    const finding = row.findings.find(each => each.record === "studio.docs.slot-model.article" && each.check === "W-VOICE")!;
+    expect(finding.current).toContain("so history is git!");
+    expect(row.rewrite).not.toBeNull();
+    const text = row.rewrite!.texts.find(each => each.record === "studio.docs.slot-model.article")!.text;
+    expect(text).toContain("so history is git.");
+    expect(text).not.toBe(finding.current);
+    const question = interviewOf(root, { agent: "writer" }).rounds.flat().find(each => each.id === `writer.wording:writer/${slot}`)!;
+    expect(question.options[0]!.label).toMatch(/^Rewrite \(Recommended\): "The slot model/);
+  });
 });
