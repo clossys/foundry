@@ -1,12 +1,7 @@
 {
-  "candidate": "studio-acquire-v4.md",
-  "sha256": "e4018851c9c7a69ea9251c1b95700ea2ae1e576cd997c24de514517bb0606b9e",
+  "candidate": "studio-acquire-v5.md",
+  "sha256": "c7dea0c2d61bb86360a641c00f7021358644210449f5fc76a6d353fc045df7ab",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:18:16.536Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:18:51.140Z"
-  }
+  "at": "2026-11-13T01:43:18.503Z"
 }

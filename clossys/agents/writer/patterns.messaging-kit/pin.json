@@ -8,5 +8,25 @@
     "by": "owner",
     "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
     "at": "2026-11-12T01:19:39.603Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T01:43:59.402Z",
+    "cites": {
+      "director:advantage.proposition.promise": 4,
+      "director:aspiration.purpose.mission": 3,
+      "director:identity.brand.essence": 4,
+      "director:identity.verbal.narrative": 4,
+      "director:identity.naming.architecture": 6,
+      "director:focus.category.definition": 5
+    },
+    "proof": {
+      "director:advantage.proposition.promise": "sha256:3fe044e620b9e4c56919066eae4b9418d46a6671bbf0a29a6fb6f247bcce9e3a",
+      "director:aspiration.purpose.mission": "sha256:b3fc9f31d141e5826ce22d11db4e8d358bd2219dde257119c3705c929aa7c733",
+      "director:identity.brand.essence": "sha256:21f6219f338ebd90f557610f65c6f3c710cc3c524a0c918788f56a36d76231eb",
+      "director:identity.verbal.narrative": "sha256:207bc340516fce3d734696ebb40535613d2d13db1153cefabe6b99edad9f1aa4",
+      "director:identity.naming.architecture": "sha256:193e19225ff0a078b76e1c68a47b7ef576f97b84bf494cf4ec60fbebe01062cd",
+      "director:focus.category.definition": "sha256:ec4d8412872247e6d756aabc0af1b69fcbef72549c355f01f952fa30f1b0f834"
+    }
   }
 }

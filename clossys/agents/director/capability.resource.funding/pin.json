@@ -1,12 +1,7 @@
 {
-  "candidate": "studio-funding-v5.md",
-  "sha256": "df8619deb4158ab080fed8720630f491801f7f290b932038b4c841dce2bee849",
+  "candidate": "studio-funding-v6.md",
+  "sha256": "f6cb9c9ab77db1e01136b187c311a7ae0db7dcfaeead71377f20abb87c1111ac",
   "decidedBy": "agent:director",
   "basis": "agent",
-  "at": "2026-11-11T23:18:16.163Z",
-  "confirmed": {
-    "by": "owner",
-    "ref": "clossys/workspace#46 issuecomment-6809267928",
-    "at": "2026-11-11T23:18:52.614Z"
-  }
+  "at": "2026-11-13T01:43:14.773Z"
 }
