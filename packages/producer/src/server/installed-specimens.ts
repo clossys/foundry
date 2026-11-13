@@ -171,8 +171,8 @@ function componentPage(item: string, state?: SpecimenState): string {
   ].join("\n");
 }
 
-function run(command: string, args: string[], cwd: string): Promise<{ code: number; output: string }> {
-  return new Promise(done => execFile(command, args, { cwd, timeout: 600_000, maxBuffer: 32 * 1024 * 1024 }, (error, stdout, stderr) => {
+function run(command: string, args: string[], cwd: string, signal?: AbortSignal): Promise<{ code: number; output: string }> {
+  return new Promise(done => execFile(command, args, { cwd, timeout: 600_000, maxBuffer: 32 * 1024 * 1024, ...(signal ? { signal } : {}) }, (error, stdout, stderr) => {
     done({ code: error ? (typeof error.code === "number" ? error.code : 1) : 0, output: `${stdout}${stderr}` });
   }));
 }
@@ -192,6 +192,8 @@ export interface PassOptions {
   /** Candidates the substrate cannot build (their code imports a host package): refused before any install. */
   readonly hostOnly?: ReadonlyMap<string, readonly string[]>;
   readonly build: SpecimenBuild;
+  /** Stops the pass and its shadcn, npm and vite children when the server closes. */
+  readonly signal?: AbortSignal;
 }
 
 /** Lines of a failed `vite build` a finding keeps from each end: vite names the error first and the stack last. */
@@ -218,13 +220,14 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
   await writeFile(join(substrate, "components", SPECIMEN_DOCUMENT), await specimenDocument());
   // One Writer snapshot: a Writer scan per candidate load held the server's event loop for minutes.
   const source = libraryRecordSource({ roots: [library], writerCopy: options.pinnedCopy });
-  const runner = shadcnRunner();
+  const runner = shadcnRunner(process.env, options.signal);
   const include = Object.keys(pins).filter(slot => slot.startsWith("themes.")).sort();
   const findings: InstallFinding[] = [];
   const pages = new Map<string, SpecimenPage>();
   let dependencies: Record<string, string> = {};
   // Theme items first: every other page installs them through `include`.
   for (const slot of [...options.slots].sort((a, b) => Number(!a.startsWith("themes.")) - Number(!b.startsWith("themes.")) || a.localeCompare(b))) {
+    options.signal?.throwIfAborted();
     const pin = pins[slot]!, page = specimenPageId(slot, pin.element, pin.version);
     // Installing it would add an uninstallable host package to the shared substrate's package.json
     // and fail every later npm install there; the host specimen mount renders it instead.
@@ -287,10 +290,13 @@ async function buildPass(options: PassOptions): Promise<PassResult> {
     pages.set(pageKey(slot, pin.element, pin.version), { page, element: pin.element, version: pin.version, build: build.key });
   }
   if (!pages.size) return { pages, findings, built: false };
-  const failed = await ensureSubstrateDependencies(substrate, dependencies, npmRunner());
+  options.signal?.throwIfAborted();
+  const failed = await ensureSubstrateDependencies(substrate, dependencies, npmRunner(process.env, options.signal));
+  options.signal?.throwIfAborted();
   if (failed) { findings.push(failed); return { pages: new Map(), findings, built: false }; }
   const vite = join(substrate, "node_modules", "vite", "bin", "vite.js");
-  const built = await run(process.execPath, [vite, "build", "--base", `${SITE_PREFIX}${build.key}/`, "--outDir", build.dist, "--emptyOutDir", "--logLevel", "error"], substrate);
+  const built = await run(process.execPath, [vite, "build", "--base", `${SITE_PREFIX}${build.key}/`, "--outDir", build.dist, "--emptyOutDir", "--logLevel", "error"], substrate, options.signal);
+  options.signal?.throwIfAborted();
   if (built.code !== 0) { findings.push(renderFailedFinding(build.key, built.code, built.output)); return { pages: new Map(), findings, built: false }; }
   return { pages, findings, built: true };
 }
@@ -346,7 +352,7 @@ const SITE_STEPS: SiteBuildSteps = { prepare: ensureSubstrate, pass: buildPass }
  * layer, and its finding is surfaced with the site's. Themes build last: their pages read the
  * CSS variables every other layer's pages install through `include`.
  */
-export async function buildSite(inputs: SiteInputs, steps: SiteBuildSteps = SITE_STEPS): Promise<InstalledSpecimenSite> {
+export async function buildSite(inputs: SiteInputs, steps: SiteBuildSteps = SITE_STEPS, signal?: AbortSignal): Promise<InstalledSpecimenSite> {
   const { key, base, substrate, pins, library, records, recordFindings, copy, pinnedCopy } = inputs;
   const layers = [...new Set(Object.keys(pins).map(layerOf))].sort((a, b) => Number(a === "themes") - Number(b === "themes") || a.localeCompare(b));
   const builds: SpecimenBuild[] = [], pages = new Map<string, SpecimenPage>(), findings: InstallFinding[] = [...recordFindings];
@@ -358,9 +364,12 @@ export async function buildSite(inputs: SiteInputs, steps: SiteBuildSteps = SITE
     const manifest = join(base, `site-${layerBuild.key}.json`);
     let result = await savedSite(manifest);
     if (!result) {
+      signal?.throwIfAborted();
       if (!prepared) { await steps.prepare(substrate); prepared = true; }
       const slots = Object.keys(pins).filter(slot => layerOf(slot) === layer);
-      const passed = await steps.pass({ library, substrate, pins, slots, records, copy, pinnedCopy, hostOnly: inputs.hostOnly, build: layerBuild });
+      const passed = await steps.pass({ library, substrate, pins, slots, records, copy, pinnedCopy, hostOnly: inputs.hostOnly, build: layerBuild, ...(signal ? { signal } : {}) });
+      // A pass stopped by shutdown is never saved: its findings name the stop, not the selection.
+      signal?.throwIfAborted();
       result = { builds: passed.built ? [layerBuild] : [], pages: passed.built ? passed.pages : new Map(), findings: passed.findings };
       await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key: layerBuild.key, layer, builds: result.builds, pages: Object.fromEntries(result.pages), findings: result.findings }, null, 2)}\n`);
     }
@@ -375,7 +384,7 @@ export async function buildSite(inputs: SiteInputs, steps: SiteBuildSteps = SITE
  * One recorded candidate that is not the pin, rendered from its own bytes: the slot swaps in this
  * (element, version) and every other slot keeps its pin. Built when Studio first asks for it.
  */
-async function buildOption(inputs: SiteInputs, slot: string, option: { element: string; version: number }): Promise<{ build?: SpecimenBuild; page?: SpecimenPage; findings: InstallFinding[] }> {
+async function buildOption(inputs: SiteInputs, slot: string, option: { element: string; version: number }, signal?: AbortSignal): Promise<{ build?: SpecimenBuild; page?: SpecimenPage; findings: InstallFinding[] }> {
   const { base, substrate, pins, unpinned, library, records, copy, pinnedCopy } = inputs;
   const key = `${inputs.key}-${hash(slot, option.element, String(option.version)).slice(0, 12)}`;
   const manifest = join(base, `site-${key}.json`);
@@ -383,7 +392,8 @@ async function buildOption(inputs: SiteInputs, slot: string, option: { element: 
   if (saved) return { ...(saved.builds[0] ? { build: saved.builds[0] } : {}), ...(saved.pages.get(pageKey(slot, option.element, option.version)) ? { page: saved.pages.get(pageKey(slot, option.element, option.version))! } : {}), findings: saved.findings };
   await ensureSubstrate(substrate);
   const build = { key, dist: join(base, `dist-${key}`) };
-  const result = await buildPass({ library, substrate, pins: { ...unpinned, ...pins, [slot]: option }, slots: [slot], records, copy, pinnedCopy, hostOnly: inputs.hostOnly, build });
+  const result = await buildPass({ library, substrate, pins: { ...unpinned, ...pins, [slot]: option }, slots: [slot], records, copy, pinnedCopy, hostOnly: inputs.hostOnly, build, ...(signal ? { signal } : {}) });
+  signal?.throwIfAborted();
   const builds = result.built ? [build] : [];
   await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(result.built ? result.pages : []), findings: result.findings }, null, 2)}\n`);
   const page = result.built ? result.pages.get(pageKey(slot, option.element, option.version)) : undefined;
@@ -415,21 +425,29 @@ export function specimenSiteCsp(origin: string, build: string): string {
   ].join("; ");
 }
 
-export function installedSpecimens(options: { root: string; library: string }): InstalledSpecimens {
+/**
+ * `signal` (the server's close) stops the pinned and option builds and their children: a closed
+ * server must exit at once, not after a cold substrate install and vite build (about 55 s
+ * measured 2026-11-12 on a fresh TMPDIR).
+ */
+export function installedSpecimens(options: { root: string; library: string; signal?: AbortSignal }): InstalledSpecimens {
+  const { signal } = options;
   const warn = (error: unknown) => {
+    if (signal?.aborted) return undefined;
     console.warn("Producer specimens could not be built:", error instanceof Error ? error.message.split("\n")[0] : String(error));
     return undefined;
   };
   const inputs = siteInputs(resolve(options.root), resolve(options.library)).catch(warn);
-  return installedSpecimenRoutes(inputs.then(value => value ? buildSite(value) : undefined).catch(warn), inputs);
+  return installedSpecimenRoutes(inputs.then(value => value ? buildSite(value, SITE_STEPS, signal) : undefined).catch(warn), inputs, signal);
 }
 
 /**
  * The `/__specimen` and `/__specimen-site/*` routes over a (being) built pinned site. With the
  * site's inputs, a recorded candidate that is not the pin is built on first request.
  */
-export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | undefined>, inputs: Promise<SiteInputs | undefined> = Promise.resolve(undefined)): InstalledSpecimens {
+export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | undefined>, inputs: Promise<SiteInputs | undefined> = Promise.resolve(undefined), signal?: AbortSignal): InstalledSpecimens {
   const warn = (error: unknown) => {
+    if (signal?.aborted) return undefined;
     console.warn("Producer specimens could not be built:", error instanceof Error ? error.message.split("\n")[0] : String(error));
     return undefined;
   };
@@ -441,7 +459,7 @@ export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | u
     const name = pageKey(slot, element, version);
     let pending = optionBuilds.get(name);
     if (!pending) {
-      pending = queue.then(() => buildOption(site, slot, { element, version })).then(result => { if (result.build) builtOptions.push(result.build); return result; }, error => { warn(error); return {}; });
+      pending = queue.then(() => buildOption(site, slot, { element, version }, signal)).then(result => { if (result.build) builtOptions.push(result.build); return result; }, error => { warn(error); return {}; });
       optionBuilds.set(name, pending);
       queue = pending;
     }
