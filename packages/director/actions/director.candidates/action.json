@@ -1,0 +1,70 @@
+{
+  "schema": "clossys.action/1",
+  "id": "director.candidates",
+  "agent": "director",
+  "kind": "decide:creative",
+  "stage": "direct.make",
+  "summary": "Create Director candidates: one immutable file per option, per L3 slot.",
+  "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
+  "inputs": [
+    {
+      "glob": "clossys/evidence/director/*.md",
+      "schema": "director-evidence"
+    },
+    {
+      "glob": "clossys/evidence/director/findings/*.md",
+      "schema": "director-evidence"
+    },
+    {
+      "glob": "clossys/agents/director/*/slot.json",
+      "schema": "slot"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    }
+  ],
+  "pass": {
+    "command": "clossys check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": [
+    "skill/SKILL.md",
+    "skill/templates/cell.md"
+  ],
+  "decider": "agent",
+  "packet": {
+    "inputs": [
+      "clossys/evidence/director/*.md",
+      "clossys/evidence/director/findings/*.md",
+      "clossys/agents/director/*/slot.json"
+    ],
+    "write": [
+      {
+        "glob": "clossys/agents/director/*/candidates/*",
+        "schema": "candidate-brief"
+      }
+    ],
+    "checks": [
+      "workspace"
+    ]
+  },
+  "skill": "skill.md",
+  "open": "slots-without-candidates:director"
+}

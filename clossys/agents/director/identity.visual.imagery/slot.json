@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.visual.imagery",
+  "agent": "director",
+  "ia": {
+    "l1": "identity",
+    "l2": "identity.visual",
+    "order": 37
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which images do we use, which never, and where do they come from?",
+    "mustContain": [
+      {
+        "key": "Use",
+        "hint": "image types we use"
+      },
+      {
+        "key": "Never",
+        "hint": "image types we never use"
+      },
+      {
+        "key": "Source",
+        "hint": "where images come from"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

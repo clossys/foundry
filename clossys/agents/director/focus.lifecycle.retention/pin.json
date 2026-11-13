@@ -1,0 +1,26 @@
+{
+  "candidate": "studio-retention-v5.md",
+  "sha256": "111a1179e7fc006ea3ed1eaedf43de5e9db79d053694800422eb52c826d74850",
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:22.888Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:47.821Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:43:00.892Z",
+    "cites": {
+      "director:context.customer.need": 6,
+      "director:capability.operation.delivery": 8,
+      "director:focus.segment.core": 3
+    },
+    "proof": {
+      "director:context.customer.need": "sha256:95e78038cb100a4c7943129d672cd990579027b4ab5640d8985242f9a4950dee",
+      "director:capability.operation.delivery": "sha256:db71e66d9bf7184965ce8ee65a656d0db7e254b91f685c7e6087713a6bcdfbb8",
+      "director:focus.segment.core": "sha256:ca76c0b03fe84f1615c91cf10b301b8ad6b95ef58f9162d46aacf4cd153c7b92"
+    }
+  }
+}

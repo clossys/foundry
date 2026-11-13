@@ -1,0 +1,12 @@
+{
+  "candidate": "studio-geography-v2.md",
+  "sha256": "7cce476c5a9795681ac38d1e82d50402fc684c802b0f38cc3d0c25f718c65733",
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:23.259Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:47.451Z"
+  }
+}

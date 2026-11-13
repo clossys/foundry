@@ -1,0 +1,12 @@
+{
+  "candidate": "studio-build-v7.md",
+  "sha256": "bb7454c941ff1da156113f73acd38620953798556a911e2a8b4a594ad94aa186",
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:29:02.982Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6810103642",
+    "at": "2026-11-11T23:54:59.505Z"
+  }
+}

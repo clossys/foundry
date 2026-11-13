@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.lifecycle.acquisition",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.lifecycle",
+    "order": 22
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How does a stranger become a customer, and at what cost?",
+    "mustContain": [
+      {
+        "key": "Path",
+        "hint": "the steps from stranger to customer"
+      },
+      {
+        "key": "Hook",
+        "hint": "what pulls them in"
+      },
+      {
+        "key": "Cost",
+        "hint": "the acquisition cost or effort, estimated"
+      }
+    ]
+  },
+  "inputs": [
+    "focus.reach.channel"
+  ],
+  "uses": []
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "context.company.constraint",
+  "agent": "director",
+  "ia": {
+    "l1": "context",
+    "l2": "context.company",
+    "order": 7
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which limits shape every choice we make?",
+    "mustContain": [
+      {
+        "key": "Limit",
+        "hint": "the limit, named"
+      },
+      {
+        "key": "Bound",
+        "hint": "the number or rule that bounds it"
+      },
+      {
+        "key": "Effect",
+        "hint": "which choices it rules out"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

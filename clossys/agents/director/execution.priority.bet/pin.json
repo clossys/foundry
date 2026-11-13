@@ -1,0 +1,17 @@
+{
+  "candidate": "studio-bet-v10.md",
+  "sha256": "40e3e3d409168c48a7b1449476baa3a2ef6d5075cf2fe5f42b5f6b1827225802",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6841911551 (OWNER WORDS 2026-11-12 R2F-L2 Director round, option a)",
+  "basis": "picked",
+  "at": "2026-11-13T02:23:37.378Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.205Z",
+    "cites": {
+      "director:capability.operation.delivery": 8
+    },
+    "proof": {
+      "director:capability.operation.delivery": "sha256:db71e66d9bf7184965ce8ee65a656d0db7e254b91f685c7e6087713a6bcdfbb8"
+    }
+  }
+}

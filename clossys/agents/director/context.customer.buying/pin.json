@@ -1,0 +1,26 @@
+{
+  "candidate": "studio-customer-buying-v6.md",
+  "sha256": "a83b998781bc33b7ec012290a2d221771890dd6544259791186d217d76d30753",
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:19.156Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:44.860Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:50.967Z",
+    "cites": {
+      "director:focus.segment.core": 3,
+      "director:focus.lifecycle.acquisition": 4,
+      "director:advantage.model.pricing": 6
+    },
+    "proof": {
+      "director:focus.segment.core": "sha256:ca76c0b03fe84f1615c91cf10b301b8ad6b95ef58f9162d46aacf4cd153c7b92",
+      "director:focus.lifecycle.acquisition": "sha256:d7ac0175e90357f4e6211f3f158729061b6d9f0da41a9bdd5c5dcd1941ff9a64",
+      "director:advantage.model.pricing": "sha256:2b012735b895a776f023790a3a74145916d51b067a95093fa38544d068cbd2ca"
+    }
+  }
+}

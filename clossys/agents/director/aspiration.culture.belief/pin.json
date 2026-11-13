@@ -1,0 +1,24 @@
+{
+  "candidate": "studio-belief-v5.md",
+  "sha256": "9728e20e64384f0a9bed0e5fe228196c7434902399611cc70ecb9fcab9b465f0",
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:14.665Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:45.973Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:50.987Z",
+    "cites": {
+      "director:advantage.proposition.proof": 6,
+      "director:identity.brand.essence": 6
+    },
+    "proof": {
+      "director:advantage.proposition.proof": "sha256:e85d6d8a3ec86a30510f76d8136c8a2b1442c4083a996570e0533ee30c685e29",
+      "director:identity.brand.essence": "sha256:21f6219f338ebd90f557610f65c6f3c710cc3c524a0c918788f56a36d76231eb"
+    }
+  }
+}

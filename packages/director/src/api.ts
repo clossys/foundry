@@ -1,0 +1,83 @@
+import { compileBrief, type Brief } from "./brief.js";
+import { discoverBriefContracts, mergeBriefContracts, type BriefContract } from "./brief-contracts.js";
+import type { Cell, CellId, CellRef, StrategyRootIssue } from "./format/types.js";
+import { slotCandidateCell, slotCandidateVersion } from "./format/slot.js";
+import { readStrategyRoot } from "./store.js";
+import type { DirectorStoreReader } from "./store-io.js";
+import { strategyStatus, type CheckOptions, type StatusReport } from "./checks/index.js";
+
+/** Structural inventory only: quality, coherence and completion are separate checks. */
+export interface StrategyInventoryReport {
+  scope: "core" | "full"; archetype: string; cells: number;
+  active: CellRef[]; missing: CellId[]; stale: CellRef[]; issues: StrategyRootIssue[];
+}
+export interface Strategy {
+  getCell(id: CellId, version?: number): Cell | undefined;
+  getActive(id: CellId): Cell | undefined;
+  getBrief(contractId: string): Brief;
+  isStale(ref: CellRef): boolean;
+  status(options?: { scope?: "core" | "full" }, checks?: CheckOptions): StatusReport;
+}
+
+/** Opens one read-only snapshot through the injected store reader; reopen after activation to observe pointer changes. */
+export function openStrategy(root: string, store: DirectorStoreReader, options: { contracts?: BriefContract[]; archetype?: string } = {}): Strategy {
+  const model = readStrategyRoot(root, store);
+  const archetype = options.archetype ?? model.tree?.archetype ?? "default";
+  if (archetype !== "default" && !Object.hasOwn(model.catalog.archetypes.extras, archetype)) throw new Error("Unknown strategy archetype");
+  // An explicit archetype changes only core selection; persisted custom cores win.
+  const statusModel = options.archetype === undefined ? model : {
+    ...model,
+    tree: model.tree ? { ...model.tree, archetype } : undefined,
+    catalog: model.tree ? model.catalog : { ...model.catalog, archetypes: {
+      ...model.catalog.archetypes,
+      default: [...new Set([...model.catalog.archetypes.default, ...(model.catalog.archetypes.extras[archetype] ?? [])])],
+    } },
+  };
+  const discovered = discoverBriefContracts(root, store, model.catalog);
+  const merged = mergeBriefContracts([...discovered.contracts, ...(options.contracts ?? [])], model.catalog);
+  const issues = [...discovered.issues, ...merged.issues];
+  if (issues.length) throw new Error(`Invalid brief contracts: ${issues.map(issue => `${issue.path}: ${issue.message}`).join("; ")}`);
+  const contracts = new Map(merged.contracts.map(contract => [contract.id, contract]));
+  const candidates = new Map<string, Cell | undefined>();
+  /**
+   * An unpinned candidate of a slot, read on demand: it resolves as a draft cell, so a ref to a superseded
+   * or not-yet-pinned version is stale, not dangling. It carries no decision date.
+   */
+  function candidateCell(id: CellId, version: number): Cell | undefined {
+    const key = `${id}@${version}`;
+    if (candidates.has(key)) return candidates.get(key);
+    let cell: Cell | undefined;
+    if (model.candidateVersions?.[id]?.includes(version)) {
+      const name = (store.list(model.root, `${id}/candidates`) ?? []).find(entry => slotCandidateVersion(entry) === version);
+      const path = name && `${id}/candidates/${name}`;
+      const bytes = path ? store.read(model.root, path) : undefined;
+      if (path && bytes !== undefined) {
+        try { cell = { ...slotCandidateCell({ id, version, updated: "", path, bytes }), status: "draft" }; } catch { cell = undefined; }
+      }
+    }
+    candidates.set(key, cell);
+    return cell;
+  }
+  function getCell(id: CellId, version?: number): Cell | undefined {
+    const pinned = model.cells.filter(cell => cell.id === id && (version === undefined || cell.version === version)).sort((a, b) => b.version - a.version)[0];
+    return pinned ?? (version === undefined ? undefined : candidateCell(id, version));
+  }
+  function getActive(id: CellId): Cell | undefined {
+    const version = model.tree?.active[id];
+    return version == null ? undefined : getCell(id, version);
+  }
+  function isStale(ref: CellRef): boolean {
+    return model.tree?.active[ref.cell] !== ref.version;
+  }
+  return {
+    getCell, getActive, isStale,
+    getBrief(contractId) {
+      const contract = contracts.get(contractId);
+      if (!contract) throw new Error(`Unknown brief contract: ${contractId}`);
+      return compileBrief(model, contract, store);
+    },
+    status({ scope = "core" } = {}, checks = {}) {
+      return strategyStatus(statusModel, { scope }, { contracts: merged.contracts, ...checks });
+    },
+  };
+}

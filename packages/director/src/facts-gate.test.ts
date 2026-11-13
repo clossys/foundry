@@ -1,0 +1,298 @@
+import { describe, expect, it } from "vitest";
+import { checkGrounding } from "./facts-gate.js";
+import type { Finding } from "./format/types.js";
+
+// Every example below is deliberately fictional prose about a made-up
+// product ("Widgetronic") — no real company, product, person, or domain.
+
+const customerCountFact: Finding = {
+  id: "active-customers",
+
+  value: 4200,
+  unit: "customers",
+  source: "billing-export-2026-06",
+  observed: "2026-06-30",
+  by: "researcher", bullets: [], path: "findings/fictional.md",
+  aliases: ["4,200"],
+};
+
+const onlyPlatformClaimFact: Finding = {
+  id: "only-platform-claim",
+
+  value: "reviewed against 40 competitor product pages, 2026-06-01",
+  source: "legal-review-2026-06-01",
+  observed: "2026-06-01",
+  by: "researcher", bullets: [], path: "findings/fictional.md",
+};
+
+describe("checkGrounding — traced claims produce no findings", () => {
+  it("PASSES when a numeric claim matches a fact's declared alias", () => {
+    const files = [{ path: "fixture:about", content: "Widgetronic now serves 4,200 customers." }];
+    const result = checkGrounding(files, [customerCountFact]);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(1);
+  });
+
+  it("PASSES when a superlative claim carries a valid fact citation", () => {
+    const files = [
+      {
+        path: "fixture:about",
+        content: "Widgetronic is the only platform built for this. <!-- fact:only-platform-claim -->",
+      },
+    ];
+    const result = checkGrounding(files, [onlyPlatformClaimFact]);
+    expect(result.findings).toEqual([]);
+  });
+});
+
+describe("checkGrounding — proves the gate actually fails", () => {
+  // The fixture below deliberately violates the rule: "9,999" appears
+  // nowhere in facts.json (the only registered count is "4,200"), so this
+  // MUST go red. A gate whose tests only ever exercise the green path
+  // proves nothing about whether it can fail at all.
+  it("FAILS on an untraced numeric claim", () => {
+    const files = [{ path: "fixture:about", content: "Widgetronic now serves 9,999 customers." }];
+    const result = checkGrounding(files, [customerCountFact]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      rule: "untraced-numeric-claim",
+      severity: "error",
+      file: "fixture:about",
+      line: 1,
+    });
+  });
+
+  it("FAILS on an untraced superlative claim", () => {
+    const files = [{ path: "fixture:about", content: "Widgetronic is the only platform built for this." }];
+    const result = checkGrounding(files, []);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("untraced-superlative-claim");
+  });
+
+  it("FAILS on a citation to a fact key that does not exist", () => {
+    const files = [{ path: "fixture:about", content: "See our growth. <!-- fact:does-not-exist -->" }];
+    const result = checkGrounding(files, [customerCountFact]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("unknown-fact-citation");
+  });
+
+  it("still flags an untraced claim even though OTHER, unrelated facts exist in the registry", () => {
+    // Merely having facts.json entries — for a different number entirely —
+    // must never suppress a genuinely untraced claim. No citation appears
+    // in this fixture at all, isolating the assertion to that point.
+    const files = [{ path: "fixture:about", content: "Widgetronic now serves 12,000 customers." }];
+    const result = checkGrounding(files, [customerCountFact, onlyPlatformClaimFact]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("untraced-numeric-claim");
+  });
+});
+
+describe("checkGrounding — escape hatch", () => {
+  it("suppresses a finding via facts-gate:ignore and records it as ignored, not silently", () => {
+    const files = [
+      { path: "fixture:about", content: "Widgetronic now serves 9,999 customers. <!-- facts-gate:ignore -->" },
+    ];
+    const result = checkGrounding(files, [customerCountFact]);
+    expect(result.findings).toEqual([]);
+    expect(result.ignored).toEqual([
+      { file: "fixture:about", line: 1, snippet: expect.stringContaining("9,999") },
+    ]);
+  });
+
+  it("does not treat facts-gate:ignoreme as an ignore marker", () => {
+    const files = [
+      { path: "fixture:about", content: "Widgetronic now serves 9,999 customers. <!-- facts-gate:ignoreme -->" },
+    ];
+    const result = checkGrounding(files, [customerCountFact]);
+    expect(result.ignored).toEqual([]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("untraced-numeric-claim");
+  });
+
+  it("does not suppress a claim on the next line after a facts-gate:ignore marker", () => {
+    const content = [
+      "Widgetronic now serves 9,999 customers. <!-- facts-gate:ignore -->",
+      "Widgetronic now serves 8,888 customers.",
+    ].join("\n");
+    const result = checkGrounding([{ path: "fixture:about", content }], [customerCountFact]);
+    expect(result.ignored).toHaveLength(1);
+    expect(result.ignored[0]?.line).toBe(1);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      rule: "untraced-numeric-claim",
+      line: 2,
+    });
+  });
+});
+
+describe("checkGrounding — false-positive avoidance", () => {
+  it("does not scan a fenced code block", () => {
+    const content = ["Example config:", "", "```", "price: $500,000", "```", "", "No claim here."].join("\n");
+    const result = checkGrounding([{ path: "fixture:example", content }], []);
+    expect(result.claimsScanned).toBe(0);
+    expect(result.findings).toEqual([]);
+  });
+
+  it("does not scan an inline code span", () => {
+    const files = [{ path: "fixture:example", content: "The config value is `$500,000` in the sample file." }];
+    const result = checkGrounding(files, []);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("does not scan digits inside a URL", () => {
+    const files = [{ path: "fixture:example", content: "See https://example.com/50%off for the changelog." }];
+    const result = checkGrounding(files, []);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("does not flag a bare small number with no currency/percent/multiplier/grouping/unit word", () => {
+    const files = [
+      { path: "fixture:example", content: "Step 3 covers onboarding. This behavior shipped in version 18." },
+    ];
+    const result = checkGrounding(files, []);
+    expect(result.claimsScanned).toBe(0);
+    expect(result.findings).toEqual([]);
+  });
+
+  it("does not flag color-mix() percentage literals in source", () => {
+    const content =
+      "const bg = `color-mix(in oklch, rebeccapurple, transparent 90%)` as const;";
+    const result = checkGrounding([{ path: "tokens.ts", content }], []);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("does not flag JSX inline style dimension percentages", () => {
+    const content = 'export function Box() { return <div style={{ width: "100%" }} />; }';
+    const result = checkGrounding([{ path: "Box.tsx", content }], []);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("does not flag declaration-shaped CSS percentages", () => {
+    const content = ".card { flex-basis: 50%; margin: 0; }";
+    const result = checkGrounding([{ path: "card.css", content }], []);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("still flags a prose percent claim when scanStyleLiterals is false (default)", () => {
+    const files = [{ path: "about.md", content: "Widgetronic revenue grew 12% last year." }];
+    const result = checkGrounding(files, []);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("untraced-numeric-claim");
+  });
+
+  it("can treat style-literal percentages as claims when scanStyleLiterals is true", () => {
+    const content = 'export function Box() { return <div style={{ width: "100%" }} />; }';
+    const result = checkGrounding([{ path: "Box.tsx", content }], [], { scanStyleLiterals: true });
+    expect(result.claimsScanned).toBeGreaterThan(0);
+  });
+
+  it("keeps blanking declaration percentages with fractions and spaces", () => {
+    const content = ".a { width: 12.5 % ; top: 3%; }";
+    const result = checkGrounding([{ path: "card.css", content }], []);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("finishes a 100,000-character declaration-shaped line without quadratic work", () => {
+    // A declaration opener followed by a very long run of digits and NO
+    // terminating `%`: the adjacent quantifiers of the old declaration
+    // regex (`[^;…]*\d+`) re-split that run from every digit position, so
+    // its work grew quadratically in the run's length. A linear scan of the
+    // same line must stay far under a second even at 100k characters.
+    const budgetMs = 1000;
+    const content = "a:" + "1".repeat(100000);
+    let ms = Number.POSITIVE_INFINITY;
+    let result!: ReturnType<typeof checkGrounding>;
+    // Best of three timings: a heavily loaded runner must not read as a slow
+    // scan, and a quadratic scan is slow on every attempt (seconds, not
+    // milliseconds), so a slow first attempt is still retried here.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const start = performance.now();
+      result = checkGrounding([{ path: "card.css", content }], []);
+      ms = Math.min(ms, performance.now() - start);
+      if (ms < budgetMs) break;
+    }
+    expect(result.claimsScanned).toBe(0); // no `%` terminator, so nothing was blanked as a declaration
+    expect(ms).toBeLessThan(budgetMs);
+  });
+});
+
+describe("checkGrounding — finding with a currency units", () => {
+  const revenueFact: Finding = {
+    id: "annual-revenue",
+
+    value: 4200000, unit: "USD",
+    source: "audited-statement-2026",
+    observed: "2026-06-30",
+  by: "researcher", bullets: [], path: "findings/fictional.md",
+    aliases: ["$4.2M"],
+  };
+
+  it("traces a currency claim matching a finding with a currency unit's declared alias", () => {
+    const files = [{ path: "fixture:about", content: "Widgetronic crossed $4.2M in annual revenue this year." }];
+    const result = checkGrounding(files, [revenueFact]);
+    expect(result.findings).toEqual([]);
+  });
+
+  it("still fails a DIFFERENT currency claim even with a finding with a currency unit registered", () => {
+    const files = [{ path: "fixture:about", content: "Widgetronic crossed $9.9M in annual revenue this year." }];
+    const result = checkGrounding(files, [revenueFact]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("untraced-numeric-claim");
+  });
+});
+
+describe("checkGrounding — catalogue-count claims (packages/records)", () => {
+  const publishablePackageCountFact: Finding = {
+    id: "publishable-package-count",
+
+    value: 21,
+    unit: "packages",
+    source: "package-manifest-inventory",
+    observed: "2026-09-21",
+  by: "researcher", bullets: [], path: "findings/fictional.md",
+    aliases: ["twenty-one packages", "twenty-one records"],
+  };
+
+  it('FAILS on an untraced spelled catalogue count ("twenty records")', () => {
+    const files = [{ path: "fixture:publishing", content: "The catalogue lists twenty records in closure." }];
+    const result = checkGrounding(files, [publishablePackageCountFact]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      rule: "untraced-numeric-claim",
+      snippet: expect.stringContaining("twenty records"),
+    });
+  });
+
+  it('PASSES when a catalogue count matches a fact alias ("twenty-one packages")', () => {
+    const files = [{ path: "fixture:publishing", content: "The active target closes over all twenty-one packages." }];
+    const result = checkGrounding(files, [publishablePackageCountFact]);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(1);
+  });
+
+  it('does not flag bare "twenty publishable" without a packages/records unit word', () => {
+    const files = [{ path: "fixture:publishing", content: "The active release target closes over all twenty publishable source manifests." }];
+    const result = checkGrounding(files, [publishablePackageCountFact]);
+    expect(result.claimsScanned).toBe(0);
+    expect(result.findings).toEqual([]);
+  });
+});
+
+describe("checkGrounding — totality", () => {
+  it("never throws on empty inputs", () => {
+    expect(() => checkGrounding([], [])).not.toThrow();
+    expect(checkGrounding([], []).findings).toEqual([]);
+  });
+
+  it("reports filesScanned matching the input length", () => {
+    const files = [
+      { path: "a.md", content: "Nothing to see here." },
+      { path: "b.md", content: "Nor here." },
+    ];
+    expect(checkGrounding(files, []).filesScanned).toBe(2);
+  });
+});

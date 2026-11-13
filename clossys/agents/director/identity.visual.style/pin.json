@@ -1,0 +1,19 @@
+{
+  "candidate": "studio-visual-style-v9.md",
+  "sha256": "91f33a76e678895a2e73231dbad026da2a064ca7223cd92b9a89940aa3709bda",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6841911551 (OWNER WORDS 2026-11-12 R2F-L2 Director round, option a)",
+  "basis": "picked",
+  "at": "2026-11-13T02:23:36.358Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.141Z",
+    "cites": {
+      "director:identity.brand.essence": 6,
+      "director:identity.verbal.voice": 6
+    },
+    "proof": {
+      "director:identity.brand.essence": "sha256:21f6219f338ebd90f557610f65c6f3c710cc3c524a0c918788f56a36d76231eb",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013"
+    }
+  }
+}

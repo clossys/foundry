@@ -1,0 +1,29 @@
+{
+  "schema": "clossys.actions-ia/1",
+  "nodes": [
+    {
+      "id": "director",
+      "children": [
+        {
+          "id": "direct.make",
+          "actions": [
+            "director.candidates"
+          ]
+        },
+        {
+          "id": "direct.pin",
+          "actions": [
+            "pick.director",
+            "director.store"
+          ]
+        },
+        {
+          "id": "publish.check",
+          "actions": [
+            "director.check"
+          ]
+        }
+      ]
+    }
+  ]
+}

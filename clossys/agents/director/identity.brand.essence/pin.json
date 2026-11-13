@@ -1,0 +1,17 @@
+{
+  "candidate": "studio-essence-v6.md",
+  "sha256": "c02ce826d0c86a9b8f889fc33eb08e25215ade6d341a583c66a21ac4c1cc82bf",
+  "decidedBy": "owner:clossys/workspace#46 issuecomment-6841911551 (OWNER WORDS 2026-11-12 R2F-L2 Director round, option a)",
+  "basis": "picked",
+  "at": "2026-11-13T02:23:33.799Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.091Z",
+    "cites": {
+      "director:advantage.proposition.proof": 6
+    },
+    "proof": {
+      "director:advantage.proposition.proof": "sha256:e85d6d8a3ec86a30510f76d8136c8a2b1442c4083a996570e0533ee30c685e29"
+    }
+  }
+}

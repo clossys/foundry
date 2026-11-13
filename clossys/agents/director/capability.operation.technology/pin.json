@@ -1,0 +1,12 @@
+{
+  "candidate": "studio-technology-v3.md",
+  "sha256": "3256672f8025804dd014a29b7c10fd44b97505e17212ae9388d34661f1609c61",
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:15.791Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:51.512Z"
+  }
+}

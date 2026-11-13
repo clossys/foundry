@@ -1,0 +1,125 @@
+{
+  "links": [
+    {
+      "downstream": "advantage.proposition.promise",
+      "upstream": "context.customer.need",
+      "label": "Need-Promise"
+    },
+    {
+      "downstream": "advantage.defensibility.differentiator",
+      "upstream": "advantage.proposition.promise",
+      "label": "Promise-Differentiator"
+    },
+    {
+      "downstream": "advantage.model.pricing",
+      "upstream": "advantage.defensibility.differentiator",
+      "label": "Differentiator-Pricing"
+    },
+    {
+      "downstream": "focus.reach.channel",
+      "upstream": "focus.segment.core",
+      "label": "Core-Channel"
+    },
+    {
+      "downstream": "focus.lifecycle.acquisition",
+      "upstream": "focus.reach.channel",
+      "label": "Channel-Acquisition"
+    },
+    {
+      "downstream": "execution.roadmap.release",
+      "upstream": "focus.lifecycle.acquisition",
+      "label": "Acquisition-Release"
+    },
+    {
+      "downstream": "identity.verbal.voice",
+      "upstream": "identity.brand.essence",
+      "label": "Essence-Voice"
+    },
+    {
+      "downstream": "identity.visual.style",
+      "upstream": "identity.verbal.voice",
+      "label": "Voice-Style"
+    },
+    {
+      "downstream": "identity.visual.style",
+      "upstream": "identity.brand.essence",
+      "label": "Essence-Style"
+    },
+    {
+      "downstream": "execution.measure.north-star",
+      "upstream": "aspiration.goal.long-term",
+      "label": "Long-term-North star"
+    },
+    {
+      "downstream": "capability.resource.allocation",
+      "upstream": "execution.priority.bet",
+      "label": "Bet-Allocation"
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "X1",
+      "a": "focus.offer.included",
+      "b": "focus.offer.excluded",
+      "rule": "no item appears in both Offer and Not",
+      "kind": "script"
+    },
+    {
+      "id": "X2",
+      "a": "execution.priority.bet",
+      "b": "execution.priority.parked",
+      "rule": "the Bet is not Parked",
+      "kind": "script"
+    },
+    {
+      "id": "X3",
+      "a": "focus.segment.core",
+      "b": "focus.segment.next",
+      "rule": "Next is not the Core segment restated",
+      "kind": "judge"
+    },
+    {
+      "id": "X4",
+      "a": "identity.verbal.voice",
+      "b": [
+        "identity.verbal.narrative",
+        "advantage.proposition.promise"
+      ],
+      "rule": "no quoted Never word appears in Narrative or Promise",
+      "kind": "script"
+    },
+    {
+      "id": "X5",
+      "a": "advantage.proposition.proof",
+      "b": [
+        "advantage.proposition.promise",
+        "identity.verbal.narrative"
+      ],
+      "rule": "no quoted Never-claim phrase appears in Promise or Narrative",
+      "kind": "script"
+    },
+    {
+      "id": "X6",
+      "a": "aspiration.goal.annual",
+      "b": "aspiration.goal.long-term",
+      "rule": "Annual Date is on or before Long-term Date",
+      "kind": "script"
+    },
+    {
+      "id": "X7",
+      "a": "capability.resource.allocation",
+      "b": "execution.priority.bet",
+      "rule": "the largest Split share goes to the active Bet",
+      "kind": "judge"
+    }
+  ],
+  "storyline": [
+    "context.customer.need",
+    "aspiration.purpose.mission",
+    "focus.segment.core",
+    "advantage.proposition.promise",
+    "identity.brand.essence",
+    "capability.operation.delivery",
+    "execution.priority.bet"
+  ]
+}

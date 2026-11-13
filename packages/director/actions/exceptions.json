@@ -1,0 +1,10 @@
+{
+  "schema": "clossys.action-exceptions/1",
+  "exceptions": [
+    {
+      "item": "docs/v2/skill/SKILL.md",
+      "reason": "The v2 interview skill draft; it replaces skill/SKILL.md only when the interview ships.",
+      "unit": "W5a"
+    }
+  ]
+}

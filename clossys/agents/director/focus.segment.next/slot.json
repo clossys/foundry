@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.segment.next",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.segment",
+    "order": 17
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which segment comes next, and what triggers the move?",
+    "mustContain": [
+      {
+        "key": "Who",
+        "hint": "the next segment"
+      },
+      {
+        "key": "Trigger",
+        "hint": "the evidence that starts the move"
+      },
+      {
+        "key": "Change",
+        "hint": "what we must change to serve them"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

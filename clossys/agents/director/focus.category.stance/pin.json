@@ -1,0 +1,12 @@
+{
+  "candidate": "studio-stance-v3.md",
+  "sha256": "59a761fc4058dbc6ccae0dc27180a9cc2d13d1be170a073d4e62b513aaed5368",
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:18:22.513Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:18:46.713Z"
+  }
+}

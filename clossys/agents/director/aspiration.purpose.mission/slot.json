@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "aspiration.purpose.mission",
+  "agent": "director",
+  "ia": {
+    "l1": "aspiration",
+    "l2": "aspiration.purpose",
+    "order": 8
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we do, for whom, and why does it matter?",
+    "mustContain": [
+      {
+        "key": "Do",
+        "hint": "what we do, as a verb phrase"
+      },
+      {
+        "key": "For",
+        "hint": "who it is for"
+      },
+      {
+        "key": "Why",
+        "hint": "why it matters to them"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

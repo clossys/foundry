@@ -1,0 +1,63 @@
+{
+  "schema": "clossys.action/1",
+  "id": "director.store",
+  "agent": "director",
+  "kind": "plumb",
+  "stage": "direct.pin",
+  "summary": "Director's own store commands (clossys director check, rate-check) through the slot-model reader and writer.",
+  "run": "clossys director check <command>",
+  "chain": "clossys director check brand",
+  "inputs": [
+    {
+      "glob": "clossys/agents/director/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    },
+    {
+      "glob": "clossys/agents/director/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/director/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/evidence/director/*.md",
+      "schema": "director-evidence"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/evidence/director/briefs/*.json",
+      "schema": "director-brief"
+    },
+    {
+      "glob": "clossys/evidence/director/reports/*.json",
+      "schema": "director-report"
+    }
+  ],
+  "pass": {
+    "command": "clossys direct",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": [
+    "bin:director-rate-check"
+  ]
+}

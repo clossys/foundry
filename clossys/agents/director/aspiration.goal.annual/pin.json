@@ -1,0 +1,26 @@
+{
+  "candidate": "studio-goal-annual-v7.md",
+  "sha256": "af3dd0657d749f4285bdd060dc0aae2eb86dcc261acc5ee7c46cf5301a5956c0",
+  "decidedBy": "agent:director",
+  "basis": "agent",
+  "at": "2026-11-11T23:21:26.074Z",
+  "confirmed": {
+    "by": "owner",
+    "ref": "clossys/workspace#46 issuecomment-6809267928",
+    "at": "2026-11-11T23:26:04.488Z"
+  },
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T02:23:51.007Z",
+    "cites": {
+      "director:aspiration.goal.long-term": 3,
+      "director:aspiration.purpose.vision": 5,
+      "director:execution.priority.bet": 10
+    },
+    "proof": {
+      "director:aspiration.goal.long-term": "sha256:e5d3b7ae75129ba11eb3c97ee5aca3f93de99902180505459bfe4fd95177a006",
+      "director:aspiration.purpose.vision": "sha256:aa453415cdda01ec513602c888ddd747bfd145f1dbb409eba6098d89697d9152",
+      "director:execution.priority.bet": "sha256:0f4b101eca664a50ee75b185802f5eb1307637dfa677cf8ca1a5bed6efa66823"
+    }
+  }
+}
