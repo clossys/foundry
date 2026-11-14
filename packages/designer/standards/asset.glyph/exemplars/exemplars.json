@@ -1,0 +1,66 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "lucide",
+      "ref": "https://lucide.dev",
+      "source": "lucide.dev",
+      "license": "ISC",
+      "description": "Lucide: a 24px, 2px-stroke icon set with round caps; the Studio's glyph source.",
+      "why": {
+        "stroke-harmony": "One stroke and cap style across the set."
+      }
+    },
+    {
+      "id": "lucide-guide",
+      "ref": "https://lucide.dev/guide/design/icon-design-guide",
+      "source": "lucide.dev",
+      "license": "ISC",
+      "description": "Lucide's icon design guide: grid, padding, stroke and corner rules.",
+      "why": {
+        "optical-balance": "Padding and keylines for optical size.",
+        "small-legibility": "Rules for minimum detail."
+      }
+    },
+    {
+      "id": "heroicons",
+      "ref": "https://heroicons.com",
+      "source": "heroicons.com",
+      "license": "MIT",
+      "description": "Heroicons: outline and solid sets drawn for 24px and 20px.",
+      "why": {
+        "small-legibility": "Separate small cuts rather than scaled ones."
+      }
+    },
+    {
+      "id": "tabler",
+      "ref": "https://tabler.io/icons",
+      "source": "tabler.io",
+      "license": "MIT",
+      "description": "Tabler Icons: a large 24px outline set with a strict stroke system.",
+      "why": {
+        "stroke-harmony": "Thousands of glyphs with one stroke system."
+      }
+    },
+    {
+      "id": "phosphor",
+      "ref": "https://phosphoricons.com",
+      "source": "phosphoricons.com",
+      "license": "MIT",
+      "description": "Phosphor: one glyph in six weights, showing how weight changes tone.",
+      "why": {
+        "optical-balance": "Weights keep the same optical footprint."
+      }
+    },
+    {
+      "id": "geist-icons",
+      "ref": "https://vercel.com/geist/icons",
+      "source": "vercel.com",
+      "license": "all-rights-reserved",
+      "description": "Geist icons: a restrained set matched to the Geist type weight.",
+      "why": {
+        "stroke-harmony": "Icon weight matched to the UI type."
+      }
+    }
+  ]
+}

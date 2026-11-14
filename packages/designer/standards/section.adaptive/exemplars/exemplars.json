@@ -1,0 +1,57 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "stripe-docs",
+      "ref": "https://docs.stripe.com",
+      "source": "docs.stripe.com",
+      "license": "all-rights-reserved",
+      "description": "Stripe docs: content sections that read the same in marketing pages and the dashboard.",
+      "why": {
+        "fit-both": "One section language across surfaces.",
+        "hierarchy": "Headings and code in a clear order."
+      }
+    },
+    {
+      "id": "vercel-docs",
+      "ref": "https://vercel.com/docs",
+      "source": "vercel.com",
+      "license": "all-rights-reserved",
+      "description": "Vercel docs: headers, callouts and cards shared with the product.",
+      "why": {
+        "fit-both": "Docs blocks reused in the app."
+      }
+    },
+    {
+      "id": "tailwind-docs",
+      "ref": "https://tailwindcss.com/docs",
+      "source": "tailwindcss.com",
+      "license": "MIT",
+      "description": "Tailwind docs: content bands with tight type and generous measure.",
+      "why": {
+        "polish": "Exact type and spacing."
+      }
+    },
+    {
+      "id": "shadcn-docs",
+      "ref": "https://ui.shadcn.com/docs",
+      "source": "ui.shadcn.com",
+      "license": "MIT",
+      "description": "shadcn docs: page headers and content sections built from the stock components.",
+      "why": {
+        "hierarchy": "Header, lead and content in order."
+      }
+    },
+    {
+      "id": "linear-changelog",
+      "ref": "https://linear.app/changelog",
+      "source": "linear.app",
+      "license": "all-rights-reserved",
+      "description": "Linear changelog: editorial entries that sit in the site and the app.",
+      "why": {
+        "fit-both": "The same entry reads well in both.",
+        "polish": "Consistent imagery and type."
+      }
+    }
+  ]
+}

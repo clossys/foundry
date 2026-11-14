@@ -10,6 +10,7 @@
   },
   "kind": "element",
   "contract": {
+    "kind": "section",
     "schema": "clossys.slot-contract/1",
     "slot": "sections.producer.pipeline-flow",
     "package": "producer",
@@ -92,5 +93,6 @@
     "components.flow.node-status",
     "components.item",
     "components.sheet"
-  ]
+  ],
+  "standard": "section.app"
 }

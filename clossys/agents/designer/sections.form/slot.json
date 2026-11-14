@@ -271,5 +271,6 @@
     "components.field",
     "components.select",
     "components.text-field"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

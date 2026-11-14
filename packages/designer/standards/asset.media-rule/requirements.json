@@ -1,0 +1,50 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "asset.media-rule",
+  "kinds": [
+    "element/asset"
+  ],
+  "mode": "craft",
+  "craftTier": "mid",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "derive.director",
+      "params": {
+        "required": [
+          "identity.visual.imagery"
+        ]
+      }
+    },
+    {
+      "check": "source.ref",
+      "params": {
+        "kinds": [
+          "original",
+          "derived"
+        ],
+        "registries": [],
+        "licenses": [
+          "MIT",
+          "CC0-1.0"
+        ]
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-media-rule]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

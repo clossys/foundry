@@ -176,5 +176,6 @@
     "components.button",
     "components.field",
     "components.select"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

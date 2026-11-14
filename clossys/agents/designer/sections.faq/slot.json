@@ -143,5 +143,6 @@
     "themes.primary",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "section.adaptive"
 }

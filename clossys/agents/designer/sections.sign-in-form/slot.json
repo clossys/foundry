@@ -310,5 +310,6 @@
     "components.card",
     "components.field",
     "themes.input"
-  ]
+  ],
+  "standard": "section.app"
 }

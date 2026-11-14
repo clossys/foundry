@@ -183,5 +183,6 @@
     "themes.radius",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "section.adaptive"
 }

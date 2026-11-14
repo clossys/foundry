@@ -245,5 +245,6 @@
     "components.field",
     "components.item",
     "components.slider"
-  ]
+  ],
+  "standard": "section.app"
 }

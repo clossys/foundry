@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "standard",
+      "at": "2026-11-14T16:18:24.428Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "designer",
+        "id": "asset.glyph",
+        "sha256": "d0d70c3cdf60a7dfeef9cf50311df92930387e1afc003cd4a95568591b5bf820"
+      },
+      "files": {
+        "exemplars/exemplars.json": "24bbf335ff6bca459a881980df46c6a685271f8c0b3063210d31cca4a9b35531",
+        "requirements.json": "6092b8f98a7a6d1874c0da4e5adf1f26521dfcaa2ecaabe1cc409c3bb6e25552",
+        "taste.md": "43e82bc0f85613fa878874d33fbf7f3592bd5424e29f7b348314de5a72fc4667"
+      }
+    }
+  ]
+}

@@ -203,5 +203,6 @@
   ],
   "uses": [
     "components.separator"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

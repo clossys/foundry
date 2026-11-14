@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "asset.logo-mark",
+  "kinds": [
+    "element/asset"
+  ],
+  "mode": "craft",
+  "craftTier": "high",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "derive.director",
+      "params": {
+        "traits": [
+          "identity.brand.essence",
+          "identity.brand.personality",
+          "identity.naming.name"
+        ],
+        "required": [
+          "identity.visual.imagery"
+        ]
+      }
+    },
+    {
+      "check": "asset.svg-files",
+      "params": {
+        "viewbox": {},
+        "modes": {},
+        "smallSize": {
+          "size": 16,
+          "minStrokePx": 1,
+          "maxShapes": 12
+        }
+      }
+    },
+    {
+      "check": "source.ref",
+      "params": {
+        "kinds": [
+          "original",
+          "derived"
+        ],
+        "registries": [],
+        "licenses": [
+          "MIT",
+          "CC0-1.0"
+        ]
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-mark-mode=\"light\"]",
+        "[data-mark-mode=\"dark\"]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

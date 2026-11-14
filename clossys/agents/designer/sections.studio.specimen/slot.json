@@ -10,6 +10,7 @@
   },
   "kind": "element",
   "contract": {
+    "kind": "section",
     "schema": "clossys.slot-contract/1",
     "slot": "sections.studio.specimen",
     "package": "producer",
@@ -55,5 +56,6 @@
     "components.field",
     "components.scroll-area",
     "components.table"
-  ]
+  ],
+  "standard": "section.app"
 }

@@ -1,0 +1,69 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "geist-font",
+      "ref": "https://vercel.com/font",
+      "source": "vercel.com",
+      "license": "OFL-1.1",
+      "description": "Geist Sans and Geist Mono: a sans and mono designed as one family for UI and code.",
+      "why": {
+        "pairing": "Sans and mono share metrics and roles are clear.",
+        "legibility": "Built for interface sizes."
+      }
+    },
+    {
+      "id": "inter",
+      "ref": "https://rsms.me/inter/",
+      "source": "rsms.me",
+      "license": "OFL-1.1",
+      "description": "Inter: a variable UI face with optical sizes and tabular figures.",
+      "why": {
+        "legibility": "Optical sizes keep small text open.",
+        "scale-rhythm": "Display cut tightens at large sizes."
+      }
+    },
+    {
+      "id": "linear-type",
+      "ref": "https://linear.app",
+      "source": "linear.app",
+      "license": "all-rights-reserved",
+      "description": "Linear's headings: Inter Display with tight tracking over a quiet body size.",
+      "why": {
+        "scale-rhythm": "Few sizes, strong contrast between display and body.",
+        "voice-fit": "Precise, engineered tone."
+      }
+    },
+    {
+      "id": "stripe-type",
+      "ref": "https://stripe.com",
+      "source": "stripe.com",
+      "license": "all-rights-reserved",
+      "description": "Stripe's typography: one confident sans carrying both editorial headlines and product UI.",
+      "why": {
+        "voice-fit": "The face carries a confident, plain voice.",
+        "pairing": "One family across marketing and product."
+      }
+    },
+    {
+      "id": "fontsource",
+      "ref": "https://fontsource.org",
+      "source": "fontsource.org",
+      "license": "MIT",
+      "description": "Fontsource: self-hosted, versioned font packages a candidate cites as its registry source.",
+      "why": {
+        "legibility": "Variable packages ship every weight the scale needs."
+      }
+    },
+    {
+      "id": "practical-typography-line-length",
+      "ref": "https://practicaltypography.com/line-length.html",
+      "source": "practicaltypography.com",
+      "license": "all-rights-reserved",
+      "description": "Butterick on line length and point size: the measure a type scale must serve.",
+      "why": {
+        "scale-rhythm": "Size, leading and measure set together."
+      }
+    }
+  ]
+}
