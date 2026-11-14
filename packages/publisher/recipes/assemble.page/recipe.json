@@ -1,0 +1,14 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "assemble.page",
+  "produces": [
+    "page",
+    "publication"
+  ],
+  "rung": "create",
+  "axes": [
+    "lead",
+    "order",
+    "grouping"
+  ]
+}
