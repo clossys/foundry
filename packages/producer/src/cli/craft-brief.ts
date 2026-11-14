@@ -37,7 +37,11 @@ export function assembleBrief(root: string, consumer: string, agent: SlotAgent, 
   const doc = readSlot(consumer, agent, slot);
   const index = slotIndex(consumer);
   const ready = readiness(consumer, agent, slot, index);
-  if (!ready.ready) {
+  // R20 (Director-derived) covers Designer and Writer slots. A Producer seat (next --stage passes it
+  // through as a SlotAgent) with no inputs configures the pipeline rather than realising content:
+  // it is briefed from its contract alone.
+  const seatRoot = (agent as string) === "producer" && !doc.inputs.length;
+  if (!seatRoot && !ready.ready) {
     const first = ready.blockedBy[0]!;
     if (first.reason === "inputs-undeclared") return { refusal: `${agent}/${slot} declares no inputs, so nothing pinned upstream can be cited (R20); fix: declare the slot's inputs (clossys migrate inputs), then pin them` };
     const owner = index.get(first.slot)?.agent ?? "director";

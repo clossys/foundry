@@ -35,6 +35,16 @@ function slot(agent: string, ia: IaDoc, id: string, fields: Record<string, unkno
   writeFileSync(join(dir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id, agent, ia: slotPositions(agent as never, ia).get(id), inputs: [], uses: [], ...fields }));
   return dir;
 }
+/** A pinned Director slot `id`, declared as the Designer fixture slot's one input. */
+function pinnedDirectorInput(id: string): void {
+  const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "identity", label: "Identity", children: [{ id: "identity.visual", label: "Visual", slots: [id] }] }] };
+  const dir = slot("director", ia, id, { kind: "brief", contract: { question: "How do we look?" } });
+  const bytes = `---\nslot: "${id}"\nsource: {"kind":"derived","ref":["finding:fixture"]}\nfeeds: []\nfunctions: ["brand"]\n---\n\n## Direction\n- Feel: quiet and exact.\n\n## Because\n- fixture\n\n## Watch\n- fixture\n`;
+  writeFileSync(join(dir, "candidates", "style-v1.md"), bytes);
+  writeFileSync(join(dir, "pin.json"), jsonBytes({ candidate: "style-v1.md", sha256: sha256Hex(bytes), decidedBy: "planner:fixture", basis: "picked", at: AT }));
+  const doc = load(join(slotDir, "slot.json"));
+  writeFileSync(join(slotDir, "slot.json"), jsonBytes({ ...doc, inputs: [id] }));
+}
 const standard = (agent: string, id: string) => cpSync(join(PACKAGES, agent, "standards", id), join(workspace, "packages", agent, "standards", id), { recursive: true });
 
 beforeEach(() => {
@@ -74,6 +84,8 @@ describe("clossys verdict --record", () => {
     expect(result.exitCode, result.message).toBe(0);
     expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
     expect(events().at(-1)).toMatchObject({ op: "verdict", verdict: "create", create: true, inputsHash: hash, gaps: create.gaps });
+    // The brief cites pinned upstream values (R20): the element realises a pinned Director slot.
+    pinnedDirectorInput("identity.visual.style");
     const skill = STEPS.find(step => step.id === "designer.candidates")!.command.skill!;
     writeFileSync(join(workspace, "brief.json"), JSON.stringify({ goal: "a button with a loading state" }));
     const brief = await runNextSubmitCli([`designer/${ID}`, "--stage", "brief", "--model", "fixture-model", "--tier", "high", "--skill", skill, "--file", "brief.json"], workspace);
