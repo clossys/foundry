@@ -26,7 +26,7 @@ function withRepo(fn) {
     };
     const pinned = slot("components.pinned");
     writeFileSync(join(pinned, "candidates", "example-v1.json"), CANDIDATE);
-    writeFileSync(join(pinned, "pin.json"), json({ candidate: "example-v1.json", sha256: sha(CANDIDATE), decidedBy: "owner", at: "2026-11-03T00:00:00.000Z" }));
+    writeFileSync(join(pinned, "pin.json"), json({ candidate: "example-v1.json", sha256: sha(CANDIDATE), decidedBy: "owner", basis: "picked", at: "2026-11-03T00:00:00.000Z" }));
     const notNeeded = slot("components.unused", { notNeeded: { reason: "No toolbar.", since: "2026-11-03", decidedBy: "owner" } });
     slot("components.open");
     fn({ repo, consumer: join(repo, "clossys"), pinned, notNeeded });
@@ -106,7 +106,7 @@ test("--agent scopes the check to one agent's pin records, and a missing agent f
     const writer = join(consumer, "agents", "writer", "strings.common");
     mkdirSync(join(writer, "candidates"), { recursive: true });
     writeFileSync(join(writer, "slot.json"), json({ schema: "clossys.slot/1", id: "strings.common" }));
-    writeFileSync(join(writer, "pin.json"), json({ candidate: "missing-v1.md", sha256: sha(""), decidedBy: "owner", at: "2026-11-03T00:00:00.000Z" }));
+    writeFileSync(join(writer, "pin.json"), json({ candidate: "missing-v1.md", sha256: sha(""), decidedBy: "owner", basis: "picked", at: "2026-11-03T00:00:00.000Z" }));
     assert.deepEqual(checkDecisions(consumer, { agent: "designer" }).findings, []);
     assert.deepEqual(checkDecisions(consumer, { agent: "writer" }).findings.map((row) => row.rule), ["pin-candidate"]);
     // A hand edit of a pinned Designer candidate is caught when scoped to Designer.

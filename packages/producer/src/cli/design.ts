@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { Cell, Bullet } from "@clossys/director";
 import { agentModule } from "../server/cells.js";
 import { libraryTheme } from "../server/library-selection.js";
-import { directorRef, readPinnedDirector } from "../records/director-pinned.js";
+import { directorLineRef, directorRef, readPinnedDirector } from "../records/director-pinned.js";
 import { readPinned, type PinnedSet } from "../records/pinned.js";
 import { hasSlotModel, readIa } from "../records/slots.js";
 import type { CliArgs } from "./args.js";
@@ -50,23 +50,23 @@ export async function designBrief(root: string, pinned?: readonly Cell[]): Promi
     const cell = cells.find(cell => cell.id === id);
     if (!cell) limits.push({ code: required ? "missing-director-input" : "optional-director-input", subject: id, message: `No pinned ${role} input` });
     else if (required && !cell.direction.length) limits.push({ code: "missing-director-input", subject: id, message: `Pinned ${role} input has no Direction bullets` });
-    return { role, id, required, version: cell?.version ?? null, ref: cell ? directorRef(cell) : null,
+    return { role, id, required, version: cell?.version ?? null, ref: cell ? directorRef(cell) : null, lineRef: cell ? directorLineRef(cell) : null,
       direction: cell?.direction ?? [], watch: cell?.watch ?? [], cites: cell?.cites ?? [] };
   });
   const traits: DesignTrait[] = [];
   for (const input of inputs) {
     for (const bullet of input.direction) {
       if (unresolved(bullet)) {
-        limits.push({ code: "unresolved-owner-input", subject: `${input.ref}#direction-L${bullet.line}`, message: bullet.text });
+        limits.push({ code: "unresolved-owner-input", subject: `${input.lineRef}#direction-L${bullet.line}`, message: bullet.text });
         continue;
       }
       const kind = input.role === "voice" ? "voice-rule" : ["essence", "personality"].includes(input.role) ? "brand-trait"
         : ["visual-direction", "imagery"].includes(input.role) ? "visual-direction" : undefined;
-      if (kind) traits.push({ id: `${input.ref}#direction-L${bullet.line}`, ref: input.ref!, kind, ...(bullet.key ? { key: bullet.key } : {}), text: bullet.text, line: bullet.line });
+      if (kind) traits.push({ id: `${input.lineRef}#direction-L${bullet.line}`, ref: input.lineRef!, kind, ...(bullet.key ? { key: bullet.key } : {}), text: bullet.text, line: bullet.line });
     }
   }
   const wontClaim = cells.flatMap(cell => cell.direction.filter(bullet => prohibitionLabel.test(bullet.key ?? ""))
-    .map(bullet => ({ ref: directorRef(cell), key: bullet.key!, text: bullet.text, line: bullet.line })));
+    .map(bullet => ({ ref: directorLineRef(cell), key: bullet.key!, text: bullet.text, line: bullet.line })));
   const leaves = [...catalog.loadCatalog().slots, ...catalog.loadComponentRegistry().slots,
     ...catalog.loadSectionRegistry().slots, ...catalog.loadBuildCatalog().slots.filter((slot: { layer: string }) => slot.layer === "frames")]
     .map((slot: { id: string; layer: string }) => ({ id: slot.id, layer: slot.layer })).sort((a, b) => a.id.localeCompare(b.id));

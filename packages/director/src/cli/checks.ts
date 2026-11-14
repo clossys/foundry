@@ -27,7 +27,7 @@ function draft(model: StrategyModel, reader: DirectorStore["reader"], id: string
   const bytes = reader.read(model.root, path);
   if (bytes === undefined) return undefined;
   // A draft has no pin, so it carries status "draft": the pin rule (Q7) applies to active cells only.
-  return { ...slotCandidateCell({ id, version: wanted, updated: new Date().toISOString().slice(0, 10), path, bytes }), status: "draft" };
+  return { ...slotCandidateCell({ id, version: wanted, updated: new Date().toISOString().slice(0, 10), path, bytes, resolve: slot => model.tree?.active[slot] ?? undefined }), status: "draft" };
 }
 function quality(model: StrategyModel, targets: string[], reader: DirectorStore["reader"]) {
   const drafts: Cell[] = [];

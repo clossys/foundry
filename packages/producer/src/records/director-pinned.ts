@@ -33,7 +33,14 @@ export async function readPinnedDirector(consumer: string): Promise<PinnedDirect
   return { set, cells, unreadable };
 }
 
-export const directorRef = (cell: Pick<Cell, "id" | "version">) => `director:${cell.id}@${cell.version}`;
+/** A pinned Director cell's citation: its slot id, resolved through the slot's pin (planner D2). */
+export const directorRef = (cell: Pick<Cell, "id">) => `director:${cell.id}`;
+/**
+ * A line anchor into the pinned Director candidate: `director:<id>@<version>`, then `#L<line>` or `#direction-L<line>`.
+ * A line number only means something in the bytes of one version, so line-anchored record sources (Writer
+ * `directorSources`, Designer traits) keep the version until the Writer and Designer packages move them to slot ids.
+ */
+export const directorLineRef = (cell: Pick<Cell, "id" | "version">) => `director:${cell.id}@${cell.version}`;
 
 /** Director evidence (`evidence/director/<id>.md`, outside the agent tree), read by the Director's own finding parser. */
 export async function readDirectorEvidence(consumer: string): Promise<{ findings: Finding[]; issues: { file: string; line: number; detail: string }[] }> {

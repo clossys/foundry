@@ -88,10 +88,11 @@ describe("production brief CLI adapter", () => {
   });
   it("keeps unresolved cell dependencies visibly stale when persisting", () => {
     const root = fixture();
-    // The dangling citation fails the cell's own Q3, so completion and the handoff both refuse it; the stale ref stays listed.
-    stage(root, 1, undefined, ["context.market.size@1"]);
+    // A citation of an unpinned slot resolves to nothing (version 0): it fails the cell's own Q3, so completion and the
+    // handoff both refuse it, and the unresolved dependency stays listed.
+    stage(root, 1, undefined, ["context.market.size"]);
     expect(run(root, ["--write"]).code).toBe(1);
-    expect(read(root, "briefs/fixture.brief.json")).toMatchObject({ state: "missing", missing: [id], stale: [{ cell: "context.market.size", version: 1 }] });
+    expect(read(root, "briefs/fixture.brief.json")).toMatchObject({ state: "missing", missing: [id], stale: [{ cell: "context.market.size", version: 0 }] });
     expect(run(root).output.result.state).toBe("missing");
     expect(existsSync(join(root, "requests"))).toBe(false);
   });

@@ -31,7 +31,7 @@ export function stageFinding(root: string, id = "active-customers", text = findi
 export interface SlotFixture {
   /** Candidate name stem; the file is `<name>-v<version>.md`. */
   name?: string;
-  /** `finding:<id>` refs of the candidate source. */
+  /** `finding:<id>` and slot-id refs of the candidate source (a versioned ref is written as its slot id). */
   refs?: string[];
   feeds?: string[];
   functions?: string[];
@@ -43,12 +43,19 @@ export interface SlotFixture {
   pin?: { decidedBy: string; basis: string };
 }
 
+/**
+ * A candidate cites slot ids (planner D2), resolved through the cited slot's pin when it is read; a
+ * versioned ref a test passes (`<slot>@<n>`, e.g. from formatRef) is written as its slot id. Tests of the
+ * refused versioned form write their bytes directly.
+ */
+export const slotCitations = (text: string): string => text.replace(/(?<![A-Za-z0-9._:/@-])((?:[a-z]+:)?[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})@[1-9][0-9]*(?![0-9]|\.[0-9])/g, "$1");
+
 /** The candidate bytes `stageSlot` writes, for tests that edit or hash them. */
 export function candidateFixture(id: string, direction: readonly string[], options: SlotFixture = {}): string {
   const lines = [
     "---",
     `slot: ${JSON.stringify(id)}`,
-    `source: ${JSON.stringify({ kind: "derived", ref: options.refs ?? [] })}`,
+    `source: ${JSON.stringify({ kind: "derived", ref: (options.refs ?? []).map(slotCitations) })}`,
     `feeds: ${JSON.stringify(options.feeds ?? [])}`,
     `functions: ${JSON.stringify(options.functions ?? [])}`,
     "---",
@@ -57,7 +64,7 @@ export function candidateFixture(id: string, direction: readonly string[], optio
     ...direction.map(line => `- ${line}`),
     "",
     "## Because",
-    ...(options.because ?? ["Observed."]).map(line => `- ${line}`),
+    ...(options.because ?? ["Observed."]).map(line => `- ${slotCitations(line)}`),
     "",
     "## Watch",
     ...(options.watch ?? ["Review."]).map(line => `- ${line}`),

@@ -64,13 +64,10 @@ Each rule is stated once, here or in the one place named, and the named check or
   packet hands over (`check:step-standard` rule `skill.ladder`). A submission whose
   ladder record does not hold is refused, and `clossys gaps` lists a recorded one as a `ladder` gap;
   the Designer's sources are held by `check:source-ladder`.
-- **A pointer-only upstream change is re-cited in place.** After `pin.director` and `pin.writer`,
-  `clossys run` runs `recite.direct` and `recite.design` (`clossys migrate recite --cascade`): a
-  citer whose cited meaning is byte-for-byte unchanged (the Director cell's Direction section; any
-  other candidate without its note and slot versions) is re-cited by `agent:producer`, with the
-  meaning hash recorded as `recited.proof`. A changed meaning re-cites nothing and opens
-  `<agent>.candidates` for that slot (its pick, once a newer candidate is drafted). The steps' pass,
-  `--cascade --check`, fails while a re-cite is pending.
+- **Citations name slot ids; a re-pin cascades.** A candidate cites `<slot>` or `<agent>:<slot>`,
+  never a version; the citation resolves through that slot's pin when it is read (compile and
+  derive time). A re-pin upstream opens no downstream candidate or pick: the derive and check steps
+  that take the pin as an input go stale, and `clossys run` re-derives and re-certifies downstream.
 - **Requests go to the upstream owner**: the Interview's gaps below (`check:step-standard` rule
   `request.addressee`).
 - **Agent work is submitted only through `clossys next --submit`** from the step's seat (Answer
@@ -85,7 +82,7 @@ cites it and runs it for its own agent id; `<id>` below is that id, `producer` h
   `clossys run` stops at an owner decide step; when a downstream agent reports a need.
 - **Gaps first**: `clossys gaps --agent <id> --json` lists what keeps the agent from done, in three
   kinds. Coverage: open decide items, slots with no candidates or no pin, failing checks, a missing
-  seat policy. Wiring: pinned slots citing an input pinned since (stale citations), steps with no
+  seat policy. Wiring: pinned slots citing an input whose pin no longer clears, steps with no
   seat, plumb steps that failed or went stale (chain drift), a candidate whose ladder record does
   not hold. Requests: a downstream agent's need addressed `to` this agent (`from`, `need`), such as
   a Designer slot citing an unclear Director cell or a Publisher page naming Writer keys the copy

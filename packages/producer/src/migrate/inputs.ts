@@ -5,7 +5,7 @@
  * - Designer: the Designer brief's Director slots (every Designer decision reads the brief,
  *   catalog and consumer-only slots alike) plus the Foundry IA's declared inputs (the theme
  *   and asset slots the slot contract reads), kept to slots the consumer has.
- * - Writer: the Foundry IA's declared inputs plus the `director:<slot>@N` refs the pinned
+ * - Writer: the Foundry IA's declared inputs plus the `director:<slot>` citations the pinned
  *   candidate's frontmatter `source.ref` cites.
  *
  * Inputs are only added, never removed: a declared input the graph does not show stays.
@@ -13,7 +13,8 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { agentRefs, candidateDocument } from "../records/pinned.js";
+import { sourceCitations } from "../records/citations.js";
+import { candidateDocument } from "../records/pinned.js";
 import { listSlots, readCandidate, readSlotRecordText, slotIndex } from "../records/slots.js";
 import { DESIGN_BRIEF_INPUTS } from "../records/slot-model/design-brief-inputs.js";
 import { designerIa, writerIa, type FoundrySlot } from "../records/slot-model/foundry-ia.js";
@@ -59,7 +60,7 @@ export function planInputsMigration(consumer: string, catalog: InputsCatalog = f
       if (agent === "writer" && entry.pin) {
         try {
           const candidate = readCandidate(consumer, agent, entry.id, entry.pin.candidate);
-          for (const ref of agentRefs(candidateDocument({ bytes: candidate.bytes, path: entry.pin.candidate }).fields, "director")) read.add(ref.slot);
+          for (const ref of sourceCitations(candidateDocument({ bytes: candidate.bytes, path: entry.pin.candidate }).fields, "director")) read.add(ref.slot);
         } catch (error) {
           // The plan still runs on the inputs it can read; the unread pinned candidate is named, never skipped silently.
           findings.push({ agent, slot: entry.id, message: `${agent}/${entry.id}: pinned candidate ${entry.pin.candidate} cannot be read (${(error as Error).message}); its Director reads are not planned` });

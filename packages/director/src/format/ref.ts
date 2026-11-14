@@ -24,7 +24,8 @@ export function parseRef(text: string): Ref | undefined {
 }
 export function formatRef(ref: Ref): string {
   switch (ref.kind) {
-    case "cell": return `${ref.ref.cell}@${ref.ref.version}`;
+    // Version 0 is a slot citation whose slot has no pin (format/slot.ts): the slot id alone.
+    case "cell": return ref.ref.version ? `${ref.ref.cell}@${ref.ref.version}` : ref.ref.cell;
     case "msg": return `msg:${ref.session}#${ref.line}`;
     case "finding": return `finding:${ref.id}`;
   }

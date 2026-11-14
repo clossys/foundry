@@ -17,7 +17,7 @@ export const DIRECTOR_CHECKS_USAGE = "       clossys director check brand [--roo
   + "       clossys director check direction [--root <dir>] [--json]\n"
   + "       clossys director check apply <scan-dir> [--root <dir>] [--json]\n"
   + "brand: every core Identity cell with the brand function is pinned. direction: every cell citation in a pinned\n"
-  + "candidate names the cited slot's pinned version. apply: every scanned surface carries a strategy:<cell>@<n> marker\n"
+  + "candidate is a slot id (never <slot>@<n>) whose slot is pinned; it resolves through that pin. apply: every scanned surface carries a strategy:<cell>@<n> marker\n"
   + "for each pinned constraint cell at its pinned version. The root defaults to <repo root>/clossys/agents/director.";
 
 const MARKER = /strategy:([a-z]+(?:-[a-z]+)*\.[a-z]+(?:-[a-z]+)*\.[a-z]+(?:-[a-z]+)*)@([1-9]\d*)/g;
@@ -41,20 +41,24 @@ function brand(model: StrategyModel): Finding[] {
     .map(cell => ({ rule: "brand-uncovered", cell: cell.id, message: `${cell.id} is a core brand cell with no pinned candidate.` }));
 }
 
-/** A pinned candidate's cell citations must name the cited slot's pinned version. */
+/**
+ * A pinned candidate's cell citations are slot ids that resolve through the cited slot's pin (planner
+ * D2): each must name a slot that has one (`direction-dangling`), and none may name a version
+ * (`direction-versioned`: the store refuses that candidate and says so). A re-pin of a cited slot is
+ * no finding: the citation resolves to the new pin, and the checks re-run on it (the cascade).
+ */
 function direction(model: StrategyModel): Finding[] {
   const pinned = pinnedVersions(model);
   const findings: Finding[] = [];
+  for (const issue of model.issues) {
+    if (!issue.message.includes(": versioned citation ")) continue;
+    const cell = issue.path.split("/")[0] ?? issue.path;
+    findings.push({ rule: "direction-versioned", cell, path: issue.path, message: issue.message });
+  }
   for (const cell of model.cells) {
     for (const ref of cell.cites) {
-      if (ref.kind !== "cell") continue;
-      const target = `${ref.ref.cell}@${ref.ref.version}`;
-      const current = pinned.get(ref.ref.cell);
-      if (current === ref.ref.version) continue;
-      const known = model.candidateVersions?.[ref.ref.cell]?.includes(ref.ref.version) ?? false;
-      findings.push(current !== undefined && known
-        ? { rule: "direction-superseded", cell: cell.id, path: cell.path, message: `${cell.id}@${cell.version} cites ${target}, superseded by ${ref.ref.cell}@${current}.` }
-        : { rule: "direction-dangling", cell: cell.id, path: cell.path, message: `${cell.id}@${cell.version} cites ${target}, which is not a pinned or recorded candidate.` });
+      if (ref.kind !== "cell" || pinned.get(ref.ref.cell) === ref.ref.version) continue;
+      findings.push({ rule: "direction-dangling", cell: cell.id, path: cell.path, message: `${cell.id} cites ${ref.ref.cell}, which has no pinned candidate.` });
     }
   }
   return findings;

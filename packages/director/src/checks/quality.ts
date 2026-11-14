@@ -52,12 +52,13 @@ export function checkCell(cell: Cell, ctx: CheckContext): CellFinding[] {
     if (!bullet.refs.length)
       add('Q3', 'Because bullet requires a trailing reference', bullet.line);
     for (const ref of bullet.refs)
-      // A recorded but unpinned version is stale (still hard: the cell cannot be active until it is re-cited).
+      // A legacy cell-format ref to a recorded but unpinned version is stale. Slot candidates cite slot ids,
+      // resolved to the pinned version when read, so a re-pin re-addresses them and never makes them stale.
       if (ref.kind === 'cell' && staleCandidate(ref, ctx.model)) {
         const pinned = ctx.model.tree?.active[ref.ref.cell];
         add('Q3', `Stale reference ${refText(ref)}: ${pinned == null
-          ? `${ref.ref.cell} has no pinned version; pin one and re-cite it`
-          : `the pinned version is ${ref.ref.cell}@${pinned}; re-cite the pinned version`} (clossys migrate director-refs) or re-draft this cell`, bullet.line, 'stale');
+          ? `${ref.ref.cell} has no pinned version; pin one`
+          : `the pinned version is ${ref.ref.cell}@${pinned}; cite the slot id, which resolves through its pin`} or re-draft this cell`, bullet.line, 'stale');
       }
       else if (!resolves(ref, ctx.model))
         add('Q3', `Unresolved reference ${refText(ref)}`, bullet.line, 'dangling');

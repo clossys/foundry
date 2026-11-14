@@ -1,8 +1,8 @@
-import { parseSlotRecite } from "@clossys/director";
+import { pinIssues } from "@clossys/director";
 import { parseFrontmatter } from "./frontmatter.js";
 import {
-  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
-  PUBLICATION_SCHEMA, OPTION_COUNTS, PIN_BASES, VARY_ID, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
+  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
+  PUBLICATION_SCHEMA, OPTION_COUNTS, VARY_ID, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "./types.js";
 
@@ -111,33 +111,9 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   return issues;
 }
 
+/** pin.json against the one pin schema (planner R9): @clossys/director pinIssues, the same verdict Director's parseSlotPin and scripts/check-decisions.mjs give. */
 export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[] {
-  const issues: SlotModelIssue[] = [];
-  const fail = (message: string) => issues.push({ code: "pin-invalid", path, message });
-  if (!object(value)) { fail("expected an object"); return issues; }
-  for (const key of Object.keys(value)) if (!["candidate", "sha256", "decidedBy", "basis", "at", "confirmed", "recited"].includes(key)) fail(`unknown key ${key}`);
-  if (!nonEmpty(value.candidate) || !CANDIDATE_NAME.test(value.candidate)) fail("candidate must be a candidate file name");
-  if (typeof value.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(value.sha256)) fail("sha256 must be 64 lowercase hex");
-  if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) fail("decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>], agent:<seat> or migrated");
-  if (!(PIN_BASES as readonly unknown[]).includes(value.basis)) fail(`basis must be one of ${PIN_BASES.join(", ")}`);
-  if ((value.basis === "agent") !== (typeof value.decidedBy === "string" && value.decidedBy.startsWith("agent:"))) fail("basis agent and decidedBy agent:<seat> go together (clossys pick)");
-  if (typeof value.at !== "string" || Number.isNaN(Date.parse(value.at)) || !/^\d{4}-\d{2}-\d{2}T/.test(value.at)) fail("at must be an ISO timestamp");
-  if (value.confirmed !== undefined) {
-    const confirmed = value.confirmed;
-    if (value.basis !== "agent") fail("confirmed is only on an agent pick (basis agent); an owner pin is its own decision");
-    if (!object(confirmed)) fail("confirmed must be {by, ref, at}");
-    else {
-      for (const key of Object.keys(confirmed)) if (!["by", "ref", "at"].includes(key)) fail(`confirmed has unknown key ${key}`);
-      if (typeof confirmed.by !== "string" || !CONFIRMED_BY.test(confirmed.by)) fail("confirmed.by must be owner[:<ref>]");
-      if (!nonEmpty(confirmed.ref) || !OWNER_WORDS_REF.test(confirmed.ref)) fail(`confirmed.ref must cite the ledger comment that holds the owner's words (${OWNER_WORDS_REF_FORM})`);
-      if (typeof confirmed.at !== "string" || Number.isNaN(Date.parse(confirmed.at)) || !/^\d{4}-\d{2}-\d{2}T/.test(confirmed.at)) fail("confirmed.at must be an ISO timestamp");
-    }
-  }
-  if (value.recited !== undefined) {
-    const recited = parseSlotRecite(value.recited);
-    if (!recited.ok) fail(recited.message);
-  }
-  return issues;
+  return pinIssues(value).map(message => ({ code: "pin-invalid", path, message }));
 }
 
 export function validateSource(value: unknown, path: string): SlotModelIssue[] {

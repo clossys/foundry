@@ -45,25 +45,28 @@ describe("brief compilation", () => {
     stage(root, need, 1); rmSync(join(root, need, "candidates", "fixture-v1.md"));
     expect(brief(root).state).toBe("missing");
   });
-  it("detects stale direct cell citations while a newer unpinned candidate has no effect", () => {
+  it("resolves direct cell citations through the pin: a re-pin re-addresses them and a newer unpinned candidate has no effect", () => {
     const { root } = fixture({ [need]: 1, [promise]: 1 });
     stage(root, promise, 1, ["context.customer.need@1"]);
     const selected = { ...contract, requires: [promise] };
     expect(brief(root, selected).state).toBe("ready");
     stage(root, need, 2, [], "draft");
     expect(brief(root, selected).state).toBe("ready");
+    // Citations name slot ids (planner D2): the promise now means need@2, so nothing is stale or missing.
     stage(root, need, 2);
-    // Completion rejects a citation of a superseded version (Q3 unresolved), so the stale ref also makes the cell missing.
-    expect(brief(root, selected)).toMatchObject({ state: "missing", missing: [promise], stale: [{ cell: need, version: 1 }] });
+    expect(brief(root, selected)).toMatchObject({ state: "ready", missing: [], stale: [] });
+    expect(readStrategyRoot(root, reader).cells.find(cell => cell.id === promise)!.cites).toContainEqual({ kind: "cell", ref: { cell: need, version: 2 } });
   });
-  it("checks transitive C1 dependencies even beyond the contract cell list", () => {
+  it("checks transitive C1 dependencies even beyond the contract cell list, through the pins", () => {
     const { root } = fixture({ [need]: 2, [promise]: 1, [differentiator]: 1 });
     stage(root, need, 1, [], "retired");
     stage(root, promise, 1, ["context.customer.need@1"]);
     stage(root, differentiator, 1, ["advantage.proposition.promise@1"]);
-    expect(brief(root, { ...contract, requires: [differentiator] })).toMatchObject({ state: "stale", stale: [{ cell: need, version: 1 }] });
-    stage(root, promise);
-    expect(brief(root, { ...contract, requires: [differentiator] }).state).toBe("stale");
+    // The retired need@1 is not what the promise cites: its slot citation resolves to the pinned need@2.
+    expect(brief(root, { ...contract, requires: [differentiator] })).toMatchObject({ state: "ready", stale: [] });
+    // An unpinned upstream leaves the citation unresolved, and the brief names it beyond the contract cells.
+    rmSync(join(root, need, "pin.json"));
+    expect(brief(root, { ...contract, requires: [differentiator] }).state).not.toBe("ready");
   });
   it("compares a previous compiled fingerprint and never writes the root", () => {
     // Compiled briefs live with Director evidence, outside the flat slot tree.

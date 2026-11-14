@@ -64,7 +64,7 @@ describe("cell format", () => {
     expect(file && SLOT_CANDIDATE_NAME.test(file)).toBe(true);
     const worked = [...template.matchAll(/```markdown\n(---\nslot: "focus\.segment\.core"\n[\s\S]*?)```/g)];
     expect(worked).toHaveLength(1);
-    const cell = slotCandidateCell({ id: "focus.segment.core", version: 2, updated: "2026-10-29", path: file!, bytes: worked[0]![1]! });
+    const cell = slotCandidateCell({ id: "focus.segment.core", version: 2, updated: "2026-10-29", path: file!, bytes: worked[0]![1]!, resolve: slot => slot === "context.customer.need" ? 1 : undefined });
     expect(cell.direction.map(bullet => bullet.key)).toEqual(expect.arrayContaining(["Who", "Situation", "Not"]));
     expect(cell.cites.map(formatRef).sort()).toEqual(["context.customer.need@1", "finding:owner-home-potters-2026-10-29", "finding:owner-kiln-queue-2026-10-29", "finding:studio-interviews-2026-10"]);
     expect(cell.watch).toHaveLength(2);

@@ -4,7 +4,7 @@ import { loadCatalog, type StrategyCatalog } from "./catalog.js";
 import { ARCHETYPE_RECORD_ID, recordedArchetype } from "./archetype.js";
 import { parseFinding, RUN_CITATION_PATTERN } from "./format/finding.js";
 import { RECORD_ID_PATTERN } from "./format/ref.js";
-import { parseSlotPin, recitedBytes, slotCandidateCell, slotCandidateVersion } from "./format/slot.js";
+import { parseSlotPin, slotCandidateCell, slotCandidateVersion, type SlotPin } from "./format/slot.js";
 import { validateTree } from "./format/tree.js";
 import type { StrategyModel, StrategyRootIssue, StrategyTree } from "./format/types.js";
 import { storeFault, type DirectorStoreReader } from "./store-io.js";
@@ -64,8 +64,11 @@ export function readStrategyFile(root: string, store: DirectorStoreReader, path:
  * `<root>/<slot-id>/pin.json` names the active candidate of each slot by file name and sha256,
  * and `<root>/<slot-id>/candidates/<name>-v<n>.md` is read as that slot's active cell by the
  * one candidate parser (format/slot.ts). An unpinned slot has no active cell. The active
- * pointers are the pins, and every candidate's version is recorded in `candidateVersions`
- * so a citation of a superseded candidate is stale, not dangling. The grouping is the root's `ia.json` when it places every catalog
+ * pointers are the pins, and every candidate's version is recorded in `candidateVersions`.
+ * A candidate's citations name slot ids and resolve through the cited slot's pin as they are
+ * read, so a re-pin re-addresses them and makes nothing stale; a citation of an unpinned slot
+ * resolves to version 0 and is reported as unresolved. A legacy cell-format ref to a recorded
+ * but unpinned version is still stale, not dangling. The grouping is the root's `ia.json` when it places every catalog
  * leaf exactly once. Findings are the consumer's Director evidence
  * (`<consumer>/evidence/director/*.md`, top-level files) when the root is
  * `<consumer>/agents/director`; any other root has no reachable evidence and no findings.
@@ -108,7 +111,9 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
 
   const active: Record<string, number | null> = Object.fromEntries(model.catalog.cells.map(c => [c.id, null]));
   const candidateVersions: Record<string, number[]> = Object.create(null);
-  // Slots are addressed by catalog id; the root itself is never listed.
+  // Slots are addressed by catalog id; the root itself is never listed. Pins are read first, so every
+  // candidate's citations resolve through the cited slot's pin (format/citation.ts) when it is read.
+  const pinned: { id: string; version: number; path: string; bytes: string; pin: SlotPin }[] = [];
   for (const id of model.catalog.cells.map(c => c.id)) {
     const names = entries(model.root, id);
     if (names?.includes("candidates")) {
@@ -120,11 +125,17 @@ export function readStrategyRoot(root: string, store: DirectorStoreReader, optio
     const value = json(pinPath); if (value === undefined) continue;
     const pin = parseSlotPin(value);
     if (!pin.ok) { issue(pinPath, "invalid-format", pin.message); continue; }
-    const version = slotCandidateVersion(pin.value.candidate)!;
+    const version = slotCandidateVersion(pin.value.candidate);
+    if (version === undefined) { issue(pinPath, "invalid-format", "Director candidates are Markdown: expected candidate <name>-v<n>.md"); continue; }
     const path = `${id}/candidates/${pin.value.candidate}`;
     const bytes = read(model.root, path); if (bytes === undefined) continue;
     if (createHash("sha256").update(bytes).digest("hex") !== pin.value.sha256) { issue(path, "invalid-format", "Pinned candidate bytes disagree with pin.json sha256"); continue; }
-    try { model.cells.push({ ...slotCandidateCell({ id, version, updated: pin.value.at.slice(0, 10), path, bytes: recitedBytes(bytes, "director", pin.value.recited) }), pin: { decidedBy: pin.value.decidedBy, basis: pin.value.basis } }); active[id] = version; }
+    pinned.push({ id, version, path, bytes, pin: pin.value });
+  }
+  const pinnedVersion = new Map(pinned.map(row => [row.id, row.version]));
+  const pinnedOf = (slot: string) => pinnedVersion.get(slot);
+  for (const { id, version, path, bytes, pin } of pinned) {
+    try { model.cells.push({ ...slotCandidateCell({ id, version, updated: pin.at.slice(0, 10), path, bytes, resolve: pinnedOf }), pin: { decidedBy: pin.decidedBy, basis: pin.basis } }); active[id] = version; }
     catch (error) { issue(path, "invalid-format", error instanceof Error ? error.message : String(error)); }
   }
 

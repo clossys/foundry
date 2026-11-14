@@ -6,8 +6,9 @@
  *                      coverage  open decide items (no slot.json, no candidates, unpinned, unapproved,
  *                                unassigned seat), a missing seat policy, slot model issues, pinned
  *                                Director cells whose checks block.
- *                      wiring    decide steps with no seat path, pinned slots citing an input pinned
- *                                after them or whose pin no longer clears (stale citations), plumb
+ *                      wiring    decide steps with no seat path, pinned slots citing an input whose
+ *                                pin no longer clears (broken citations; a re-pinned input is no gap:
+ *                                citations name slot ids and resolve through its new pin), plumb
  *                                steps whose latest run failed or went stale (chain drift), recorded
  *                                candidates whose selection-ladder record does not hold (a created one
  *                                with no reason no seed fit; candidate-ladder.ts).
@@ -47,7 +48,6 @@ import { directorStoreReader, listSlots, readCandidate, readiness, readSlot, slo
 import type { SlotEntry } from "../records/slots.js";
 import { WRITER_KEY, writerCopy } from "../records/writer-copy.js";
 import { writerWording, type WordingRow } from "../records/writer-wording.js";
-import { staleCitations } from "../records/stale-citations.js";
 import { ARCHETYPE_RECORD_ID, directorContent } from "./director-interview.js";
 import type { DirectorContent } from "./director-interview.js";
 import { agentOfItem, candidatesOf, chainCommand, contextOf, explainChain, INTERVIEW_AGENTS, openItems, packetOf, PLACEHOLDER_MEANING, skillLine, skillOf, verbOf } from "./chain.js";
@@ -76,7 +76,7 @@ type PolicyAgent = typeof POLICY_AGENTS[number];
 
 export interface Gap {
   readonly kind: GapKind;
-  /** `open.<step>`, `seat-policy.missing`, `citation.stale`, `request.input-unpinned`, ... */
+  /** `open.<step>`, `seat-policy.missing`, `citation.broken`, `request.input-unpinned`, ... */
   readonly code: string;
   /** Who must act: the agent whose skill closes it (a request's addressee). */
   readonly agent: InterviewAgent;
@@ -264,8 +264,6 @@ function allGaps(root: string, options: InterviewOptions): { gaps: Gap[]; notes:
   const index = slotIndex(consumer);
   const entries = new Map<SlotAgent, SlotEntry[]>();
   for (const agent of SLOT_AGENTS) entries.set(agent, listSlots(consumer, agent));
-  for (const row of staleCitations(consumer)) gaps.push({ kind: "wiring", code: "citation.stale", agent: row.agent, item: `${row.agent}/${row.slot}`, step: row.drafted ? `pick.${row.agent}` : `${row.agent}.candidates`, decider: "agent",
-    message: `pinned ${row.pinnedAt.slice(0, 10)}; ${plural(row.inputs.length, "input")} pinned since: ${listed(row.inputs)}${row.drafted ? "; a newer candidate waits on its pick" : ""}` });
   for (const [agent, list] of entries) for (const entry of list) {
     if (!entry.pin || agent === "director") continue;
     const broken = readiness(consumer, agent, entry.id, index).blockedBy.filter(block => ["invalid-pin", "missing-candidate", "hash-drift", "invalid-candidate", "invalid-slot"].includes(block.reason));

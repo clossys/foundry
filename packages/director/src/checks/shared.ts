@@ -3,7 +3,8 @@ import type { StrategyModel } from '../format/types.js';
 import type { Scope } from './types.js';
 export function refText(ref: Ref): string {
   if (ref.kind === 'cell')
-    return `${ref.ref.cell}@${ref.ref.version}`;
+    // Version 0: a slot citation whose slot has no pin (format/slot.ts); it names the slot alone.
+    return ref.ref.version ? `${ref.ref.cell}@${ref.ref.version}` : ref.ref.cell;
   if (ref.kind === 'msg')
     return `msg:${ref.session}#${ref.line}`;
   return `finding:${ref.id}`;

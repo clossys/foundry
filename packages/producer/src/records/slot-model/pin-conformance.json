@@ -1,0 +1,285 @@
+{
+  "$comment": "The one pin schema's conformance fixtures (planner R9). validatePin, Director parseSlotPin and scripts/check-decisions.mjs pin-shape must give each the same verdict (pin-conformance.test.ts).",
+  "fixtures": [
+    {
+      "name": "owner pick, markdown candidate",
+      "valid": true,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "agent pick, json candidate",
+      "valid": true,
+      "pin": {
+        "candidate": "button-v1.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "agent:designer",
+        "basis": "agent",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "planner pin with ref",
+      "valid": true,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "planner:2026-11-01 sweep",
+        "basis": "planner",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "bulk migrated pin",
+      "valid": true,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "migrated",
+        "basis": "bulk",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "confirmed agent pick",
+      "valid": true,
+      "pin": {
+        "candidate": "button-v1.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "agent:designer",
+        "basis": "agent",
+        "at": "2026-11-03T00:00:00.000Z",
+        "confirmed": {
+          "by": "owner",
+          "ref": "clossys/workspace#46 issuecomment-123",
+          "at": "2026-11-04T00:00:00.000Z"
+        }
+      }
+    },
+    {
+      "name": "recited is not a pin key",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z",
+        "recited": {
+          "by": "agent:writer",
+          "at": "2026-11-05T00:00:00Z",
+          "cites": {
+            "director:identity.verbal.voice": 4
+          }
+        }
+      }
+    },
+    {
+      "name": "unknown key",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z",
+        "note": "x"
+      }
+    },
+    {
+      "name": "missing basis",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "unknown basis",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "basis": "auto",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "decidedBy outside the deciders",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "someone",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "empty decidedBy",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "agent basis without an agent decider",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "basis": "agent",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "agent decider without the agent basis",
+      "valid": false,
+      "pin": {
+        "candidate": "button-v1.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "agent:designer",
+        "basis": "planner",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "uppercase sha256",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "decidedBy": "owner",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "short sha256",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "abc",
+        "decidedBy": "owner",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "candidate is not a candidate file name",
+      "valid": false,
+      "pin": {
+        "candidate": "hero.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "candidate path",
+      "valid": false,
+      "pin": {
+        "candidate": "../hero-v1.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "date-only at",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "basis": "picked",
+        "at": "2026-11-03"
+      }
+    },
+    {
+      "name": "confirmed on an owner pin",
+      "valid": false,
+      "pin": {
+        "candidate": "hero-v2.md",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "owner",
+        "basis": "picked",
+        "at": "2026-11-03T00:00:00.000Z",
+        "confirmed": {
+          "by": "owner",
+          "ref": "clossys/workspace#46 issuecomment-123",
+          "at": "2026-11-04T00:00:00.000Z"
+        }
+      }
+    },
+    {
+      "name": "confirmed ref names no ledger comment",
+      "valid": false,
+      "pin": {
+        "candidate": "button-v1.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "agent:designer",
+        "basis": "agent",
+        "at": "2026-11-03T00:00:00.000Z",
+        "confirmed": {
+          "by": "owner",
+          "ref": "standing instruction",
+          "at": "2026-11-04T00:00:00.000Z"
+        }
+      }
+    },
+    {
+      "name": "confirmed by a non-owner",
+      "valid": false,
+      "pin": {
+        "candidate": "button-v1.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "agent:designer",
+        "basis": "agent",
+        "at": "2026-11-03T00:00:00.000Z",
+        "confirmed": {
+          "by": "planner",
+          "ref": "clossys/workspace#46 issuecomment-123",
+          "at": "2026-11-04T00:00:00.000Z"
+        }
+      }
+    },
+    {
+      "name": "confirmed unknown key",
+      "valid": false,
+      "pin": {
+        "candidate": "button-v1.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decidedBy": "agent:designer",
+        "basis": "agent",
+        "at": "2026-11-03T00:00:00.000Z",
+        "confirmed": {
+          "by": "owner",
+          "ref": "clossys/workspace#46 issuecomment-123",
+          "at": "2026-11-04T00:00:00.000Z",
+          "why": "x"
+        }
+      }
+    },
+    {
+      "name": "not an object",
+      "valid": false,
+      "pin": []
+    }
+  ]
+}
