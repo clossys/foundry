@@ -1,0 +1,13 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.statement",
+  "produces": [
+    "brief.statement"
+  ],
+  "rung": "create",
+  "axes": [
+    "stance",
+    "scope",
+    "horizon"
+  ]
+}
