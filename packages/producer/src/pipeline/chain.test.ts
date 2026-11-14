@@ -98,13 +98,13 @@ describe("clossys run", { timeout: 60_000 }, () => {
   });
 
   it("records a shared-verb step in its own store, so migrate is fresh after it ran", async () => {
-    // migrate, recite.direct and recite.design all run `clossys migrate`: the run must be recorded as
-    // the step it is, or the chain reads back an old record and calls the step stale forever.
+    // Every step that runs `clossys migrate` must be recorded as the step it is, or the chain reads
+    // back an old record and calls the step stale forever. The recite steps are retired (planner D2).
     const migrators = STEPS.filter(step => step.command.cli?.verb === "migrate" && step.command.cli.parser !== undefined);
-    expect(migrators.map(step => step.id)).toEqual(expect.arrayContaining(["migrate", "recite.direct", "recite.design"]));
+    expect(migrators.map(step => step.id)).toEqual(["migrate"]);
+    expect(STEPS.map(step => step.id).filter(id => id.startsWith("recite."))).toEqual([]);
     expect(ownerStep(migrators, ["migrate", "copy-keys"])!.id).toBe("migrate");
-    expect(ownerStep(migrators, ["migrate", "recite", "--cascade"])!.id).toBe("recite.direct");
-    expect(ownerStep(migrators, ["migrate", "recite", "--cascade"], "recite.design")!.id).toBe("recite.design");
+    expect(ownerStep(migrators, ["migrate", "citations-to-slots"])!.id).toBe("migrate");
     expect(ownerStep(migrators, ["migrate", "copy-keys"], "not-a-migrator")!.id).toBe("migrate");
     const root = workspace();
     const steps = [real("migrate")];
@@ -113,7 +113,6 @@ describe("clossys run", { timeout: 60_000 }, () => {
     expect((await runPipeline(["migrate", "copy-keys", "--root", root], root)).exitCode).toBe(0);
     expect(process.env[STEP_ENV]).toBeUndefined();
     expect(readStore(root, storeFile("migrate")).map(entry => entry.record.invocation)).toEqual(["migrate copy-keys"]);
-    expect(readStore(root, storeFile("recite.direct"))).toEqual([]);
     expect(runChain(root, { steps, dry: true }).rows[0]).toMatchObject({ state: "fresh", last: "passed" });
   });
 

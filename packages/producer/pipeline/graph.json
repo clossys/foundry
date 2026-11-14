@@ -7661,6 +7661,10 @@
     "cli": {
       "ia": [
         {
+          "flag": "--adopt",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -7670,6 +7674,10 @@
         }
       ],
       "evidence": [
+        {
+          "flag": "--adopt",
+          "value": null
+        },
         {
           "flag": "--help",
           "value": null
@@ -7681,6 +7689,10 @@
       ],
       "workspace.config": [
         {
+          "flag": "--adopt",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -7691,6 +7703,10 @@
       ],
       "seats": [
         {
+          "flag": "--adopt",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -7700,6 +7716,10 @@
         }
       ],
       "rules": [
+        {
+          "flag": "--adopt",
+          "value": null
+        },
         {
           "flag": "--help",
           "value": null
@@ -7825,6 +7845,10 @@
           "value": null
         },
         {
+          "flag": "--confirm",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -7838,6 +7862,10 @@
         },
         {
           "flag": "--reason",
+          "value": null
+        },
+        {
+          "flag": "--ref",
           "value": null
         },
         {
@@ -8075,6 +8103,10 @@
       ],
       "writer.approve": [
         {
+          "flag": "--adopt",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -8097,6 +8129,10 @@
           "value": null
         },
         {
+          "flag": "--confirm",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -8110,6 +8146,10 @@
         },
         {
           "flag": "--reason",
+          "value": null
+        },
+        {
+          "flag": "--ref",
           "value": null
         },
         {
@@ -8131,6 +8171,10 @@
           "value": null
         },
         {
+          "flag": "--confirm",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -8144,6 +8188,10 @@
         },
         {
           "flag": "--reason",
+          "value": null
+        },
+        {
+          "flag": "--ref",
           "value": null
         },
         {
@@ -8261,6 +8309,10 @@
           "value": null
         },
         {
+          "flag": "--confirm",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -8274,6 +8326,10 @@
         },
         {
           "flag": "--reason",
+          "value": null
+        },
+        {
+          "flag": "--ref",
           "value": null
         },
         {
@@ -8437,7 +8493,7 @@
       ],
       "migrate": [
         {
-          "flag": "--by",
+          "flag": "--apply",
           "value": null
         },
         {
@@ -8645,6 +8701,10 @@
           "value": null
         },
         {
+          "flag": "--confirm",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -8658,6 +8718,10 @@
         },
         {
           "flag": "--reason",
+          "value": null
+        },
+        {
+          "flag": "--ref",
           "value": null
         },
         {

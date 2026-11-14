@@ -3,82 +3,31 @@
  * A pinned candidate is read as a `Cell` here, once, for every reader: Director's own
  * readStrategyRoot and the clossys CLI's pinned-set reader (@clossys/producer) both call
  * slotCandidateCell, so there is one candidate parser. Pins are written by `clossys pin`, never here.
+ * A candidate cites Director slots by id (`<slot>` or `director:<slot>`, format/citation.ts); the reader
+ * resolves each through the cited slot's pin, so a cell ref's version is the pinned version at read time.
  */
 import { readBullet } from "../cell-format/markdown.js";
+import { parseSlotCitation, versionedCitation, versionedCitationMessage } from "./citation.js";
+import { pinIssues } from "./pin.js";
 import { parseRef } from "./ref.js";
 import type { Bullet, Cell, Ref } from "./types.js";
 
 /** `<name>-v<n>.md`: a Director candidate file name; n is the candidate version. */
 export const SLOT_CANDIDATE_NAME = /^([a-z0-9][a-z0-9.-]*)-v([1-9][0-9]*)\.md$/;
-const SHA256 = /^[0-9a-f]{64}$/;
 const SECTIONS = { "## Direction": "direction", "## Because": "because", "## Watch": "watch" } as const;
 
-/** A pin names one candidate of its slot by file name and by the sha256 of its bytes. */
-export interface SlotPin { candidate: string; sha256: string; decidedBy: string; basis: string; at: string; recited?: SlotRecite }
+/** A pin names one candidate of its slot by file name and by the sha256 of its bytes (the one pin schema, format/pin.ts). */
+export interface SlotPin { candidate: string; sha256: string; decidedBy: string; basis: string; at: string; confirmed?: { by: string; ref: string; at: string } }
+
 /**
- * A pointer-only update in place (`clossys migrate recite`): the pinned candidate's meaning is unchanged,
- * only the upstream versions it cites moved. `cites` maps `<agent>:<slot>` to the version the record now
- * cites; readers see the pinned bytes with those refs re-addressed (recitedBytes). The pin keeps its
- * candidate, basis and decider; no new version is written.
+ * pin.json against the one pin schema (format/pin.ts), the same verdict as @clossys/producer validatePin and
+ * scripts/check-decisions.mjs. That a Director pin names a Markdown candidate is the store's rule, not the schema's.
  */
-export interface SlotRecite { by: string; at: string; cites: Record<string, number>; reason?: string }
-const CITE_KEY = /^(director|designer|writer|publisher):([a-z0-9][a-z0-9.-]*)$/;
-
-/** The structural shape of a pin's `recited` field, or a message. */
-export function parseSlotRecite(value: unknown): { ok: true; value: SlotRecite } | { ok: false; message: string } {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return { ok: false, message: "recited must be {by, at, cites, proof?, reason?}" };
-  const recite = value as Record<string, unknown>;
-  for (const key of Object.keys(recite)) if (!["by", "at", "cites", "proof", "reason"].includes(key)) return { ok: false, message: `recited has unknown key ${key}` };
-  if (typeof recite.by !== "string" || !/^(?:agent:[a-z][a-z0-9.-]*|planner(?::.+)?)$/.test(recite.by)) return { ok: false, message: "recited.by must be agent:<seat> or planner[:<ref>]" };
-  if (typeof recite.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(recite.at) || !Number.isFinite(Date.parse(recite.at))) return { ok: false, message: "recited.at must be an ISO timestamp" };
-  if (typeof recite.cites !== "object" || recite.cites === null || Array.isArray(recite.cites) || !Object.keys(recite.cites).length) return { ok: false, message: "recited.cites must map <agent>:<slot> to a version" };
-  for (const [key, version] of Object.entries(recite.cites)) {
-    if (!CITE_KEY.test(key)) return { ok: false, message: `recited.cites key ${key} is not <agent>:<slot>` };
-    if (!Number.isInteger(version) || (version as number) < 1) return { ok: false, message: `recited.cites ${key} must be a version >= 1` };
-  }
-  if (recite.proof !== undefined) {
-    if (typeof recite.proof !== "object" || recite.proof === null || Array.isArray(recite.proof)) return { ok: false, message: "recited.proof must map <agent>:<slot> to sha256:<hex>" };
-    for (const [key, hash] of Object.entries(recite.proof)) {
-      if (!(key in (recite.cites as Record<string, number>))) return { ok: false, message: `recited.proof key ${key} is not cited` };
-      if (typeof hash !== "string" || !/^sha256:[0-9a-f]{64}$/.test(hash)) return { ok: false, message: `recited.proof ${key} must be sha256:<64 hex>` };
-    }
-  }
-  if (recite.reason !== undefined && (typeof recite.reason !== "string" || !recite.reason.trim())) return { ok: false, message: "recited.reason must be a non-empty string" };
-  return { ok: true, value: { by: recite.by, at: recite.at, cites: { ...(recite.cites as Record<string, number>) }, ...(recite.proof ? { proof: { ...(recite.proof as Record<string, string>) } } : {}), ...(recite.reason ? { reason: recite.reason as string } : {}) } };
-}
-
-const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-/**
- * The pinned bytes as the record now cites: every `<agent>:<slot>@<n>` ref (and, for the slot's own agent,
- * a bare `<slot>@<n>`) re-addressed to the version `recited.cites` names. Bytes are hashed against the pin
- * before this; the overlay is what readers parse.
- */
-export function recitedBytes(bytes: string, agent: string, recited: Pick<SlotRecite, "cites"> | undefined): string {
-  if (!recited) return bytes;
-  let out = bytes;
-  for (const [key, version] of Object.entries(recited.cites)) {
-    const [cited, slot] = key.split(":") as [string, string];
-    const prefix = cited === agent ? `(?:${cited}:)?` : `${cited}:`;
-    out = out.replace(new RegExp(`(?<![a-z0-9.:-])(${prefix}${escape(slot)})@[1-9][0-9]*(?![0-9])`, "g"), `$1@${version}`);
-  }
-  return out;
-}
-
-/** The structural shape of pin.json; `decidedBy` and `basis` are recorded by `clossys pin`. */
 export function parseSlotPin(value: unknown): { ok: true; value: SlotPin } | { ok: false; message: string } {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return { ok: false, message: "Expected a pin object" };
-  const pin = value as Record<string, unknown>;
-  if (typeof pin.candidate !== "string" || !SLOT_CANDIDATE_NAME.test(pin.candidate)) return { ok: false, message: "Expected candidate <name>-v<n>.md" };
-  if (typeof pin.sha256 !== "string" || !SHA256.test(pin.sha256)) return { ok: false, message: "Expected a lowercase hex sha256" };
-  for (const key of ["decidedBy", "basis"] as const) if (typeof pin[key] !== "string" || !pin[key]) return { ok: false, message: `Expected a ${key} string` };
-  if (typeof pin.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(pin.at) || !Number.isFinite(Date.parse(pin.at))) return { ok: false, message: "Expected an ISO at timestamp" };
-  let recited: SlotRecite | undefined;
-  if (pin.recited !== undefined) {
-    const parsed = parseSlotRecite(pin.recited);
-    if (!parsed.ok) return parsed;
-    recited = parsed.value;
-  }
-  return { ok: true, value: { candidate: pin.candidate, sha256: pin.sha256, decidedBy: pin.decidedBy as string, basis: pin.basis as string, at: pin.at, ...(recited ? { recited } : {}) } };
+  const issues = pinIssues(value);
+  if (issues.length) return { ok: false, message: issues.join("; ") };
+  const pin = value as SlotPin;
+  return { ok: true, value: { candidate: pin.candidate, sha256: pin.sha256, decidedBy: pin.decidedBy, basis: pin.basis, at: pin.at, ...(pin.confirmed ? { confirmed: { by: pin.confirmed.by, ref: pin.confirmed.ref, at: pin.confirmed.at } } : {}) } };
 }
 
 /** The candidate version a file name carries, or undefined for a name that is not a candidate. */
@@ -123,6 +72,12 @@ export interface SlotCandidateInput {
   /** Reported path of the candidate file. */
   path: string;
   bytes: string;
+  /**
+   * The pinned version of a cited Director slot, or undefined when it has no pin. A citation resolves
+   * through it when the candidate is read; an unresolved one is kept as `{cell, version: 0}` (cites a
+   * slot with no pin), which no cell matches, so the checks report it dangling.
+   */
+  resolve?: (slot: string) => number | undefined;
 }
 
 /**
@@ -135,19 +90,20 @@ export function slotCandidateCell(input: SlotCandidateInput): Cell {
   if (!parsed.ok) throw new Error(`${input.path}: ${parsed.message}`);
   const { fields, body, firstLine } = parsed.value;
   if (fields.slot !== undefined && fields.slot !== input.id) throw new Error(`${input.path}: frontmatter slot disagrees with its slot folder`);
+  const cite = (text: string): Ref | undefined | null => citationRef(text, input);
   const lists: Record<"direction" | "because" | "watch", Bullet[]> = { direction: [], because: [], watch: [] };
   let section: keyof typeof lists | undefined;
   body.split("\n").forEach((text, index) => {
     if (text.startsWith("## ")) { section = SECTIONS[text.trim() as keyof typeof SECTIONS]; return; }
     if (!section) return;
     const bullet = readBullet(text, firstLine + index) as Bullet | undefined;
-    if (bullet) lists[section].push(bullet);
+    if (bullet) lists[section].push({ ...bullet, refs: bulletRefs(bullet.text, cite) });
   });
   if (!lists.direction.length) throw new Error(`${input.path}: no Direction bullets`);
   const source = fields.source as { ref?: unknown } | undefined;
-  // Finding and cell refs are cites; URLs, paths and session refs (the slot model keeps no sessions) are not.
+  // Finding and Director slot citations are cites; URLs, paths, other agents' slots and session refs (the slot model keeps no sessions) are not.
   const cites: Ref[] = (Array.isArray(source?.ref) ? source!.ref as unknown[] : []).flatMap(ref => {
-    const parsed = typeof ref === "string" ? parseRef(ref) : undefined;
+    const parsed = typeof ref === "string" ? cite(ref) : undefined;
     return parsed && parsed.kind !== "msg" ? [parsed] : [];
   });
   const strings = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
@@ -157,4 +113,31 @@ export function slotCandidateCell(input: SlotCandidateInput): Cell {
     ...(typeof fields.note === "string" ? { note: fields.note } : {}),
     direction: lists.direction, because: lists.because, watch: lists.watch, path: input.path,
   };
+}
+
+/**
+ * One citation of a Director candidate as a Ref: a finding or session ref as written, a Director slot id
+ * resolved to its pinned version. Undefined for text that is no citation; null for another agent's slot.
+ * A versioned citation is refused: the model carries no cited version.
+ */
+function citationRef(text: string, input: SlotCandidateInput): Ref | undefined | null {
+  if (versionedCitation(text)) throw new Error(`${input.path}: ${versionedCitationMessage(text)}`);
+  const slot = parseSlotCitation(text);
+  if (slot) {
+    if (slot.agent !== undefined && slot.agent !== "director") return null;
+    return { kind: "cell", ref: { cell: slot.slot, version: input.resolve?.(slot.slot) ?? 0 } };
+  }
+  const ref = parseRef(text);
+  return ref && ref.kind !== "cell" ? ref : undefined;
+}
+
+/** A bullet's trailing parenthesised citation list, when every entry is a citation; prose parentheses stay prose. */
+function bulletRefs(text: string, cite: (text: string) => Ref | undefined | null): Ref[] {
+  const suffix = /\(([^()]*)\)[.!?]?$/.exec(text);
+  if (!suffix) return [];
+  const parts = suffix[1]!.split(",").map(part => part.trim());
+  // A versioned token anywhere in the list is refused even beside prose.
+  for (const part of parts) if (versionedCitation(part)) cite(part);
+  const refs = parts.map(cite);
+  return refs.every((ref): ref is Ref => ref !== undefined && ref !== null) ? refs : [];
 }

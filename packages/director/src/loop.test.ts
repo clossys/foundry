@@ -145,7 +145,7 @@ describe('production review read graph', () => {
   afterEach(() => { for (const root of roots.splice(0)) rmSync(root,{recursive:true,force:true}); });
   const temporary = () => { const root=mkdtempSync(join(tmpdir(),'strategy-review-')); roots.push(root); return root; };
   const target='context.customer.need';
-  /** The owner pins a watched cell that cites a superseded need; signups evidence trips its watch. */
+  /** The owner pins a watched cell that cites the need slot (re-pinned to v2 since); signups evidence trips its watch. */
   function fixture(extraWatch: string[] = []) {
     const base=temporary(); const root=strategyRoot(base);
     stageSlot(root,cell,2,'Who: owner-led studios.',{refs:[`${target}@1`],watch:[watch('each month'),...extraWatch]});
@@ -164,12 +164,12 @@ describe('production review read graph', () => {
     }
     walk(''); return result;
   }
-  it('uses actual store and citation index, plans the citing-cell drift, and preserves every filesystem byte', () => {
+  it('uses actual store and citation index, plans no drift for a re-pinned citation, and preserves every filesystem byte', () => {
     const {base,root}=fixture(); const before=snapshot(base);
     const report=planReview(root, reader,{today:'2026-10-29'});
     expect(report.issues).toEqual([]);
-    expect(report.requests.map(request=>request.kind)).toEqual(['tripwire','drift']);
-    expect(report.requests.find(request=>request.kind==='drift')?.cells).toEqual([cell]);
+    // The citation names the need slot and resolves through its pin to need@2 (planner D2): a re-pin is no drift.
+    expect(report.requests.map(request=>request.kind)).toEqual(['tripwire']);
     expect(snapshot(base)).toEqual(before);
     expect(planReview(root, reader,{today:'2026-10-28'}).requests.some(request=>request.kind==='tripwire')).toBe(false);
   });
@@ -191,7 +191,7 @@ describe('production review read graph', () => {
     try {
       expect(main(['review','--root',root,'--today','2026-10-29','--json'], store)).toBe(1);
       expect(runReviewCli(['--root',root,'--today','2026-10-29'], store)).toBe(1);
-      expect(runReviewCli(['--root',root,'--today','2026-10-28'], store)).toBe(1);
+      expect(runReviewCli(['--root',root,'--today','2026-10-28'], store)).toBe(0);
       expect(runReviewCli(['--root',root,'--today','2026-02-30'], store)).toBe(2);
       expect(runReviewCli(['--force'], store)).toBe(2);
       expect(runReviewCli(['--root',root,'--root',root], store)).toBe(2);

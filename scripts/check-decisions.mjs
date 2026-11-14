@@ -7,9 +7,13 @@
  * or slot.json `notNeeded: {reason, since, decidedBy}`. This check reads the files directly (no
  * build needed) and fails on any decision record a hand edit could leave behind:
  *
- *   pin-shape          pin.json is not JSON, has keys other than {candidate, sha256, decidedBy, basis, at},
- *                      is missing decidedBy / at, or has a basis other than picked | bulk | planner | agent
- *                      (a missing basis is check:git-cms's finding, rule R-GIT-CMS)
+ *   pin-shape          pin.json is not JSON or breaks the one pin schema (planner R9, director
+ *                      format/pin.ts pinIssues, mirrored here): keys {candidate, sha256, decidedBy,
+ *                      basis, at, confirmed} only (no recited: citations name slot ids and resolve
+ *                      through the cited pin), a candidate file name, a lowercase sha256, decidedBy
+ *                      owner|planner|migration[:<ref>] | agent:<seat> | migrated, basis picked | bulk |
+ *                      planner | agent (agent exactly with decidedBy agent:<seat>), ISO at, and
+ *                      confirmed {by owner, ref <ledger comment>, at} only on an agent pick
  *   pin-candidate      the pinned candidate file does not exist
  *   pin-hash           sha256 in pin.json differs from the candidate file's bytes
  *   both               the slot is pinned and marked not needed at once
@@ -25,8 +29,17 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PIN_BASES } from './check-git-cms.mjs';
 
+// The one pin schema (planner R9), mirrored rule for rule and message for message from
+// packages/director/src/format/pin.ts (pinIssues) so this check needs no build; the conformance test
+// packages/producer/src/records/slot-model/pin-conformance.test.ts holds the two to the same verdicts.
 const PIN_KEYS = ['candidate', 'sha256', 'decidedBy', 'basis', 'at', 'confirmed'];
 const CONFIRMED_KEYS = ['by', 'ref', 'at'];
+const PIN_CANDIDATE_NAME = /^([a-z0-9][a-z0-9.-]*)-v([1-9][0-9]*)\.(md|json)$/;
+const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/;
+const CONFIRMED_BY = /^owner(?::\S.*)?$/;
+const OWNER_WORDS_REF = /^(?:[\w.-]+\/[\w.-]+#\d+ issuecomment-\d+|https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/issues\/\d+#issuecomment-\d+)(?: \([^()]*\))?$/;
+const OWNER_WORDS_REF_FORM = '<org>/<repo>#<issue> issuecomment-<id> or https://github.com/<org>/<repo>/issues/<issue>#issuecomment-<id>';
+const SHA256 = /^[a-f0-9]{64}$/;
 const NOT_NEEDED_KEYS = ['reason', 'since', 'decidedBy'];
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
@@ -35,6 +48,33 @@ const isDir = path => { try { const stat = lstatSync(path); return stat.isDirect
 const isFile = path => { try { const stat = lstatSync(path); return stat.isFile() && !stat.isSymbolicLink(); } catch { return false; } };
 const nonEmpty = value => typeof value === 'string' && value.trim().length > 0;
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const isoTime = value => typeof value === 'string' && ISO_TIME.test(value) && !Number.isNaN(Date.parse(value));
+
+/** The pin-shape messages for one parsed pin.json value (director pinIssues, mirrored); empty for a valid pin. */
+export function pinShapeIssues(pin) {
+  const issues = [];
+  if (!object(pin)) return ['expected an object'];
+  for (const key of Object.keys(pin)) if (!PIN_KEYS.includes(key)) issues.push(`unknown key ${key}`);
+  if (typeof pin.candidate !== 'string' || !PIN_CANDIDATE_NAME.test(pin.candidate)) issues.push('candidate must be a candidate file name');
+  if (typeof pin.sha256 !== 'string' || !SHA256.test(pin.sha256)) issues.push('sha256 must be 64 lowercase hex');
+  if (typeof pin.decidedBy !== 'string' || !DECIDED_BY.test(pin.decidedBy)) issues.push('decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>], agent:<seat> or migrated');
+  if (!PIN_BASES.includes(pin.basis)) issues.push(`basis must be one of ${PIN_BASES.join(', ')}`);
+  if ((pin.basis === 'agent') !== (typeof pin.decidedBy === 'string' && pin.decidedBy.startsWith('agent:'))) issues.push('basis agent and decidedBy agent:<seat> go together (clossys pick)');
+  if (!isoTime(pin.at)) issues.push('at must be an ISO timestamp');
+  if (pin.confirmed !== undefined) {
+    const confirmed = pin.confirmed;
+    if (pin.basis !== 'agent') issues.push('confirmed is only on an agent pick (basis agent); an owner pin is its own decision');
+    if (!object(confirmed)) issues.push('confirmed must be {by, ref, at}');
+    else {
+      for (const key of Object.keys(confirmed)) if (!CONFIRMED_KEYS.includes(key)) issues.push(`confirmed has unknown key ${key}`);
+      if (typeof confirmed.by !== 'string' || !CONFIRMED_BY.test(confirmed.by)) issues.push('confirmed.by must be owner[:<ref>]');
+      if (typeof confirmed.ref !== 'string' || !OWNER_WORDS_REF.test(confirmed.ref)) issues.push(`confirmed.ref must cite the ledger comment that holds the owner's words (${OWNER_WORDS_REF_FORM})`);
+      if (!isoTime(confirmed.at)) issues.push('confirmed.at must be an ISO timestamp');
+    }
+  }
+  return issues;
+}
 
 /** Every decision finding and the state count under `<consumer>/agents`, or under one agent's folder. */
 export function checkDecisions(consumer, { agent: only } = {}) {
@@ -73,21 +113,7 @@ export function checkDecisions(consumer, { agent: only } = {}) {
       try { pin = JSON.parse(readFileSync(pinPath, 'utf8')); }
       catch { add('pin-shape', `${where}/pin.json`, 'pin.json is not JSON'); continue; }
       if (!object(pin)) { add('pin-shape', `${where}/pin.json`, 'pin.json must be an object'); continue; }
-      for (const key of Object.keys(pin)) if (!PIN_KEYS.includes(key)) add('pin-shape', `${where}/pin.json`, `unknown key ${key}`);
-      if (!nonEmpty(pin.decidedBy)) add('pin-shape', `${where}/pin.json`, 'missing decidedBy');
-      if (pin.basis !== undefined && !PIN_BASES.includes(pin.basis)) add('pin-shape', `${where}/pin.json`, `basis ${JSON.stringify(pin.basis)} is not ${PIN_BASES.join(' | ')}`);
-      if (typeof pin.at !== 'string' || !ISO_TIME.test(pin.at) || Number.isNaN(Date.parse(pin.at))) add('pin-shape', `${where}/pin.json`, 'missing at (ISO timestamp)');
-      if (pin.confirmed !== undefined) {
-        const confirmed = pin.confirmed;
-        if (pin.basis !== 'agent') add('pin-shape', `${where}/pin.json`, 'confirmed is only on an agent pick (basis agent)');
-        if (!object(confirmed)) add('pin-shape', `${where}/pin.json`, 'confirmed must be {by, ref, at}');
-        else {
-          for (const key of Object.keys(confirmed)) if (!CONFIRMED_KEYS.includes(key)) add('pin-shape', `${where}/pin.json`, `confirmed has unknown key ${key}`);
-          if (typeof confirmed.by !== 'string' || !/^owner(?::\S.*)?$/.test(confirmed.by)) add('pin-shape', `${where}/pin.json`, 'confirmed.by must be owner[:<ref>]');
-          if (!nonEmpty(confirmed.ref)) add('pin-shape', `${where}/pin.json`, 'confirmed.ref is missing');
-          if (typeof confirmed.at !== 'string' || !ISO_TIME.test(confirmed.at) || Number.isNaN(Date.parse(confirmed.at))) add('pin-shape', `${where}/pin.json`, 'confirmed.at must be an ISO timestamp');
-        }
-      }
+      for (const message of pinShapeIssues(pin)) add('pin-shape', `${where}/pin.json`, message);
       if (!nonEmpty(pin.candidate) || pin.candidate.includes('/') || pin.candidate.includes('\\')) { add('pin-candidate', `${where}/pin.json`, 'pin names no candidate file'); continue; }
       const candidatePath = join(dir, 'candidates', pin.candidate);
       if (!isFile(candidatePath)) { add('pin-candidate', `${where}/pin.json`, `pinned candidate ${pin.candidate} does not exist`); continue; }

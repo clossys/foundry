@@ -29,7 +29,7 @@ export function selectStep(verb: string, args: CliArgs, steps: readonly Step[] =
  * Which of the steps sharing an own-parser verb a run is: the step the parent chain named (STEP_ENV),
  * else the one whose target the argument names (`clossys pin designer/<slot>`), else the one whose
  * declared run has the same subcommand (`clossys migrate copy-keys` is step migrate, not
- * recite.direct), else the first. The record goes to that step's store, so this decides freshness.
+ * another migrate step), else the first. The record goes to that step's store, so this decides freshness.
  */
 export function ownerStep(owners: readonly Step[], argv: readonly string[], named?: string): Step | undefined {
   const chosen = named ? owners.find(step => step.id === named) : undefined;

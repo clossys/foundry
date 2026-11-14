@@ -12,6 +12,7 @@
  * `ia`, so the IA can be regrouped without moving a file.
  * Nothing about pinning lives in a candidate. Provenance is one `source` key.
  */
+import { PIN_BASES } from "@clossys/director";
 export const SLOT_AGENTS = ["director", "designer", "writer", "publisher"] as const;
 /**
  * The agents whose IA is Foundry data (`clossys ia <agent> --adopt`), each with the agents whose IA it is adopted
@@ -67,7 +68,7 @@ export const RETIRED_SEAT_FILE = "seat.json";
 export const MIGRATION_DECIDED_BY = "migrated";
 export const DIRECTOR_DECIDED_BY = "owner:2026-10-31 all-approved";
 /** Who decided: owner, planner or migration (each optionally `:<ref>`), `agent:<seat>` (a judge seat, `clossys pick`), or `migrated`. Written by `clossys pin` and `clossys pick`. */
-export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/;
+export { DECIDED_BY } from "@clossys/director";
 /**
  * How a pin was decided, so Studio can show what the owner still has to confirm:
  * `picked` the owner chose this candidate; `bulk` a blanket owner approval; `planner` the planner chose it;
@@ -75,7 +76,7 @@ export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|m
  * Written by `clossys pin` (`--by planner:*` is `planner`; any other decider needs an explicit `--basis`)
  * and `clossys pick` (always `agent`, with `--by agent:<seat>`). Required on every pin.
  */
-export const PIN_BASES = ["picked", "bulk", "planner", "agent"] as const;
+export { PIN_BASES } from "@clossys/director";
 export type PinBasis = typeof PIN_BASES[number];
 /** A pin's review status: `pinned` only for an owner pick (basis picked); bulk, planner and agent pins are `confirm`. */
 export type PinStatus = "pinned" | "confirm";
@@ -149,6 +150,7 @@ export type SlotState =
 export type SlotStateRejection = "no-pin" | "invalid-pin" | "pinned-and-not-needed" | "invalid-slot";
 export type SlotStateResult = SlotState | { readonly state: "rejected"; readonly reason: SlotStateRejection; readonly message: string };
 
+/** pin.json: the one pin schema (planner R9), checked by @clossys/director pinIssues (validate.ts validatePin). */
 export interface PinDoc {
   readonly candidate: string;
   /** Hex sha256 of the candidate bytes. */
@@ -164,22 +166,6 @@ export interface PinDoc {
    * who confirmed it, when, and the ledger reference holding their words. Only on a basis `agent` pin.
    */
   readonly confirmed?: PinConfirmation;
-  /**
-   * A pointer-only update in place (`clossys migrate recite`): the upstream versions this pin's candidate
-   * now cites (`<agent>:<slot>` to version), with who recited it and when. The candidate, basis and decider
-   * stay; readers see the candidate's refs re-addressed (Director recitedBytes). A meaning change is a new
-   * candidate instead.
-   */
-  readonly recited?: PinRecite;
-}
-export interface PinRecite {
-  readonly by: string;
-  readonly at: string;
-  readonly cites: Readonly<Record<string, number>>;
-  /** `<agent>:<slot>` to `sha256:<hex>` of what the cited version means (recite.ts meaningHash). */
-  readonly proof?: Readonly<Record<string, string>>;
-  /** Older records only: recite proves meaning by hash, never by a reason. */
-  readonly reason?: string;
 }
 export interface PinConfirmation {
   /** owner or owner:<ref> (CONFIRMED_BY). */
@@ -190,14 +176,13 @@ export interface PinConfirmation {
   readonly at: string;
 }
 /** Who may confirm an agent pick: the owner only. */
-export const CONFIRMED_BY = /^owner(?::\S.*)?$/;
+export { CONFIRMED_BY } from "@clossys/director";
 /**
  * Where a confirmation's owner words are: one ledger comment, `<org>/<repo>#<issue> issuecomment-<id>`
  * or its GitHub URL, optionally followed by a note in parentheses. A ref that cites no comment (a launch
  * instruction, a "standing instruction", a date) records no owner words and is refused.
  */
-export const OWNER_WORDS_REF = /^(?:[\w.-]+\/[\w.-]+#\d+ issuecomment-\d+|https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/issues\/\d+#issuecomment-\d+)(?: \([^()]*\))?$/;
-export const OWNER_WORDS_REF_FORM = "<org>/<repo>#<issue> issuecomment-<id> or https://github.com/<org>/<repo>/issues/<issue>#issuecomment-<id>";
+export { OWNER_WORDS_REF, OWNER_WORDS_REF_FORM } from "@clossys/director";
 
 export const SOURCE_KINDS = ["registry", "derived", "original", "composition", "npm"] as const;
 /** The one ref of an `npm` source: `npm/<package>@<exact version>` (ref-verbatim proves it against package-lock.json). */

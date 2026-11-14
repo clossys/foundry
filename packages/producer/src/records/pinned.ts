@@ -4,7 +4,6 @@
  * `design`, `write`, `publish`) read; nothing here writes into the consumer.
  */
 import { join, relative, sep } from "node:path";
-import { recitedBytes } from "@clossys/director";
 import { hasPinFile, listSlots, readCandidate, readSlot } from "./slots.js";
 import {
   CANDIDATE_NAME, candidatesDir, parseFrontmatter, validateCandidate,
@@ -19,9 +18,9 @@ export interface PinnedCandidate {
   /** Candidate file name, e.g. `studio-essence-v1.md`. */
   readonly name: string;
   readonly version: number;
-  /** The candidate as it now cites: the pinned bytes with a pointer-only recite's refs re-addressed (pin.recited). */
+  /** The pinned candidate's bytes. Its citations name slot ids, resolved through their pins when read (citations.ts). */
   readonly bytes: string;
-  /** The pinned sha256 of the candidate file's own bytes (before any recite overlay). */
+  /** The pinned sha256 of the candidate's bytes. */
   readonly sha256: string;
   /** Consumer-root-relative path, e.g. `clossys/agents/director/<id>/candidates/<name>`. */
   readonly path: string;
@@ -61,7 +60,7 @@ export function readPinned(consumer: string, agent: SlotAgent): PinnedSet {
     if (invalid.length) { issue(entry.id, "invalid-candidate", `${agent}/${entry.id}: ${invalid[0]!.message}`); continue; }
     const name = entry.pin.candidate;
     const root = join(consumer, "..");
-    pinned.push({ id: entry.id, agent, doc, pin: entry.pin, name, version: candidateVersion(name), bytes: recitedBytes(bytes, agent, entry.pin.recited), sha256,
+    pinned.push({ id: entry.id, agent, doc, pin: entry.pin, name, version: candidateVersion(name), bytes, sha256,
       path: relative(root, join(candidatesDir(entry.dir), name)).split(sep).join("/") });
   }
   return { agent, pinned, unpinned, issues };
@@ -73,15 +72,4 @@ export function candidateDocument(candidate: Pick<PinnedCandidate, "bytes" | "pa
   if (!parsed.ok) throw new Error(`${candidate.path}: ${parsed.message}`);
   const head = candidate.bytes.length - parsed.value.body.length;
   return { fields: parsed.value.fields, body: parsed.value.body, firstLine: candidate.bytes.slice(0, head).split("\n").length };
-}
-
-/** `agent:<slot>@<version>` refs a candidate's frontmatter `source.ref` names. */
-export function agentRefs(fields: Readonly<Record<string, unknown>>, agent: SlotAgent): { slot: string; version: number; ref: string }[] {
-  const source = fields.source as { ref?: unknown } | undefined;
-  const refs = Array.isArray(source?.ref) ? source!.ref as unknown[] : [];
-  const pattern = new RegExp(`^${agent}:([a-z0-9][a-z0-9.-]*)@([1-9][0-9]*)$`);
-  return refs.flatMap(ref => {
-    const match = typeof ref === "string" ? pattern.exec(ref) : null;
-    return match ? [{ slot: match[1]!, version: Number(match[2]), ref: ref as string }] : [];
-  });
 }

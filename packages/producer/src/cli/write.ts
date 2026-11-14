@@ -2,8 +2,9 @@ import { join } from "node:path";
 import type { Cell } from "@clossys/director";
 import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
 import { agentModule } from "../server/cells.js";
-import { directorRef, pinnedStrategyModel, readPinnedDirector } from "../records/director-pinned.js";
-import { agentRefs, candidateDocument, readPinned, type PinnedCandidate } from "../records/pinned.js";
+import { directorLineRef, directorRef, pinnedStrategyModel, readPinnedDirector } from "../records/director-pinned.js";
+import { resolveCitation, sourceCitations } from "../records/citations.js";
+import { candidateDocument, readPinned, type PinnedCandidate } from "../records/pinned.js";
 import { hasSlotModel, readIa } from "../records/slots.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
@@ -31,7 +32,7 @@ function writerBrief(cells: readonly Cell[], catalog: { slots: { id: string; lay
     directorInputs: selected.map(cell => ({ id: cell.id, version: cell.version, ref: directorRef(cell), path: cell.path, direction: cell.direction, because: cell.because, watch: cell.watch })),
     leaves: layers.map(layer => ({ layer, role: [...new Set(catalog.slots.filter(slot => slot.layer === layer).map(slot => String(slot.contract.recordKind ?? slot.contract.kind)))].join(", "), ids: catalog.slots.filter(slot => slot.layer === layer).map(slot => slot.id) })),
     missingInputs: INPUTS.filter(id => !selected.some(cell => cell.id === id)),
-    obligations: selected.filter(cell => OBLIGED.includes(cell.id)).flatMap(cell => cell.direction.map(bullet => ({ id: `${directorRef(cell)}#L${bullet.line}`, ref: directorRef(cell), line: bullet.line, ...(bullet.key ? { key: bullet.key } : {}), text: bullet.text }))),
+    obligations: selected.filter(cell => OBLIGED.includes(cell.id)).flatMap(cell => cell.direction.map(bullet => ({ id: `${directorLineRef(cell)}#L${bullet.line}`, ref: directorLineRef(cell), line: bullet.line, ...(bullet.key ? { key: bullet.key } : {}), text: bullet.text }))),
   };
 }
 
@@ -88,14 +89,17 @@ export async function runWrite(args: CliArgs, root: string): Promise<CliResult> 
       ].join("\n") };
     }
 
-    // Derivation: each pinned Writer slot names the pinned Director versions it derives from.
+    // Derivation: each pinned Writer slot cites the Director slots it derives from, by id; each citation
+    // resolves through that slot's pin now (records/citations.ts), so a Director re-pin re-derives the copy.
     const pinnedDirector = new Map(director.cells.map(cell => [cell.id, cell.version]));
     for (const id of INPUTS) if (!pinnedDirector.has(id)) findings.push({ rule: "director-input-missing", slot: id, message: `No pinned Director input: ${id}` });
     const limits: string[] = [];
     for (const { candidate } of rows) {
       for (const input of candidate.doc.inputs) if (!pinnedDirector.has(input)) findings.push({ rule: "director-input-unpinned", slot: candidate.id, message: `Declared input director:${input} has no pinned candidate` });
-      const refs = agentRefs(candidateDocument(candidate).fields, "director");
-      for (const ref of refs) if (pinnedDirector.get(ref.slot) !== ref.version) findings.push({ rule: "director-link-stale", slot: candidate.id, message: `Director link is absent or not the pinned version: ${ref.ref}` });
+      for (const ref of sourceCitations(candidateDocument(candidate).fields, "director")) {
+        if (ref.versioned) findings.push({ rule: "director-link-versioned", slot: candidate.id, message: `Director link names a version, not a slot id: ${ref.ref} (clossys migrate citations-to-slots)` });
+        else if (!pinnedDirector.has(ref.slot) || !resolveCitation(consumer, ref.ref)) findings.push({ rule: "director-link-dangling", slot: candidate.id, message: `Director link resolves to no pinned Director slot: ${ref.ref}` });
+      }
     }
     // Voice derivation: record-level directorSources against the pinned voice/personality lines.
     const ia = await agentModule("writer", "catalog/ia/index.js");

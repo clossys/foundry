@@ -52,7 +52,7 @@ export function openStrategy(root: string, store: DirectorStoreReader, options: 
       const path = name && `${id}/candidates/${name}`;
       const bytes = path ? store.read(model.root, path) : undefined;
       if (path && bytes !== undefined) {
-        try { cell = { ...slotCandidateCell({ id, version, updated: "", path, bytes }), status: "draft" }; } catch { cell = undefined; }
+        try { cell = { ...slotCandidateCell({ id, version, updated: "", path, bytes, resolve: slot => model.tree?.active[slot] ?? undefined }), status: "draft" }; } catch { cell = undefined; }
       }
     }
     candidates.set(key, cell);

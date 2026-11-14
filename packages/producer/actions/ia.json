@@ -40,18 +40,6 @@
       "id": "producer",
       "children": [
         {
-          "id": "direct.pin",
-          "actions": [
-            "recite.direct"
-          ]
-        },
-        {
-          "id": "design.pin",
-          "actions": [
-            "recite.design"
-          ]
-        },
-        {
           "id": "publish.assemble",
           "actions": [
             "compile",

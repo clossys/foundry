@@ -23,7 +23,7 @@ import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
 import type { SeatReport } from "./seats.js";
 import { readJson, slotCounts, writerKeysUnapproved } from "./status.js";
-import { staleCitations, type StaleCitation } from "../records/stale-citations.js";
+import { listModelDir, modelExists } from "../records/slots.js";
 import type { PipelineStatus } from "./status.js";
 import { STEPS } from "./steps/index.js";
 import { appendRecord, buildRecord, invocationOf, readStore, STEP_ENV, storeFile } from "./trace.js";
@@ -41,9 +41,9 @@ export type Exec = (argv: readonly string[], cwd: string, step?: string) => numb
 const CLI = fileURLToPath(new URL("../cli/index.js", import.meta.url));
 /**
  * The built CLI in a child process, its output on stderr so the chain's own output stays parseable.
- * The child is told which step it runs (STEP_ENV): several steps share one verb (migrate copy-keys,
- * recite.direct and recite.design all run `clossys migrate`), and the record must land in the store
- * of the step the chain reads back, or that step stays stale however often it runs.
+ * The child is told which step it runs (STEP_ENV): steps may share one verb (`clossys migrate`
+ * copy-keys and inputs are one step, but the runner never assumes so), and the record must land in
+ * the store of the step the chain reads back, or that step stays stale however often it runs.
  */
 export const execCli: Exec = (argv, cwd, step) => spawnSync(process.execPath, [CLI, ...argv], { cwd, stdio: ["ignore", 2, 2], env: step ? { ...process.env, [STEP_ENV]: step } : process.env }).status ?? 2;
 
@@ -111,19 +111,21 @@ function iaSlots(root: string, agent: string): string[] {
   return (ia?.nodes ?? []).flatMap(node => (node.children ?? []).flatMap(child => (child.slots ?? []).filter((slot): slot is string => typeof slot === "string")));
 }
 
-/** Stale citations (records/stale-citations.ts), read once per context. */
-const staleMemo = new WeakMap<Context, StaleCitation[]>();
-const staleOf = (context: Context, agent: string): StaleCitation[] => {
-  // A slot tree that does not read is the interview's and the checks' finding (slot.check), not a stale citation.
-  if (!staleMemo.has(context)) { let rows: StaleCitation[] = []; try { rows = existsSync(join(context.root, "clossys", "agents")) ? staleCitations(join(context.root, "clossys")) : []; } catch { rows = []; } staleMemo.set(context, rows); }
-  return staleMemo.get(context)!.filter(row => row.agent === agent);
-};
+/**
+ * A model presence or listing through the one reader (records/slots.ts); a path the reader refuses
+ * (an alias, a path outside the model) is absent here and the model check's finding (slot.check).
+ */
+const present = (path: string): boolean => { try { return modelExists(path); } catch { return false; } };
+const listed = (path: string): string[] => { try { return listModelDir(path); } catch { return []; } };
 
-/** Unpinned slots, then pinned slots whose meaning changed upstream and whose newer candidate waits on a pick. */
-const undecided = (context: Context, agent: string): string[] => [
-  ...(context.agents[agent]?.bySlot ?? []).filter(row => !row.pinned && !row.notNeeded).map(row => `${agent}/${row.slot}`),
-  ...staleOf(context, agent).filter(row => row.drafted).map(row => `${agent}/${row.slot}`),
-];
+/**
+ * Unpinned slots. A pinned slot is decided: a re-pin upstream re-addresses its citations (they name
+ * slot ids, resolved through the cited pin, records/citations.ts) and makes every derive and check
+ * step that takes that pin as an input stale, so `clossys run` re-derives and re-certifies downstream
+ * (the cascade: input digests, wiring.ts runState); it opens no candidate or pick work.
+ */
+const undecided = (context: Context, agent: string): string[] =>
+  (context.agents[agent]?.bySlot ?? []).filter(row => !row.pinned && !row.notNeeded).map(row => `${agent}/${row.slot}`);
 
 /** The open items of one decide step (slot `agent/slot`, seat step id, or the step id itself); empty when decided. */
 export function openItems(step: Step, context: Context): string[] {
@@ -133,21 +135,17 @@ export function openItems(step: Step, context: Context): string[] {
   if (counter === "slots-without-slot-json") {
     const dir = join(root, "clossys", "agents");
     // An agent with a Foundry IA and no ia.json is one open item (its bare id), once the agents it reads have theirs.
-    const placed = (agent: string) => existsSync(join(dir, agent, "ia.json"));
+    const placed = (agent: string) => present(join(dir, agent, "ia.json"));
     const unplaced = FOUNDRY_IA_AGENTS.filter(agent => !placed(agent) && FOUNDRY_IA_AFTER[agent].every(placed));
-    return [...unplaced, ...(existsSync(dir) ? readdirSync(dir).sort() : [])
+    return [...unplaced, ...listed(dir).sort()
       // The seat tree's ia.json places seats, which have no slot.json (status.ts counts the same).
       .filter(agent => (FOLDER_KIND as Readonly<Record<string, string>>)[agent] !== "seat")
-      .flatMap(agent => iaSlots(root, agent).filter(slot => !existsSync(join(dir, agent, slot, "slot.json"))).map(slot => `${agent}/${slot}`))];
+      .flatMap(agent => iaSlots(root, agent).filter(slot => !present(join(dir, agent, slot, "slot.json"))).map(slot => `${agent}/${slot}`))];
   }
   if (counter?.startsWith("slots-without-candidates:")) {
     const agent = counter.slice("slots-without-candidates:".length);
-    // A slot with no candidate yet, then a pinned slot whose cited meaning changed upstream (the runner's
-    // recite step already re-cited every unchanged one) until its agent drafts a newer candidate.
-    return [
-      ...(context.agents[agent]?.bySlot ?? []).filter(row => row.candidates === 0).map(row => `${agent}/${row.slot}`),
-      ...staleOf(context, agent).filter(row => !row.drafted).map(row => `${agent}/${row.slot}`),
-    ];
+    // A slot with no candidate yet. An upstream re-pin opens no candidate work (no stale flag).
+    return (context.agents[agent]?.bySlot ?? []).filter(row => row.candidates === 0).map(row => `${agent}/${row.slot}`);
   }
   if (counter?.startsWith("slots-undecided:")) return undecided(context, counter.slice("slots-undecided:".length));
   if (counter === "writer-keys-unapproved") return [...writerKeysUnapproved(root).keys()].map(slot => `writer/${slot}`);
@@ -245,7 +243,7 @@ function slotDoc(root: string, item: string): { contract?: unknown; options?: nu
 }
 export const candidatesOf = (root: string, item: string): string[] => {
   const dir = join(root, "clossys", "agents", ...item.split("/"), CANDIDATES_DIR);
-  try { return readdirSync(dir).filter(name => !name.startsWith(".")).sort((a, b) => version(a) - version(b) || (a < b ? -1 : 1)); } catch { return []; }
+  return listed(dir).filter(name => !name.startsWith(".")).sort((a, b) => version(a) - version(b) || (a < b ? -1 : 1));
 };
 const version = (name: string) => Number(/-v(\d+)\.[a-z]+$/.exec(name)?.[1] ?? 0);
 

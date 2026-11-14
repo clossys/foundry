@@ -156,33 +156,9 @@ export function writeConfirm(consumer: string, agent: SlotAgent, id: string, can
     if (current.basis !== "agent") throw new Error(`confirm refused: ${agent}/${id} is pinned by ${current.decidedBy} (basis ${current.basis}), not an agent pick; the owner pins it with --basis picked`);
     if (current.candidate !== candidate) throw new Error(`confirm refused: ${agent}/${id} is agent-picked at ${current.candidate}, not ${candidate}`);
     if (readCandidate(consumer, agent, id, candidate).sha256 !== current.sha256) throw new Error(`confirm refused: ${candidate} no longer matches the agent pick's sha256`);
-    const pin: PinDoc = { candidate: current.candidate, sha256: current.sha256, decidedBy: current.decidedBy, basis: current.basis, at: current.at, confirmed: { by: input.by, ref: input.ref, at: input.at }, ...(current.recited ? { recited: current.recited } : {}) };
+    const pin: PinDoc = { candidate: current.candidate, sha256: current.sha256, decidedBy: current.decidedBy, basis: current.basis, at: current.at, confirmed: { by: input.by, ref: input.ref, at: input.at } };
     const issues = validatePin(pin);
     if (issues.length) throw new Error(`confirm refused: ${issues.map(issue => issue.message).join("; ")}`);
-    replaceFile(path, jsonBytes(pin));
-    return pin;
-  });
-}
-
-/**
- * A pointer-only update in place (`clossys migrate recite`): the pin keeps its candidate, sha256, basis,
- * decider, `at` and confirmation, and gains `recited` (the upstream versions its candidate now cites).
- * `base`, when given, is the pin to keep instead of the current one (a re-pin that only moved citations is
- * restored to the pin it replaced); its candidate must still match its sha256. No candidate is written.
- */
-export function writeRecite(consumer: string, agent: SlotAgent, id: string, input: { recited: NonNullable<PinDoc["recited"]>; base?: PinDoc }): PinDoc {
-  const { entry } = located(consumer, agent, id);
-  return slotLocked(entry.dir, () => {
-    const path = pinFile(entry.dir);
-    if (!existsSync(path)) throw new Error(`recite refused: ${agent}/${id} has no pin`);
-    const current = input.base ?? JSON.parse(readFileSync(path, "utf8")) as PinDoc;
-    const currentIssues = validatePin(current);
-    if (currentIssues.length) throw new Error(`recite refused: the ${input.base ? "restored" : "current"} pin is invalid: ${currentIssues.map(issue => issue.message).join("; ")}`);
-    if (readCandidate(consumer, agent, id, current.candidate).sha256 !== current.sha256) throw new Error(`recite refused: ${current.candidate} no longer matches the pin's sha256`);
-    const { recited: _old, ...kept } = current;
-    const pin: PinDoc = { ...kept, recited: input.recited };
-    const issues = validatePin(pin);
-    if (issues.length) throw new Error(`recite refused: ${issues.map(issue => issue.message).join("; ")}`);
     replaceFile(path, jsonBytes(pin));
     return pin;
   });
@@ -234,6 +210,42 @@ export function restoreThemeProbePin(consumer: string, id: string, original: str
   const path = themeProbePath(consumer, id);
   replaceFile(path, original);
   return readFileSync(path, "utf8") === original;
+}
+
+/** One record a citation codemod rewrites in place: the bytes it read, and the bytes it writes. */
+export interface InPlaceRewrite { readonly name: string; readonly before: string; readonly after: string }
+
+/**
+ * The one in-place rewrite of a slot's records (`clossys migrate citations-to-slots`, planner D2):
+ * candidate bytes whose citations name a version become the same bytes citing the slot id, and the
+ * pin drops `recited` and carries its sha256 to the rewritten pinned bytes. The decision itself
+ * (candidate, decidedBy, basis, at, confirmed) is never changed. Every record is compared with the
+ * bytes the plan read (a concurrent change refuses the slot), the rewritten candidate may add no
+ * validation issue, and the rewritten pin must be valid. Candidates otherwise stay immutable: this
+ * is the only writer that replaces candidate bytes, and only for a citation-format change.
+ */
+export function rewriteCitationsInPlace(consumer: string, agent: SlotAgent, id: string, change: { readonly candidates: readonly InPlaceRewrite[]; readonly pin?: { readonly before: string; readonly after: string } }): void {
+  const { entry } = located(consumer, agent, id);
+  slotLocked(entry.dir, () => {
+    const { doc } = located(consumer, agent, id);
+    for (const rewrite of change.candidates) {
+      if (!CANDIDATE_NAME.test(rewrite.name) || !entry.candidates.includes(rewrite.name)) throw new Error(`citation rewrite refused: ${agent}/${id} has no candidate ${rewrite.name}`);
+      if (readCandidate(consumer, agent, id, rewrite.name).bytes !== rewrite.before) throw new Error(`citation rewrite refused: ${agent}/${id}/${rewrite.name} changed since it was read`);
+      const known = new Set(validateCandidate(doc.kind, id, rewrite.name, rewrite.before).map(issue => issue.message));
+      const added = validateCandidate(doc.kind, id, rewrite.name, rewrite.after).filter(issue => !known.has(issue.message));
+      if (added.length) throw new Error(`citation rewrite refused: ${agent}/${id}/${rewrite.name}: ${added.map(issue => issue.message).join("; ")}`);
+    }
+    const pinPath = pinFile(entry.dir);
+    if (change.pin) {
+      if (!existsSync(pinPath) || readFileSync(pinPath, "utf8") !== change.pin.before) throw new Error(`citation rewrite refused: ${agent}/${id} pin.json changed since it was read`);
+      const issues = validatePin(JSON.parse(change.pin.after));
+      if (issues.length) throw new Error(`citation rewrite refused: ${agent}/${id} pin.json: ${issues.map(issue => issue.message).join("; ")}`);
+    }
+    // The pin lands first: an interruption leaves a pin already naming the rewritten bytes, which a
+    // re-run recognises (the plan carries a sha256 that matches either form) and completes.
+    if (change.pin) replaceFile(pinPath, change.pin.after);
+    for (const rewrite of change.candidates) replaceFile(join(candidatesDir(entry.dir), rewrite.name), rewrite.after);
+  });
 }
 
 /** Mark a slot not needed: slot.json `notNeeded {reason, since, decidedBy}`, and any pin.json removed. */

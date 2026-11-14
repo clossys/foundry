@@ -58,7 +58,7 @@ File `focus.segment.core/candidates/studio-segment-core-v2.md`:
 ```markdown
 ---
 slot: "focus.segment.core"
-source: {"kind":"derived","ref":["context.customer.need@1","finding:owner-kiln-queue-2026-10-29","finding:owner-home-potters-2026-10-29","finding:studio-interviews-2026-10"]}
+source: {"kind":"derived","ref":["context.customer.need","finding:owner-kiln-queue-2026-10-29","finding:owner-home-potters-2026-10-29","finding:studio-interviews-2026-10"]}
 feeds: ["writer.messaging","customer.persona"]
 functions: ["gtm","product"]
 note: "Narrowed from v1; home potters dropped after the pricing pushback."
@@ -73,7 +73,7 @@ note: "Narrowed from v1; home potters dropped after the pricing pushback."
 ## Because
 - Owners called kiln scheduling "the weekly fire drill" (finding:owner-kiln-queue-2026-10-29)
 - 11 of 14 interviewed owners ran memberships in a spreadsheet (finding:studio-interviews-2026-10)
-- The need cell names the kiln queue as the job to be done (context.customer.need@1)
+- The need cell names the kiln queue as the job to be done (context.customer.need)
 - Home potters will not pay a monthly fee, so v1's wider segment broke the pricing (finding:owner-home-potters-2026-10-29)
 
 ## Watch
@@ -114,9 +114,9 @@ Why it passes:
 | Q5 specific | numbers, named alternatives, no banned phrases |
 | Q6 real choice | `Not:` plus "rather than" |
 | Confirmed | `pin.json` names `studio-segment-core-v2.md`, decided by the owner |
-| C1 | `advantage.proposition.promise@1` must cite `context.customer.need@1`. `focus.reach.channel` will need to cite `focus.segment.core@2` |
+| C1 | `advantage.proposition.promise` must cite `context.customer.need`. `focus.reach.channel` will need to cite `focus.segment.core` |
 | Effect on v1 | v1 stays in `candidates/`, unpinned and unchanged |
-| Effect on citations | anything citing `focus.segment.core@1` is now stale |
+| Effect on citations | anything citing `focus.segment.core` now resolves to v2 through its pin; nothing is stale and nothing is re-drafted |
 
 ## Owner-words finding
 

@@ -87,7 +87,7 @@ describe('quality rules (positive and negative fixtures)', () => {
       expect(hard(m, 'Q3').length).toBeGreaterThan(0);
     }
   });
-  it('Q3 classes a citation of a recorded but unpinned version as stale, still blocking, and an unknown version as dangling', () => {
+  it('Q3 resolves slot citations through the pin: a re-pin re-addresses them and flags nothing stale; a legacy versioned ref stays stale or dangling', () => {
     const base = mkdtempSync(join(tmpdir(), 'strategy-q3-stale-'));
     try {
       const root = strategyRoot(base);
@@ -100,40 +100,43 @@ describe('quality rules (positive and negative fixtures)', () => {
       stageFinding(root, 'sample', '---\nid: sample\nsource: user\nobserved: 2026-10-29\nby: researcher\n---\n- Sample observations for 20 teams.\n');
       const promiseId = 'advantage.proposition.promise', needId = 'context.customer.need';
       const q3 = (m: StrategyModel) => checkCell(get(m, promiseId), { model: m }).filter(f => f.rule === 'Q3' && f.severity !== 'judge');
-      // Baseline: the promise cites need@1 while need@1 is pinned, so Q3 passes and the root is complete.
+      const needCite = (m: StrategyModel) => get(m, promiseId).cites.find(r => r.kind === 'cell' && r.ref.cell === needId);
+      // Baseline: the promise cites the slot id; it resolves to need@1, the pin, so Q3 passes and the root is complete.
       const before = readStrategyRoot(root, reader);
+      expect(needCite(before)).toEqual(ref(needId, 1));
       expect(q3(before)).toEqual([]);
       expect(completion(before, judgePass).complete).toBe(true);
-      // need@2 is pinned; need@1 stays a recorded candidate the promise still cites (and need@3 is a draft nobody pinned).
+      // Re-pin need to v2 (v3 is a draft nobody pinned). The promise's candidate is untouched: its citation
+      // re-resolves to need@2, nothing is stale, and the promise stays active and fresh (no re-draft, no new candidate).
       stage({ ...get(model, needId), version: 2 });
       stage({ ...get(model, needId), version: 3 }, true);
       const read = readStrategyRoot(root, reader);
       expect(read.issues).toEqual([]);
       expect(read.tree!.active[needId]).toBe(2);
       expect(read.candidateVersions?.[needId]).toEqual([1, 2, 3]);
-      const found = q3(read);
-      expect(found.map(f => [f.code, f.severity])).toEqual([['stale', 'hard']]);
-      expect(found[0]!.message).toBe(`Stale reference ${needId}@1: the pinned version is ${needId}@2; re-cite the pinned version (clossys migrate director-refs) or re-draft this cell`);
-      expect(openStrategy(root, reader).isStale({ cell: needId, version: 1 })).toBe(true);
-      // Still blocking exactly as before: the citing cell is neither L3-active nor fresh, so neither MVS nor completion holds.
+      expect(needCite(read)).toEqual(ref(needId, 2));
+      expect(q3(read)).toEqual([]);
+      expect(openStrategy(root, reader).isStale({ cell: needId, version: 2 })).toBe(false);
       const report = completion(read, judgePass);
       const promise = report.cells.find(cell => cell.id === promiseId)!;
-      expect(promise.findings.some(f => f.rule === 'Q3' && f.code === 'stale')).toBe(true);
-      expect([promise.active, promise.fresh]).toEqual([false, false]);
-      expect(report.core.cells.find(cell => cell.id === promiseId)!.active).toBe(false);
-      expect([report.mvs, report.complete]).toEqual([false, false]);
-      // A recorded draft newer than the pin is stale too; a version with no candidate file stays dangling.
-      const promise3 = get(read, promiseId);
+      expect(promise.findings.some(f => f.code === 'stale')).toBe(false);
+      expect([promise.active, promise.fresh]).toEqual([true, true]);
+      expect(report.complete).toBe(true);
+      // A legacy cell-format ref to a recorded but unpinned version is stale; a version with no candidate file stays dangling.
+      const promise2 = get(read, promiseId);
       for (const [version, code, message] of [
-        [3, 'stale', `Stale reference ${needId}@3: the pinned version is ${needId}@2; re-cite the pinned version (clossys migrate director-refs) or re-draft this cell`],
+        [1, 'stale', `Stale reference ${needId}@1: the pinned version is ${needId}@2; cite the slot id, which resolves through its pin or re-draft this cell`],
+        [3, 'stale', `Stale reference ${needId}@3: the pinned version is ${needId}@2; cite the slot id, which resolves through its pin or re-draft this cell`],
         [99, 'dangling', `Unresolved reference ${needId}@99`],
       ] as const) {
-        const cell = { ...promise3, because: promise3.because.map(b => ({ ...b, refs: b.refs.map(r => r.kind === 'cell' && r.ref.cell === needId ? ref(needId, version) : r) })), cites: promise3.cites.map(r => r.kind === 'cell' && r.ref.cell === needId ? ref(needId, version) : r) };
+        const cell = { ...promise2, because: promise2.because.map(b => ({ ...b, refs: b.refs.map(r => r.kind === 'cell' && r.ref.cell === needId ? ref(needId, version) : r) })), cites: promise2.cites.map(r => r.kind === 'cell' && r.ref.cell === needId ? ref(needId, version) : r) };
         expect(checkCell(cell, { model: read }).filter(f => f.rule === 'Q3' && f.severity !== 'judge').map(f => [f.code, f.severity, f.message])).toEqual([[code, 'hard', message]]);
       }
-      // An unpinned slot's recorded candidate is stale with no pinned version to name.
-      const unpinned: StrategyModel = { ...read, cells: read.cells.filter(cell => cell.id !== needId), tree: { ...read.tree!, active: { ...read.tree!.active, [needId]: null } } };
-      expect(q3(unpinned).map(f => [f.code, f.message])).toEqual([['stale', `Stale reference ${needId}@1: ${needId} has no pinned version; pin one and re-cite it (clossys migrate director-refs) or re-draft this cell`]]);
+      // Unpin need: the slot citation resolves to nothing (version 0), reported as unresolved, never stale.
+      rmSync(join(root, needId, 'pin.json'));
+      const unpinned = readStrategyRoot(root, reader);
+      expect(needCite(unpinned)).toEqual(ref(needId, 0));
+      expect(q3(unpinned).map(f => [f.code, f.message])).toEqual([['dangling', `Unresolved reference ${needId}`]]);
     } finally {
       rmSync(base, { recursive: true, force: true });
     }
