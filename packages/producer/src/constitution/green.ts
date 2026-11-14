@@ -22,14 +22,25 @@
  * A key is (check, subject): `<check> <agent>/<slot> <path>`, the path shortened to the part inside
  * the slot folder (`.` for the folder itself), plus `#<candidate>` when the path does not name it. The reason text is not part
  * of the key (some reasons carry tool output); several rows under one key are counted.
+ * A key never embeds a line number (W2-G2 D2): a row whose path cites `<file>:<line>[:<col>]` (the
+ * code rules R11 and R13 cite the line of the code they judge) is keyed by the file plus
+ * `@<anchor>`, a hash of its whitespace-normalised reason. For those rows the reason is the rule's
+ * fixed text and the judged snippet (R11.1: the call; R13: the detail or message), so the key
+ * follows the code, not its line: a line shift above it keeps the key, a change to the snippet
+ * makes it a new key. Two rows of one file with the same snippet share a key (counted).
+ *
+ * A record's digest leaves out exactly the slot.json fields the `ia` verb's position bookkeeping
+ * rewrites (W2-G2 D1; POSITION_FIELDS): an order-only renumber of later slots by
+ * `clossys ia --contract --under`, `--remove` or a regroup does not change those slots' records.
+ * Every other byte of the record counts.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { dependencySet } from "./checks/shared.js";
-import type { ConstitutionContext, Row } from "./types.js";
+import { dependencySet, isObject } from "./checks/shared.js";
+import type { ConstitutionContext, JsonRecord, Row } from "./types.js";
 
 export const GREEN_SCHEMA = "clossys.constitution-green/1";
 /** `<P>/pipeline/constitution-green.json`, resolved from this module (src/ or dist/ alike). */
@@ -100,13 +111,53 @@ export function canonical(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** The finding's key: (check, subject). */
+/** A path that cites a line: `<file>:<line>` or `<file>:<line>:<col>` (the file has an extension, no space). */
+const LINE_CITED = /^([^\s:]+\.[A-Za-z0-9]+):\d+(?::\d+)?$/;
+
+/** The content anchor of a line-cited row: a hash of its whitespace-normalised reason (see the module note). */
+export function rowAnchor(row: Row): string {
+  return sha256(row.reason.replace(/\s+/g, " ").trim()).slice(0, 12);
+}
+
+/** The finding's key: (check, subject). Never a line number: a line-cited path keys by file and content anchor. */
 export function rowKey(row: Row): string {
+  const cited = LINE_CITED.exec(row.path);
+  const rowPath = cited ? cited[1]! : row.path;
   const dir = `agents/${row.agent}/${row.slot}`;
-  const at = row.path.indexOf(`${dir}/`);
-  const path = row.path === dir || row.path.endsWith(`/${dir}`) ? "." : at >= 0 && (at === 0 || row.path[at - 1] === "/") ? row.path.slice(at + dir.length + 1) : row.path;
+  const at = rowPath.indexOf(`${dir}/`);
+  const path = rowPath === dir || rowPath.endsWith(`/${dir}`) ? "." : at >= 0 && (at === 0 || rowPath[at - 1] === "/") ? rowPath.slice(at + dir.length + 1) : rowPath;
   const candidate = row.candidate && !path.endsWith(row.candidate) ? ` #${row.candidate}` : "";
-  return `${row.check} ${row.agent}/${row.slot} ${path}${candidate}`;
+  const anchor = cited ? ` @${rowAnchor(row)}` : "";
+  return `${row.check} ${row.agent}/${row.slot} ${path}${candidate}${anchor}`;
+}
+
+/**
+ * The slot.json fields the `ia` verb's position bookkeeping rewrites: followPositions in
+ * cli/ia-regroup.ts writes a slot's `ia` as its slotPositions entry `{ l0?, l1, l2, order }`, and an
+ * order-only renumber of later slots changes `ia.order` alone. Named one by one; nothing else is
+ * left out of a record's digest.
+ */
+export const POSITION_FIELDS = ["ia.l0", "ia.l1", "ia.l2", "ia.order"] as const;
+
+/**
+ * The slot.json bytes a record digest covers: the file without POSITION_FIELDS. Only a slot.json in
+ * the bytes the slot writer produces (2-space JSON and a newline, records/slot-model jsonBytes) is
+ * normalised; any other file (unparsed, not an object, other formatting) is digested as it is, so a
+ * change the view could not see still counts.
+ */
+export function slotRecordView(record: JsonRecord | undefined): string | null {
+  if (!record) return null;
+  const value = record.value;
+  if (!isObject(value) || `${JSON.stringify(value, null, 2)}\n` !== record.text) return record.text;
+  const view: Record<string, unknown> = { ...value };
+  for (const field of POSITION_FIELDS) {
+    const [parent, key] = field.split(".") as [string, string];
+    const holder = view[parent];
+    if (!isObject(holder) || !(key in holder)) continue;
+    const { [key]: _position, ...rest } = holder;
+    view[parent] = rest;
+  }
+  return `${JSON.stringify(view, null, 2)}\n`;
 }
 
 /** The record a row is about: its slot folder, else its agent folder, else none (`*` rows). */
@@ -125,7 +176,7 @@ export function recordIndex(ctx: ConstitutionContext): RecordIndex {
     for (const slot of agent.slots.values()) {
       const id = `${agent.agent}/${slot.id}`;
       digests[id] = sha256(canonical({
-        live: slot.live, entries: slot.entries, slot: slot.slot?.text ?? null, pin: slot.pin?.text ?? null, ledger: slot.ledger?.text ?? null,
+        live: slot.live, entries: slot.entries, slot: slotRecordView(slot.slot), pin: slot.pin?.text ?? null, ledger: slot.ledger?.text ?? null,
         candidates: slot.candidates.map(item => [item.name, item.sha256]), retired: slot.retired.map(item => [item.name, item.sha256]),
       })).slice(0, 16);
       const deps = dependencySet(slot);

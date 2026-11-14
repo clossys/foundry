@@ -4,9 +4,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseArgs } from "../cli/args.js";
 import { runCheck } from "../cli/check.js";
-import { buildGreen, evaluateDelta, greenDigest, readGreen, rowKey, verifyGreen, type GreenReport } from "./green.js";
+import { buildGreen, evaluateDelta, greenDigest, POSITION_FIELDS, readGreen, rowKey, slotRecordView, verifyGreen, type GreenReport } from "./green.js";
+import { singleReaderRows } from "./rules/r11.js";
 import { runConstitution } from "./run.js";
-import { cleanSpec, NO_HISTORY, writeWorkspace, type WorkspaceSpec } from "./__fixtures__/workspace.js";
+import { cleanSpec, NO_HISTORY, slotDoc, writeWorkspace, type WorkspaceSpec } from "./__fixtures__/workspace.js";
 
 const WS = "(no package.json)";
 
@@ -102,6 +103,61 @@ describe("constitution delta gate (until E2)", () => {
     const delta = evaluateDelta(base.report.rows, base.index, forged.read, scope(base.report));
     expect(delta).toMatchObject({ ok: false, blocking: [] });
     expect(delta.stale).toEqual([{ key: "R04 designer/ui.ghost .", recorded: 1, produced: 0 }]);
+  });
+
+  it("D1: an order-only renumber by the ia verb does not change a record; its pre-existing finding stays passing", () => {
+    const { root, consumer } = writeWorkspace(baselineSpec());
+    const again = () => runConstitution({ root, consumer, history: () => NO_HISTORY, index: true, now: () => 0 });
+    const base = again();
+    const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
+    // What followPositions writes for a later slot when a slot is placed above it: ia.order only, in jsonBytes.
+    const file = join(consumer, "agents/designer/ui.button/slot.json");
+    const doc = JSON.parse(readFileSync(file, "utf8")) as { ia: Record<string, unknown> };
+    writeFileSync(file, `${JSON.stringify({ ...doc, ia: { ...doc.ia, order: 7 } }, null, 2)}\n`);
+    const renumbered = again();
+    expect(renumbered.index!.digests).toEqual(base.index!.digests);
+    const delta = evaluateDelta(renumbered.rows, renumbered.index!, stored(green).read, scope(renumbered));
+    expect(delta).toMatchObject({ ok: true, changedRecords: [], dependantRecords: [], changedRows: 0, newRows: 0 });
+    expect(r04(delta.blocking)).toEqual([]);
+  });
+
+  it("D1: only the named position fields are left out; any other slot.json change changes the record", () => {
+    expect(POSITION_FIELDS).toEqual(["ia.l0", "ia.l1", "ia.l2", "ia.order"]);
+    const doc = slotDoc("designer", "ui.button");
+    const record = (value: unknown) => ({ path: "slot.json", text: `${JSON.stringify(value, null, 2)}\n`, value });
+    const before = slotRecordView(record(doc));
+    // Each position field alone: not a change.
+    for (const field of ["l0", "l1", "l2", "order"]) {
+      expect(slotRecordView(record({ ...doc, ia: { ...(doc.ia as object), [field]: field === "order" ? 9 : "moved" } }))).toBe(before);
+    }
+    // Every other field, top level and inside ia: a change.
+    const bump = (value: unknown): unknown => typeof value === "string" ? `${value}-x` : typeof value === "boolean" ? !value : typeof value === "number" ? value + 1 : Array.isArray(value) ? [...value, "x"] : { ...(value as object), x: 1 };
+    const others = Object.keys(doc).filter(key => key !== "ia");
+    expect(others.length).toBeGreaterThan(4);
+    for (const key of others) expect(slotRecordView(record({ ...doc, [key]: bump(doc[key]) })), key).not.toBe(before);
+    expect(slotRecordView(record({ ...doc, added: 1 }))).not.toBe(before);
+    expect(slotRecordView(record({ ...doc, ia: { ...(doc.ia as object), extra: 1 } }))).not.toBe(before);
+    // A slot.json the view cannot normalise is digested as its bytes: a renumber there still counts.
+    const loose = { path: "slot.json", text: JSON.stringify(doc), value: doc };
+    expect(slotRecordView({ ...loose, text: JSON.stringify({ ...doc, ia: { ...(doc.ia as object), order: 9 } }) })).not.toBe(slotRecordView(loose));
+  });
+
+  it("D2: a finding key never embeds a line number; a line shift keeps the key, a changed snippet does not", () => {
+    const at = (line: number, text = "mkdirSync(dirname(path), { recursive: true })") => singleReaderRows([{ file: "packages/producer/src/cli/owner.ts", line, text, kind: "reader" }]).r111[0]!;
+    const before = at(100), shifted = at(126);
+    expect(before.path).toBe("packages/producer/src/cli/owner.ts:100");
+    expect(rowKey(before)).toMatch(/^R11\.1 \*\/\* packages\/producer\/src\/cli\/owner\.ts @[0-9a-f]{12}$/);
+    expect(rowKey(before)).not.toMatch(/:\d/);
+    expect(rowKey(shifted)).toBe(rowKey(before));
+    expect(rowKey(at(100, "rmdirSync(dir)"))).not.toBe(rowKey(before));
+    expect(rowKey({ ...before, path: "packages/producer/studio/lib/y.ts:3:14" })).toBe(rowKey({ ...before, path: "packages/producer/studio/lib/y.ts:40" }));
+    // Through the gate: the shifted finding is neither new nor stale.
+    const index = { digests: {}, dependsOn: {} };
+    const green = buildGreen([before], index, { workspace: WS, commit: "unknown" });
+    const delta = evaluateDelta([shifted], index, stored(green).read, { rules: ["R11"] });
+    expect(delta).toMatchObject({ ok: true, newRows: 0, stale: [] });
+    // A path without a line is keyed as before (no anchor).
+    expect(rowKey({ ...before, path: "packages/producer/scripts/check-compile-pure.mjs" })).toBe("R11.1 */* packages/producer/scripts/check-compile-pure.mjs");
   });
 
   it("wires check --constitution: --record-green seeds, --enforced gates the delta, --strict the whole set, both counts printed", async () => {
