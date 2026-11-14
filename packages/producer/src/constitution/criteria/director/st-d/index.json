@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.criteria/1",
+  "criteria": [
+    {
+      "id": "brief.sections",
+      "module": "brief",
+      "export": "sections",
+      "fixtures": "__fixtures__/brief.sections.json",
+      "summary": "Exactly ## Direction, ## Because and ## Watch, in order, each a list of - lines with no loose text."
+    },
+    {
+      "id": "brief.keys",
+      "module": "brief",
+      "export": "keys",
+      "fixtures": "__fixtures__/brief.keys.json",
+      "summary": "Every contract mustContain key (params.keys) is answered once as a - Key: value Direction line."
+    },
+    {
+      "id": "brief.derived-upstream",
+      "module": "brief",
+      "export": "derivedUpstream",
+      "fixtures": "__fixtures__/brief.derived-upstream.json",
+      "summary": "The source is derived and cites only Director slots and findings: no other agent, URL or note."
+    },
+    {
+      "id": "brief.because-cited",
+      "module": "brief",
+      "export": "becauseCited",
+      "fixtures": "__fixtures__/brief.because-cited.json",
+      "summary": "Every Because line ends with (<ref>) from the source, and every source ref backs a Because line."
+    },
+    {
+      "id": "brief.watch-trigger",
+      "module": "brief",
+      "export": "watchTrigger",
+      "fixtures": "__fixtures__/brief.watch-trigger.json",
+      "summary": "Every Watch line is If <metric> <comparator> <number> <window>, then <action>."
+    },
+    {
+      "id": "brief.plain-direction",
+      "module": "brief",
+      "export": "plainDirection",
+      "fixtures": "__fixtures__/brief.plain-direction.json",
+      "summary": "Direction is plain language: no record refs, slot ids, file paths, code markup or placeholders."
+    },
+    {
+      "id": "brief.direction-values",
+      "module": "brief",
+      "export": "directionValues",
+      "fixtures": "__fixtures__/brief.direction-values.json",
+      "summary": "Every Direction value is within params.maxWords words and params.maxSentences sentences."
+    },
+    {
+      "id": "brief.quantified",
+      "module": "brief",
+      "export": "quantified",
+      "fixtures": "__fixtures__/brief.quantified.json",
+      "summary": "A measure brief states at least params.min quantities: a number, a date, or an explicit zero, none or free."
+    },
+    {
+      "id": "brief.boundary",
+      "module": "brief",
+      "export": "boundary",
+      "fixtures": "__fixtures__/brief.boundary.json",
+      "summary": "A profile says what it is not: a Not, Never or Avoid line, or an exclusion."
+    }
+  ]
+}

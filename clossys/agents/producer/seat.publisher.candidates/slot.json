@@ -5,7 +5,7 @@
   "ia": {
     "l1": "publish",
     "l2": "publish.make",
-    "order": 15
+    "order": 17
   },
   "kind": "seat",
   "contract": {
@@ -27,5 +27,6 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [],
+  "standard": "seat"
 }

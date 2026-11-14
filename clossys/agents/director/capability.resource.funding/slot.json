@@ -27,5 +27,6 @@
     ]
   },
   "inputs": [],
-  "uses": []
+  "uses": [],
+  "standard": "brief.measure"
 }

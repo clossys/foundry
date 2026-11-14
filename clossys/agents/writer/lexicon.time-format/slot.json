@@ -18,5 +18,6 @@
   "inputs": [
     "focus.reach.geography"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "lexicon.format-rule"
 }

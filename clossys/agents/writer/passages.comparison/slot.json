@@ -151,5 +151,6 @@
     "context.competition.alternative",
     "focus.offer.included"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

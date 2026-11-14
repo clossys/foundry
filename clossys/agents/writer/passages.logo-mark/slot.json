@@ -23,5 +23,6 @@
     "identity.naming.name",
     "identity.visual.style"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

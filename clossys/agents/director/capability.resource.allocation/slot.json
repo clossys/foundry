@@ -29,5 +29,6 @@
   "inputs": [
     "execution.priority.bet"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "brief.list"
 }

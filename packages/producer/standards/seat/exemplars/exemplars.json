@@ -1,0 +1,58 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "github-codeowners",
+      "ref": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners",
+      "source": "GitHub Docs",
+      "license": "CC-BY-4.0",
+      "description": "CODEOWNERS: each path names the people responsible for reviewing it.",
+      "why": {
+        "right-owner": "Ownership follows the output, path by path."
+      }
+    },
+    {
+      "id": "k8s-owners",
+      "ref": "https://www.kubernetes.dev/docs/guide/owners/",
+      "source": "Kubernetes contributor guide",
+      "license": "CC-BY-4.0",
+      "description": "OWNERS files: approvers and reviewers per directory, with how to escalate.",
+      "why": {
+        "right-owner": "Approver and reviewer roles are distinct.",
+        "procedure-clarity": "The review procedure is written down."
+      }
+    },
+    {
+      "id": "sre-on-call",
+      "ref": "https://sre.google/sre-book/being-on-call/",
+      "source": "Google SRE book",
+      "license": "CC-BY-NC-ND-4.0",
+      "description": "On-call: who holds the pager, with playbooks a responder can follow.",
+      "why": {
+        "procedure-clarity": "A responder can act from the playbook alone.",
+        "tier-fit": "Effort matched to severity."
+      }
+    },
+    {
+      "id": "gov-uk-team-roles",
+      "ref": "https://www.gov.uk/service-manual/the-team/what-each-role-does-in-service-team",
+      "source": "GOV.UK Service Manual",
+      "license": "OGL-UK-3.0",
+      "description": "What each role in a service team does, and who decides what.",
+      "why": {
+        "right-owner": "One role decides each kind of question."
+      }
+    },
+    {
+      "id": "sre-workbook-on-call",
+      "ref": "https://sre.google/workbook/on-call/",
+      "source": "Google SRE workbook",
+      "license": "CC-BY-NC-ND-4.0",
+      "description": "On-call in practice: escalation tiers and when a human must take over.",
+      "why": {
+        "tier-fit": "Escalate only when the lower tier cannot decide.",
+        "procedure-clarity": "Each escalation has a written step."
+      }
+    }
+  ]
+}

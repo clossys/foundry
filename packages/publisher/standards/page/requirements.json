@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "page",
+  "kinds": [
+    "page"
+  ],
+  "mode": "craft",
+  "craftTier": "mid",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "page.assembled",
+      "params": {}
+    },
+    {
+      "check": "page.no-inline-copy",
+      "params": {}
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "frame",
+      "intrinsicWidth": 1280,
+      "mustContain": [
+        "iframe[data-specimen-frame]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

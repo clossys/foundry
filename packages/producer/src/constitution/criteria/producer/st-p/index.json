@@ -1,0 +1,19 @@
+{
+  "schema": "clossys.criteria/1",
+  "criteria": [
+    {
+      "id": "seat.assigned",
+      "module": "seat",
+      "export": "assigned",
+      "fixtures": "__fixtures__/seat.assigned.json",
+      "summary": "by is owner, planner or agent:<agent>; llm names model, tier and a step skill; human has a procedure and a clossys verb."
+    },
+    {
+      "id": "seat.prompt-owner",
+      "module": "seat",
+      "export": "promptOwner",
+      "fixtures": "__fixtures__/seat.prompt-owner.json",
+      "summary": "The llm prompt is a skill of the agent that holds the seat (agent:<a> runs packages/<a>/, owner and planner run packages/producer/)."
+    }
+  ]
+}

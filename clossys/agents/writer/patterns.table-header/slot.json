@@ -34,5 +34,6 @@
   "inputs": [
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "pattern"
 }

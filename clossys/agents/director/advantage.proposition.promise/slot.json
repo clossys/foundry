@@ -31,5 +31,6 @@
   ],
   "uses": [],
   "options": 3,
-  "varyOn": "angle"
+  "varyOn": "angle",
+  "standard": "brief.statement"
 }

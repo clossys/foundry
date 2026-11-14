@@ -19,5 +19,6 @@
     "focus.category.definition",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "lexicon.term-list"
 }

@@ -19,5 +19,6 @@
     "identity.brand.personality",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "lexicon.voice-rule"
 }

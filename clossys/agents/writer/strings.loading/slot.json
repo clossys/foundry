@@ -19,5 +19,6 @@
   "inputs": [
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }

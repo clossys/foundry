@@ -1,0 +1,90 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "mailchimp-voice-tone",
+      "ref": "https://styleguide.mailchimp.com/voice-and-tone/",
+      "source": "Mailchimp Content Style Guide",
+      "license": "CC-BY-NC-4.0",
+      "description": "A voice described as fixed traits, with tone that shifts by context and do and do-not examples.",
+      "why": {
+        "voice-fit": "Voice is defined once and applied to every line."
+      }
+    },
+    {
+      "id": "gov-uk-writing",
+      "ref": "https://www.gov.uk/guidance/content-design/writing-for-gov-uk",
+      "source": "GOV.UK content design",
+      "license": "OGL-UK-3.0",
+      "description": "Plain English, front-loaded sentences and short words, written for people who scan.",
+      "why": {
+        "clarity": "Front-load the point; one reading.",
+        "economy": "Cut words that do not help the reader act."
+      }
+    },
+    {
+      "id": "google-dev-style",
+      "ref": "https://developers.google.com/style",
+      "source": "Google developer documentation style guide",
+      "license": "CC-BY-4.0",
+      "description": "A style guide for clear, consistent technical writing, with a word list and voice guidance.",
+      "why": {
+        "clarity": "Consistent words for the same thing.",
+        "voice-fit": "Conversational without being frivolous."
+      }
+    },
+    {
+      "id": "18f-content-guide",
+      "ref": "https://content-guide.18f.gov/",
+      "source": "18F Content Guide",
+      "license": "CC0-1.0",
+      "description": "Plain language, active voice and an inclusive word list for a government technology team.",
+      "why": {
+        "economy": "Short sentences, active voice.",
+        "clarity": "Plain words over jargon."
+      }
+    },
+    {
+      "id": "microsoft-style",
+      "ref": "https://learn.microsoft.com/en-us/style-guide/welcome/",
+      "source": "Microsoft Writing Style Guide",
+      "license": "proprietary (link only)",
+      "description": "Warm and relaxed, crisp and clear, ready to lend a hand: voice principles with concrete examples.",
+      "why": {
+        "voice-fit": "Voice principles turned into sentence-level guidance.",
+        "economy": "Get to the point fast."
+      }
+    },
+    {
+      "id": "google-capitalization",
+      "ref": "https://developers.google.com/style/capitalization",
+      "source": "Google developer documentation style guide",
+      "license": "CC-BY-4.0",
+      "description": "Sentence case for headings and titles, with proper nouns kept as written.",
+      "why": {
+        "clarity": "Sentence case reads as plain speech."
+      }
+    },
+    {
+      "id": "gov-uk-titles",
+      "ref": "https://www.gov.uk/guidance/content-design/writing-for-gov-uk#titles",
+      "source": "GOV.UK content design",
+      "license": "OGL-UK-3.0",
+      "description": "Titles under 65 characters that say what the page is about, front-loaded with the words people search.",
+      "why": {
+        "specific-promise": "A title says what the reader gets.",
+        "economy": "Short and front-loaded."
+      }
+    },
+    {
+      "id": "apple-hig-writing",
+      "ref": "https://developer.apple.com/design/human-interface-guidelines/writing",
+      "source": "Apple Human Interface Guidelines",
+      "license": "proprietary (link only)",
+      "description": "Writing for interfaces: be direct, be consistent, speak to the person's goal.",
+      "why": {
+        "specific-promise": "Lead with what the person can do."
+      }
+    }
+  ]
+}

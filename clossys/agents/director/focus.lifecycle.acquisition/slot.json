@@ -29,5 +29,6 @@
   "inputs": [
     "focus.reach.channel"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "brief.list"
 }

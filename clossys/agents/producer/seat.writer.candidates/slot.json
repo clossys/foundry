@@ -5,7 +5,7 @@
   "ia": {
     "l1": "design",
     "l2": "design.make",
-    "order": 9
+    "order": 11
   },
   "kind": "seat",
   "contract": {
@@ -27,5 +27,6 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [],
+  "standard": "seat"
 }

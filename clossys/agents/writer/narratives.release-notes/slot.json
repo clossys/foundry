@@ -19,5 +19,6 @@
     "identity.verbal.voice",
     "execution.roadmap.release"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "narrative"
 }
