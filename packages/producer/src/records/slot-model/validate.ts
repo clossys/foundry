@@ -53,6 +53,12 @@ export function validateIa(value: unknown, path = "ia.json", agent?: ModelAgent)
   }
   if (strings(value.extensions)) for (const id of value.extensions) if (!seen.has(id)) fail(`extension ${id} is not placed in the IA`);
   if (value.layers !== undefined) validateLayers(value.layers, value.nodes, fail);
+  // The declared axes (R01.7) and the owner-authorized change records (IA-V) are held to ia.schema.json itself.
+  if (value.axes !== undefined || value.changes !== undefined) {
+    const schema = loadSchema("ia");
+    const part = { type: "object", $defs: schema.$defs, properties: { axes: schema.properties!.axes!, changes: schema.properties!.changes! } };
+    for (const issue of validateValue({ ...(value.axes !== undefined ? { axes: value.axes } : {}), ...(value.changes !== undefined ? { changes: value.changes } : {}) }, part)) fail(`${issue.path.slice(1)} ${issue.message}`);
+  }
   return issues;
 }
 

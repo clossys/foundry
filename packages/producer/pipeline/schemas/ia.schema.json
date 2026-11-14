@@ -176,6 +176,44 @@
           }
         }
       }
+    },
+    "changes": {
+      "description": "The owner-authorized IA changes (clossys ia regroup operations, IA-V), oldest first: the operation, the owner-words ref it was authorized by (a registered clossys/owner-decisions.json decision), when, what changed and how many slot.json files the same write rewrote. Stands in for the slot ledger IA events until W2-B.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "op",
+          "ownerRef",
+          "at",
+          "detail",
+          "slotFiles"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "type": "string",
+            "pattern": "^[a-z][a-z-]*$"
+          },
+          "ownerRef": {
+            "type": "string",
+            "pattern": "^(?:[\\w.-]+\\/[\\w.-]+#\\d+ issuecomment-\\d+|https:\\/\\/github\\.com\\/[\\w.-]+\\/[\\w.-]+\\/issues\\/\\d+#issuecomment-\\d+)(?: \\([^()]*\\))?$"
+          },
+          "at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T"
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "slotFiles": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
     }
   }
 }
