@@ -4,7 +4,7 @@
  * derives only from Director pins and findings, cites each reason, and ends on a measurable watch;
  * each answer shape (statement, list, measure, profile) adds its own check. Pure.
  */
-import { excerpt, num, sentences, strings, words } from "../../core/lib.js";
+import { excerpt, isRecord, num, sentences, strings, words } from "../../core/lib.js";
 import type { Criterion } from "../../core/types.js";
 import { EVIDENCE_REF, SLOT_ID, briefSections, keyed, lineValue, sectionLines, sourceOf } from "./lib.js";
 
@@ -23,10 +23,12 @@ export const sections: Criterion = subject => {
   return failures;
 };
 
-/** brief.keys: every `params.keys` entry (the contract's mustContain keys) is exactly one `- Key: value` Direction line with a value. */
+/** brief.keys: every `params.keys` entry, else every mustContain key of `params.contract` (a standard binds it with "$contract"), is exactly one `- Key: value` Direction line with a value. */
 export const keys: Criterion = (subject, params) => {
-  const wanted = strings(params.keys);
-  if (!wanted.length) return ["params.keys must list the contract's mustContain keys"];
+  const contract = isRecord(params.contract) ? params.contract : undefined;
+  const fromContract = Array.isArray(contract?.mustContain) ? contract.mustContain.filter(isRecord).map(item => item.key).filter((key): key is string => typeof key === "string") : [];
+  const wanted = strings(params.keys).length ? strings(params.keys) : fromContract;
+  if (!wanted.length) return ["params.keys (or params.contract with mustContain keys) must list the keys the brief answers"];
   const lines = sectionLines(subject.text, "Direction") ?? [];
   const failures: string[] = [];
   for (const key of wanted) {

@@ -15,6 +15,7 @@ import { runPipelineCli } from "../cli/pipeline.js";
 import { runProduce } from "../cli/produce.js";
 import { runPublish, runPublishCheck } from "../cli/publish.js";
 import { runSpecimenCli } from "../cli/specimen.js";
+import { runStandardCli } from "../cli/standard.js";
 import { runRenderCli } from "../cli/render.js";
 import { runWrite } from "../cli/write.js";
 import type { Step } from "./define.js";
@@ -63,6 +64,7 @@ export const HANDLERS: Readonly<Record<string, Handler>> = {
   "src/cli/next.ts#runNextSubmitCli": async context => runNextSubmitCli(context.argv, context.cwd, context.step),
   "src/cli/owner.ts#runIaCli": async context => runIaCli(context.argv, context.cwd),
   "src/cli/owner.ts#runRetireCli": async context => runRetireCli(context.argv, context.cwd),
+  "src/cli/standard.ts#runStandardCli": async context => runStandardCli(context.argv, context.cwd),
   "src/cli/reissue.ts#runReissueCli": async context => runReissueCli(context.argv, context.cwd),
   "src/cli/owner.ts#runEvidenceCli": async context => runEvidenceCli(context.argv, context.cwd),
   "src/cli/owner.ts#runConfigCli": async context => runConfigCli(context.argv, context.cwd),

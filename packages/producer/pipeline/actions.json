@@ -67,6 +67,70 @@
     },
     {
       "package": "producer",
+      "path": "packages/producer/actions/standard/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "standard",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "direct.brief",
+        "summary": "Write one standard, the independent judge of a slot kind: its requirements, taste anchors and exemplars (clossys standard). Only the owner or the planner changes a standard, never an agent seat (R16.3); the verb validates the whole standard and appends one ledger event naming every file's sha256.",
+        "run": "clossys standard <agent>/<id> --by owner|planner --requirements <file> --taste <file> --exemplars <file>",
+        "inputs": [],
+        "outputs": [
+          {
+            "glob": "packages/*/standards/*/requirements.json",
+            "schema": "standard"
+          },
+          {
+            "glob": "packages/*/standards/*/exemplars/exemplars.json",
+            "schema": "exemplars"
+          }
+        ],
+        "pass": {
+          "command": "clossys check",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [
+          "skill/SKILL.md"
+        ],
+        "decider": "owner",
+        "packet": {
+          "inputs": [],
+          "write": [
+            {
+              "glob": "packages/*/standards/*/requirements.json",
+              "schema": "standard"
+            },
+            {
+              "glob": "packages/*/standards/*/exemplars/exemplars.json",
+              "schema": "exemplars"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md",
+        "open": "on-demand"
+      }
+    },
+    {
+      "package": "producer",
       "path": "packages/producer/actions/retire/action.json",
       "contract": {
         "schema": "clossys.action/1",

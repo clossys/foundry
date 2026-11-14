@@ -75,16 +75,46 @@ const limitsOf = (params: Params): Limit[] => Array.isArray(params.limits) ? par
   ...(typeof item.maxWords === "number" ? { maxWords: item.maxWords } : {}),
 })) : [];
 const endsWithKey = (key: string, suffix: string) => key === suffix || key.endsWith(`.${suffix}`);
+const numberOf = (value: unknown) => typeof value === "number" ? value : undefined;
+/**
+ * The limits a slot contract states (`params.contract`, bound by a standard with "$contract"): a passage's
+ * per-field English maxLength by its last key segment (the tightest when two fields share one), a pattern's
+ * per-part maxChars and maxWords, and a string's own maxChars and maxWords as the fallback.
+ */
+function contractLimits(contract: unknown): { limits: Limit[]; fallback: Limit } {
+  if (!isRecord(contract)) return { limits: [], fallback: {} };
+  const limits = new Map<string, Limit>();
+  if (contract.kind === "passage" && isRecord(contract.copy) && Array.isArray(contract.copy.fields)) {
+    for (const field of contract.copy.fields.filter(isRecord)) {
+      const max = isRecord(field.maxLength) ? numberOf(field.maxLength.en) : undefined;
+      if (max === undefined || typeof field.key !== "string") continue;
+      const suffix = field.key.split("[].").at(-1)!;
+      const was = limits.get(suffix)?.maxChars;
+      limits.set(suffix, { suffix, maxChars: was === undefined ? max : Math.min(was, max) });
+    }
+  }
+  if (contract.kind === "pattern" && isRecord(contract.parts) && Array.isArray(contract.parts.items)) {
+    for (const item of contract.parts.items.filter(isRecord)) {
+      if (typeof item.id !== "string") continue;
+      const maxChars = numberOf(item.maxChars), maxWords = numberOf(item.maxWords);
+      limits.set(item.id, { suffix: item.id, ...(maxChars !== undefined ? { maxChars } : {}), ...(maxWords !== undefined ? { maxWords } : {}) });
+    }
+  }
+  const maxChars = contract.kind === "string" ? numberOf(contract.maxChars) : undefined, maxWords = contract.kind === "string" ? numberOf(contract.maxWords) : undefined;
+  return { limits: [...limits.values()].sort((a, b) => a.suffix!.localeCompare(b.suffix!)), fallback: { ...(maxChars !== undefined ? { maxChars } : {}), ...(maxWords !== undefined ? { maxWords } : {}) } };
+}
 
 /**
  * copy.within-limits: every plain value is within its limit: the `params.limits` row whose `suffix`
- * ends the key (longest suffix wins), else the default `params.maxChars` / `params.maxWords`. At
+ * ends the key (longest suffix wins), else the default `params.maxChars` / `params.maxWords`; with no
+ * `params.limits`, the limits `params.contract` states (a standard binds it with "$contract"). At
  * least one limit is required.
  */
 export const withinLimits: Criterion = (subject, params) => {
-  const limits = limitsOf(params);
-  const fallback: Limit = { ...(typeof params.maxChars === "number" ? { maxChars: params.maxChars } : {}), ...(typeof params.maxWords === "number" ? { maxWords: params.maxWords } : {}) };
-  if (!limits.length && fallback.maxChars === undefined && fallback.maxWords === undefined) return ["params need maxChars, maxWords or limits[]"];
+  const stated = contractLimits(params.contract);
+  const limits = limitsOf(params).length ? limitsOf(params) : stated.limits;
+  const fallback: Limit = { ...(typeof params.maxChars === "number" ? { maxChars: params.maxChars } : {}), ...(typeof params.maxWords === "number" ? { maxWords: params.maxWords } : {}), ...stated.fallback };
+  if (!limits.length && fallback.maxChars === undefined && fallback.maxWords === undefined) return ["params need maxChars, maxWords, limits[] or a params.contract that states limits"];
   const failures: string[] = [];
   for (const entry of parseCopy(subject.text).entries) {
     if (entry.fenced) continue;
@@ -232,10 +262,18 @@ export const narrativeSequence: Criterion = subject => {
 };
 
 interface Part { readonly id: string; readonly required: boolean }
-const partsOf = (params: Params): Part[] => Array.isArray(params.parts) ? params.parts.filter(isRecord).filter(item => typeof item.id === "string").map(item => ({ id: item.id as string, required: item.required !== false })) : [];
+const partList = (value: unknown): Part[] => Array.isArray(value) ? value.filter(isRecord).filter(item => typeof item.id === "string").map(item => ({ id: item.id as string, required: item.required !== false })) : [];
+/** `params.parts`, else the parts of `params.contract` (a standard binds it with "$contract"). */
+const partsOf = (params: Params): Part[] => {
+  const listed = partList(params.parts);
+  if (listed.length || !isRecord(params.contract) || !isRecord(params.contract.parts)) return listed;
+  return partList(params.contract.parts.items);
+};
 
-/** pattern.parts: every key ends in `.<part>` for one of `params.parts` (required), and every group (the key before its part) holds each required part once. */
+/** pattern.parts: every key ends in `.<part>` for one of `params.parts` (or `params.contract`'s parts; required by default), and every group (the key before its part) holds each required part once. */
 export const patternParts: Criterion = (subject, params) => {
+  // A standard over several kinds binds each slot's contract: only a pattern contract has parts to hold.
+  if (!partList(params.parts).length && isRecord(params.contract) && params.contract.kind !== "pattern") return [];
   const parts = partsOf(params);
   if (!parts.length) return ["params.parts must list the pattern's parts"];
   const failures: string[] = [];

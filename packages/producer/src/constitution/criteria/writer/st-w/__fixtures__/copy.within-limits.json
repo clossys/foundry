@@ -37,6 +37,45 @@
           }
         ]
       }
+    },
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "contract": {
+          "kind": "passage",
+          "copy": {
+            "fields": [
+              {
+                "key": "header.heading",
+                "maxLength": {
+                  "en": 160
+                }
+              },
+              {
+                "key": "header.description",
+                "maxLength": {
+                  "en": 480
+                }
+              },
+              {
+                "key": "actions[].primary.label",
+                "maxLength": {
+                  "en": 40
+                }
+              }
+            ]
+          }
+        }
+      },
+      "note": "limits from the bound passage contract's field maxLength"
     }
   ],
   "fail": [
@@ -87,6 +126,85 @@
       },
       "params": {},
       "note": "no limit"
+    },
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "contract": {
+          "kind": "passage",
+          "copy": {
+            "fields": [
+              {
+                "key": "header.heading",
+                "maxLength": {
+                  "en": 160
+                }
+              },
+              {
+                "key": "header.description",
+                "maxLength": {
+                  "en": 480
+                }
+              },
+              {
+                "key": "actions[].primary.label",
+                "maxLength": {
+                  "en": 8
+                }
+              }
+            ]
+          }
+        }
+      },
+      "note": "the bound contract caps primary.label at 8; 'Open Director' has 13"
+    },
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "maxChars": 480,
+        "contract": {
+          "kind": "string",
+          "maxChars": 10,
+          "maxWords": 2
+        }
+      },
+      "note": "a string contract's own maxChars and maxWords override the standard's fallback"
+    },
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "contract": {
+          "kind": "passage",
+          "copy": {
+            "fields": []
+          }
+        }
+      },
+      "note": "a bound contract that states no limits leaves nothing to check"
     }
   ]
 }

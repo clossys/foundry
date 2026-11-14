@@ -99,6 +99,15 @@ describe("records/standards", () => {
     ]);
   });
 
+  it("binds a \"$contract\" param to the slot's own contract, so per-slot facts are never copied into contract.requirements", () => {
+    const contract = { question: "Why us?", mustContain: [{ key: "Difference", hint: "how" }] };
+    const standard = [{ check: "brief.keys", params: { contract: "$contract" } }, { check: "brief.sections", params: { note: "$contracts" } }];
+    expect(resolveRequirements(standard, contract)).toEqual([{ check: "brief.keys", params: { contract } }, { check: "brief.sections", params: { note: "$contracts" } }]);
+    expect(resolveRequirements(standard, undefined)[0]).toEqual({ check: "brief.keys", params: { contract: {} } });
+    // The standard is never mutated: the next slot binds its own contract.
+    expect(standard[0]!.params.contract).toBe("$contract");
+  });
+
   describe("preview.card (SC-0, R18.13)", () => {
     const INLINE = { method: "inline", intrinsicWidth: null, mustContain: ["[data-swatch]"], states: ["loading", "not-needed", "no-preview", "failed", "not-pinned"] };
     const FRAME = { method: "frame", intrinsicWidth: 480, mustContain: ["[data-clossys-slot]"], states: ["loading", "failed", "not-pinned"] };

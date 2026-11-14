@@ -399,7 +399,12 @@ function runIaSeatStandard(flags: Flags, cwd: string, target: string, slot: stri
   const standard = readStandard(root, SEAT_AGENT, standardId);
   if (!standard.doc || standard.issues.length) return refuse("ia", `standard ${standardId} is not valid: ${standard.issues.slice(0, 5).join("; ")}`);
   if (!standardFits(standard.doc, "seat", contract)) return refuse("ia", `standard ${standardId} serves ${standard.doc.kinds.join(", ")}, not ${slotKinds("seat", contract).join(" or ")}`);
-  const doc = { ...existing, standard: standardId, contract };
+  // The seat is recorded at the position producer ia.json gives it (order only): a seat placed before
+  // it by clossys seat once left its order stale (seatPositionWrites now follows in that write).
+  const iaFile = iaPath(consumer, SEAT_AGENT);
+  const position = modelExists(iaFile) ? slotPositions(SEAT_AGENT, readModelJson(iaFile) as IaDoc).get(slot) : undefined;
+  if (!position) return refuse("ia", `${target} is not placed in producer ia.json: a seat is placed by clossys seat <step>`);
+  const doc = { ...existing, ia: { ...position }, standard: standardId, contract };
   const docIssues = validateSlotDoc(doc, file);
   if (docIssues.length) return refuse("ia", docIssues.map(issue => issue.message).join("; "));
   const bytes = jsonBytes(doc);
@@ -618,6 +623,26 @@ export function placeSeat(ia: { schema: string; source: string; extensions: stri
 /** A seat slot's candidate stem: the last dot segment of its slot id (seat.pick.designer -> designer). */
 export const seatLeaf = (step: string): string => seatSlotId(step).split(".").at(-1)!;
 
+/**
+ * The seat slot.json rewrites (order and group only) that make every placed seat but `except` sit where
+ * producer ia.json places it. Producer ia.json is derived from the pipeline steps, so its position always wins.
+ */
+export function seatPositionWrites(consumer: string, ia: IaDoc, except?: string): { writes: [string, string][] } | { error: string } {
+  const writes: [string, string][] = [];
+  for (const [id, at] of slotPositions(SEAT_AGENT, ia)) {
+    if (id === except) continue;
+    const file = slotFile(join(agentDir(consumer, SEAT_AGENT), id));
+    if (!modelExists(file)) continue;
+    const doc = JSON.parse(readModelText(file)) as Record<string, unknown>;
+    if (jsonBytes(doc.ia) === jsonBytes(at)) continue;
+    const nextDoc = { ...doc, ia: { ...at } };
+    const issues = validateSlotDoc(nextDoc, file);
+    if (issues.length) return { error: `producer/${id}: ${issues.map(issue => issue.message).join("; ")}` };
+    writes.push([file, jsonBytes(nextDoc)]);
+  }
+  return { writes };
+}
+
 export async function runSeatCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
   const flags = parseSeat(argv);
   if (flags.help) return { exitCode: 0, message: SEAT_USAGE };
@@ -681,8 +706,12 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
     contract: { step: id, fixture: { step: id, seat } }, inputs: [], uses: [],
   };
   if (doc) { const docIssues = validateSlotDoc(doc, docFile); if (docIssues.length) return refuse("seat", docIssues.map(issue => issue.message).join("; ")); }
-  const added = guarded(consumer, [iaFile, candidate, pinFile(dir), ...(doc ? [docFile] : [])], () => {
+  // A seat placed before the end shifts every later seat's order: their slot.json positions follow in the same guarded write.
+  const follow = seatPositionWrites(consumer, placed as IaDoc, slotId);
+  if ("error" in follow) return refuse("seat", follow.error);
+  const added = guarded(consumer, [iaFile, candidate, pinFile(dir), ...(doc ? [docFile] : []), ...follow.writes.map(([file]) => file)], () => {
     if (placed !== ia) replaceFile(iaFile, jsonBytes(placed));
+    for (const [file, bytes] of follow.writes) replaceFile(file, bytes);
     if (doc) createModelFile(docFile, jsonBytes(doc));
     createModelFile(candidate, bytes);
     replaceFile(pinFile(dir), jsonBytes(pin));
