@@ -1,0 +1,13 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.mark",
+  "produces": [
+    "asset.logo-mark"
+  ],
+  "rung": "create",
+  "axes": [
+    "construction",
+    "reduction",
+    "metaphor"
+  ]
+}

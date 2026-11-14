@@ -1,0 +1,16 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.element",
+  "produces": [
+    "frame",
+    "section.app",
+    "section.adaptive",
+    "asset.media-rule"
+  ],
+  "rung": "create",
+  "axes": [
+    "structure",
+    "density",
+    "emphasis"
+  ]
+}

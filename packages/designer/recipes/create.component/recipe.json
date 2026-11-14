@@ -1,0 +1,13 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.component",
+  "produces": [
+    "component"
+  ],
+  "rung": "create",
+  "axes": [
+    "composition",
+    "interaction",
+    "density"
+  ]
+}
