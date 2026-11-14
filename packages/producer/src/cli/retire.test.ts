@@ -8,7 +8,8 @@ import { checkSlotModel } from "../records/slot-check.js";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
 import "./main.js";
 import { RETIRE_SCHEMA, runRetireCli } from "./owner.js";
-import { RETIRE_REASON } from "../constitution/checks/R10-retire.js";
+import { candidateRetires, RETIRE_REASON } from "../constitution/checks/R10-retire.js";
+import { buildContext } from "../constitution/context.js";
 
 let workspace: string;
 let agents: string;
@@ -56,8 +57,10 @@ describe("clossys retire <agent>/<slot> <candidate>", () => {
     expect(existsSync(join(dir, "candidates", "example-v1.json"))).toBe(false);
     expect(readFileSync(join(dir, "retired", "example-v1.json"), "utf8")).toBe(v1);
     expect(load(join(dir, "retired", "example-v1.json.json"))).toEqual({
-      schema: RETIRE_SCHEMA, slot: `designer/${ID}`, candidate: "example-v1.json", sha256: sha256Hex(v1), by: "owner:2026-11-13 retire", reason: "superseded: by v2", at: AT,
+      schema: RETIRE_SCHEMA, slot: ID, candidate: "example-v1.json", sha256: sha256Hex(v1), by: "owner:2026-11-13 retire", reason: "superseded: by v2", at: AT,
     });
+    // The record is one the constitution's R10.1 accepts.
+    expect(candidateRetires(buildContext(workspace, join(workspace, "clossys"), { history: () => ({ available: true, changes: new Map(), dirty: new Set() }) }))).toEqual([]);
     // The pin is untouched and still resolves.
     expect(load(join(dir, "pin.json")).candidate).toBe("example-v2.json");
     expect(checkSlotModel(join(workspace, "clossys")).filter(issue => issue.path !== `agents/designer/${ID}/retired`)).toEqual([]);

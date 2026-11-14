@@ -494,7 +494,7 @@ export async function runApproveCli(argv: readonly string[], cwd: string): Promi
 export const RETIRE_USAGE = "Usage: clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]\n"
   + "       clossys retire <agent>/<slot> --slot --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]\n"
   + "  <code> is one of uncertified, superseded, edited-in-place, not-needed, duplicate, shared-split (constitution R10).\n"
-  + "  retires one candidate: writes <slot>/retired/<candidate>.json (clossys.retire/1: slot, candidate, sha256, by, reason, at) and moves\n"
+  + "  retires one candidate: writes <slot>/retired/<candidate>.json (clossys.retire/1: slot id, candidate, sha256, by, reason, at) and moves\n"
   + "  the candidate file from candidates/ into retired/. The pinned candidate is refused: repin first.\n"
   + "  --slot retires a whole slot: it leaves its agent's ia.json, the removal is recorded in that ia.json's `retired` list, and its folder\n"
   + "  moves to agents/<agent>/_retired/<slot>. Refused while another slot.json `uses` it or a pinned slot takes it as an input.";
@@ -531,7 +531,8 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
   const from = join(candidatesDir(entry.dir), candidate);
   const retired = join(entry.dir, RETIRED_DIR), to = join(retired, candidate), file = join(retired, `${candidate}.json`);
   if (modelExists(to) || modelExists(file)) return refuse("retire", `${target} already has ${RETIRED_DIR}/${candidate}`);
-  const record = { schema: RETIRE_SCHEMA, slot: target, candidate, sha256: sha(readModelBytes(from)), by: fields.by, reason: fields.reason, at: fields.at };
+  // `slot` is the slot id (the folder names the agent), as constitution R10.1 and retire.schema.json read it.
+  const record = { schema: RETIRE_SCHEMA, slot, candidate, sha256: sha(readModelBytes(from)), by: fields.by, reason: fields.reason, at: fields.at };
   // The slot model check does not list retired/ among a slot folder's entries yet: that one orphan is this write's own.
   const own = `agents/${agent}/${slot}/${RETIRED_DIR}`;
   const added = guarded(consumer, [file, from, to], () => { replaceFile(file, jsonBytes(record)); moveModelEntry(from, to); }, {
