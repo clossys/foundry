@@ -265,19 +265,19 @@
     "id": "R11",
     "statement": "One resolver. Only records/slots.ts reads the agent trees, only records/slot-write.ts writes them, and only resolveCitation() turns a citation into a candidate.",
     "scope": "all-records",
-    "status": "pending",
+    "status": "enforced",
     "owner": "W2-D",
     "check": "src/constitution/checks/R11-resolver.ts",
-    "test": "src/constitution/constitution.test.ts",
+    "test": "src/constitution/rules/r11.test.ts",
     "checks": [
       {
         "id": "R11.1",
-        "status": "pending",
+        "status": "enforced",
         "owner": "W2-D"
       },
       {
         "id": "R11.2",
-        "status": "pending",
+        "status": "enforced",
         "owner": "W2-D"
       }
     ]
@@ -289,16 +289,16 @@
     "status": "pending",
     "owner": "W2-D",
     "check": "src/constitution/checks/R12-deterministic-build.ts",
-    "test": "src/constitution/constitution.test.ts",
+    "test": "src/constitution/rules/r12.test.ts",
     "checks": [
       {
         "id": "R12.1",
-        "status": "pending",
+        "status": "enforced",
         "owner": "W2-D"
       },
       {
         "id": "R12.2",
-        "status": "pending",
+        "status": "enforced",
         "owner": "W2-D"
       },
       {
@@ -312,24 +312,24 @@
     "id": "R13",
     "statement": "Strings and pages. Every visible string is a Writer key, every page is one frame plus sections, and every copy key resolves.",
     "scope": "all-records",
-    "status": "pending",
+    "status": "enforced",
     "owner": "W2-D",
     "check": "src/constitution/checks/R13-strings-pages.ts",
-    "test": "src/constitution/constitution.test.ts",
+    "test": "src/constitution/rules/r13.test.ts",
     "checks": [
       {
         "id": "R13.1",
-        "status": "pending",
+        "status": "enforced",
         "owner": "W2-D"
       },
       {
         "id": "R13.2",
-        "status": "pending",
+        "status": "enforced",
         "owner": "W2-D"
       },
       {
         "id": "R13.3",
-        "status": "pending",
+        "status": "enforced",
         "owner": "W2-D"
       }
     ]

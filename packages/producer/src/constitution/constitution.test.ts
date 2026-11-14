@@ -10,7 +10,7 @@ import { cleanSpec, contextOf, expectCatches, writeWorkspace, NO_HISTORY } from 
 
 const packageRoot = fileURLToPath(new URL("../../", import.meta.url));
 const IDS = Array.from({ length: 14 }, (_, index) => `R${String(index + 1).padStart(2, "0")}`);
-const ENFORCED = ["R04", "R06", "R07", "R08", "R09", "R10"];
+const ENFORCED = ["R04", "R06", "R07", "R08", "R09", "R10", "R11", "R13"];
 
 describe("constitution registry", () => {
   it("rules.json lists R01-R14 once each, scope all-records, with existing module and test paths", () => {

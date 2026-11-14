@@ -6623,5 +6623,6 @@
       "path": "generated/studio-provenance.json",
       "sha256": "d625b721c766c95057120630d30bde88b2a61f5877abe1e0cb726fba22f182ad"
     }
-  ]
+  ],
+  "pinSetHash": "f9ba0796afc3f32e42d02d9731b60265405c03b96687c6e901e8c1bc32d75a32"
 }
