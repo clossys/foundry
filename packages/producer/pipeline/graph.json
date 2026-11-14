@@ -10745,6 +10745,10 @@
           "value": true
         },
         {
+          "flag": "--changed",
+          "value": true
+        },
+        {
           "flag": "--check",
           "value": false
         },
@@ -10782,6 +10786,10 @@
         },
         {
           "flag": "--rule",
+          "value": true
+        },
+        {
+          "flag": "--slot",
           "value": true
         },
         {
@@ -11193,6 +11201,10 @@
           "value": true
         },
         {
+          "flag": "--changed",
+          "value": true
+        },
+        {
           "flag": "--check",
           "value": false
         },
@@ -11238,6 +11250,10 @@
         },
         {
           "flag": "--rule",
+          "value": true
+        },
+        {
+          "flag": "--slot",
           "value": true
         },
         {
