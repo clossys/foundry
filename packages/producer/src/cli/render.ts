@@ -19,15 +19,13 @@
  * sha256 and the dependency pin-set hash), so submitting the same bytes later reuses the render.
  */
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pinSetHash, type PinSetEntry } from "../constitution/rules/r12.js";
 import { readCandidate, readSlot, slotIndex, type SlotEntry } from "../records/slots.js";
-import { CANDIDATE_NAME, jsonBytes } from "../records/slot-model/index.js";
-import { agentDir, candidatesDir } from "../records/slot-model/layout.js";
-import { nextVersion } from "../records/slot-write.js";
+import { CANDIDATE_NAME } from "../records/slot-model/index.js";
+import { nextVersion, withDraftOverlay } from "../records/slot-write.js";
 import { snapshotSpecimen, type SnapshotOptions, type SnapshotResult } from "../specimen/thumbnails.js";
 import { CliUsageError } from "./args.js";
 import { discoverRoot } from "./root.js";
@@ -162,18 +160,8 @@ export async function renderCandidate(options: {
     if (!CANDIDATE_NAME.test(candidate)) throw new CliUsageError(`the draft ${options.draft} names no element (its name must be a candidate stem)`);
     // A temporary copy of the consumer's records with the draft as the slot's next candidate: the
     // consumer's records are never written, and the harness reads the draft as it reads any candidate.
-    const overlay = realpathSync(mkdtempSync(join(realpathSync(tmpdir()), "clossys-render-draft-")));
-    try {
-      const copy = join(overlay, "clossys");
-      for (const name of readdirSync(consumer)) if (statSync(join(consumer, name)).isFile()) cpSync(join(consumer, name), join(copy, name));
-      // Every agent's records: a Designer element's dependency pins reach Director and Writer slots.
-      cpSync(join(consumer, "agents"), join(copy, "agents"), { recursive: true });
-      const dir = candidatesDir(join(agentDir(copy, "designer"), options.slot));
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(join(dir, candidate), jsonBytes(item), { flag: "wx" });
-      const rendered = await renderAt(copy, options.root, { ...options, candidate }, slotIndex(copy));
-      return { ...rendered, draft: options.draft };
-    } finally { rmSync(overlay, { recursive: true, force: true }); }
+    return withDraftOverlay(consumer, "designer", options.slot, candidate, item, async copy =>
+      ({ ...await renderAt(copy, options.root, { ...options, candidate }, slotIndex(copy)), draft: options.draft }));
   }
   if (options.candidate === undefined) throw new CliUsageError("render needs <candidate> or --draft <file>");
   return renderAt(consumer, options.root, { ...options, candidate: options.candidate }, index);

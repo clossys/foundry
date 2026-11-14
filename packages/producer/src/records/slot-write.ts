@@ -12,12 +12,12 @@
  * byte state it leaves is the one the ledger already records.
  */
 import { createHash, randomUUID } from "node:crypto";
-import { closeSync, constants, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
-import { hostname } from "node:os";
+import { closeSync, constants, cpSync, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStore, DirectorStoreChange, DirectorStoreWriter } from "@clossys/director";
 import {
-  CANDIDATE_NAME, KIND_EXT, SEAT_AGENT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
+  CANDIDATE_NAME, KIND_EXT, SEAT_AGENT, agentDir, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
@@ -197,6 +197,24 @@ function canonicalDirectory(directory: string): void {
 
 /** A slot's retired candidates: files under `<slot>/retired/` (constitution R08.1 counts them). */
 const RETIRED_CANDIDATES = "retired";
+/**
+ * `clossys render --draft`: a temporary copy of the consumer's records (its top-level files and every
+ * agent's tree, since a Designer element's dependency pins reach Director and Writer slots) with `item`
+ * written as `<agent>/<slot>`'s candidate `candidate`. `use` runs on the copy's consumer root; the copy
+ * is removed afterwards. The consumer's own records are never written (R11.1: the one writer owns this).
+ */
+export async function withDraftOverlay<T>(consumer: string, agent: ModelAgent, slot: string, candidate: string, item: unknown, use: (copy: string) => Promise<T>): Promise<T> {
+  const overlay = realpathSync(mkdtempSync(join(realpathSync(tmpdir()), "clossys-render-draft-")));
+  try {
+    const copy = join(overlay, "clossys");
+    for (const name of readdirSync(consumer)) if (statSync(join(consumer, name)).isFile()) cpSync(join(consumer, name), join(copy, name));
+    cpSync(join(consumer, "agents"), join(copy, "agents"), { recursive: true });
+    const dir = candidatesDir(join(agentDir(copy, agent), slot));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, candidate), jsonBytes(item), { flag: "wx" });
+    return await use(copy);
+  } finally { rmSync(overlay, { recursive: true, force: true }); }
+}
 /**
  * The next candidate version of a slot: one above the highest version any of its candidates holds,
  * across every stem and including retired candidates, so a version number is never used twice in a
