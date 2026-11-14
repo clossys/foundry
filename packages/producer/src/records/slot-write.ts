@@ -210,6 +210,18 @@ export function appendRetireSlot(consumer: string, agent: SlotAgent, id: string,
 }
 
 /**
+ * The `ia` verb's agent-ledger event (`clossys ia`, one per ia.json it writes): `ia` with ia.json's
+ * current bytes, written after the file under the agent lock (R14.1). `fields` carries the event's
+ * kind and anything else the verb records.
+ */
+export function appendIaEvent(consumer: string, agent: SlotAgent, input: { by: string; at: string; fields?: Readonly<Record<string, unknown>> }, given?: WriteProvenance): LedgerEvent {
+  const base = join(consumer, "agents", agent);
+  const event = ledgerEvent("ia", input.at, provenance({ verb: "ia", by: input.by, skill: skillPath("producer", "ia") }, given), { ...input.fields }, [recordState(base, "ia.json")]);
+  agentLocked(consumer, agent, () => appendEvent(base, "agent", event));
+  return event;
+}
+
+/**
  * A `slot` event recording slot.json's current bytes, for a verb that rewrote slot.json as part of
  * an agent-level change (retire --slot renumbers the positions of the slots after the retired one).
  */

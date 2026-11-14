@@ -34,7 +34,7 @@ import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from 
 import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
-import { appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, writePin } from "../records/slot-write.js";
+import { appendIaEvent, appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, writePin } from "../records/slot-write.js";
 import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
 import type { ModelAgent } from "../records/slot-model/index.js";
@@ -46,6 +46,7 @@ import { SEAT_POLICY_FILE, SEAT_POLICY_SCHEMA, validateSeatPolicy } from "../pip
 import { writerKeysUnapproved } from "../pipeline/status.js";
 import { STEPS } from "../pipeline/steps/index.js";
 import { RETIRE_CODES, RETIRE_REASON } from "../constitution/checks/R10-retire.js";
+import { IA_KIND, slotWriteKind } from "../constitution/green.js";
 import { resolveCandidate } from "./pin.js";
 import { CliUsageError } from "./args.js";
 import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
@@ -196,7 +197,7 @@ const GATE_FLAGS = ["--owner-ref", "--at", "--root"];
  * A dry run validates what a write validates and runs the same slot model check on the planned files in
  * memory: it refuses (exit 1) exactly where the write would be refused, and lists the files either way.
  */
-function commitIa(consumer: string, root: string, writes: readonly (readonly [string, string])[], dry: boolean, summary: string, lines: readonly string[] = [], message = `ia: ${summary}`): CliResult {
+function commitIa(consumer: string, root: string, writes: readonly (readonly [string, string])[], dry: boolean, summary: string, lines: readonly string[] = [], message = `ia: ${summary}`, who: IaWho = {}): CliResult {
   const rel = (path: string) => relative(root, path).split(sep).join("/");
   if (dry) {
     const files = writes.map(([path]) => rel(path));
@@ -212,9 +213,35 @@ function commitIa(consumer: string, root: string, writes: readonly (readonly [st
       message: [`ia --dry: ${summary}; would write ${files.length} file${files.length === 1 ? "" : "s"}, wrote nothing`, ...listed].join("\n"),
     };
   }
-  const added = guarded(consumer, writes.map(([path]) => path), () => { for (const [path, bytes] of writes) replaceFile(path, bytes); });
+  // One ledger event per written file (R14.1), appended after every file is written; a refused write restores each ledger.
+  const targets = writes.map(([path, bytes]) => iaWriteTarget(consumer, path, bytes));
+  const ledgers = [...new Set(writes.map(([path]) => join(dirname(path), LEDGER_FILE)))];
+  const by = who.by ?? "planner", at = who.at || new Date().toISOString();
+  const added = guarded(consumer, [...writes.map(([path]) => path), ...ledgers], () => {
+    for (const [path, bytes] of writes) replaceFile(path, bytes);
+    for (const target of targets) {
+      if (target.slot === undefined) appendIaEvent(consumer, target.agent, { by, at, fields: { kind: target.kind } });
+      else appendSlotDocEvent(consumer, target.agent, target.slot, { by, at, verb: "ia", skill: skillPath("producer", "ia"), fields: { kind: target.kind } });
+    }
+  });
   if (added.length) return refuse("ia", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
   return { exitCode: 0, root, message: [message, ...lines.map(line => `  ${line}`)].join("\n") };
+}
+/** Who an `ia` write's ledger events name: `owner` with an owner ref, else `planner`; `at` defaults to now. */
+interface IaWho { readonly by?: string; readonly at?: string }
+const iaWho = (ownerRef: string | undefined, at: string): IaWho => ({ by: ownerRef ? "owner" : "planner", at });
+/**
+ * The ledger an `ia` write goes to and its event kind: ia.json → the agent ledger, kind `ia`;
+ * `<agent>/<slot>/slot.json` → the slot ledger, kind `ia-position` when only the position fields
+ * changed (green.ts slotWriteKind, the record digest's own view), else `ia`.
+ */
+function iaWriteTarget(consumer: string, path: string, bytes: string): { agent: SlotAgent; slot?: string; kind: string } {
+  const parts = relative(join(consumer, "agents"), path).split(sep);
+  const agent = parts[0] as SlotAgent;
+  if (!(SLOT_AGENTS as readonly string[]).includes(agent)) throw new Error(`ia write outside an agent tree: ${path}`);
+  if (parts.length === 2 && parts[1] === "ia.json") return { agent, kind: IA_KIND };
+  if (parts.length === 3 && parts[2] === "slot.json") return { agent, slot: parts[1]!, kind: slotWriteKind(modelExists(path) ? readModelText(path) : null, bytes) };
+  throw new Error(`ia write is neither an ia.json nor a slot.json: ${path}`);
 }
 /** `--owner-ref`, resolved against clossys/owner-decisions.json (offline): the ref to record, or the refusal. */
 function ownerRefOf(flags: Flags, consumer: string, required: boolean): { ref?: string } | CliResult {
@@ -236,7 +263,7 @@ function applyEdit(consumer: string, root: string, agent: SlotAgent, ia: IaFile,
   const plan = planIaWrite(consumer, agent, ia, edit, { op, ownerRef, at });
   if ("error" in plan) return refuse("ia", plan.error);
   if ("unchanged" in plan) return { exitCode: 0, root, message: `ia: ${plan.unchanged}; nothing written` };
-  return commitIa(consumer, root, plan.writes, dry, `${agent} ${edit.detail}`, plan.lines);
+  return commitIa(consumer, root, plan.writes, dry, `${agent} ${edit.detail}`, plan.lines, undefined, iaWho(ownerRef, at));
 }
 
 /** `clossys ia <agent> --start`: an empty workspace-owned ia.json, where the agent has none. */
@@ -374,6 +401,8 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   const owner = ownerRefOf(flags, consumer, false);
   if (isResult(owner)) return owner;
   const at = owner.ref ? atOf(flags) : "";
+  // The ledger events' time: --at when given (validated as a regroup's), else the write's.
+  const eventAt = at || (flags.values.has("--at") ? atOf(flags) : "");
   const dir = slotDir(consumer, agent, slot);
   const placed = isPlaced(ia, slot);
   if (flags.bare.has("--remove")) {
@@ -387,7 +416,7 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
     if (owner.ref) next = withChange(next, { op: "remove", ownerRef: owner.ref, at, detail: `removed ${slot}${renumbered(follow)}`, slotFiles: follow.writes.length });
     const issues = validateIa(next, iaFile);
     if (issues.length) return refuse("ia", issues.map(issue => issue.message).join("; "));
-    return commitIa(consumer, root, [[iaFile, jsonBytes(next)], ...follow.writes], dry, `remove ${target} from ${agent} ia.json`, followLines(follow), `ia: removed ${target} from ${agent} ia.json`);
+    return commitIa(consumer, root, [[iaFile, jsonBytes(next)], ...follow.writes], dry, `remove ${target} from ${agent} ia.json`, followLines(follow), `ia: removed ${target} from ${agent} ia.json`, iaWho(owner.ref, eventAt));
   }
   const standardId = one(flags, "--standard");
   if (standardId !== undefined && !STANDARD_ID.test(standardId)) throw new CliUsageError(`--standard must be a standard id such as element.button, got ${standardId}\n${IA_USAGE}`);
@@ -443,7 +472,7 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   const named = standardId !== undefined ? `, standard ${standardId} named` : "";
   const what = contractFile === undefined ? `standard ${standardId} named` : `${placed ? "contract written" : `placed under ${one(flags, "--under")} and its contract written`}${named}`;
   const summary = contractFile === undefined ? `${target} standard ${standardId}` : `${target} ${placed ? "contract" : `placed under ${one(flags, "--under")} and contract`}${standardId !== undefined ? `, standard ${standardId}` : ""}`;
-  return commitIa(consumer, root, writes, dry, summary, followLines(follow), `ia: ${target} ${what} (clossys/agents/${agent}/${slot}/slot.json)`);
+  return commitIa(consumer, root, writes, dry, summary, followLines(follow), `ia: ${target} ${what} (clossys/agents/${agent}/${slot}/slot.json)`, iaWho(owner.ref, eventAt));
 }
 
 // ---------------------------------------------------------------- clossys evidence

@@ -4,10 +4,13 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseArgs } from "../cli/args.js";
 import { runCheck } from "../cli/check.js";
+// Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
+import "../cli/main.js";
+import { runIaCli } from "../cli/owner.js";
 import { buildGreen, evaluateDelta, formatDelta, greenDigest, IA_POSITION_KIND, isIaPositionEvent, ledgerRecordView, POSITION_FIELDS, readGreen, rowKey, seedGrowth, slotRecordView, slotWriteKind, verifyGreen, type GreenReport } from "./green.js";
 import { singleReaderRows } from "./rules/r11.js";
 import { runConstitution } from "./run.js";
-import { cleanSpec, NO_HISTORY, slotDoc, writeWorkspace, type WorkspaceSpec } from "./__fixtures__/workspace.js";
+import { AT, cleanSpec, ledgerDoc, ledgerEvent, NO_HISTORY, sha, slotDoc, writeWorkspace, type WorkspaceSpec } from "./__fixtures__/workspace.js";
 
 const WS = "(no package.json)";
 
@@ -121,11 +124,19 @@ describe("constitution delta gate (until E2)", () => {
     const again = () => runConstitution({ root, consumer, history: () => NO_HISTORY, index: true, now: () => 0 });
     const base = again();
     const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
-    // What followPositions writes for a later slot when a slot is placed above it: ia.order only, in jsonBytes.
+    // What followPositions writes for a later slot when a slot is placed above it: ia.order only, in jsonBytes,
+    // and the `ia-position` event commitIa appends for it (R14.1).
     const file = join(consumer, "agents/designer/ui.button/slot.json");
-    const doc = JSON.parse(readFileSync(file, "utf8")) as { ia: Record<string, unknown> };
-    writeFileSync(file, `${JSON.stringify({ ...doc, ia: { ...doc.ia, order: 7 } }, null, 2)}\n`);
+    const before = readFileSync(file, "utf8");
+    const doc = JSON.parse(before) as { ia: Record<string, unknown> };
+    const after = `${JSON.stringify({ ...doc, ia: { ...doc.ia, order: 7 } }, null, 2)}\n`;
+    expect(slotWriteKind(before, after)).toBe(IA_POSITION_KIND);
+    writeFileSync(file, after);
+    const ledgerFile = join(consumer, "agents/designer/ui.button/ledger.json");
+    const ledger = JSON.parse(readFileSync(ledgerFile, "utf8")) as { events: unknown[] };
+    writeFileSync(ledgerFile, `${JSON.stringify(ledgerDoc([...ledger.events, ledgerEvent("slot", "ia", "packages/producer/actions/ia/skill.md", { kind: IA_POSITION_KIND }, [{ file: "slot.json", sha256: sha(after) }])]), null, 2)}\n`);
     const renumbered = again();
+    expect(renumbered.rows.filter(row => row.check === "R14.1")).toEqual([]);
     expect(renumbered.index!.digests).toEqual(base.index!.digests);
     const delta = evaluateDelta(renumbered.rows, renumbered.index!, stored(green).read, scope(renumbered));
     expect(delta).toMatchObject({ ok: true, changedRecords: [], dependantRecords: [], changedRows: 0, newRows: 0 });
@@ -278,5 +289,71 @@ describe("constitution delta gate (until E2)", () => {
     expect(seedGrowth(old, { keys: { a: 2, b: 1 } })).toEqual([]);
     expect(seedGrowth(old, { keys: { a: 1 } })).toEqual([]);
     expect(seedGrowth(old, { keys: { a: 3, b: 1, c: 1 } })).toEqual([{ key: "a", recorded: 2, produced: 3 }, { key: "c", recorded: 0, produced: 1 }]);
+  });
+});
+
+describe("the ia verb's ledger events (R14.1) and the delta gate (D1)", () => {
+  const DECISION = "6873279813";
+  /** The baseline workspace with a registered ia owner decision, and runs of the ia verb and the constitution over it. */
+  function iaWorkspace() {
+    const { root, consumer } = writeWorkspace(baselineSpec());
+    writeFileSync(join(consumer, "clossys.config.ts"), "export default {};\n");
+    writeFileSync(join(consumer, "owner-decisions.json"), `${JSON.stringify({ schema: "clossys.owner-decisions/1", decisions: [{ id: DECISION, ref: "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review)", date: "2026-11-13", scope: ["ia"], summary: "IA review." }] }, null, 2)}\n`);
+    const constitution = () => runConstitution({ root, consumer, history: () => NO_HISTORY, index: true, now: () => 0 });
+    const ia = (...args: string[]) => runIaCli([...args, "--at", AT, "--root", root], root);
+    const read = (path: string) => readFileSync(join(consumer, "agents", path), "utf8");
+    const events = (path: string) => (JSON.parse(read(path)) as { events: Record<string, unknown>[] }).events;
+    return { root, consumer, constitution, ia, read, events };
+  }
+  it("an ia write appends one event per written file, and R14.1 stays clean", async () => {
+    const ws = iaWorkspace();
+    const base = ws.constitution();
+    expect(base.rows.filter(row => row.check === "R14.1")).toEqual([]);
+    const before = { designer: ws.events("designer/ledger.json").length, button: ws.events("designer/ui.button/ledger.json").length, card: ws.events("designer/ui.card/ledger.json").length };
+    // ui.card before ui.button: ia.json changes, and ui.button's slot.json is renumbered (ia.order only).
+    const result = await ws.ia("designer", "--reorder", "controls/all", "--order", "ui.card,ui.button", "--owner-ref", DECISION);
+    expect(result.exitCode, result.message).toBe(0);
+    const agent = ws.events("designer/ledger.json"), button = ws.events("designer/ui.button/ledger.json");
+    expect(agent.length).toBe(before.designer + 1);
+    expect(agent.at(-1)).toMatchObject({ op: "ia", verb: "ia", kind: "ia", by: "owner", at: AT, model: "none", tier: "none", skill: { path: "packages/producer/actions/ia/skill.md" }, records: [{ file: "ia.json", sha256: sha(ws.read("designer/ia.json")) }] });
+    expect(button.length).toBe(before.button + 1);
+    expect(button.at(-1)).toMatchObject({ op: "slot", verb: "ia", kind: IA_POSITION_KIND, by: "owner", at: AT, records: [{ file: "slot.json", sha256: sha(ws.read("designer/ui.button/slot.json")) }] });
+    expect(ws.events("designer/ui.card/ledger.json").length).toBe(before.card); // not written, no event
+    const after = ws.constitution();
+    expect(after.rows.filter(row => row.check === "R14.1")).toEqual([]);
+  });
+
+  it("an order-only renumber by the ia verb is unchanged in green; the regrouped agent record is changed", async () => {
+    const ws = iaWorkspace();
+    const base = ws.constitution();
+    const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
+    const result = await ws.ia("designer", "--reorder", "controls/all", "--order", "ui.card,ui.button", "--owner-ref", DECISION);
+    expect(result.exitCode, result.message).toBe(0);
+    expect((JSON.parse(ws.read("designer/ui.button/slot.json")) as { ia: { order: number } }).ia.order).not.toBe((slotDoc("designer", "ui.button").ia as { order: number }).order);
+    const next = ws.constitution();
+    expect(next.index!.digests["designer/ui.button"]).toBe(base.index!.digests["designer/ui.button"]);
+    const delta = evaluateDelta(next.rows, next.index!, stored(green).read, scope(next));
+    expect(delta).toMatchObject({ ok: true, newRows: 0, changedRecords: ["designer"] });
+    expect(delta.changedRecords).not.toContain("designer/ui.button");
+  });
+
+  it("a real ia edit (a new contract) is an `ia` event and changes the record; --dry writes no event", async () => {
+    const ws = iaWorkspace();
+    const base = ws.constitution();
+    const green = buildGreen(base.rows, base.index!, { workspace: WS, commit: "unknown" });
+    const contract = join(ws.root, "contract.json");
+    writeFileSync(contract, `${JSON.stringify({ ...(slotDoc("designer", "ui.button").contract as object), summary: "element ui.button, rewritten" }, null, 2)}\n`);
+    const ledger = ws.read("designer/ui.button/ledger.json"), slot = ws.read("designer/ui.button/slot.json");
+    const dry = await ws.ia("designer/ui.button", "--contract", contract, "--dry");
+    expect(dry.exitCode, dry.message).toBe(0);
+    expect(ws.read("designer/ui.button/ledger.json")).toBe(ledger);
+    expect(ws.read("designer/ui.button/slot.json")).toBe(slot);
+    const result = await ws.ia("designer/ui.button", "--contract", contract);
+    expect(result.exitCode, result.message).toBe(0);
+    expect(ws.events("designer/ui.button/ledger.json").at(-1)).toMatchObject({ op: "slot", verb: "ia", kind: "ia", by: "planner", at: AT, records: [{ file: "slot.json", sha256: sha(ws.read("designer/ui.button/slot.json")) }] });
+    const next = ws.constitution();
+    expect(next.rows.filter(row => row.check === "R14.1")).toEqual([]);
+    expect(next.index!.digests["designer/ui.button"]).not.toBe(base.index!.digests["designer/ui.button"]);
+    expect(evaluateDelta(next.rows, next.index!, stored(green).read, scope(next)).changedRecords).toContain("designer/ui.button");
   });
 });
