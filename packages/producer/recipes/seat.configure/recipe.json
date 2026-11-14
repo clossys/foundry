@@ -1,0 +1,13 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "seat.configure",
+  "produces": [
+    "seat"
+  ],
+  "rung": "create",
+  "axes": [
+    "holder",
+    "tier",
+    "hand"
+  ]
+}
