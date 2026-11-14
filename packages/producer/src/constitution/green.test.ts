@@ -237,14 +237,17 @@ describe("constitution delta gate (until E2)", () => {
     expect(refused.message).toMatch(/REFUSED: .*integrity/);
   });
   it("G2: --record-green refuses to add a key; with removals only it rewrites and re-seals the report", async () => {
-    const spec = baselineSpec();
-    spec.designer!["ui.card"]!.pin = false; // two pre-existing findings: ui.button and ui.card unpinned
+    // Two pre-existing findings, ui.card and home.hero unpinned, with their upstream ui.button pinned first
+    // (R02.2): site.home's R02.2 row stays while home.hero is unpinned, so fixing ui.card fixes one key.
+    const spec = cleanSpec();
+    spec.designer!["ui.card"]!.pin = false;
+    spec.writer!["home.hero"]!.pin = false;
     const path = join(mkdtempSync(join(tmpdir(), "constitution-green-")), "green.json");
     let consumer = writeWorkspace(spec).consumer;
     const cli = (...flags: string[]) => runCheck(parseArgs(["check", "--constitution", "--green", path, "--root", consumer, ...flags]), consumer);
     expect((await cli("--record-green")).exitCode).toBe(0);
     const seeded = JSON.parse(readFileSync(path, "utf8")) as GreenReport;
-    expect(Object.keys(seeded.keys)).toEqual(expect.arrayContaining(["R04 designer/ui.button .", "R04 designer/ui.card ."]));
+    expect(Object.keys(seeded.keys)).toEqual(expect.arrayContaining(["R04 designer/ui.card .", "R04 writer/home.hero .", "R02.2 publisher/site.home slot.json"]));
     // A new finding (the producer seat unpinned): --enforced blocks it and --record-green refuses, writing nothing.
     const worse = structuredClone(spec);
     worse.producer!["seat.director"]!.pin = false;
