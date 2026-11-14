@@ -1,0 +1,81 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "gov-uk-measuring-success",
+      "ref": "https://www.gov.uk/service-manual/measuring-success",
+      "source": "GOV.UK Service Manual",
+      "license": "OGL-UK-3.0",
+      "description": "How a government service picks metrics, sets baselines and decides what change in a number means.",
+      "why": {
+        "tripwire-usefulness": "Every metric is paired with the decision it informs.",
+        "evidence-weight": "Data is the reason, not decoration."
+      }
+    },
+    {
+      "id": "sre-slo",
+      "ref": "https://sre.google/sre-book/service-level-objectives/",
+      "source": "Google SRE book",
+      "license": "CC-BY-NC-ND-4.0",
+      "description": "Service level objectives: a numeric threshold over a window, and what happens when it is crossed.",
+      "why": {
+        "tripwire-usefulness": "Thresholds over windows that trigger a stated response.",
+        "decisive": "A target is one number, not a range of hopes."
+      }
+    },
+    {
+      "id": "shape-up-pitch",
+      "ref": "https://basecamp.com/shapeup/1.5-chapter-06",
+      "source": "Shape Up (Basecamp)",
+      "license": "proprietary (link only)",
+      "description": "The pitch: problem, appetite, solution, rabbit holes and no-gos, written so a team can bet on it.",
+      "why": {
+        "decisive": "A pitch commits to an appetite and a shape.",
+        "evidence-weight": "The problem statement is the reason, stated first."
+      }
+    },
+    {
+      "id": "digital-services-playbook",
+      "ref": "https://playbook.cio.gov/",
+      "source": "US Digital Services Playbook",
+      "license": "public-domain (US government work)",
+      "description": "Thirteen plays, each one imperative sentence followed by a short checklist and key questions.",
+      "why": {
+        "decisive": "Each play is a direct instruction.",
+        "evidence-weight": "Checklists back each play without restating it."
+      }
+    },
+    {
+      "id": "adr-nygard",
+      "ref": "https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions",
+      "source": "Michael Nygard, Documenting architecture decisions",
+      "license": "proprietary (link only)",
+      "description": "The decision record: context, decision, status and consequences, kept short and immutable.",
+      "why": {
+        "evidence-weight": "Context is the evidence; the decision is one paragraph.",
+        "decisive": "Records state a decision in full sentences in active voice."
+      }
+    },
+    {
+      "id": "gov-uk-user-needs",
+      "ref": "https://www.gov.uk/service-manual/user-research/start-by-learning-user-needs",
+      "source": "GOV.UK Service Manual",
+      "license": "OGL-UK-3.0",
+      "description": "User needs as behaviours and goals learned from research, not assumed demographics.",
+      "why": {
+        "sharp-edges": "Profiles are behaviours, grounded in research.",
+        "evidence-weight": "Each need is traced to research."
+      }
+    },
+    {
+      "id": "nng-personas",
+      "ref": "https://www.nngroup.com/articles/persona/",
+      "source": "Nielsen Norman Group",
+      "license": "proprietary (link only)",
+      "description": "Personas built from research: goals and behaviours that make design decisions, with what the persona is not.",
+      "why": {
+        "sharp-edges": "A persona is useful when it excludes."
+      }
+    }
+  ]
+}

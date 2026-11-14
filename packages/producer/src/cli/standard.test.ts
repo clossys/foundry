@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { readStandard } from "../records/standards.js";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
 import "./main.js";
-import { runIaCli } from "./owner.js";
+import { runIaCli, runSeatCli } from "./owner.js";
 import { runStandardCli, STANDARD_USAGE } from "./standard.js";
 
 const FIXTURE = fileURLToPath(new URL("../constitution/__fixtures__/standards/fixture-headline/", import.meta.url));
@@ -139,5 +139,86 @@ describe("clossys ia --standard", () => {
     const result = await runIaCli(["writer/home.hero", "--contract", contract, "--standard", "fixture-headline"], root);
     expect(result.exitCode, result.message).toBe(0);
     expect(slotJson(root)).toMatchObject({ standard: "fixture-headline", contract: { summary: "strings home.hero v2" } });
+  });
+});
+
+describe("clossys ia producer/<seat> --standard", () => {
+  const seatDir = (root: string) => join(root, "packages", "producer", "standards", "fixture-seat");
+  async function seated(): Promise<string> {
+    const root = workspace();
+    const result = await runSeatCli(["owner.decisions", "--by", "owner", "--no-llm", "--procedure", "Compare each slot's candidates against its contract and pin one.", "--command", "clossys pin"], root);
+    expect(result.exitCode, result.message).toBe(0);
+    cpSync(FIXTURE, seatDir(root), { recursive: true });
+    const requirements = join(seatDir(root), "requirements.json");
+    put(requirements, readFileSync(requirements, "utf8").replace("\"fixture-headline\"", "\"fixture-seat\"").replace("[\"strings\"]", "[\"seat\"]"));
+    return root;
+  }
+  const seatJson = (root: string) => JSON.parse(readFileSync(join(root, "clossys", "agents", "producer", "seat.owner.decisions", "slot.json"), "utf8")) as Record<string, unknown>;
+
+  it("names the standard of a seat slot, keeping its contract, and records one ia event", async () => {
+    const root = await seated();
+    const before = seatJson(root);
+    const result = await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", ...AT], root);
+    expect(result.exitCode, result.message).toBe(0);
+    expect(seatJson(root)).toEqual({ ...before, standard: "fixture-seat" });
+    const ledger = JSON.parse(readFileSync(join(root, "clossys", "agents", "producer", "seat.owner.decisions", "ledger.json"), "utf8")) as { events: Record<string, unknown>[] };
+    expect(ledger.events.at(-1)).toMatchObject({ verb: "ia", by: "planner" });
+    expect((await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat"], root)).message).toMatch(/already names standard fixture-seat; nothing written/);
+  });
+
+  it("takes a revised seat contract on the same step, never a moved step or a requirements key, and refuses anything but --standard", async () => {
+    const root = await seated();
+    const contract = seatJson(root).contract as { step: string; fixture: { step: string; seat: Record<string, unknown> } };
+    const revised = { ...contract, fixture: { ...contract.fixture, seat: { ...contract.fixture.seat, human: { procedure: "Compare every open slot's candidates against its contract, then pin one.", command: "clossys pin" } } } };
+    put(join(root, "ok.json"), JSON.stringify(revised));
+    put(join(root, "moved.json"), JSON.stringify({ ...revised, step: "pin.writer" }));
+    put(join(root, "params.json"), JSON.stringify({ ...revised, requirements: [{ check: "seat.prompt-owner" }] }));
+    expect((await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--contract", join(root, "moved.json")], root)).message).toMatch(/must keep the seat's step/);
+    expect((await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--contract", join(root, "params.json")], root)).message).toMatch(/unknown key requirements/);
+    expect(seatJson(root).standard).toBeUndefined();
+    const result = await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--contract", join(root, "ok.json")], root);
+    expect(result.exitCode, result.message).toBe(0);
+    expect(seatJson(root)).toMatchObject({ standard: "fixture-seat", contract: revised });
+    await expect(runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--under", "a/b"], root)).rejects.toThrow(/takes only --standard/);
+    await expect(runIaCli(["producer/seat.owner.decisions", "--contract", join(root, "ok.json")], root)).rejects.toThrow(/--standard/);
+    expect((await runIaCli(["producer/seat.nowhere", "--standard", "fixture-seat"], root)).message).toMatch(/has no slot\.json/);
+  });
+
+  it("refuses a standard that does not serve seats", async () => {
+    const root = await seated();
+    const requirements = join(seatDir(root), "requirements.json");
+    put(requirements, readFileSync(requirements, "utf8").replace("[\"seat\"]", "[\"page\"]"));
+    expect((await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat"], root)).message).toMatch(/serves page, not seat/);
+    expect(seatJson(root).standard).toBeUndefined();
+  });
+
+  it("keeps every seat at its producer ia.json position: a seat placed before others renumbers them, and ia --standard records the seat where it sits", async () => {
+    const root = workspace();
+    const producer = join(root, "clossys", "agents", "producer");
+    const position = (seat: string) => (JSON.parse(readFileSync(join(producer, seat, "slot.json"), "utf8")) as { ia: unknown }).ia;
+    const placedAt = (seat: string) => {
+      const ia = JSON.parse(readFileSync(join(producer, "ia.json"), "utf8")) as { nodes: { id: string; children: { id: string; slots: string[] }[] }[] };
+      const order = ia.nodes.flatMap(node => node.children.flatMap(child => child.slots.map(id => ({ id, l1: node.id, l2: child.id }))));
+      const at = order.findIndex(row => row.id === seat);
+      return { l1: order[at]!.l1, l2: order[at]!.l2, order: at };
+    };
+    const seat = (step: string) => runSeatCli([step, "--by", "owner", "--no-llm", "--procedure", "Compare each slot's candidates against its contract and pin one.", "--command", "clossys pin"], root);
+    expect((await seat("pin.director")).exitCode).toBe(0);
+    expect(position("seat.pin.director")).toEqual({ l1: "direct", l2: "direct.pin", order: 0 });
+    const earlier = await seat("owner.decisions");
+    expect(earlier.exitCode, earlier.message).toBe(0);
+    expect(position("seat.owner.decisions")).toEqual(placedAt("seat.owner.decisions"));
+    expect(position("seat.pin.director")).toEqual(placedAt("seat.pin.director"));
+    expect(position("seat.pin.director")).toEqual({ l1: "direct", l2: "direct.pin", order: 1 });
+    // A seat whose order went stale before this rule is recorded at its position when its standard is named.
+    const file = join(producer, "seat.pin.director", "slot.json");
+    put(file, readFileSync(file, "utf8").replace("\"order\": 1", "\"order\": 0"));
+    expect(position("seat.pin.director")).toEqual({ l1: "direct", l2: "direct.pin", order: 0 });
+    cpSync(FIXTURE, seatDir(root), { recursive: true });
+    const requirements = join(seatDir(root), "requirements.json");
+    put(requirements, readFileSync(requirements, "utf8").replace("\"fixture-headline\"", "\"fixture-seat\"").replace("[\"strings\"]", "[\"seat\"]"));
+    const named = await runIaCli(["producer/seat.pin.director", "--standard", "fixture-seat", ...AT], root);
+    expect(named.exitCode, named.message).toBe(0);
+    expect(position("seat.pin.director")).toEqual({ l1: "direct", l2: "direct.pin", order: 1 });
   });
 });

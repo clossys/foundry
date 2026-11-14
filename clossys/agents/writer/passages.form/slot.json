@@ -142,5 +142,6 @@
     "context.company.constraint",
     "focus.offer.excluded"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

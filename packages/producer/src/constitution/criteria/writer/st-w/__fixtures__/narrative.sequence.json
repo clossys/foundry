@@ -1,0 +1,99 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings/narrative",
+        "text": "\n## en\n\n### home.story\n<!-- {\"id\":\"home.story\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"home.story\",\n  \"context\": \"home.story\",\n  \"frame\": {\n    \"frameId\": \"frames.app-shell\"\n  },\n  \"passages\": [\n    \"passages.hero#home.hero\",\n    \"passages.features#home.features\"\n  ]\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings/narrative",
+        "text": "\n## en\n\n### chrome\n<!-- {\"id\":\"chrome\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"chrome\",\n  \"context\": \"chrome\",\n  \"frame\": {\n    \"frameId\": \"frames.shell\"\n  },\n  \"regions\": {\n    \"header\": {\n      \"brand\": {\n        \"ref\": \"string\",\n        \"id\": \"passages.logo-mark#logo.label\"\n      }\n    }\n  }\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings/narrative",
+        "text": "\n## en\n\n### email.ready\n<!-- {\"id\":\"email.ready\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"email.ready\",\n  \"context\": \"email.ready\",\n  \"title\": \"Your workspace is ready\",\n  \"frame\": {\n    \"frameId\": \"frames.document\"\n  },\n  \"blocks\": [\n    {\n      \"type\": \"paragraph\",\n      \"text\": \"Every slot now holds a candidate.\"\n    }\n  ]\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings/narrative",
+        "text": "\n## en\n\n### home.story\n<!-- {\"id\":\"home.story\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"home.story\",\n  \"context\": \"home.story\",\n  \"frame\": {\n    \"frameId\": \"app-shell\"\n  },\n  \"passages\": [\n    \"passages.hero#home.hero\",\n    \"passages.features#home.features\"\n  ]\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "bad frame"
+    },
+    {
+      "subject": {
+        "kind": "strings/narrative",
+        "text": "\n## en\n\n### home.story\n<!-- {\"id\":\"home.story\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"home.story\",\n  \"context\": \"home.story\",\n  \"frame\": {\n    \"frameId\": \"frames.app-shell\"\n  },\n  \"passages\": [\n    \"home.hero\",\n    \"passages.features#home.features\"\n  ]\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "bad ref"
+    },
+    {
+      "subject": {
+        "kind": "strings/narrative",
+        "text": "\n## en\n\n### email.ready\n<!-- {\"id\":\"email.ready\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"email.ready\",\n  \"context\": \"email.ready\",\n  \"title\": \"Your workspace is ready\",\n  \"frame\": {\n    \"frameId\": \"frames.document\"\n  },\n  \"blocks\": [\n    {\n      \"type\": \"paragraph\",\n      \"text\": \"\"\n    }\n  ]\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "empty block"
+    },
+    {
+      "subject": {
+        "kind": "strings/narrative",
+        "text": "\n## en\n\n### email.ready\n<!-- {\"id\":\"email.ready\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"email.ready\",\n  \"context\": \"email.ready\",\n  \"title\": \"Your workspace is ready\",\n  \"frame\": {\n    \"frameId\": \"frames.document\"\n  },\n  \"blocks\": []\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "tells nothing"
+    },
+    {
+      "subject": {
+        "kind": "strings/narrative",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "not json"
+    }
+  ]
+}

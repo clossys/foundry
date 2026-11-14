@@ -1,0 +1,45 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "narrative",
+  "kinds": [
+    "strings/narrative"
+  ],
+  "mode": "craft",
+  "craftTier": "mid",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "copy.voice-derived",
+      "params": {}
+    },
+    {
+      "check": "copy.derived-upstream",
+      "params": {}
+    },
+    {
+      "check": "copy.entries",
+      "params": {}
+    },
+    {
+      "check": "narrative.sequence",
+      "params": {}
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-narrative-title]",
+        "ol[data-narrative-outline] > li"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

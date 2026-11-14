@@ -141,5 +141,6 @@
     "identity.verbal.voice",
     "focus.offer.included"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

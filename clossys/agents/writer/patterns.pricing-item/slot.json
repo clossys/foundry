@@ -47,5 +47,6 @@
     "advantage.model.pricing",
     "focus.offer.included"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "pattern"
 }

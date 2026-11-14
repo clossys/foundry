@@ -20,5 +20,6 @@
     "focus.offer.included",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }

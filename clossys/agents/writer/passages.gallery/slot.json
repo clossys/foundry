@@ -88,5 +88,6 @@
     "identity.visual.imagery",
     "focus.offer.included"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

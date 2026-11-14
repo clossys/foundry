@@ -19,5 +19,6 @@
     "advantage.proposition.promise",
     "advantage.proposition.proof"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "lexicon.claim-list"
 }

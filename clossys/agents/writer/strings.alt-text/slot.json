@@ -24,5 +24,6 @@
     "identity.visual.imagery",
     "identity.naming.name"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }

@@ -1,0 +1,66 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "mailchimp-voice-tone",
+      "ref": "https://styleguide.mailchimp.com/voice-and-tone/",
+      "source": "Mailchimp Content Style Guide",
+      "license": "CC-BY-NC-4.0",
+      "description": "A voice described as fixed traits, with tone that shifts by context and do and do-not examples.",
+      "why": {
+        "voice-fit": "Voice is defined once and applied to every line."
+      }
+    },
+    {
+      "id": "gov-uk-writing",
+      "ref": "https://www.gov.uk/guidance/content-design/writing-for-gov-uk",
+      "source": "GOV.UK content design",
+      "license": "OGL-UK-3.0",
+      "description": "Plain English, front-loaded sentences and short words, written for people who scan.",
+      "why": {
+        "clarity": "Front-load the point; one reading."
+      }
+    },
+    {
+      "id": "google-dev-style",
+      "ref": "https://developers.google.com/style",
+      "source": "Google developer documentation style guide",
+      "license": "CC-BY-4.0",
+      "description": "A style guide for clear, consistent technical writing, with a word list and voice guidance.",
+      "why": {
+        "clarity": "Consistent words for the same thing.",
+        "voice-fit": "Conversational without being frivolous."
+      }
+    },
+    {
+      "id": "18f-content-guide",
+      "ref": "https://content-guide.18f.gov/",
+      "source": "18F Content Guide",
+      "license": "CC0-1.0",
+      "description": "Plain language, active voice and an inclusive word list for a government technology team.",
+      "why": {
+        "clarity": "Plain words over jargon."
+      }
+    },
+    {
+      "id": "gov-uk-style-a-z",
+      "ref": "https://www.gov.uk/guidance/style-guide/a-to-z",
+      "source": "GOV.UK style guide",
+      "license": "OGL-UK-3.0",
+      "description": "An A to Z of format rules: numbers, dates, times and abbreviations, each with the exact form.",
+      "why": {
+        "rule-usefulness": "Each entry settles one recurring choice with an example."
+      }
+    },
+    {
+      "id": "mailchimp-grammar",
+      "ref": "https://styleguide.mailchimp.com/grammar-and-mechanics/",
+      "source": "Mailchimp Content Style Guide",
+      "license": "CC-BY-NC-4.0",
+      "description": "Grammar and mechanics: numbers, dates, punctuation, each rule with an example.",
+      "why": {
+        "rule-usefulness": "Rule plus example, no theory."
+      }
+    }
+  ]
+}

@@ -80,8 +80,90 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 0,
+        "x": 280,
         "y": 344
+      }
+    },
+    {
+      "id": "standard",
+      "kind": "decide:judgment",
+      "actor": "owner",
+      "stage": "direct.brief",
+      "summary": "Write one standard, the independent judge of a slot kind: its requirements, taste anchors and exemplars (clossys standard). Only the owner or the planner changes a standard, never an agent seat (R16.3); the verb validates the whole standard and appends one ledger event naming every file's sha256.",
+      "inputs": [],
+      "outputs": [
+        {
+          "glob": "packages/*/standards/*/requirements.json",
+          "schema": "standard"
+        },
+        {
+          "glob": "packages/*/standards/*/exemplars/exemplars.json",
+          "schema": "exemplars"
+        }
+      ],
+      "command": {
+        "cli": {
+          "verb": "standard",
+          "parser": "src/cli/standard.ts"
+        },
+        "entry": "src/cli/standard.ts#runStandardCli",
+        "skill": "packages/producer/actions/standard/skill.md"
+      },
+      "checks": [
+        "workspace"
+      ],
+      "open": "on-demand",
+      "agent": "owner",
+      "package": "producer",
+      "run": "clossys standard <agent>/<id> --by owner|planner --requirements <file> --taste <file> --exemplars <file>",
+      "pass": {
+        "command": "clossys check",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "fail": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
+      },
+      "record": "clossys.pipeline-run/1",
+      "decider": "owner",
+      "packet": {
+        "inputs": [],
+        "write": [
+          {
+            "glob": "packages/*/standards/*/requirements.json",
+            "schema": "standard"
+          },
+          {
+            "glob": "packages/*/standards/*/exemplars/exemplars.json",
+            "schema": "exemplars"
+          }
+        ],
+        "checks": [
+          "workspace"
+        ]
+      },
+      "uses": [
+        "skill/SKILL.md"
+      ],
+      "seat": "clossys/agents/producer/seat.standard/pin.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "you",
+        "stage": "direct.brief",
+        "rank": 0,
+        "x": 0,
+        "y": 172
       }
     },
     {
@@ -195,7 +277,7 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 13,
-        "x": 560,
+        "x": 840,
         "y": 0
       }
     },
@@ -277,7 +359,7 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 0,
+        "x": 280,
         "y": 0
       }
     },
@@ -353,7 +435,7 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 280,
+        "x": 0,
         "y": 344
       }
     },
@@ -435,7 +517,7 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 280,
+        "x": 0,
         "y": 0
       }
     },
@@ -508,7 +590,7 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 0,
+        "x": 280,
         "y": 172
       }
     },
@@ -581,8 +663,8 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 280,
-        "y": 172
+        "x": 560,
+        "y": 0
       }
     },
     {
@@ -674,7 +756,7 @@
         "lane": "director",
         "stage": "direct.make",
         "rank": 1,
-        "x": 880,
+        "x": 1160,
         "y": 540
       }
     },
@@ -760,7 +842,7 @@
         "lane": "director",
         "stage": "direct.pin",
         "rank": 6,
-        "x": 1480,
+        "x": 1760,
         "y": 540
       }
     },
@@ -844,7 +926,7 @@
         "lane": "publisher",
         "stage": "direct.pin",
         "rank": 7,
-        "x": 1760,
+        "x": 2040,
         "y": 1128
       }
     },
@@ -944,7 +1026,7 @@
         "lane": "you",
         "stage": "direct.pin",
         "rank": 5,
-        "x": 1200,
+        "x": 1480,
         "y": 0
       }
     },
@@ -1006,7 +1088,7 @@
         "lane": "publisher",
         "stage": "design.brief",
         "rank": 7,
-        "x": 2080,
+        "x": 2360,
         "y": 1128
       }
     },
@@ -1068,7 +1150,7 @@
         "lane": "publisher",
         "stage": "design.brief",
         "rank": 7,
-        "x": 2080,
+        "x": 2360,
         "y": 1300
       }
     },
@@ -1168,7 +1250,7 @@
         "lane": "designer",
         "stage": "design.make",
         "rank": 3,
-        "x": 2400,
+        "x": 2680,
         "y": 736
       }
     },
@@ -1265,7 +1347,7 @@
         "lane": "writer",
         "stage": "design.make",
         "rank": 7,
-        "x": 2680,
+        "x": 2960,
         "y": 932
       }
     },
@@ -1351,7 +1433,7 @@
         "lane": "designer",
         "stage": "design.pin",
         "rank": 6,
-        "x": 3280,
+        "x": 3560,
         "y": 736
       }
     },
@@ -1437,7 +1519,7 @@
         "lane": "writer",
         "stage": "design.pin",
         "rank": 9,
-        "x": 3840,
+        "x": 4120,
         "y": 932
       }
     },
@@ -1519,7 +1601,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 8,
-        "x": 3560,
+        "x": 3840,
         "y": 172
       }
     },
@@ -1619,7 +1701,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 5,
-        "x": 3000,
+        "x": 3280,
         "y": 0
       }
     },
@@ -1719,7 +1801,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 8,
-        "x": 3560,
+        "x": 3840,
         "y": 0
       }
     },
@@ -1821,7 +1903,7 @@
         "lane": "publisher",
         "stage": "publish.make",
         "rank": 10,
-        "x": 4480,
+        "x": 4760,
         "y": 1128
       }
     },
@@ -1907,7 +1989,7 @@
         "lane": "publisher",
         "stage": "publish.pin",
         "rank": 12,
-        "x": 5080,
+        "x": 5360,
         "y": 1128
       }
     },
@@ -2007,7 +2089,7 @@
         "lane": "you",
         "stage": "publish.pin",
         "rank": 11,
-        "x": 4800,
+        "x": 5080,
         "y": 0
       }
     },
@@ -2090,7 +2172,7 @@
         "lane": "publisher",
         "stage": "publish.pin",
         "rank": 13,
-        "x": 5360,
+        "x": 5640,
         "y": 1128
       }
     },
@@ -2159,7 +2241,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 6240,
+        "x": 6520,
         "y": 1128
       }
     },
@@ -2228,7 +2310,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 10,
-        "x": 6520,
+        "x": 6800,
         "y": 1128
       }
     },
@@ -2309,7 +2391,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 13,
-        "x": 7080,
+        "x": 7360,
         "y": 1128
       }
     },
@@ -2401,7 +2483,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 4,
-        "x": 5960,
+        "x": 6240,
         "y": 1128
       }
     },
@@ -2489,7 +2571,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 10,
-        "x": 6520,
+        "x": 6800,
         "y": 1472
       }
     },
@@ -2573,7 +2655,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 10,
-        "x": 6520,
+        "x": 6800,
         "y": 1300
       }
     },
@@ -2650,7 +2732,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 11,
-        "x": 6800,
+        "x": 7080,
         "y": 1128
       }
     },
@@ -2736,7 +2818,7 @@
         "lane": "you",
         "stage": "publish.assemble",
         "rank": 13,
-        "x": 7080,
+        "x": 7360,
         "y": 0
       }
     },
@@ -2813,7 +2895,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 2,
-        "x": 5680,
+        "x": 5960,
         "y": 1128
       }
     },
@@ -2924,7 +3006,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 13,
-        "x": 7080,
+        "x": 7360,
         "y": 1300
       }
     },
@@ -2986,7 +3068,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 6240,
+        "x": 6520,
         "y": 1300
       }
     },
@@ -3043,7 +3125,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 6240,
+        "x": 6520,
         "y": 1472
       }
     },
@@ -3102,7 +3184,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7400,
+        "x": 7680,
         "y": 1668
       }
     },
@@ -3168,7 +3250,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7400,
+        "x": 7680,
         "y": 1840
       }
     },
@@ -3234,7 +3316,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 10,
-        "x": 7680,
+        "x": 7960,
         "y": 1668
       }
     },
@@ -3301,7 +3383,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 7960,
+        "x": 8240,
         "y": 1840
       }
     },
@@ -3391,7 +3473,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 15,
-        "x": 8520,
+        "x": 8800,
         "y": 1668
       }
     },
@@ -3451,7 +3533,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 7960,
+        "x": 8240,
         "y": 1668
       }
     },
@@ -3539,7 +3621,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 7960,
+        "x": 8240,
         "y": 2012
       }
     },
@@ -3624,7 +3706,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 14,
-        "x": 8240,
+        "x": 8520,
         "y": 1668
       }
     },
@@ -3703,7 +3785,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 14,
-        "x": 8240,
+        "x": 8520,
         "y": 2012
       }
     },
@@ -3765,7 +3847,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 14,
-        "x": 8240,
+        "x": 8520,
         "y": 1840
       }
     },
@@ -3839,7 +3921,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 13,
-        "x": 8840,
+        "x": 9120,
         "y": 1128
       }
     },
@@ -3926,7 +4008,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 14,
-        "x": 9120,
+        "x": 9400,
         "y": 1128
       }
     }
@@ -8113,8 +8195,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 13115,
-      "after": 12884
+      "before": 13054,
+      "after": 12903
     },
     "lanes": [
       {
@@ -8166,14 +8248,14 @@
         "index": 0,
         "x": 0,
         "y": -72,
-        "width": 800,
+        "width": 1080,
         "round": "direct",
         "name": "brief"
       },
       {
         "id": "direct.make",
         "index": 1,
-        "x": 880,
+        "x": 1160,
         "y": -72,
         "width": 240,
         "round": "direct",
@@ -8182,7 +8264,7 @@
       {
         "id": "direct.pin",
         "index": 2,
-        "x": 1200,
+        "x": 1480,
         "y": -72,
         "width": 800,
         "round": "direct",
@@ -8191,7 +8273,7 @@
       {
         "id": "design.brief",
         "index": 3,
-        "x": 2080,
+        "x": 2360,
         "y": -72,
         "width": 240,
         "round": "design",
@@ -8200,7 +8282,7 @@
       {
         "id": "design.make",
         "index": 4,
-        "x": 2400,
+        "x": 2680,
         "y": -72,
         "width": 520,
         "round": "design",
@@ -8209,7 +8291,7 @@
       {
         "id": "design.pin",
         "index": 5,
-        "x": 3000,
+        "x": 3280,
         "y": -72,
         "width": 1080,
         "round": "design",
@@ -8218,7 +8300,7 @@
       {
         "id": "design.select",
         "index": 6,
-        "x": 4160,
+        "x": 4440,
         "y": -72,
         "width": 240,
         "round": "design",
@@ -8227,7 +8309,7 @@
       {
         "id": "publish.make",
         "index": 7,
-        "x": 4480,
+        "x": 4760,
         "y": -72,
         "width": 240,
         "round": "publish",
@@ -8236,7 +8318,7 @@
       {
         "id": "publish.pin",
         "index": 8,
-        "x": 4800,
+        "x": 5080,
         "y": -72,
         "width": 800,
         "round": "publish",
@@ -8245,7 +8327,7 @@
       {
         "id": "publish.assemble",
         "index": 9,
-        "x": 5680,
+        "x": 5960,
         "y": -72,
         "width": 1640,
         "round": "publish",
@@ -8254,7 +8336,7 @@
       {
         "id": "publish.check",
         "index": 10,
-        "x": 7400,
+        "x": 7680,
         "y": -72,
         "width": 1360,
         "round": "publish",
@@ -8263,7 +8345,7 @@
       {
         "id": "publish.publish",
         "index": 11,
-        "x": 8840,
+        "x": 9120,
         "y": -72,
         "width": 520,
         "round": "publish",
@@ -8276,7 +8358,7 @@
         "index": 0,
         "x": 0,
         "y": -128,
-        "width": 2000,
+        "width": 2280,
         "stages": [
           "direct.brief",
           "direct.make",
@@ -8286,7 +8368,7 @@
       {
         "id": "design",
         "index": 1,
-        "x": 2080,
+        "x": 2360,
         "y": -128,
         "width": 2320,
         "stages": [
@@ -8299,7 +8381,7 @@
       {
         "id": "publish",
         "index": 2,
-        "x": 4480,
+        "x": 4760,
         "y": -128,
         "width": 4880,
         "stages": [
@@ -8456,6 +8538,14 @@
         "procedure": "Decide where each L3 slot sits in its agent's IA tree (L1, L2) and what the slot is for: its contract in slot.json.",
         "command": "clossys ia"
       },
+      "issues": []
+    },
+    "standard": {
+      "path": "clossys/agents/producer/seat.standard/pin.json",
+      "state": "unassigned",
+      "by": null,
+      "llm": "open",
+      "human": "open",
       "issues": []
     },
     "retire": {
@@ -8758,7 +8848,7 @@
       "kinds": [
         "you"
       ],
-      "steps": 13,
+      "steps": 14,
       "sources": [
         "file",
         "derived"
@@ -8874,6 +8964,16 @@
         },
         {
           "flag": "--reorder",
+          "value": null
+        }
+      ],
+      "standard": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
           "value": null
         }
       ],

@@ -1,0 +1,90 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "mailchimp-voice-tone",
+      "ref": "https://styleguide.mailchimp.com/voice-and-tone/",
+      "source": "Mailchimp Content Style Guide",
+      "license": "CC-BY-NC-4.0",
+      "description": "A voice described as fixed traits, with tone that shifts by context and do and do-not examples.",
+      "why": {
+        "voice-fit": "Voice is defined once and applied to every line."
+      }
+    },
+    {
+      "id": "gov-uk-writing",
+      "ref": "https://www.gov.uk/guidance/content-design/writing-for-gov-uk",
+      "source": "GOV.UK content design",
+      "license": "OGL-UK-3.0",
+      "description": "Plain English, front-loaded sentences and short words, written for people who scan.",
+      "why": {
+        "clarity": "Front-load the point; one reading.",
+        "economy": "Cut words that do not help the reader act."
+      }
+    },
+    {
+      "id": "google-dev-style",
+      "ref": "https://developers.google.com/style",
+      "source": "Google developer documentation style guide",
+      "license": "CC-BY-4.0",
+      "description": "A style guide for clear, consistent technical writing, with a word list and voice guidance.",
+      "why": {
+        "clarity": "Consistent words for the same thing.",
+        "voice-fit": "Conversational without being frivolous."
+      }
+    },
+    {
+      "id": "18f-content-guide",
+      "ref": "https://content-guide.18f.gov/",
+      "source": "18F Content Guide",
+      "license": "CC0-1.0",
+      "description": "Plain language, active voice and an inclusive word list for a government technology team.",
+      "why": {
+        "economy": "Short sentences, active voice.",
+        "clarity": "Plain words over jargon."
+      }
+    },
+    {
+      "id": "microsoft-style",
+      "ref": "https://learn.microsoft.com/en-us/style-guide/welcome/",
+      "source": "Microsoft Writing Style Guide",
+      "license": "proprietary (link only)",
+      "description": "Warm and relaxed, crisp and clear, ready to lend a hand: voice principles with concrete examples.",
+      "why": {
+        "voice-fit": "Voice principles turned into sentence-level guidance.",
+        "economy": "Get to the point fast."
+      }
+    },
+    {
+      "id": "gov-uk-error-message",
+      "ref": "https://design-system.service.gov.uk/components/error-message/",
+      "source": "GOV.UK Design System",
+      "license": "OGL-UK-3.0",
+      "description": "Error messages that say what happened and how to fix it, in a fixed form per error type.",
+      "why": {
+        "consistency-in-context": "One form per message type, shown in its component."
+      }
+    },
+    {
+      "id": "gov-uk-button",
+      "ref": "https://design-system.service.gov.uk/components/button/",
+      "source": "GOV.UK Design System",
+      "license": "OGL-UK-3.0",
+      "description": "Button text that starts with a verb and describes the action.",
+      "why": {
+        "consistency-in-context": "Action labels share one shape.",
+        "economy": "Few words, verb first."
+      }
+    },
+    {
+      "id": "nng-error-messages",
+      "ref": "https://www.nngroup.com/articles/error-message-guidelines/",
+      "source": "Nielsen Norman Group",
+      "license": "proprietary (link only)",
+      "description": "Error message guidelines: visible, precise, constructive and polite.",
+      "why": {
+        "clarity": "Say what went wrong and what to do."
+      }
+    }
+  ]
+}

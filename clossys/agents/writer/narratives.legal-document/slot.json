@@ -19,5 +19,6 @@
     "identity.verbal.voice",
     "advantage.proposition.proof"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "narrative"
 }

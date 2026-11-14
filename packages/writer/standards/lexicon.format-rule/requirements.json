@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "lexicon.format-rule",
+  "kinds": [
+    "strings/lexicon"
+  ],
+  "mode": "craft",
+  "craftTier": "mid",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "copy.voice-derived",
+      "params": {}
+    },
+    {
+      "check": "copy.derived-upstream",
+      "params": {}
+    },
+    {
+      "check": "copy.entries",
+      "params": {}
+    },
+    {
+      "check": "lexicon.record",
+      "params": {
+        "kinds": [
+          "format"
+        ]
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "dl[data-lexicon-rows] > dt",
+        "[data-lexicon-example]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

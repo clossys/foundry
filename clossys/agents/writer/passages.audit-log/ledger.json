@@ -355,6 +355,44 @@
       "name": "studio-v1.md",
       "sha256": "1b3c8cc7d706752fdb122fa30a38e570d5fdef7f26e7d39fa5058ec1b086766c",
       "code": "edited-in-place"
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T17:03:34.182Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "2f469c8f761ab0c4fc012f991260003a5e205592390985caae77aa67f1eff56a"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T17:21:36.887Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "35f8c23abcd69f79bc4ef691885d9bd086f66c127484acaa7587a0030216cabd"
+        }
+      ]
     }
   ]
 }

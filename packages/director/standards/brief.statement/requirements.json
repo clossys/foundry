@@ -1,0 +1,61 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "brief.statement",
+  "kinds": [
+    "brief"
+  ],
+  "mode": "craft",
+  "craftTier": "high",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "brief.sections",
+      "params": {}
+    },
+    {
+      "check": "brief.keys",
+      "params": {
+        "contract": "$contract"
+      }
+    },
+    {
+      "check": "brief.derived-upstream",
+      "params": {}
+    },
+    {
+      "check": "brief.because-cited",
+      "params": {}
+    },
+    {
+      "check": "brief.watch-trigger",
+      "params": {}
+    },
+    {
+      "check": "brief.plain-direction",
+      "params": {}
+    },
+    {
+      "check": "brief.direction-values",
+      "params": {
+        "maxWords": 30,
+        "maxSentences": 1
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-brief-statement]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

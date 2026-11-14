@@ -1,0 +1,53 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### claim.open\n<!-- {\"id\":\"claim.open\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"claim.open\",\n  \"context\": \"claim.open\",\n  \"kind\": \"claim\",\n  \"strategy\": \"director:advantage.proposition.proof\",\n  \"phrasings\": [\n    \"The packages are free and open under the MIT license.\"\n  ],\n  \"requiresCitation\": true\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### claim.open\n<!-- {\"id\":\"claim.open\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"claim.open\",\n  \"context\": \"claim.open\",\n  \"kind\": \"claim\",\n  \"strategy\": \"director:advantage.proposition.proof\",\n  \"phrasings\": [\n    \"The packages are the best and free under the MIT license.\"\n  ],\n  \"requiresCitation\": true\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "superlative"
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### claim.open\n<!-- {\"id\":\"claim.open\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"claim.open\",\n  \"context\": \"claim.open\",\n  \"kind\": \"claim\",\n  \"strategy\": \"director:advantage.proposition.proof\",\n  \"phrasings\": [\n    \"The packages are free and open under the MIT license.\"\n  ],\n  \"requiresCitation\": false\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "no citation"
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### claim.open\n<!-- {\"id\":\"claim.open\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"claim.open\",\n  \"context\": \"claim.open\",\n  \"kind\": \"claim\",\n  \"strategy\": \"writer:x.y\",\n  \"phrasings\": [\n    \"The packages are free and open under the MIT license.\"\n  ],\n  \"requiresCitation\": true\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "strategy not director"
+    }
+  ]
+}

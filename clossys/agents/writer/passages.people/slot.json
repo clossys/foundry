@@ -79,5 +79,6 @@
     "identity.verbal.voice",
     "capability.team.role"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

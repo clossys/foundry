@@ -20,5 +20,6 @@
     "advantage.proposition.promise",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }

@@ -1,0 +1,57 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "sitemaps-protocol",
+      "ref": "https://www.sitemaps.org/protocol.html",
+      "source": "sitemaps.org",
+      "license": "CC-BY-SA-2.5",
+      "description": "The sitemap protocol: every public page listed once at one canonical URL.",
+      "why": {
+        "findability": "Every page has one canonical location."
+      }
+    },
+    {
+      "id": "astro-routing",
+      "ref": "https://docs.astro.build/en/guides/routing/",
+      "source": "Astro docs",
+      "license": "MIT",
+      "description": "File-based routing: one route per page, nesting that mirrors the content.",
+      "why": {
+        "coherence": "One nesting scheme.",
+        "route-naming": "Readable path segments."
+      }
+    },
+    {
+      "id": "gov-uk-urls",
+      "ref": "https://www.gov.uk/guidance/content-design/url-standards-for-gov-uk",
+      "source": "GOV.UK content design",
+      "license": "OGL-UK-3.0",
+      "description": "URL standards: lowercase, hyphenated, plain words, no internal ids.",
+      "why": {
+        "route-naming": "Short plain-word routes."
+      }
+    },
+    {
+      "id": "docusaurus-sidebar",
+      "ref": "https://docusaurus.io/docs/sidebar",
+      "source": "Docusaurus docs",
+      "license": "MIT",
+      "description": "A sidebar that groups pages by topic and keeps the tree shallow.",
+      "why": {
+        "findability": "Grouped by what the reader looks for.",
+        "coherence": "One tree for the whole publication."
+      }
+    },
+    {
+      "id": "nng-ia",
+      "ref": "https://www.nngroup.com/articles/ia-vs-navigation/",
+      "source": "Nielsen Norman Group",
+      "license": "proprietary (link only)",
+      "description": "Information architecture versus navigation: structure first, then the menus that expose it.",
+      "why": {
+        "coherence": "Structure before menus."
+      }
+    }
+  ]
+}

@@ -31,5 +31,6 @@
   ],
   "uses": [],
   "options": 3,
-  "varyOn": "tone"
+  "varyOn": "tone",
+  "standard": "copy.headline"
 }

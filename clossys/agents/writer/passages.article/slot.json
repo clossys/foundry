@@ -87,5 +87,6 @@
     "identity.verbal.narrative",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

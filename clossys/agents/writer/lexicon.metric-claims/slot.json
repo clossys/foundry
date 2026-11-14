@@ -19,5 +19,6 @@
     "advantage.proposition.proof",
     "execution.measure.driver"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "lexicon.claim-list"
 }

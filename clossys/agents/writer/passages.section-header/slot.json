@@ -59,5 +59,6 @@
   "inputs": [
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "copy.headline"
 }

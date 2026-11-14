@@ -35,5 +35,6 @@
     "advantage.defensibility.differentiator",
     "focus.offer.included"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "pattern"
 }

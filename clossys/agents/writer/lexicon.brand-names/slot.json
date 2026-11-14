@@ -19,5 +19,6 @@
     "identity.naming.architecture",
     "identity.naming.name"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "lexicon.term-list"
 }

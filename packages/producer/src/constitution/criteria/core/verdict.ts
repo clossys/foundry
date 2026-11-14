@@ -45,6 +45,13 @@ export function certifyKey(inputs: VerdictInputs): CertifyKey {
  * slot contract"): a contract entry for a listed check merges its params over the standard's; a
  * contract entry for another check is appended. Contract form: `[{check, params}]` or `{<check>: params}`.
  */
+/**
+ * A param value a standard may give as exactly this string: it resolves to the slot's own contract, so a
+ * criterion reads per-slot facts (answer keys, length limits, pattern parts) from the one place that
+ * states them, never a copy of them in contract.requirements.
+ */
+export const CONTRACT_PARAM = "$contract";
+
 export function resolveRequirements(standard: readonly Requirement[], contract: unknown): Requirement[] {
   const raw = isRecord(contract) ? contract.requirements : undefined;
   const extra: Requirement[] = Array.isArray(raw)
@@ -56,7 +63,10 @@ export function resolveRequirements(standard: readonly Requirement[], contract: 
     if (at >= 0) out[at] = { check: item.check, params: { ...out[at]!.params, ...item.params } };
     else out.push(item);
   }
-  return out;
+  const bound = isRecord(contract) ? contract : {};
+  return out.map(item => Object.values(item.params).includes(CONTRACT_PARAM)
+    ? { check: item.check, params: Object.fromEntries(Object.entries(item.params).map(([key, value]) => [key, value === CONTRACT_PARAM ? bound : value])) }
+    : item);
 }
 
 /** The subject of a candidate: a Markdown body without frontmatter (frontmatter as flat fields), or parsed JSON. */

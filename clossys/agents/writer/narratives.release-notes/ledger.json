@@ -358,6 +358,25 @@
       "name": "studio-v1.md",
       "sha256": "d88fc09d54a128ddf380be0e181dd25031fcd8f5903d77118cb0c05bd85de015",
       "code": "edited-in-place"
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T17:03:14.152Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "29af67f4fdc3d2e15d920a0b4dec38f09dc3633fa58a4ab47c8b24a7655c9e68"
+        }
+      ]
     }
   ]
 }

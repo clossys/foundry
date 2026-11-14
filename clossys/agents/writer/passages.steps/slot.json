@@ -79,5 +79,6 @@
     "identity.verbal.voice",
     "capability.operation.delivery"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

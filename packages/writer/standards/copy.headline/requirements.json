@@ -1,0 +1,98 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "copy.headline",
+  "kinds": [
+    "strings/passage",
+    "strings/pattern",
+    "strings/string"
+  ],
+  "mode": "craft",
+  "craftTier": "high",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "copy.voice-derived",
+      "params": {}
+    },
+    {
+      "check": "copy.derived-upstream",
+      "params": {}
+    },
+    {
+      "check": "copy.entries",
+      "params": {}
+    },
+    {
+      "check": "copy.plain-values",
+      "params": {
+        "icu": true
+      }
+    },
+    {
+      "check": "text.no-placeholder",
+      "params": {}
+    },
+    {
+      "check": "lexicon.clean",
+      "params": {
+        "avoid": [
+          "seamless",
+          "seamlessly",
+          "best-in-class",
+          "best in class",
+          "magic",
+          "magical",
+          "effortless",
+          "effortlessly",
+          "solutions",
+          "solution"
+        ]
+      }
+    },
+    {
+      "check": "copy.within-limits",
+      "params": {
+        "maxChars": 160,
+        "contract": "$contract"
+      }
+    },
+    {
+      "check": "pattern.parts",
+      "params": {
+        "contract": "$contract"
+      }
+    },
+    {
+      "check": "copy.sentence-case",
+      "params": {
+        "proper": [
+          "Clossys",
+          "Studio",
+          "Foundry",
+          "Director",
+          "Designer",
+          "Writer",
+          "Publisher",
+          "Producer"
+        ]
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-copy-heading]",
+        "[data-copy-body]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

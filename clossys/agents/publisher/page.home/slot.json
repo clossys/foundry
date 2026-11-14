@@ -31,5 +31,6 @@
     "sections.task-list",
     "strings.common",
     "strings.page-titles"
-  ]
+  ],
+  "standard": "page"
 }

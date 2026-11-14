@@ -1,0 +1,41 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "standard",
+      "at": "2026-11-14T16:00:00.000Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "writer",
+        "id": "string",
+        "sha256": "99afd9dc7dc55f776b9d04cc8753f61cb5b5374a4416533f7b651259c7460ed9"
+      },
+      "files": {
+        "exemplars/exemplars.json": "6764098f1f0c2ef85e40c29b5701e7839de4d5bf2410d0e0d97059468308e127",
+        "requirements.json": "3a59885d8d6fd006019a28aca46454cd7818676211eecad0ab55dfa9b811b355",
+        "taste.md": "4432cd7b79eeb2569bbe788d6c8e82fe6dcb574cf7f44c7afdc670a5c9420905"
+      }
+    },
+    {
+      "op": "standard",
+      "at": "2026-11-14T18:00:00.000Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "writer",
+        "id": "string",
+        "sha256": "fcf4b07759a543489708a743b3b1eca44ab73361d6a92c68b9a8158186bb6b65"
+      },
+      "files": {
+        "exemplars/exemplars.json": "6764098f1f0c2ef85e40c29b5701e7839de4d5bf2410d0e0d97059468308e127",
+        "requirements.json": "978c760fd1432382de518a6818bd046c71de94607b86cb0fb2012f5a6a4e598f",
+        "taste.md": "4432cd7b79eeb2569bbe788d6c8e82fe6dcb574cf7f44c7afdc670a5c9420905"
+      }
+    }
+  ]
+}

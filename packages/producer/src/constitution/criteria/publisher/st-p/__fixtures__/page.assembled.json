@@ -1,0 +1,404 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"/designer/assets\", \"title\": \"studio.page.designer-assets\", \"frame\": \"frames.studio-shell\", \"sections\": [\"sections.studio.page-header\", \"sections.studio.slot-grid\"], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "/designer/assets",
+          "title": "studio.page.designer-assets",
+          "frame": "frames.studio-shell",
+          "sections": [
+            "sections.studio.page-header",
+            "sections.studio.slot-grid"
+          ],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"/\", \"title\": \"studio.page.designer-assets\", \"frame\": \"frames.studio-shell\", \"sections\": [\"sections.studio.page-header\", \"sections.studio.slot-grid\"], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "/",
+          "title": "studio.page.designer-assets",
+          "frame": "frames.studio-shell",
+          "sections": [
+            "sections.studio.page-header",
+            "sections.studio.slot-grid"
+          ],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"designer\", \"title\": \"studio.page.designer-assets\", \"frame\": \"frames.studio-shell\", \"sections\": [\"sections.studio.page-header\", \"sections.studio.slot-grid\"], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "designer",
+          "title": "studio.page.designer-assets",
+          "frame": "frames.studio-shell",
+          "sections": [
+            "sections.studio.page-header",
+            "sections.studio.slot-grid"
+          ],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      },
+      "note": "bad path"
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"/designer/assets\", \"title\": \"studio.page.designer-assets\", \"frame\": \"studio-shell\", \"sections\": [\"sections.studio.page-header\", \"sections.studio.slot-grid\"], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "/designer/assets",
+          "title": "studio.page.designer-assets",
+          "frame": "studio-shell",
+          "sections": [
+            "sections.studio.page-header",
+            "sections.studio.slot-grid"
+          ],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      },
+      "note": "bad frame"
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"/designer/assets\", \"title\": \"studio.page.designer-assets\", \"frame\": \"frames.studio-shell\", \"sections\": [], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "/designer/assets",
+          "title": "studio.page.designer-assets",
+          "frame": "frames.studio-shell",
+          "sections": [],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      },
+      "note": "no sections"
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"/designer/assets\", \"title\": \"studio.page.designer-assets\", \"frame\": \"frames.studio-shell\", \"sections\": [\"sections.a\", \"sections.a\"], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "/designer/assets",
+          "title": "studio.page.designer-assets",
+          "frame": "frames.studio-shell",
+          "sections": [
+            "sections.a",
+            "sections.a"
+          ],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      },
+      "note": "duplicate section"
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"/designer/assets\", \"title\": \"Designer assets\", \"frame\": \"frames.studio-shell\", \"sections\": [\"sections.studio.page-header\", \"sections.studio.slot-grid\"], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "/designer/assets",
+          "title": "Designer assets",
+          "frame": "frames.studio-shell",
+          "sections": [
+            "sections.studio.page-header",
+            "sections.studio.slot-grid"
+          ],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      },
+      "note": "inline title"
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/1\", \"path\": \"/designer/assets\", \"title\": \"studio.page.designer-assets\", \"frame\": \"frames.studio-shell\", \"sections\": [\"sections.studio.page-header\", \"sections.studio.slot-grid\"], \"copy\": {\"meta-title\": \"Designer assets\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/1",
+          "path": "/designer/assets",
+          "title": "studio.page.designer-assets",
+          "frame": "frames.studio-shell",
+          "sections": [
+            "sections.studio.page-header",
+            "sections.studio.slot-grid"
+          ],
+          "copy": {
+            "meta-title": "Designer assets"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      },
+      "note": "inline copy"
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{\"schema\": \"clossys.page/0\", \"path\": \"/designer/assets\", \"title\": \"studio.page.designer-assets\", \"frame\": \"frames.studio-shell\", \"sections\": [\"sections.studio.page-header\", \"sections.studio.slot-grid\"], \"copy\": {\"meta-title\": \"page.designer-assets#meta-title\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"entry\": {\"fields\": {\"kind\": \"page\", \"note\": \"Assembled from the pinned frame.\"}, \"blocks\": {\"Actions\": [{\"id\": \"needs\", \"label\": \"studio.needs\"}], \"Route\": {\"archetype\": \"workspace\", \"body\": \"plain\"}}}}}",
+        "json": {
+          "schema": "clossys.page/0",
+          "path": "/designer/assets",
+          "title": "studio.page.designer-assets",
+          "frame": "frames.studio-shell",
+          "sections": [
+            "sections.studio.page-header",
+            "sections.studio.slot-grid"
+          ],
+          "copy": {
+            "meta-title": "page.designer-assets#meta-title"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "entry": {
+              "fields": {
+                "kind": "page",
+                "note": "Assembled from the pinned frame."
+              },
+              "blocks": {
+                "Actions": [
+                  {
+                    "id": "needs",
+                    "label": "studio.needs"
+                  }
+                ],
+                "Route": {
+                  "archetype": "workspace",
+                  "body": "plain"
+                }
+              }
+            }
+          }
+        }
+      },
+      "note": "schema"
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "not json"
+      },
+      "note": "not json"
+    }
+  ]
+}

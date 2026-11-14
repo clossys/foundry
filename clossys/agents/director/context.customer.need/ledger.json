@@ -342,6 +342,44 @@
       "name": "studio-customer-need-v3.md",
       "sha256": "d3c677e9caaa041404849d6bfdfa69cb3ccd173000e84efb2de2aae8f1a0c14d",
       "code": "edited-in-place"
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T16:57:40.216Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "fe38654d9433f030e4025c45b78ef966b62b72c3d05b90a4c8032ddd13aed5b5"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T17:19:19.777Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "e94109016f9a53f36f8643abd9767b12051185363113568a8c5fbc4def1ce705"
+        }
+      ]
     }
   ]
 }
