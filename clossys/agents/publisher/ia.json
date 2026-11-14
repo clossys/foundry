@@ -1,6 +1,6 @@
 {
   "schema": "clossys.ia/1",
-  "source": "consumer#agents/publisher/tree.json",
+  "source": "workspace#owner",
   "extensions": [],
   "nodes": [
     {

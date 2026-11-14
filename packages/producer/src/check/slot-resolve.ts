@@ -7,9 +7,10 @@ import { resolveAgent } from "../agents.js";
 import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check-output-envelope.js";
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
-import { assertModelTree, listSlots, readAgentFile, readCandidate, readIa, readSlot } from "../records/slots.js";
+import { assertModelTree, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
 import { agentModule } from "../server/cells.js";
 import { checkSlotModel, formatCoverage, slotCoverage, writerRecords, type AgentCoverage } from "../records/slot-check.js";
+import { writerDeclarationsText } from "../publish/studio-defaults.js";
 import {
   SLOT_AGENTS, parseFrontmatter, validateIa, validateSource,
   type SlotModelCode, type SourceDoc,
@@ -157,7 +158,7 @@ function modelStores(root: string, writer: Map<string, string[]>): SlotStore[] {
 async function writerAliases(root: string, inputErrors: string[]): Promise<Map<string, string[]>> {
   const aliases = new Map<string, string[]>();
   try {
-    const text = readAgentFile(root, "writer", "declarations.json");
+    const text = writerDeclarationsText(root);
     if (text === undefined) return aliases;
     const declarations = (await agentModule("writer", "declarations.js")).parseWriterDeclarations(text) as { locales: Record<string, { aliases: Record<string, string> }> };
     for (const locale of Object.values(declarations.locales)) for (const [alias, id] of Object.entries(locale.aliases)) aliases.set(alias, [...new Set([...(aliases.get(alias) ?? []), id])]);

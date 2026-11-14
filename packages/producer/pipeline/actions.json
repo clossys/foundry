@@ -40,6 +40,7 @@
         "record": "clossys.pipeline-run/1",
         "checks": [
           "workspace",
+          "ia-source",
           "slot-defaults"
         ],
         "uses": [
@@ -60,6 +61,7 @@
           ],
           "checks": [
             "workspace",
+            "ia-source",
             "slot-defaults"
           ]
         },

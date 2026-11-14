@@ -17,6 +17,7 @@ import { isDeepStrictEqual } from "node:util";
 import { deriveRefs, feedsIndex } from "./derive.js";
 import { designerIa, directorIa, producerIa, slotPositions, writerIa, type FoundryIa, type FoundrySlot } from "./foundry-ia.js";
 import { iaPath, jsonBytes, slotDir, slotFile } from "./layout.js";
+import { resolveIaSource, WORKSPACE_OWNED_SOURCE } from "./ia-source.js";
 import { FOUNDRY_IA_AGENTS, SLOT_AGENTS, SLOT_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type SlotAgent, type SlotPosition } from "./types.js";
 import { modelExists, readModelText } from "../slots.js";
 import { classify } from "../slot-options.js";
@@ -273,3 +274,24 @@ export function knownSlots(consumerDir: string, agent: SyncAgent, state: SyncSta
 }
 
 export type { IaLeafGroup, IaNode };
+
+/** The agents whose IA the workspace owns (`ia <agent> --start`): every slot agent the sync does not write from a package. */
+export const WORKSPACE_IA_AGENTS = SLOT_AGENTS.filter(agent => !(SYNC_AGENTS as readonly string[]).includes(agent));
+
+/**
+ * A workspace-owned IA whose `source` does not resolve (SOURCE-MIGRATE step 6: the Publisher's
+ * `consumer#agents/publisher/tree.json` named a file that no longer exists). The sync repoints it to
+ * `workspace#owner`; nothing else in the file changes.
+ */
+export function workspaceSourceRepairs(consumer: string): { agent: SlotAgent; detail: string; path: string; bytes: string }[] {
+  const out: { agent: SlotAgent; detail: string; path: string; bytes: string }[] = [];
+  for (const agent of WORKSPACE_IA_AGENTS) {
+    const path = iaPath(consumer, agent);
+    if (!modelExists(path)) continue;
+    const doc = readDoc(path);
+    const resolution = resolveIaSource(doc.source);
+    if (resolution.ok) continue;
+    out.push({ agent, path, detail: `source ${JSON.stringify(doc.source)} does not resolve (${resolution.reason}); a workspace-owned IA is ${JSON.stringify(WORKSPACE_OWNED_SOURCE)}`, bytes: jsonBytes({ ...doc, source: WORKSPACE_OWNED_SOURCE }) });
+  }
+  return out;
+}

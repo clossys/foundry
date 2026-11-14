@@ -2,12 +2,14 @@
  * Bare `publish` dry run, end to end through the built CLI: a page copy ref `<cell>#<key>` whose cell
  * is no Writer slot (`page.home#meta-title`) resolves through the Writer declarations alias
  * `<cell>.<key>` (`page.home.meta-title`), the same rule `check --readiness` applies. In a full copy of
- * the repository's `clossys/`, no page reports `writer-slot-unpinned` while its aliases are declared;
- * removing one alias (mutation) brings exactly that ref back as a `writer-slot-unpinned` finding.
+ * the repository's `clossys/`, no page reports `writer-slot-unpinned` while the Studio package default
+ * declares its aliases; a consumer file without one alias (mutation) brings exactly that ref back as a
+ * `writer-slot-unpinned` finding.
  */
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { STUDIO_WRITER_DECLARATIONS } from "../publish/studio-defaults.js";
 import { flatConsumer, runVerb, withBriefContracts } from "./__fixtures__/flat-consumer.js";
 
 type Finding = { code: string; page?: string; message: string };
@@ -23,8 +25,9 @@ describe("publish dry run: page copy refs through Writer declarations aliases", 
     expect(baseline.status).not.toBe(2);
     expect(unpinned(baseline.value)).toEqual([]);
 
+    // The Studio declarations are the package default; the consumer's own file wins, so the mutation writes one.
     const file = join(root, "clossys", "agents", "writer", "declarations.json");
-    const declarations = JSON.parse(readFileSync(file, "utf8")) as { locales: Record<string, { aliases: Record<string, string> }> };
+    const declarations = JSON.parse(readFileSync(STUDIO_WRITER_DECLARATIONS, "utf8")) as { locales: Record<string, { aliases: Record<string, string> }> };
     for (const locale of Object.values(declarations.locales)) {
       expect(Object.hasOwn(locale.aliases, "page.home.meta-title")).toBe(true);
       delete locale.aliases["page.home.meta-title"];

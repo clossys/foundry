@@ -1,6 +1,6 @@
 {
   "schema": "clossys.ia/1",
-  "source": "@clossys/designer#leaf-freeze:undefined",
+  "source": "@clossys/designer#src/catalog/ia",
   "extensions": [],
   "nodes": [
     {

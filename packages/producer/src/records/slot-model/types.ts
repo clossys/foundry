@@ -112,7 +112,7 @@ export interface IaLeafGroup { readonly id: string; readonly label: string; read
 export interface IaNode { readonly id: string; readonly label: string; readonly children: readonly IaLeafGroup[] }
 export interface IaDoc {
   readonly schema: typeof IA_SCHEMA;
-  /** `<foundry pkg>#<leaf-freeze ref>`, or `consumer#<store>` for the Publisher. */
+  /** `@clossys/<package>#<path>` (the package IA file or folder), or `workspace#owner` for a workspace-owned IA (records/slot-model/ia-source.ts). */
   readonly source: string;
   /** Consumer-only slots the owner signed. */
   readonly extensions: readonly string[];

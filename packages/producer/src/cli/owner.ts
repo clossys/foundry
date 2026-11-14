@@ -31,11 +31,12 @@ import { checkSlotModel, RETIRED_DIR } from "../records/slot-check.js";
 import { ledgerComment, OWNER_DECISION_SCOPES, OWNER_DECISIONS_FILE, OWNER_DECISIONS_SCHEMA, resolveOwnerRef, validateOwnerDecisions, type OwnerDecision } from "../records/owner-decisions.js";
 import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SEAT_AGENT, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId, seatStepOf } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
+import { WORKSPACE_OWNED_SOURCE } from "../records/slot-model/ia-source.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { feedsIndex } from "../records/slot-model/derive.js";
 import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
-import { adoptedSlotDoc, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
+import { adoptedSlotDoc, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, workspaceSourceRepairs, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
 import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
@@ -189,7 +190,7 @@ const parseIa = parser(IA_USAGE, [
 ], ["--remove", "--adopt", "--start", "--move", "--dry", "--check"]);
 const FOUNDRY_IA: Readonly<Record<keyof typeof FOUNDRY_IA_AFTER, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
 /** The source of a workspace-owned IA (`--start`): `--under` may add L1/L2 groups to it, never to a Foundry IA. */
-export const WORKSPACE_IA_SOURCE = "workspace#owner";
+export const WORKSPACE_IA_SOURCE = WORKSPACE_OWNED_SOURCE;
 /** The agent-level regroup operations and the flags each takes besides --owner-ref, --at and --root. */
 const REGROUP_OPS: Readonly<Record<string, readonly string[]>> = {
   "--add": ["--label", "--layer"], "--rename": ["--label", "--id"], "--merge": ["--into"], "--drop": [],
@@ -437,16 +438,19 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");
   const findings: SyncFinding[] = [];
   for (const agent of agents) findings.push(...syncDrift(consumer, agent));
+  // A workspace-owned IA (the Publisher's) is not synced, but a dead source on it is repointed.
+  const repairs = only === undefined ? workspaceSourceRepairs(consumer) : [];
   const counts = Object.fromEntries(agents.map(agent => [agent, driftCounts(findings.filter(finding => finding.agent === agent))]));
-  const summary = agents.map(agent => {
+  const summary = [...agents.map(agent => {
     const entries = Object.entries(counts[agent]!);
     return `${agent}: ${entries.length ? entries.map(([kind, n]) => `${n} ${kind}`).join(", ") : "in sync"}`;
-  });
+  }), ...repairs.map(repair => `${repair.agent}: 1 source (workspace-owned)`)];
   if (flags.bare.has("--check")) {
-    const listed = findings.slice(0, 60).map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`);
+    const listed = [...findings.map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`), ...repairs.map(repair => `  ${repair.agent} source: ${repair.detail}`)].slice(0, 60);
+    const drift = findings.length + repairs.length;
     return {
-      exitCode: findings.length ? 1 : 0, root, check: true, output: { drift: findings.length, counts, findings },
-      message: [`ia sync --check: ${findings.length ? `${findings.length} drift finding${findings.length === 1 ? "" : "s"}` : "in sync with the package IA"}`, ...summary.map(line => `  ${line}`), ...listed, ...(findings.length > 60 ? [`  ... and ${findings.length - 60} more`] : [])].join("\n"),
+      exitCode: drift ? 1 : 0, root, check: true, output: { drift, counts, findings, workspaceSources: repairs.map(({ agent, detail }) => ({ agent, detail })) },
+      message: [`ia sync --check: ${drift ? `${drift} drift finding${drift === 1 ? "" : "s"}` : "in sync with the package IA"}`, ...summary.map(line => `  ${line}`), ...listed, ...(findings.length > 60 ? [`  ... and ${findings.length - 60} more`] : [])].join("\n"),
     };
   }
   // The write: per agent, the sync plan (ia.json and the changed slot.json files); an undeclared leaf refuses the whole sync.
@@ -465,8 +469,12 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
     writes.push(...plan.writes);
     lines.push(`${agent}: ${plan.writes.length} file${plan.writes.length === 1 ? "" : "s"}${plan.adopted.length ? `, adopted ${plan.adopted.join(", ")}` : ""}`);
   }
+  for (const repair of repairs) {
+    writes.push([repair.path, repair.bytes]);
+    lines.push(`${repair.agent}: 1 file, source repointed to the workspace-owned IA`);
+  }
   if (!writes.length) return { exitCode: 0, root, message: ["ia sync: in sync with the package IA; nothing written", ...summary.map(line => `  ${line}`)].join("\n") };
-  return commitIa(consumer, root, writes, flags.bare.has("--dry"), `sync ${agents.join(", ")} from the package IA (${findings.length} drift finding${findings.length === 1 ? "" : "s"})`, lines);
+  return commitIa(consumer, root, writes, flags.bare.has("--dry"), `sync ${agents.join(", ")} from the package IA (${findings.length + repairs.length} drift finding${findings.length + repairs.length === 1 ? "" : "s"})`, lines);
 }
 
 export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {

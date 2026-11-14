@@ -70,6 +70,7 @@
     "check:route-parity": "node scripts/check-route-parity.mjs",
     "check:slot-options": "node scripts/check-slot-options.mjs",
     "check:slot-defaults": "node scripts/check-slot-defaults.mjs",
+    "check:ia-source": "node scripts/check-ia-source.mjs",
     "check:slot-state": "node scripts/check-slot-state.mjs",
     "check:slot-pins": "node scripts/check-slot-pins.mjs",
     "check:constitution": "node dist/cli/index.js check --constitution",

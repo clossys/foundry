@@ -24,6 +24,25 @@
           "sha256": "7f55136bc8185021ad0cd83e8cc04c830856017bb0a3d200232ee752308007a9"
         }
       ]
+    },
+    {
+      "op": "ia",
+      "at": "2026-11-14T23:12:31.199Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "9b5b67739e179fad9fca574e150d8b7fe6b73d09295b8a7cc93dde3bc017b051"
+        }
+      ]
     }
   ]
 }

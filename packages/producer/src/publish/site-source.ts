@@ -7,7 +7,8 @@ import { join } from "node:path";
 import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
 import { agentModule } from "../server/cells.js";
 import { readPinnedPublication } from "./pinned-publication.js";
-import { hasPinFile, hasSlotModel, listSlots, readAgentFile, readCandidate, readIa, readSlot } from "../records/slots.js";
+import { writerDeclarationsText } from "./studio-defaults.js";
+import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
 import { parseFrontmatter, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "./site-plan.js";
 
@@ -88,7 +89,7 @@ export async function readWriter(root: string): Promise<WriterInput & { locale: 
   const consumer = join(root, "clossys");
   if (!readIa(consumer, "writer")) throw new Error("Writer native IA is missing");
   // Aliased or irregular declarations are refused by the one reader.
-  const declarationText = readAgentFile(consumer, "writer", "declarations.json");
+  const declarationText = writerDeclarationsText(consumer);
   const { rows, locales } = await pinnedWriterRows(consumer);
   if (declarationText !== undefined) {
     const api = await agentModule("writer", "declarations.js");

@@ -33,7 +33,7 @@ export class AgentResolutionError extends Error {
 
 const producerRequire = createRequire(import.meta.url);
 
-function resolveInstalledPackage(packageName: string): string {
+export function resolveInstalledPackage(packageName: string): string {
   // Agents can expose only import subpaths, so their bare name and manifest
   // need not be exported. Use Producer's Node lookup paths without loading code.
   for (const searchPath of producerRequire.resolve.paths(packageName) ?? []) {

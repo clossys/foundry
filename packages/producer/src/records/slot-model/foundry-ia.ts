@@ -10,6 +10,7 @@ import { resolveAgent } from "../../agents.js";
 import { PRODUCER_ROOT } from "../../package-path.js";
 import { isAbsent } from "../../errors.js";
 import { DESIGN_BRIEF_INPUTS } from "./design-brief-inputs.js";
+import { packageIaSource } from "./ia-source.js";
 import { PRODUCER_IA_SOURCE, readPipelineSeats } from "./pipeline-seats.js";
 import { IA_SCHEMA, type IaAxes, type IaDoc, type IaLayer, type IaLeafGroup, type IaNode, type ModelAgent, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
 
@@ -60,14 +61,9 @@ export function readSlotDefaults(root: string, agent: SlotAgent): ReadonlyMap<st
 const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const stripAgent = (ref: string) => ref.replace(/^[a-z]+:/, "").replace(/@\d+$/, "");
 
-/** `leaf-freeze:<signed head>`, or `build-unfrozen` when the layer ships no freeze record. */
-function leafFreezeRef(root: string, path: string): string {
-  const freeze = readOptionalJson(root, path) as { signedHead?: unknown } | undefined;
-  if (freeze === undefined) return "build-unfrozen";
-  // Unchanged from the prior reader: an unsigned record (no signedHead) yields `leaf-freeze:undefined`,
-  // which consumer ia.json files already carry as their source; renaming it is not this unit's scope.
-  return `leaf-freeze:${freeze.signedHead}`;
-}
+/** The package IA files an ia.json `source` names (check:ia-source resolves them). */
+const DIRECTOR_IA_FILE = "src/catalog/ia/strategy.json";
+const CATALOG_IA_DIR = "src/catalog/ia";
 
 export const DESIGNER_LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 export const WRITER_LAYERS = ["lexicon", "strings", "patterns", "passages", "narratives"] as const;
@@ -75,9 +71,8 @@ export const WRITER_LAYERS = ["lexicon", "strings", "patterns", "passages", "nar
 /** Director: the director catalog (57 slots, 7 L1 / 28 L2). */
 export function directorIa(): FoundryIa {
   const root = resolveAgent("director").packageRoot;
-  const ia = readJson(root, "src/catalog/ia/strategy.json") as { nodes: { id: string; name: string; children: { id: string; name: string; leaves: string[] }[] }[]; layers?: IaLayer[]; axes?: IaAxes };
+  const ia = readJson(root, DIRECTOR_IA_FILE) as { nodes: { id: string; name: string; children: { id: string; name: string; leaves: string[] }[] }[]; layers?: IaLayer[]; axes?: IaAxes };
   const cells = new Map((readJson(root, join("src", "catalog", "cells", "strategy.json")) as { id: string; question: string; mustContain: unknown }[]).map(cell => [cell.id, cell]));
-  const freeze = readJson(root, "src/catalog/ia/strategy.leaf-freeze.json") as { frozenAt: string };
   // Older director builds carry no slot contracts: inputs stay undeclared.
   const raw = readOptionalJson(root, "src/slot-contracts/contracts.json") as { fixture?: Record<string, unknown>; slots: { id: string; inputs: string[]; feeds: string[] }[] } | undefined;
   const contracts = new Map<string, { inputs: string[]; feeds: string[] }>((raw?.slots ?? []).map(slot => [slot.id, { inputs: strings(slot.inputs), feeds: strings(slot.feeds) }]));
@@ -98,7 +93,7 @@ export function directorIa(): FoundryIa {
   }
   // The owner-decided L0 layers and axes (2026-11-13 IA review) are package data: every consumer IA levels by them.
   const levels = { ...(ia.layers ? { layers: ia.layers } : {}), ...(ia.axes ? { axes: ia.axes } : {}) };
-  return { agent: "director", ia: { schema: IA_SCHEMA, source: `@clossys/director#leaf-freeze:${freeze.frozenAt}`, extensions: [], nodes, ...levels }, slots };
+  return { agent: "director", ia: { schema: IA_SCHEMA, source: packageIaSource("@clossys/director", DIRECTOR_IA_FILE), extensions: [], nodes, ...levels }, slots };
 }
 
 /** Flatten a placement subtree: groups below L2 fold into their L2 ancestor. */
@@ -126,7 +121,6 @@ export function producerIa(): FoundryIa {
 export function designerIa(): FoundryIa {
   const catalog = loadBuildCatalog();
   const root = resolveAgent("designer").packageRoot;
-  const ref = leafFreezeRef(root, "src/catalog/ia/themes.leaf-freeze.json");
   const contracts = new Map(catalog.slots.map(slot => [slot.id, slot]));
   const nodes: IaNode[] = [];
   const order = [...catalog.placements].sort((a, b) => DESIGNER_LAYERS.indexOf(a.layer as typeof DESIGNER_LAYERS[number]) - DESIGNER_LAYERS.indexOf(b.layer as typeof DESIGNER_LAYERS[number]));
@@ -166,7 +160,7 @@ export function designerIa(): FoundryIa {
     group.slots.splice(at === -1 ? (extra.after === null ? 0 : group.slots.length) : at + 1, 0, extra.id);
     slots.set(extra.id, { id: extra.id, kind: extra.kind, contract: extra.contract, declaredInputs: [...brief].sort(), declaredUses: [...extra.uses], feeds: [], defaults: { standard: extra.standard } });
   }
-  return { agent: "designer", ia: { schema: IA_SCHEMA, source: `@clossys/designer#${ref}`, extensions: [], nodes }, slots };
+  return { agent: "designer", ia: { schema: IA_SCHEMA, source: packageIaSource("@clossys/designer", CATALOG_IA_DIR), extensions: [], nodes }, slots };
 }
 
 /** One Designer slot the Studio publication defines (src/studio-defaults/designer-slots.json). */
@@ -188,7 +182,6 @@ export function studioDesignerSlots(): readonly StudioDesignerSlot[] {
 /** Writer: the five Writer IA layers (136 leaves); a slot is one Writer leaf (D5). */
 export function writerIa(): FoundryIa {
   const root = resolveAgent("writer").packageRoot;
-  const ref = leafFreezeRef(root, "src/catalog/ia/strings.leaf-freeze.json");
   type WriterNode = { id: string; label: string; children?: WriterNode[]; leaves?: string[] };
   const flat = (node: WriterNode): string[] => node.leaves ? [...node.leaves] : (node.children ?? []).flatMap(flat);
   const nodes: IaNode[] = [];
@@ -208,7 +201,7 @@ export function writerIa(): FoundryIa {
       }
     }
   }
-  return { agent: "writer", ia: { schema: IA_SCHEMA, source: `@clossys/writer#${ref}`, extensions: [], nodes }, slots };
+  return { agent: "writer", ia: { schema: IA_SCHEMA, source: packageIaSource("@clossys/writer", CATALOG_IA_DIR), extensions: [], nodes }, slots };
 }
 
 /**
