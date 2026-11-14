@@ -2,6 +2,7 @@ import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { certifySlots } from "../cli/__fixtures__/certified.js";
 import { runGapsCli } from "../cli/gaps.js";
 import { runCli } from "../cli/main.js";
 import { runNextCli } from "../cli/next.js";
@@ -235,7 +236,12 @@ describe("Director content questions (next --owner --agent director)", { timeout
     const pinOf = (cell: string) => JSON.parse(readFileSync(join(director, cell, "pin.json"), "utf8")) as { candidate: string; decidedBy: string; basis: string; confirmed?: { by: string; ref: string } };
     const cells = readdirSync(director).filter(cell => existsSync(join(director, cell, "pin.json")) && !core.has(`director/${cell}`) && pinOf(cell).basis !== "picked").slice(0, 2);
     expect(cells).toHaveLength(2);
-    for (const cell of cells) expect((await runCli(["pick", `director/${cell}`, pinOf(cell).candidate, "--by", "agent:director", "--root", root], root)).exitCode).toBe(0);
+    // The pick is guarded (R05.1, R05.2): each cell is certified for the candidate it picks first.
+    await certifySlots(root, "director", Object.fromEntries(cells.map(cell => [cell, [pinOf(cell).candidate]])));
+    for (const cell of cells) {
+      const picked = await runCli(["pick", `director/${cell}`, pinOf(cell).candidate, "--by", "agent:director", "--root", root], root);
+      expect(picked.exitCode, picked.message).toBe(0);
+    }
     const question = interviewOf(root, { agent: "director" }).rounds.flat().find(each => each.id === "director.agent-picks")!;
     const confirm = question.options[0]!;
     expect(confirm.fill).toHaveProperty(CONFIRM_REF);

@@ -1,0 +1,11 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "fixture-copy",
+  "kinds": ["strings", "brief"],
+  "mode": "craft",
+  "craftTier": "high",
+  "seeds": [],
+  "requirements": [
+    { "check": "text.nonempty", "params": {} }
+  ]
+}

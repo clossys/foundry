@@ -6,7 +6,8 @@ import { sha256Hex } from "./hash.js";
 import { jsonBytes, serializeFrontmatter, slotPositions, validatePin, validateSlotDoc, type IaDoc, type OptionTable } from "./slot-model/index.js";
 import { checkSlotOptions, slotOptions } from "./slot-options.js";
 import { readSlotEntry } from "./slots.js";
-import { writePin, writeSlotOptions } from "./slot-write.js";
+import { writeCandidate, writePin, writeSlotOptions } from "./slot-write.js";
+import { certifySlots } from "../cli/__fixtures__/certified.js";
 import { runOptionsCli, runPickCli } from "../cli/options.js";
 
 const ID = "identity.brand.essence";
@@ -139,12 +140,14 @@ describe("clossys options and pick", () => {
 
   for (const [decidedBy, basis] of [["owner:2026-11-03 pin-if-agree", "bulk"], ["planner:UNIT", "planner"], ["agent:other", "agent"]] as const) {
     it(`pick replaces a ${basis} pin with basis agent, shown as confirm`, async () => {
-      add("essence-human-v1.md", brief({ angle: "human" }));
+      // The pick is guarded (R05.1, R05.2, R14.1): the alternative is submitted through the writer and the slot certified.
+      const human = writeCandidate(consumer(), "director", ID, "essence-human", brief({ angle: "human" })).name;
+      await certifySlots(root, "director", { [ID]: ["essence-v1.md", human] });
       writePin(consumer(), "director", ID, "essence-v1.md", { decidedBy, basis, at: "2026-11-03T00:00:00Z" });
       expect(slotOptions(consumer(), readSlotEntry(consumer(), "director", ID)!, TABLE).pinStatus).toBe("confirm");
-      const picked = await runPickCli([`director/${ID}`, "essence-human-v1", "--by", "agent:judge", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
-      expect(picked.exitCode).toBe(0);
-      expect(JSON.parse(readFileSync(join(dir, "pin.json"), "utf8"))).toMatchObject({ candidate: "essence-human-v1.md", decidedBy: "agent:judge", basis: "agent" });
+      const picked = await runPickCli([`director/${ID}`, human.replace(/\.md$/, ""), "--by", "agent:judge", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
+      expect(picked.exitCode, picked.message).toBe(0);
+      expect(JSON.parse(readFileSync(join(dir, "pin.json"), "utf8"))).toMatchObject({ candidate: human, decidedBy: "agent:judge", basis: "agent" });
       expect(slotOptions(consumer(), readSlotEntry(consumer(), "director", ID)!, TABLE).pinStatus).toBe("confirm");
     });
   }

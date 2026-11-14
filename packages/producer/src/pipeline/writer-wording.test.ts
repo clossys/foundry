@@ -2,6 +2,7 @@ import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { certifySlots } from "../cli/__fixtures__/certified.js";
 import { runCli } from "../cli/main.js";
 import { readCandidate } from "../records/slots.js";
 import { writeCandidate, writePin } from "../records/slot-write.js";
@@ -67,6 +68,8 @@ describe("Writer wording findings reach the Writer's owner questions (R2F-W1)", 
     expect(interviewIssues(interview, gapsOf(root))).toEqual([]);
 
     // The answer flows back through pin with the ledger ref; the slot is then settled and asked no more.
+    // The pin is guarded (R05.1, R05.2): the slot is certified for the rewrite it pins first.
+    await certifySlots(root, "writer", { [SLOT]: [row.rewrite!.candidate] });
     for (const call of rewrite!.calls) {
       const result = await runCli([...call.slice(1).map(word => word.replace(CONFIRM_REF, REF)), "--root", root], root);
       expect(result.exitCode, result.message).toBe(0);

@@ -1,10 +1,12 @@
-import { mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { certifySlots } from "../cli/__fixtures__/certified.js";
 import { flatConsumer } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { listSlots } from "../records/slots.js";
+import { writeCandidate } from "../records/slot-write.js";
 import { writerCopyDuplicates } from "../records/writer-copy.js";
 import { interviewOf, type Interview, type InterviewAgent } from "./interview.js";
 import { ownerWiringIssues } from "./owner-wiring.js";
@@ -84,6 +86,8 @@ describe("owner.wiring (clossys pipeline check)", () => {
 
   it("fails an answer the gaps do not see: it re-records a slot no gap is about", async () => {
     const settled = listSlots(`${root}/clossys`, "writer").find(entry => entry.pin?.basis === "bulk")!;
+    // The pin is guarded (R05.1, R05.2): the slot is certified for the candidate it re-records.
+    await certifySlots(root, "writer", { [settled.id]: [settled.pin!.candidate] });
     const unseen = rewritten(() => [["clossys", "pin", `writer/${settled.id}`, settled.pin!.candidate, "--basis", "picked"]]);
     const result = await ownerWiringIssues(root, { run: runCli, agents: ["writer"], interviewOf: firstOnly(unseen) });
     expect(result.issues.map(issue => issue.message).join("\n")).toContain("writer writer.policy a: the answer ran, but clossys gaps --agent writer reports the same gaps");
@@ -97,11 +101,10 @@ describe("owner.wiring (clossys pipeline check)", () => {
     // The other slot's first record, appended to the owner slot's pinned bytes as a new candidate of that slot.
     const record = /^### .*\n<!-- .* -->\n.*\n/m.exec(read(other))![0];
     const key = JSON.parse(/<!-- (.*) -->/.exec(record)![1]!).id as string;
-    const names = readdirSync(join(consumer, "agents", "writer", owner!.id, "candidates"));
+    // The pin is guarded (R05.1, R05.2, R14.1): the candidate is submitted through the writer and the slot certified.
     const prefix = owner!.pin!.candidate.replace(/-v\d+\.md$/, "");
-    const next = Math.max(...names.filter(name => name.startsWith(`${prefix}-v`)).map(name => Number(/-v(\d+)\.md$/.exec(name)![1]))) + 1;
-    const name = `${prefix}-v${next}.md`;
-    writeFileSync(join(consumer, "agents", "writer", owner!.id, "candidates", name), `${read(owner).replace(/\n*$/, "\n\n")}${record}`);
+    const name = writeCandidate(consumer, "writer", owner!.id, prefix, `${read(owner).replace(/\n*$/, "\n\n")}${record}`).name;
+    await certifySlots(dup, "writer", { [owner!.id]: [name] });
     expect(writerCopyDuplicates(consumer).map(row => row.id)).not.toContain(key);
     const duplicating = rewritten(() => [["clossys", "pin", `writer/${owner!.id}`, name, "--basis", "picked"]]);
     const result = await ownerWiringIssues(dup, { run: runCli, agents: ["writer"], interviewOf: firstOnly(duplicating) });

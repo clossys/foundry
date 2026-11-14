@@ -17,7 +17,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it } from "vitest";
 import { NEXT_ROUTE_MARKER } from "@clossys/publisher/install";
 import { parseArgs } from "../cli/args.js";
+import { certifySlots } from "../cli/__fixtures__/certified.js";
 import { runPinCli } from "../cli/pin.js";
+import { writeCandidate } from "../records/slot-write.js";
 import { withDesignerSlots } from "../specimen/__fixtures__/canonical-library.js";
 import { publishNext, type PublishNextResult } from "./install-next.js";
 import { localItemRunner, NEXT_BIND_ASSEMBLY, NEXT_BIND_PROJECTION, NEXT_BIND_STATES } from "./install-next-bind.js";
@@ -118,10 +120,11 @@ describe("clossys publish --install --next --bind", () => {
     expect(blocking(await install(root, app))).toEqual([]);
     const strings = join(root, "clossys", "agents", "writer", "strings.site", "candidates");
     const current = JSON.parse(readFileSync(join(strings, "..", "pin.json"), "utf8")).candidate as string;
-    const next = `site-v${Number(/-v(\d+)\.md$/.exec(current)![1]) + 1}`;
-    writeFileSync(join(strings, `${next}.md`), readFileSync(join(strings, current), "utf8").replace("Pages assembled from records", "Pages reinstalled from a new pin"));
-    const pinned = await runPinCli(["writer/strings.site", next, "--by", "planner:SITE-TEMPLATE", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
-    expect(pinned.exitCode).toBe(0);
+    // The re-pin is guarded (R05.1, R05.2, R14.1): the new version is submitted through the writer and the slot certified.
+    const next = writeCandidate(join(root, "clossys"), "writer", "strings.site", "site", readFileSync(join(strings, current), "utf8").replace("Pages assembled from records", "Pages reinstalled from a new pin")).name;
+    await certifySlots(root, "writer", { "strings.site": [next] });
+    const pinned = await runPinCli(["writer/strings.site", next.replace(/\.md$/, ""), "--by", "planner:SITE-TEMPLATE", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
+    expect(pinned.exitCode, pinned.message).toBe(0);
     // Until it is reinstalled, the installed page module is stale and the check run says so.
     expect((await install(root, app, true)).files.filter(file => file.state === "drift").map(file => file.file)).toContain("clossys/pages/home.tsx");
     expect(blocking(await install(root, app))).toEqual([]);
