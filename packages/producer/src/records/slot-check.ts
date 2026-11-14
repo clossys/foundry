@@ -2,7 +2,8 @@
  * `clossys check --slots [--readiness]`: the slot model's structure and coverage.
  *
  * check: folder == agents/<agent>/<slot-id> for every IA slot, slot.json ia == ia.json position, one pin, pin hash matches, a single `source`
- * key, no candidate-side status, inputs/uses name real slots, no orphans.
+ * key, no candidate-side status, inputs/uses name real slots, no orphans (ledger.json is a record of
+ * the slot folder and the agent tree, records/ledger.ts).
  */
 import { join } from "node:path";
 import { sha256Hex } from "./hash.js";
@@ -11,6 +12,7 @@ import {
   slotPositions, validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotModelIssue,
 } from "./slot-model/index.js";
+import { LEDGER_FILE } from "./ledger.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readiness, slotIndex, type Readiness } from "./slots.js";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -77,13 +79,13 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
           else if (sha256Hex(readModelBytes(join(candidatesDir(dir), pin.candidate))) !== pin.sha256) issues.push({ code: "pin-hash", path: `${rel}/${PIN_FILE}`, message: `${pin.candidate} bytes do not match the pinned sha256` });
         }
       }
-      for (const name of list(dir)) if (![SLOT_FILE, PIN_FILE, CANDIDATES_DIR].includes(name) && !/^pin.*\.json$/.test(name)) issues.push({ code: "orphan", path: `${rel}/${name}`, message: `unexpected entry in slot folder ${id}` });
+      for (const name of list(dir)) if (![SLOT_FILE, PIN_FILE, CANDIDATES_DIR, LEDGER_FILE].includes(name) && !/^pin.*\.json$/.test(name)) issues.push({ code: "orphan", path: `${rel}/${name}`, message: `unexpected entry in slot folder ${id}` });
     }
     // Orphans: agent-folder entries that are not an IA slot of this agent. The
     // layout is flat (agents/<agent>/<slot-id>), so grouping never shows up as
     // folders; `_`-prefixed folders (e.g. `_evidence`) are explicitly non-slot.
     for (const name of list(base)) {
-      if (name === IA_FILE || AGENT_FILES[agent].includes(name)) continue;
+      if (name === IA_FILE || name === LEDGER_FILE || AGENT_FILES[agent].includes(name)) continue;
       if (isNonSlotEntry(name) && isDir(join(base, name))) continue;
       if (positions.has(name)) continue;
       const home = where.get(name);

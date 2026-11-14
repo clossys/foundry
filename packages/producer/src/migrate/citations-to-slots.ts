@@ -131,7 +131,7 @@ export function applyCitationsToSlots(consumer: string, plan: CitationsPlan, rec
   const refused: CitationFinding[] = [];
   for (const change of plan.changes) {
     let touched: RewrittenFile[];
-    try { touched = rewriteCitationsInPlace(consumer, change.agent, change.slot, { candidates: change.candidates, ...(change.pin ? { pin: { before: change.pin.before, after: change.pin.after } } : {}) }); }
+    try { touched = rewriteCitationsInPlace(consumer, change.agent, change.slot, { candidates: change.candidates, ...(change.pin ? { pin: { before: change.pin.before, after: change.pin.after } } : {}) }, record); }
     catch (error) { refused.push({ agent: change.agent, slot: change.slot, message: (error as Error).message }); continue; }
     if (touched.length) appendMigrationEvents(consumer, "citations-to-slots", touched, record);
   }

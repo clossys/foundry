@@ -24,6 +24,11 @@ export interface SlotSpec {
   candidates?: Record<string, unknown>;
   /** retired/<name> → text or JSON value. */
   retired?: Record<string, unknown>;
+  /**
+   * ledger.json: absent ("auto") writes the ledger that proves the folder (R14.1, R02.3, R08.2): a
+   * `slot` event for slot.json, a `submit` per candidate and a `pin` event mirroring pin.json. false
+   * writes none; any other value is written as is.
+   */
   ledger?: unknown;
   /** Extra files in the slot folder. */
   files?: Record<string, unknown>;
@@ -36,6 +41,8 @@ export interface FixtureExtras {
   agentRetired?: Partial<Record<Agent, Record<string, unknown>>>;
   /** Root package-lock.json; default locks react@19.0.0. */
   lock?: unknown;
+  /** agents/<agent>/ledger.json: default an `ia` event recording ia.json; false writes none; a value is written as is. */
+  agentLedger?: Partial<Record<Agent, unknown>>;
 }
 
 const KIND: Record<Agent, string> = { director: "brief", designer: "element", writer: "strings", publisher: "page", producer: "seat" };
@@ -49,6 +56,31 @@ const body = (value: unknown) => (typeof value === "string" ? value : `${JSON.st
 const write = (path: string, value: unknown) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, body(value)); };
 
 export const AT = "2026-11-13T00:00:00Z";
+
+/** The sha256 every fixture ledger event's skill carries; contextOf's skillShas knows only it (R14.2). */
+export const FIXTURE_SKILL_SHA = sha("fixture action skill\n");
+/** One deterministic fixture ledger event. */
+export function ledgerEvent(op: string, verb: string, skill: string, fields: Record<string, unknown> = {}, records?: { file: string; sha256: string | null }[]): Record<string, unknown> {
+  return { op, at: AT, by: "planner", verb, skill: { path: skill, sha256: FIXTURE_SKILL_SHA }, model: "none", tier: "none", ...fields, ...(records ? { records } : {}) };
+}
+export const ledgerDoc = (events: unknown[]) => ({ schema: "clossys.ledger/1", events });
+
+/** The ledger that proves a written slot folder: slot.json, each candidate's bytes and the pin. */
+function autoLedger(agent: Agent, written: { slot?: string; candidates: [string, string][]; pin?: { text: string; value: unknown } }): Record<string, unknown> {
+  const events: unknown[] = [];
+  if (written.slot !== undefined) events.push(ledgerEvent("slot", "ia", "packages/producer/actions/ia/skill.md", {}, [{ file: "slot.json", sha256: sha(written.slot) }]));
+  for (const [name, text] of written.candidates) events.push(ledgerEvent("submit", "submit", `packages/${agent}/actions/${agent}.candidates/skill.md`, { name, sha256: sha(text) }));
+  if (written.pin) {
+    const pin = (written.pin.value !== null && typeof written.pin.value === "object" ? written.pin.value : {}) as Record<string, unknown>;
+    const fields: Record<string, unknown> = {};
+    for (const key of ["candidate", "sha256", "decidedBy", "basis"]) if (key in pin) fields[key] = pin[key];
+    const event = ledgerEvent("pin", "pin", `packages/producer/actions/pin.${agent}/skill.md`, fields, [{ file: "pin.json", sha256: sha(written.pin.text) }]);
+    if (typeof pin.at === "string") event.at = pin.at;
+    if (typeof pin.decidedBy === "string") event.by = pin.decidedBy;
+    events.push(event);
+  }
+  return ledgerDoc(events);
+}
 export function validPin(candidate: string, text: string): Record<string, unknown> {
   return { candidate, sha256: sha(text), decidedBy: "planner", basis: "planner", at: AT };
 }
@@ -99,22 +131,28 @@ export function writeWorkspace(spec: WorkspaceSpec, extras: FixtureExtras = {}):
     const agentAbs = join(consumer, "agents", agent);
     mkdirSync(agentAbs, { recursive: true });
     const live = Object.entries(slots).filter(([, slot]) => slot.live !== false).map(([id]) => id);
-    write(join(agentAbs, "ia.json"), {
+    const ia = body({
       schema: "clossys.ia/1", source: "fixture#test", extensions: FOUNDRY_PLACED.includes(agent) ? live : [],
       nodes: [{ id: "root", label: "Root", children: [{ id: "all", label: "All", slots: live }] }],
     });
+    write(join(agentAbs, "ia.json"), ia);
+    const agentLedger = extras.agentLedger && agent in extras.agentLedger ? extras.agentLedger[agent] : ledgerDoc([ledgerEvent("ia", "ia", "packages/producer/actions/ia/skill.md", {}, [{ file: "ia.json", sha256: sha(ia) }])]);
+    if (agentLedger !== false) write(join(agentAbs, "ledger.json"), agentLedger);
     for (const [name, value] of Object.entries(extras.agentRetired?.[agent] ?? {})) write(join(agentAbs, "retired", name), value);
     for (const [id, slot] of Object.entries(slots)) {
       const dir = join(agentAbs, id);
       mkdirSync(dir, { recursive: true });
-      if (slot.slot !== false) write(join(dir, "slot.json"), slot.slot ?? slotDoc(agent, id));
+      const slotText = slot.slot === false ? undefined : body(slot.slot ?? slotDoc(agent, id));
+      if (slotText !== undefined) write(join(dir, "slot.json"), slotText);
       const candidates = Object.entries(slot.candidates ?? {});
       for (const [name, value] of candidates) write(join(dir, "candidates", name), value);
       const pin = slot.pin ?? "auto";
-      if (pin === "auto" && candidates.length) write(join(dir, "pin.json"), validPin(candidates[0]![0], body(candidates[0]![1])));
-      else if (pin !== "auto" && pin !== false) write(join(dir, "pin.json"), pin);
+      const pinValue = pin === "auto" ? (candidates.length ? validPin(candidates[0]![0], body(candidates[0]![1])) : undefined) : pin === false ? undefined : pin;
+      if (pinValue !== undefined) write(join(dir, "pin.json"), pinValue);
       for (const [name, value] of Object.entries(slot.retired ?? {})) write(join(dir, "retired", name), value);
-      if (slot.ledger !== undefined) write(join(dir, "ledger.json"), slot.ledger);
+      const ledger = slot.ledger !== undefined ? slot.ledger : slotText === undefined && !candidates.length && pinValue === undefined ? false
+        : autoLedger(agent, { ...(slotText !== undefined ? { slot: slotText } : {}), candidates: candidates.map(([name, value]) => [name, body(value)]), ...(pinValue !== undefined ? { pin: { text: body(pinValue), value: pinValue } } : {}) });
+      if (ledger !== false) write(join(dir, "ledger.json"), ledger);
       for (const [name, value] of Object.entries(slot.files ?? {})) write(join(dir, name), value);
     }
   }
@@ -126,8 +164,11 @@ export const NO_HISTORY: CandidateHistory = { available: true, changes: new Map(
 /** The context over a written spec; history defaults to a clean one (every file unchanged). */
 export function contextOf(spec: WorkspaceSpec, extras: FixtureExtras = {}, history: CandidateHistory = NO_HISTORY): ConstitutionContext {
   const { root, consumer } = writeWorkspace(spec, extras);
-  return buildContext(root, consumer, { history: () => history, foundryLeaves: NO_FOUNDRY_LEAVES });
+  return buildContext(root, consumer, { history: () => history, foundryLeaves: NO_FOUNDRY_LEAVES, skillShas: FIXTURE_SKILL_SHAS });
 }
+
+/** The fixture's only known action skill state (R14.2). */
+export const FIXTURE_SKILL_SHAS = (): ReadonlySet<string> => new Set([FIXTURE_SKILL_SHA]);
 
 /** No Foundry leaves: the fixture places every Director, Designer and Writer slot as an extension instead. */
 export const NO_FOUNDRY_LEAVES = (): ReadonlySet<string> => new Set();

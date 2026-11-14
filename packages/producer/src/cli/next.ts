@@ -18,7 +18,7 @@
  * and its run record keeps the model, tier, basis, ladder, skill file and output file with their sha256.
  */
 import { createHash } from "node:crypto";
-import { readFileSync, unlinkSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { CANDIDATE_NAME, KIND_EXT, SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
@@ -26,7 +26,7 @@ import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { readCandidate, readSlot, readSlotEntry } from "../records/slots.js";
-import { writeCandidate } from "../records/slot-write.js";
+import { SLOT_LOCK, writeCandidate } from "../records/slot-write.js";
 import { nextPacket, openItems, openPackets, skillFile } from "../pipeline/chain.js";
 import type { Packet } from "../pipeline/chain.js";
 import type { Step } from "../pipeline/define.js";
@@ -225,20 +225,26 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
     if (held === digest) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
   }
   // The slot model check is the output's check: a submission may not add an issue the model did not have.
-  const before = new Set(checkSlotModel(consumer).map(issue => `${issue.code} ${issue.path} ${issue.message}`));
+  // It runs inside the writer's slot lock, so the lock folder itself is not this submission's issue.
+  const issueKeys = () => checkSlotModel(consumer).map(issue => `${issue.code} ${issue.path} ${issue.message}`);
+  const lockPath = `agents/${agent}/${slot}/${SLOT_LOCK}`;
+  const before = new Set(issueKeys());
+  const skill = { path: contractSkill, sha256: sha(skillBytes) };
+  // The run decision is the submit event's provenance in the slot ledger (records/ledger.ts), not only the run record.
   let written: { name: string; sha256: string };
-  try { written = writeCandidate(consumer, agent as SlotAgent, slot, stem, content, { canonical: true }); }
-  catch (error) { return reject(error instanceof Error ? error.message : String(error)); }
+  try {
+    written = writeCandidate(consumer, agent as SlotAgent, slot, stem, content, {
+      canonical: true,
+      provenance: { verb: "submit", by: flags.basis === "agent" ? `agent:${owning.id}` : flags.basis!, skill, model: flags.model!, tier: flags.tier! },
+      fields: { basis: flags.basis!, ladder: ladder! },
+      verify: () => issueKeys().filter(issue => !before.has(issue) && !issue.startsWith(`orphan ${lockPath} `)),
+    });
+  } catch (error) { return reject(error instanceof Error ? error.message : String(error)); }
   const writtenFile = join(candidatesDir(slotDir(consumer, agent as SlotAgent, slot)), written.name);
-  const added = checkSlotModel(consumer).map(issue => `${issue.code} ${issue.path} ${issue.message}`).filter(issue => !before.has(issue));
-  if (added.length) {
-    unlinkSync(writtenFile);
-    return reject(`${written.name} fails the slot model check: ${added.slice(0, 5).join("; ")}`);
-  }
   const outputPath = workspacePath(root, writtenFile) ?? `clossys/agents/${agent}/${slot}/candidates/${written.name}`;
   const runDecision = {
     model: flags.model!, tier: flags.tier!, basis: flags.basis!, ladder: ladder!,
-    skill: { path: contractSkill, sha256: sha(skillBytes) },
+    skill,
     output: { path: outputPath, sha256: written.sha256 },
   };
   return {

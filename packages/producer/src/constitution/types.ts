@@ -46,6 +46,8 @@ export interface CandidateRecord {
 export interface JsonRecord {
   readonly path: string;
   readonly text: string;
+  /** Hex sha256 of the file bytes (absent when unreadable). */
+  readonly sha256?: string;
   readonly value?: unknown;
   readonly error?: string;
 }
@@ -81,6 +83,8 @@ export interface AgentRecord {
   /** Workspace-relative agent folder path. */
   readonly dir: string;
   readonly ia?: JsonRecord;
+  /** The agent tree's ledger.json (records/ledger.ts). */
+  readonly ledger?: JsonRecord;
   /** Slot ids ia.json places, in IA order (read leniently: an invalid IA still places its ids). */
   readonly liveIds: readonly string[];
   /** Every folder in the agent tree, by name. */
@@ -95,7 +99,7 @@ export interface AgentRecord {
  * One commit's change to one path (git `--raw --no-renames`), oldest first per path. `from` and
  * `to` are the path's git blob ids before and after the change, when the log carried them.
  */
-export interface PathChange { readonly commit: string; readonly status: "A" | "M" | "D" | "T"; readonly from?: string; readonly to?: string }
+export interface PathChange { readonly commit: string; readonly status: "A" | "M" | "D" | "T"; readonly from?: string; readonly to?: string; /** The change is a merge commit's diff against its first parent. */ readonly merge?: true }
 
 /** The migration manifest (`<consumer>/evidence/migrations.json`, records/migrations.ts), as read for R08.2. */
 export interface MigrationsRecord {
@@ -134,6 +138,11 @@ export interface ConstitutionContext {
   readonly migrations?: MigrationsRecord;
   /** The Foundry-placed leaf ids of a Foundry-placed agent (R01.5); read lazily, once per agent. Throws when the Foundry IA is unreadable. */
   readonly foundryLeaves: (agent: FoundryAgent) => ReadonlySet<string>;
+  /**
+   * The sha256s an action skill path is known by (R14.2): its installed file's, plus every state
+   * src/constitution/skill-hashes.json lists. Read lazily, once per path; empty for an unknown skill.
+   */
+  readonly skillShas: (path: string) => ReadonlySet<string>;
 }
 
 /** The agents whose IA Foundry places (R01.5). */

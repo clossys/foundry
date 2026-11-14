@@ -37,25 +37,21 @@
     "id": "R02",
     "statement": "Pins and order. Pins carry a closed basis and decidedBy, upstream is pinned before downstream, and each pin equals its last ledger pin event.",
     "scope": "all-records",
-    "status": "pending",
-    "owner": "W2-B",
+    "status": "enforced",
     "check": "src/constitution/checks/R02-pins-order.ts",
-    "test": "src/constitution/constitution.test.ts",
+    "test": "src/constitution/checks/R02-pins-order.test.ts",
     "checks": [
       {
         "id": "R02.1",
-        "status": "pending",
-        "owner": "W2-B"
+        "status": "enforced"
       },
       {
         "id": "R02.2",
-        "status": "pending",
-        "owner": "W2-B"
+        "status": "enforced"
       },
       {
         "id": "R02.3",
-        "status": "pending",
-        "owner": "W2-B"
+        "status": "enforced"
       }
     ]
   },
@@ -331,25 +327,21 @@
     "id": "R14",
     "statement": "Provenance. Every record byte state matches a ledger event naming its verb, action skill, model and tier.",
     "scope": "all-records",
-    "status": "pending",
-    "owner": "W2-B",
+    "status": "enforced",
     "check": "src/constitution/checks/R14-provenance.ts",
-    "test": "src/constitution/constitution.test.ts",
+    "test": "src/constitution/checks/R14-provenance.test.ts",
     "checks": [
       {
         "id": "R14.1",
-        "status": "pending",
-        "owner": "W2-B"
+        "status": "enforced"
       },
       {
         "id": "R14.2",
-        "status": "pending",
-        "owner": "W2-B"
+        "status": "enforced"
       },
       {
         "id": "R14.3",
-        "status": "pending",
-        "owner": "W2-B"
+        "status": "enforced"
       }
     ]
   }
