@@ -8174,7 +8174,19 @@
     "cli": {
       "ia": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8183,12 +8195,40 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
       "evidence": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8197,12 +8237,40 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
       "workspace.config": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8211,12 +8279,40 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
       "seats": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8225,12 +8321,40 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
       "rules": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8239,6 +8363,22 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
@@ -8616,7 +8756,19 @@
       ],
       "writer.approve": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8625,6 +8777,22 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
