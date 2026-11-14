@@ -199,6 +199,10 @@
         "id": "R07.5",
         "status": "pending",
         "owner": "W2-C"
+      },
+      {
+        "id": "R07.6",
+        "status": "enforced"
       }
     ]
   },
