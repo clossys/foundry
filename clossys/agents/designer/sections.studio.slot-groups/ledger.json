@@ -7,8 +7,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -26,8 +26,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -45,8 +45,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -64,8 +64,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -83,8 +83,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -107,8 +107,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -134,8 +134,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -158,8 +158,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -177,8 +177,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -196,8 +196,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -215,8 +215,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -234,8 +234,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -261,8 +261,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -280,8 +280,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -299,8 +299,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -318,8 +318,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -342,8 +342,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -369,8 +369,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -388,8 +388,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -415,8 +415,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -441,8 +441,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -459,8 +459,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -485,8 +485,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -512,8 +512,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
@@ -536,8 +536,8 @@
       "by": "history:claude",
       "verb": "migrate",
       "skill": {
-        "path": "packages/producer/actions/migrate/skill.md",
-        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
       },
       "model": "none",
       "tier": "none",
