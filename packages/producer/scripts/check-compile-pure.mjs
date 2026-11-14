@@ -33,6 +33,7 @@ import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, 
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { pickRepin, repinFinding } from './compile-pure-repin.mjs';
 
 // --root <dir>: check another checkout laid out like this one (<dir>/packages/producer and <dir>/clossys).
 const rootAt = process.argv.indexOf('--root');
@@ -277,24 +278,29 @@ try {
         const declaredKeys = text => [...text.matchAll(/<!--\s*(\{[^\n]*?\})\s*-->/g)].flatMap(([, meta]) => { try { const id = JSON.parse(meta).id; return typeof id === 'string' ? [id] : []; } catch { return []; } });
         const rootD = copyRoot('root-d');
         let repinned;
+        const skipped = [];
         for (const path of [...inputs.keys()].filter(path => path.startsWith('clossys/agents/writer/') && path.endsWith('/pin.json'))) {
           const pin = JSON.parse(readFileSync(join(rootD, path), 'utf8'));
           const pinnedFile = join(rootD, dirname(path), 'candidates', pin.candidate);
           if (!existsSync(pinnedFile) || !declaredKeys(readFileSync(pinnedFile, 'utf8')).some(id => rendered.has(id))) continue;
           const dir = join(rootD, dirname(path), 'candidates');
-          const other = existsSync(dir) ? readdirSync(dir).filter(name => name !== pin.candidate && name.endsWith('.md')).sort().pop() : undefined;
-          if (!other) continue;
+          const pick = existsSync(dir) ? pickRepin(readdirSync(dir), pin.candidate, name => readFileSync(join(dir, name))) : { none: true };
+          if (pick.skip) { skipped.push(dirname(path).split('/').pop()); console.log(`decisions: SKIP ${pick.skip} ${dirname(path).split('/').pop()}`); continue; }
+          if (!pick.other) continue;
+          const other = pick.other;
           const bytes = readFileSync(join(dir, other));
           writeFileSync(join(rootD, path), `${JSON.stringify({ ...pin, candidate: other, sha256: sha256(bytes) }, null, 2)}\n`);
           repinned = `${path} -> ${other}`;
           break;
         }
-        if (!repinned) finding('decisions', 'no Writer pin whose candidate feeds the compiled copy has a second candidate to re-pin');
+        if (!repinned && skipped.length) console.log(`decisions: SKIP no-distinct-candidate: no rendered Writer pin has a byte-distinct candidate (${skipped.join(', ')})`);
+        else if (!repinned) finding('decisions', 'no Writer pin whose candidate feeds the compiled copy has a second candidate to re-pin');
         else {
           const d = compile(rootD, join(scratch, 'out-d'));
           if (d) {
             const changed = treeDiff(a, d).filter(line => !line.endsWith('compile.lock.json'));
-            if (!changed.length) finding('decisions', `re-pinning ${repinned} did not change the rendered output`);
+            const missed = repinFinding(repinned, changed.length);
+            if (missed) finding('decisions', missed);
             else console.log(`decisions: re-pinning ${repinned} changed ${changed.length} output files`);
           }
         }
