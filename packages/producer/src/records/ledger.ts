@@ -44,6 +44,12 @@ export type RecordFile = (typeof RECORD_FILES)[number];
 
 /** `packages/<pkg>/actions/<step>/skill.md`: the action skill an event ran under. */
 export const SKILL_PATH = /^packages\/([a-z][a-z0-9-]*)\/actions\/([a-z0-9][a-z0-9.-]*)\/skill\.md$/;
+/**
+ * `packages/<pkg>/actions/<step>/action.json`: a plumb action's contract. A plumb action carries no
+ * skill (docs/step-standard.md), so its events cite the contract instead; R14.2 accepts that only
+ * when the actions registry has the step as `plumb` (a decide action's events cite its skill.md).
+ */
+export const ACTION_CONTRACT_PATH = /^packages\/([a-z][a-z0-9-]*)\/actions\/([a-z0-9][a-z0-9.-]*)\/action\.json$/;
 const SHA = /^[a-f0-9]{64}$/;
 const AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
 
@@ -71,18 +77,22 @@ const text = (value: unknown) => typeof value === "string" && value.length > 0;
 
 /** The skill path of an action step (`packages/<pkg>/actions/<step>/skill.md`). */
 export const skillPath = (pkg: string, step: string) => `packages/${pkg}/actions/${step}/skill.md`;
+/** The contract path of a plumb action step (`packages/<pkg>/actions/<step>/action.json`), which its events cite. */
+export const actionContractPath = (pkg: string, step: string) => `packages/${pkg}/actions/${step}/action.json`;
 
 /** The installed @clossys/producer package root (src/records and dist/records both resolve to it). */
 export const PRODUCER_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 /**
- * The installed file of an action skill named by its ledger path: the Producer's own under
- * `producerRoot`, any other package's beside it (`<producerRoot>/../<pkg>`). Path arithmetic only.
+ * The installed file of an action skill (or a plumb action's contract) named by its ledger path:
+ * the Producer's own under `producerRoot`, any other package's beside it (`<producerRoot>/../<pkg>`).
+ * Path arithmetic only.
  */
 export function skillFile(path: string, producerRoot = PRODUCER_ROOT): string {
-  const match = SKILL_PATH.exec(path);
-  if (!match) throw new Error(`not an action skill path (packages/<pkg>/actions/<step>/skill.md): ${path}`);
+  const match = SKILL_PATH.exec(path) ?? ACTION_CONTRACT_PATH.exec(path);
+  if (!match) throw new Error(`not an action skill path (packages/<pkg>/actions/<step>/skill.md) or action contract path (…/action.json): ${path}`);
   const [, pkg, step] = match;
-  return pkg === "producer" ? join(producerRoot, "actions", step!, "skill.md") : join(producerRoot, "..", pkg!, "actions", step!, "skill.md");
+  const file = path.endsWith("/action.json") ? "action.json" : "skill.md";
+  return pkg === "producer" ? join(producerRoot, "actions", step!, file) : join(producerRoot, "..", pkg!, "actions", step!, file);
 }
 
 /** Issues with the provenance pair (R14.3): model and tier both `none`, or a model with a tier. */
@@ -108,7 +118,7 @@ export function eventIssues(event: unknown, scope: "slot" | "agent" = "slot"): s
   if (!text(event.by)) issues.push("names no by");
   if (!(VERBS as readonly unknown[]).includes(event.verb)) issues.push(`verb ${String(event.verb)} is not in the verb table`);
   const skill = event.skill;
-  if (!isObject(skill) || typeof skill.path !== "string" || !SKILL_PATH.test(skill.path)) issues.push("skill.path is not packages/<pkg>/actions/<step>/skill.md");
+  if (!isObject(skill) || typeof skill.path !== "string" || !(SKILL_PATH.test(skill.path) || ACTION_CONTRACT_PATH.test(skill.path))) issues.push("skill.path is not packages/<pkg>/actions/<step>/skill.md (or a plumb action's action.json)");
   else if (!(skill.sha256 === null || (typeof skill.sha256 === "string" && SHA.test(skill.sha256)))) issues.push("skill.sha256 is not 64 hex or null");
   issues.push(...modelTierIssues(event));
   if (event.records !== undefined) {

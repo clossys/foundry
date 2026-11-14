@@ -3,7 +3,7 @@
  * record that predates it, from git history only. Deterministic plumbing: no model, no judgement, no
  * hand-written records; every ledger is written by records/slot-write.ts `writeBackfilledLedger`.
  *
- * Events (verb `migrate`, the migrate action skill, model none, tier none, `backfill {commit, at[,
+ * Events (verb `migrate`, the plumb migrate action's action.json, model none, tier none, `backfill {commit, at[,
  * authoredIn]}` naming the git evidence; `by` is the author kind git shows):
  * - a candidate's `submit {name, sha256}` at the change constitution R08.2 treats as its add (the last
  *   side-line `A`, else a merge `A`), then a `migrate {migration, files}` for each later change the
@@ -23,7 +23,7 @@
  * blob (`authoredIn`), else to the merge. Changes at or after the commit that added a folder's
  * ledger.json are never backfilled, and a folder whose ledger already holds an event without
  * `backfill` is kept as it is. Output depends only on git objects, the manifest and the installed
- * migrate skill: a second run plans no change.
+ * migrate action.json: a second run plans no change.
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -33,14 +33,14 @@ import { addIndex } from "../constitution/checks/R08-immutability.js";
 import { HISTORY_LOG_ARGS, parseNameStatusLog } from "../constitution/git.js";
 import { slotWriteKind } from "../constitution/green.js";
 import type { PathChange } from "../constitution/types.js";
-import { NONE, RETIRE_EVENT_CODES, skillPath, type LedgerEvent, type LedgerRecordState, type Provenance } from "../records/ledger.js";
+import { NONE, RETIRE_EVENT_CODES, actionContractPath, type LedgerEvent, type LedgerRecordState, type Provenance } from "../records/ledger.js";
 import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../records/migrations.js";
 import { CANDIDATE_NAME, MODEL_AGENTS, type ModelAgent } from "../records/slot-model/index.js";
 import { buildLedgerEvent, skillState, writeBackfilledLedger, type BackfillOutcome } from "../records/slot-write.js";
 import { isModelDir, listModelDir } from "../records/slots.js";
 
-/** The action skill every backfilled event runs under. */
-const MIGRATE_SKILL = skillPath("producer", "migrate");
+/** What every backfilled event cites: migrate is a plumb action, so its action.json, not a skill (R14.2). */
+const MIGRATE_ACTION = actionContractPath("producer", "migrate");
 const ZERO = /^0+$/;
 
 export interface BackfillFolder {
@@ -166,7 +166,7 @@ export function planLedgerBackfill(consumer: string): LedgerPlan {
     const side = (topo.get(path) ?? []).find(item => !item.merge && item.to === change.to && item.status !== "D");
     return side && side.commit !== change.commit ? side.commit : undefined;
   };
-  const who: Provenance = { verb: "migrate", by: "", skill: skillState(MIGRATE_SKILL), model: NONE, tier: NONE };
+  const who: Provenance = { verb: "migrate", by: "", skill: skillState(MIGRATE_ACTION), model: NONE, tier: NONE };
   const counts: Record<string, number> = {};
   const count = (key: string) => { counts[key] = (counts[key] ?? 0) + 1; };
   const gaps: BackfillGap[] = [], refused: BackfillGap[] = [], planned: BackfillFolder[] = [];

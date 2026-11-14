@@ -25,11 +25,12 @@
         "by": { "type": "string", "minLength": 1 },
         "verb": { "enum": ["submit", "options", "verdict", "pick", "pin", "retire", "reissue", "ia", "migrate", "standard", "critique", "request", "task", "triage"] },
         "skill": {
+          "description": "The action skill the event ran under, or, for a plumb action (which carries no skill), its action.json; constitution R14.2 holds an action.json citation to a step the actions registry has as plumb.",
           "type": "object",
           "required": ["path", "sha256"],
           "additionalProperties": false,
           "properties": {
-            "path": { "type": "string", "pattern": "^packages/[a-z][a-z0-9-]*/actions/[a-z0-9][a-z0-9.-]*/skill\\.md$" },
+            "path": { "type": "string", "pattern": "^packages/[a-z][a-z0-9-]*/actions/[a-z0-9][a-z0-9.-]*/(skill\\.md|action\\.json)$" },
             "sha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] }
           }
         },

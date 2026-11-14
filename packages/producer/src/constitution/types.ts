@@ -144,10 +144,15 @@ export interface ConstitutionContext {
   /** The Foundry-placed leaf ids of a Foundry-placed agent (R01.5); read lazily, once per agent. Throws when the Foundry IA is unreadable. */
   readonly foundryLeaves: (agent: FoundryAgent) => ReadonlySet<string>;
   /**
-   * The sha256s an action skill path is known by (R14.2): its installed file's, plus every state
-   * src/constitution/skill-hashes.json lists. Read lazily, once per path; empty for an unknown skill.
+   * The sha256s an action skill path (or a plumb action's action.json path) is known by (R14.2):
+   * its installed file's, plus every state src/constitution/skill-hashes.json lists. Read lazily, once per path; empty for an unknown skill.
    */
   readonly skillShas: (path: string) => ReadonlySet<string>;
+  /**
+   * The registry kind of an action step (R14.2): `plumb`, `decide:judgment` or `decide:creative`
+   * from pipeline/actions.json; undefined for a step the registry does not have. Read lazily, once.
+   */
+  readonly actionKind: (pkg: string, step: string) => string | undefined;
 }
 
 /** The agents whose IA Foundry places (R01.5). */

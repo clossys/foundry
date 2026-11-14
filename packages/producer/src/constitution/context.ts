@@ -11,6 +11,7 @@ import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../reco
 import { agentDir, candidatesDir, designerIa, directorIa, MODEL_AGENTS, writerIa, type FoundryIa, type ModelAgent } from "../records/slot-model/index.js";
 import { isModelDir, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
 import { skillFile } from "../records/ledger.js";
+import { loadActions } from "../pipeline/actions.js";
 import { readCandidateHistory } from "./git.js";
 import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, FoundryAgent, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
 
@@ -33,20 +34,35 @@ function readJsonRecord(abs: string, rel: string): JsonRecord {
   catch (error) { return { path: rel, text: read.text, sha256, error: `not JSON: ${errorText(error)}` }; }
 }
 
-/** src/constitution/skill-hashes.json (scripts/generate-skill-hashes.mjs): every past state of every action skill. */
+/**
+ * src/constitution/skill-hashes.json (scripts/generate-skill-hashes.mjs): every past state of every
+ * action skill (`skills`) and of every plumb action's action.json (`actions`), by path.
+ */
 export function readSkillHashes(url: URL = new URL("../../src/constitution/skill-hashes.json", import.meta.url)): Map<string, Set<string>> {
   const known = new Map<string, Set<string>>();
   let value: unknown;
   try { value = JSON.parse(readFileSync(url, "utf8")); } catch { return known; }
-  const skills = (value as { skills?: unknown } | null)?.skills;
-  if (!skills || typeof skills !== "object" || Array.isArray(skills)) return known;
-  for (const [path, list] of Object.entries(skills as Record<string, unknown>)) {
-    if (Array.isArray(list)) known.set(path, new Set(list.filter((sha): sha is string => typeof sha === "string")));
+  for (const key of ["skills", "actions"] as const) {
+    const paths = (value as Record<string, unknown> | null)?.[key];
+    if (!paths || typeof paths !== "object" || Array.isArray(paths)) continue;
+    for (const [path, list] of Object.entries(paths as Record<string, unknown>)) {
+      if (Array.isArray(list)) known.set(path, new Set(list.filter((sha): sha is string => typeof sha === "string")));
+    }
   }
   return known;
 }
 
-/** The sha256s an action skill is known by: the installed file's, plus its skill-hashes.json history. */
+/**
+ * The kind of every registered action (pipeline/actions.json, the registry snapshot): `<pkg>/<step>`
+ * -> `plumb`, `decide:judgment` or `decide:creative`; undefined for a step the registry does not have.
+ */
+export function installedActionKinds(): (pkg: string, step: string) => string | undefined {
+  const kinds = new Map<string, string>();
+  for (const action of loadActions()) kinds.set(`${action.package}/${action.contract.id}`, String(action.contract.kind));
+  return (pkg, step) => kinds.get(`${pkg}/${step}`);
+}
+
+/** The sha256s an action skill (or a plumb action's action.json) is known by: the installed file's, plus its skill-hashes.json history. */
 export function installedSkillShas(history: ReadonlyMap<string, ReadonlySet<string>> = readSkillHashes()): (path: string) => ReadonlySet<string> {
   return path => {
     const shas = new Set(history.get(path) ?? []);
@@ -114,6 +130,8 @@ export interface ContextOptions {
   readonly foundryLeaves?: (agent: FoundryAgent) => ReadonlySet<string>;
   /** Action skill sha256s (R14.2); tests substitute one. Defaults to the installed files plus skill-hashes.json. */
   readonly skillShas?: (path: string) => ReadonlySet<string>;
+  /** Action kinds (R14.2); tests substitute one. Defaults to the installed registry (pipeline/actions.json). */
+  readonly actionKind?: (pkg: string, step: string) => string | undefined;
 }
 
 const FOUNDRY_IA: Record<FoundryAgent, () => FoundryIa> = { director: directorIa, designer: designerIa, writer: writerIa };
@@ -184,5 +202,7 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
     if (!set) skills.set(path, set = (readSkill ??= installedSkillShas())(path));
     return set;
   };
-  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), ...(migrations ? { migrations } : {}), history: () => (history ??= read(root, consumer)), foundryLeaves, skillShas };
+  let kindOf = options.actionKind;
+  const actionKind = (pkg: string, step: string) => (kindOf ??= installedActionKinds())(pkg, step);
+  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), ...(migrations ? { migrations } : {}), history: () => (history ??= read(root, consumer)), foundryLeaves, skillShas, actionKind };
 }

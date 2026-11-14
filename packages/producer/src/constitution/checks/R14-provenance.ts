@@ -6,10 +6,13 @@
  *   missing, unreadable or malformed ledger proves nothing, so every record it should cover is a row;
  * - R14.2 every event names a verb from the verb table and an action skill whose sha256 is the
  *   installed file's or is listed in src/constitution/skill-hashes.json (ctx.skillShas); an event
- *   whose skill file was missing when it ran (sha256 null) is a row;
+ *   whose skill file was missing when it ran (sha256 null) is a row. A plumb action carries no skill
+ *   (docs/step-standard.md), so an event may instead cite `packages/<pkg>/actions/<step>/action.json`
+ *   with a known sha256, but only when the actions registry has that step as `plumb` (ctx.actionKind);
+ *   a decide action's events (and an unregistered step's) still cite its skill.md;
  * - R14.3 events that ran an LLM name the model and tier; deterministic verbs record none/none.
  */
-import { SKILL_PATH, VERBS, eventIssues, expectedCandidateSha, lastRecordState, ledgerEventsOf, modelTierIssues, type RecordFile } from "../../records/ledger.js";
+import { ACTION_CONTRACT_PATH, SKILL_PATH, VERBS, eventIssues, expectedCandidateSha, lastRecordState, ledgerEventsOf, modelTierIssues, type RecordFile } from "../../records/ledger.js";
 import type { AgentRecord, ConstitutionContext, JsonRecord, Row, RuleModule, SlotRecord } from "../types.js";
 import { allSlots, isObject, listed, row } from "./shared.js";
 
@@ -108,7 +111,13 @@ export function eventsNameSkill(ctx: ConstitutionContext): Row[] {
       const where = `events[${index}] (${String(event.op)})`;
       if (!(VERBS as readonly unknown[]).includes(event.verb)) issues.push(`${where} verb ${JSON.stringify(event.verb)} is not in the verb table`);
       const skill = event.skill;
-      if (!isObject(skill) || typeof skill.path !== "string" || !SKILL_PATH.test(skill.path)) { issues.push(`${where} names no action skill (packages/<pkg>/actions/<step>/skill.md)`); return; }
+      const noSkill = `${where} names no action skill (packages/<pkg>/actions/<step>/skill.md)`;
+      if (!isObject(skill) || typeof skill.path !== "string") { issues.push(noSkill); return; }
+      const contract = ACTION_CONTRACT_PATH.exec(skill.path);
+      if (contract) {
+        const kind = ctx.actionKind(contract[1]!, contract[2]!);
+        if (kind !== "plumb") { issues.push(`${where} cites ${skill.path}, but only a plumb action's events may cite its action.json; ${kind === undefined ? "the actions registry has no such step" : `the registry has it as ${kind}, whose events cite its skill.md`}`); return; }
+      } else if (!SKILL_PATH.test(skill.path)) { issues.push(noSkill); return; }
       if (skill.sha256 === null) { issues.push(`${where} ran ${skill.path} while that file was missing (skill.sha256 null)`); return; }
       if (typeof skill.sha256 !== "string" || !ctx.skillShas(skill.path).has(skill.sha256)) issues.push(`${where} skill ${skill.path} sha256 ${String(skill.sha256).slice(0, 12)} is neither the installed file's nor listed in skill-hashes.json`);
     });

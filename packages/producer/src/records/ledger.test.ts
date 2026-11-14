@@ -45,7 +45,7 @@ describe("ledger events (records/ledger.ts)", () => {
     expect(eventIssues(good)).toEqual([]);
     expect(eventIssues({ ...good, op: "dance", at: "today", by: "", verb: "sing", skill: { path: "x.md", sha256: null }, model: "claude", tier: "none", records: [{ file: "notes.md", sha256: null }] })).toEqual([
       "op dance is not a slot ledger op", "at is not an ISO timestamp", "names no by", "verb sing is not in the verb table",
-      "skill.path is not packages/<pkg>/actions/<step>/skill.md", "model claude with tier none is neither none/none nor a model with tier low|mid|high",
+      "skill.path is not packages/<pkg>/actions/<step>/skill.md (or a plumb action's action.json)", "model claude with tier none is neither none/none nor a model with tier low|mid|high",
       "records[] entries are {file: pin.json|slot.json|ia.json|policy.json, sha256: 64 hex or null}",
     ]);
     expect(eventIssues({ ...good, name: undefined, sha256: "short" })).toEqual(["submit needs name (candidate file name)", "submit needs sha256 (64 hex)"]);
@@ -84,6 +84,8 @@ describe("ledger events (records/ledger.ts)", () => {
     expect(skillPath("producer", "retire")).toBe("packages/producer/actions/retire/skill.md");
     expect(skillFile("packages/producer/actions/next/skill.md", "/p/producer/")).toBe("/p/producer/actions/next/skill.md");
     expect(skillFile("packages/designer/actions/pick.designer/skill.md", "/p/producer/")).toBe("/p/designer/actions/pick.designer/skill.md");
+    expect(skillFile("packages/producer/actions/migrate/action.json", "/p/producer/")).toBe("/p/producer/actions/migrate/action.json");
+    expect(skillFile("packages/writer/actions/writer.check/action.json", "/p/producer/")).toBe("/p/writer/actions/writer.check/action.json");
     expect(() => skillFile("docs/skill.md")).toThrow(/not an action skill path/);
     expect(existsSync(PRODUCER_ROOT)).toBe(true);
   });
@@ -115,6 +117,8 @@ describe("the single writer appends one ledger event per write", () => {
     expect(list[2]).toMatchObject({ by: "agent:director", candidate: "essence-v1.md", basis: "agent", skill: { path: "packages/director/actions/pick.director/skill.md" } });
     expect(list[4]).toMatchObject({ by: "owner", candidate: "essence-v2.md", basis: "picked", skill: { path: "packages/producer/actions/pin.director/skill.md" } });
     expect(list[7]).toMatchObject({ migration: "citations-to-slots", files: [{ name: "essence-v1.md", from: first.sha256, to: fileSha(join(dir, "candidates", "essence-v1.md")) }] });
+    // migrate is a plumb action with no skill: its events cite the installed action.json (R14.2).
+    expect(list[7]!.skill).toEqual({ path: "packages/producer/actions/migrate/action.json", sha256: fileSha(join(PRODUCER_ROOT, "actions", "migrate", "action.json")) });
     expect(list[8]).toMatchObject({ reason: "covered elsewhere", records: [{ file: "slot.json", sha256: fileSha(join(dir, "slot.json")) }, { file: "pin.json", sha256: null }] });
     expect(list[9]).toMatchObject({ name: "essence-v2.md", code: "superseded" });
     // Every record's last state is the bytes on disk, and every candidate's submit sha follows it (R14.1, R08.2).

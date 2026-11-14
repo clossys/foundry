@@ -156,7 +156,7 @@ describe("R08.2 edited in place", () => {
       // The slot ledger records the same rewrite (slot-write.ts rewriteCitationsInPlace appends it), carrying the submit sha.
       const ledgerPath = join(consumer, "agents/designer/ui.button/ledger.json");
       const ledger = JSON.parse(readFileSync(ledgerPath, "utf8")) as { events: unknown[] };
-      ledger.events.push(ledgerEvent("migrate", "migrate", "packages/producer/actions/migrate/skill.md", { migration: "citations-to-slots", files: [{ name: "button-v1.json", from: sha256Hex(before), to: sha256Hex(after) }] }));
+      ledger.events.push(ledgerEvent("migrate", "migrate", "packages/producer/actions/migrate/action.json", { migration: "citations-to-slots", files: [{ name: "button-v1.json", from: sha256Hex(before), to: sha256Hex(after) }] }));
       writeFileSync(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`);
       // Recording the same rewrite again adds nothing.
       expect(appendMigrationEvents(consumer, "citations-to-slots", [{ file: BUTTON_FILE, from: recorded[0]!.from, to: recorded[0]!.to }], { by: "planner", at: AT })).toEqual([]);

@@ -22,7 +22,7 @@ import {
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
 import {
-  LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, eventIssues, skillFile, skillPath,
+  LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
   type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
 } from "./ledger.js";
 import { fileState, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations, type FileState, type FormatMigration, type MigratedEvent, type MigrationsDoc } from "./migrations.js";
@@ -121,7 +121,7 @@ export function nextVersion(dir: string, candidates: readonly string[]): number 
 // The ledger: one event per write, appended under the lock that guards the write.
 // ---------------------------------------------------------------------------
 
-/** An action skill as an event records it: its path and the sha256 of the installed file (null when the file is missing; R14.2 reports it). */
+/** An action skill (or a plumb action's action.json) as an event records it: its path and the sha256 of the installed file (null when the file is missing; R14.2 reports it). */
 export function skillState(path: string): LedgerSkill {
   try { return { path, sha256: createHash("sha256").update(readFileSync(skillFile(path))).digest("hex") }; }
   catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return { path, sha256: null }; throw error; }
@@ -462,7 +462,8 @@ export function rewriteCitationsInPlace(consumer: string, agent: SlotAgent, id: 
     // what git sees for this change (records/migrations.ts).
     // The ledger's `migrate` event carries each rewritten candidate's sha256 from and to (R08.2 follows
     // a submit through it) and the pin's new bytes (R14.1).
-    const who = provenance({ verb: "migrate", by: input.by ?? "planner", skill: skillPath("producer", "migrate") }, given);
+    // migrate is a plumb action: its events cite its action.json, not a skill (R14.2).
+    const who = provenance({ verb: "migrate", by: input.by ?? "planner", skill: actionContractPath("producer", "migrate") }, given);
     readLedger(entry.dir, "slot");
     const touched: RewrittenFile[] = [];
     const files: { name: string; from: string; to: string }[] = [];

@@ -70,7 +70,7 @@ describe("R02.3 pin equals the last ledger decision", () => {
       const hero = spec.writer!["home.hero"]!;
       hero.candidates = { "hero-v1.md": migrated };
       hero.pin = { ...validPin("hero-v1.md", migrated) };
-      hero.ledger = ledgerDoc([submit, pinEvent({}), ledgerEvent("migrate", "migrate", "packages/producer/actions/migrate/skill.md", { migration: "citations-to-slots", files: [{ name: "hero-v1.md", from: sha(HERO), to: sha(migrated) }] })]);
+      hero.ledger = ledgerDoc([submit, pinEvent({}), ledgerEvent("migrate", "migrate", "packages/producer/actions/migrate/action.json", { migration: "citations-to-slots", files: [{ name: "hero-v1.md", from: sha(HERO), to: sha(migrated) }] })]);
     });
     expect(pinMatchesLedger(ctx)).toEqual([]);
   });

@@ -81,7 +81,7 @@ describe("clossys migrate ledger", () => {
     expect(events.map(event => [event.by, (event.backfill as { commit: string }).commit])).toEqual([
       ...Array(3).fill(["history:claude", fixture.first]), ["history:unattributed", second], ["history:unattributed", second],
     ]);
-    for (const event of events) expect(event).toMatchObject({ verb: "migrate", model: "none", tier: "none", skill: { path: "packages/producer/actions/migrate/skill.md" } });
+    for (const event of events) expect(event).toMatchObject({ verb: "migrate", model: "none", tier: "none", skill: { path: "packages/producer/actions/migrate/action.json" } });
     // A pin event carries the pin's own time (R02.3); the commit time stays in backfill.at.
     expect(events[4]).toMatchObject({ at: "2026-11-02T08:00:00Z", backfill: { at: "2026-11-01T10:02:00.000Z" } });
     expect(events[0]).toMatchObject({ at: "2026-11-01T10:01:00.000Z", sha256: sha(json(BUTTON_V1)) });

@@ -1,4 +1,7 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { skillFile } from "../../records/ledger.js";
 import { buildContext } from "../context.js";
 import { cleanSpec, contextOf, expectCatches, FIXTURE_SKILL_SHA, ledgerDoc, ledgerEvent, NO_FOUNDRY_LEAVES, NO_HISTORY, sha, validPin, writeWorkspace, type FixtureExtras, type WorkspaceSpec } from "../__fixtures__/workspace.js";
 import { R14, eventsNameSkill, llmNamesModel, recordsMatchLedger } from "./R14-provenance.js";
@@ -71,7 +74,7 @@ describe("R14.1 every record byte state matches a ledger event", () => {
       hero.candidates = { "hero-v1.md": rewritten };
       hero.pin = false;
       hero.slot = false;
-      hero.ledger = ledgerDoc([heroSubmit(), ledgerEvent("migrate", "migrate", "packages/producer/actions/migrate/skill.md", { migration: "citations-to-slots", files: [{ name: "hero-v1.md", from: sha(HERO), to: sha(rewritten) }] })]);
+      hero.ledger = ledgerDoc([heroSubmit(), ledgerEvent("migrate", "migrate", "packages/producer/actions/migrate/action.json", { migration: "citations-to-slots", files: [{ name: "hero-v1.md", from: sha(HERO), to: sha(rewritten) }] })]);
     });
     expect(recordsMatchLedger(ctx)).toEqual([]);
   });
@@ -107,6 +110,61 @@ describe("R14.2 every event names a verb and a known action skill", () => {
     const installed = eventsNameSkill(buildContext(root, consumer, { history: () => NO_HISTORY, foundryLeaves: NO_FOUNDRY_LEAVES }));
     expect(installed.length).toBeGreaterThan(0);
     expect(installed[0]!.reason).toMatch(/is neither the installed file's nor listed in skill-hashes\.json/);
+  });
+});
+
+describe("R14.2 a plumb action's events may cite its action.json instead of a skill", () => {
+  const MIGRATE_ACTION = "packages/producer/actions/migrate/action.json";
+  const migrateEvent = (skill: { path: string; sha256: string | null }) => ({ ...ledgerEvent("migrate", "migrate", MIGRATE_ACTION, { migration: "citations-to-slots", files: [] }), skill });
+  const heroLedger = (...events: Record<string, unknown>[]) => (spec: WorkspaceSpec) => { spec.writer!["home.hero"]!.ledger = ledgerDoc([heroSubmit(), ...events]); };
+
+  it("reads the step kinds from the installed actions registry", () => {
+    const ctx = clean();
+    expect(ctx.actionKind("producer", "migrate")).toBe("plumb");
+    expect(ctx.actionKind("producer", "pin.writer")).toBe("decide:judgment");
+    expect(ctx.actionKind("writer", "writer.candidates")).toBe("decide:creative");
+    expect(ctx.actionKind("producer", "no-such-step")).toBeUndefined();
+  });
+
+  it("passes a plumb event that cites its action.json with a known sha256", () => {
+    expect(eventsNameSkill(broken(heroLedger(migrateEvent({ path: MIGRATE_ACTION, sha256: FIXTURE_SKILL_SHA }))))).toEqual([]);
+  });
+
+  it("fails a decide event (or an unregistered step's) that cites action.json instead of its skill.md", () => {
+    const rows = expectCatches(eventsNameSkill, clean(), broken(heroLedger(
+      ledgerEvent("pin", "pin", "packages/producer/actions/pin.writer/action.json", { candidate: "hero-v1.md", sha256: sha(HERO), decidedBy: "planner", basis: "planner" }),
+      heroSubmit({ skill: { path: "packages/writer/actions/writer.candidates/action.json", sha256: FIXTURE_SKILL_SHA } }),
+      migrateEvent({ path: "packages/producer/actions/no-such-step/action.json", sha256: FIXTURE_SKILL_SHA }),
+    )));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.reason.split(", events")).toEqual([
+      "events[1] (pin) cites packages/producer/actions/pin.writer/action.json, but only a plumb action's events may cite its action.json; the registry has it as decide:judgment, whose events cite its skill.md",
+      "[2] (submit) cites packages/writer/actions/writer.candidates/action.json, but only a plumb action's events may cite its action.json; the registry has it as decide:creative, whose events cite its skill.md",
+      "[3] (migrate) cites packages/producer/actions/no-such-step/action.json, but only a plumb action's events may cite its action.json; the actions registry has no such step",
+    ]);
+  });
+
+  it("fails a plumb event that cites its action.json with an unknown or a missing sha256", () => {
+    const rows = expectCatches(eventsNameSkill, clean(), broken(heroLedger(
+      migrateEvent({ path: MIGRATE_ACTION, sha256: "e".repeat(64) }),
+      migrateEvent({ path: MIGRATE_ACTION, sha256: null }),
+    )));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.reason.split(", events")).toEqual([
+      `events[1] (migrate) skill ${MIGRATE_ACTION} sha256 eeeeeeeeeeee is neither the installed file's nor listed in skill-hashes.json`,
+      `[2] (migrate) ran ${MIGRATE_ACTION} while that file was missing (skill.sha256 null)`,
+    ]);
+  });
+
+  it("knows the installed action.json by default, and a registry that says decide refuses it", () => {
+    const installed = createHash("sha256").update(readFileSync(skillFile(MIGRATE_ACTION))).digest("hex");
+    const spec = cleanSpec();
+    spec.writer!["home.hero"]!.ledger = ledgerDoc([migrateEvent({ path: MIGRATE_ACTION, sha256: installed })]);
+    const { root, consumer } = writeWorkspace(spec);
+    const own = (ctx: ReturnType<typeof buildContext>) => eventsNameSkill(ctx).filter(row => row.agent === "writer" && row.slot === "home.hero");
+    expect(own(buildContext(root, consumer, { history: () => NO_HISTORY, foundryLeaves: NO_FOUNDRY_LEAVES }))).toEqual([]);
+    const decide = own(buildContext(root, consumer, { history: () => NO_HISTORY, foundryLeaves: NO_FOUNDRY_LEAVES, actionKind: () => "decide:judgment" }));
+    expect(decide.map(row => row.reason)).toEqual([expect.stringMatching(/^events\[0\] \(migrate\) cites .*the registry has it as decide:judgment/)]);
   });
 });
 
