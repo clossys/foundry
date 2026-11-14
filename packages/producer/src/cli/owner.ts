@@ -34,6 +34,7 @@ import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js"
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
+import { driftCounts, SYNC_AGENTS, syncDrift, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
 import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
@@ -63,11 +64,13 @@ export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--s
   + "       clossys ia producer/<seat> --move --under <l1>/<l2> --owner-ref <ref> [--dry] [--root <dir>]  (a placed seat; a new seat is placed by clossys seat <step>)\n"
   + "       clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent> --adopt | --start [--dry] [--root <dir>]\n"
+  + "       clossys ia sync [--check] [--agent <agent>] [--dry] [--root <dir>]\n"
   + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
   + "  --standard names the standard the slot is judged by (packages/<agent>/standards/<id>/, R15.1): it must exist, be valid and serve the slot's kind; alone it keeps the written contract.\n"
   + "  producer/<seat>: names the standard of a seat slot clossys seat wrote (kind seat); --contract may add requirements but keeps the seat's step. Nothing else of a seat is written here.\n"
   + "  --adopt writes the agent's Foundry IA (ia.json and every slot.json, inputs and uses derived) where it has no ia.json (Director, Designer, Writer; the Director's first).\n"
   + "  --start writes an empty workspace IA instead; --under then adds its L1/L2 groups as it places each slot.\n"
+  + "  sync refreshes ia.json and every slot.json structure field from the package IA the consumer resolves (declared extensions kept; candidates, pins and ledgers untouched); --check lists the drift and exits 1 on any.\n"
   + "Regroup (owner-authorized; leaf ids never change, only placement; every slot.json position follows in the same guarded write):\n"
   + "       clossys ia <agent>/<slot> --move --under <l1>/<l2>|<l0>/<l1>/<l2> [--extension true|false] --owner-ref <ref>\n"
   + "       clossys ia <agent>/<slot> --extension true|false --owner-ref <ref>\n"
@@ -181,8 +184,8 @@ const readModelJson = (path: string): unknown => JSON.parse(readModelText(path))
 // ---------------------------------------------------------------- clossys ia
 const parseIa = parser(IA_USAGE, [
   "--contract", "--standard", "--under", "--kind", "--inputs", "--uses", "--root", "--owner-ref", "--at", "--extension",
-  "--add", "--rename", "--merge", "--into", "--drop", "--reorder", "--order", "--assign", "--layer", "--label", "--id", "--layers", "--axes",
-], ["--remove", "--adopt", "--start", "--move", "--dry"]);
+  "--add", "--rename", "--merge", "--into", "--drop", "--reorder", "--order", "--assign", "--layer", "--label", "--id", "--layers", "--axes", "--agent",
+], ["--remove", "--adopt", "--start", "--move", "--dry", "--check"]);
 const FOUNDRY_IA: Readonly<Record<keyof typeof FOUNDRY_IA_AFTER, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
 /** The source of a workspace-owned IA (`--start`): `--under` may add L1/L2 groups to it, never to a Foundry IA. */
 export const WORKSPACE_IA_SOURCE = "workspace#owner";
@@ -421,9 +424,36 @@ function runIaSeatStandard(flags: Flags, cwd: string, target: string, slot: stri
 const rootConsumer = (cwd: string, flags: Flags) => join(rootOf(cwd, flags), "clossys");
 const isRecordValue = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** `clossys ia sync [--check] [--agent <a>]`: the package IA against the consumer (foundry-feedback-0022). */
+function runIaSync(flags: Flags, cwd: string): CliResult {
+  const allowed = ["--agent", "--root"];
+  const stray = [...[...flags.values.keys()].filter(flag => !allowed.includes(flag)), ...[...flags.bare].filter(flag => flag !== "--dry" && flag !== "--check")];
+  if (stray.length || flags.positional.length > 1) throw new CliUsageError(`ia sync takes only --check, --agent, --dry and --root\n${IA_USAGE}`);
+  const only = one(flags, "--agent");
+  if (only !== undefined && !(SYNC_AGENTS as readonly string[]).includes(only)) throw new CliUsageError(`ia sync --agent takes one of ${SYNC_AGENTS.join(", ")}, got ${only}\n${IA_USAGE}`);
+  const agents = (only === undefined ? SYNC_AGENTS : [only]) as SyncAgent[];
+  const root = rootOf(cwd, flags), consumer = join(root, "clossys");
+  const findings: SyncFinding[] = [];
+  for (const agent of agents) findings.push(...syncDrift(consumer, agent));
+  const counts = Object.fromEntries(agents.map(agent => [agent, driftCounts(findings.filter(finding => finding.agent === agent))]));
+  const summary = agents.map(agent => {
+    const entries = Object.entries(counts[agent]!);
+    return `${agent}: ${entries.length ? entries.map(([kind, n]) => `${n} ${kind}`).join(", ") : "in sync"}`;
+  });
+  if (flags.bare.has("--check")) {
+    const listed = findings.slice(0, 60).map(finding => `  ${finding.agent} ${finding.kind}: ${finding.detail}`);
+    return {
+      exitCode: findings.length ? 1 : 0, root, check: true, output: { drift: findings.length, counts, findings },
+      message: [`ia sync --check: ${findings.length ? `${findings.length} drift finding${findings.length === 1 ? "" : "s"}` : "in sync with the package IA"}`, ...summary.map(line => `  ${line}`), ...listed, ...(findings.length > 60 ? [`  ... and ${findings.length - 60} more`] : [])].join("\n"),
+    };
+  }
+  return refuse("ia", "sync writes land with SOURCE-MIGRATE step 3; run ia sync --check");
+}
+
 export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parseIa(argv);
   if (flags.help) return { exitCode: 0, message: IA_USAGE };
+  if (flags.positional[0] === "sync") return runIaSync(flags, cwd);
   const [target, ...extra] = flags.positional;
   const dry = flags.bare.has("--dry");
   const whole = (["--adopt", "--start"] as const).filter(flag => flags.bare.has(flag));
