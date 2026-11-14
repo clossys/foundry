@@ -5,25 +5,13 @@
   "ia": {
     "l1": "direct",
     "l2": "direct.brief",
-    "order": 4
+    "order": 6
   },
   "kind": "seat",
   "contract": {
     "step": "rules",
     "fixture": {
-      "step": "rules",
-      "seat": {
-        "by": "owner",
-        "llm": {
-          "model": "claude-opus-5-5",
-          "tier": "mid",
-          "promptFile": "packages/producer/actions/rules/skill.md"
-        },
-        "human": {
-          "procedure": "Decide which owner rules are rows in the registry and whether each one gates.",
-          "command": "clossys rule"
-        }
-      }
+      "step": "rules"
     }
   },
   "inputs": [],

@@ -33,7 +33,8 @@
   },
   "record": "clossys.pipeline-run/1",
   "checks": [
-    "pipeline"
+    "pipeline",
+    "pipeline-seats"
   ],
   "uses": [
     "skill/SKILL.md"
@@ -52,7 +53,8 @@
       }
     ],
     "checks": [
-      "pipeline"
+      "pipeline",
+      "pipeline-seats"
     ]
   },
   "skill": "skill.md",

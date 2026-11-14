@@ -135,7 +135,7 @@ describe("clossys reissue producer/<seat>", () => {
     seatDir = join(producer, SEAT_ID);
     mkdirSync(join(seatDir, "candidates"), { recursive: true });
     writeFileSync(join(producer, "ia.json"), jsonBytes(ia));
-    writeFileSync(join(seatDir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id: SEAT_ID, agent: "producer", ia: slotPositions("producer", ia).get(SEAT_ID), kind: "seat", contract: { step: "owner.decisions", fixture: { step: "owner.decisions", seat: JSON.parse(SEAT) } }, inputs: [], uses: [] }));
+    writeFileSync(join(seatDir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id: SEAT_ID, agent: "producer", ia: slotPositions("producer", ia).get(SEAT_ID), kind: "seat", contract: { step: "owner.decisions", fixture: { step: "owner.decisions" } }, inputs: [], uses: [] }));
     writeFileSync(join(seatDir, "candidates", "owner.decisions-v1.json"), SEAT);
     writeFileSync(join(seatDir, "pin.json"), jsonBytes({ candidate: "owner.decisions-v1.json", sha256: sha256Hex(SEAT), decidedBy: "planner", basis: "planner", at: AT }));
   });

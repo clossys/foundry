@@ -28,7 +28,8 @@
         "skill": "packages/producer/actions/ia/skill.md"
       },
       "checks": [
-        "workspace"
+        "workspace",
+        "slot-defaults"
       ],
       "open": "slots-without-slot-json",
       "agent": "owner",
@@ -63,7 +64,8 @@
           }
         ],
         "checks": [
-          "workspace"
+          "workspace",
+          "slot-defaults"
         ]
       },
       "uses": [
@@ -465,7 +467,8 @@
         "skill": "packages/producer/actions/seats/skill.md"
       },
       "checks": [
-        "pipeline"
+        "pipeline",
+        "pipeline-seats"
       ],
       "open": "seats-open",
       "agent": "owner",
@@ -500,7 +503,8 @@
           }
         ],
         "checks": [
-          "pipeline"
+          "pipeline",
+          "pipeline-seats"
         ]
       },
       "uses": [

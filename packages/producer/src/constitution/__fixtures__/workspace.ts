@@ -58,7 +58,7 @@ export const FIXTURE_IA: Record<Agent, { l0: { id: string; label: string }; l1: 
   publisher: { l0: { id: "web", label: "Web" }, l1: { id: "home", label: "Home" } },
   producer: { l0: { id: "pipeline", label: "Pipeline" }, l1: { id: "steps", label: "Steps" } },
 };
-/** The sample seat a fixture seat contract carries (seat.schema.json). */
+/** The sample seat the fixture seat candidate holds (seat.schema.json). */
 export const SAMPLE_SEAT = { by: "owner", llm: null, human: null };
 
 export const sha = (text: string) => createHash("sha256").update(text).digest("hex");
@@ -104,7 +104,7 @@ export function contractOf(agent: Agent, id: string): Record<string, unknown> {
     case "brief": return { summary: `brief ${id}`, fixture: { headings: ["Voice"] } };
     case "element": return { summary: `element ${id}`, props: ["label"], fixture: { schema: "clossys.preview/1", fixtures: { file: `ui/${id}.tsx`, export: "Example", props: { label: "Label" } } } };
     case "strings": return { summary: `strings ${id}`, fixture: { keys: ["title"], locales: ["en"] } };
-    case "seat": { const step = id.slice("seat.".length); return { step, fixture: { step, seat: SAMPLE_SEAT } }; }
+    case "seat": { const step = id.slice("seat.".length); return { step, fixture: { step } }; }
     default: return { summary: `page ${id}`, fixture: { route: { path: "/" } } };
   }
 }

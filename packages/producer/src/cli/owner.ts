@@ -34,6 +34,7 @@ import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js"
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { feedsIndex } from "../records/slot-model/derive.js";
+import { PRODUCER_IA_SOURCE } from "../records/slot-model/pipeline-seats.js";
 import { adoptedSlotDoc, driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
@@ -763,15 +764,15 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
   const pinIssues = validatePin(pin);
   if (pinIssues.length) return refuse("seat", pinIssues.map(issue => issue.message).join("; "));
   const iaFile = iaPath(consumer, "producer");
-  const ia = modelExists(iaFile) ? readModelJson(iaFile) as Parameters<typeof placeSeat>[0] : { schema: IA_SCHEMA, source: "@clossys/producer#src/pipeline/steps", extensions: [], nodes: [] };
+  const ia = modelExists(iaFile) ? readModelJson(iaFile) as Parameters<typeof placeSeat>[0] : { schema: IA_SCHEMA, source: PRODUCER_IA_SOURCE, extensions: [], nodes: [] };
   const placed = placeSeat(ia, step);
   const candidate = join(candidatesDir(dir), name);
-  // A seat is a slot of kind seat (D5): its slot.json is written once, with the step and a sample seat as the contract fixture.
+  // A seat is a slot of kind seat (D5): its slot.json is written once, its contract the step (the sample seat is package data, pipeline/seats.json).
   const docFile = slotFile(dir);
   const slotId = seatSlotId(id);
   const doc = modelExists(docFile) ? undefined : {
     schema: SLOT_SCHEMA, id: slotId, agent: "producer", ia: slotPositions("producer", placed as IaDoc).get(slotId)!, kind: "seat",
-    contract: { step: id, fixture: { step: id, seat } }, inputs: [], uses: [],
+    contract: { step: id, fixture: { step: id } }, inputs: [], uses: [], standard: "seat",
   };
   if (doc) { const docIssues = validateSlotDoc(doc, docFile); if (docIssues.length) return refuse("seat", docIssues.map(issue => issue.message).join("; ")); }
   // A seat placed before the end shifts every later seat's order: their slot.json positions follow in the same guarded write.

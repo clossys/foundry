@@ -15,17 +15,22 @@
  */
 import { isDeepStrictEqual } from "node:util";
 import { deriveRefs, feedsIndex } from "./derive.js";
-import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa, type FoundrySlot } from "./foundry-ia.js";
+import { designerIa, directorIa, producerIa, slotPositions, writerIa, type FoundryIa, type FoundrySlot } from "./foundry-ia.js";
 import { iaPath, jsonBytes, slotDir, slotFile } from "./layout.js";
 import { FOUNDRY_IA_AGENTS, SLOT_AGENTS, SLOT_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type SlotAgent, type SlotPosition } from "./types.js";
 import { modelExists, readModelText } from "../slots.js";
 import { classify } from "../slot-options.js";
 import { OPTION_TABLE } from "./option-classes.js";
 
-/** The agents whose IA a package owns (the Publisher and Producer trees are synced in their own steps). */
-export const SYNC_AGENTS = FOUNDRY_IA_AGENTS;
+/**
+ * The agents whose IA a package owns: the three catalog agents and the Producer seat tree
+ * (pipeline/seats.json, step 5). The Publisher tree is synced in its own step.
+ */
+export const SYNC_AGENTS = [...FOUNDRY_IA_AGENTS, "producer"] as const;
 export type SyncAgent = typeof SYNC_AGENTS[number];
-const PACKAGE_IA: Readonly<Record<SyncAgent, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
+const PACKAGE_IA: Readonly<Record<SyncAgent, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa, producer: producerIa };
+/** Agents whose consumer tree `ia sync` creates when it is missing: the seat tree is package-owned whole (the catalog agents adopt first). */
+const CREATED_BY_SYNC: ReadonlySet<SyncAgent> = new Set(["producer"]);
 
 export const SYNC_KINDS = [
   "undeclared-leaf", "unadopted-leaf", "redefined", "source", "layers", "axes", "node", "group", "order", "contract", "kind", "behaviour", "position", "slot-missing",
@@ -171,7 +176,7 @@ export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncStat
   const ctx = consumer ? refContext(consumerDir, agent, state) : undefined;
   const findings: SyncFinding[] = [];
   const add = (kind: SyncKind, detail: string, slot?: string) => findings.push({ agent, kind, ...(slot ? { slot } : {}), detail });
-  if (!consumer) { add("slot-missing", `${agent} has no ia.json (clossys ia ${agent} --adopt)`); return findings; }
+  if (!consumer) { add("slot-missing", `${agent} has no ia.json (${CREATED_BY_SYNC.has(agent) ? "clossys ia sync" : `clossys ia ${agent} --adopt`})`); return findings; }
   const placed = new Set(placedIds(consumer));
   for (const id of state.undeclared) add("undeclared-leaf", `${id} is placed in the consumer but is neither a package leaf nor a declared extension`, id);
   for (const id of pkg.slots.keys()) if (!placed.has(id)) add("unadopted-leaf", `${id} is a package leaf the consumer has not adopted`, id);
@@ -230,13 +235,13 @@ export function driftCounts(findings: readonly SyncFinding[]): Partial<Record<Sy
  * declared as extensions or upstreamed into the package first.
  */
 export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlySet<string>, state: SyncState = syncState(consumerDir, agent)): { writes: [string, string][]; adopted: string[] } | { error: string } {
-  if (!state.consumer) return { error: `${agent} has no ia.json: adopt the package IA first (clossys ia ${agent} --adopt)` };
+  if (!state.consumer && !CREATED_BY_SYNC.has(agent)) return { error: `${agent} has no ia.json: adopt the package IA first (clossys ia ${agent} --adopt)` };
   if (state.undeclared.length) return { error: `${agent} places ${state.undeclared.length} leaves that are neither package leaves nor declared extensions: ${state.undeclared.slice(0, 8).join(", ")}${state.undeclared.length > 8 ? ", ..." : ""}` };
   const writes: [string, string][] = [];
   const adopted: string[] = [];
   const iaFile = iaPath(consumerDir, agent);
   const iaBytes = jsonBytes(state.target);
-  if (readModelText(iaFile) !== iaBytes) writes.push([iaFile, iaBytes]);
+  if (!modelExists(iaFile) || readModelText(iaFile) !== iaBytes) writes.push([iaFile, iaBytes]);
   const feeds = feedsIndex([...(agent === "director" ? state.pkg : directorIa()).slots.values()].map(slot => [slot.id, slot.feeds] as const), known);
   const ctx: RefContext = { known, feeds };
   for (const [id, position] of state.positions) {

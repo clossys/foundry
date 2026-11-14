@@ -237,7 +237,7 @@ describe("the seat kind (Producer tree)", () => {
     const folder = (step: string) => join(producer, `seat.${step}`);
     const slotJson = (step: string, order: number) => save(join(folder(step), "slot.json"), {
       schema: "clossys.slot/1", id: `seat.${step}`, agent: "producer", ia: { l1: "design", l2: "design.pin", order }, kind: "seat",
-      contract: { step, fixture: { step, seat: { by: "owner", llm: null, human: null } } }, inputs: [], uses: [],
+      contract: { step, fixture: { step } }, inputs: [], uses: [],
     });
     const seat = (step: string, value: unknown) => {
       const bytes = jsonBytes(value), name = `${step}-v1.json`;
@@ -260,7 +260,7 @@ describe("the seat kind (Producer tree)", () => {
     save(join(folder("pin.designer"), "slot.json"), { ...load(join(folder("pin.designer"), "slot.json")) as object, kind: "page" });
     expect(() => readSeatText(root, "pin.designer")).toThrow(/slot\.json is invalid/);
     slotJson("pin.designer", 0);
-    save(join(folder("pin.designer"), "slot.json"), { ...load(join(folder("pin.designer"), "slot.json")) as object, contract: { step: "pick.designer", fixture: { step: "pick.designer", seat: { by: "owner", llm: null, human: null } } } });
+    save(join(folder("pin.designer"), "slot.json"), { ...load(join(folder("pin.designer"), "slot.json")) as object, contract: { step: "pick.designer", fixture: { step: "pick.designer" } } });
     expect(() => readSeatText(root, "pin.designer")).toThrow(/contract\.step must be pin\.designer/);
     slotJson("pin.designer", 0);
     // A drifted candidate, a pin naming a missing candidate and a retired seat.json are refused.

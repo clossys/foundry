@@ -39,7 +39,8 @@
         },
         "record": "clossys.pipeline-run/1",
         "checks": [
-          "workspace"
+          "workspace",
+          "slot-defaults"
         ],
         "uses": [
           "skill/SKILL.md"
@@ -58,7 +59,8 @@
             }
           ],
           "checks": [
-            "workspace"
+            "workspace",
+            "slot-defaults"
           ]
         },
         "skill": "skill.md",
@@ -383,7 +385,8 @@
         },
         "record": "clossys.pipeline-run/1",
         "checks": [
-          "pipeline"
+          "pipeline",
+          "pipeline-seats"
         ],
         "uses": [
           "skill/SKILL.md"
@@ -402,7 +405,8 @@
             }
           ],
           "checks": [
-            "pipeline"
+            "pipeline",
+            "pipeline-seats"
           ]
         },
         "skill": "skill.md",

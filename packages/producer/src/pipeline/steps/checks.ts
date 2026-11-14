@@ -33,6 +33,8 @@ export const CHECKS = [
   defineCheck({ id: "studio-capture", files: ["scripts/capture-studio.mjs"], npm: ["check:studio-capture", "test:studio-capture"] }),
   defineCheck({ id: "rules", rootNpm: ["check:rules"] }),
   defineCheck({ id: "slot-options", files: ["scripts/check-slot-options.mjs"], npm: ["check:slot-options"], rootNpm: ["check:slot-options"] }),
+  defineCheck({ id: "slot-defaults", files: ["scripts/check-slot-defaults.mjs"], npm: ["check:slot-defaults"] }),
+  defineCheck({ id: "pipeline-seats", files: ["scripts/generate-pipeline-seats.mjs"], npm: ["check:pipeline-seats", "generate:pipeline-seats"] }),
   defineCheck({ id: "slot-state", files: ["scripts/check-slot-state.mjs"], npm: ["check:slot-state"] }),
   defineCheck({ id: "slot-pins", files: ["scripts/check-slot-pins.mjs"], npm: ["check:slot-pins"] }),
   defineCheck({ id: "constitution", npm: ["check:constitution"], rootNpm: ["check:constitution", "check:constitution:strict", "check:changed"] }),

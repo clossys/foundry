@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { validateSlotDoc } from "../records/slot-model/validate.js";
 import { listSeats, readSeatText, seatStates } from "../records/slots.js";
-import { planSeatsToSlots, runSeatsToSlots, SAMPLE_SEAT } from "./seats-to-slots.js";
+import { planSeatsToSlots, runSeatsToSlots } from "./seats-to-slots.js";
 
 let consumer: string;
 const producer = () => join(consumer, "agents", "producer");
@@ -40,8 +40,9 @@ describe("migrate seats-to-slots", () => {
     expect(existsSync(join(producer(), "pin.designer"))).toBe(false);
     const doc = JSON.parse(readFileSync(join(producer(), "seat.pin.designer", "slot.json"), "utf8"));
     expect(validateSlotDoc(doc)).toEqual([]);
-    expect(doc).toMatchObject({ id: "seat.pin.designer", agent: "producer", kind: "seat", ia: { l1: "design", l2: "design.pin", order: 0 }, contract: { step: "pin.designer", fixture: { step: "pin.designer", seat: SEAT } } });
-    expect(JSON.parse(readFileSync(join(producer(), "seat.pick.designer", "slot.json"), "utf8")).contract.fixture.seat).toEqual(SAMPLE_SEAT);
+    expect(doc).toMatchObject({ id: "seat.pin.designer", agent: "producer", kind: "seat", ia: { l1: "design", l2: "design.pin", order: 0 }, contract: { step: "pin.designer", fixture: { step: "pin.designer" } } });
+    // The sample seat is package data (pipeline/seats.json): no contract carries one.
+    expect(JSON.parse(readFileSync(join(producer(), "seat.pick.designer", "slot.json"), "utf8")).contract).toEqual({ step: "pick.designer", fixture: { step: "pick.designer" } });
     expect(seatStates(consumer)).toEqual([{ id: "seat.pin.designer", step: "pin.designer", state: "pinned" }, { id: "seat.pick.designer", step: "pick.designer", state: "open" }]);
     expect(JSON.parse(readSeatText(consumer, "pin.designer")!)).toEqual(SEAT);
     expect(runSeatsToSlots(consumer, { check: true })).toEqual({ exitCode: 0, message: "seats-to-slots: current" });

@@ -10,6 +10,7 @@ import { resolveAgent } from "../../agents.js";
 import { PRODUCER_ROOT } from "../../package-path.js";
 import { isAbsent } from "../../errors.js";
 import { DESIGN_BRIEF_INPUTS } from "./design-brief-inputs.js";
+import { PRODUCER_IA_SOURCE, readPipelineSeats } from "./pipeline-seats.js";
 import { IA_SCHEMA, type IaAxes, type IaDoc, type IaLayer, type IaLeafGroup, type IaNode, type ModelAgent, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
 
 export interface FoundrySlot {
@@ -34,7 +35,7 @@ export interface SlotDefaults {
 }
 export const SLOT_DEFAULTS_SCHEMA = "clossys.slot-defaults/1";
 export const SLOT_DEFAULTS_FILE = "src/catalog/slot-defaults.json";
-export interface FoundryIa { readonly agent: SlotAgent; readonly ia: IaDoc; readonly slots: ReadonlyMap<string, FoundrySlot> }
+export interface FoundryIa { readonly agent: ModelAgent; readonly ia: IaDoc; readonly slots: ReadonlyMap<string, FoundrySlot> }
 
 const readJson = (root: string, path: string): any => JSON.parse(readFileSync(join(root, path), "utf8"));
 /** A Foundry data file older agent builds may not ship: undefined when absent; a malformed one surfaces. */
@@ -103,6 +104,22 @@ export function directorIa(): FoundryIa {
 /** Flatten a placement subtree: groups below L2 fold into their L2 ancestor. */
 function leavesOf(node: PlacementNode): string[] {
   return "leaves" in node ? [...node.leaves] : node.children.flatMap(leavesOf);
+}
+
+/**
+ * Producer: the seat tree (pipeline/seats.json, SOURCE-MIGRATE step 5). One `seat.<step>` slot per
+ * decide step; its contract names the step (the sample seat is the package default in that file)
+ * and its standard is the seat standard.
+ */
+export function producerIa(): FoundryIa {
+  const doc = readPipelineSeats();
+  const nodes: IaNode[] = doc.nodes.map(node => ({ id: node.id, label: node.label, children: node.children.map(child => ({ id: child.id, label: child.label, slots: [...child.slots] })) }));
+  const slots = new Map<string, FoundrySlot>();
+  for (const node of nodes) for (const child of node.children) for (const id of child.slots) {
+    const step = id.slice("seat.".length);
+    slots.set(id, { id, kind: "seat", contract: { step, fixture: { step } }, declaredInputs: [], declaredUses: [], feeds: [], defaults: { standard: "seat" } });
+  }
+  return { agent: "producer", ia: { schema: IA_SCHEMA, source: PRODUCER_IA_SOURCE, extensions: [], nodes }, slots };
 }
 
 /** Designer: the build catalog placements (themes, assets, components, sections, frames). */

@@ -30,6 +30,8 @@ const steps = [
   ["ia", "designer", "--adopt"],
   ["ia", "writer", "--adopt"],
   ["ia", "publisher", "--start"],
+  // The Producer seat tree is package-owned whole: the sync writes it from pipeline/seats.json.
+  ["ia", "sync"],
   // Made-up decisions: the example shop is a synthetic consumer, not a real one.
   ["pin", "writer/lexicon.currency-format", "--not-needed", "--reason", "synthetic fixture: the example shop lists no prices", "--by", "planner"],
 ];

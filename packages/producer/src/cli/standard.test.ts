@@ -190,16 +190,18 @@ describe("clossys ia producer/<seat> --standard", () => {
     expect((await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat"], root)).message).toMatch(/already names standard fixture-seat; nothing written/);
   });
 
-  it("takes a revised seat contract on the same step, never a moved step or a requirements key, and refuses anything but --standard", async () => {
+  it("takes a seat contract on the same step, never a moved step, a requirements key or a sample seat (package data), and refuses anything but --standard", async () => {
     const root = await seated();
-    const contract = seatJson(root).contract as { step: string; fixture: { step: string; seat: Record<string, unknown> } };
-    const revised = { ...contract, fixture: { ...contract.fixture, seat: { ...contract.fixture.seat, human: { procedure: "Compare every open slot's candidates against its contract, then pin one.", command: "clossys pin" } } } };
+    const contract = seatJson(root).contract as { step: string; fixture: { step: string } };
+    const revised = { ...contract, fixture: { step: contract.step } };
     put(join(root, "ok.json"), JSON.stringify(revised));
     put(join(root, "moved.json"), JSON.stringify({ ...revised, step: "pin.writer" }));
     put(join(root, "params.json"), JSON.stringify({ ...revised, requirements: [{ check: "seat.prompt-owner" }] }));
+    put(join(root, "sample.json"), JSON.stringify({ ...revised, fixture: { ...revised.fixture, seat: { by: "owner", llm: null, human: null } } }));
+    expect((await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--contract", join(root, "sample.json")], root)).message).toMatch(/seat is package data|unknown key seat/);
     expect((await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--contract", join(root, "moved.json")], root)).message).toMatch(/must keep the seat's step/);
     expect((await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--contract", join(root, "params.json")], root)).message).toMatch(/unknown key requirements/);
-    expect(seatJson(root).standard).toBeUndefined();
+    expect(seatJson(root).standard).toBe("seat");
     const result = await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--contract", join(root, "ok.json")], root);
     expect(result.exitCode, result.message).toBe(0);
     expect(seatJson(root)).toMatchObject({ standard: "fixture-seat", contract: revised });
@@ -214,7 +216,7 @@ describe("clossys ia producer/<seat> --standard", () => {
     const requirements = join(seatDir(root), "requirements.json");
     put(requirements, readFileSync(requirements, "utf8").replace("[\"seat\"]", "[\"page\"]"));
     expect((await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat"], root)).message).toMatch(/serves page, not seat/);
-    expect(seatJson(root).standard).toBeUndefined();
+    expect(seatJson(root).standard).toBe("seat");
   });
 
   it("keeps every seat at its producer ia.json position: a seat placed before others renumbers them, and ia --standard records the seat where it sits", async () => {

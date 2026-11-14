@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "seat.seats",
+  "agent": "producer",
+  "ia": {
+    "l1": "direct",
+    "l2": "direct.brief",
+    "order": 5
+  },
+  "kind": "seat",
+  "contract": {
+    "step": "seats",
+    "fixture": {
+      "step": "seats"
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "standard": "seat"
+}

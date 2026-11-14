@@ -152,7 +152,7 @@ export function slotContractIssues(contract: Readonly<Record<string, unknown>>, 
   return issues;
 }
 
-/** A seat slot's contract: `{step, fixture: {step, seat}}`, the step being the id after `seat.`. */
+/** A seat slot's contract: `{step, fixture: {step}}`, the step being the id after `seat.`; the sample seat is package data (pipeline/seats.json). */
 export function seatContractIssues(contract: unknown, id: string, path = "slot.json"): SlotModelIssue[] {
   const issues: SlotModelIssue[] = validateValue(contract, loadSchema("contract-seat")).map(issue => ({ code: "slot-invalid", path, message: `contract${issue.path === "/" ? "" : issue.path} ${issue.message}` }));
   if (!object(contract)) return issues;
@@ -166,7 +166,7 @@ export function seatContractIssues(contract: unknown, id: string, path = "slot.j
  * The fixture a contract carries (R01.3), by kind. element: a `clossys.preview/1` preview with
  * `fixtures {file, export, props}` (contract-fixture.ts); brief: the required `headings`; strings:
  * the required `keys` and `locales`; page and publication: a sample `route` entry `{path}`; seat:
- * the `step` id and a sample `seat`. Empty when the fixture has the kind's shape.
+ * the `step` id only (the sample seat is package data). Empty when the fixture has the kind's shape.
  */
 export function fixtureShapeIssues(kind: SlotKind, contract: Readonly<Record<string, unknown>>): string[] {
   const fixture = contract.fixture;
@@ -179,9 +179,10 @@ export function fixtureShapeIssues(kind: SlotKind, contract: Readonly<Record<str
     case "strings": return [...list("keys"), ...list("locales")];
     case "page": case "publication": return object(fixture.route) && typeof fixture.route.path === "string" && fixture.route.path.startsWith("/") ? [] : ["route must be a sample route entry {path: \"/...\"}"];
     case "seat": {
+      // The sample seat is the package default (pipeline/seats.json, checked against seat.schema.json by
+      // check:pipeline-seats); a consumer contract that carries one redefines package data.
       const issues = nonEmpty(fixture.step) ? [] : ["step must be the step id"];
-      if (!object(fixture.seat)) issues.push("seat must be a sample seat");
-      else issues.push(...validateValue(fixture.seat, loadSchema("seat")).map(issue => `seat${issue.path === "/" ? "" : issue.path} ${issue.message}`));
+      if (Object.hasOwn(fixture, "seat")) issues.push("seat is package data (@clossys/producer pipeline/seats.json): the contract fixture names the step only");
       return issues;
     }
   }

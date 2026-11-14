@@ -87,7 +87,7 @@ describe("R01.2 every live slot has a valid slot.json and a contract valid again
 
   it("flags a seat slot whose contract names another step, or whose kind is not seat", () => {
     const rows = expectCatches(slotContract, clean(), broken(spec => {
-      spec.producer!["seat.director"]!.slot = { ...slotDoc("producer", "seat.director"), contract: { step: "writer", fixture: { step: "writer", seat: SAMPLE_SEAT } } };
+      spec.producer!["seat.director"]!.slot = { ...slotDoc("producer", "seat.director"), contract: { step: "writer", fixture: { step: "writer" } } };
     }));
     expect(reasons(rows)).toEqual([expect.stringMatching(/^producer:seat\.director: slot\.json is invalid: .*contract\.step must be director/)]);
     const wrongKind = broken(spec => { spec.producer!["seat.director"]!.slot = { ...slotDoc("producer", "seat.director"), kind: "element" }; });
@@ -122,7 +122,7 @@ describe("R01.3 every contract carries a fixture of its kind's shape", () => {
     ]);
   });
 
-  it("flags a fixture of the wrong shape: empty headings, missing locales, undeclared element props, an invalid sample seat", () => {
+  it("flags a fixture of the wrong shape: empty headings, missing locales, undeclared element props, a sample seat the package owns", () => {
     const rows = expectCatches(contractFixture, clean(), broken(spec => {
       spec.director!["brand.voice"]!.slot = { ...slotDoc("director", "brand.voice"), contract: { summary: "x", fixture: { headings: [] } } };
       spec.writer!["home.hero"]!.slot = { ...slotDoc("writer", "home.hero", { inputs: ["brand.voice"] }), contract: { summary: "y", fixture: { keys: ["title"] } } };
@@ -134,7 +134,7 @@ describe("R01.3 every contract carries a fixture of its kind's shape", () => {
     expect(text).toMatch(/director:brand\.voice: contract\.fixture headings must be a non-empty list of strings \(brief\)/);
     expect(text).toMatch(/writer:home\.hero: contract\.fixture locales must be a non-empty list of strings \(strings\)/);
     expect(text).toMatch(/designer:ui\.button: contract\.fixture props label are not declared in contract\.props \(element\)/);
-    expect(text).toMatch(/producer:seat\.director: contract\.fixture seat/);
+    expect(text).toMatch(/producer:seat\.director: contract\.fixture seat is package data/);
   });
 
   it("mutation proof: a disabled R01.3 fails the failing-first contract", () => {
@@ -247,6 +247,6 @@ describe("R01 fixture files", () => {
   it("writes the Producer seat as a seat slot with its slot.json", () => {
     const { consumer } = writeWorkspace(cleanSpec());
     const doc = JSON.parse(readFileSync(join(consumer, "agents", "producer", "seat.director", "slot.json"), "utf8")) as Record<string, unknown>;
-    expect(doc).toMatchObject({ id: "seat.director", agent: "producer", kind: "seat", contract: { step: "director", fixture: { step: "director", seat: SAMPLE_SEAT } } });
+    expect(doc).toMatchObject({ id: "seat.director", agent: "producer", kind: "seat", contract: { step: "director", fixture: { step: "director" } } });
   });
 });

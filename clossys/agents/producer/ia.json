@@ -1,6 +1,6 @@
 {
   "schema": "clossys.ia/1",
-  "source": "@clossys/producer#src/pipeline/steps/decisions.ts",
+  "source": "@clossys/producer#pipeline/seats.json",
   "extensions": [],
   "nodes": [
     {
@@ -12,11 +12,12 @@
           "label": "Brief",
           "slots": [
             "seat.ia",
+            "seat.standard",
+            "seat.retire",
             "seat.evidence",
             "seat.workspace.config",
             "seat.seats",
             "seat.rules",
-            "seat.retire",
             "seat.owner.decisions"
           ]
         },
@@ -31,8 +32,8 @@
           "id": "direct.pin",
           "label": "Pin",
           "slots": [
-            "seat.pin.director",
-            "seat.pick.director"
+            "seat.pick.director",
+            "seat.pin.director"
           ]
         }
       ]
@@ -53,11 +54,11 @@
           "id": "design.pin",
           "label": "Pin",
           "slots": [
-            "seat.pin.designer",
             "seat.pick.designer",
-            "seat.pin.writer",
             "seat.pick.writer",
-            "seat.writer.approve"
+            "seat.writer.approve",
+            "seat.pin.designer",
+            "seat.pin.writer"
           ]
         }
       ]
@@ -77,8 +78,17 @@
           "id": "publish.pin",
           "label": "Pin",
           "slots": [
-            "seat.pin.publisher",
-            "seat.pick.publisher"
+            "seat.pick.publisher",
+            "seat.pin.publisher"
+          ]
+        },
+        {
+          "id": "publish.assemble",
+          "label": "Assemble",
+          "slots": [
+            "seat.critic",
+            "seat.verdict",
+            "seat.reissue"
           ]
         }
       ]

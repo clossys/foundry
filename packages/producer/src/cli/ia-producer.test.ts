@@ -75,7 +75,7 @@ describe("clossys seat places a new seat; ia never does", () => {
   });
 
   it("refuses --under on a producer seat, with --contract or without, writing nothing", async () => {
-    put("contract.json", { step: "migrate", fixture: { step: "migrate", seat: { by: "owner", llm: null, human: null } } });
+    put("contract.json", { step: "migrate", fixture: { step: "migrate" } });
     const before = tree();
     await expect(owned("producer/seat.migrate", "--contract", join(workspace, "contract.json"), "--under", "publish/publish.assemble")).rejects.toThrow(/a new seat is placed by clossys seat migrate/);
     await expect(owned("producer/seat.migrate", "--under", "publish/publish.assemble")).rejects.toThrow(/a new seat is placed by clossys seat migrate/);

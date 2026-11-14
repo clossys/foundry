@@ -139,7 +139,7 @@ describe("a Producer seat slot through P1 and P2", () => {
   let seatDir: string;
   beforeEach(() => {
     const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "direct", label: "Direct", children: [{ id: "direct.brief", label: "Brief", slots: [SEAT_ID] }] }] };
-    seatDir = slot("producer", ia, SEAT_ID, { kind: "seat", standard: "seat", contract: { step: "owner.decisions", fixture: { step: "owner.decisions", seat: { by: "owner", llm: { model: "claude-opus-5-5", tier: "mid", promptFile: "packages/producer/actions/owner.decisions/skill.md" }, human: { procedure: "Record an owner decision through the verb.", command: "clossys owner-decision" } } } } });
+    seatDir = slot("producer", ia, SEAT_ID, { kind: "seat", standard: "seat", contract: { step: "owner.decisions", fixture: { step: "owner.decisions" } } });
     // seat is a craft standard: requirements seat.assigned, seat.prompt-owner; taste right-owner, tier-fit, procedure-clarity.
     standard("producer", "seat");
     mkdirSync(join(workspace, "renders"), { recursive: true });

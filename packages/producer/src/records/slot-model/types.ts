@@ -31,7 +31,7 @@ export type SlotAgent = typeof SLOT_AGENTS[number];
  * slot pin contract (pin.json: candidate, sha256, decidedBy, basis, at):
  *
  *   <consumer>/agents/producer/ia.json                                    seat slot ids in IA order (grouped by round and stage)
- *   <consumer>/agents/producer/seat.<step>/slot.json                      kind seat; contract {step, fixture}
+ *   <consumer>/agents/producer/seat.<step>/slot.json                      kind seat; contract {step, fixture: {step}}
  *   <consumer>/agents/producer/seat.<step>/candidates/<step>-v<n>.json    who decides that step (pipeline/schemas/seat.schema.json)
  *   <consumer>/agents/producer/seat.<step>/pin.json                       the pinned seat candidate
  *

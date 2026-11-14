@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "seat.pin.writer",
+  "agent": "producer",
+  "ia": {
+    "l1": "design",
+    "l2": "design.pin",
+    "order": 17
+  },
+  "kind": "seat",
+  "contract": {
+    "step": "pin.writer",
+    "fixture": {
+      "step": "pin.writer"
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "standard": "seat"
+}

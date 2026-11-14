@@ -2,7 +2,7 @@
  * One-shot `migrate seats-to-slots` (W2-A, D5; deleted in E1): the Producer seats become slots of
  * kind `seat`. Each placed seat folder `agents/producer/<step>/` moves to `seat.<step>/` (candidates
  * and pin.json move with it, bytes unchanged), gains a slot.json (kind `seat`, its IA position, the
- * contract `{step, fixture: {step, seat}}` with the pinned seat as the sample), and producer ia.json
+ * contract `{step, fixture: {step}}`; the sample seat is package data, pipeline/seats.json), and producer ia.json
  * places `seat.<step>` where it placed `<step>`.
  *
  * Deterministic and idempotent: a second run plans no change. `check` plans without writing and
@@ -12,14 +12,10 @@
 import { join, relative, sep } from "node:path";
 import { isModelDir, listModelDir, modelExists, readModelText } from "../records/slots.js";
 import { createModelFile, moveModelEntry, replaceModelFile } from "../records/slot-write.js";
-import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, slotFile } from "../records/slot-model/layout.js";
+import { agentDir, iaPath, jsonBytes, slotFile } from "../records/slot-model/layout.js";
 import { slotPositions } from "../records/slot-model/foundry-ia.js";
 import { SEAT_AGENT, SEAT_PREFIX, SLOT_SCHEMA, seatSlotId, seatStepOf, type IaDoc } from "../records/slot-model/types.js";
 import { validateIa, validateSlotDoc } from "../records/slot-model/validate.js";
-import { loadSchema, validateValue } from "../pipeline/schema.js";
-
-/** The sample seat a seat with no valid pinned seat carries in its contract fixture. */
-export const SAMPLE_SEAT = { by: "owner", llm: null, human: null } as const;
 
 export interface SeatsToSlotsPlan {
   /** Folder moves, consumer-relative (`agents/producer/<step>` to `agents/producer/seat.<step>`). */
@@ -34,16 +30,6 @@ export interface SeatsToSlotsPlan {
 const posix = (path: string) => path.split(sep).join("/");
 // Reads go through the slot-model reader and writes through records/slot-write.ts (R11.1).
 const isDir = isModelDir;
-
-/** The pinned seat of a folder when it is valid against seat.schema.json; otherwise the sample seat. */
-function sampleSeat(dir: string): unknown {
-  try {
-    const pin = JSON.parse(readModelText(pinFile(dir))) as { candidate?: unknown };
-    if (typeof pin.candidate !== "string") return SAMPLE_SEAT;
-    const seat = JSON.parse(readModelText(join(candidatesDir(dir), pin.candidate))) as unknown;
-    return validateValue(seat, loadSchema("seat")).length ? SAMPLE_SEAT : seat;
-  } catch { return SAMPLE_SEAT; }
-}
 
 export function planSeatsToSlots(consumer: string): SeatsToSlotsPlan {
   const root = agentDir(consumer, SEAT_AGENT);
@@ -76,7 +62,7 @@ export function planSeatsToSlots(consumer: string): SeatsToSlotsPlan {
       dir = from;
     } else if (!isDir(to)) continue; // an open seat: placed, never written; its first `clossys seat` writes the folder.
     if (modelExists(slotFile(dir))) continue;
-    const doc = { schema: SLOT_SCHEMA, id, agent: SEAT_AGENT, ia: position, kind: "seat", contract: { step, fixture: { step, seat: sampleSeat(dir) } }, inputs: [], uses: [] };
+    const doc = { schema: SLOT_SCHEMA, id, agent: SEAT_AGENT, ia: position, kind: "seat", contract: { step, fixture: { step } }, inputs: [], uses: [] };
     const issues = validateSlotDoc(doc, rel(slotFile(to)));
     if (issues.length) { findings.push(...issues.map(issue => `${issue.path}: ${issue.message}`)); continue; }
     slots.push({ path: rel(slotFile(to)), bytes: jsonBytes(doc) });

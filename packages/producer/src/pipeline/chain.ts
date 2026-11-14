@@ -346,6 +346,8 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
   } else if (step.id.startsWith("pin.")) {
     const names = candidatesOf(root, item);
     for (const name of names.slice(-3).reverse()) add(`Pin ${name}.`, ["clossys", "pin", item, name, "--basis", "picked"]);
+    // A slot adopted from the package IA with no candidate yet: the first answer asks for its options.
+    if (!names.length) add(`Ask the ${item.slice(0, item.indexOf("/"))} agent for candidates first (the brief for fresh options).`, ["clossys", "options", item, "--more"]);
     add("Not needed: the slot ships nothing.", ["clossys", "pin", item, "--not-needed", "--reason", "<why>"]);
   }
   options.splice(4);

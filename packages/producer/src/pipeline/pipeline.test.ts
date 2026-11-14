@@ -24,7 +24,7 @@ import { createHash } from "node:crypto";
 function writeSeat(root: string, step: string, value: unknown): void {
   const dir = join(root, "clossys", "agents", "producer", `seat.${step}`), name = `${step}-v1.json`, bytes = JSON.stringify(value);
   mkdirSync(join(dir, "candidates"), { recursive: true });
-  const fixture = { step, seat: { by: "owner", llm: null, human: null } };
+  const fixture = { step };
   writeFileSync(join(dir, "slot.json"), JSON.stringify({ schema: "clossys.slot/1", id: `seat.${step}`, agent: "producer", ia: { l1: "seats", l2: "seats.all", order: 0 }, kind: "seat", contract: { step, fixture }, inputs: [], uses: [] }));
   writeFileSync(join(dir, "candidates", name), bytes);
   writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: name, sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "migrated", basis: "planner", at: "2026-11-04T00:00:00.000Z" }));

@@ -1,0 +1,386 @@
+{
+  "schema": "clossys.pipeline-seats/1",
+  "about": "The Producer seat tree: one seat.<step> slot per decide step, under its round and stage, and each seat's package default. Generated from the pipeline steps by scripts/generate-pipeline-seats.mjs; the labels are authored. The model is a tier placeholder the consumer's seat-policy.json fills.",
+  "nodes": [
+    {
+      "id": "direct",
+      "label": "Direct",
+      "children": [
+        {
+          "id": "direct.brief",
+          "label": "Brief",
+          "slots": [
+            "seat.ia",
+            "seat.standard",
+            "seat.retire",
+            "seat.evidence",
+            "seat.workspace.config",
+            "seat.seats",
+            "seat.rules",
+            "seat.owner.decisions"
+          ]
+        },
+        {
+          "id": "direct.make",
+          "label": "Make",
+          "slots": [
+            "seat.director.candidates"
+          ]
+        },
+        {
+          "id": "direct.pin",
+          "label": "Pin",
+          "slots": [
+            "seat.pick.director",
+            "seat.pin.director"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "design",
+      "label": "Design",
+      "children": [
+        {
+          "id": "design.make",
+          "label": "Make",
+          "slots": [
+            "seat.designer.candidates",
+            "seat.writer.candidates"
+          ]
+        },
+        {
+          "id": "design.pin",
+          "label": "Pin",
+          "slots": [
+            "seat.pick.designer",
+            "seat.pick.writer",
+            "seat.writer.approve",
+            "seat.pin.designer",
+            "seat.pin.writer"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "publish",
+      "label": "Publish",
+      "children": [
+        {
+          "id": "publish.make",
+          "label": "Make",
+          "slots": [
+            "seat.publisher.candidates"
+          ]
+        },
+        {
+          "id": "publish.pin",
+          "label": "Pin",
+          "slots": [
+            "seat.pick.publisher",
+            "seat.pin.publisher"
+          ]
+        },
+        {
+          "id": "publish.assemble",
+          "label": "Assemble",
+          "slots": [
+            "seat.critic",
+            "seat.verdict",
+            "seat.reissue"
+          ]
+        }
+      ]
+    }
+  ],
+  "seats": {
+    "ia": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/ia/skill.md"
+      },
+      "human": {
+        "procedure": "Decide where each L3 slot sits in its agent's IA tree (L1, L2) and what the slot is for: its contract in slot.json.",
+        "command": "clossys ia"
+      }
+    },
+    "standard": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/standard/skill.md"
+      },
+      "human": {
+        "procedure": "Say what every candidate of a slot kind must satisfy, independently of whoever crafts it, through the verb, never by editing standard files by hand.",
+        "command": "clossys standard"
+      }
+    },
+    "retire": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/retire/skill.md"
+      },
+      "human": {
+        "procedure": "Retire what a slot no longer needs, through the verb, never by moving files by hand.",
+        "command": "clossys retire"
+      }
+    },
+    "evidence": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/evidence/skill.md"
+      },
+      "human": {
+        "procedure": "Decide which owner answers and findings the Director may cite.",
+        "command": "clossys evidence"
+      }
+    },
+    "workspace.config": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/workspace.config/skill.md"
+      },
+      "human": {
+        "procedure": "Decide the workspace config: which folder is the consumer workspace and the settings the CLI reads.",
+        "command": "clossys config"
+      }
+    },
+    "seats": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/seats/skill.md"
+      },
+      "human": {
+        "procedure": "Decide who holds each decide step: an llm seat (model and prompt file), a human seat (procedure and the clossys command that records it), or both.",
+        "command": "clossys seat"
+      }
+    },
+    "rules": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/rules/skill.md"
+      },
+      "human": {
+        "procedure": "Decide which owner rules are rows in the registry and whether each one gates.",
+        "command": "clossys rule"
+      }
+    },
+    "owner.decisions": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/owner.decisions/skill.md"
+      },
+      "human": {
+        "procedure": "Decide which owner words an owner-gated verb may cite with `--owner-ref`.",
+        "command": "clossys owner-decision"
+      }
+    },
+    "director.candidates": {
+      "by": "agent:director",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/director/actions/director.candidates/skill.md"
+      },
+      "human": {
+        "procedure": "Create Director candidates for the open L3 slots: one immutable file per option.",
+        "command": "clossys next"
+      }
+    },
+    "pick.director": {
+      "by": "agent:director",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/director/actions/pick.director/skill.md"
+      },
+      "human": {
+        "procedure": "Pick one of a Director slot's options as its agent seat, for the owner to confirm.",
+        "command": "clossys pick"
+      }
+    },
+    "pin.director": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/pin.director/skill.md"
+      },
+      "human": {
+        "procedure": "Decide which candidate a Director slot ships, or that the slot is not needed.",
+        "command": "clossys pin"
+      }
+    },
+    "designer.candidates": {
+      "by": "agent:designer",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/designer/actions/designer.candidates/skill.md"
+      },
+      "human": {
+        "procedure": "Create Designer candidates for the open L3 slots: one immutable file per option.",
+        "command": "clossys next"
+      }
+    },
+    "writer.candidates": {
+      "by": "agent:writer",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/writer/actions/writer.candidates/skill.md"
+      },
+      "human": {
+        "procedure": "Create Writer candidates for the open L3 slots: one immutable file per option.",
+        "command": "clossys next"
+      }
+    },
+    "pick.designer": {
+      "by": "agent:designer",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/designer/actions/pick.designer/skill.md"
+      },
+      "human": {
+        "procedure": "Pick one of a Designer slot's options as its agent seat, for the owner to confirm.",
+        "command": "clossys pick"
+      }
+    },
+    "pick.writer": {
+      "by": "agent:writer",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/writer/actions/pick.writer/skill.md"
+      },
+      "human": {
+        "procedure": "Pick one of a Writer slot's options as its agent seat, for the owner to confirm.",
+        "command": "clossys pick"
+      }
+    },
+    "writer.approve": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/writer.approve/skill.md"
+      },
+      "human": {
+        "procedure": "Decide whether a Writer copy key is approved to ship.",
+        "command": "clossys approve"
+      }
+    },
+    "pin.designer": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/pin.designer/skill.md"
+      },
+      "human": {
+        "procedure": "Decide which candidate a Designer slot ships, or that the slot is not needed.",
+        "command": "clossys pin"
+      }
+    },
+    "pin.writer": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/pin.writer/skill.md"
+      },
+      "human": {
+        "procedure": "Decide which candidate a Writer slot ships, or that the slot is not needed.",
+        "command": "clossys pin"
+      }
+    },
+    "publisher.candidates": {
+      "by": "agent:publisher",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/publisher/actions/publisher.candidates/skill.md"
+      },
+      "human": {
+        "procedure": "Create Publisher candidates for the open L3 slots: one immutable file per option.",
+        "command": "clossys next"
+      }
+    },
+    "pick.publisher": {
+      "by": "agent:publisher",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/publisher/actions/pick.publisher/skill.md"
+      },
+      "human": {
+        "procedure": "Pick one of a Publisher slot's options as its agent seat, for the owner to confirm.",
+        "command": "clossys pick"
+      }
+    },
+    "pin.publisher": {
+      "by": "owner",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/pin.publisher/skill.md"
+      },
+      "human": {
+        "procedure": "Decide which candidate a Publisher slot ships, or that the slot is not needed.",
+        "command": "clossys pin"
+      }
+    },
+    "critic": {
+      "by": "agent:producer",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/critic/skill.md"
+      },
+      "human": {
+        "procedure": "Score a P2 craft run's renders as a fresh critic who never saw the maker's work, and record the scores through the verb.",
+        "command": "clossys critique"
+      }
+    },
+    "verdict": {
+      "by": "agent:producer",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/verdict/skill.md"
+      },
+      "human": {
+        "procedure": "Decide P1 for one slot from its options packet, and record the decision through the verb, never by editing ledger or pin files by hand.",
+        "command": "clossys verdict"
+      }
+    },
+    "reissue": {
+      "by": "agent:producer",
+      "llm": {
+        "model": "<model:mid>",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/reissue/skill.md"
+      },
+      "human": {
+        "procedure": "Bring one candidate up to the slot rules as the slot's next version, through the verb, never by editing or renaming files by hand.",
+        "command": "clossys reissue"
+      }
+    }
+  }
+}

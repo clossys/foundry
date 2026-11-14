@@ -1,6 +1,7 @@
 /**
  * The seat certifier (R05): a Producer seat candidate fits its slot when the slot's contract is a
- * well-formed seat contract (`{step, fixture: {step, seat}}`) and its step is a node of the step
+ * well-formed seat contract (`{step, fixture: {step}}`; the sample seat is package data,
+ * pipeline/seats.json) and its step is a node of the step
  * graph (pipeline/graph.json). Its schema is seat.schema.json (`validateCandidate`). A seat, like
  * every slot, is certified only against its standard (planner decision, 2026-11-13): until one
  * exists the seat is uncertified (`no-standard`), never passed by default.
