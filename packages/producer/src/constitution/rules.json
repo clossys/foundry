@@ -30,6 +30,51 @@
       {
         "id": "R01.6",
         "status": "enforced"
+      },
+      {
+        "id": "R01.7",
+        "status": "building",
+        "owner": "IA-C"
+      },
+      {
+        "id": "R01.8",
+        "status": "building",
+        "owner": "IA-C"
+      },
+      {
+        "id": "R01.9",
+        "status": "building",
+        "owner": "IA-C"
+      },
+      {
+        "id": "R01.10",
+        "status": "building",
+        "owner": "IA-C"
+      },
+      {
+        "id": "R01.11",
+        "status": "building",
+        "owner": "IA-C"
+      },
+      {
+        "id": "R01.12",
+        "status": "building",
+        "owner": "IA-C"
+      },
+      {
+        "id": "R01.13",
+        "status": "building",
+        "owner": "IA-C"
+      },
+      {
+        "id": "R01.14",
+        "status": "building",
+        "owner": "IA-C"
+      },
+      {
+        "id": "R01.15",
+        "status": "warn",
+        "owner": "IA-C"
       }
     ]
   },

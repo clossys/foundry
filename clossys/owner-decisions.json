@@ -1,0 +1,12 @@
+{
+  "schema": "clossys.owner-decisions/1",
+  "decisions": [
+    {
+      "id": "6873279813",
+      "ref": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "date": "2026-11-13",
+      "scope": ["ia"],
+      "summary": "The owner picked the recommended option on IA review questions Q1-Q7 (foundry-plan-0002); planner-decidable items auto-decided as proposed; leaf ids never change."
+    }
+  ]
+}
