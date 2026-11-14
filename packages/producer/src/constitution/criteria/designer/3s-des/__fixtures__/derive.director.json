@@ -1,0 +1,339 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"Realises director:identity.visual.style (quiet and exact): a near-white ground; base shadcn/neutral@4.23.0 --background.\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "Realises director:identity.visual.style (quiet and exact): a near-white ground; base shadcn/neutral@4.23.0 --background."
+            }
+          }
+        }
+      },
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.personality",
+          "identity.brand.essence"
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"default:shadcn/neutral@4.23.0 kept because director:identity.brand.personality asks for calm, and the neutral ground is the calmest of the four directions.\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "default:shadcn/neutral@4.23.0 kept because director:identity.brand.personality asks for calm, and the neutral ground is the calmest of the four directions."
+            }
+          }
+        }
+      },
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.personality",
+          "identity.brand.essence"
+        ]
+      },
+      "note": "keeping a default with a Director reason"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"Original line glyph drawn from director:identity.visual.imagery#rules on the 24px grid.\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "Original line glyph drawn from director:identity.visual.imagery#rules on the 24px grid."
+            }
+          }
+        }
+      },
+      "params": {
+        "traits": [
+          "identity.visual.imagery"
+        ],
+        "required": [
+          "identity.visual.imagery"
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"shadcn neutral --background mapped to the Foundry default brand value the Studio renders with (packages/designer/ui/src/index.css).\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "shadcn neutral --background mapped to the Foundry default brand value the Studio renders with (packages/designer/ui/src/index.css)."
+            }
+          }
+        }
+      },
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.personality",
+          "identity.brand.essence"
+        ]
+      },
+      "note": "today's bulk pin: the reference is the reason"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"default:shadcn/neutral@4.23.0 kept unchanged.\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "default:shadcn/neutral@4.23.0 kept unchanged."
+            }
+          }
+        }
+      },
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.personality",
+          "identity.brand.essence"
+        ]
+      },
+      "note": "default kept without a Director reason"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background"
+            }
+          }
+        }
+      },
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.personality",
+          "identity.brand.essence"
+        ]
+      },
+      "note": "no reason"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"Realises director:identity.visual.style@v9.\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "Realises director:identity.visual.style@v9."
+            }
+          }
+        }
+      },
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.personality",
+          "identity.brand.essence"
+        ]
+      },
+      "note": "version suffix"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"Realises director:focus.segment.core.\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "Realises director:focus.segment.core."
+            }
+          }
+        }
+      },
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.personality",
+          "identity.brand.essence"
+        ]
+      },
+      "note": "cites a Director slot outside the standard's traits"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"Realises director:identity.visual.style.\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "Realises director:identity.visual.style."
+            }
+          }
+        }
+      },
+      "params": {
+        "traits": [
+          "identity.visual.style"
+        ],
+        "required": [
+          "identity.visual.imagery"
+        ]
+      },
+      "note": "asset without the imagery derivation"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"Realises director:identity.visual.style.\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "Realises director:identity.visual.style."
+            }
+          }
+        }
+      },
+      "params": {},
+      "note": "no traits listed"
+    }
+  ]
+}

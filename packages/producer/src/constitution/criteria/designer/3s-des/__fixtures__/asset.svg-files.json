@@ -1,0 +1,344 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"icons/check.svg\", \"type\": \"registry:file\", \"content\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" width=\\\"24\\\" height=\\\"24\\\" viewBox=\\\"0 0 24 24\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\"><path d=\\\"M20 6 9 17l-5-5\\\" /></svg>\"}, {\"path\": \"clossys/assets.icon-check.json\", \"content\": \"{}\"}], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"registry\", \"ref\": [\"lucide/check@1.65.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"ISC\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "icons/check.svg",
+              "type": "registry:file",
+              "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M20 6 9 17l-5-5\" /></svg>"
+            },
+            {
+              "path": "clossys/assets.icon-check.json",
+              "content": "{}"
+            }
+          ],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "lucide/check@1.65.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "ISC"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "viewbox": {
+          "size": 24
+        },
+        "modes": {},
+        "smallSize": {
+          "size": 16,
+          "minStrokePx": 1
+        }
+      }
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"mark/positive.svg\", \"type\": \"registry:file\", \"content\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" viewBox=\\\"0 0 32 32\\\"><rect width=\\\"32\\\" height=\\\"32\\\" rx=\\\"8\\\" fill=\\\"currentColor\\\"/><path d=\\\"M23 10H13\\\" stroke=\\\"var(--background)\\\" stroke-width=\\\"2\\\" fill=\\\"none\\\"/></svg>\"}], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"registry\", \"ref\": [\"lucide/check@1.65.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"ISC\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "mark/positive.svg",
+              "type": "registry:file",
+              "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><rect width=\"32\" height=\"32\" rx=\"8\" fill=\"currentColor\"/><path d=\"M23 10H13\" stroke=\"var(--background)\" stroke-width=\"2\" fill=\"none\"/></svg>"
+            }
+          ],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "lucide/check@1.65.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "ISC"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "viewbox": {
+          "size": 32
+        },
+        "smallSize": false
+      },
+      "note": "mark: token paint, small-size off"
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/assets.icon-check.json\", \"content\": \"{}\"}], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"registry\", \"ref\": [\"lucide/check@1.65.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"ISC\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/assets.icon-check.json",
+              "content": "{}"
+            }
+          ],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "lucide/check@1.65.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "ISC"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "viewbox": {
+          "size": 24
+        },
+        "modes": {},
+        "smallSize": {
+          "size": 16,
+          "minStrokePx": 1
+        }
+      },
+      "note": "no svg file"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"mark/positive.svg\", \"type\": \"registry:file\", \"content\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" viewBox=\\\"0 0 32 32\\\"><rect width=\\\"32\\\" height=\\\"32\\\" fill=\\\"currentColor\\\"/><path d=\\\"M23 10H13\\\" stroke=\\\"white\\\" stroke-width=\\\"2\\\"/></svg>\"}], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"registry\", \"ref\": [\"lucide/check@1.65.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"ISC\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "mark/positive.svg",
+              "type": "registry:file",
+              "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\"><rect width=\"32\" height=\"32\" fill=\"currentColor\"/><path d=\"M23 10H13\" stroke=\"white\" stroke-width=\"2\"/></svg>"
+            }
+          ],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "lucide/check@1.65.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "ISC"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "viewbox": {
+          "size": 32
+        },
+        "smallSize": false
+      },
+      "note": "fixed paint breaks dark mode"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"icons/check.svg\", \"type\": \"registry:file\", \"content\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" width=\\\"24\\\" height=\\\"24\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\"><path d=\\\"M20 6 9 17l-5-5\\\" /></svg>\"}], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"registry\", \"ref\": [\"lucide/check@1.65.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"ISC\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "icons/check.svg",
+              "type": "registry:file",
+              "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M20 6 9 17l-5-5\" /></svg>"
+            }
+          ],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "lucide/check@1.65.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "ISC"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "viewbox": {
+          "size": 24
+        },
+        "modes": {},
+        "smallSize": {
+          "size": 16,
+          "minStrokePx": 1
+        }
+      },
+      "note": "no viewBox"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"icons/check.svg\", \"type\": \"registry:file\", \"content\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" width=\\\"24\\\" height=\\\"24\\\" viewBox=\\\"0 0 20 20\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\"><path d=\\\"M20 6 9 17l-5-5\\\" /></svg>\"}], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"registry\", \"ref\": [\"lucide/check@1.65.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"ISC\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "icons/check.svg",
+              "type": "registry:file",
+              "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M20 6 9 17l-5-5\" /></svg>"
+            }
+          ],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "lucide/check@1.65.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "ISC"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "viewbox": {
+          "size": 24
+        },
+        "modes": {},
+        "smallSize": {
+          "size": 16,
+          "minStrokePx": 1
+        }
+      },
+      "note": "off the 24 grid"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"icons/check.svg\", \"type\": \"registry:file\", \"content\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" width=\\\"24\\\" height=\\\"24\\\" viewBox=\\\"0 0 24 24\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"0.5\\\"><path d=\\\"M20 6 9 17l-5-5\\\" /></svg>\"}], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"registry\", \"ref\": [\"lucide/check@1.65.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"ISC\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "icons/check.svg",
+              "type": "registry:file",
+              "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"0.5\"><path d=\"M20 6 9 17l-5-5\" /></svg>"
+            }
+          ],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "lucide/check@1.65.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "ISC"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "viewbox": {
+          "size": 24
+        },
+        "modes": {},
+        "smallSize": {
+          "size": 16,
+          "minStrokePx": 1
+        }
+      },
+      "note": "hairline at 16px"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"icon-check\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"icons/check.svg\", \"type\": \"registry:file\", \"content\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" width=\\\"24\\\" height=\\\"24\\\" viewBox=\\\"0 0 24 24\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\"><image href=\\\"data:image/png;base64,AAAA\\\"/><path d=\\\"M20 6 9 17l-5-5\\\" /></svg>\"}], \"meta\": {\"slot\": \"assets.icon-check\", \"source\": {\"kind\": \"registry\", \"ref\": [\"lucide/check@1.65.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"ISC\"}, \"element\": {\"slot\": \"assets.icon-check\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "icon-check",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "icons/check.svg",
+              "type": "registry:file",
+              "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><image href=\"data:image/png;base64,AAAA\"/><path d=\"M20 6 9 17l-5-5\" /></svg>"
+            }
+          ],
+          "meta": {
+            "slot": "assets.icon-check",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "lucide/check@1.65.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "ISC"
+            },
+            "element": {
+              "slot": "assets.icon-check",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "viewbox": {
+          "size": 24
+        },
+        "modes": {},
+        "smallSize": {
+          "size": 16,
+          "minStrokePx": 1
+        }
+      },
+      "note": "raster"
+    }
+  ]
+}
