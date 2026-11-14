@@ -575,6 +575,11 @@ export const SLOT_CONTRACT_SCHEMA: JsonSchema = {
   $defs: { referenceRef },
   properties: {
     schema: { const: RECORD_SCHEMA_IDS.slotContract },
+    kind: {
+      type: "string",
+      pattern: ID,
+      description: "The slot's sub-kind (section, frame, ...): a standard serves `<slot kind>/<kind>` (records/standards.ts slotKinds).",
+    },
     slot: { type: "string", pattern: SLOT },
     package: { type: "string", pattern: ID },
     layer: { type: "string", pattern: ID },
