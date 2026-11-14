@@ -78,5 +78,6 @@
     "identity.brand.personality",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

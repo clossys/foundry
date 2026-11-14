@@ -59,14 +59,15 @@
     "identity.verbal.voice",
     "identity.visual.imagery",
     "identity.visual.style",
-    "themes.background",
     "themes.destructive",
-    "themes.muted",
     "themes.muted-foreground",
+    "themes.spacing",
+    "themes.background",
+    "themes.muted",
     "themes.primary",
     "themes.radius",
-    "themes.ring",
-    "themes.spacing"
+    "themes.ring"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

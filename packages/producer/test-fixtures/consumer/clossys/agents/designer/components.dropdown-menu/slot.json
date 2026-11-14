@@ -85,5 +85,6 @@
   ],
   "uses": [
     "components.icon"
-  ]
+  ],
+  "standard": "component"
 }

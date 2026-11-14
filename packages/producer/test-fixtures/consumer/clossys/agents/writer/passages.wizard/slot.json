@@ -102,7 +102,9 @@
     }
   },
   "inputs": [
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "capability.operation.delivery"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

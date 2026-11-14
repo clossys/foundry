@@ -96,5 +96,6 @@
   "uses": [
     "components.button",
     "components.popover"
-  ]
+  ],
+  "standard": "component"
 }

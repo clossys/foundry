@@ -200,5 +200,6 @@
     "components.form",
     "components.progress-bar",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

@@ -154,5 +154,6 @@
     "components.card",
     "components.semantic-content",
     "components.separator"
-  ]
+  ],
+  "standard": "section.site"
 }

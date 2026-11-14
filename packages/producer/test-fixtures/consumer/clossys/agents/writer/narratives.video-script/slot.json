@@ -19,5 +19,8 @@
     "identity.brand.personality",
     "identity.verbal.narrative"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "arc",
+  "standard": "narrative"
 }

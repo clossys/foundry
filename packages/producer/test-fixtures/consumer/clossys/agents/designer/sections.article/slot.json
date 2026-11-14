@@ -165,5 +165,6 @@
     "components.link",
     "components.semantic-content",
     "components.separator"
-  ]
+  ],
+  "standard": "section.site"
 }

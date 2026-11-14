@@ -58,7 +58,9 @@
   },
   "inputs": [
     "focus.reach.geography",
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "advantage.proposition.proof"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

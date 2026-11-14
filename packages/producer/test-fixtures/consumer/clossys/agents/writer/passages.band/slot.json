@@ -22,5 +22,6 @@
   "inputs": [
     "identity.visual.imagery"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

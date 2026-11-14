@@ -46,5 +46,6 @@
     "themes.muted",
     "themes.radius"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

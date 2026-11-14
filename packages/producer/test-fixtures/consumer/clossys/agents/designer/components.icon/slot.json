@@ -120,5 +120,6 @@
     "identity.visual.style",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

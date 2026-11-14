@@ -74,5 +74,6 @@
   ],
   "uses": [
     "components.toggle-button"
-  ]
+  ],
+  "standard": "component"
 }

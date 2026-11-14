@@ -96,5 +96,6 @@
     "components.grid-list",
     "components.semantic-content",
     "components.specimen-swatch"
-  ]
+  ],
+  "standard": "section.app"
 }

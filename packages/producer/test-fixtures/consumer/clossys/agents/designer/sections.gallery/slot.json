@@ -158,5 +158,6 @@
     "components.button",
     "components.dialog",
     "components.grid-list"
-  ]
+  ],
+  "standard": "section.site"
 }

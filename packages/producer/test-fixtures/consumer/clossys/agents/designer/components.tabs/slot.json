@@ -77,5 +77,6 @@
     "themes.shadow",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

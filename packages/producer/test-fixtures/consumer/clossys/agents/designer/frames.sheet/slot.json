@@ -102,5 +102,6 @@
     "components.icon",
     "components.semantic-content",
     "components.sheet"
-  ]
+  ],
+  "standard": "frame"
 }

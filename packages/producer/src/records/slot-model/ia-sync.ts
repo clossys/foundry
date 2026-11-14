@@ -7,6 +7,11 @@
  * difference between the two, which `sync --check` reports and fails on. `syncPlan` lists the files
  * a sync writes. Candidates, pins, ledgers and evidence are never touched, and an extension keeps
  * its own contract.
+ *
+ * The slot behaviour is package data too (SOURCE-MIGRATE step 4): `standard` and non-derived
+ * `inputs` from the agent's src/catalog/slot-defaults.json, `options`/`varyOn` from the producer
+ * option classes, and every other `inputs` derived from the read graph. A consumer's `uses` stay its
+ * own: they follow the candidates it pins.
  */
 import { isDeepStrictEqual } from "node:util";
 import { deriveRefs, feedsIndex } from "./derive.js";
@@ -14,6 +19,8 @@ import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa, type F
 import { iaPath, jsonBytes, slotDir, slotFile } from "./layout.js";
 import { FOUNDRY_IA_AGENTS, SLOT_AGENTS, SLOT_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type SlotAgent, type SlotPosition } from "./types.js";
 import { modelExists, readModelText } from "../slots.js";
+import { classify } from "../slot-options.js";
+import { OPTION_TABLE } from "./option-classes.js";
 
 /** The agents whose IA a package owns (the Publisher and Producer trees are synced in their own steps). */
 export const SYNC_AGENTS = FOUNDRY_IA_AGENTS;
@@ -21,7 +28,7 @@ export type SyncAgent = typeof SYNC_AGENTS[number];
 const PACKAGE_IA: Readonly<Record<SyncAgent, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
 
 export const SYNC_KINDS = [
-  "undeclared-leaf", "unadopted-leaf", "redefined", "source", "layers", "axes", "node", "group", "order", "contract", "kind", "position", "slot-missing",
+  "undeclared-leaf", "unadopted-leaf", "redefined", "source", "layers", "axes", "node", "group", "order", "contract", "kind", "behaviour", "position", "slot-missing",
 ] as const;
 export type SyncKind = typeof SYNC_KINDS[number];
 export interface SyncFinding { readonly agent: SyncAgent; readonly kind: SyncKind; readonly slot?: string; readonly detail: string }
@@ -85,6 +92,54 @@ function packageFields(slot: FoundrySlot): Doc {
   return { kind: slot.kind, contract: slot.contract };
 }
 
+/** The read-graph context a slot's refs resolve in: every placed slot id, and the Director feeds. */
+export interface RefContext { readonly known: ReadonlySet<string>; readonly feeds: ReadonlyMap<string, readonly string[]> }
+export function refContext(consumerDir: string, agent: SyncAgent, state: SyncState): RefContext {
+  const known = knownSlots(consumerDir, agent, state);
+  const feeds = feedsIndex([...(agent === "director" ? state.pkg : directorIa()).slots.values()].map(slot => [slot.id, slot.feeds] as const), known);
+  return { known, feeds };
+}
+
+/** The behaviour fields the package gives one slot.json, in slot.json key order; an absent key is removed. */
+export const BEHAVIOUR_KEYS = ["inputs", "options", "varyOn", "standard"] as const;
+export interface SlotBehaviour { readonly inputs: string[]; readonly options?: number; readonly varyOn?: string; readonly standard?: string; readonly uses: string[]; readonly dropped: string[] }
+/**
+ * One package slot's behaviour: its inputs (the package's listed inputs that name a placed slot, else
+ * derived from the read graph), its option class (options/varyOn when it offers more than one) and
+ * its standard; `uses` is the derived default an adopted leaf starts from.
+ */
+export function packageBehaviour(agent: SyncAgent, id: string, slot: FoundrySlot, position: Pick<SlotPosition, "l1" | "l2">, ctx: RefContext): SlotBehaviour {
+  const derived = deriveRefs(agent as SlotAgent, slot.kind, id, { inputs: slot.declaredInputs, uses: slot.declaredUses }, ctx);
+  const listed = slot.defaults.inputs;
+  const inputs = listed ? listed.filter(ref => ctx.known.has(ref) && ref !== id) : derived.inputs;
+  // Listed inputs replace the derived ones, so only the dropped `uses` refs and the unplaced listed inputs count.
+  const usesDropped = listed ? deriveRefs(agent as SlotAgent, slot.kind, id, { inputs: [], uses: slot.declaredUses }, { known: ctx.known, feeds: new Map() }).dropped : [];
+  const dropped = listed ? [...new Set([...usesDropped, ...listed.filter(ref => !ctx.known.has(ref))])].sort() : derived.dropped;
+  const classId = classify(agent as SlotAgent, id, `${position.l1}/${position.l2}`)?.classId;
+  const klass = classId ? OPTION_TABLE.classes[classId] : undefined;
+  return {
+    inputs,
+    ...(klass && klass.options > 1 ? { options: klass.options, ...(klass.varyOn ? { varyOn: klass.varyOn } : {}) } : {}),
+    ...(slot.defaults.standard !== undefined ? { standard: slot.defaults.standard } : {}),
+    uses: derived.uses, dropped,
+  };
+}
+/** `doc` with the package behaviour applied: present keys set in place (a new key appended), absent ones removed. */
+function withBehaviour(doc: Doc, behaviour: SlotBehaviour): Doc {
+  const out: Doc = { ...doc };
+  for (const key of BEHAVIOUR_KEYS) {
+    const value = behaviour[key];
+    if (value === undefined) delete out[key]; else out[key] = value;
+  }
+  return out;
+}
+/** A newly adopted package leaf's slot.json: structure, derived refs and the package behaviour. */
+export function adoptedSlotDoc(agent: SyncAgent, id: string, slot: FoundrySlot, position: SlotPosition, ctx: RefContext): { doc: Doc; dropped: string[] } {
+  const behaviour = packageBehaviour(agent, id, slot, position, ctx);
+  const doc = withBehaviour({ schema: SLOT_SCHEMA, id, agent, ia: { ...position }, ...packageFields(slot), inputs: behaviour.inputs, uses: behaviour.uses }, behaviour);
+  return { doc, dropped: behaviour.dropped };
+}
+
 export interface SyncState {
   readonly agent: SyncAgent;
   readonly pkg: FoundryIa;
@@ -113,6 +168,7 @@ const sameIa = (a: unknown, b: unknown) => sameJson(
 /** Every difference between a consumer and its package IA (extensions allowed), by kind. */
 export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncState = syncState(consumerDir, agent)): SyncFinding[] {
   const { pkg, consumer, target, positions } = state;
+  const ctx = consumer ? refContext(consumerDir, agent, state) : undefined;
   const findings: SyncFinding[] = [];
   const add = (kind: SyncKind, detail: string, slot?: string) => findings.push({ agent, kind, ...(slot ? { slot } : {}), detail });
   if (!consumer) { add("slot-missing", `${agent} has no ia.json (clossys ia ${agent} --adopt)`); return findings; }
@@ -149,6 +205,9 @@ export function syncDrift(consumerDir: string, agent: SyncAgent, state: SyncStat
     if (slot) {
       if (doc.kind !== slot.kind) add("kind", `${id} is kind ${String(doc.kind)}, the package says ${slot.kind}`, id);
       if (!sameJson(doc.contract, slot.contract)) add("contract", `${id} contract differs from the package`, id);
+      const behaviour = packageBehaviour(agent, id, slot, position, ctx!);
+      const off = BEHAVIOUR_KEYS.filter(key => !sameJson(doc[key], behaviour[key]));
+      if (off.length) add("behaviour", `${id} ${off.join(", ")} differ from the package (${off.map(key => `${key} ${JSON.stringify(doc[key] ?? null)} vs ${JSON.stringify(behaviour[key] ?? null)}`).join("; ")})`, id);
     }
     if (!sameIa(doc.ia, position)) add("position", `${id} slot.json ia ${JSON.stringify(doc.ia)} is not ${JSON.stringify(position)}`, id);
   }
@@ -179,18 +238,19 @@ export function syncPlan(consumerDir: string, agent: SyncAgent, known: ReadonlyS
   const iaBytes = jsonBytes(state.target);
   if (readModelText(iaFile) !== iaBytes) writes.push([iaFile, iaBytes]);
   const feeds = feedsIndex([...(agent === "director" ? state.pkg : directorIa()).slots.values()].map(slot => [slot.id, slot.feeds] as const), known);
+  const ctx: RefContext = { known, feeds };
   for (const [id, position] of state.positions) {
     const file = slotFile(slotDir(consumerDir, agent, id));
     const slot = state.pkg.slots.get(id);
     let doc: Doc;
     if (!modelExists(file)) {
       if (!slot) continue;
-      const derived = deriveRefs(agent as SlotAgent, slot.kind, id, { inputs: slot.declaredInputs, uses: slot.declaredUses }, { known, feeds });
-      doc = { schema: SLOT_SCHEMA, id, agent, ia: { ...position }, ...packageFields(slot), inputs: derived.inputs, uses: derived.uses };
+      doc = adoptedSlotDoc(agent, id, slot, position, ctx).doc;
       adopted.push(id);
     } else {
       const current = readDoc(file);
       doc = { ...current, ia: { ...position }, ...(slot ? packageFields(slot) : {}) };
+      if (slot) doc = withBehaviour(doc, packageBehaviour(agent, id, slot, position, ctx));
       if (sameJson(current, doc) && Object.keys(current).join() === Object.keys(doc).join()) continue;
     }
     writes.push([file, jsonBytes(doc)]);

@@ -65,5 +65,6 @@
     "themes.spacing",
     "themes.tracking-tight"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

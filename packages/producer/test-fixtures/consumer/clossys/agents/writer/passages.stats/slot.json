@@ -140,5 +140,6 @@
   "inputs": [
     "advantage.proposition.proof"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

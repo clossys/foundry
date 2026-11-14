@@ -73,5 +73,6 @@
     "components.icon",
     "components.logo",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "component"
 }

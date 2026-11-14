@@ -263,5 +263,6 @@
     "components.table",
     "components.tag-group",
     "components.text-field"
-  ]
+  ],
+  "standard": "section.app"
 }

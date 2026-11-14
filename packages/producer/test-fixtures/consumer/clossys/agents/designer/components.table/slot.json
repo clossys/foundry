@@ -73,5 +73,6 @@
   ],
   "uses": [
     "components.checkbox"
-  ]
+  ],
+  "standard": "component"
 }

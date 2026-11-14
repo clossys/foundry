@@ -325,5 +325,6 @@
     "components.link",
     "components.semantic-content",
     "sections.empty-state"
-  ]
+  ],
+  "standard": "section.app"
 }

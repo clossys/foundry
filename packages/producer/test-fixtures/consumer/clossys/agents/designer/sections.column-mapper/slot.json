@@ -205,5 +205,6 @@
     "components.select",
     "components.semantic-content",
     "components.table"
-  ]
+  ],
+  "standard": "section.app"
 }

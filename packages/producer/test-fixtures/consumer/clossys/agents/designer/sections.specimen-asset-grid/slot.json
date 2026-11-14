@@ -90,5 +90,6 @@
     "components.logo",
     "components.semantic-content",
     "components.specimen-grid"
-  ]
+  ],
+  "standard": "section.app"
 }

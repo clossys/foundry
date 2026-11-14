@@ -67,5 +67,6 @@
     "frames.app-shell",
     "frames.auth-shell",
     "frames.site-shell"
-  ]
+  ],
+  "standard": "frame"
 }

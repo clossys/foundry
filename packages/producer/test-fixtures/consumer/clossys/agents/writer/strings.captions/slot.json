@@ -24,5 +24,6 @@
     "advantage.proposition.proof",
     "identity.visual.imagery"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }

@@ -125,5 +125,6 @@
     "components.search-field",
     "components.semantic-content",
     "components.tooltip"
-  ]
+  ],
+  "standard": "frame"
 }

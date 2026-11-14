@@ -90,5 +90,6 @@
     "components.grid-list",
     "components.semantic-content",
     "components.specimen-player"
-  ]
+  ],
+  "standard": "section.app"
 }

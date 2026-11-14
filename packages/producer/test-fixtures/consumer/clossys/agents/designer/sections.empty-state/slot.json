@@ -159,5 +159,6 @@
     "components.icon",
     "components.link",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

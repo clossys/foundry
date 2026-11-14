@@ -34,5 +34,6 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [],
+  "standard": "brief.list"
 }

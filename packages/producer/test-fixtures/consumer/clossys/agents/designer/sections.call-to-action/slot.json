@@ -150,5 +150,6 @@
     "components.card",
     "components.link",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.site"
 }

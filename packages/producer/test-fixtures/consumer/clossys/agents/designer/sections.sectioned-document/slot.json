@@ -89,5 +89,6 @@
     "sections.media",
     "sections.pricing",
     "sections.section-header"
-  ]
+  ],
+  "standard": "section.site"
 }

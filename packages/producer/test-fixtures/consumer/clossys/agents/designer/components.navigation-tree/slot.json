@@ -73,5 +73,6 @@
     "themes.sidebar-foreground",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

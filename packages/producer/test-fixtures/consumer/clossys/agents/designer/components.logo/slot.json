@@ -68,5 +68,6 @@
     "themes.sidebar-foreground",
     "themes.sidebar-primary-foreground"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

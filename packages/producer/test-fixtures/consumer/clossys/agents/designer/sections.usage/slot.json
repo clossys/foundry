@@ -247,5 +247,6 @@
     "components.semantic-content",
     "components.status-mark",
     "sections.empty-state"
-  ]
+  ],
+  "standard": "section.app"
 }

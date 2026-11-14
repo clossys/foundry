@@ -138,7 +138,10 @@
     }
   },
   "inputs": [
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "context.company.constraint",
+    "focus.offer.excluded"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

@@ -156,7 +156,9 @@
     }
   },
   "inputs": [
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "capability.team.structure"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

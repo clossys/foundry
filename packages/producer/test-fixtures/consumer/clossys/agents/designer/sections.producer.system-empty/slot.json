@@ -49,5 +49,6 @@
   ],
   "uses": [
     "components.empty"
-  ]
+  ],
+  "standard": "section.app"
 }

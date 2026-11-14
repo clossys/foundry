@@ -313,5 +313,6 @@
     "components.link",
     "components.semantic-content",
     "components.text-field"
-  ]
+  ],
+  "standard": "section.app"
 }

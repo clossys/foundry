@@ -232,5 +232,6 @@
     "components.status-mark",
     "components.table",
     "components.toggle-group"
-  ]
+  ],
+  "standard": "section.site"
 }

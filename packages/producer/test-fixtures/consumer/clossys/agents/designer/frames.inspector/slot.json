@@ -107,10 +107,10 @@
     "identity.visual.imagery",
     "identity.visual.style",
     "themes.border",
-    "themes.foreground",
-    "themes.muted-foreground",
     "themes.popover",
-    "themes.spacing"
+    "themes.spacing",
+    "themes.foreground",
+    "themes.muted-foreground"
   ],
   "uses": [
     "components.button",
@@ -118,5 +118,6 @@
     "components.resize-handle",
     "components.semantic-content",
     "frames.sheet"
-  ]
+  ],
+  "standard": "frame"
 }

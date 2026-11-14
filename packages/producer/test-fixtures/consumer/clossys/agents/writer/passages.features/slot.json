@@ -70,5 +70,8 @@
     "advantage.proposition.promise",
     "focus.offer.included"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "tone",
+  "standard": "passage"
 }

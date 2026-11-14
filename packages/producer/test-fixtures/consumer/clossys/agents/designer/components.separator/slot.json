@@ -40,5 +40,6 @@
     "identity.visual.style",
     "themes.border"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

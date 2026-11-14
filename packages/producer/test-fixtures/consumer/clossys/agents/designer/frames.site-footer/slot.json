@@ -133,5 +133,6 @@
     "components.logo",
     "components.semantic-content",
     "components.separator"
-  ]
+  ],
+  "standard": "frame"
 }

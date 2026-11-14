@@ -143,5 +143,6 @@
     "components.icon",
     "components.link",
     "components.logo"
-  ]
+  ],
+  "standard": "frame"
 }

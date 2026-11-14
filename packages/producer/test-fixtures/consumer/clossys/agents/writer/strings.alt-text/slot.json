@@ -21,7 +21,9 @@
     }
   },
   "inputs": [
-    "identity.visual.imagery"
+    "identity.visual.imagery",
+    "identity.naming.name"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }

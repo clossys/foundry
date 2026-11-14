@@ -60,5 +60,6 @@
     "components.grid-list",
     "components.rich-text",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "component"
 }

@@ -152,5 +152,6 @@
     "components.link",
     "components.logo",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.site"
 }

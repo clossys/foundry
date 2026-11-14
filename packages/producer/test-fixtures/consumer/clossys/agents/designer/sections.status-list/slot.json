@@ -281,5 +281,6 @@
   "uses": [
     "components.semantic-content",
     "components.status-mark"
-  ]
+  ],
+  "standard": "section.site"
 }

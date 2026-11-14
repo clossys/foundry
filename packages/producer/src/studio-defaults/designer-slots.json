@@ -6,6 +6,7 @@
   "slots": [
     {
       "id": "themes.success",
+      "standard": "token.color",
       "l1": {
         "id": "themes.colors",
         "label": "Colors"
@@ -38,6 +39,7 @@
     },
     {
       "id": "themes.warning",
+      "standard": "token.color",
       "l1": {
         "id": "themes.colors",
         "label": "Colors"
@@ -70,6 +72,7 @@
     },
     {
       "id": "themes.info",
+      "standard": "token.color",
       "l1": {
         "id": "themes.colors",
         "label": "Colors"
@@ -102,6 +105,7 @@
     },
     {
       "id": "sections.producer.team-strip",
+      "standard": "section.app",
       "l1": {
         "id": "sections.producer",
         "label": "Producer"
@@ -171,6 +175,7 @@
     },
     {
       "id": "sections.producer.system-empty",
+      "standard": "section.app",
       "l1": {
         "id": "sections.producer",
         "label": "Producer"
@@ -215,6 +220,7 @@
     },
     {
       "id": "components.studio.specimen-document",
+      "standard": "component",
       "l1": {
         "id": "components.studio",
         "label": "Studio"

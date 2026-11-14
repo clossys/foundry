@@ -64,5 +64,6 @@
     "components.icon",
     "components.semantic-content",
     "components.toolbar"
-  ]
+  ],
+  "standard": "component"
 }

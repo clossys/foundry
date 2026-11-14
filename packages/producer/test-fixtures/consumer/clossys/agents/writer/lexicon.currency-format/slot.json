@@ -20,6 +20,7 @@
     "focus.reach.geography"
   ],
   "uses": [],
+  "standard": "lexicon.format-rule",
   "notNeeded": {
     "reason": "synthetic fixture: the example shop lists no prices",
     "since": "2026-11-14",

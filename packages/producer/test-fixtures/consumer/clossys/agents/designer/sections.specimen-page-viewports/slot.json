@@ -98,5 +98,6 @@
     "components.semantic-content",
     "components.specimen-viewport",
     "components.table"
-  ]
+  ],
+  "standard": "section.app"
 }

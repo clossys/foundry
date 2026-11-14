@@ -105,5 +105,6 @@
     "components.semantic-content",
     "components.slider",
     "components.toggle-button"
-  ]
+  ],
+  "standard": "component"
 }

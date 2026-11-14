@@ -66,5 +66,6 @@
     "components.disclosure",
     "components.grid-list",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "component"
 }

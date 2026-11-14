@@ -75,5 +75,6 @@
     "themes.muted-foreground",
     "themes.radius"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

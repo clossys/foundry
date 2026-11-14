@@ -158,5 +158,6 @@
     "components.avatar",
     "components.card",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.site"
 }

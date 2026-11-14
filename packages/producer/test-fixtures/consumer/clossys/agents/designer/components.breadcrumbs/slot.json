@@ -64,5 +64,6 @@
   ],
   "uses": [
     "components.link"
-  ]
+  ],
+  "standard": "component"
 }

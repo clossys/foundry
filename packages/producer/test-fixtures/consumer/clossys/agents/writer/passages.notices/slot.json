@@ -84,7 +84,9 @@
     }
   },
   "inputs": [
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "execution.risk.mitigation"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

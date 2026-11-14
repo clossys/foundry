@@ -1,0 +1,178 @@
+{
+  "schema": "clossys.slot-defaults/1",
+  "agent": "director",
+  "about": "Per-slot package defaults the IA sync writes into every consumer slot.json: the standard that judges the slot, and inputs where the read graph does not derive them. Options and varyOn come from the producer option classes.",
+  "slots": {
+    "advantage.defensibility.differentiator": {
+      "standard": "brief.statement"
+    },
+    "advantage.defensibility.moat": {
+      "standard": "brief.statement"
+    },
+    "advantage.model.margin": {
+      "standard": "brief.measure"
+    },
+    "advantage.model.pricing": {
+      "standard": "brief.measure"
+    },
+    "advantage.proposition.promise": {
+      "standard": "brief.statement"
+    },
+    "advantage.proposition.proof": {
+      "standard": "brief.list"
+    },
+    "aspiration.culture.behavior": {
+      "standard": "brief.list"
+    },
+    "aspiration.culture.belief": {
+      "standard": "brief.statement"
+    },
+    "aspiration.goal.annual": {
+      "standard": "brief.measure"
+    },
+    "aspiration.goal.long-term": {
+      "standard": "brief.measure"
+    },
+    "aspiration.purpose.mission": {
+      "standard": "brief.statement"
+    },
+    "aspiration.purpose.vision": {
+      "standard": "brief.statement"
+    },
+    "capability.competency.critical": {
+      "standard": "brief.list"
+    },
+    "capability.competency.gap": {
+      "standard": "brief.list"
+    },
+    "capability.operation.delivery": {
+      "standard": "brief.list"
+    },
+    "capability.operation.technology": {
+      "standard": "brief.list"
+    },
+    "capability.resource.allocation": {
+      "standard": "brief.list"
+    },
+    "capability.resource.funding": {
+      "standard": "brief.measure"
+    },
+    "capability.sourcing.acquire": {
+      "standard": "brief.list"
+    },
+    "capability.sourcing.build": {
+      "standard": "brief.list"
+    },
+    "capability.sourcing.partner": {
+      "standard": "brief.list"
+    },
+    "capability.team.role": {
+      "standard": "brief.list"
+    },
+    "capability.team.structure": {
+      "standard": "brief.list"
+    },
+    "context.company.constraint": {
+      "standard": "brief.list"
+    },
+    "context.company.strength": {
+      "standard": "brief.list"
+    },
+    "context.competition.alternative": {
+      "standard": "brief.profile"
+    },
+    "context.competition.gap": {
+      "standard": "brief.list"
+    },
+    "context.customer.buying": {
+      "standard": "brief.profile"
+    },
+    "context.customer.need": {
+      "standard": "brief.profile"
+    },
+    "context.market.size": {
+      "standard": "brief.measure"
+    },
+    "context.market.trend": {
+      "standard": "brief.list"
+    },
+    "execution.measure.driver": {
+      "standard": "brief.measure"
+    },
+    "execution.measure.north-star": {
+      "standard": "brief.measure"
+    },
+    "execution.priority.bet": {
+      "standard": "brief.list"
+    },
+    "execution.priority.parked": {
+      "standard": "brief.list"
+    },
+    "execution.risk.mitigation": {
+      "standard": "brief.list"
+    },
+    "execution.risk.threat": {
+      "standard": "brief.list"
+    },
+    "execution.roadmap.milestone": {
+      "standard": "brief.measure"
+    },
+    "execution.roadmap.release": {
+      "standard": "brief.list"
+    },
+    "focus.category.definition": {
+      "standard": "brief.statement"
+    },
+    "focus.category.stance": {
+      "standard": "brief.statement"
+    },
+    "focus.lifecycle.acquisition": {
+      "standard": "brief.list"
+    },
+    "focus.lifecycle.retention": {
+      "standard": "brief.list"
+    },
+    "focus.offer.excluded": {
+      "standard": "brief.list"
+    },
+    "focus.offer.included": {
+      "standard": "brief.list"
+    },
+    "focus.reach.channel": {
+      "standard": "brief.list"
+    },
+    "focus.reach.geography": {
+      "standard": "brief.list"
+    },
+    "focus.segment.core": {
+      "standard": "brief.profile"
+    },
+    "focus.segment.next": {
+      "standard": "brief.profile"
+    },
+    "identity.brand.essence": {
+      "standard": "brief.statement"
+    },
+    "identity.brand.personality": {
+      "standard": "brief.profile"
+    },
+    "identity.naming.architecture": {
+      "standard": "brief.list"
+    },
+    "identity.naming.name": {
+      "standard": "brief.statement"
+    },
+    "identity.verbal.narrative": {
+      "standard": "brief.statement"
+    },
+    "identity.verbal.voice": {
+      "standard": "brief.profile"
+    },
+    "identity.visual.imagery": {
+      "standard": "brief.profile"
+    },
+    "identity.visual.style": {
+      "standard": "brief.profile"
+    }
+  }
+}

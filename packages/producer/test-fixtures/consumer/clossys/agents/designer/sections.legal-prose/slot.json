@@ -145,5 +145,6 @@
     "components.semantic-content",
     "sections.article",
     "sections.section-header"
-  ]
+  ],
+  "standard": "section.site"
 }

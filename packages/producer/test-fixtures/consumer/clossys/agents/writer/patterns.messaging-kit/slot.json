@@ -59,7 +59,12 @@
     "advantage.proposition.promise",
     "aspiration.purpose.mission",
     "identity.brand.essence",
-    "identity.verbal.narrative"
+    "identity.verbal.narrative",
+    "focus.category.definition",
+    "identity.naming.architecture"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "tone",
+  "standard": "pattern"
 }

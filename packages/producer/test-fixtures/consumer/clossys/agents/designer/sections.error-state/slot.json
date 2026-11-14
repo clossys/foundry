@@ -157,5 +157,6 @@
     "components.button",
     "components.link",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

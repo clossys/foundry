@@ -104,5 +104,6 @@
   "uses": [
     "components.logo",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.site"
 }

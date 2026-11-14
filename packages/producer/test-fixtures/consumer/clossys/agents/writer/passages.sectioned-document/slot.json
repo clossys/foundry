@@ -19,6 +19,9 @@
       "fields": []
     }
   },
-  "inputs": [],
-  "uses": []
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": [],
+  "standard": "passage"
 }

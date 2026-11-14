@@ -185,5 +185,6 @@
   ],
   "uses": [
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

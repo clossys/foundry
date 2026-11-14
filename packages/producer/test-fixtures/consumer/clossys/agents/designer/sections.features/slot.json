@@ -178,5 +178,6 @@
     "components.semantic-content",
     "components.tabs",
     "sections.media"
-  ]
+  ],
+  "standard": "section.site"
 }

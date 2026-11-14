@@ -100,5 +100,6 @@
   "uses": [
     "components.link",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "frame"
 }

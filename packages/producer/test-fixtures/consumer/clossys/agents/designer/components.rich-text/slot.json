@@ -110,5 +110,6 @@
     "components.link",
     "components.semantic-content",
     "components.table"
-  ]
+  ],
+  "standard": "component"
 }

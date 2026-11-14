@@ -190,7 +190,6 @@
     "advantage.proposition.promise",
     "assets.image",
     "assets.image-ratio",
-    "assets.pattern",
     "focus.category.definition",
     "focus.segment.core",
     "identity.brand.essence",
@@ -204,12 +203,14 @@
     "themes.muted",
     "themes.muted-foreground",
     "themes.primary",
-    "themes.spacing"
+    "themes.spacing",
+    "assets.pattern"
   ],
   "uses": [
     "components.button",
     "components.link",
     "components.media-player",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.site"
 }

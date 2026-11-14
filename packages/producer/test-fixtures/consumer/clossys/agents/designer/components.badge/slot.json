@@ -80,5 +80,6 @@
     "themes.secondary-foreground",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

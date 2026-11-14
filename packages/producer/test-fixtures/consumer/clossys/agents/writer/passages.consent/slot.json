@@ -87,5 +87,6 @@
     "advantage.proposition.proof",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

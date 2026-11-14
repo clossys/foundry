@@ -177,5 +177,6 @@
     "components.link",
     "components.select",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

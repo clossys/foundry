@@ -52,5 +52,6 @@
     "components.calendar",
     "components.date-field",
     "components.popover"
-  ]
+  ],
+  "standard": "component"
 }

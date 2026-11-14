@@ -169,5 +169,6 @@
     "components.menu",
     "components.semantic-content",
     "components.status-mark"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

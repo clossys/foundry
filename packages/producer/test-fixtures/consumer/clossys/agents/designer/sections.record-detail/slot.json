@@ -284,5 +284,6 @@
     "components.semantic-content",
     "components.skeleton",
     "components.tabs"
-  ]
+  ],
+  "standard": "section.app"
 }

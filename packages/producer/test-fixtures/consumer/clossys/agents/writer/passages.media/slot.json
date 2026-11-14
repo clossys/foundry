@@ -105,5 +105,6 @@
     "identity.verbal.voice",
     "identity.visual.imagery"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

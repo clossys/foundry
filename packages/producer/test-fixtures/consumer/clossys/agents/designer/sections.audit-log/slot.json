@@ -283,5 +283,6 @@
     "components.search-field",
     "components.semantic-content",
     "components.table"
-  ]
+  ],
+  "standard": "section.app"
 }

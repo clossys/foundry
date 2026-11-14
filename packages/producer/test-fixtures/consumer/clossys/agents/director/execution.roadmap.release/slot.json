@@ -36,5 +36,6 @@
   "inputs": [
     "focus.lifecycle.acquisition"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "brief.list"
 }

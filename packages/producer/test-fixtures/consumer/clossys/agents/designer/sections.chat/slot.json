@@ -193,5 +193,6 @@
     "components.spinner",
     "components.text-field",
     "components.tooltip"
-  ]
+  ],
+  "standard": "section.app"
 }

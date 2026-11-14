@@ -168,5 +168,6 @@
     "advantage.model.pricing",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

@@ -188,5 +188,6 @@
     "components.toast",
     "frames.site-footer",
     "frames.site-header"
-  ]
+  ],
+  "standard": "frame"
 }

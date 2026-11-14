@@ -36,5 +36,8 @@
   "inputs": [
     "context.customer.need"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle",
+  "standard": "brief.statement"
 }

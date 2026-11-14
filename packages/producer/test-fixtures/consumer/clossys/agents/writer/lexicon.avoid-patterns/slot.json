@@ -18,5 +18,6 @@
   "inputs": [
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "lexicon.term-list"
 }

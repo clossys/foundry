@@ -218,5 +218,6 @@
     "components.button",
     "components.icon",
     "components.text-field"
-  ]
+  ],
+  "standard": "section.site"
 }

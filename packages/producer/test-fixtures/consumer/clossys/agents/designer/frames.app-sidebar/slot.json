@@ -153,5 +153,6 @@
     "components.semantic-content",
     "components.tooltip",
     "frames.sheet"
-  ]
+  ],
+  "standard": "frame"
 }

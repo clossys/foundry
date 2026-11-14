@@ -231,5 +231,6 @@
     "components.breadcrumbs",
     "components.button",
     "components.tabs"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

@@ -276,5 +276,6 @@
     "components.select",
     "components.semantic-content",
     "components.text-field"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

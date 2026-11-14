@@ -100,5 +100,6 @@
     "components.semantic-content",
     "components.specimen-matrix",
     "components.table"
-  ]
+  ],
+  "standard": "section.app"
 }

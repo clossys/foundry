@@ -238,5 +238,6 @@
     "components.semantic-content",
     "components.table",
     "components.tooltip"
-  ]
+  ],
+  "standard": "section.app"
 }

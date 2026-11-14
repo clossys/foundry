@@ -121,7 +121,10 @@
   },
   "inputs": [
     "identity.verbal.narrative",
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "aspiration.goal.long-term",
+    "execution.measure.driver"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

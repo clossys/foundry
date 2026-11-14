@@ -65,5 +65,6 @@
     "themes.muted",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

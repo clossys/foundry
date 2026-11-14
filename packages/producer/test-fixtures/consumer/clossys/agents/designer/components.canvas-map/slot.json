@@ -63,5 +63,6 @@
   "uses": [
     "components.button",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "component"
 }

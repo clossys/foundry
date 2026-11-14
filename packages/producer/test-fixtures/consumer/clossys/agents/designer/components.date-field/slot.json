@@ -92,5 +92,6 @@
     "themes.sidebar-primary-foreground",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

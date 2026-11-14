@@ -143,7 +143,6 @@
   },
   "inputs": [
     "advantage.proposition.promise",
-    "assets.icon-close",
     "focus.category.definition",
     "focus.segment.core",
     "identity.brand.essence",
@@ -153,12 +152,14 @@
     "identity.visual.style",
     "themes.card",
     "themes.destructive",
-    "themes.spacing"
+    "themes.spacing",
+    "assets.icon-close"
   ],
   "uses": [
     "components.banner",
     "components.button",
     "components.icon",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

@@ -126,5 +126,6 @@
     "components.status-mark",
     "components.toggle-button",
     "components.tooltip"
-  ]
+  ],
+  "standard": "frame"
 }

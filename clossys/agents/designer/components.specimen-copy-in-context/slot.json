@@ -69,5 +69,6 @@
     "components.rich-text",
     "components.semantic-content",
     "components.table"
-  ]
+  ],
+  "standard": "component"
 }

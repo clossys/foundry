@@ -104,5 +104,6 @@
     "components.semantic-content",
     "components.specimen-copy-in-context",
     "components.table"
-  ]
+  ],
+  "standard": "section.app"
 }

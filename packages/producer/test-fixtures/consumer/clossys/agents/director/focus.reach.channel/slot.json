@@ -36,5 +36,6 @@
   "inputs": [
     "focus.segment.core"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "brief.list"
 }

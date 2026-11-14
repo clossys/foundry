@@ -88,5 +88,6 @@
     "components.grid-list",
     "components.semantic-content",
     "components.specimen-ladder"
-  ]
+  ],
+  "standard": "section.app"
 }

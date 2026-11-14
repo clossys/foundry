@@ -225,5 +225,6 @@
     "components.chart-sparkline",
     "components.meter",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

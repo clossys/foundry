@@ -80,5 +80,6 @@
     "themes.sidebar-ring",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

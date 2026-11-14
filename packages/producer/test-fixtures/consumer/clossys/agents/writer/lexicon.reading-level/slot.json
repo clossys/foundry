@@ -19,5 +19,6 @@
     "focus.segment.core",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "lexicon.voice-rule"
 }

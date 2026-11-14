@@ -146,5 +146,6 @@
   "uses": [
     "components.disclosure",
     "components.semantic-content"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

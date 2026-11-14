@@ -229,5 +229,6 @@
     "components.semantic-content",
     "components.switch",
     "components.toast"
-  ]
+  ],
+  "standard": "section.app"
 }

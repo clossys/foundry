@@ -87,5 +87,6 @@
   "uses": [
     "components.icon",
     "components.sheet"
-  ]
+  ],
+  "standard": "component"
 }

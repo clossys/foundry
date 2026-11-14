@@ -56,4 +56,21 @@ describe("ia sync --check", () => {
     expect(kinds).toContain("contract");
     expect(kinds).not.toContain("undeclared-leaf");
   });
+
+  it("reports a behaviour edit: standard, options/varyOn and inputs are package data", () => {
+    const consumer = copy();
+    const edit = (agent: string, slot: string, change: (doc: any) => void) => {
+      const file = join(consumer, "agents", agent, slot, "slot.json");
+      const doc = JSON.parse(readFileSync(file, "utf8"));
+      change(doc);
+      writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+    };
+    edit("writer", "passages.hero", doc => { doc.standard = "string"; });
+    edit("director", "identity.naming.name", doc => { delete doc.options; delete doc.varyOn; });
+    edit("designer", "sections.hero", doc => { doc.inputs = doc.inputs.slice(1); });
+    const behaviour = (agent: typeof SYNC_AGENTS[number]) => syncDrift(consumer, agent).filter(finding => finding.kind === "behaviour").map(finding => finding.slot);
+    expect(behaviour("writer")).toEqual(["passages.hero"]);
+    expect(behaviour("director")).toEqual(["identity.naming.name"]);
+    expect(behaviour("designer")).toEqual(["sections.hero"]);
+  });
 });

@@ -278,5 +278,6 @@
     "components.meter",
     "components.semantic-content",
     "components.status-mark"
-  ]
+  ],
+  "standard": "section.app"
 }

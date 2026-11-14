@@ -90,5 +90,6 @@
     "components.rich-text",
     "components.semantic-content",
     "components.specimen-passage"
-  ]
+  ],
+  "standard": "section.app"
 }

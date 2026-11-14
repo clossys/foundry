@@ -73,5 +73,6 @@
     "themes.ring",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

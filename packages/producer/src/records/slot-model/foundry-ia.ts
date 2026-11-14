@@ -22,7 +22,18 @@ export interface FoundrySlot {
   readonly declaredUses: readonly string[];
   /** Downstream slots this slot feeds (Director contract feeds). */
   readonly feeds: readonly string[];
+  /** The package's per-slot defaults (src/catalog/slot-defaults.json): its standard and any non-derived inputs. */
+  readonly defaults: SlotDefaults;
 }
+/** One slot's row in a package's src/catalog/slot-defaults.json (schema clossys.slot-defaults/1). */
+export interface SlotDefaults {
+  /** The standard that judges the slot. */
+  readonly standard?: string;
+  /** The slot's inputs, in order, where the read graph does not derive them; unset means derived. */
+  readonly inputs?: readonly string[];
+}
+export const SLOT_DEFAULTS_SCHEMA = "clossys.slot-defaults/1";
+export const SLOT_DEFAULTS_FILE = "src/catalog/slot-defaults.json";
 export interface FoundryIa { readonly agent: SlotAgent; readonly ia: IaDoc; readonly slots: ReadonlyMap<string, FoundrySlot> }
 
 const readJson = (root: string, path: string): any => JSON.parse(readFileSync(join(root, path), "utf8"));
@@ -32,6 +43,19 @@ const readOptionalJson = (root: string, path: string): any => {
   try { text = readFileSync(join(root, path), "utf8"); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
   return JSON.parse(text);
 };
+/** A package's per-slot defaults; empty when an older agent build ships none, a malformed file surfaces. */
+export function readSlotDefaults(root: string, agent: SlotAgent): ReadonlyMap<string, SlotDefaults> {
+  const doc = readOptionalJson(root, SLOT_DEFAULTS_FILE) as { schema?: unknown; agent?: unknown; slots?: unknown } | undefined;
+  if (doc === undefined) return new Map();
+  if (doc.schema !== SLOT_DEFAULTS_SCHEMA || doc.agent !== agent || !doc.slots || typeof doc.slots !== "object") throw new Error(`${agent} ${SLOT_DEFAULTS_FILE}: expected ${SLOT_DEFAULTS_SCHEMA} for ${agent}`);
+  const out = new Map<string, SlotDefaults>();
+  for (const [id, row] of Object.entries(doc.slots as Record<string, { standard?: unknown; inputs?: unknown }>)) {
+    if (row.standard !== undefined && typeof row.standard !== "string") throw new Error(`${agent} ${SLOT_DEFAULTS_FILE}: ${id} standard must be a string`);
+    if (row.inputs !== undefined && !(Array.isArray(row.inputs) && row.inputs.every(item => typeof item === "string"))) throw new Error(`${agent} ${SLOT_DEFAULTS_FILE}: ${id} inputs must be slot ids`);
+    out.set(id, { ...(row.standard !== undefined ? { standard: row.standard as string } : {}), ...(row.inputs !== undefined ? { inputs: [...row.inputs as string[]] } : {}) });
+  }
+  return out;
+}
 const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const stripAgent = (ref: string) => ref.replace(/^[a-z]+:/, "").replace(/@\d+$/, "");
 
@@ -57,6 +81,7 @@ export function directorIa(): FoundryIa {
   const raw = readOptionalJson(root, "src/slot-contracts/contracts.json") as { fixture?: Record<string, unknown>; slots: { id: string; inputs: string[]; feeds: string[] }[] } | undefined;
   const contracts = new Map<string, { inputs: string[]; feeds: string[] }>((raw?.slots ?? []).map(slot => [slot.id, { inputs: strings(slot.inputs), feeds: strings(slot.feeds) }]));
   const slots = new Map<string, FoundrySlot>();
+  const defaults = readSlotDefaults(root, "director");
   const nodes: IaNode[] = ia.nodes.map(node => ({
     id: node.id, label: node.name,
     children: node.children.map(child => ({ id: child.id, label: child.name, slots: [...child.leaves] })),
@@ -67,6 +92,7 @@ export function directorIa(): FoundryIa {
       // The brief fixture (DIR-CERT: Direction, Because, Watch) is the package default for every Director contract.
       id, kind: "brief", contract: { question: cell?.question ?? "", mustContain: cell?.mustContain ?? [], ...(raw?.fixture ? { fixture: raw.fixture } : {}) },
       declaredInputs: (contract?.inputs ?? []).map(stripAgent), declaredUses: [], feeds: (contract?.feeds ?? []).map(stripAgent),
+      defaults: defaults.get(id) ?? {},
     });
   }
   // The owner-decided L0 layers and axes (2026-11-13 IA review) are package data: every consumer IA levels by them.
@@ -106,12 +132,13 @@ export function designerIa(): FoundryIa {
   }
   const brief = DESIGN_BRIEF_INPUTS.map(([, id]) => id as string);
   const slots = new Map<string, FoundrySlot>();
+  const defaults = readSlotDefaults(root, "designer");
   for (const node of nodes) for (const child of node.children) for (const id of child.slots) {
     const slot = contracts.get(id) as { contract?: Record<string, unknown>; requires?: readonly string[] } | undefined;
     const contract = (slot?.contract ?? {}) as Record<string, unknown>;
     const composes = [...strings(contract.allowedComposes), ...strings(contract.composes)];
     const declaredInputs = [...new Set([...brief, ...(reads.get(id) ?? []).filter(input => input !== id)])].sort();
-    slots.set(id, { id, kind: "element", contract, declaredInputs, declaredUses: [...strings(slot?.requires), ...composes], feeds: [] });
+    slots.set(id, { id, kind: "element", contract, declaredInputs, declaredUses: [...strings(slot?.requires), ...composes], feeds: [], defaults: defaults.get(id) ?? {} });
   }
   for (const extra of studioDesignerSlots()) {
     let node = nodes.find(candidate => candidate.id === extra.l1.id);
@@ -120,14 +147,14 @@ export function designerIa(): FoundryIa {
     if (!group) { group = { id: extra.l2.id, label: extra.l2.label, slots: [] }; (node.children as IaLeafGroup[]).push(group); }
     const at = extra.after === null ? -1 : group.slots.indexOf(extra.after);
     group.slots.splice(at === -1 ? (extra.after === null ? 0 : group.slots.length) : at + 1, 0, extra.id);
-    slots.set(extra.id, { id: extra.id, kind: extra.kind, contract: extra.contract, declaredInputs: [...brief].sort(), declaredUses: [...extra.uses], feeds: [] });
+    slots.set(extra.id, { id: extra.id, kind: extra.kind, contract: extra.contract, declaredInputs: [...brief].sort(), declaredUses: [...extra.uses], feeds: [], defaults: { standard: extra.standard } });
   }
   return { agent: "designer", ia: { schema: IA_SCHEMA, source: `@clossys/designer#${ref}`, extensions: [], nodes }, slots };
 }
 
 /** One Designer slot the Studio publication defines (src/studio-defaults/designer-slots.json). */
 interface StudioDesignerSlot {
-  readonly id: string; readonly l1: { id: string; label: string }; readonly l2: { id: string; label: string };
+  readonly id: string; readonly standard: string; readonly l1: { id: string; label: string }; readonly l2: { id: string; label: string };
   readonly after: string | null; readonly kind: SlotKind; readonly uses: readonly string[]; readonly contract: Record<string, unknown>;
 }
 /**
@@ -137,7 +164,7 @@ interface StudioDesignerSlot {
  */
 export function studioDesignerSlots(): readonly StudioDesignerSlot[] {
   const doc = JSON.parse(readFileSync(join(PRODUCER_ROOT, "src", "studio-defaults", "designer-slots.json"), "utf8")) as { schema: string; agent: string; slots: StudioDesignerSlot[] };
-  if (doc.schema !== "clossys.package-slots/1" || doc.agent !== "designer" || !Array.isArray(doc.slots)) throw new Error("studio-defaults/designer-slots.json: unexpected shape");
+  if (doc.schema !== "clossys.package-slots/1" || doc.agent !== "designer" || !Array.isArray(doc.slots) || doc.slots.some(slot => typeof slot.standard !== "string")) throw new Error("studio-defaults/designer-slots.json: unexpected shape");
   return doc.slots;
 }
 
@@ -149,6 +176,7 @@ export function writerIa(): FoundryIa {
   const flat = (node: WriterNode): string[] => node.leaves ? [...node.leaves] : (node.children ?? []).flatMap(flat);
   const nodes: IaNode[] = [];
   const slots = new Map<string, FoundrySlot>();
+  const defaults = readSlotDefaults(root, "writer");
   for (const layer of WRITER_LAYERS) {
     const placement = readJson(root, `src/catalog/ia/${layer}.json`) as { nodes: WriterNode[] };
     const contracts = new Map((readJson(root, `src/catalog/slots/${layer}.json`) as { id: string; contract: Record<string, unknown>; requires: string[] }[]).map(slot => [slot.id, slot]));
@@ -159,7 +187,7 @@ export function writerIa(): FoundryIa {
       nodes.push({ id: `${layer}.${node.id}`, label: node.label, children });
       for (const child of children) for (const id of child.slots) {
         const slot = contracts.get(id);
-        slots.set(id, { id, kind: "strings", contract: slot?.contract ?? {}, declaredInputs: strings(slot?.requires).map(stripAgent), declaredUses: [], feeds: [] });
+        slots.set(id, { id, kind: "strings", contract: slot?.contract ?? {}, declaredInputs: strings(slot?.requires).map(stripAgent), declaredUses: [], feeds: [], defaults: defaults.get(id) ?? {} });
       }
     }
   }

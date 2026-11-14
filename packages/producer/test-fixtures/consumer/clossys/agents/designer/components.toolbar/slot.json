@@ -44,5 +44,6 @@
     "themes.input",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }
