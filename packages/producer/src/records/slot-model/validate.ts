@@ -2,6 +2,8 @@ import { pinIssues } from "@clossys/director";
 import { parseFrontmatter } from "./frontmatter.js";
 import { loadSchema, validateValue } from "../../pipeline/schema.js";
 import { contractFixtureIssues } from "./contract-fixture.js";
+import { RECORD_SCHEMA_IDS } from "../schemas.js";
+import { validateSlotContract } from "../validate.js";
 import {
   AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, MODEL_AGENTS, NODE_ID, PAGE_SCHEMA,
   PUBLICATION_SCHEMA, OPTION_COUNTS, VARY_ID, SEAT_AGENT, SEAT_PREFIX, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, STANDARD_ID, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
@@ -130,11 +132,24 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   return issues;
 }
 
-/** A kind's contract, beyond the object shape: the seat contract against contract-seat.schema.json, every kind's fixture by its shape. */
+/**
+ * A kind's contract, beyond the object shape: the seat contract against contract-seat.schema.json,
+ * a contract declaring `clossys.slot-contract/1` against the slot contract schema (naming this slot),
+ * every kind's fixture by its shape.
+ */
 function contractIssues(kind: SlotKind, contract: Record<string, unknown>, id: string, path: string): SlotModelIssue[] {
   if (kind === "seat") return seatContractIssues(contract, id, path);
-  if (!SLOT_KINDS.includes(kind) || contract.fixture === undefined) return [];
-  return fixtureShapeIssues(kind, contract).map(message => ({ code: "slot-invalid" as const, path, message: `contract.fixture ${message}` }));
+  const issues = contract.schema === RECORD_SCHEMA_IDS.slotContract ? slotContractIssues(contract, id, path) : [];
+  if (!SLOT_KINDS.includes(kind) || contract.fixture === undefined) return issues;
+  return [...issues, ...fixtureShapeIssues(kind, contract).map(message => ({ code: "slot-invalid" as const, path, message: `contract.fixture ${message}` }))];
+}
+
+/** A `clossys.slot-contract/1` contract: the slot contract schema and its semantics (records/validate.ts), and `slot` naming this slot. */
+export function slotContractIssues(contract: Readonly<Record<string, unknown>>, id: string, path = "slot.json"): SlotModelIssue[] {
+  const result = validateSlotContract(contract);
+  const issues: SlotModelIssue[] = result.ok ? [] : result.issues.map(issue => ({ code: "slot-invalid", path, message: `contract${issue.path === "$" || issue.path === "/" ? "" : ` ${issue.path}`} ${issue.message} (${RECORD_SCHEMA_IDS.slotContract})` }));
+  if (id && contract.slot !== id) issues.push({ code: "slot-invalid", path, message: `contract.slot must be ${id}, the slot's own id` });
+  return issues;
 }
 
 /** A seat slot's contract: `{step, fixture: {step, seat}}`, the step being the id after `seat.`. */
