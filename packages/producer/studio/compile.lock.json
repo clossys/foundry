@@ -3739,7 +3739,7 @@
     },
     {
       "path": "clossys/agents/producer/ia.json",
-      "sha256": "f31d1a81baebf2eb6a36da60ab0bb3c5f222377912f11ee12e42341ce5becb9d"
+      "sha256": "7022f687296789a612dd225471be6f4231a63abe91c5fce79b488ffd5536d0da"
     },
     {
       "path": "clossys/agents/producer/seat.designer.candidates/candidates/designer.candidates-v1.json",
@@ -3788,6 +3788,18 @@
     {
       "path": "clossys/agents/producer/seat.ia/slot.json",
       "sha256": "a7f5ef11ef57457a59b9be74571aea8037c7c2edcb215ca2314e950e9e116d0e"
+    },
+    {
+      "path": "clossys/agents/producer/seat.owner.decisions/candidates/owner.decisions-v1.json",
+      "sha256": "edfc0927f919a338034b8b7fe979ea6cc16833022f944130321283898992aeb8"
+    },
+    {
+      "path": "clossys/agents/producer/seat.owner.decisions/pin.json",
+      "sha256": "e737042822137c768f7c0c9e29911a5ec6bba141e254a56f52cf35d6bd982f79"
+    },
+    {
+      "path": "clossys/agents/producer/seat.owner.decisions/slot.json",
+      "sha256": "0b60cfc23c5f901ab3621202acd9e377637a97c2b5896772de5a7727ccf7083b"
     },
     {
       "path": "clossys/agents/producer/seat.pick.designer/candidates/pick.designer-v2.json",
@@ -6768,5 +6780,5 @@
       "sha256": "d625b721c766c95057120630d30bde88b2a61f5877abe1e0cb726fba22f182ad"
     }
   ],
-  "pinSetHash": "f52e9ff7c715e2b335cad21de02385bb94d0f974bf8d274f9b5aacf7452c157d"
+  "pinSetHash": "1ffaa09b7dfe31b5b4b9c31d654c3ad554fe094ca9a1d92611231922a7db7ef1"
 }
