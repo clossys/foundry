@@ -7,6 +7,7 @@ import type { Check, ConstitutionContext } from "../types.js";
 import { importSpecifiers, R03, R03_CHECKS, r03_1, r03_2, r03_3, r03_4, r03_5, RAW_HEADLESS, RUNG_READS, sourceKindOf } from "./r03.js";
 import { adoptedItem, createVerdict, createdItem, r03Spec, r03World, SEED_HASH, SEED_REF, submit } from "./r03.world.js";
 import { put } from "./r15.world.js";
+import { sha256Hex } from "../../records/hash.js";
 
 type Change = (spec: WorkspaceSpec) => void;
 const broken = (change: Change, edit?: Parameters<typeof r03World>[1]) => { const spec = r03Spec(); change(spec); return r03World(spec, edit); };
@@ -77,6 +78,22 @@ describe("R03.2 adopt is verbatim, for every candidate", () => {
   it("catches another agent's adopt whose bytes differ from its seed, or whose seed names no candidate", () => {
     catches(r03_2, broken(spec => { hero(spec).candidates = { "hero-v1.md": "---\nlocales: [\"en\"]\n---\none\n", "hero-v2.md": "---\nlocales: [\"en\"]\n---\ntwo\n" }; }), /adopts seed home\.hero\/hero-v1\.md but its bytes differ/);
     catches(r03_2, broken(spec => { hero(spec).ledger = { events: [createVerdict(), submit("hero-v1.md", "create", { reason: "first copy" }), submit("hero-v2.md", "adopt", { seed: "home.hero/hero-v9.md" })] }; }), /names no candidate/);
+  });
+
+  it("resolves a reissue seed <slot>/<old>@<sha> through the retire-candidate event once the old file is retired", () => {
+    // slot-constitution.md section 5 (Reissue): rung adopt, seed <slot>/<old>@<sha>, the old file retired.
+    const reissued = (bytes: string, events: (sha: string) => Record<string, unknown>[]) => broken(spec => {
+      const copy = hero(spec).candidates!["hero-v1.md"] as string;
+      const sha = sha256Hex(copy);
+      hero(spec).candidates = { "hero-v2.md": bytes };
+      hero(spec).ledger = { events: [createVerdict(), submit("hero-v1.md", "create", { reason: "first copy" }), ...events(sha)] };
+    });
+    const copy = r03Spec().writer!["home.hero"]!.candidates!["hero-v1.md"] as string;
+    const verbatim = reissued(copy, sha => [submit("hero-v2.md", "adopt", { seed: `home.hero/hero-v1.md@${sha}` }), { op: "retire-candidate", name: "hero-v1.md", sha256: sha, code: "superseded" }]);
+    expect(r03_2(verbatim)).toEqual([]);
+    catches(r03_2, reissued(`${copy}edited\n`, sha => [submit("hero-v2.md", "adopt", { seed: `home.hero/hero-v1.md@${sha}` }), { op: "retire-candidate", name: "hero-v1.md", sha256: sha, code: "superseded" }]), /adopts seed home\.hero\/hero-v1\.md@[0-9a-f]{64} but its bytes differ/);
+    catches(r03_2, reissued(copy, sha => [submit("hero-v2.md", "adopt", { seed: `home.hero/hero-v1.md@${sha}` })]), /names no candidate/);
+    catches(r03_2, reissued(copy, sha => [submit("hero-v2.md", "adopt", { seed: `home.hero/hero-v1.md@${sha}` }), { op: "retire-candidate", name: "hero-v1.md", sha256: "0".repeat(64), code: "superseded" }]), /names no candidate/);
   });
 });
 
