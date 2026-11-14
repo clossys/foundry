@@ -1,0 +1,12 @@
+{
+  "by": "owner",
+  "llm": {
+    "model": "claude-opus-5-5",
+    "tier": "mid",
+    "promptFile": "packages/producer/actions/owner.decisions/skill.md"
+  },
+  "human": {
+    "procedure": "Record an owner decision an --owner-ref may cite through the verb, never by editing owner-decisions.json by hand.",
+    "command": "clossys owner-decision"
+  }
+}

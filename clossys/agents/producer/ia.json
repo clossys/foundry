@@ -16,7 +16,8 @@
             "seat.workspace.config",
             "seat.seats",
             "seat.rules",
-            "seat.retire"
+            "seat.retire",
+            "seat.owner.decisions"
           ]
         },
         {
