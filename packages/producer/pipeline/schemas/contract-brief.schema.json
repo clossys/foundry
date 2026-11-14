@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/contract-brief.schema.json",
+  "title": "Brief slot contract (contract in clossys/agents/director/<slot>/slot.json)",
+  "description": "Derived from src/records/slot-model/validate.ts fixtureShapeIssues (brief). The contract is otherwise free-form; R01.3 requires the fixture, this schema gives its shape: the headings the brief must carry.",
+  "type": "object",
+  "properties": {
+    "fixture": {
+      "type": "object",
+      "required": [
+        "headings"
+      ],
+      "properties": {
+        "headings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      }
+    }
+  }
+}

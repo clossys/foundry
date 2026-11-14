@@ -346,7 +346,7 @@ function outputOf(step: Step, item: string): { path: string; schema: string } {
     const [agent, slot] = [item.slice(0, item.indexOf("/")), item.slice(item.indexOf("/") + 1)];
     return { path: glob.replace(`clossys/agents/${agent}/*`, `clossys/agents/${agent}/${slot}`).replace("clossys/agents/*/*", `clossys/agents/${agent}/${slot}`), schema: port?.schema ?? "" };
   }
-  if (step.id === "seats") return { path: `clossys/agents/producer/${item}/pin.json`, schema: "seat" };
+  if (step.id === "seats") return { path: `clossys/agents/producer/seat.${item}/pin.json`, schema: "seat" };
   if (step.id === "ia") return { path: `clossys/agents/${item}/ia.json`, schema: "ia" };
   return { path: glob, schema: port?.schema ?? "" };
 }

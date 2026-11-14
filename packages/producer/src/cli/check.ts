@@ -114,7 +114,7 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
   if (args.constitution) {
     // The constitution suite alone: every rule over every record; any row (pending included) fails.
     const { formatReport, runConstitution } = await import("../constitution/run.js");
-    const report = runConstitution({ root, consumer, ...(args.rule ? { rule: args.rule } : {}) });
+    const report = runConstitution({ root, consumer, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}) });
     return { verb: "check", root, check: true, exitCode: report.ok ? 0 : 1, message: formatReport(report), output: report };
   }
   const slots = await runSlotResolve(consumer);

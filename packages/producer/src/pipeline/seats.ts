@@ -22,7 +22,10 @@ export interface SeatReport {
   readonly issues: readonly SchemaIssue[];
 }
 
-/** The seat folders sit in the Producer tree of the workspace's consumer folder (define.ts seatPath). */
+/**
+ * The seats are slots of kind `seat` in the Producer tree of the workspace's consumer folder:
+ * `agents/producer/seat.<step>/` (D5, define.ts seatPath), read only through records/slots.ts.
+ */
 const CONSUMER = "clossys";
 
 export function readSeat(root: string, step: Step): SeatReport | null {

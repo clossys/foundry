@@ -289,7 +289,7 @@ export function defineAction(contract: ActionContract, binding: Binding | undefi
 
 export const isDecide = (step: Pick<Step, "kind">): boolean => step.kind !== "plumb";
 /** A decide step's seat: the pin of its seat folder (the pinned candidate is the seat; records/slots.ts readSeatText). */
-export const seatPath = (id: string): string => `clossys/agents/producer/${id}/pin.json`;
+export const seatPath = (id: string): string => `clossys/agents/producer/seat.${id}/pin.json`;
 const toPort = (value: string | Port): Port => typeof value === "string" ? { glob: value } : value;
 
 export function defineStep(input: StepInput): Step {

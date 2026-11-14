@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/contract-seat.schema.json",
+  "title": "Seat slot contract (contract in clossys/agents/producer/seat.<step>/slot.json)",
+  "description": "Derived from src/records/slot-model/validate.ts seatContractIssues. The step the seat decides, and the fixture R01.3 requires: the step id plus a sample seat (seat.schema.json).",
+  "type": "object",
+  "required": [
+    "step",
+    "fixture"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "step": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){0,2}$"
+    },
+    "fixture": {
+      "type": "object",
+      "required": [
+        "step",
+        "seat"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){0,2}$"
+        },
+        "seat": {
+          "$ref": "seat.schema.json"
+        }
+      }
+    }
+  }
+}

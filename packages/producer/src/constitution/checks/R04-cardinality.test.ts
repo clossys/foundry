@@ -43,9 +43,9 @@ describe("R04 cardinality", () => {
 
   it("holds Producer seats to the same rule and ignores slots that are not live", () => {
     const rows = expectCatches(cardinality, clean(), broken(spec => {
-      spec.producer!.director!.pin = false;
+      spec.producer!["seat.director"]!.pin = false;
       spec.designer!["ui.old"] = { live: false, candidates: {}, pin: false };
     }));
-    expect(rows).toEqual([expect.objectContaining({ agent: "producer", slot: "director", reason: "no pin.json" })]);
+    expect(rows).toEqual([expect.objectContaining({ agent: "producer", slot: "seat.director", reason: "no pin.json" })]);
   });
 });

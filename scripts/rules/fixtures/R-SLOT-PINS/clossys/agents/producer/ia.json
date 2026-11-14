@@ -3,6 +3,6 @@
   "source": "@clossys/producer#steps",
   "extensions": [],
   "nodes": [
-    { "id": "direct", "label": "Direct", "children": [ { "id": "direct.pin", "label": "Pin", "slots": ["pin.director"] } ] }
+    { "id": "direct", "label": "Direct", "children": [ { "id": "direct.pin", "label": "Pin", "slots": ["seat.pin.director"] } ] }
   ]
 }

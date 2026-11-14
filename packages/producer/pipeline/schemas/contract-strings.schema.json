@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/contract-strings.schema.json",
+  "title": "Strings slot contract (contract in clossys/agents/writer/<slot>/slot.json)",
+  "description": "Derived from src/records/slot-model/validate.ts fixtureShapeIssues (strings). The contract is otherwise free-form; R01.3 requires the fixture, this schema gives its shape: the required keys and locales.",
+  "type": "object",
+  "properties": {
+    "fixture": {
+      "type": "object",
+      "required": [
+        "keys",
+        "locales"
+      ],
+      "properties": {
+        "keys": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "locales": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      }
+    }
+  }
+}

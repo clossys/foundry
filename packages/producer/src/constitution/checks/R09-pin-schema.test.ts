@@ -25,10 +25,10 @@ describe("R09 one pin schema", () => {
 
   it("emits one row per invalid pin in every agent tree", () => {
     const rows = expectCatches(pinSchema, clean(), broken(spec => {
-      spec.producer!.director!.pin = { ...base, candidate: "director-v1.json", owner: "calvin" };
+      spec.producer!["seat.director"]!.pin = { ...base, candidate: "director-v1.json", owner: "calvin" };
       spec.writer!["home.hero"]!.pin = "not json" as unknown as Record<string, unknown>;
     }));
-    expect(rows.map(row => `${row.agent}:${row.slot}`).sort()).toEqual(["producer:director", "writer:home.hero"]);
+    expect(rows.map(row => `${row.agent}:${row.slot}`).sort()).toEqual(["producer:seat.director", "writer:home.hero"]);
     expect(rows.find(row => row.agent === "writer")!.reason).toMatch(/unreadable/);
   });
 });

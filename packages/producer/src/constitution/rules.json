@@ -3,40 +3,33 @@
     "id": "R01",
     "statement": "Catalog and contract. Every agent has one valid IA, and every live slot has one contract.",
     "scope": "all-records",
-    "status": "pending",
-    "owner": "W2-A",
+    "status": "enforced",
     "check": "src/constitution/checks/R01-catalog.ts",
-    "test": "src/constitution/constitution.test.ts",
+    "test": "src/constitution/checks/R01-catalog.test.ts",
     "checks": [
       {
         "id": "R01.1",
-        "status": "pending",
-        "owner": "W2-A"
+        "status": "enforced"
       },
       {
         "id": "R01.2",
-        "status": "pending",
-        "owner": "W2-A"
+        "status": "enforced"
       },
       {
         "id": "R01.3",
-        "status": "pending",
-        "owner": "W2-A"
+        "status": "enforced"
       },
       {
         "id": "R01.4",
-        "status": "pending",
-        "owner": "W2-A"
+        "status": "enforced"
       },
       {
         "id": "R01.5",
-        "status": "pending",
-        "owner": "W2-A"
+        "status": "enforced"
       },
       {
         "id": "R01.6",
-        "status": "pending",
-        "owner": "W2-A"
+        "status": "enforced"
       }
     ]
   },

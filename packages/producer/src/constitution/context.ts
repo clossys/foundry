@@ -8,10 +8,10 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { sha256Hex } from "../records/hash.js";
 import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../records/migrations.js";
-import { agentDir, candidatesDir, MODEL_AGENTS, type ModelAgent } from "../records/slot-model/index.js";
+import { agentDir, candidatesDir, designerIa, directorIa, MODEL_AGENTS, writerIa, type FoundryIa, type ModelAgent } from "../records/slot-model/index.js";
 import { isModelDir, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
 import { readCandidateHistory } from "./git.js";
-import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
+import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, FoundryAgent, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
 
 const posix = (path: string) => path.split(sep).join("/");
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -86,7 +86,13 @@ function readMigrations(abs: string, rel: (abs: string) => string, fileOf: (file
 export interface ContextOptions {
   /** Git history reader; tests substitute one. Defaults to `git log` over the agent trees. */
   readonly history?: (root: string, consumer: string) => CandidateHistory;
+  /** Foundry leaf reader; tests substitute one. Defaults to the installed Foundry IA (directorIa, designerIa, writerIa). */
+  readonly foundryLeaves?: (agent: FoundryAgent) => ReadonlySet<string>;
 }
+
+const FOUNDRY_IA: Record<FoundryAgent, () => FoundryIa> = { director: directorIa, designer: designerIa, writer: writerIa };
+/** The Foundry-placed leaf ids of an agent, from the installed Foundry IA. */
+export const installedFoundryLeaves = (agent: FoundryAgent): ReadonlySet<string> => new Set(FOUNDRY_IA[agent]().slots.keys());
 
 /** Reads the records under `<consumer>/agents` for the run. `root` is the workspace root rows are relative to. */
 export function buildContext(root: string, consumer: string, options: ContextOptions = {}): ConstitutionContext {
@@ -141,5 +147,8 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
   const read = options.history ?? readCandidateHistory;
   const lockVersions = readLockVersions(root);
   const migrations = readMigrations(join(consumer, MIGRATIONS_FILE), rel, abs => rel(join(consumer, abs)));
-  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), ...(migrations ? { migrations } : {}), history: () => (history ??= read(root, consumer)) };
+  const leaves = new Map<FoundryAgent, ReadonlySet<string>>();
+  const readLeaves = options.foundryLeaves ?? installedFoundryLeaves;
+  const foundryLeaves = (agent: FoundryAgent) => { let set = leaves.get(agent); if (!set) leaves.set(agent, set = readLeaves(agent)); return set; };
+  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), ...(migrations ? { migrations } : {}), history: () => (history ??= read(root, consumer)), foundryLeaves };
 }

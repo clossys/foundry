@@ -1,6 +1,7 @@
 /**
  * Test fixture: writes a small workspace (`<root>/clossys/agents/<agent>/...`) from a plain spec and
- * builds the constitution context over it. Every rule test starts from `cleanSpec()`, which passes
+ * builds the constitution context over it. ia.json and slot.json are full records (R01), and the
+ * Producer seat is the slot `seat.director` (D5). Every rule test starts from `cleanSpec()`, which passes
  * every implemented check, and breaks exactly one thing.
  */
 import { createHash } from "node:crypto";
@@ -15,7 +16,7 @@ export type Agent = "director" | "designer" | "writer" | "publisher" | "producer
 export interface SlotSpec {
   /** Placed in ia.json (default true). */
   live?: boolean;
-  /** slot.json content; false writes none. Default {id, agent, kind, inputs: [], uses: []}. */
+  /** slot.json content; false writes none. Default slotDoc(agent, id): a full record with its kind's contract and fixture. */
   slot?: Record<string, unknown> | false;
   /** pin.json: "auto" pins the first candidate validly, false writes none, an object is written as is. */
   pin?: "auto" | false | Record<string, unknown>;
@@ -37,7 +38,11 @@ export interface FixtureExtras {
   lock?: unknown;
 }
 
-const KIND: Record<Agent, string | undefined> = { director: "brief", designer: "element", writer: "strings", publisher: "page", producer: undefined };
+const KIND: Record<Agent, string> = { director: "brief", designer: "element", writer: "strings", publisher: "page", producer: "seat" };
+/** The agents whose live slots R01.5 holds to the Foundry leaves; the fixture lists them as ia.json extensions. */
+const FOUNDRY_PLACED: readonly Agent[] = ["director", "designer", "writer"];
+/** The sample seat a fixture seat contract carries (seat.schema.json). */
+export const SAMPLE_SEAT = { by: "owner", llm: null, human: null };
 
 export const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 const body = (value: unknown) => (typeof value === "string" ? value : `${JSON.stringify(value, null, 2)}\n`);
@@ -48,8 +53,23 @@ export function validPin(candidate: string, text: string): Record<string, unknow
   return { candidate, sha256: sha(text), decidedBy: "planner", basis: "planner", at: AT };
 }
 
+/**
+ * A kind's contract that passes R01.2 and R01.3: distinct per slot id (R01.6 dedupes on the contract
+ * without its fixture) and carrying the kind's fixture.
+ */
+export function contractOf(agent: Agent, id: string): Record<string, unknown> {
+  switch (KIND[agent]) {
+    case "brief": return { summary: `brief ${id}`, fixture: { headings: ["Voice"] } };
+    case "element": return { summary: `element ${id}`, props: ["label"], fixture: { schema: "clossys.preview/1", fixtures: { file: `ui/${id}.tsx`, export: "Example", props: { label: "Label" } } } };
+    case "strings": return { summary: `strings ${id}`, fixture: { keys: ["title"], locales: ["en"] } };
+    case "seat": { const step = id.slice("seat.".length); return { step, fixture: { step, seat: SAMPLE_SEAT } }; }
+    default: return { summary: `page ${id}`, fixture: { route: { path: "/" } } };
+  }
+}
+
+/** A full slot.json (clossys.slot/1) at IA position root/all, valid for R01. */
 export function slotDoc(agent: Agent, id: string, deps: { inputs?: string[]; uses?: string[] } = {}): Record<string, unknown> {
-  return { id, agent, ...(KIND[agent] ? { kind: KIND[agent] } : {}), inputs: deps.inputs ?? [], uses: deps.uses ?? [] };
+  return { schema: "clossys.slot/1", id, agent, ia: { l1: "root", l2: "all", order: 0 }, kind: KIND[agent], contract: contractOf(agent, id), inputs: deps.inputs ?? [], uses: deps.uses ?? [] };
 }
 
 /** A workspace that passes every implemented check: one live slot per agent, each pinned. */
@@ -65,7 +85,7 @@ export function cleanSpec(): WorkspaceSpec {
     },
     writer: { "home.hero": { slot: slotDoc("writer", "home.hero", { inputs: ["brand.voice"] }), candidates: { "hero-v1.md": "---\nsource:\n  kind: authored\n---\nWelcome.\n" } } },
     publisher: { "site.home": { slot: slotDoc("publisher", "site.home", { inputs: ["ui.card", "home.hero"] }), candidates: { "home-v1.json": { schema: "clossys.page/1", sections: ["ui.card"], copy: { title: "home.hero#title" } } } } },
-    producer: { director: { slot: false, candidates: { "director-v1.json": { seat: "director" } } } },
+    producer: { "seat.director": { candidates: { "director-v1.json": SAMPLE_SEAT } } },
   };
 }
 
@@ -79,7 +99,10 @@ export function writeWorkspace(spec: WorkspaceSpec, extras: FixtureExtras = {}):
     const agentAbs = join(consumer, "agents", agent);
     mkdirSync(agentAbs, { recursive: true });
     const live = Object.entries(slots).filter(([, slot]) => slot.live !== false).map(([id]) => id);
-    write(join(agentAbs, "ia.json"), { nodes: [{ id: "root", children: [{ id: "all", slots: live }] }] });
+    write(join(agentAbs, "ia.json"), {
+      schema: "clossys.ia/1", source: "fixture#test", extensions: FOUNDRY_PLACED.includes(agent) ? live : [],
+      nodes: [{ id: "root", label: "Root", children: [{ id: "all", label: "All", slots: live }] }],
+    });
     for (const [name, value] of Object.entries(extras.agentRetired?.[agent] ?? {})) write(join(agentAbs, "retired", name), value);
     for (const [id, slot] of Object.entries(slots)) {
       const dir = join(agentAbs, id);
@@ -103,8 +126,11 @@ export const NO_HISTORY: CandidateHistory = { available: true, changes: new Map(
 /** The context over a written spec; history defaults to a clean one (every file unchanged). */
 export function contextOf(spec: WorkspaceSpec, extras: FixtureExtras = {}, history: CandidateHistory = NO_HISTORY): ConstitutionContext {
   const { root, consumer } = writeWorkspace(spec, extras);
-  return buildContext(root, consumer, { history: () => history });
+  return buildContext(root, consumer, { history: () => history, foundryLeaves: NO_FOUNDRY_LEAVES });
 }
+
+/** No Foundry leaves: the fixture places every Director, Designer and Writer slot as an extension instead. */
+export const NO_FOUNDRY_LEAVES = (): ReadonlySet<string> => new Set();
 
 /**
  * The failing-first contract every implemented check is held to: silent on the clean workspace,

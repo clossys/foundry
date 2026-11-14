@@ -20,10 +20,12 @@ import { pipelineStatus, slotCounts } from "./status.js";
 import { STEPS } from "./steps/index.js";
 import { createHash } from "node:crypto";
 
-/** A seat as its folder holds it: one candidate file and the pin.json that chooses it. */
+/** A seat as its slot folder holds it (D5): slot.json of kind seat, one candidate file and the pin.json that chooses it. */
 function writeSeat(root: string, step: string, value: unknown): void {
-  const dir = join(root, "clossys", "agents", "producer", step), name = `${step}-v1.json`, bytes = JSON.stringify(value);
+  const dir = join(root, "clossys", "agents", "producer", `seat.${step}`), name = `${step}-v1.json`, bytes = JSON.stringify(value);
   mkdirSync(join(dir, "candidates"), { recursive: true });
+  const fixture = { step, seat: { by: "owner", llm: null, human: null } };
+  writeFileSync(join(dir, "slot.json"), JSON.stringify({ schema: "clossys.slot/1", id: `seat.${step}`, agent: "producer", ia: { l1: "seats", l2: "seats.all", order: 0 }, kind: "seat", contract: { step, fixture }, inputs: [], uses: [] }));
   writeFileSync(join(dir, "candidates", name), bytes);
   writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: name, sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "migrated", basis: "planner", at: "2026-11-04T00:00:00.000Z" }));
 }
@@ -63,8 +65,8 @@ describe("step definitions", () => {
   });
   it("gives every decide step a seat file and no plumb step one", () => {
     for (const each of STEPS) expect(Boolean(each.seat)).toBe(each.kind !== "plumb");
-    expect(step("pin.director").seat).toBe("clossys/agents/producer/pin.director/pin.json");
-    expect(step("pin.publisher").seat).toBe("clossys/agents/producer/pin.publisher/pin.json");
+    expect(step("pin.director").seat).toBe("clossys/agents/producer/seat.pin.director/pin.json");
+    expect(step("pin.publisher").seat).toBe("clossys/agents/producer/seat.pin.publisher/pin.json");
   });
 });
 
@@ -197,14 +199,14 @@ describe("derived graph", () => {
     expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");
     expect(buildGraph(root).seats["pin.director"]!.state).toBe("invalid");
     // A pin that drifts from its candidate, a symlinked pin and a retired seat.json are invalid, never read.
-    writeFileSync(join(root, "clossys", "agents", "producer", "pin.director", "candidates", "pin.director-v1.json"), JSON.stringify({ by: "owner", llm: null, human: null }));
+    writeFileSync(join(root, "clossys", "agents", "producer", "seat.pin.director", "candidates", "pin.director-v1.json"), JSON.stringify({ by: "owner", llm: null, human: null }));
     expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");
     writeSeat(root, "pin.director", { by: "owner", llm: null, human: null });
-    rmSync(join(root, "clossys", "agents", "producer", "pin.director", "pin.json"));
-    symlinkSync(join(root, "elsewhere.json"), join(root, "clossys", "agents", "producer", "pin.director", "pin.json"));
+    rmSync(join(root, "clossys", "agents", "producer", "seat.pin.director", "pin.json"));
+    symlinkSync(join(root, "elsewhere.json"), join(root, "clossys", "agents", "producer", "seat.pin.director", "pin.json"));
     expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");
     writeSeat(root, "pick.director", { by: "owner", llm: null, human: null });
-    writeFileSync(join(root, "clossys", "agents", "producer", "pick.director", "seat.json"), JSON.stringify({ by: "owner", llm: null, human: null }));
+    writeFileSync(join(root, "clossys", "agents", "producer", "seat.pick.director", "seat.json"), JSON.stringify({ by: "owner", llm: null, human: null }));
     expect(readSeat(root, step("pick.director"))!.state).toBe("invalid");
   });
   it("takes each pick seat's llm from its agent's make step (W4)", () => {
@@ -251,8 +253,8 @@ describe("status", () => {
     const ia = (slots: string[]) => JSON.stringify({ schema: "clossys.ia/1", source: "x#y", extensions: [], nodes: [{ id: "design", label: "Design", children: [{ id: "design.pin", label: "Pin", slots }] }] });
     const opened = () => pipelineStatus(root).decisions.find(each => each.step === "ia")!.count;
     const before = opened();
-    mkdirSync(join(root, "clossys", "agents", "producer", "pin.designer"), { recursive: true });
-    writeFileSync(join(root, "clossys", "agents", "producer", "ia.json"), ia(["pin.designer"]));
+    mkdirSync(join(root, "clossys", "agents", "producer", "seat.pin.designer"), { recursive: true });
+    writeFileSync(join(root, "clossys", "agents", "producer", "ia.json"), ia(["seat.pin.designer"]));
     expect(opened()).toBe(before);
     expect(slotCounts(root).producer).toBeUndefined();
     writeFileSync(join(root, "clossys", "agents", "writer", "ia.json"), ia(["writer.ghost"]));
