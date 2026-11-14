@@ -1,0 +1,15 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.structured",
+  "produces": [
+    "brief.list",
+    "brief.measure",
+    "brief.profile"
+  ],
+  "rung": "create",
+  "axes": [
+    "selection",
+    "cut",
+    "evidence"
+  ]
+}

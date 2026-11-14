@@ -1,0 +1,16 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.copy",
+  "produces": [
+    "passage",
+    "pattern",
+    "string",
+    "narrative"
+  ],
+  "rung": "create",
+  "axes": [
+    "angle",
+    "register",
+    "structure"
+  ]
+}

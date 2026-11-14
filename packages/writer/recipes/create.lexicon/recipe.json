@@ -1,0 +1,16 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.lexicon",
+  "produces": [
+    "lexicon.claim-list",
+    "lexicon.format-rule",
+    "lexicon.term-list",
+    "lexicon.voice-rule"
+  ],
+  "rung": "create",
+  "axes": [
+    "strictness",
+    "coverage",
+    "example"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.headline",
+  "produces": [
+    "copy.headline"
+  ],
+  "rung": "create",
+  "axes": [
+    "angle",
+    "register",
+    "length"
+  ]
+}
