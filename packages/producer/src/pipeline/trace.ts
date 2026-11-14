@@ -374,40 +374,121 @@ export function storeIgnored(root: string): boolean {
   return ignored;
 }
 
+/** Bytes a store scan reads at a time: a scan holds one chunk and one line, never the whole store. */
+export const STORE_SCAN_CHUNK = 1 << 20;
+/**
+ * Every line of a store file in order (the text after the last newline too, when not empty), read
+ * in STORE_SCAN_CHUNK pieces: memory is one chunk plus the longest line, whatever the store's size.
+ * A missing store has no lines.
+ */
+function* storeLines(file: string): Generator<Buffer> {
+  let fd: number;
+  try { fd = fs.openSync(file, "r"); } catch { return; }
+  try {
+    const chunk = Buffer.alloc(STORE_SCAN_CHUNK);
+    let pending: Buffer[] = [];
+    for (;;) {
+      const size = fs.readSync(fd, chunk, 0, STORE_SCAN_CHUNK, null);
+      if (!size) break;
+      const view = chunk.subarray(0, size);
+      let start = 0;
+      for (let end = view.indexOf(10, start); end !== -1; end = view.indexOf(10, start)) {
+        pending.push(view.subarray(start, end));
+        yield pending.length === 1 ? Buffer.from(pending[0]!) : Buffer.concat(pending);
+        pending = [];
+        start = end + 1;
+      }
+      if (start < size) pending.push(Buffer.from(view.subarray(start)));
+    }
+    if (pending.length) yield Buffer.concat(pending);
+  } finally { fs.closeSync(fd); }
+}
+/** A line readStore skips: only whitespace. A record line starts with `{` and is never decoded here. */
+const blankLine = (bytes: Buffer): boolean => bytes[0] !== 0x7b && !bytes.toString("utf8").trim();
+/** One store line as a run record; a malformed line or another schema throws, naming `store:line`. */
+function parseStoreLine(store: string, line: number, text: string): RunRecord {
+  let record: RunRecord;
+  try { record = JSON.parse(text) as RunRecord; } catch (error) { throw new Error(`${store}:${line}: not a run record (${error instanceof Error ? error.message : String(error)})`); }
+  if (record.schema !== RUN_SCHEMA) throw new Error(`${store}:${line}: schema is ${String(record.schema)}, expected ${RUN_SCHEMA}`);
+  return record;
+}
+/**
+ * The invocation of one store line. buildRecord writes schema, run, step and invocation first, so a
+ * record this module wrote names its invocation in its first bytes and is not parsed whole; any
+ * other line is parsed and checked as readStore checks it.
+ */
+const INVOCATION_PREFIX = /^\{"schema":"clossys\.pipeline-run\/1","run":"[0-9a-f]*","step":"(?:[^"\\]|\\.)*","invocation":("(?:[^"\\]|\\.)*")/;
+function invocationOfLine(store: string, line: number, bytes: Buffer): string {
+  const head = INVOCATION_PREFIX.exec(bytes.subarray(0, 16384).toString("utf8"));
+  if (head) return JSON.parse(head[1]!) as string;
+  return parseStoreLine(store, line, bytes.toString("utf8")).invocation;
+}
+
 /**
  * Append one record to its step's store, keeping the newest RUNS_KEPT per invocation; returns its
  * citation, or null (nothing written) when the workspace does not ignore the store (storeIgnored).
+ *
+ * The store is scanned line by line and never held whole: a store gains one record per distinct
+ * invocation (every `clossys ia <slot>` is one), and a record lists every file its run read, so
+ * reading it whole made each run's memory and time grow with every earlier run. When no invocation
+ * goes over RUNS_KEPT the record is appended; otherwise the kept lines are copied, unchanged, to a
+ * sibling that replaces the store.
  */
 export function appendRecord(root: string, record: RunRecord): StoredRun | null {
   if (!storeIgnored(root)) return null;
   const store = storeFile(record.step);
   const file = join(root, ...store.split("/"));
   fs.mkdirSync(dirname(file), { recursive: true });
-  const kept = readStore(root, store).map(entry => entry.record);
-  kept.push(record);
   const counts = new Map<string, number>();
-  const newest = kept.slice().reverse().filter(entry => {
-    const count = (counts.get(entry.invocation) ?? 0) + 1;
-    counts.set(entry.invocation, count);
-    return count <= RUNS_KEPT;
-  }).reverse();
+  let lines = 0, endsInNewline = true;
+  for (const bytes of storeLines(file)) {
+    lines++;
+    if (blankLine(bytes)) continue;
+    const invocation = invocationOfLine(store, lines, bytes);
+    counts.set(invocation, (counts.get(invocation) ?? 0) + 1);
+  }
+  try { const size = fs.statSync(file).size; if (size) { const fd = fs.openSync(file, "r"); try { const last = Buffer.alloc(1); fs.readSync(fd, last, 0, 1, size - 1); endsInNewline = last[0] === 10; } finally { fs.closeSync(fd); } } } catch { /* a new store */ }
+  counts.set(record.invocation, (counts.get(record.invocation) ?? 0) + 1);
+  const text = JSON.stringify(record);
+  if (Math.max(...counts.values()) <= RUNS_KEPT) {
+    const fd = fs.openSync(file, "a");
+    try { fs.writeSync(fd, `${endsInNewline ? "" : "\n"}${text}\n`); } finally { fs.closeSync(fd); }
+    return { record, store, line: lines + 1 };
+  }
+  // Keep the newest RUNS_KEPT of each invocation: the first (count - RUNS_KEPT) of it are dropped.
+  const dropping = new Map([...counts].filter(([, count]) => count > RUNS_KEPT).map(([invocation, count]) => [invocation, count - RUNS_KEPT]));
   const temp = `${file}.${process.pid}.tmp`;
-  raw.write(temp, newest.map(entry => JSON.stringify(entry)).join("\n") + "\n");
+  const out = fs.openSync(temp, "w");
+  let written = 0;
+  try {
+    const consider = (bytes: Buffer, invocation: string) => {
+      const drop = dropping.get(invocation) ?? 0;
+      if (drop > 0) { dropping.set(invocation, drop - 1); return; }
+      fs.writeSync(out, bytes); fs.writeSync(out, "\n"); written++;
+    };
+    let line = 0;
+    for (const bytes of storeLines(file)) {
+      line++;
+      if (blankLine(bytes)) continue;
+      consider(bytes, invocationOfLine(store, line, bytes));
+    }
+    consider(Buffer.from(text), record.invocation);
+  } finally { fs.closeSync(out); }
   raw.rename(temp, file);
-  return { record, store, line: newest.length };
+  return { record, store, line: written };
 }
 
-/** Every record of one store file, oldest first, with its 1-based line; a malformed line throws. */
+/** Every record of one store file, oldest first, with its 1-based line; a malformed line throws. Read line by line. */
 export function readStore(root: string, store: string): StoredRun[] {
-  let text: string;
-  try { text = raw.read(join(root, ...store.split("/"))).toString(); } catch { return []; }
-  return text.split("\n").flatMap((line, index) => {
-    if (!line.trim()) return [];
-    let record: RunRecord;
-    try { record = JSON.parse(line) as RunRecord; } catch (error) { throw new Error(`${store}:${index + 1}: not a run record (${error instanceof Error ? error.message : String(error)})`); }
-    if (record.schema !== RUN_SCHEMA) throw new Error(`${store}:${index + 1}: schema is ${String(record.schema)}, expected ${RUN_SCHEMA}`);
-    return [{ record, store, line: index + 1 }];
-  });
+  const runs: StoredRun[] = [];
+  let line = 0;
+  for (const bytes of storeLines(join(root, ...store.split("/")))) {
+    line++;
+    const text = bytes.toString("utf8");
+    if (!text.trim()) continue;
+    runs.push({ record: parseStoreLine(store, line, text), store, line });
+  }
+  return runs;
 }
 
 /** Every record in the workspace's store. */
