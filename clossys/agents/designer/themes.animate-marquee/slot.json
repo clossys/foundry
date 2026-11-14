@@ -38,10 +38,5 @@
     "identity.visual.imagery",
     "identity.visual.style"
   ],
-  "uses": [],
-  "notNeeded": {
-    "reason": "planner:DS-COMPLETE: magicui registry:ui animation var mis-slotted as a theme token; no pinned element's code consumes it (only metadata reads lists)",
-    "since": "2026-11-05",
-    "decidedBy": "planner:DS-COMPLETE"
-  }
+  "uses": []
 }

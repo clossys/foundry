@@ -2586,8 +2586,16 @@
       "sha256": "c468e57a8dc12caf9bf2216f420de8263ed719a15b89a953b4d51f2a5bf759bc"
     },
     {
+      "path": "clossys/agents/designer/themes.animate-marquee/candidates/animate-marquee-v2.json",
+      "sha256": "6b7deea12e85277b65a51c05577d4f2df445248ebafbf374a46db5cce2fa8570"
+    },
+    {
+      "path": "clossys/agents/designer/themes.animate-marquee/pin.json",
+      "sha256": "bee81ef45d5f769f3113dfe66acedcaf081ffbe215e224c120e9e4a6357a89da"
+    },
+    {
       "path": "clossys/agents/designer/themes.animate-marquee/slot.json",
-      "sha256": "baaf0514ef494a26e5d3b30fe6313db94c026f6ae12f61a764c62778472e9f48"
+      "sha256": "70d426e5ffd562168a662e8d0a7b4beae65063a739ae8bd39b71cf1dd5196627"
     },
     {
       "path": "clossys/agents/designer/themes.animate-shiny-text/slot.json",
@@ -6780,5 +6788,5 @@
       "sha256": "d625b721c766c95057120630d30bde88b2a61f5877abe1e0cb726fba22f182ad"
     }
   ],
-  "pinSetHash": "1ffaa09b7dfe31b5b4b9c31d654c3ad554fe094ca9a1d92611231922a7db7ef1"
+  "pinSetHash": "5a0e97aa3d36d3ce0d791ff66e2cf37a3cf9b93339f7688ffb7de84f6cdd2990"
 }

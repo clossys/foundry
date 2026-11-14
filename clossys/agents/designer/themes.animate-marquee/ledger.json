@@ -188,6 +188,32 @@
           "sha256": "baaf0514ef494a26e5d3b30fe6313db94c026f6ae12f61a764c62778472e9f48"
         }
       ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-14T13:10:40.239Z",
+      "by": "planner:LEDGER-BF2",
+      "verb": "pin",
+      "skill": {
+        "path": "packages/producer/actions/pin.designer/skill.md",
+        "sha256": "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "animate-marquee-v2.json",
+      "sha256": "6b7deea12e85277b65a51c05577d4f2df445248ebafbf374a46db5cce2fa8570",
+      "decidedBy": "planner:LEDGER-BF2",
+      "basis": "planner",
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "bee81ef45d5f769f3113dfe66acedcaf081ffbe215e224c120e9e4a6357a89da"
+        },
+        {
+          "file": "slot.json",
+          "sha256": "70d426e5ffd562168a662e8d0a7b4beae65063a739ae8bd39b71cf1dd5196627"
+        }
+      ]
     }
   ]
 }
