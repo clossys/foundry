@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { deflateSync } from "node:zlib";
 import { JSDOM } from "jsdom";
-import { DEFAULT_MAP, FAILING, GATES_FILE, THEMES, WIDTHS, blocks, defaultServers, orderShots, planShards, runShards, shardTmpdir, summarize, readGates, seedShard, specimenCache, captureWithRetry, contactSheet, createBrowserPool, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, reusedShot, selectCapture, severityOf } from "./capture-studio.mjs";
+import { DEFAULT_MAP, FAILING, GATES_FILE, THEMES, WIDTHS, blocks, defaultServers, orderShots, planShards, runShards, shardTmpdir, summarize, readGates, seedShard, specimenCache, captureWithRetry, contactSheet, createBrowserPool, createCdpClient, decodePng, detectFindings, diffRatio, enumerateRoutes, idTokens, isSettled, pageProbe, parseArgs, pinGraph, reusedShot, selectCapture, severityOf } from "./capture-studio.mjs";
 import routeScope from "../studio/checks/route-scope.cjs";
 
 const FIXTURE = `<!doctype html><html><head><title>Studio</title></head><body>
@@ -401,25 +401,66 @@ function scopeFixture() {
 const greenState = (inputs, routes) => ({ ...inputs, generatedAt: "t0", shots: routes.flatMap(route => THEMES.flatMap(theme => WIDTHS.map(width => ({ route: route.path, width, theme, file: `shots/${width}-${theme}.png`, findings: [], severity: 0, reusedFrom: { generatedAt: "t0", out: "/green" } })))) });
 const pathsOf = list => list.map(route => route.path);
 
-test("capture shoots Designer slot pages and changed routes; every other route reuses the last green capture", () => {
+test("capture shoots only changed routes; every other route reuses the last green capture", () => {
   const { root, map, write, routes } = scopeFixture();
   const inputs = routeScope.routeInputs({ repositoryRoot: root, map });
   // No green capture yet: everything (7 routes x 6 shots).
   const first = selectCapture({ routes, inputs, last: undefined });
   assert.deepEqual([first.mode, first.reason, first.capture.length * WIDTHS.length * THEMES.length], ["full", "no previous green run", 42]);
   const last = greenState(inputs, routes);
-  // Nothing changed: only the two Designer slot pages are shot (12 shots); 5 routes (30 shots) reused.
+  // Nothing changed: nothing is shot, Designer slot pages included; all 7 routes (42 shots) reused.
   const quiet = selectCapture({ routes, inputs, last });
-  assert.deepEqual(pathsOf(quiet.capture), ["/designer/colors/themes.x", "/designer/colors/themes.y"]);
-  assert.equal(quiet.reuse.flatMap(entry => entry.shots).length, 30);
-  // One Writer candidate changes: only the routes that use it are added.
+  assert.deepEqual(pathsOf(quiet.capture), []);
+  assert.equal(quiet.reuse.flatMap(entry => entry.shots).length, 42);
+  // One Writer candidate changes (folder digests): only the routes that use it.
   write("clossys/agents/writer/strings.hello/candidates/strings.hello-v2.json", "{}");
   const changed = selectCapture({ routes, inputs: routeScope.routeInputs({ repositoryRoot: root, map }), last });
-  assert.deepEqual(pathsOf(changed.capture), ["/", "/writer/strings", "/designer/colors/themes.x", "/designer/colors/themes.y", "/writer/strings/strings.hello"]);
-  assert.deepEqual(pathsOf(changed.reuse.map(entry => entry.route)), ["/designer/colors", "/writer/strings/strings.bye"]);
+  assert.deepEqual(pathsOf(changed.capture), ["/", "/writer/strings", "/writer/strings/strings.hello"]);
+  assert.deepEqual(pathsOf(changed.reuse.map(entry => entry.route)), ["/designer/colors", "/designer/colors/themes.x", "/designer/colors/themes.y", "/writer/strings/strings.bye"]);
   // Reused shots say so and point at the green run that took them.
   const reused = reusedShot(changed.reuse[0].shots[0]);
   assert.deepEqual([reused.reused, reused.file, reused.reusedFrom.out], [true, "/green/shots/375-light.png", "/green"]);
+});
+
+/** The scope fixture's pin graph: strings.hello cites themes.x (inputs), strings.bye uses nothing. */
+const pinsOf = (overrides = {}) => ({
+  "frames.shell": { sha: "f1", deps: [] },
+  "themes.x": { sha: "x1", deps: [] },
+  "themes.y": { sha: "y1", deps: [] },
+  "strings.hello": { sha: "h1", deps: ["themes.x"] },
+  "strings.bye": { sha: "b1", deps: [] },
+  ...overrides,
+});
+
+test("one repin shoots only that slot's routes and its dependants' routes (pinned sha, R07 cascade)", () => {
+  const { root, map, write, routes } = scopeFixture();
+  const inputs = routeScope.routeInputs({ repositoryRoot: root, map, pins: pinsOf() });
+  const last = greenState(inputs, routes);
+  // A new candidate without a repin changes no pinned sha: nothing is shot.
+  write("clossys/agents/designer/themes.y/candidates/themes.y-v2.json", "{}");
+  assert.deepEqual(pathsOf(selectCapture({ routes, inputs: routeScope.routeInputs({ repositoryRoot: root, map, pins: pinsOf() }), last }).capture), []);
+  // themes.y repins: its leaf, the tab that shows its card, and Home (which reads every pin).
+  const y = selectCapture({ routes, inputs: routeScope.routeInputs({ repositoryRoot: root, map, pins: pinsOf({ "themes.y": { sha: "y2", deps: [] } }) }), last });
+  assert.deepEqual([y.mode, pathsOf(y.capture)], ["scoped", ["/", "/designer/colors", "/designer/colors/themes.y"]]);
+  // themes.x repins: its own routes plus its dependant strings.hello's routes, never strings.bye's.
+  const x = selectCapture({ routes, inputs: routeScope.routeInputs({ repositoryRoot: root, map, pins: pinsOf({ "themes.x": { sha: "x2", deps: [] } }) }), last });
+  assert.deepEqual(pathsOf(x.capture), ["/", "/designer/colors", "/writer/strings", "/designer/colors/themes.x", "/writer/strings/strings.hello"]);
+  assert.deepEqual(pathsOf(x.reuse.map(entry => entry.route)), ["/designer/colors/themes.y", "/writer/strings/strings.bye"]);
+  // A slot whose dependencies are unreadable is always shot; a frame repin shoots everything.
+  const unreadable = selectCapture({ routes, inputs: routeScope.routeInputs({ repositoryRoot: root, map, pins: pinsOf({ "strings.bye": { sha: "b1", deps: null } }) }), last });
+  assert.ok(pathsOf(unreadable.capture).includes("/writer/strings/strings.bye"));
+  const framed = selectCapture({ routes, inputs: routeScope.routeInputs({ repositoryRoot: root, map, pins: pinsOf({ "frames.shell": { sha: "f2", deps: [] } }) }), last });
+  assert.deepEqual([framed.mode, framed.reason, framed.capture.length], ["full", "frame changed", 7]);
+  // A folder-digest state never stands in for a pin-graph one.
+  assert.equal(selectCapture({ routes, inputs, last: greenState(routeScope.routeInputs({ repositoryRoot: root, map }), routes) }).reason, "inputs changed");
+});
+
+test("pinGraph reads pins and dependencies through the slot reader", async () => {
+  const reader = {
+    slotIndex: () => new Map([["a", { agent: "designer", pin: { sha256: "s-a" } }], ["b", { agent: "writer", pin: null }], ["c", { agent: "writer", pin: { sha256: "s-c" } }]]),
+    readSlot: (_root, _agent, id) => { if (id === "c") throw new Error("Invalid writer slot c"); return { inputs: id === "b" ? ["a"] : [], uses: id === "b" ? ["a", "z"] : [] }; },
+  };
+  assert.deepEqual(await pinGraph("/repo", reader), { a: { sha: "s-a", deps: [] }, b: { sha: null, deps: ["a", "z"] }, c: { sha: "s-c", deps: null } });
 });
 
 test("a frame or build change, --full or an explicit filter shoots every selected route", () => {

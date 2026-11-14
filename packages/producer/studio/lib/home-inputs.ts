@@ -13,7 +13,13 @@ const SEVERITY_TONE: Record<string, ModuleCheckRow['tone']> = { error: 'destruct
 /** A report's severity as shown (Writer copy). */
 const SEVERITY_LABEL: Record<string, string> = { error: studioCopy('studio.severity-error'), warning: studioCopy('studio.severity-warning'), info: studioCopy('studio.severity-info') };
 
-export const needRow = (report: StudioReport): ModuleCheckRow => ({ id: report.id, badge: SEVERITY_LABEL[report.severity] ?? report.severity, tone: SEVERITY_TONE[report.severity] ?? 'outline', title: report.title, detail: report.detail });
+/** A severity the registries above do not name fails loudly: no raw id badge, no neutral tone. */
+function severityOf<T>(registry: Readonly<Record<string, T>>, report: StudioReport, what: string): T {
+  const value = registry[report.severity];
+  if (value === undefined) throw new Error(`report ${report.id} has severity ${JSON.stringify(report.severity)}, which has no registered ${what}`);
+  return value;
+}
+export const needRow = (report: StudioReport): ModuleCheckRow => ({ id: report.id, badge: severityOf(SEVERITY_LABEL, report, 'label'), tone: severityOf(SEVERITY_TONE, report, 'tone'), title: report.title, detail: report.detail });
 /** The reports that wait on the owner: not information, not an agent's own compile run. */
 export const openNeeds = (reports: readonly StudioReport[], keep: (report: StudioReport) => boolean = () => true) => reports.filter(report => report.severity !== 'info' && report.area !== 'compile' && keep(report));
 

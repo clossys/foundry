@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Deterministic Studio page acceptance: start the built producer, capture the routes the
 // generated Studio map publishes at 375/768/1280 in light and dark, record mechanical findings
-// per shot, and exit 1 when any failing finding exists. By default only Designer slot pages and
-// routes whose inputs changed since the last green capture are shot; the rest reuse that capture's
-// shots, marked `reused` in the manifest (see selectCapture). --full shoots every route. A browser is never downloaded: the run
+// per shot, and exit 1 when any failing finding exists. By default only routes whose pinned slots,
+// or a slot they depend on, were repinned since the last green capture are shot; the rest reuse that
+// capture's shots, marked `reused` in the manifest (see selectCapture). --full shoots every route.
+// The chain runs it only on demand (`clossys run --capture`). A browser is never downloaded: the run
 // uses an already-installed Chromium/Chrome and reports BLOCKED (exit 2) when none exists.
 // --servers K (or CAPTURE_STUDIO_SERVERS; default min(3, (cpus-2)/2)) shards routes across K producers
 // sharing --concurrency shots in flight; the report and exit code equal the serial run's.
@@ -79,17 +80,18 @@ export function enumerateRoutes(map) {
 // ---------------------------------------------------------------- route selection
 
 /**
- * Which routes this run shoots (owner, clossys/workspace#46 issuecomment-6840407560): Designer slot
- * pages always, plus routes whose inputs changed since the last green capture; every other route
- * reuses that capture's shots. No last green state, a changed build, frame or checker, `--full`, or
- * an explicit route filter (`--only`, `--scope`) shoots every selected route.
+ * Which routes this run shoots (W2-G; owner, clossys/workspace#46 issuecomment-6840407560): the
+ * routes whose inputs changed since the last green capture. With a pin graph (`pinGraph`), a route's
+ * inputs are the pinned shas of the slots it shows and of every slot they depend on (R07 cascade), so
+ * one repin shoots that slot's routes and its dependants' routes; every other route reuses the last
+ * green capture's shots. No last green state, a changed build, frame or checker, `--full`, or an
+ * explicit route filter (`--only`, `--scope`) shoots every selected route.
  */
 export function selectCapture({ routes, inputs, last, full = false, explicit = false }) {
   const paths = routes.map(route => route.path);
   if (full || explicit) return { mode: full ? "full" : "explicit", reason: full ? "--full" : "explicit route filter", capture: routes, reuse: [] };
   const changed = routeScope.changedRoutes(inputs, last, paths);
   if (changed.all) return { mode: "full", reason: changed.reason, capture: routes, reuse: [] };
-  const leaves = new Set(routes.filter(route => route.kind === "leaf").map(route => route.path));
   const fresh = new Set(changed.changed);
   const previous = new Map();
   for (const shot of last.shots ?? []) previous.set(shot.route, [...(previous.get(shot.route) ?? []), shot]);
@@ -97,10 +99,29 @@ export function selectCapture({ routes, inputs, last, full = false, explicit = f
   for (const route of routes) {
     const shots = previous.get(route.path) ?? [];
     // A route the last green run has no complete set of shots for is shot again.
-    if (fresh.has(route.path) || routeScope.isDesignerSlotRoute(route.path, leaves) || shots.length !== WIDTHS.length * THEMES.length || !shots.every(shot => shot.reusedFrom?.out)) capture.push(route);
+    if (fresh.has(route.path) || shots.length !== WIDTHS.length * THEMES.length || !shots.every(shot => shot.reusedFrom?.out)) capture.push(route);
     else reuse.push({ route, shots });
   }
   return { mode: "scoped", reason: changed.reason, capture, reuse, changed: changed.changed.length };
+}
+
+/**
+ * Slot id -> { sha, deps } for every slot in the consumer's IA, through the one slot reader (the
+ * built `records/slots.js`): `sha` is the pinned candidate's sha256 (null while unpinned), `deps` the
+ * slot.json inputs and uses (null when the slot document is unreadable, so its routes are always shot).
+ */
+export async function pinGraph(root, reader) {
+  const slots = reader ?? await import(new URL("../dist/records/slots.js", import.meta.url).href);
+  const graph = {};
+  for (const [id, entry] of slots.slotIndex(root)) {
+    let deps = null;
+    try {
+      const doc = slots.readSlot(root, entry.agent, id);
+      deps = [...new Set([...doc.inputs, ...doc.uses])].sort();
+    } catch { /* an unreadable slot document: its routes are always shot */ }
+    graph[id] = { sha: entry.pin?.sha256 ?? null, deps };
+  }
+  return graph;
 }
 
 /** A reused shot, marked as such, its file pointing at the green run that took it. */
@@ -865,7 +886,7 @@ export async function run(args) {
   if (args.scope !== "all") routes = routes.filter(route => route.kind === (args.scope === "pages" ? "page" : "leaf"));
   if (args.routes) routes = routes.filter(route => args.routes.includes(route.path));
   const explicit = Boolean(args.routes) || args.scope !== "all";
-  const inputs = routeScope.routeInputs({ repositoryRoot: args.root, map, checker: CHECKER });
+  const inputs = routeScope.routeInputs({ repositoryRoot: args.root, map, checker: CHECKER, pins: await pinGraph(args.root) });
   const selection = selectCapture({ routes, inputs, last: routeScope.readState(args.state), full: args.full, explicit });
   const reused = selection.reuse.flatMap(entry => entry.shots.map(reusedShot));
   const executable = findBrowser();

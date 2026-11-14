@@ -151,7 +151,10 @@ export async function consumerFontFile(root: string, path: string): Promise<{ bo
   try { target = await realpath(join(packageRoot, ...file.split("/"))); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
   const inside = relative(packageRoot, target);
   if (isAbsolute(inside) || inside.startsWith("..")) return undefined;
-  return { body: await readFile(target), type: FONT_TYPES[extname(target)] ?? "application/octet-stream" };
+  // An extension FONT_FILE admits but FONT_TYPES does not register fails loudly, never as octet-stream.
+  const type = FONT_TYPES[extname(target)];
+  if (type === undefined) throw new Error(`designer font ${file} has no registered content type for ${extname(target) || "(no extension)"}`);
+  return { body: await readFile(target), type };
 }
 
 export type { ConsumerBrand } from "./consumer-brand.js";

@@ -8,7 +8,7 @@
  * writes consumer routes or establishes runtime/adoption clearance. */
 export type { ContentMap, ContentMapCollection, ContentMapEntry, ContentMapExternalEntry, ContentMapNode, ContentMapIndexing, ContentMapRedirectDeclaration, ContentMapRedirect, ContentMapStaticParams, ContentMapSource, ContentMapAction, ContentMapPageAction, ContentMapConstructs, ContentMapFinding, ContentMapFindingCode, ContentMapNavigationNode, ContentMapNavigation, ContentMapCommand, ContentMapCommandGroup, ContentMapBreadcrumb, ContentMapOutlineNode, ContentMapTocEntry, ContentMapSitemapEntry, ContentMapSitemapOptions, ContentMapCompleteRoute, ContentMapRouteOptions, ContentMapRoutes } from "./contract.js";
 export { CONTENT_MAP_MAX_DEPTH } from "./contract.js";
-export { checkContentMap } from "./check.js";
+export { checkContentMap, checkContentMapIcons } from "./check.js";
 export { projectRoutes, projectNavigation, projectCommands, projectBreadcrumbs, projectSitemap, projectOutline, projectToc, projectRedirects, projectStaticParams } from "./projections.js";
 export { projectRobots } from "./robots.js";
 export type { ContentMapRobotsOptions, ContentMapRobots } from "./robots.js";

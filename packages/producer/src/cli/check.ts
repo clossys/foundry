@@ -115,7 +115,11 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
     // The constitution suite alone: every rule over every record; any row (pending included) fails.
     const { formatReport, runConstitution } = await import("../constitution/run.js");
     const report = runConstitution({ root, consumer, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}) });
-    return { verb: "check", root, check: true, exitCode: report.ok ? 0 : 1, message: formatReport(report), output: report };
+    if (!args.enforced) return { verb: "check", root, check: true, exitCode: report.ok ? 0 : 1, message: formatReport(report), output: report };
+    // --enforced (the chain's constitution step, W2-G): every enforced row blocks; pending rows are listed, never passing or failing.
+    const enforced = report.total - report.pending;
+    const verdict = `constitution --enforced: ${enforced ? "FAIL" : "PASS"}  enforced findings ${enforced}; pending rows ${report.pending} listed, not blocking`;
+    return { verb: "check", root, check: true, exitCode: enforced ? 1 : 0, message: `${formatReport(report)}\n${verdict}`, output: { ...report, enforced: { ok: enforced === 0, findings: enforced } } };
   }
   const slots = await runSlotResolve(consumer);
   const page = args.pages !== undefined ? await runPageCheck(args, cwd) : undefined;

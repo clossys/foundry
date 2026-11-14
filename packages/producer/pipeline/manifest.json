@@ -235,9 +235,11 @@
         "producer"
       ],
       "steps": [
+        "constitution",
         "compile",
         "options",
         "specimen",
+        "render",
         "migrate",
         "derive.uses",
         "studio.map",
@@ -259,6 +261,7 @@
         "options",
         "pipeline",
         "produce",
+        "render",
         "specimen"
       ],
       "commands": [
@@ -290,6 +293,8 @@
         "packages/producer/src/cli/pipeline.ts",
         "packages/producer/src/cli/pipeline.ts#runPipelineCli",
         "packages/producer/src/cli/produce.ts#runProduce",
+        "packages/producer/src/cli/render.ts",
+        "packages/producer/src/cli/render.ts#runRenderCli",
         "packages/producer/src/cli/specimen.ts",
         "packages/producer/src/cli/specimen.ts#runSpecimenCli",
         "packages/producer/studio/checks/p0-studio-check.cjs"

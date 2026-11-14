@@ -343,8 +343,9 @@ export async function servePreview(root: string, pathname: string, method: strin
       const page = /\.html?$/.test(route.source.file) ? await previewSource(base, route.source.file) : await renderNativePreview({ root: base, entry: route.source.file, exportName: route.source.export, title: entry?.title, description: entry?.description });
       bytes = Buffer.from(themePage(page.toString("utf8"), theme));
     } else {
-      type = TYPES[extname(file).toLowerCase()] ?? "";
-      if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "studio.error.preview-content-type"); return; }
+      const known = TYPES[extname(file).toLowerCase()];
+      if (known === undefined || file.split("/").some(part => part.startsWith("."))) { fail(415, "studio.error.preview-content-type"); return; }
+      type = known;
       if (file.startsWith(BUNDLE_STYLES)) {
         // A native page's bundled CSS, linked by its render (never inlined).
         const css = bundledPreviewStylesheet(file.slice(BUNDLE_STYLES.length));
@@ -386,8 +387,9 @@ async function serveInstall(root: string, selected: string, kind: string, file: 
     type = TYPES[".html"]!;
     bytes = Buffer.from(themePage(links && html.includes("</head>") ? html.replace("</head>", `${links}</head>`) : html, theme));
   } else {
-    type = TYPES[extname(file).toLowerCase()] ?? "";
-    if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "studio.error.preview-content-type"); return; }
+    const known = TYPES[extname(file).toLowerCase()];
+    if (known === undefined || file.split("/").some(part => part.startsWith("."))) { fail(415, "studio.error.preview-content-type"); return; }
+    type = known;
     if (!/^[^/]+\/substrate\/dist\/assets\/[^/]+$/.test(file)) { fail(404, "studio.error.preview-asset-unavailable"); return; }
     bytes = await previewSource(found.base, file);
   }

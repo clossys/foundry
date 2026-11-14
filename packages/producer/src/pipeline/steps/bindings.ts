@@ -36,6 +36,8 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "writer.check": { entry: "src/cli/write.ts#runWrite" },
   "writer.compile": { entry: "src/cli/write.ts#runWrite" },
   "workspace.check": { entry: "src/cli/check.ts#runCheck" },
+  // The constitution before compile (W2-G): `check --constitution --enforced`, blocking on every enforced row.
+  "constitution": { entry: "src/cli/check.ts#runCheck" },
   "compile": { entry: "src/cli/compile.ts#runCompileCli", parser: "src/cli/compile.ts" },
   "options": { entry: "src/cli/options.ts#runOptionsCli", parser: "src/cli/options.ts" },
   "decisions": { entry: "src/cli/pin.ts#runDecisionsCli", parser: "src/cli/pin.ts" },
@@ -43,6 +45,8 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "publish.install": { entry: "src/cli/publish.ts#runPublish" },
   "publish.page": { entry: "src/cli/publish.ts#runPublishCheck" },
   "specimen": { entry: "src/cli/specimen.ts#runSpecimenCli", parser: "src/cli/specimen.ts" },
+  // P2 renders one candidate in context, cached by (candidate sha256, dependency pin-set hash) (W2-G).
+  "render": { entry: "src/cli/render.ts#runRenderCli", parser: "src/cli/render.ts" },
   "migrate": { entry: "src/cli/migrate.ts#runMigrateCli", parser: "src/cli/migrate.ts" },
   "pipeline": { entry: "src/cli/pipeline.ts#runPipelineCli", parser: "src/cli/pipeline.ts" },
   // Traced script steps: `clossys pipeline trace <id> -- <command>` records their run.

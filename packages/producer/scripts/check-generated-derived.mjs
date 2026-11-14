@@ -4,7 +4,8 @@
  *
  * Six derived products. Five come from the consumer's pins alone:
  *   icons       studio/generated/studio-icons.ts: one icon per pinned assets.icon-* slot, drawn
- *               from the glyph its pinned candidate carries (R-ICONS-FROM-PINS).
+ *               from the glyph its pinned candidate carries, and every icon id the Studio
+ *               projection names resolves to one of them (R-ICONS-FROM-PINS).
  *   provenance  studio/generated/studio-provenance.json: per assembled frame and section the
  *               data-clossys-slot/candidate/hash markers, from the page records and pins
  *               (R-PROVENANCE-GENERATED).
@@ -123,6 +124,31 @@ export const STUDIO_ICON_SOURCES: Readonly<Record<string, { lucide: string; cand
 ${rows.map(row => `  ${JSON.stringify(row.slot)}: ${JSON.stringify({ lucide: row.lucide, candidate: row.candidate, hash: `sha256:${row.sha256}` })},`).join('\n')}
 };
 `;
+}
+
+/**
+ * Every icon id a Studio projection names, with its reference count: map entries and their page
+ * actions, each page's (and leaf template's) manifest modules and actions, and the agent groups.
+ */
+export function projectionIcons(projection) {
+  const counts = new Map();
+  const add = icon => { if (typeof icon === 'string' && icon) counts.set(icon, (counts.get(icon) ?? 0) + 1); };
+  const manifest = value => { for (const row of [...(value?.modules ?? []), ...(value?.actions ?? [])]) add(row?.icon); };
+  for (const entry of projection?.map?.entries ?? []) { add(entry.icon); for (const action of entry.actions ?? []) add(action?.icon); }
+  for (const page of projection?.pages ?? []) { manifest(page.manifest); manifest(page.leaf?.manifest); }
+  for (const agent of projection?.agents ?? []) add(agent.icon);
+  return counts;
+}
+
+/** The icon slot ids an icon reference may resolve to: the pinned assets.icon-* slots the icon map is drawn from. */
+export function pinnedIconSlots(clossysRoot) {
+  return new Set(deriveIcons(clossysRoot).rows.map(row => row.slot));
+}
+
+/** The icon ids a projection names that resolve to no pinned assets.icon-* slot (foundry-audit-0001). */
+export function danglingIcons(clossysRoot, projection) {
+  const pinnedIcons = pinnedIconSlots(clossysRoot);
+  return [...projectionIcons(projection)].filter(([id]) => !pinnedIcons.has(id)).sort(([a], [b]) => a.localeCompare(b)).map(([id, count]) => ({ id, count }));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -519,6 +545,11 @@ export function checkGeneratedDerived({ root = repo, clossysRoot = join(root, 'c
   const icons = deriveIcons(clossysRoot);
   findings.push(...icons.findings);
   products['studio-icons.ts'] = iconsModule(clossysRoot);
+  // Every icon the committed Studio projection names resolves to a pinned icon slot; a dangling id would render nothing.
+  try {
+    const map = JSON.parse(readFileSync(join(generated, 'studio-map.json'), 'utf8'));
+    for (const row of danglingIcons(clossysRoot, map)) findings.push({ rule: 'R-ICONS-FROM-PINS', file: 'packages/producer/studio/generated/studio-map.json', detail: `${row.id} (${row.count} reference${row.count === 1 ? '' : 's'}) resolves to no pinned assets.icon-* slot` });
+  } catch (error) { findings.push({ rule: 'R-ICONS-FROM-PINS', file: 'packages/producer/studio/generated/studio-map.json', detail: `icon references unreadable: ${error.message}` }); }
   try { products['studio-provenance.json'] = provenanceJson(studioSectionPins(clossysRoot, join(generated, 'studio-map.json'))); }
   catch (error) { findings.push({ rule: 'R-PROVENANCE-GENERATED', file: 'packages/producer/studio/generated/studio-map.json', detail: error.message }); }
   products['studio-brand.json'] = brandJson(clossysRoot);

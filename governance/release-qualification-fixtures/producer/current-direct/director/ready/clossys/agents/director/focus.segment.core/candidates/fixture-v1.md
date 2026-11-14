@@ -1,15 +1,17 @@
 ---
 slot: "focus.segment.core"
-source: {"kind":"derived","ref":[]}
+source: {"kind":"derived","ref":["finding:active-customers"]}
 feeds: []
 functions: []
 ---
 
 ## Direction
-- Fictional audience direction for qualification.
+- Who: Only Fictional studios with 20 bookings each week
+- Situation: Only Fictional studios with 20 bookings each week
+- Not: Only Fictional studios with 20 bookings each week
 
 ## Because
-- Observed.
+- Five interviews (finding:active-customers)
 
 ## Watch
-- Review.
+- If trial count > 10 each month, then review this choice.

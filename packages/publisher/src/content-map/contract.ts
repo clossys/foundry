@@ -86,7 +86,7 @@ export interface ContentMap<F extends FormatId = FormatId> {
   readonly actions?: readonly ContentMapAction[];
   readonly redirects?: readonly ContentMapRedirectDeclaration[];
 }
-export type ContentMapFindingCode = "contract" | "format" | "duplicate-id" | "duplicate-path" | "missing-parent" | "cycle" | "orphan" | "pin" | "web-path" | "depth" | "action-id" | "redirect";
+export type ContentMapFindingCode = "contract" | "format" | "duplicate-id" | "duplicate-path" | "missing-parent" | "cycle" | "orphan" | "pin" | "web-path" | "depth" | "action-id" | "redirect" | "asset";
 export interface ContentMapFinding {
   readonly severity: "P0";
   readonly code: ContentMapFindingCode;

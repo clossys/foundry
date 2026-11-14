@@ -14,6 +14,7 @@ import { runPipelineCli } from "../cli/pipeline.js";
 import { runProduce } from "../cli/produce.js";
 import { runPublish, runPublishCheck } from "../cli/publish.js";
 import { runSpecimenCli } from "../cli/specimen.js";
+import { runRenderCli } from "../cli/render.js";
 import { runWrite } from "../cli/write.js";
 import type { Step } from "./define.js";
 
@@ -54,6 +55,7 @@ export const HANDLERS: Readonly<Record<string, Handler>> = {
   "src/cli/options.ts#runOptionsCli": async context => runOptionsCli(context.argv, context.cwd),
   "src/cli/options.ts#runPickCli": async context => runPickCli(context.argv, context.cwd),
   "src/cli/specimen.ts#runSpecimenCli": async context => runSpecimenCli(context.argv, context.cwd),
+  "src/cli/render.ts#runRenderCli": async context => runRenderCli(context.argv, context.cwd),
   "src/cli/migrate.ts#runMigrateCli": async context => runMigrateCli(context.argv, context.cwd),
   "src/cli/pipeline.ts#runPipelineCli": async context => runPipelineCli(context.argv, context.cwd),
   "src/cli/director.ts#runDirectorVerb": async context => runDirectorVerb(context.argv),

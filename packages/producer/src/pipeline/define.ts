@@ -166,9 +166,10 @@ export interface ActionGap { readonly unit: string; readonly reason: string; rea
 /**
  * How `clossys run` executes a plumb step: the concrete command when the run names placeholders
  * (`<file>`), or `skip` with why the chain never runs it (a server, a caller-chosen target).
+ * A skip with `onDemand` names the `clossys run` flag that runs `run` after all (capture: `--capture`).
  * Absent, the chain runs `run` itself.
  */
-export type ActionChain = string | { readonly skip: string };
+export type ActionChain = string | { readonly skip: string; readonly onDemand?: "--capture" };
 /** packages/<package>/actions/<id>/action.json (pipeline/schemas/action.schema.json). */
 export interface ActionContract {
   readonly schema: typeof ACTION_SCHEMA;

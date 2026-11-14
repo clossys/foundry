@@ -1,15 +1,17 @@
 ---
 slot: "advantage.proposition.proof"
-source: {"kind":"derived","ref":[]}
+source: {"kind":"derived","ref":["finding:active-customers"]}
 feeds: []
 functions: []
 ---
 
 ## Direction
-- Fictional claim direction for qualification.
+- Proof: Only Fictional studios with 20 bookings each week
+- Gap: Only Fictional studios with 20 bookings each week
+- Never-claim: Only Fictional studios with 20 bookings each week
 
 ## Because
-- Observed.
+- Five interviews (finding:active-customers)
 
 ## Watch
-- Review.
+- If trial count > 10 each month, then review this choice.

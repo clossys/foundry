@@ -1425,6 +1425,69 @@
       }
     },
     {
+      "package": "producer",
+      "path": "packages/producer/actions/constitution/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "constitution",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.pin",
+        "summary": "Slot constitution over every record before compile; blocks on every enforced finding.",
+        "run": "clossys check --constitution --enforced",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/director/*/candidates/*",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          },
+          {
+            "glob": "clossys/agents/publisher/*/candidates/*",
+            "schema": "candidate-publisher"
+          }
+        ],
+        "outputs": [],
+        "pass": {
+          "command": "clossys check --constitution --enforced",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "constitution"
+        ],
+        "uses": []
+      }
+    },
+    {
       "package": "designer",
       "path": "packages/designer/actions/designer.compile/action.json",
       "contract": {
@@ -1733,6 +1796,73 @@
         "record": "clossys.pipeline-run/1",
         "checks": [
           "studio-dom"
+        ],
+        "uses": []
+      }
+    },
+    {
+      "package": "producer",
+      "path": "packages/producer/actions/render/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "render",
+        "agent": "producer",
+        "kind": "plumb",
+        "stage": "publish.assemble",
+        "summary": "Render one Designer candidate in context for P2, cached by (candidate sha256, dependency pin-set hash).",
+        "run": "clossys render <slot> <candidate>",
+        "chain": {
+          "skip": "render draws one candidate a P2 craft run names; P2 and its blind critic run it"
+        },
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/designer/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/designer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/designer/*/candidates/*",
+            "schema": "candidate-element"
+          },
+          {
+            "glob": "clossys/agents/writer/*/pin.json",
+            "schema": "pin"
+          },
+          {
+            "glob": "clossys/agents/writer/*/candidates/*",
+            "schema": "candidate-strings"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "node_modules/.cache/clossys/render/**",
+            "schema": "specimen-thumbnail"
+          }
+        ],
+        "pass": {
+          "command": "clossys render <slot> <candidate>",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "every-candidate-previewable"
         ],
         "uses": []
       }
@@ -2564,6 +2694,10 @@
         "stage": "publish.check",
         "summary": "Capture every Studio route as screenshots and a contact sheet.",
         "run": "clossys pipeline trace capture -- npm run capture:studio",
+        "chain": {
+          "skip": "capture runs only on demand, before an owner preview or a landing",
+          "onDemand": "--capture"
+        },
         "inputs": [
           {
             "glob": "pkg:studio/generated/studio-map.json",

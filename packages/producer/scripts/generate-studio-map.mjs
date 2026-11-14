@@ -3,7 +3,7 @@ import { existsSync, realpathSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { projectRedirects } from '@clossys/publisher/content-map';
+import { checkContentMapIcons, projectRedirects } from '@clossys/publisher/content-map';
 import { validateCopyRegistryShape } from '@clossys/writer';
 import { resolveCopyRef } from '@clossys/writer/resolve';
 import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slots.js';
@@ -13,7 +13,7 @@ import { publishNext } from '../dist/publish/install-next.js';
 import { readPinnedPublication, resolvePublicationTitles } from '../dist/publish/pinned-publication.js';
 import { expandPublication, landingOf, projectTrails } from '../dist/publish/expand-tabs.js';
 import { checkComponent, checkPayload, componentTarget, installComponent, installPayload } from './studio-payload.mjs';
-import { brandJson, flowThemeCss, iconsModule, provenanceJson } from './check-generated-derived.mjs';
+import { brandJson, danglingIcons, flowThemeCss, iconsModule, pinnedIconSlots, provenanceJson } from './check-generated-derived.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
@@ -394,6 +394,11 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
     document: STUDIO_DOCUMENT,
     shell: installed.filter(file => file.kind === 'shell').map(file => ({ state: file.shell, entry: { file: `studio/app/${file.file}`, export: 'default' } })),
   };
+  // Every icon the projection names resolves to a pinned assets.icon-* slot (foundry-audit-0001): a
+  // dangling id fails the build, it never renders as nothing. The fix is a Designer icon slot.
+  const iconFindings = checkContentMapIcons(map, pinnedIconSlots(clossysRoot));
+  const dangling = danglingIcons(clossysRoot, projection);
+  if (iconFindings.length || dangling.length) fail(`icon ids resolve to no pinned assets.icon-* slot: ${[...new Set([...dangling.map(row => `${row.id} (${row.count})`), ...iconFindings.map(finding => `${finding.path} ${finding.message}`)])].join(', ')}`);
   const assemblyBanner = target === 'preview' ? '// Generated Studio DRAFT preview from explicit native bindings; unapproved and not release qualified.\n' : banner;
   const module = `${assemblyBanner}import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
 import projection from './studio-map.json';

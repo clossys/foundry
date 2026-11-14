@@ -127,7 +127,7 @@ test('native Trigger calls onPress then toggles only its nearest provider once; 
 test('375px shell shares the stock Sidebar mobile sheet, stock geometry, close CTA and dismissal for navigation/chat', async () => {
   const Frame = await shellComponent();
   globalThis.__stockFrameTheme = { resolved: 'light', setMode() {} };
-  const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
+  const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'assets.icon-home' }], activeId: 'home' };
   const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation, commands: [], breadcrumbs: [] }, 'Body'), 375);
   const sheets = () => [...document.querySelectorAll('[data-mobile="true"]')];
   async function escape() {
@@ -171,7 +171,7 @@ test('375px shell shares the stock Sidebar mobile sheet, stock geometry, close C
 test('375px mobile sheets are the stock Sidebar sheet: its own screen-reader header, no frame-side title props', async () => {
   const Frame = await shellComponent();
   globalThis.__stockFrameTheme = { resolved: 'light', setMode() {} };
-  const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
+  const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'assets.icon-home' }], activeId: 'home' };
   const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation, commands: [], breadcrumbs: [] }, 'Body'), 375);
   const header = () => document.querySelector('[role="dialog"] [data-slot="sheet-header"]');
   try {
@@ -229,7 +229,7 @@ for (const width of [768, 1280]) test(`shell at ${width}px is the sidebar-15 pag
   const themeCalls = [];
   globalThis.__stockFrameTheme = { resolved: 'light', setMode: value => themeCalls.push(value) };
   document.cookie = 'chat_state=true';
-  const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
+  const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'assets.icon-home' }], activeId: 'home' };
   const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation, commands: [], breadcrumbs: [{ id: 'home', label: 'Home' }] }, e('section', { id: 'body' }, 'Body')), width);
   try {
     assert.equal(document.querySelector('[data-mobile="true"]'), null, 'both sidebars use desktop behavior at the native md boundary');
@@ -273,7 +273,7 @@ test('prompt action forwards text, substitutes every URL, handles clipboard fail
   globalThis.setTimeout = (fn, delay, ...args) => { const handle = nativeSet(fn, delay, ...args); if (delay === 1600) timers.add(handle); return handle; };
   globalThis.clearTimeout = handle => { if (timers.has(handle)) cleared.add(handle); return nativeClear(handle); };
   const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation: { tree: [], activeId: 'home' }, commands: [], breadcrumbs: [],
-    popovers: [{ id: 'request-change', label: 'Request change', icon: 'pencil', copy: { kind: 'prompt', prompt: 'Review {url} and {url}' } }] }, 'Body'));
+    popovers: [{ id: 'request-change', label: 'Request change', icon: 'assets.icon-document', copy: { kind: 'prompt', prompt: 'Review {url} and {url}' } }] }, 'Body'));
   try {
     const content = document.querySelector('[data-popover="request-change"]'); assert.ok(content);
     const expected = 'Review http://localhost/?keep=1#body and http://localhost/?keep=1#body';
@@ -296,7 +296,7 @@ test('legacy link actions cannot activate the shell clipboard fallback and curre
   let writes = 0;
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { async writeText() { writes++; } } });
   const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation: { tree: [], activeId: 'home' }, commands: [], breadcrumbs: [],
-    popovers: [{ id: 'legacy', label: 'Legacy', icon: 'link', copy: { kind: 'link' } }] }, 'Body'));
+    popovers: [{ id: 'legacy', label: 'Legacy', icon: 'assets.icon-external-link', copy: { kind: 'link' } }] }, 'Body'));
   try {
     const content = document.querySelector('[data-popover="legacy"]'); assert.ok(content);
     assert.equal(content.querySelector('[data-popover-copy]'), null);
