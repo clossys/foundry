@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v23.md",
-  "sha256": "ea9822b1f74e3516c98092709fe37f106a87a7a659bf08ed820e7ae4b40cba6d",
-  "decidedBy": "owner:https://github.com/clossys/workspace/issues/46#issuecomment-6867459781",
-  "basis": "picked",
-  "at": "2026-11-13T23:24:17.034Z"
+  "candidate": "studio-v24.md",
+  "sha256": "30c1011ed9be8341c5241104b4844474970374a0bd236ab64a2546581fd38a51",
+  "decidedBy": "planner:W2-G dependency; AUTO-DECIDED planner, sibling icon library",
+  "basis": "planner",
+  "at": "2026-11-14T08:23:00.278Z"
 }

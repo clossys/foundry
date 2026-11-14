@@ -797,6 +797,41 @@
       ]
     },
     {
+      "registry": "lucide",
+      "name": "list-tree",
+      "slots": [
+        "assets.icon-outline"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "list-checks",
+      "slots": [
+        "assets.icon-checks"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "rotate-ccw-clock",
+      "slots": [
+        "assets.icon-versions"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "message-square-plus",
+      "slots": [
+        "assets.icon-request"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "inbox",
+      "slots": [
+        "assets.icon-needs"
+      ]
+    },
+    {
       "registry": "shadcn",
       "name": "aspect-ratio",
       "slots": [

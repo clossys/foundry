@@ -53,6 +53,12 @@ export function validateIa(value: unknown, path = "ia.json", agent?: ModelAgent)
   }
   if (strings(value.extensions)) for (const id of value.extensions) if (!seen.has(id)) fail(`extension ${id} is not placed in the IA`);
   if (value.layers !== undefined) validateLayers(value.layers, value.nodes, fail);
+  // The declared axes (R01.7) and the owner-authorized change records (IA-V) are held to ia.schema.json itself.
+  if (value.axes !== undefined || value.changes !== undefined) {
+    const schema = loadSchema("ia");
+    const part = { type: "object", $defs: schema.$defs, properties: { axes: schema.properties!.axes!, changes: schema.properties!.changes! } };
+    for (const issue of validateValue({ ...(value.axes !== undefined ? { axes: value.axes } : {}), ...(value.changes !== undefined ? { changes: value.changes } : {}) }, part)) fail(`${issue.path.slice(1)} ${issue.message}`);
+  }
   return issues;
 }
 
@@ -91,7 +97,7 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "slot-invalid", path, message });
   if (!object(value)) { fail("expected an object"); return issues; }
-  const allowed = new Set(["schema", "id", "agent", "ia", "kind", "standard", "contract", "inputs", "uses", "notNeeded", "options", "varyOn"]);
+  const allowed = new Set(["schema", "id", "agent", "ia", "kind", "standard", "contract", "inputs", "uses", "notNeeded", "options", "varyOn", "extension"]);
   for (const key of Object.keys(value)) if (!allowed.has(key)) fail(`unknown key ${key}${key === "usedBy" ? " (usedBy is computed, never stored)" : ""}`);
   if (value.schema !== SLOT_SCHEMA) fail(`schema must be ${SLOT_SCHEMA}`);
   if (!nonEmpty(value.id) || !SLOT_ID.test(value.id)) fail("id must be a slot id");
@@ -101,6 +107,7 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   else if (agent && !AGENT_KIND[agent].includes(value.kind as SlotKind)) fail(`kind ${String(value.kind)} does not belong to ${String(value.agent)}`);
   if (nonEmpty(value.id) && agent === SEAT_AGENT && seatStepOf(value.id) === undefined) fail(`producer slot id must be ${SEAT_PREFIX}<step-id>`);
   if (value.standard !== undefined && (typeof value.standard !== "string" || !STANDARD_ID.test(value.standard))) fail("standard must be a standard id such as element.button");
+  if (value.extension !== undefined && typeof value.extension !== "boolean") fail("extension must be true or false");
   const ia = value.ia;
   if (!object(ia) || !nonEmpty(ia.l1) || !nonEmpty(ia.l2) || !Number.isSafeInteger(ia.order) || (ia.order as number) < 0 || (ia.l0 !== undefined && !nonEmpty(ia.l0))) fail("ia must be {l0?, l1, l2, order}");
   if (!object(value.contract)) fail("contract must be an object");

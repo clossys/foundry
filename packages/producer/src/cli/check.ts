@@ -157,11 +157,14 @@ const headCommit = (root: string): string => {
 async function runConstitutionCheck(args: CliArgs, root: string, consumer: string): Promise<CliResult> {
   const { formatReport, runConstitution } = await import("../constitution/run.js");
   const green = await import("../constitution/green.js");
-  const { index, ...report } = runConstitution({ root, consumer, index: true, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}) });
+  const { index, ...report } = runConstitution({ root, consumer, index: true, strict: args.strict, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}) });
+  // Building rows (IA-C) stay report-only outside --strict: the delta gate and the green report
+  // count non-pending, non-building rows; --strict gates every row, building included.
+  const gated = args.strict ? report.rows : report.rows.filter(row => row.level !== "building");
   const path = resolve(root, args.green ?? green.DEFAULT_GREEN_PATH);
   const workspace = workspaceName(root);
   const read = green.readGreen(path, workspace);
-  const delta = green.evaluateDelta(report.rows, index!, read, { rules: report.rules.map(rule => rule.id), ...(args.agent ? { agent: args.agent } : {}) });
+  const delta = green.evaluateDelta(gated, index!, read, { rules: report.rules.map(rule => rule.id), ...(args.agent ? { agent: args.agent } : {}) });
   const mode = args.strict ? "strict" : args.enforced ? "enforced" : "report";
   let exitCode: 0 | 1 = mode === "strict" ? (delta.enforced || delta.tampered.length ? 1 : 0)
     : mode === "enforced" ? (delta.ok ? 0 : 1)
@@ -179,7 +182,7 @@ async function runConstitutionCheck(args: CliArgs, root: string, consumer: strin
       recorded = { path, written: false, reason: refusal };
       exitCode = 1;
     } else {
-      const next = green.buildGreen(report.rows, index!, { workspace, commit: headCommit(root) });
+      const next = green.buildGreen(gated, index!, { workspace, commit: headCommit(root) });
       await green.writeGreen(path, next);
       recorded = { path, written: true, reason: missing ? "seeded (no report existed)" : `recorded (${delta.stale.length} fixed key(s) dropped)` };
       exitCode = 0;

@@ -2602,6 +2602,11 @@
         "permanent": false
       },
       {
+        "from": "/designer/assets.icon-request",
+        "to": "/designer/assets/icons/assets.icon-request",
+        "permanent": false
+      },
+      {
         "from": "/designer/assets.icon-success",
         "to": "/designer/assets/icons/assets.icon-success",
         "permanent": false
@@ -2719,6 +2724,26 @@
       {
         "from": "/designer/assets.icon-integration",
         "to": "/designer/assets/icons/assets.icon-integration",
+        "permanent": false
+      },
+      {
+        "from": "/designer/assets.icon-outline",
+        "to": "/designer/assets/icons/assets.icon-outline",
+        "permanent": false
+      },
+      {
+        "from": "/designer/assets.icon-checks",
+        "to": "/designer/assets/icons/assets.icon-checks",
+        "permanent": false
+      },
+      {
+        "from": "/designer/assets.icon-versions",
+        "to": "/designer/assets/icons/assets.icon-versions",
+        "permanent": false
+      },
+      {
+        "from": "/designer/assets.icon-needs",
+        "to": "/designer/assets/icons/assets.icon-needs",
         "permanent": false
       },
       {
@@ -24957,6 +24982,12 @@
     },
     {
       "page": "designer-assets.icons",
+      "slug": "assets.icon-request",
+      "title": "Icon request",
+      "path": "/designer/assets/icons/assets.icon-request"
+    },
+    {
+      "page": "designer-assets.icons",
       "slug": "assets.icon-success",
       "title": "Success",
       "path": "/designer/assets/icons/assets.icon-success"
@@ -25098,6 +25129,30 @@
       "slug": "assets.icon-integration",
       "title": "Integration",
       "path": "/designer/assets/icons/assets.icon-integration"
+    },
+    {
+      "page": "designer-assets.icons",
+      "slug": "assets.icon-outline",
+      "title": "Icon outline",
+      "path": "/designer/assets/icons/assets.icon-outline"
+    },
+    {
+      "page": "designer-assets.icons",
+      "slug": "assets.icon-checks",
+      "title": "Icon checks",
+      "path": "/designer/assets/icons/assets.icon-checks"
+    },
+    {
+      "page": "designer-assets.icons",
+      "slug": "assets.icon-versions",
+      "title": "Icon versions",
+      "path": "/designer/assets/icons/assets.icon-versions"
+    },
+    {
+      "page": "designer-assets.icons",
+      "slug": "assets.icon-needs",
+      "title": "Icon needs",
+      "path": "/designer/assets/icons/assets.icon-needs"
     },
     {
       "page": "designer-assets.imagery",
@@ -32363,6 +32418,28 @@
         "href": "/designer/assets/icons/assets.icon-theme-system"
       }
     ],
+    "designer-assets.icons:assets.icon-request": [
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-assets",
+        "label": "Assets",
+        "href": "/designer/assets/logo"
+      },
+      {
+        "id": "designer-assets.icons",
+        "label": "Icons",
+        "href": "/designer/assets/icons"
+      },
+      {
+        "id": "designer-assets.icons:assets.icon-request",
+        "label": "Icon request",
+        "href": "/designer/assets/icons/assets.icon-request"
+      }
+    ],
     "designer-assets.icons:assets.icon-success": [
       {
         "id": "designer",
@@ -32889,6 +32966,94 @@
         "id": "designer-assets.icons:assets.icon-integration",
         "label": "Integration",
         "href": "/designer/assets/icons/assets.icon-integration"
+      }
+    ],
+    "designer-assets.icons:assets.icon-outline": [
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-assets",
+        "label": "Assets",
+        "href": "/designer/assets/logo"
+      },
+      {
+        "id": "designer-assets.icons",
+        "label": "Icons",
+        "href": "/designer/assets/icons"
+      },
+      {
+        "id": "designer-assets.icons:assets.icon-outline",
+        "label": "Icon outline",
+        "href": "/designer/assets/icons/assets.icon-outline"
+      }
+    ],
+    "designer-assets.icons:assets.icon-checks": [
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-assets",
+        "label": "Assets",
+        "href": "/designer/assets/logo"
+      },
+      {
+        "id": "designer-assets.icons",
+        "label": "Icons",
+        "href": "/designer/assets/icons"
+      },
+      {
+        "id": "designer-assets.icons:assets.icon-checks",
+        "label": "Icon checks",
+        "href": "/designer/assets/icons/assets.icon-checks"
+      }
+    ],
+    "designer-assets.icons:assets.icon-versions": [
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-assets",
+        "label": "Assets",
+        "href": "/designer/assets/logo"
+      },
+      {
+        "id": "designer-assets.icons",
+        "label": "Icons",
+        "href": "/designer/assets/icons"
+      },
+      {
+        "id": "designer-assets.icons:assets.icon-versions",
+        "label": "Icon versions",
+        "href": "/designer/assets/icons/assets.icon-versions"
+      }
+    ],
+    "designer-assets.icons:assets.icon-needs": [
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-assets",
+        "label": "Assets",
+        "href": "/designer/assets/logo"
+      },
+      {
+        "id": "designer-assets.icons",
+        "label": "Icons",
+        "href": "/designer/assets/icons"
+      },
+      {
+        "id": "designer-assets.icons:assets.icon-needs",
+        "label": "Icon needs",
+        "href": "/designer/assets/icons/assets.icon-needs"
       }
     ],
     "designer-assets.imagery:assets.image-ratio": [
@@ -40536,6 +40701,11 @@
       "permanent": false
     },
     {
+      "source": "/designer/assets.icon-checks",
+      "destination": "/designer/assets/icons/assets.icon-checks",
+      "permanent": false
+    },
+    {
       "source": "/designer/assets.icon-chevron-down",
       "destination": "/designer/assets/icons/assets.icon-chevron-down",
       "permanent": false
@@ -40641,8 +40811,18 @@
       "permanent": false
     },
     {
+      "source": "/designer/assets.icon-needs",
+      "destination": "/designer/assets/icons/assets.icon-needs",
+      "permanent": false
+    },
+    {
       "source": "/designer/assets.icon-organization",
       "destination": "/designer/assets/icons/assets.icon-organization",
+      "permanent": false
+    },
+    {
+      "source": "/designer/assets.icon-outline",
+      "destination": "/designer/assets/icons/assets.icon-outline",
       "permanent": false
     },
     {
@@ -40663,6 +40843,11 @@
     {
       "source": "/designer/assets.icon-receipt",
       "destination": "/designer/assets/icons/assets.icon-receipt",
+      "permanent": false
+    },
+    {
+      "source": "/designer/assets.icon-request",
+      "destination": "/designer/assets/icons/assets.icon-request",
       "permanent": false
     },
     {
@@ -40713,6 +40898,11 @@
     {
       "source": "/designer/assets.icon-user",
       "destination": "/designer/assets/icons/assets.icon-user",
+      "permanent": false
+    },
+    {
+      "source": "/designer/assets.icon-versions",
+      "destination": "/designer/assets/icons/assets.icon-versions",
       "permanent": false
     },
     {

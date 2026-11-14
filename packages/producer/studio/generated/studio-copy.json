@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "1ea35c825e247868f36c9f9f3d7e9d5d3a24b9da52c5452d1295c766bf26bfa4",
+  "revision": "09308da717eeed94647703678cecca4918024772671facd9524100c2d4df1758",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2248,6 +2248,18 @@
     {
       "id": "studio.pipeline.node.capture",
       "text": "Capture screenshots",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.constitution",
+      "text": "Check the constitution",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.render",
+      "text": "Render candidates",
       "context": "lib/pipeline-flow.ts",
       "status": "draft"
     },

@@ -35,7 +35,12 @@
     "sections.studio.publications",
     "sections.studio.references",
     "sections.studio.slot-groups",
-    "sections.studio.specimen"
+    "sections.studio.specimen",
+    "assets.icon-outline",
+    "assets.icon-checks",
+    "assets.icon-versions",
+    "assets.icon-request",
+    "assets.icon-needs"
   ],
   "nodes": [
     {
@@ -249,7 +254,8 @@
             "assets.icon-grid-view",
             "assets.icon-theme-light",
             "assets.icon-theme-dark",
-            "assets.icon-theme-system"
+            "assets.icon-theme-system",
+            "assets.icon-request"
           ]
         },
         {
@@ -285,7 +291,11 @@
             "assets.icon-legal",
             "assets.icon-package",
             "assets.icon-layers",
-            "assets.icon-integration"
+            "assets.icon-integration",
+            "assets.icon-outline",
+            "assets.icon-checks",
+            "assets.icon-versions",
+            "assets.icon-needs"
           ]
         }
       ]
@@ -1033,6 +1043,78 @@
           ]
         }
       ]
+    }
+  ],
+  "changes": [
+    {
+      "op": "place",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:32.135Z",
+      "detail": "placed assets.icon-outline under assets.icons/icons-objects; 186 later slot.json renumbered (order only)",
+      "slotFiles": 187
+    },
+    {
+      "op": "extension",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:33.964Z",
+      "detail": "assets.icon-outline is an extension",
+      "slotFiles": 1
+    },
+    {
+      "op": "place",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:35.675Z",
+      "detail": "placed assets.icon-checks under assets.icons/icons-objects; 186 later slot.json renumbered (order only)",
+      "slotFiles": 187
+    },
+    {
+      "op": "extension",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:37.455Z",
+      "detail": "assets.icon-checks is an extension",
+      "slotFiles": 1
+    },
+    {
+      "op": "place",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:39.146Z",
+      "detail": "placed assets.icon-versions under assets.icons/icons-objects; 186 later slot.json renumbered (order only)",
+      "slotFiles": 187
+    },
+    {
+      "op": "extension",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:40.961Z",
+      "detail": "assets.icon-versions is an extension",
+      "slotFiles": 1
+    },
+    {
+      "op": "place",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:42.661Z",
+      "detail": "placed assets.icon-request under assets.icons/icons-actions; 213 later slot.json renumbered (order only)",
+      "slotFiles": 214
+    },
+    {
+      "op": "extension",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:44.425Z",
+      "detail": "assets.icon-request is an extension",
+      "slotFiles": 1
+    },
+    {
+      "op": "place",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:46.419Z",
+      "detail": "placed assets.icon-needs under assets.icons/icons-objects; 186 later slot.json renumbered (order only)",
+      "slotFiles": 187
+    },
+    {
+      "op": "extension",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:26:48.199Z",
+      "detail": "assets.icon-needs is an extension",
+      "slotFiles": 1
     }
   ]
 }

@@ -121,11 +121,26 @@ export interface IaDoc {
   /**
    * Optional display grouping (Studio tabs). Each layer lists L1 refs: `<l1>`
    * shows that L1 with its L2 groups; `<l1>/<l2>` shows one L2 group as its
-   * own L1. Display only: folders and slot.json positions never change.
+   * own L1. Display only until the IA declares its `axes`: then each layer is an L0 and slot.json
+   * `ia.l0` carries it (foundry-ia.ts nodeLayers). Folders never change.
    */
   readonly layers?: readonly IaLayer[];
+  /** The closed L0 and L1 vocabularies (R01.7); `L1` is keyed by layer id. */
+  readonly axes?: IaAxes;
+  /** The owner-authorized IA changes (`clossys ia` regroup operations, IA-V), oldest first: each names the owner decision that allowed it. */
+  readonly changes?: readonly IaChange[];
 }
 export interface IaLayer { readonly id: string; readonly label: string; readonly nodes: readonly string[] }
+/** One IA level's axis: a name plus a closed label list, or `instance` for data-driven tabs (L1 only); `mirrors` names `<agent>/<L0>` (R01.11). */
+export interface IaAxis { readonly name: string; readonly values?: readonly string[]; readonly instance?: true; readonly mirrors?: string }
+export interface IaAxes { readonly L0: IaAxis; readonly L1: Readonly<Record<string, IaAxis>>; readonly shared?: readonly string[] }
+/**
+ * One owner-authorized change to an ia.json (`clossys ia ... --owner-ref <ref>`): the operation, the
+ * resolved owner-words ref (OWNER_WORDS_REF, from clossys/owner-decisions.json), when, what changed
+ * and how many slot.json files the same guarded write rewrote. It stands in for the slot ledger's IA
+ * events until the ledger lands (W2-B).
+ */
+export interface IaChange { readonly op: string; readonly ownerRef: string; readonly at: string; readonly detail: string; readonly slotFiles: number }
 
 export interface SlotPosition { readonly l0?: string; readonly l1: string; readonly l2: string; readonly order: number }
 export interface SlotDoc {
@@ -151,6 +166,8 @@ export interface SlotDoc {
   readonly options?: typeof OPTION_COUNTS[number];
   /** The axis candidates differ on (e.g. `tone`); required when options > 1. Each candidate tags its value as `vary: {"<axis>": "<value>"}`. */
   readonly varyOn?: string;
+  /** A consumer extension leaf (R01.14): listed in ia.json `extensions`, under a Foundry L1. */
+  readonly extension?: boolean;
 }
 
 /** Why a slot is not needed, since when (ISO date) and who decided. Written by `clossys pin --not-needed`, never by an agent fill. */
