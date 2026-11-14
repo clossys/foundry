@@ -1,0 +1,75 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-14T09:31:26.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "icon-request-v1.json",
+      "sha256": "9bc8cb9e309f4a9aab5447a7e186b6e332e14945a0553edf30a10148dd33eb45",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T09:31:26.000Z",
+        "authoredIn": "01a2e5437842efe3294570b0512e5cfe2e214354"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T09:31:26.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T09:31:26.000Z",
+        "authoredIn": "01a2e5437842efe3294570b0512e5cfe2e214354"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "3bc91cd2d1294a9fa00331db32dd9116d9717e409d09146a176929ff77907bf5"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-14T09:28:33.502Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "icon-request-v1.json",
+      "sha256": "9bc8cb9e309f4a9aab5447a7e186b6e332e14945a0553edf30a10148dd33eb45",
+      "decidedBy": "planner:W2-G Studio icon dependency; AUTO-DECIDED planner, lucide 1.65.0 ISC, sibling icon library",
+      "basis": "planner",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T09:31:26.000Z",
+        "authoredIn": "01a2e5437842efe3294570b0512e5cfe2e214354"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "86a32958f4dbef216a8151e6e05ea1c07a4ad2f1eb074f7222b9be0c0914cb0a"
+        }
+      ]
+    }
+  ]
+}

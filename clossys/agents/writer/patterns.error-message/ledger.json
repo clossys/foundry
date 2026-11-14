@@ -1,0 +1,330 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-03T08:03:19.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-v1.md",
+      "sha256": "ec7f86ffd6b2bf71bf46df96d61b5119cf6f607e6ee8b2d1fc28e9b035f9580d",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:03:19.000Z",
+        "authoredIn": "75dd3bed1960e88886a1f0d5a2cf8f1b1c77ce3b"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-03T08:03:19.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:03:19.000Z",
+        "authoredIn": "75dd3bed1960e88886a1f0d5a2cf8f1b1c77ce3b"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "d062535623c6bb42bec82a0fa52b2841895ac20371c3dc41782c64a23aff719c"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-03T08:58:39Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-v1.md",
+      "sha256": "ec7f86ffd6b2bf71bf46df96d61b5119cf6f607e6ee8b2d1fc28e9b035f9580d",
+      "decidedBy": "owner:2026-11-03 pin-if-agree",
+      "basis": "bulk",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T08:11:23.000Z",
+        "authoredIn": "e34fa3721b13db1a333c900e8e2e7ee5fa308d0a"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "254e1436d734bba41c9c3278d098dd628653ee6ce1dca12a919836829f3900d5"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T04:44:39.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-v2.md",
+      "sha256": "f01567e308421d0b1941912946744950725c67301dcc014eb5b40327caeea682",
+      "backfill": {
+        "commit": "5eb2437187920096762196fc0ec4542db540259d",
+        "at": "2026-11-11T04:44:39.000Z",
+        "authoredIn": "eebc134c0500be2dc383aa26c711231a3e13952c"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T08:01:44.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-v3.md",
+      "sha256": "ecd0c633a68940a9c5dc93a6b2123a5df240c56497c51de9ee21c9cbb2092bb2",
+      "backfill": {
+        "commit": "638bb00ba6f407c04d3d4ed3112aa22054363e61",
+        "at": "2026-11-11T08:01:44.000Z",
+        "authoredIn": "a864aadf3b01a662981ffff6d2af52bd4fedb708"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-12T00:10:28.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-v4.md",
+      "sha256": "c74000ef5713839154abdcb40297cc625f18e9562541fe8fdc016e0eb873e53e",
+      "backfill": {
+        "commit": "33f7e2b9a8426428656ecf2fb25e4252f6bd909a",
+        "at": "2026-11-12T00:10:28.000Z"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-12T00:08:59.132Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-v4.md",
+      "sha256": "c74000ef5713839154abdcb40297cc625f18e9562541fe8fdc016e0eb873e53e",
+      "decidedBy": "planner:CASCADE re-cite at Director r9, copy unchanged (was owner:2026-11-03 pin-if-agree, bulk)",
+      "basis": "planner",
+      "backfill": {
+        "commit": "33f7e2b9a8426428656ecf2fb25e4252f6bd909a",
+        "at": "2026-11-12T00:10:28.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "bdad79115b1f800ec00600d679c0042c99334aab905188ab8c8c03873d780f85"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-03T08:58:39Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-v1.md",
+      "sha256": "ec7f86ffd6b2bf71bf46df96d61b5119cf6f607e6ee8b2d1fc28e9b035f9580d",
+      "decidedBy": "owner:2026-11-03 pin-if-agree",
+      "basis": "bulk",
+      "backfill": {
+        "commit": "9d725ca9835454f4796065e0d188db43d356448d",
+        "at": "2026-11-12T01:16:16.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "e73905c114a97d601abe7ca848e7a1449c30fa02314b0dbf5b39d1d3c241ace2"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-03T08:58:39Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-v1.md",
+      "sha256": "ec7f86ffd6b2bf71bf46df96d61b5119cf6f607e6ee8b2d1fc28e9b035f9580d",
+      "decidedBy": "owner:2026-11-03 pin-if-agree",
+      "basis": "bulk",
+      "backfill": {
+        "commit": "bc23cd62b4e8cfac54692d3554f1de5b8d340461",
+        "at": "2026-11-13T02:46:58.000Z",
+        "authoredIn": "05f41744dec594f8a914a5427e8ff3d0a3b16008"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "3fb62768f2fb7e7830a2028a615ab01680d8d656934407cf4b4a8b866c573c4e"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-13T03:07:59.281Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-v3.md",
+      "sha256": "ecd0c633a68940a9c5dc93a6b2123a5df240c56497c51de9ee21c9cbb2092bb2",
+      "decidedBy": "owner:https://github.com/clossys/workspace/issues/46#issuecomment-6842596596",
+      "basis": "picked",
+      "backfill": {
+        "commit": "a31758a3863eafab3b6ea0250ed9a4671b9dddc5",
+        "at": "2026-11-13T03:09:01.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "ec5decf355c051303824aec28ea1c60c350dec3345274bfc69edd3db1a3619a6"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-13T05:06:56.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-recite-v1.md",
+      "sha256": "f5d546539af8d5f1a9f6d838c4d3578444f0c185e26d750ae9b8a313d6fe1ac8",
+      "backfill": {
+        "commit": "612f559ee602ed5ced144fa1d8f6076a107c3c4a",
+        "at": "2026-11-13T05:06:56.000Z"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-13T05:42:04.212Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-recite-v1.md",
+      "sha256": "f5d546539af8d5f1a9f6d838c4d3578444f0c185e26d750ae9b8a313d6fe1ac8",
+      "decidedBy": "owner:https://github.com/clossys/workspace/issues/46#issuecomment-6845217118",
+      "basis": "picked",
+      "backfill": {
+        "commit": "df5e011913e3d37378abe36ff4116f1bc647f297",
+        "at": "2026-11-13T05:42:14.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "81826dab6abcb4d55635912b86bcf613d901ac59f4e49ad8c45b6648d72abc2c"
+        }
+      ]
+    },
+    {
+      "op": "migrate",
+      "at": "2026-11-14T02:55:59.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "citations-to-slots",
+      "files": [
+        {
+          "name": "studio-recite-v1.md",
+          "from": "f5d546539af8d5f1a9f6d838c4d3578444f0c185e26d750ae9b8a313d6fe1ac8",
+          "to": "86583868174f127634d7939f9b6b29d1f1603f86c5d84fcaf82329df6c4f0398"
+        },
+        {
+          "name": "studio-v1.md",
+          "from": "ec7f86ffd6b2bf71bf46df96d61b5119cf6f607e6ee8b2d1fc28e9b035f9580d",
+          "to": "5c40a039ae0a3d065e8d93931a9602ae433de6a5b4191a0a9f40fcef351e38bc"
+        },
+        {
+          "name": "studio-v2.md",
+          "from": "f01567e308421d0b1941912946744950725c67301dcc014eb5b40327caeea682",
+          "to": "c3a1f9dc09731c5482caed61e29d8ff44df02686653bac56b66da9af001034e0"
+        },
+        {
+          "name": "studio-v3.md",
+          "from": "ecd0c633a68940a9c5dc93a6b2123a5df240c56497c51de9ee21c9cbb2092bb2",
+          "to": "86583868174f127634d7939f9b6b29d1f1603f86c5d84fcaf82329df6c4f0398"
+        },
+        {
+          "name": "studio-v4.md",
+          "from": "c74000ef5713839154abdcb40297cc625f18e9562541fe8fdc016e0eb873e53e",
+          "to": "5c40a039ae0a3d065e8d93931a9602ae433de6a5b4191a0a9f40fcef351e38bc"
+        }
+      ],
+      "backfill": {
+        "commit": "f320d5a2a62f26d7bca319b5d0d28ca21e5882e1",
+        "at": "2026-11-14T02:55:59.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "45ed24de985b6a05575d9380308a753f0665156ace675b4d88fc4d6fb3665057"
+        }
+      ]
+    }
+  ]
+}

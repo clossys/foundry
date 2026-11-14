@@ -1,0 +1,351 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-03T08:03:19.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-north-star-v1.md",
+      "sha256": "8009314ce0afc43377660d8f757b94b103817c0a7fec28c11a0accf89731e1e8",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:03:19.000Z",
+        "authoredIn": "75dd3bed1960e88886a1f0d5a2cf8f1b1c77ce3b"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-03T08:03:19.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:03:19.000Z",
+        "authoredIn": "75dd3bed1960e88886a1f0d5a2cf8f1b1c77ce3b"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "38696f543fa25aaa6e620810148da95f484bec75459d6ff9a76275d4ee55410e"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-03T08:58:39Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-north-star-v1.md",
+      "sha256": "8009314ce0afc43377660d8f757b94b103817c0a7fec28c11a0accf89731e1e8",
+      "decidedBy": "owner:2026-11-03 pin-if-agree",
+      "basis": "bulk",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T08:11:23.000Z",
+        "authoredIn": "e34fa3721b13db1a333c900e8e2e7ee5fa308d0a"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "5a8a61b7098127d6dbde8b92de27b8c168f10c8246d1711fc288fc0bec528818"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T08:37:52.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-north-star-v2.md",
+      "sha256": "6cce6e19894df92559dcfc1c51742c48786c7797f75aa17d07b3fc963f182eab",
+      "backfill": {
+        "commit": "638bb00ba6f407c04d3d4ed3112aa22054363e61",
+        "at": "2026-11-11T08:37:52.000Z",
+        "authoredIn": "f8879d5850026543e60fd1a59186e12060f29928"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-11T08:34:04.856Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-north-star-v2.md",
+      "sha256": "6cce6e19894df92559dcfc1c51742c48786c7797f75aa17d07b3fc963f182eab",
+      "decidedBy": "owner",
+      "basis": "picked",
+      "backfill": {
+        "commit": "638bb00ba6f407c04d3d4ed3112aa22054363e61",
+        "at": "2026-11-11T08:37:52.000Z",
+        "authoredIn": "f8879d5850026543e60fd1a59186e12060f29928"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "852a139648eeea1e5dfdfe4b6504d192e72c720bba7edec30f2437cb014c3fc7"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T16:26:16.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-north-star-v3.md",
+      "sha256": "9a345793e2fcca3aaf1a7637e36f3a55ca19272649b2ee5560e846dca29ddf6a",
+      "backfill": {
+        "commit": "72bc004614b31bc4b3b22862c4f6d7d4ba84d9b7",
+        "at": "2026-11-11T16:26:16.000Z",
+        "authoredIn": "9bb3fb51a7f5ce7323b7906fdab9ccfb7e2cf093"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-11T16:19:41.154Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-north-star-v3.md",
+      "sha256": "9a345793e2fcca3aaf1a7637e36f3a55ca19272649b2ee5560e846dca29ddf6a",
+      "decidedBy": "owner",
+      "basis": "picked",
+      "backfill": {
+        "commit": "72bc004614b31bc4b3b22862c4f6d7d4ba84d9b7",
+        "at": "2026-11-11T16:26:16.000Z",
+        "authoredIn": "9bb3fb51a7f5ce7323b7906fdab9ccfb7e2cf093"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "eb60e4b2e33eafc8ce9d389de693216729d29d7ca1fc914d0c258d8f682d7b18"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T18:57:51.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-north-star-v4.md",
+      "sha256": "b5a43cb82b1e351bf3af10b8b4a813ba00d0f04ba28f21a2f870d01048e27189",
+      "backfill": {
+        "commit": "284da9583e77aab31cd0b6f55025b4b32fcf874c",
+        "at": "2026-11-11T18:57:51.000Z",
+        "authoredIn": "35aee4b94b2eba08bad3237377ef7c66e4708177"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T18:57:51.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-north-star-v5.md",
+      "sha256": "9778454037aae7e20a04d99f7803e7c16b0e715df787cb4c59bfb94d364a1b34",
+      "backfill": {
+        "commit": "284da9583e77aab31cd0b6f55025b4b32fcf874c",
+        "at": "2026-11-11T18:57:51.000Z",
+        "authoredIn": "35aee4b94b2eba08bad3237377ef7c66e4708177"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-11T22:38:22.491Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-north-star-v4.md",
+      "sha256": "b5a43cb82b1e351bf3af10b8b4a813ba00d0f04ba28f21a2f870d01048e27189",
+      "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
+      "basis": "picked",
+      "backfill": {
+        "commit": "2421741243a5cdd7b9ba454b7029d3d5aa1dcff9",
+        "at": "2026-11-11T22:38:35.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "c0b2a7defae0f302550ad93e62524db7e8019f8fbfa9ec9044b7ba36b2797651"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-13T01:55:05.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-north-star-v6.md",
+      "sha256": "dced5ccbaf999ac0c338c783b5f5595880ea5936656ffc23eb29c219951b35ca",
+      "backfill": {
+        "commit": "bc23cd62b4e8cfac54692d3554f1de5b8d340461",
+        "at": "2026-11-13T01:55:05.000Z",
+        "authoredIn": "d66455aabf1c0d8a0fd01794814f32736faca39d"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-13T02:23:37.889Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-north-star-v6.md",
+      "sha256": "dced5ccbaf999ac0c338c783b5f5595880ea5936656ffc23eb29c219951b35ca",
+      "decidedBy": "owner:clossys/workspace#46 issuecomment-6841911551 (OWNER WORDS 2026-11-12 R2F-L2 Director round, option a)",
+      "basis": "picked",
+      "backfill": {
+        "commit": "bc23cd62b4e8cfac54692d3554f1de5b8d340461",
+        "at": "2026-11-13T02:35:02.000Z",
+        "authoredIn": "93879de7cd0750332722adfa95bc5fac9375b6ac"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "f93e6f432ca3c23e8b489b2f75b4698da585d340a7ffa43102f4cb32275f910d"
+        }
+      ]
+    },
+    {
+      "op": "migrate",
+      "at": "2026-11-14T02:55:59.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "citations-to-slots",
+      "files": [
+        {
+          "name": "studio-north-star-v2.md",
+          "from": "6cce6e19894df92559dcfc1c51742c48786c7797f75aa17d07b3fc963f182eab",
+          "to": "e8346df704c087358853a4c56b218c25a0fbdebe9a65bdda1258b43e1ab4d499"
+        },
+        {
+          "name": "studio-north-star-v3.md",
+          "from": "9a345793e2fcca3aaf1a7637e36f3a55ca19272649b2ee5560e846dca29ddf6a",
+          "to": "08c25bd64b5eaf55e508e1195be10f840fc2f590d765e1f0b2c74c5d913220b2"
+        },
+        {
+          "name": "studio-north-star-v4.md",
+          "from": "b5a43cb82b1e351bf3af10b8b4a813ba00d0f04ba28f21a2f870d01048e27189",
+          "to": "aff5201ec639ffe825a6bfa6bf8a718761433b20d24cdd8eaeafff9f99bef3af"
+        },
+        {
+          "name": "studio-north-star-v5.md",
+          "from": "9778454037aae7e20a04d99f7803e7c16b0e715df787cb4c59bfb94d364a1b34",
+          "to": "86385aade64b125d8c9c70bf54984e4a34d25b04467cd264c9510211d4dbc573"
+        },
+        {
+          "name": "studio-north-star-v6.md",
+          "from": "dced5ccbaf999ac0c338c783b5f5595880ea5936656ffc23eb29c219951b35ca",
+          "to": "0c0947765ae61dd087c8a85859e4588d6e035f0b97ea2d9247026b194c5fdfcf"
+        }
+      ],
+      "backfill": {
+        "commit": "f320d5a2a62f26d7bca319b5d0d28ca21e5882e1",
+        "at": "2026-11-14T02:55:59.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "20235296538376470f4b2725575611286c041cfd7bf582d7f089f803d1b7f47d"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T09:26:40.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia-position",
+      "backfill": {
+        "commit": "7590344afbac069fa8405edca44320a033d1b707",
+        "at": "2026-11-14T09:26:40.000Z",
+        "authoredIn": "20a865f849812f8a0f58d987e5a5d8ec48ee641c"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "5f23f7faeb848773e8ba538890d98157f4be33376ec7c6e83317d5578c695c65"
+        }
+      ]
+    }
+  ]
+}

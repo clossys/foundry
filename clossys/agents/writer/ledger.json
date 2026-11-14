@@ -1,0 +1,29 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "ia",
+      "at": "2026-11-03T00:55:30.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T00:55:30.000Z",
+        "authoredIn": "7d7631ac0afef4287f4c5ffbc20b174c380295e1"
+      },
+      "records": [
+        {
+          "file": "ia.json",
+          "sha256": "c34729516de5f2ffd770b04c7f13733aa6498396bfd249dc482da716ff7df471"
+        }
+      ]
+    }
+  ]
+}

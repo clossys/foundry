@@ -1,0 +1,264 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-03T08:03:19.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "logo-v1.json",
+      "sha256": "0f9e3c31d4579ac4ea87ca066f451e217fb53bc3fe12c2756e9d8ae8a90a5e81",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:03:19.000Z",
+        "authoredIn": "75dd3bed1960e88886a1f0d5a2cf8f1b1c77ce3b"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-03T13:59:51.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "logo-v2.json",
+      "sha256": "9e9971cbd7ba365af0fff456839cfd799aac5d3d3408eef1498f4743c21e47ed",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T13:59:51.000Z",
+        "authoredIn": "dde465b5f7cb1bf761441b7198616eab429128fe"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-03T16:45:43.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "logo-v3.json",
+      "sha256": "cc6830e46fce19e6e2c0a3c043bc6de147d2825d02134e214a8ce4fc832c5af6",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T16:45:43.000Z",
+        "authoredIn": "b5fb06750da856d2becb70737f7cfa6758b9db91"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-03T08:50:36.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:50:36.000Z",
+        "authoredIn": "3aee6f2ae97b8a3461592ac8ce9a53a000b4daa7"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "e6e439e2a7beb52ce062a42fb0dbcd3e813a936671ddb2b7bb953895ae5b7780"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-03T16:45:00.994Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "logo-v3.json",
+      "sha256": "cc6830e46fce19e6e2c0a3c043bc6de147d2825d02134e214a8ce4fc832c5af6",
+      "decidedBy": "owner:2026-11-03 one-brand clossys asterisk",
+      "basis": "picked",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T08:11:23.000Z",
+        "authoredIn": "e34fa3721b13db1a333c900e8e2e7ee5fa308d0a"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "23bffc79a55704a6ac2b48366490a5c312ff3a07283a93e6e7f51fa36d9e9979"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-05T11:19:12.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "fbf657802c9da93b78f049fe0587d60eab6d1933",
+        "at": "2026-11-05T11:19:12.000Z",
+        "authoredIn": "fec0ff42a15927491c1642c3232b28896ea4fe4d"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "4131b57e9e28868cb8d49a1cd55ca11296814831e76cd219c59b892f0d229e80"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-12T00:01:26.843Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "logo-v3.json",
+      "sha256": "cc6830e46fce19e6e2c0a3c043bc6de147d2825d02134e214a8ce4fc832c5af6",
+      "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was owner:2026-11-03 one-brand clossys asterisk, picked)",
+      "basis": "planner",
+      "backfill": {
+        "commit": "fc9d9cd80d141722c1f87f535e4f62d9049d72a2",
+        "at": "2026-11-12T00:02:35.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "205aab3f3aa3d2b07deacc3b41b1cbc6114b08506d3ff5ae70a93c08ca571669"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-03T16:45:00.994Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "logo-v3.json",
+      "sha256": "cc6830e46fce19e6e2c0a3c043bc6de147d2825d02134e214a8ce4fc832c5af6",
+      "decidedBy": "owner:2026-11-03 one-brand clossys asterisk",
+      "basis": "picked",
+      "backfill": {
+        "commit": "9d725ca9835454f4796065e0d188db43d356448d",
+        "at": "2026-11-12T01:16:16.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "dbc4e2994a6914b0ebaf96679a0e34081bd008f63bccf408a041076d2d4622e1"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-03T16:45:00.994Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "logo-v3.json",
+      "sha256": "cc6830e46fce19e6e2c0a3c043bc6de147d2825d02134e214a8ce4fc832c5af6",
+      "decidedBy": "owner:2026-11-03 one-brand clossys asterisk",
+      "basis": "picked",
+      "backfill": {
+        "commit": "bc23cd62b4e8cfac54692d3554f1de5b8d340461",
+        "at": "2026-11-13T02:35:02.000Z",
+        "authoredIn": "93879de7cd0750332722adfa95bc5fac9375b6ac"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "33b1b67cfc6884b99934f6e32cb6743dfc05862ebe625d0ed7addf1e11e1f370"
+        }
+      ]
+    },
+    {
+      "op": "migrate",
+      "at": "2026-11-14T02:55:59.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "citations-to-slots",
+      "files": [],
+      "backfill": {
+        "commit": "f320d5a2a62f26d7bca319b5d0d28ca21e5882e1",
+        "at": "2026-11-14T02:55:59.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "23bffc79a55704a6ac2b48366490a5c312ff3a07283a93e6e7f51fa36d9e9979"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T09:31:26.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia-position",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T09:31:26.000Z",
+        "authoredIn": "01a2e5437842efe3294570b0512e5cfe2e214354"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "4408ff66621c20a64e8b8b9e7bd750009dcd04b77fa253dc6869a2befd3e5d8a"
+        }
+      ]
+    }
+  ]
+}

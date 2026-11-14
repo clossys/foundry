@@ -1,0 +1,224 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-03T08:03:19.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-geography-v1.md",
+      "sha256": "fe46584eff18b88ef19df9f3a0b8bebb3b1d521d98739c5c390ff7b47abc5182",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:03:19.000Z",
+        "authoredIn": "75dd3bed1960e88886a1f0d5a2cf8f1b1c77ce3b"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-03T08:03:19.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:03:19.000Z",
+        "authoredIn": "75dd3bed1960e88886a1f0d5a2cf8f1b1c77ce3b"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "6c0ca2dd6df8b7f455cfa0dafefeb16ec860601c86d8a6b05a33845aec4b435d"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-03T08:58:39Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-geography-v1.md",
+      "sha256": "fe46584eff18b88ef19df9f3a0b8bebb3b1d521d98739c5c390ff7b47abc5182",
+      "decidedBy": "owner:2026-11-03 pin-if-agree",
+      "basis": "bulk",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T08:11:23.000Z",
+        "authoredIn": "e34fa3721b13db1a333c900e8e2e7ee5fa308d0a"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "283be0bd726dfdb92a8dde2845b34cf76c4edc9a9e036c9ab2c8f3f939a43d38"
+        }
+      ]
+    },
+    {
+      "op": "pick",
+      "at": "2026-11-11T05:27:57.624Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-geography-v1.md",
+      "sha256": "fe46584eff18b88ef19df9f3a0b8bebb3b1d521d98739c5c390ff7b47abc5182",
+      "decidedBy": "agent:planner:WDIR",
+      "basis": "agent",
+      "backfill": {
+        "commit": "52b756145d1d1b44faf16843059bd5c763ab6b96",
+        "at": "2026-11-11T05:29:14.000Z",
+        "authoredIn": "ca6baf04a8b942589d85e8717685225fca5eb1a8"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "3cb398f2cccbcbeadd1d0dfd0295d02800d9e388da6d8dfab40aa3a13b0e0ace"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T18:57:51.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-geography-v2.md",
+      "sha256": "7cce476c5a9795681ac38d1e82d50402fc684c802b0f38cc3d0c25f718c65733",
+      "backfill": {
+        "commit": "284da9583e77aab31cd0b6f55025b4b32fcf874c",
+        "at": "2026-11-11T18:57:51.000Z",
+        "authoredIn": "35aee4b94b2eba08bad3237377ef7c66e4708177"
+      }
+    },
+    {
+      "op": "pick",
+      "at": "2026-11-11T18:40:54.260Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-geography-v2.md",
+      "sha256": "7cce476c5a9795681ac38d1e82d50402fc684c802b0f38cc3d0c25f718c65733",
+      "decidedBy": "agent:director",
+      "basis": "agent",
+      "backfill": {
+        "commit": "284da9583e77aab31cd0b6f55025b4b32fcf874c",
+        "at": "2026-11-11T18:57:51.000Z",
+        "authoredIn": "35aee4b94b2eba08bad3237377ef7c66e4708177"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "9be3e96f4ffef41e46b692775a2271f3036978c2f23644a627d20b9e13d9024b"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-11T22:47:49.142Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-geography-v2.md",
+      "sha256": "7cce476c5a9795681ac38d1e82d50402fc684c802b0f38cc3d0c25f718c65733",
+      "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r7: confirm the clean agent picks, option a)",
+      "basis": "bulk",
+      "backfill": {
+        "commit": "52bef6fe0ca4a8bde3bc909f7c28e9c57bc8255c",
+        "at": "2026-11-11T22:48:03.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "5c2c69adc1a90ec18d07dfaf8fc33f642834b7e8b63513d4a3b4e9bd168b0796"
+        }
+      ]
+    },
+    {
+      "op": "pick",
+      "at": "2026-11-11T23:18:23.259Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-geography-v2.md",
+      "sha256": "7cce476c5a9795681ac38d1e82d50402fc684c802b0f38cc3d0c25f718c65733",
+      "decidedBy": "agent:director",
+      "basis": "agent",
+      "backfill": {
+        "commit": "622c0c41b30ce63a0d0a2e287c15e0bb05ee776d",
+        "at": "2026-11-11T23:19:05.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "2890a4e22f996a73da961c43c6dc7d449fa85cf5479c076b2429c36f080f24c6"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T09:26:40.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia-position",
+      "backfill": {
+        "commit": "7590344afbac069fa8405edca44320a033d1b707",
+        "at": "2026-11-14T09:26:40.000Z",
+        "authoredIn": "20a865f849812f8a0f58d987e5a5d8ec48ee641c"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "1a7e75588321b7d92089e2721fb1334d57455873839edc5d79217ecd368fe44c"
+        }
+      ]
+    }
+  ]
+}

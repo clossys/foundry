@@ -1,0 +1,293 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-04T08:41:39.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-personality-ambitious-v1.md",
+      "sha256": "052b3bf16cbaee0d2342117f8a9648d91fc33239a45d70e8ae40fd7a51b9600f",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T08:41:39.000Z",
+        "authoredIn": "7d4b2a9251e32470c210762c8828944e49cefc64"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-04T08:41:39.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-personality-human-v1.md",
+      "sha256": "75ae7cbb0d89e5c2ac0ec25ff0edd587df1c9f312241b567756855e574624c46",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T08:41:39.000Z",
+        "authoredIn": "7d4b2a9251e32470c210762c8828944e49cefc64"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-03T08:03:19.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-personality-v1.md",
+      "sha256": "af84b99d6c155729e5ed3ad8a1063a126b636de63227f7f4ff6309dea6c3006f",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:03:19.000Z",
+        "authoredIn": "75dd3bed1960e88886a1f0d5a2cf8f1b1c77ce3b"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-04T08:31:30.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T08:31:30.000Z",
+        "authoredIn": "6b6947074feb99816ab347f8b26ba67daaed8105"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "b105782f26faf1263d23012544b291687ca6c9ade2d22b3c8067977e4bd2270c"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-03T08:58:39Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-personality-v1.md",
+      "sha256": "af84b99d6c155729e5ed3ad8a1063a126b636de63227f7f4ff6309dea6c3006f",
+      "decidedBy": "owner:2026-11-03 pin-if-agree",
+      "basis": "bulk",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T08:11:23.000Z",
+        "authoredIn": "e34fa3721b13db1a333c900e8e2e7ee5fa308d0a"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "cfbdf13fecef27fef4aa9878fa59af126116017508cffbbb356f9fe0fcc2b066"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T08:37:52.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-personality-v2.md",
+      "sha256": "2234d1c15ad2ea120c9192957d2daea2c1ea5d6f7d1e33bf6e993ce26ca40075",
+      "backfill": {
+        "commit": "638bb00ba6f407c04d3d4ed3112aa22054363e61",
+        "at": "2026-11-11T08:37:52.000Z",
+        "authoredIn": "f8879d5850026543e60fd1a59186e12060f29928"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-11T08:34:03.627Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-personality-v2.md",
+      "sha256": "2234d1c15ad2ea120c9192957d2daea2c1ea5d6f7d1e33bf6e993ce26ca40075",
+      "decidedBy": "owner",
+      "basis": "picked",
+      "backfill": {
+        "commit": "638bb00ba6f407c04d3d4ed3112aa22054363e61",
+        "at": "2026-11-11T08:37:52.000Z",
+        "authoredIn": "f8879d5850026543e60fd1a59186e12060f29928"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "c5694e50c9f57abe3ab5ef5de11fdb4aacc171b8c89cd561d9bfb95690f00257"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T18:57:51.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-personality-v3.md",
+      "sha256": "9d0f3793b9e8df296f2bed389327d907e5cabc6e154b85186323267083039130",
+      "backfill": {
+        "commit": "284da9583e77aab31cd0b6f55025b4b32fcf874c",
+        "at": "2026-11-11T18:57:51.000Z",
+        "authoredIn": "35aee4b94b2eba08bad3237377ef7c66e4708177"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-11T18:57:51.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-personality-v4.md",
+      "sha256": "4197b3fd595ee35334cc03bdb485157b9262c21d6952df30a3f6798bd1d07af6",
+      "backfill": {
+        "commit": "284da9583e77aab31cd0b6f55025b4b32fcf874c",
+        "at": "2026-11-11T18:57:51.000Z",
+        "authoredIn": "35aee4b94b2eba08bad3237377ef7c66e4708177"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-11T22:38:19.550Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-personality-v3.md",
+      "sha256": "9d0f3793b9e8df296f2bed389327d907e5cabc6e154b85186323267083039130",
+      "decidedBy": "owner:clossys/workspace#46 issuecomment-6808731400 (OWNER WORDS 2026-11-11 Foundry Director r0-7, option a)",
+      "basis": "picked",
+      "backfill": {
+        "commit": "2421741243a5cdd7b9ba454b7029d3d5aa1dcff9",
+        "at": "2026-11-11T22:38:35.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "2f8c1df601b758e391f78cf72f429ad8ab692799275fb79c976fb440354ae2ea"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-13T01:55:05.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-personality-v5.md",
+      "sha256": "2d49a9fcfb9a4e556cb74307c0ea3cc59159fc89c81c9f748cb057524c1b18d0",
+      "backfill": {
+        "commit": "bc23cd62b4e8cfac54692d3554f1de5b8d340461",
+        "at": "2026-11-13T01:55:05.000Z",
+        "authoredIn": "d66455aabf1c0d8a0fd01794814f32736faca39d"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-13T02:23:34.276Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "studio-personality-v5.md",
+      "sha256": "2d49a9fcfb9a4e556cb74307c0ea3cc59159fc89c81c9f748cb057524c1b18d0",
+      "decidedBy": "owner:clossys/workspace#46 issuecomment-6841911551 (OWNER WORDS 2026-11-12 R2F-L2 Director round, option a)",
+      "basis": "picked",
+      "backfill": {
+        "commit": "bc23cd62b4e8cfac54692d3554f1de5b8d340461",
+        "at": "2026-11-13T02:35:02.000Z",
+        "authoredIn": "93879de7cd0750332722adfa95bc5fac9375b6ac"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "4d3d286dc26174f8c1760e04ad2652f283f0ee9c4c1fd3632128ca935d3f33fa"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T09:26:40.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia-position",
+      "backfill": {
+        "commit": "7590344afbac069fa8405edca44320a033d1b707",
+        "at": "2026-11-14T09:26:40.000Z",
+        "authoredIn": "20a865f849812f8a0f58d987e5a5d8ec48ee641c"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "207d74b764e658a6b01f00dac8aefe1f07d4117b000d7a0676e13d941051ffa1"
+        }
+      ]
+    }
+  ]
+}

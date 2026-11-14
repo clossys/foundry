@@ -1,0 +1,72 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-14T05:59:04.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "rules-v1.json",
+      "sha256": "b6fbe7cc9c4c0cb849ba5bdc9dd7c85c9ed9fd2a4782bf1ed050cf39eee56906",
+      "backfill": {
+        "commit": "850d1d941e81b3c1ca32841d52b4251d3d903b9c",
+        "at": "2026-11-14T05:59:04.000Z"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T05:59:04.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "850d1d941e81b3c1ca32841d52b4251d3d903b9c",
+        "at": "2026-11-14T05:59:04.000Z"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "d09f20a4bf403049cb48d1b4f53859573ec02fb14bd84ab9a093979c62270b61"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-11T21:23:40.065Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "rules-v1.json",
+      "sha256": "b6fbe7cc9c4c0cb849ba5bdc9dd7c85c9ed9fd2a4782bf1ed050cf39eee56906",
+      "decidedBy": "owner:clossys/workspace#46 issuecomment-6806341230 (OWNER WORDS 2026-11-11 Producer r1, option a)",
+      "basis": "picked",
+      "backfill": {
+        "commit": "850d1d941e81b3c1ca32841d52b4251d3d903b9c",
+        "at": "2026-11-14T05:59:04.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "8365cf1940e65c0c4baeb2e7a7f48941a70656b67442d0f519ba3f5d215fc64c"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-14T05:59:04.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "writer.candidates-v1.json",
+      "sha256": "d4234551a5d552ce9ca6bc6f44a1e072ed5b82e22f583b484529775649bfe101",
+      "backfill": {
+        "commit": "850d1d941e81b3c1ca32841d52b4251d3d903b9c",
+        "at": "2026-11-14T05:59:04.000Z"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T05:59:04.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "850d1d941e81b3c1ca32841d52b4251d3d903b9c",
+        "at": "2026-11-14T05:59:04.000Z"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "0b8622a962b0ae663436d99e6816d822152213bcd78f198aad380a5b7dc6c1f0"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-11T21:23:43.119Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "writer.candidates-v1.json",
+      "sha256": "d4234551a5d552ce9ca6bc6f44a1e072ed5b82e22f583b484529775649bfe101",
+      "decidedBy": "owner:clossys/workspace#46 issuecomment-6806341230 (OWNER WORDS 2026-11-11 Producer r1, option a)",
+      "basis": "picked",
+      "backfill": {
+        "commit": "850d1d941e81b3c1ca32841d52b4251d3d903b9c",
+        "at": "2026-11-14T05:59:04.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "f3d8aed48aa95a2176d0b78aedaa630ab1c56d22ffaa9bae3971a3e819bfe1ec"
+        }
+      ]
+    }
+  ]
+}

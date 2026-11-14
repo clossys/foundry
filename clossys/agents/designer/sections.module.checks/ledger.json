@@ -1,0 +1,375 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-03T08:03:19.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "module-checks-v1.json",
+      "sha256": "ee6b1831b5db1adb471755b6dec330862619d8464ac93d47094ba53deb11e728",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T08:03:19.000Z",
+        "authoredIn": "75dd3bed1960e88886a1f0d5a2cf8f1b1c77ce3b"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-03T22:45:56.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "module-checks-v2.json",
+      "sha256": "15fdea04591e2063ee9b84774cc46adf3dd1e11f0faa181531bc2603543c2d66",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T22:45:56.000Z",
+        "authoredIn": "b3bd7f56a6183ebfb9313c91ede240a97a1cb2ac"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-04T01:04:15.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "module-checks-v3.json",
+      "sha256": "3fef713401e52a3e89788ce7fb276523a73a6b9e485abd571817bd87bd62b280",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T01:04:15.000Z",
+        "authoredIn": "bd276cefad7b3119600f9776beba0b0bc854a0ba"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-04T01:04:15.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "module-checks-v4.json",
+      "sha256": "24d77971e4a4dfd10cae754d5f54bc4a78e39389a8d22ebd7d3cda7dc3a05199",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T01:04:15.000Z",
+        "authoredIn": "bd276cefad7b3119600f9776beba0b0bc854a0ba"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-03T22:45:56.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-03T22:45:56.000Z",
+        "authoredIn": "b3bd7f56a6183ebfb9313c91ede240a97a1cb2ac"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "e00aa13e50ee17e697349309873a20c78d901648a4d0a0f0973a6061050a5024"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-04T00:50:32.625Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "module-checks-v4.json",
+      "sha256": "24d77971e4a4dfd10cae754d5f54bc4a78e39389a8d22ebd7d3cda7dc3a05199",
+      "decidedBy": "planner:CONVERGE-R2",
+      "basis": "planner",
+      "backfill": {
+        "commit": "e8d9022a4b9cc270e39126558b038cd5639d774a",
+        "at": "2026-11-04T08:11:23.000Z",
+        "authoredIn": "e34fa3721b13db1a333c900e8e2e7ee5fa308d0a"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "03676f645770bcba7a5fe3fd47dcfc046121d3851bee6176fe08d0e3668fc8ce"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-05T13:00:02.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "fbf657802c9da93b78f049fe0587d60eab6d1933",
+        "at": "2026-11-05T13:00:02.000Z",
+        "authoredIn": "4a17fcaa63481904551567d1fa09400979ec1115"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "7948b67b131ab60b592947defd25766b95b08cb82ee57b0ab87fa36ef9646028"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-05T12:59:54.227Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "module-checks-v5.json",
+      "sha256": "49ace7671f63039ed121af4ec767b116abc4dc3ccc4b5de27db873502a6539dc",
+      "decidedBy": "planner:FLAT-SLOTS",
+      "basis": "planner",
+      "backfill": {
+        "commit": "fbf657802c9da93b78f049fe0587d60eab6d1933",
+        "at": "2026-11-05T13:00:02.000Z",
+        "authoredIn": "4a17fcaa63481904551567d1fa09400979ec1115"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "e435b2673167444d9d8f67fdf2754dfc217966eadb9ff2fb20f9e862ad7b19ca"
+        }
+      ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-05T06:12:15.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "module-checks-v5.json",
+      "sha256": "809b74f3504ee23363b9532e850a29041ea92cb105117f8d053e98387ee6872a",
+      "backfill": {
+        "commit": "937441777df6d088b0477d3f6338e6e950bf685a",
+        "at": "2026-11-05T06:12:15.000Z",
+        "authoredIn": "a587426d32688271fad28a6a5194240a52591856"
+      }
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-05T10:10:35.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "module-checks-v6.json",
+      "sha256": "ee046f560f04e715a37a636bf9586789431fda3503374d6f9eea277acd3e7171",
+      "backfill": {
+        "commit": "937441777df6d088b0477d3f6338e6e950bf685a",
+        "at": "2026-11-05T10:10:35.000Z",
+        "authoredIn": "31519f79242ad69431dfb488eb2928f9541ac96d"
+      }
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-05T10:06:50.054Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "module-checks-v6.json",
+      "sha256": "ee046f560f04e715a37a636bf9586789431fda3503374d6f9eea277acd3e7171",
+      "decidedBy": "planner:DS-COMPLETE",
+      "basis": "planner",
+      "backfill": {
+        "commit": "937441777df6d088b0477d3f6338e6e950bf685a",
+        "at": "2026-11-05T10:10:35.000Z",
+        "authoredIn": "31519f79242ad69431dfb488eb2928f9541ac96d"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "e281a1c2f147922fc0f1a9d8fbac66c552eb75219ff1f15079edb3d5bda916f8"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-10T12:00:07.347Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "module-checks-v6.json",
+      "sha256": "2627c9d6800742919132939e8b34f7daf4da1f24ee15f9979976acda8c793c3d",
+      "decidedBy": "planner:R2F-39",
+      "basis": "planner",
+      "backfill": {
+        "commit": "2f35da6ed1266787a1b5e3ca0031c63a41577c46",
+        "at": "2026-11-10T12:03:57.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "45115f3651e90a0a0de4a7e736aad7c3b15629153c884937c48a19fa456ec228"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-12T00:01:57.388Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "module-checks-v6.json",
+      "sha256": "2627c9d6800742919132939e8b34f7daf4da1f24ee15f9979976acda8c793c3d",
+      "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-39, planner)",
+      "basis": "planner",
+      "backfill": {
+        "commit": "fc9d9cd80d141722c1f87f535e4f62d9049d72a2",
+        "at": "2026-11-12T00:02:35.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "6b133a39ee9d78f01a0e1aee0653eacf37f8f71c76c2ae17bad26ea486d817fe"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-12T00:01:57.388Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "module-checks-v6.json",
+      "sha256": "2627c9d6800742919132939e8b34f7daf4da1f24ee15f9979976acda8c793c3d",
+      "decidedBy": "planner:CASCADE re-cite at Director r9, candidate unchanged (was planner:R2F-39, planner)",
+      "basis": "planner",
+      "backfill": {
+        "commit": "bc23cd62b4e8cfac54692d3554f1de5b8d340461",
+        "at": "2026-11-13T02:35:02.000Z",
+        "authoredIn": "93879de7cd0750332722adfa95bc5fac9375b6ac"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "501470bd3201bd7e80761b2dbd08d88d5b4508343face50002d6eb8a38169e5a"
+        }
+      ]
+    },
+    {
+      "op": "migrate",
+      "at": "2026-11-14T02:55:59.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "citations-to-slots",
+      "files": [],
+      "backfill": {
+        "commit": "f320d5a2a62f26d7bca319b5d0d28ca21e5882e1",
+        "at": "2026-11-14T02:55:59.000Z"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "6b133a39ee9d78f01a0e1aee0653eacf37f8f71c76c2ae17bad26ea486d817fe"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T09:31:26.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia-position",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T09:31:26.000Z",
+        "authoredIn": "01a2e5437842efe3294570b0512e5cfe2e214354"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "663a9aacfbf73b9496514959761f84d24fbe105eaec606ece90b2470db4b970e"
+        }
+      ]
+    }
+  ]
+}

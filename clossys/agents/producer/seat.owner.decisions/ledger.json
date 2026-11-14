@@ -1,0 +1,75 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-14T10:45:36.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "owner.decisions-v1.json",
+      "sha256": "edfc0927f919a338034b8b7fe979ea6cc16833022f944130321283898992aeb8",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T10:45:36.000Z",
+        "authoredIn": "d12596d974254132c306d145b9e5bf8865f1046a"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T10:45:36.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T10:45:36.000Z",
+        "authoredIn": "d12596d974254132c306d145b9e5bf8865f1046a"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "0b60cfc23c5f901ab3621202acd9e377637a97c2b5896772de5a7727ccf7083b"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-14T10:44:40.679Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "owner.decisions-v1.json",
+      "sha256": "edfc0927f919a338034b8b7fe979ea6cc16833022f944130321283898992aeb8",
+      "decidedBy": "planner",
+      "basis": "planner",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T10:45:36.000Z",
+        "authoredIn": "d12596d974254132c306d145b9e5bf8865f1046a"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "e737042822137c768f7c0c9e29911a5ec6bba141e254a56f52cf35d6bd982f79"
+        }
+      ]
+    }
+  ]
+}

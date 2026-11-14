@@ -1,0 +1,75 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "submit",
+      "at": "2026-11-14T10:27:35.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "retire-v1.json",
+      "sha256": "fa2f668babc6b5814cdb6c8aa441c6ca692d357315039e2d32320c29f830f452",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T10:27:35.000Z",
+        "authoredIn": "86ab2c71085e951ddbf149cc8a77a1cab5a0fc89"
+      }
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T10:27:35.000Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T10:27:35.000Z",
+        "authoredIn": "86ab2c71085e951ddbf149cc8a77a1cab5a0fc89"
+      },
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "5bce4ab9742e74bda89e2e2135a6e7d43646a88bc706894439eef57d479a9826"
+        }
+      ]
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-14T10:19:38.896Z",
+      "by": "history:claude",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/skill.md",
+        "sha256": "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "retire-v1.json",
+      "sha256": "fa2f668babc6b5814cdb6c8aa441c6ca692d357315039e2d32320c29f830f452",
+      "decidedBy": "planner",
+      "basis": "planner",
+      "backfill": {
+        "commit": "53cd8ba5c31ae0e7739c1f5ac0b0a6edccab3da1",
+        "at": "2026-11-14T10:27:35.000Z",
+        "authoredIn": "86ab2c71085e951ddbf149cc8a77a1cab5a0fc89"
+      },
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "755ac3ed418259d95a6a4c39de1a3c0ec0948da0ffb00651a1270b7d7b0aec5c"
+        }
+      ]
+    }
+  ]
+}
