@@ -12,7 +12,7 @@
 import { iaPath, jsonBytes, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { nodeLayers, slotPositions } from "../records/slot-model/foundry-ia.js";
 import { validateIa, validateSlotDoc } from "../records/slot-model/validate.js";
-import { NODE_ID, type IaChange, type IaDoc, type SlotAgent } from "../records/slot-model/types.js";
+import { NODE_ID, type IaChange, type IaDoc, type ModelAgent } from "../records/slot-model/types.js";
 import { modelExists, readModelText } from "../records/slots.js";
 
 export interface IaGroup { id: string; label: string; slots: string[] }
@@ -71,7 +71,7 @@ function resolveRef(ia: IaFile, ref: string): Ref | string {
 const refText = (ref: Ref) => ref.level === "L0" ? ref.layer.id : ref.level === "L1" ? ref.node.id : `${ref.node.id}/${ref.group.id}`;
 
 /** `--move --under <l1>/<l2>` or `<l0>/<l1>/<l2>`: an already placed slot to the end of another L2 group. */
-export function moveSlot(agent: SlotAgent, before: IaFile, slot: string, under: string): Edit {
+export function moveSlot(agent: ModelAgent, before: IaFile, slot: string, under: string): Edit {
   const ia = copy(before);
   const parts = under.split("/");
   if (parts.length < 2 || parts.length > 3 || parts.some(part => !part)) return { error: `--under ${under} is not <l1>/<l2> or <l0>/<l1>/<l2>` };
@@ -99,7 +99,7 @@ export function setExtension(before: IaFile, slot: string, extension: boolean): 
 }
 
 /** `--add <l1> | <l1>/<l2> --label <text> [--layer <l0>]`: a new, empty L1 or L2 group. */
-export function addGroup(agent: SlotAgent, before: IaFile, ref: string, label: string, layerId: string | undefined): Edit {
+export function addGroup(agent: ModelAgent, before: IaFile, ref: string, label: string, layerId: string | undefined): Edit {
   const ia = copy(before);
   const parts = ref.split("/");
   const layer = layerId === undefined ? undefined : ia.layers?.find(each => each.id === layerId);
@@ -244,7 +244,7 @@ export function dropGroup(before: IaFile, ref: string): Edit {
 }
 
 /** `--reorder L0 | <l0> | <l1> | <l1>/<l2> --order <id,...>`: the members of one parent, in the given order (an exact permutation). */
-export function reorderGroup(agent: SlotAgent, before: IaFile, scope: string, order: readonly string[]): Edit {
+export function reorderGroup(agent: ModelAgent, before: IaFile, scope: string, order: readonly string[]): Edit {
   const ia = copy(before);
   const prefixed = !ia.layers?.length && (agent === "designer" || agent === "writer");
   const prefixes = prefixed ? [...new Set(ia.nodes.map(node => node.id.split(".")[0]!))] : [];
@@ -355,7 +355,7 @@ export interface PositionFollow { readonly writes: [string, string][]; readonly 
  * slot is always rewritten (and its `extension` set). `except` names a slot whose slot.json the caller
  * writes itself (a slot being placed). Shared by every regroup plan and by `--contract --under`.
  */
-export function followPositions(consumer: string, agent: SlotAgent, before: IaFile, next: IaFile, slot?: { id: string; extension?: boolean }, except?: string): PositionFollow | { error: string } {
+export function followPositions(consumer: string, agent: ModelAgent, before: IaFile, next: IaFile, slot?: { id: string; extension?: boolean }, except?: string): PositionFollow | { error: string } {
   const was = slotPositions(agent, before as unknown as IaDoc), now = slotPositions(agent, next as unknown as IaDoc);
   const writes: [string, string][] = [], moved: string[] = [];
   let reordered = 0;
@@ -388,7 +388,7 @@ export function followPositions(consumer: string, agent: SlotAgent, before: IaFi
  * The files one guarded write changes for an edit: ia.json (with the owner-authorized change recorded
  * when there is an owner ref) and each slot.json whose position follows. Validated, never written here.
  */
-export function planIaWrite(consumer: string, agent: SlotAgent, before: IaFile, edit: { ia: IaFile; detail: string; slot?: { id: string; extension?: boolean } }, change: IaChangeInput): IaPlan | { error: string } | { unchanged: string } {
+export function planIaWrite(consumer: string, agent: ModelAgent, before: IaFile, edit: { ia: IaFile; detail: string; slot?: { id: string; extension?: boolean } }, change: IaChangeInput): IaPlan | { error: string } | { unchanged: string } {
   const next = copy(edit.ia);
   const iaFile = iaPath(consumer, agent);
   if (next.axes !== undefined) {

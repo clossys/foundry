@@ -86,6 +86,30 @@ describe("clossys standard", () => {
     expect(events(root)).toHaveLength(2);
   });
 
+  it("--dry validates the write, restores every byte and says whether the event matches the ledger's last", async () => {
+    const fresh = workspace();
+    const first = await runStandardCli(["writer/fixture-headline", "--by", "planner", ...parts, ...AT, "--dry"], fresh);
+    expect(first.exitCode, first.message).toBe(0);
+    expect(first.output).toMatchObject({ schema: "clossys.standard-dry/1", valid: true, written: false, last: null, matches: false });
+    expect(existsSync(dirOf(fresh))).toBe(false);
+
+    const root = workspace();
+    expect((await runStandardCli(["writer/fixture-headline", "--by", "planner", ...parts, ...AT], root)).exitCode).toBe(0);
+    const files = ["requirements.json", "taste.md", "ledger.json", "exemplars/exemplars.json"].map(rel => readFileSync(join(dirOf(root), rel), "utf8"));
+    const same = await runStandardCli(["writer/fixture-headline", "--by", "planner", ...parts, "--at", "2026-11-14T00:00:00.000Z", "--dry"], root);
+    expect(same.exitCode, same.message).toBe(0);
+    expect(same.message).toMatch(/matches the ledger's last event \(every field but at\); nothing written/);
+    expect((same.output as { event: unknown }).event).toEqual({ ...events(root)[0], at: "2026-11-14T00:00:00.000Z" });
+    const taste = join(root, "taste.md");
+    put(taste, `${readFileSync(join(FIXTURE, "taste.md"), "utf8")}\n`);
+    const changed = await runStandardCli(["writer/fixture-headline", "--by", "owner", "--taste", taste, ...AT, "--dry"], root);
+    expect(changed.exitCode, changed.message).toBe(0);
+    expect(changed.output).toMatchObject({ matches: false, written: false });
+    expect(changed.message).toMatch(/differs from the ledger's last event/);
+    expect(["requirements.json", "taste.md", "ledger.json", "exemplars/exemplars.json"].map(rel => readFileSync(join(dirOf(root), rel), "utf8"))).toEqual(files);
+    expect(events(root)).toHaveLength(1);
+  });
+
   it("checks its arguments", async () => {
     const root = workspace();
     expect((await runStandardCli(["--help"], root)).message).toBe(STANDARD_USAGE);
@@ -179,7 +203,8 @@ describe("clossys ia producer/<seat> --standard", () => {
     const result = await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--contract", join(root, "ok.json")], root);
     expect(result.exitCode, result.message).toBe(0);
     expect(seatJson(root)).toMatchObject({ standard: "fixture-seat", contract: revised });
-    await expect(runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--under", "a/b"], root)).rejects.toThrow(/takes only --standard/);
+    await expect(runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--under", "a/b"], root)).rejects.toThrow(/a new seat is placed by clossys seat owner\.decisions/);
+    await expect(runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--kind", "seat"], root)).rejects.toThrow(/takes only --standard/);
     await expect(runIaCli(["producer/seat.owner.decisions", "--contract", join(root, "ok.json")], root)).rejects.toThrow(/--standard/);
     expect((await runIaCli(["producer/seat.nowhere", "--standard", "fixture-seat"], root)).message).toMatch(/has no slot\.json/);
   });

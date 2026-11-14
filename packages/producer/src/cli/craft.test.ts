@@ -101,6 +101,15 @@ describe("next --stage", () => {
     expect((await stage("diverge", directions(2))).message).toMatch(/2 directions; 3 to 4 required \(cap 4\)/);
     expect((await stage("diverge", directions(5))).message).toMatch(/5 directions; 3 to 4 required/);
     expect((await stage("diverge", [{ id: "d1" }, ...directions(2)])).message).toMatch(/direction 1 carries no axes/);
+    // R15.7 at write time: identical axis values are cosmetic variants, and every direction names every axis.
+    const same = directions(3).map(direction => ({ ...direction, axes: { ...direction.axes, tone: "quiet" } }));
+    expect((await stage("diverge", same)).message).toMatch(/directions 1 and 2 share tone "quiet"; fix: .*cosmetic variant \(R15\.7\)/);
+    expect((await stage("diverge", directions(3).map(direction => ({ ...direction, axes: { density: 1 } })))).message).toMatch(/directions 1 and 2 share density 1;/);
+    const partial = directions(3).map((direction, index) => index ? direction : { ...direction, axes: { ...direction.axes, tone: "loud" } });
+    expect((await stage("diverge", partial)).message).toMatch(/direction 2 has no value on axis tone; fix: .*\(R15\.7\)/);
+    const blank = directions(3).map((direction, index) => ({ ...direction, axes: { ...direction.axes, tone: index === 1 ? "" : `t${index}` } }));
+    expect((await stage("diverge", blank)).message).toMatch(/direction 2 has no value on axis tone; fix: /);
+    expect(ops().filter(op => op === "craft:diverge")).toEqual([]);
     expect((await stage("diverge", directions(4))).exitCode).toBe(0);
     for (const name of ["render", "critique", "refine", "render", "critique", "refine", "render", "critique"]) expect((await stage(name)).exitCode, name).toBe(0);
     expect((await stage("refine")).message).toMatch(/at most 2 refine rounds/);

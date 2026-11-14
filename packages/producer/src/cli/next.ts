@@ -20,8 +20,9 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { KIND_EXT, SLOT_AGENTS } from "../records/slot-model/types.js";
-import type { SlotAgent } from "../records/slot-model/types.js";
+import { KIND_EXT, SEAT_AGENT, SLOT_AGENTS, seatStepOf } from "../records/slot-model/types.js";
+import type { ModelAgent, SlotAgent } from "../records/slot-model/types.js";
+
 import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
 import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/slots.js";
@@ -44,6 +45,9 @@ import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
+/** The step a Producer seat slot crafts under: the seats action (`clossys seat` writes the seat). */
+const SEAT_STEP = "seats";
+
 export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
   + "       clossys next --owner [--agent <id>] [--model <tier>=<id>]... [--json] [--root <dir>]\n"
   + "       clossys next <agent>/<slot> --submit <file> --model <id> --tier low|mid|high --basis agent|owner|planner --skill <path> --rung <rung> [--seed <id>] [--reason <text>] [--root <dir>] [--json]\n"
@@ -59,7 +63,8 @@ export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
   + "  create (for the latest options packet's inputsHash). The submit refuses on any finding of a constitution check whose\n"
   + "  rules.json guard lists submit, on the new file (absolute: findings the slot already had count too).\n"
   + "  --stage: one P2 craft stage (section 5b) as a craft:<stage> slot-ledger event, in order brief, diverge, render, critique,\n"
-  + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4).";
+  + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4). A Producer seat\n"
+  + "  slot (producer/seat.<step>) crafts under the seats action's skill; clossys seat writes the seat.";
 
 const TIERS = ["low", "mid", "high"] as const;
 const BASES = ["agent", "owner", "planner"] as const;
@@ -310,10 +315,12 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
   if (!(CRAFT_STAGES as readonly string[]).includes(stage)) throw new CliUsageError(`--stage must be ${CRAFT_STAGES.join(", ")}, got ${stage}\n${NEXT_USAGE}`);
   const slash = target.indexOf("/");
   const agent = target.slice(0, slash), slot = target.slice(slash + 1);
-  if (slash < 1 || !slot || !(SLOT_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`next target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")}, got ${target}\n${NEXT_USAGE}`);
+  // A Producer seat slot (producer/seat.<step>) crafts like any slot; its step is the seats action (clossys seat writes the seat).
+  const seat = agent === SEAT_AGENT && seatStepOf(slot) !== undefined;
+  if (slash < 1 || !slot || !(seat || (SLOT_AGENTS as readonly string[]).includes(agent))) throw new CliUsageError(`next --stage target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")}, or producer/seat.<step>, got ${target}\n${NEXT_USAGE}`);
   for (const [flag, given] of [["--model", flags.model], ["--tier", flags.tier], ["--skill", flags.skill]] as const) if (!given) throw new CliUsageError(`next --stage requires ${flag}\n${NEXT_USAGE}`);
   if (!(TIERS as readonly string[]).includes(flags.tier!)) throw new CliUsageError(`--tier must be ${TIERS.join(", ")}, got ${flags.tier}\n${NEXT_USAGE}`);
-  const owning = steps.find(each => each.id === `${agent}.candidates`);
+  const owning = steps.find(each => each.id === (seat ? SEAT_STEP : `${agent}.candidates`));
   if (!owning) return refuse(`${target} is not a candidates slot of a defined step`);
   const contractSkill = owning.command.skill;
   if (!contractSkill || flags.skill !== contractSkill) return refuse(`--skill ${flags.skill} is not ${owning.id}'s skill (${contractSkill ?? "none"})`);
@@ -321,7 +328,7 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
   try { skillBytes = readFileSync(skillFile(owning, packageRoot)!); } catch { return refuse(`${owning.id}'s skill ${contractSkill} is missing`); }
   const root = rootOf(cwd, flags.root);
   const consumer = join(root, "clossys");
-  const entry = readSlotEntry(consumer, agent as SlotAgent, slot);
+  const entry = readSlotEntry(consumer, agent as ModelAgent, slot);
   if (!entry) return refuse(`unknown slot ${target} (not in ${agent} ia.json)`);
   // Craft is P2: checked as the agent's create rung (L4 for the Designer, create otherwise).
   const createRung = rungsOf(agent).find(rung => rungKind(agent, rung) === "create")!;
@@ -346,7 +353,7 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
   }
   let event;
   try {
-    event = appendCraftEvent(consumer, agent as SlotAgent, slot, stage as CraftStage, fields, {
+    event = appendCraftEvent(consumer, agent as ModelAgent, slot, stage as CraftStage, fields, {
       by: `agent:${owning.id}`, skill: { path: contractSkill, sha256: sha(skillBytes) }, model: flags.model!, tier: flags.tier!,
     });
   } catch (error) { return refuse(error instanceof Error ? error.message : String(error)); }

@@ -2392,7 +2392,7 @@
         "stage": "publish.assemble",
         "rank": 13,
         "x": 7360,
-        "y": 1128
+        "y": 1300
       }
     },
     {
@@ -2660,6 +2660,260 @@
       }
     },
     {
+      "id": "critique-packet",
+      "kind": "plumb",
+      "actor": "code",
+      "stage": "publish.assemble",
+      "summary": "List the blind critic's packet for one slot (clossys critique-packet): the standard's taste.md, at most 3 exemplars, the slot contract and the renders, anonymised and shuffled by a stable order of their bytes. Writes nothing; refuses any file of the maker (R16.2).",
+      "inputs": [
+        {
+          "glob": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "glob": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "glob": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ],
+      "outputs": [],
+      "command": {
+        "cli": {
+          "verb": "critique-packet",
+          "parser": "src/cli/critique.ts"
+        },
+        "entry": "src/cli/critique.ts#runCritiquePacketCli"
+      },
+      "checks": [
+        "constitution"
+      ],
+      "agent": "producer",
+      "package": "producer",
+      "run": "clossys critique-packet <agent>/<slot> --standard <id> --render <path>",
+      "chain": {
+        "skip": "a critique packet is listed for one P2 craft run's renders; the fresh critic reads it"
+      },
+      "pass": {
+        "command": "clossys critique-packet <agent>/<slot> --standard <id> --render <path>",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "fail": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
+      },
+      "record": "clossys.pipeline-run/1",
+      "uses": [],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "publisher",
+        "stage": "publish.assemble",
+        "rank": 13,
+        "x": 7360,
+        "y": 1128
+      }
+    },
+    {
+      "id": "critic",
+      "kind": "decide:judgment",
+      "actor": "agent:judge",
+      "stage": "publish.assemble",
+      "summary": "The fresh P2 critic (section 5b stage 4): score anonymised renders against the standard's taste criteria from the critique packet only, and record the critique (clossys critique --record) as critiques/<leaf>-v<n>.json with its craft:critique event. It never sees the recipe, directions, brief or maker (R16.2).",
+      "inputs": [
+        {
+          "glob": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "glob": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "glob": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ],
+      "outputs": [
+        {
+          "glob": "clossys/agents/*/*/critiques/*",
+          "schema": "critique"
+        },
+        {
+          "glob": "clossys/agents/*/*/ledger.json#events",
+          "schema": "ledger"
+        }
+      ],
+      "command": {
+        "cli": {
+          "verb": "critique",
+          "parser": "src/cli/critique.ts"
+        },
+        "entry": "src/cli/critique.ts#runCritiqueCli",
+        "skill": "packages/producer/actions/critic/skill.md"
+      },
+      "checks": [
+        "workspace"
+      ],
+      "open": "on-demand",
+      "agent": "producer",
+      "package": "producer",
+      "run": "clossys critique <agent>/<slot> --record <critique.json> --model <id> --tier <tier>",
+      "pass": {
+        "command": "clossys check --slots",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "fail": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
+      },
+      "record": "clossys.pipeline-run/1",
+      "decider": "agent",
+      "packet": {
+        "inputs": [
+          "clossys/agents/*/*/slot.json"
+        ],
+        "write": [
+          {
+            "glob": "clossys/agents/*/*/critiques/*",
+            "schema": "critique"
+          },
+          {
+            "glob": "clossys/agents/*/*/ledger.json#events",
+            "schema": "ledger"
+          }
+        ],
+        "checks": [
+          "workspace"
+        ]
+      },
+      "uses": [],
+      "seat": "clossys/agents/producer/seat.critic/pin.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "you",
+        "stage": "publish.assemble",
+        "rank": 13,
+        "x": 7360,
+        "y": 0
+      }
+    },
+    {
+      "id": "verdict",
+      "kind": "decide:judgment",
+      "actor": "agent:judge",
+      "stage": "publish.assemble",
+      "summary": "Record the P1 verdict on one slot (clossys verdict --record): a pick of one candidate with the taste criteria it rests on, pinned with basis agent, or create with the gaps no candidate meets, which opens P2 craft (clossys next --stage). Every id must exist in the slot's standard or brief; an adopt-first create names a createGaps gap (R03.5). It claims only its slot-ledger events: the pin it writes is owned by the pick steps, and every write goes through records/slot-write.ts under the verdict guard.",
+      "inputs": [
+        {
+          "glob": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "glob": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "glob": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "clossys/agents/*/*/ledger.json#events",
+          "schema": "ledger"
+        }
+      ],
+      "outputs": [
+        {
+          "glob": "clossys/agents/*/*/ledger.json#events",
+          "schema": "ledger"
+        }
+      ],
+      "command": {
+        "cli": {
+          "verb": "verdict",
+          "parser": "src/cli/verdict.ts"
+        },
+        "entry": "src/cli/verdict.ts#runVerdictCli",
+        "skill": "packages/producer/actions/verdict/skill.md"
+      },
+      "checks": [
+        "workspace"
+      ],
+      "open": "on-demand",
+      "agent": "producer",
+      "package": "producer",
+      "run": "clossys verdict <agent>/<slot> --record <verdict.json> --model <id> --tier <tier> --by agent:<seat>",
+      "pass": {
+        "command": "clossys check --slots",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "fail": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
+      },
+      "record": "clossys.pipeline-run/1",
+      "decider": "agent",
+      "packet": {
+        "inputs": [
+          "clossys/agents/*/*/slot.json",
+          "clossys/agents/*/*/pin.json"
+        ],
+        "write": [
+          {
+            "glob": "clossys/agents/*/*/ledger.json#events",
+            "schema": "ledger"
+          }
+        ],
+        "checks": [
+          "workspace"
+        ]
+      },
+      "uses": [],
+      "seat": "clossys/agents/producer/seat.verdict/pin.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "you",
+        "stage": "publish.assemble",
+        "rank": 14,
+        "x": 7640,
+        "y": 0
+      }
+    },
+    {
       "id": "migrate",
       "kind": "plumb",
       "actor": "code",
@@ -2819,7 +3073,7 @@
         "stage": "publish.assemble",
         "rank": 13,
         "x": 7360,
-        "y": 0
+        "y": 172
       }
     },
     {
@@ -3007,7 +3261,7 @@
         "stage": "publish.assemble",
         "rank": 13,
         "x": 7360,
-        "y": 1300
+        "y": 1472
       }
     },
     {
@@ -3184,7 +3438,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7680,
+        "x": 7960,
         "y": 1668
       }
     },
@@ -3250,7 +3504,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7680,
+        "x": 7960,
         "y": 1840
       }
     },
@@ -3316,7 +3570,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 10,
-        "x": 7960,
+        "x": 8240,
         "y": 1668
       }
     },
@@ -3383,7 +3637,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 8240,
+        "x": 8520,
         "y": 1840
       }
     },
@@ -3473,7 +3727,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 15,
-        "x": 8800,
+        "x": 9080,
         "y": 1668
       }
     },
@@ -3533,7 +3787,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 8240,
+        "x": 8520,
         "y": 1668
       }
     },
@@ -3621,7 +3875,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 8240,
+        "x": 8520,
         "y": 2012
       }
     },
@@ -3706,7 +3960,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 14,
-        "x": 8520,
+        "x": 8800,
         "y": 1668
       }
     },
@@ -3785,7 +4039,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 14,
-        "x": 8520,
+        "x": 8800,
         "y": 2012
       }
     },
@@ -3847,7 +4101,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 14,
-        "x": 8520,
+        "x": 8800,
         "y": 1840
       }
     },
@@ -3921,7 +4175,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 13,
-        "x": 9120,
+        "x": 9400,
         "y": 1128
       }
     },
@@ -4008,7 +4262,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 14,
-        "x": 9400,
+        "x": 9680,
         "y": 1128
       }
     }
@@ -4255,6 +4509,54 @@
     },
     {
       "from": "ia",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "ia",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "ia",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "ia",
       "to": "reissue",
       "via": [
         {
@@ -4413,6 +4715,39 @@
     {
       "from": "seats",
       "to": "options",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "verdict",
       "via": [
         {
           "output": "clossys/agents/producer/*/pin.json",
@@ -4835,6 +5170,39 @@
     },
     {
       "from": "pick.director",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.director",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.director",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.director",
       "to": "reissue",
       "via": [
         {
@@ -5109,6 +5477,54 @@
     {
       "from": "pin.director",
       "to": "options",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/director/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.director",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/director/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.director",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/director/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.director",
+      "to": "verdict",
       "via": [
         {
           "output": "clossys/agents/director/*/pin.json",
@@ -5786,6 +6202,39 @@
     },
     {
       "from": "pick.designer",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.designer",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.designer",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.designer",
       "to": "reissue",
       "via": [
         {
@@ -6006,6 +6455,39 @@
     },
     {
       "from": "pick.writer",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.writer",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.writer",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.writer",
       "to": "reissue",
       "via": [
         {
@@ -6198,6 +6680,39 @@
         {
           "output": "clossys/agents/writer/*/pin.json",
           "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "writer.approve",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "writer.approve",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "writer.approve",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
           "schema": "pin"
         }
       ]
@@ -6448,6 +6963,54 @@
         {
           "output": "clossys/agents/designer/*/slot.json#notNeeded",
           "input": "clossys/agents/designer/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.designer",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/designer/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.designer",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/designer/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.designer",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/designer/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
           "schema": "slot"
         }
       ]
@@ -6746,6 +7309,54 @@
           "output": "clossys/agents/writer/*/pin.json",
           "input": "clossys/agents/writer/*/pin.json",
           "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin.writer",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/writer/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.writer",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/writer/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.writer",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/writer/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
         }
       ]
     },
@@ -7094,6 +7705,39 @@
     },
     {
       "from": "pick.publisher",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.publisher",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.publisher",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.publisher",
       "to": "reissue",
       "via": [
         {
@@ -7275,6 +7919,54 @@
     {
       "from": "pin.publisher",
       "to": "options",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/publisher/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.publisher",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/publisher/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.publisher",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/publisher/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.publisher",
+      "to": "verdict",
       "via": [
         {
           "output": "clossys/agents/publisher/*/pin.json",
@@ -7734,6 +8426,54 @@
     },
     {
       "from": "options",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json#options",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json#varyOn",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "options",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json#options",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json#varyOn",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "options",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json#options",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json#varyOn",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "options",
       "to": "reissue",
       "via": [
         {
@@ -7841,6 +8581,39 @@
           "output": "clossys/agents/*/*/slot.json#varyOn",
           "input": "clossys/agents/*/*/slot.json",
           "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "critic",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/ledger.json#events",
+          "input": "clossys/agents/*/*/ledger.json#events",
+          "schema": "ledger"
+        }
+      ]
+    },
+    {
+      "from": "migrate",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/ledger.json",
+          "input": "clossys/agents/*/*/ledger.json#events",
+          "schema": "ledger"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/ledger.json#events",
+          "input": "clossys/agents/*/*/ledger.json#events",
+          "schema": "ledger"
         }
       ]
     },
@@ -8055,6 +8828,39 @@
     },
     {
       "from": "derive.uses",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json#uses",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "derive.uses",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json#uses",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "derive.uses",
+      "to": "verdict",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json#uses",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "derive.uses",
       "to": "reissue",
       "via": [
         {
@@ -8195,8 +9001,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 13054,
-      "after": 12903
+      "before": 16240,
+      "after": 15838
     },
     "lanes": [
       {
@@ -8329,14 +9135,14 @@
         "index": 9,
         "x": 5960,
         "y": -72,
-        "width": 1640,
+        "width": 1920,
         "round": "publish",
         "name": "assemble"
       },
       {
         "id": "publish.check",
         "index": 10,
-        "x": 7680,
+        "x": 7960,
         "y": -72,
         "width": 1360,
         "round": "publish",
@@ -8345,7 +9151,7 @@
       {
         "id": "publish.publish",
         "index": 11,
-        "x": 9120,
+        "x": 9400,
         "y": -72,
         "width": 520,
         "round": "publish",
@@ -8383,7 +9189,7 @@
         "index": 2,
         "x": 4760,
         "y": -128,
-        "width": 4880,
+        "width": 5160,
         "stages": [
           "publish.make",
           "publish.pin",
@@ -8833,6 +9639,22 @@
       },
       "issues": []
     },
+    "critic": {
+      "path": "clossys/agents/producer/seat.critic/pin.json",
+      "state": "unassigned",
+      "by": null,
+      "llm": "open",
+      "human": "open",
+      "issues": []
+    },
+    "verdict": {
+      "path": "clossys/agents/producer/seat.verdict/pin.json",
+      "state": "unassigned",
+      "by": null,
+      "llm": "open",
+      "human": "open",
+      "issues": []
+    },
     "reissue": {
       "path": "clossys/agents/producer/seat.reissue/pin.json",
       "state": "unassigned",
@@ -8848,7 +9670,7 @@
       "kinds": [
         "you"
       ],
-      "steps": 14,
+      "steps": 16,
       "sources": [
         "file",
         "derived"
@@ -8902,7 +9724,7 @@
         "ai",
         "code"
       ],
-      "steps": 19,
+      "steps": 20,
       "sources": [
         "file",
         "derived"
@@ -8968,6 +9790,10 @@
         }
       ],
       "standard": [
+        {
+          "flag": "--dry",
+          "value": null
+        },
         {
           "flag": "--help",
           "value": null
@@ -10131,6 +10957,10 @@
           "value": null
         },
         {
+          "flag": "--draft",
+          "value": null
+        },
+        {
           "flag": "--help",
           "value": null
         },
@@ -10148,6 +10978,36 @@
         },
         {
           "flag": "--width",
+          "value": null
+        }
+      ],
+      "critique-packet": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        }
+      ],
+      "critic": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        }
+      ],
+      "verdict": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
           "value": null
         }
       ],

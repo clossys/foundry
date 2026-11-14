@@ -28,7 +28,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { checkSlotModel, RETIRED_DIR } from "../records/slot-check.js";
 import { ledgerComment, OWNER_DECISION_SCOPES, OWNER_DECISIONS_FILE, OWNER_DECISIONS_SCHEMA, resolveOwnerRef, validateOwnerDecisions, type OwnerDecision } from "../records/owner-decisions.js";
-import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SEAT_AGENT, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId } from "../records/slot-model/types.js";
+import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SEAT_AGENT, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId, seatStepOf } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
@@ -59,6 +59,7 @@ import { RULES_FILE } from "./rules-file.js";
 export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --standard <id> [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia producer/<seat> --standard <id> [--contract <file>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
+  + "       clossys ia producer/<seat> --move --under <l1>/<l2> --owner-ref <ref> [--dry] [--root <dir>]  (a placed seat; a new seat is placed by clossys seat <step>)\n"
   + "       clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent> --adopt | --start [--dry] [--root <dir>]\n"
   + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
@@ -234,9 +235,9 @@ const iaWho = (ownerRef: string | undefined, at: string): IaWho => ({ by: ownerR
  * `<agent>/<slot>/slot.json` → the slot ledger, kind `ia-position` when only the position fields
  * changed (green.ts slotWriteKind, the record digest's own view), else `ia`.
  */
-function iaWriteTarget(consumer: string, path: string, bytes: string): { agent: SlotAgent; slot?: string; kind: string } {
+function iaWriteTarget(consumer: string, path: string, bytes: string): { agent: ModelAgent; slot?: string; kind: string } {
   const parts = relative(join(consumer, "agents"), path).split(sep);
-  const agent = parts[0] as SlotAgent;
+  const agent = parts[0] as ModelAgent;
   if (!(SLOT_AGENTS as readonly string[]).includes(agent) && (agent as string) !== SEAT_AGENT) throw new Error(`ia write outside an agent tree: ${path}`);
   if (parts.length === 2 && parts[1] === "ia.json") return { agent, kind: IA_KIND };
   if (parts.length === 3 && parts[2] === "slot.json") return { agent, slot: parts[1]!, kind: slotWriteKind(modelExists(path) ? readModelText(path) : null, bytes) };
@@ -256,7 +257,7 @@ function atOf(flags: Flags): string {
   return at;
 }
 /** An edit, planned (slot.json positions follow, the owner ref recorded) and committed, or printed under --dry. */
-function applyEdit(consumer: string, root: string, agent: SlotAgent, ia: IaFile, edit: Edit, op: string, ownerRef: string, at: string, dry: boolean): CliResult {
+function applyEdit(consumer: string, root: string, agent: ModelAgent, ia: IaFile, edit: Edit, op: string, ownerRef: string, at: string, dry: boolean): CliResult {
   if ("error" in edit) return refuse("ia", edit.error);
   if ("unchanged" in edit) return { exitCode: 0, root, message: `ia: ${edit.unchanged}; nothing written` };
   const plan = planIaWrite(consumer, agent, ia, edit, { op, ownerRef, at });
@@ -318,15 +319,20 @@ const followLines = (follow: PositionFollow) => [...follow.moved, ...(follow.reo
 const withChange = (ia: AgentIaFile, change: { op: string; ownerRef: string; at: string; detail: string; slotFiles: number }): AgentIaFile =>
   ({ ...ia, changes: [...(Array.isArray(ia.changes) ? ia.changes : []), change] });
 
-/** `clossys ia <agent> --add|--rename|--merge|--drop|--reorder|--assign|--layers|--axes`: one owner-authorized regroup of the agent IA. */
+/**
+ * `clossys ia <agent> --add|--rename|--merge|--drop|--reorder|--assign|--layers|--axes`: one owner-authorized
+ * regroup of the agent IA. The Producer seat tree (producer ia.json) regroups the same way: its groups and
+ * layers are the owner's, while a new seat is only ever placed by `clossys seat <step>`.
+ */
+const REGROUP_AGENTS: readonly ModelAgent[] = [...SLOT_AGENTS, SEAT_AGENT];
 function runIaRegroup(flags: Flags, cwd: string, target: string, op: string): CliResult {
-  if (target.includes("/") || !(SLOT_AGENTS as readonly string[]).includes(target)) throw new CliUsageError(`ia ${op} takes one <agent> (${SLOT_AGENTS.join(", ")}), got ${target}\n${IA_USAGE}`);
+  if (target.includes("/") || !(REGROUP_AGENTS as readonly string[]).includes(target)) throw new CliUsageError(`ia ${op} takes one <agent> (${REGROUP_AGENTS.join(", ")}), got ${target}\n${IA_USAGE}`);
   const allowed = [op, ...REGROUP_OPS[op]!, ...GATE_FLAGS];
   const stray = [...[...flags.values.keys()].filter(flag => !allowed.includes(flag)), ...[...flags.bare].filter(flag => flag !== "--dry")];
   if (stray.length) throw new CliUsageError(`ia ${op} takes no ${stray.join(", ")}\n${IA_USAGE}`);
-  const agent = target as SlotAgent;
+  const agent = target as ModelAgent;
   const root = rootOf(cwd, flags), consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent);
-  if (!modelExists(iaFile)) return refuse("ia", `${agent} has no ia.json`);
+  if (!modelExists(iaFile)) return refuse("ia", `${agent} has no ia.json${agent === SEAT_AGENT ? ": producer ia.json is written by clossys seat <step>" : ""}`);
   const owner = ownerRefOf(flags, consumer, true);
   if (isResult(owner)) return owner;
   const at = atOf(flags);
@@ -348,13 +354,13 @@ function runIaRegroup(flags: Flags, cwd: string, target: string, op: string): Cl
 }
 
 /** `clossys ia <agent>/<slot> --move --under ... [--extension]` or `--extension true|false`: one placed slot, owner-authorized. */
-function runIaSlotRegroup(flags: Flags, consumer: string, root: string, agent: SlotAgent, slot: string, ia: IaFile): CliResult {
+function runIaSlotRegroup(flags: Flags, consumer: string, root: string, agent: ModelAgent, slot: string, ia: IaFile): CliResult {
   const move = flags.bare.has("--move"), given = one(flags, "--extension");
   const allowed = [...(move ? ["--under"] : []), "--extension", ...GATE_FLAGS];
   const stray = [...[...flags.values.keys()].filter(flag => !allowed.includes(flag)), ...[...flags.bare].filter(flag => flag !== "--dry" && flag !== "--move")];
   if (stray.length) throw new CliUsageError(`ia ${move ? "--move" : "--extension"} takes no ${stray.join(", ")}\n${IA_USAGE}`);
   if (given !== undefined && given !== "true" && given !== "false") throw new CliUsageError(`--extension takes true or false, got ${given}\n${IA_USAGE}`);
-  if (!isPlaced(ia, slot)) return refuse("ia", `${agent}/${slot} is not placed in ${agent} ia.json; place it with --contract <file> --under`);
+  if (!isPlaced(ia, slot)) return refuse("ia", `${agent}/${slot} is not placed in ${agent} ia.json; ${agent === SEAT_AGENT ? `a new seat is placed by clossys seat ${seatStepOf(slot) ?? "<step>"}` : "place it with --contract <file> --under"}`);
   const owner = ownerRefOf(flags, consumer, true);
   if (isResult(owner)) return owner;
   const at = atOf(flags);
@@ -411,6 +417,7 @@ function runIaSeatStandard(flags: Flags, cwd: string, target: string, slot: stri
   if (readModelText(file) === bytes) return { exitCode: 0, root, message: `ia: ${target} already names standard ${standardId}; nothing written` };
   return commitIa(consumer, root, [[file, bytes]], flags.bare.has("--dry"), `${target} standard ${standardId}${contractFile !== undefined ? " and contract" : ""}`, [], `ia: ${target} standard ${standardId} named (clossys/agents/${SEAT_AGENT}/${slot}/slot.json)`, iaWho(owner.ref, eventAt));
 }
+const rootConsumer = (cwd: string, flags: Flags) => join(rootOf(cwd, flags), "clossys");
 const isRecordValue = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
 export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {
@@ -432,7 +439,19 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   if (!target || extra.length) throw new CliUsageError(`ia takes one <agent>/<slot>\n${IA_USAGE}`);
   const slash = target.indexOf("/");
   const agent = target.slice(0, slash) as SlotAgent, slot = target.slice(slash + 1);
-  if ((agent as string) === SEAT_AGENT && SLOT_ID.test(slot)) return runIaSeatStandard(flags, cwd, target, slot);
+  if ((agent as string) === SEAT_AGENT && SLOT_ID.test(slot)) {
+    // A placed seat moves like any slot (owner-authorized, slot.json follows); it is never placed here:
+    // --under without --move (as with --contract) would create a seat, which only clossys seat <step> does.
+    const step = seatStepOf(slot) ?? "<step>";
+    if (flags.bare.has("--move")) {
+      if (flags.values.has("--extension") || flags.bare.has("--remove")) throw new CliUsageError(`ia ${target} --move takes only --under, --owner-ref, --at, --dry and --root (a seat is never a consumer extension)\n${IA_USAGE}`);
+      const seatIa = iaPath(rootConsumer(cwd, flags), SEAT_AGENT);
+      if (!modelExists(seatIa)) return refuse("ia", `producer has no ia.json: a new seat is placed by clossys seat ${step}`);
+      return runIaSlotRegroup(flags, rootConsumer(cwd, flags), rootOf(cwd, flags), SEAT_AGENT, slot, readModelJson(seatIa) as IaFile);
+    }
+    if (flags.values.has("--under")) throw new CliUsageError(`ia ${target} --under: a new seat is placed by clossys seat ${step}; a placed seat moves with --move --under <l1>/<l2> --owner-ref <ref>\n${IA_USAGE}`);
+    return runIaSeatStandard(flags, cwd, target, slot);
+  }
   if (!(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`ia target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${IA_USAGE}`);
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");
   const iaFile = iaPath(consumer, agent);

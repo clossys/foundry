@@ -2,7 +2,7 @@
 // each rule once in the copy makes the check exit 1 naming that rule. Run after the build (dist).
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
@@ -20,7 +20,8 @@ const run = (...args) => {
 
 /** A copy of every package's registry, package.json, skill files and the generated files. */
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "step-standard-"));
+  // The real temp path: the slot model follows no symbolic link, and macOS TMPDIR is one (/var -> /private/var).
+  const root = mkdtempSync(join(realpathSync(tmpdir()), "step-standard-"));
   const packages = join(root, "packages");
   for (const pkg of PACKAGES) {
     const from = join(REPO, "packages", pkg);
@@ -117,6 +118,8 @@ proves("step.hand-written", f => {
 proves("pending.stale", f => {
   // Copy the whole dist: dist/pipeline imports ../records, ../cli and friends.
   cpSync(dirname(DIST), join(f.root, "dist"), { recursive: true });
+  // The copied dist resolves its bare imports (@clossys/director, ...) from the repository's node_modules, as the real dist does.
+  symlinkSync(join(REPO, "node_modules"), join(f.root, "node_modules"), "dir");
   const dir = join(f.root, "dist", "pipeline");
   const checks = join(dir, "steps", "checks.js");
   copyFileSync(checks, join(dir, "steps", "checks.real.js"));

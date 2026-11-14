@@ -20,7 +20,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { lockfileVersions } from "../constitution/context.js";
 import { lineAnchorsToSlots, slotOwner } from "../records/citations.js";
-import { CANDIDATE_NAME, KIND_EXT, SLOT_AGENTS, SLOT_ID, type SlotAgent } from "../records/slot-model/index.js";
+import { CANDIDATE_NAME, KIND_EXT, MODEL_AGENTS, SLOT_ID, type ModelAgent } from "../records/slot-model/index.js";
 import { readCandidate, readLedger, readSlot, readSlotEntry, slotIndex, type SlotEntry } from "../records/slots.js";
 import { GuardRefusal, writeReissue, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
@@ -82,13 +82,13 @@ export function exactDependencies(dependencies: readonly unknown[], lock: Lock):
  * registryDependencies as slot ids of `agent`: a slot id of the agent, or a registry item name (bare,
  * or the last segment of a URL or path, without `.json`) that is the leaf of exactly one of its slots.
  */
-export function registrySlots(entries: readonly unknown[], agent: SlotAgent, index: ReadonlyMap<string, SlotEntry>): { uses: string[]; issues: string[] } {
+export function registrySlots(entries: readonly unknown[], agent: ModelAgent, index: ReadonlyMap<string, SlotEntry>): { uses: string[]; issues: string[] } {
   const own = [...index.values()].filter(entry => entry.agent === agent);
   const uses: string[] = [], issues: string[] = [];
   for (const entry of entries) {
     if (typeof entry !== "string" || !entry.trim()) { issues.push(`registryDependency ${JSON.stringify(entry)} is not a name`); continue; }
     const prefixed = /^([a-z]+):(.+)$/.exec(entry);
-    if (prefixed && (SLOT_AGENTS as readonly string[]).includes(prefixed[1]!) && prefixed[1] !== agent) { issues.push(`registryDependency ${entry} names another agent's slot`); continue; }
+    if (prefixed && (MODEL_AGENTS as readonly string[]).includes(prefixed[1]!) && prefixed[1] !== agent) { issues.push(`registryDependency ${entry} names another agent's slot`); continue; }
     const cited = prefixed && prefixed[1] === agent ? prefixed[2]! : entry;
     if (SLOT_ID.test(cited)) {
       const found = index.get(cited);
@@ -116,7 +116,7 @@ export function withoutPreviewProps(doc: Json): Json {
 }
 
 /** The reissue's ladder rung: adopt, or for the Designer the old submit's L1/L2, else L1 for stock shadcn and L2 for a partner registry. */
-export function reissueRung(agent: SlotAgent, oldRung: unknown, doc: unknown): string {
+export function reissueRung(agent: ModelAgent, oldRung: unknown, doc: unknown): string {
   if (agent !== "designer") return "adopt";
   if (typeof oldRung === "string" && (DESIGNER_RUNG_KIND as Record<string, string>)[oldRung] === "adopt") return oldRung;
   const source = isObject(doc) && isObject(doc.meta) && isObject(doc.meta.source) ? doc.meta.source : undefined;
@@ -126,7 +126,7 @@ export function reissueRung(agent: SlotAgent, oldRung: unknown, doc: unknown): s
 
 export interface ReissuePlan { readonly content: unknown; readonly uses?: readonly string[]; readonly anchors: number; readonly issues: readonly string[] }
 /** The reissued content of one candidate (pure: the lock, the slot index and slot.json uses are its inputs). */
-export function planReissue(text: string, json: boolean, input: { agent: SlotAgent; slot: string; uses: readonly string[]; lock: Lock; index: ReadonlyMap<string, SlotEntry> }): ReissuePlan {
+export function planReissue(text: string, json: boolean, input: { agent: ModelAgent; slot: string; uses: readonly string[]; lock: Lock; index: ReadonlyMap<string, SlotEntry> }): ReissuePlan {
   const owner = slotOwner(input.index);
   if (!json) {
     const anchored = lineAnchorsToSlots(text, owner);
@@ -185,8 +185,9 @@ export async function runReissueCli(argv: readonly string[], cwd: string, guard:
   const [target, candidateId, ...extra] = flags.positional;
   if (!target || !candidateId || extra.length) throw new CliUsageError(`reissue takes <agent>/<slot> <candidate>\n${REISSUE_USAGE}`);
   const slash = target.indexOf("/");
-  const agent = target.slice(0, slash) as SlotAgent, id = target.slice(slash + 1);
-  if (slash < 1 || !(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(id)) throw new CliUsageError(`reissue target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${REISSUE_USAGE}`);
+  // Every model agent's slots reissue, the Producer's seats included (their candidates are JSON).
+  const agent = target.slice(0, slash) as ModelAgent, id = target.slice(slash + 1);
+  if (slash < 1 || !(MODEL_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(id)) throw new CliUsageError(`reissue target must be <agent>/<slot> with agent ${MODEL_AGENTS.join(", ")} and a slot id, got ${target}\n${REISSUE_USAGE}`);
   if (!flags.by || !SEAT.test(flags.by)) throw new CliUsageError(`reissue is an agent seat's: --by agent:<seat>${flags.by ? `, got ${flags.by}` : ""}\n${REISSUE_USAGE}`);
   const at = flags.at ?? new Date().toISOString();
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${REISSUE_USAGE}`);

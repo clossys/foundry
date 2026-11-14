@@ -12,7 +12,7 @@ export const iaPath = (consumer: string, agent: ModelAgent) => join(agentDir(con
  * lives only in ia.json (and slot.json `ia`), so regrouping never moves a file.
  */
 export const slotRel = (slot: string) => slot;
-export const slotDir = (consumer: string, agent: SlotAgent, slot: string) => join(agentDir(consumer, agent), slot);
+export const slotDir = (consumer: string, agent: ModelAgent, slot: string) => join(agentDir(consumer, agent), slot);
 /** Entries of an agent folder that start with `_` (e.g. `_evidence`) are never slot folders. */
 export const isNonSlotEntry = (name: string) => name.startsWith("_");
 export const slotFile = (dir: string) => join(dir, SLOT_FILE);

@@ -18,7 +18,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { manifestIssues } from "../constitution/rules/r16.js";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
-import { SLOT_AGENTS, SLOT_ID, type SlotAgent } from "../records/slot-model/index.js";
+import { SEAT_AGENT, SLOT_AGENTS, SLOT_ID, seatStepOf, type ModelAgent } from "../records/slot-model/index.js";
 import { readModelBytes, readSlotEntry } from "../records/slots.js";
 import { writeCritique } from "../records/slot-write.js";
 import { TIERS } from "../records/ledger.js";
@@ -58,12 +58,14 @@ const one = (flags: Flags, flag: string, usage: string): string | undefined => {
   if (values && values.length > 1) throw new CliUsageError(`${flag} is given once\n${usage}`);
   return values?.[0];
 };
-function target(flags: Flags, verb: string, usage: string): { agent: SlotAgent; slot: string } {
+/** `<agent>/<slot>` of a slot agent, or `producer/seat.<step>`: a Producer seat slot is critiqued like any slot. */
+function target(flags: Flags, verb: string, usage: string): { agent: ModelAgent; slot: string } {
   const [given, ...extra] = flags.positional;
   if (!given || extra.length) throw new CliUsageError(`${verb} takes one <agent>/<slot>\n${usage}`);
   const slash = given.indexOf("/");
-  const agent = given.slice(0, slash) as SlotAgent, slot = given.slice(slash + 1);
-  if (slash < 1 || !(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`${verb} target must be <agent>/<slot>, got ${given}\n${usage}`);
+  const agent = given.slice(0, slash) as ModelAgent, slot = given.slice(slash + 1);
+  const known = (SLOT_AGENTS as readonly string[]).includes(agent) || (agent === SEAT_AGENT && seatStepOf(slot) !== undefined);
+  if (slash < 1 || !known || !SLOT_ID.test(slot)) throw new CliUsageError(`${verb} target must be <agent>/<slot> or producer/seat.<step>, got ${given}\n${usage}`);
   return { agent, slot };
 }
 const sha = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");

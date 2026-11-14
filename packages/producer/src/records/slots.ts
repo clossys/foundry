@@ -20,9 +20,9 @@ import {
 } from "./slot-model/index.js";
 import { isAbsent, parseJson } from "../errors.js";
 
-export interface SlotEntry {
+export interface SlotEntry<A extends ModelAgent = SlotAgent> {
   readonly id: string;
-  readonly agent: SlotAgent;
+  readonly agent: A;
   readonly position: SlotPosition;
   /** Absolute slot folder. */
   readonly dir: string;
@@ -269,7 +269,7 @@ function candidateNamesAt(dir: string): string[] {
     .sort((a, b) => versionOf(a) - versionOf(b) || (a < b ? -1 : a > b ? 1 : 0));
 }
 
-function locate(consumer: string, agent: SlotAgent, id: string): { position: SlotPosition; dir: string } {
+function locate(consumer: string, agent: ModelAgent, id: string): { position: SlotPosition; dir: string } {
   const position = loadIa(consumer, agent)?.positions.get(id);
   if (!position) throw new Error(`${agent} slot ${id} is not in ia.json`);
   return { position, dir: slotDir(consumer, agent, id) };
@@ -366,7 +366,7 @@ function seatTextAt(consumer: string, step: string): string | undefined {
 }
 
 /** Every IA slot of one agent, in IA order; empty slots included. */
-export function listSlots(consumer: string, agent: SlotAgent): SlotEntry[] {
+export function listSlots<A extends ModelAgent = SlotAgent>(consumer: string, agent: A): SlotEntry<A>[] {
   return withSlotReadScope(() => {
     const ia = loadIa(consumer, agent);
     if (!ia) return [];
@@ -382,7 +382,7 @@ export function listSlots(consumer: string, agent: SlotAgent): SlotEntry[] {
  * One IA slot's entry, as `listSlots` would list it, without reading every other slot's folder.
  * Undefined when the id is not in the agent's IA.
  */
-export function readSlotEntry(consumer: string, agent: SlotAgent, id: string): SlotEntry | undefined {
+export function readSlotEntry<A extends ModelAgent = SlotAgent>(consumer: string, agent: A, id: string): SlotEntry<A> | undefined {
   return withSlotReadScope(() => {
     const position = loadIa(consumer, agent)?.positions.get(id);
     if (!position) return undefined;
@@ -447,7 +447,7 @@ export function rejectedSlots(consumer: string): RejectedSlot[] {
  * A schema-valid slot document and whether it is the document its IA position names (same id,
  * agent and position). Malformed documents throw `Invalid <agent> slot <id>`, as in `readSlot`.
  */
-export function inspectSlot(consumer: string, agent: SlotAgent, id: string): { doc: SlotDoc; placed: boolean } {
+export function inspectSlot(consumer: string, agent: ModelAgent, id: string): { doc: SlotDoc; placed: boolean } {
   return withSlotReadScope(() => {
     const { position, dir } = locate(consumer, agent, id);
     const path = slotFile(dir);
@@ -461,7 +461,7 @@ export function inspectSlot(consumer: string, agent: SlotAgent, id: string): { d
   });
 }
 
-export function readSlot(consumer: string, agent: SlotAgent, id: string): SlotDoc {
+export function readSlot(consumer: string, agent: ModelAgent, id: string): SlotDoc {
   return withSlotReadScope(() => {
     const { doc, placed } = inspectSlot(consumer, agent, id);
     if (!placed) throw new Error(`Slot ${agent}/${id} does not match its IA position`);
@@ -484,7 +484,7 @@ export function candidateStamp(consumer: string, agent: SlotAgent, id: string, n
   });
 }
 
-export function readCandidate(consumer: string, agent: SlotAgent, id: string, name: string): Candidate {
+export function readCandidate(consumer: string, agent: ModelAgent, id: string, name: string): Candidate {
   return withSlotReadScope(() => {
     if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);
     const path = join(candidatesDir(locate(consumer, agent, id).dir), name);

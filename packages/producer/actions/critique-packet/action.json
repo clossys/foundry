@@ -1,0 +1,46 @@
+{
+  "schema": "clossys.action/1",
+  "id": "critique-packet",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.assemble",
+  "summary": "List the blind critic's packet for one slot (clossys critique-packet): the standard's taste.md, at most 3 exemplars, the slot contract and the renders, anonymised and shuffled by a stable order of their bytes. Writes nothing; refuses any file of the maker (R16.2).",
+  "run": "clossys critique-packet <agent>/<slot> --standard <id> --render <path>",
+  "chain": {
+    "skip": "a critique packet is listed for one P2 craft run's renders; the fresh critic reads it"
+  },
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys critique-packet <agent>/<slot> --standard <id> --render <path>",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "constitution"
+  ],
+  "uses": []
+}
