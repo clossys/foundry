@@ -16,6 +16,13 @@
  * which is the fallback the rule forbids. Code is parsed with TypeScript, so comments never count
  * as reporting.
  *
+ * A finding is also a registry lookup with a default (W2-D): a `??` whose left side looks a key up
+ * in a registry constant (a SCREAMING_CASE name, `REGISTRY[key]` or `REGISTRY.get(key)`, also inside
+ * a conditional such as `(key ? ICONS[key] : undefined) ?? NoIcon`) and whose right side substitutes
+ * a value. An unknown key then renders the substitute (an empty icon, a guessed MIME type, the raw
+ * id) instead of failing. A right side of `undefined`/`null`, or an error state as above (an
+ * error-state string, the identifier `unavailable`, an error record), hands the miss on and passes.
+ *
  * Scope: packages/producer/{src,bin} and packages/producer/studio/{app,lib,components,frames,
  * sections}, outside tests (*.test.*, *.spec.*), declaration files, generated/, fixtures and dist.
  *
@@ -90,6 +97,28 @@ function surfaces(clause, sf) {
   return found;
 }
 
+const REGISTRY = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
+/** The registry a `??` left side looks a key up in, or undefined. Nested functions are not entered. */
+function registryLookup(left) {
+  let found;
+  const scan = node => {
+    if (found) return;
+    if (ts.isElementAccessExpression(node) && ts.isIdentifier(node.expression) && REGISTRY.test(node.expression.text)) found = node.expression.text;
+    else if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "get"
+      && ts.isIdentifier(node.expression.expression) && REGISTRY.test(node.expression.expression.text)) found = node.expression.expression.text;
+    else if (!ts.isFunctionLike(node)) ts.forEachChild(node, scan);
+  };
+  scan(left);
+  return found;
+}
+/** A `??` right side that hands the miss on instead of substituting a value. */
+function handsOn(right, sf) {
+  while (ts.isParenthesizedExpression(right)) right = right.expression;
+  if (right.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(right) && (right.text === "undefined" || right.text === "unavailable"))) return true;
+  if ((ts.isStringLiteral(right) || ts.isNoSubstitutionTemplateLiteral(right)) && ERROR_STATE.test(right.text)) return true;
+  return errorRecord(right, sf);
+}
+
 export function findHiddenFallbacks(packageDir) {
   const findings = [];
   const files = DIRS.flatMap(dir => walk(join(packageDir, dir), []));
@@ -101,7 +130,14 @@ export function findHiddenFallbacks(packageDir) {
       if (ts.isCatchClause(node) && !surfaces(node, sf)) {
         const line = sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
         const body = node.block.getText(sf).replace(/\s+/g, " ").slice(0, 100);
-        findings.push({ path: `${relative(packageDir, file).split(sep).join("/")}:${line}`, message: `catch swallows its error: ${body}` });
+        findings.push({ path: `${relative(packageDir, file).split(sep).join("/")}:${line}`, kind: "silent-catch", message: `catch swallows its error: ${body}` });
+      }
+      if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken && !handsOn(node.right, sf)) {
+        const registry = registryLookup(node.left);
+        if (registry) {
+          const line = sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
+          findings.push({ path: `${relative(packageDir, file).split(sep).join("/")}:${line}`, kind: "registry-default", message: `a ${registry} lookup substitutes a default for an unknown key: ${node.getText(sf).replace(/\s+/g, " ").slice(0, 100)}` });
+        }
       }
       ts.forEachChild(node, visit);
     };
@@ -119,7 +155,7 @@ function main(args) {
   if (args.includes("--json")) console.log(JSON.stringify({ files, findings }, null, 2));
   else {
     console.log(`check-no-hidden-fallbacks: ${files} files, ${findings.length} finding(s)`);
-    for (const finding of findings) console.log(`  ${finding.path} [silent-catch] ${finding.message}`);
+    for (const finding of findings) console.log(`  ${finding.path} [${finding.kind}] ${finding.message}`);
   }
   return findings.length ? 1 : 0;
 }

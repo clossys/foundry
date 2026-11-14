@@ -10,7 +10,7 @@ import { cleanSpec, contextOf, expectCatches, writeWorkspace, NO_HISTORY } from 
 
 const packageRoot = fileURLToPath(new URL("../../", import.meta.url));
 const IDS = Array.from({ length: 14 }, (_, index) => `R${String(index + 1).padStart(2, "0")}`);
-const ENFORCED = ["R01", "R04", "R06", "R07", "R08", "R09", "R10"];
+const ENFORCED = ["R01", "R04", "R06", "R07", "R08", "R09", "R10", "R11", "R13"];
 
 describe("constitution registry", () => {
   it("rules.json lists R01-R14 once each, scope all-records, with existing module and test paths", () => {
@@ -114,7 +114,15 @@ describe("constitution schemas", () => {
 
 describe("clossys check --constitution arguments", () => {
   it("parses --constitution and --rule on check", () => {
-    expect(parseArgs(["check", "--constitution", "--rule", "R04", "--json"])).toMatchObject({ verb: "check", constitution: true, rule: "R04", json: true });
+    expect(parseArgs(["check", "--constitution", "--rule", "R04", "--json"])).toMatchObject({ verb: "check", constitution: true, rule: ["R04"], json: true });
+  });
+
+  it("accumulates repeated --rule flags, and the runner runs every named rule", () => {
+    expect(parseArgs(["check", "--constitution", "--rule", "R11", "--rule", "R13", "--strict"])).toMatchObject({ constitution: true, rule: ["R11", "R13"] });
+    expect(() => parseArgs(["check", "--constitution", "--rule", "R11", "--rule", "R15"])).toThrow(/R01..R14/);
+    const { root, consumer } = writeWorkspace(cleanSpec());
+    const report = runConstitution({ root, consumer, rule: ["R04", "R09"], history: () => NO_HISTORY });
+    expect(report.rules.map(rule => rule.id)).toEqual(["R04", "R09"]);
     expect(parseArgs(["check"])).toMatchObject({ constitution: false });
   });
 

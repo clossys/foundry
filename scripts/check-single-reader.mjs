@@ -17,13 +17,23 @@
  *     candidatesDir, slotRel, seatDir, seatFile);
  *   - a local name whose initializer, or a local function whose return value, is derived from
  *     either of the above (traced to a fixpoint within the file).
- * File-system calls are the node:fs and node:fs/promises reads, stats, listings, watches and
- * writes bound by import or require in that file, plus `git show` through child_process.
+ * File-system calls are the node:fs and node:fs/promises reads, stats, listings, watches,
+ * writes and removals (rmdir, truncate, link, chmod, chown, utimes and mkdtemp included) bound by
+ * import or require in that file, plus `git show` through child_process.
+ *
+ * Writer scan (R11.1): the reader itself is scanned for writes; a write call in READER whose path
+ * is slot-model derived is a finding, because only WRITER writes the model.
+ *
+ * Resolver scan (R11.2): only packages/producer/src/records/citations.ts (`resolveCitation`) turns a
+ * citation into a candidate. A shipped file that imports a citation parser (parseSlotCitation,
+ * versionedCitation, slotCitationsInText, ... from @clossys/director, or parseCitation from the
+ * resolver module) is a finding, outside the parser's own package (packages/director/src) and the
+ * one-time rewrite the resolver names (packages/producer/src/migrate).
  *
  * Usage: node scripts/check-single-reader.mjs [--root DIR] [--json]
  * Exit 0 with no finding, 1 on any finding, 2 on a usage or parse error.
  */
-import { readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -35,13 +45,25 @@ export const WRITER = "packages/producer/src/records/slot-write.ts";
 export const SLOT_AGENTS = Object.freeze(["director", "designer", "writer", "publisher"]);
 /** The agent trees the reader owns: the slot trees and the Producer seat tree (slot-model types.ts MODEL_AGENTS). */
 export const MODEL_TREES = Object.freeze([...SLOT_AGENTS, "producer"]);
+/** Calls that change the file system: the writer scan flags these in READER. */
+export const WRITE_CALLS = Object.freeze([
+  "writeFileSync", "writeFile", "appendFileSync", "appendFile", "unlinkSync", "unlink", "mkdirSync", "mkdir", "mkdtempSync", "mkdtemp",
+  "rmSync", "rm", "rmdirSync", "rmdir", "renameSync", "rename", "copyFileSync", "copyFile", "cpSync", "cp", "createWriteStream",
+  "symlinkSync", "symlink", "linkSync", "link", "truncateSync", "truncate", "ftruncateSync", "chmodSync", "chmod", "lchmodSync", "lchmod",
+  "chownSync", "chown", "lchownSync", "lchown", "utimesSync", "utimes", "lutimesSync", "lutimes",
+]);
+/** The one resolver and the places a citation may be parsed (R11.2), repository-relative. */
+export const RESOLVER = "packages/producer/src/records/citations.ts";
+export const PARSER_HOMES = Object.freeze([RESOLVER, "packages/director/src/", "packages/producer/src/migrate/"]);
+export const CITATION_PARSERS = Object.freeze(["parseSlotCitation", "parseCitation", "versionedCitation", "versionedCitationsInText", "slotCitationsInText", "reciteLineAnchors", "VERSIONED_CITATION_IN_TEXT", "isVersionedCitation"]);
 export const HELPERS = Object.freeze(["agentsDir", "agentDir", "iaPath", "slotDir", "slotFile", "pinFile", "candidatesDir", "slotRel", "seatDir", "seatFile"]);
 export const FS_CALLS = Object.freeze([
   "readFileSync", "readFile", "existsSync", "exists", "lstatSync", "lstat", "statSync", "stat", "readdirSync", "readdir",
   "opendirSync", "opendir", "watch", "watchFile", "createReadStream", "accessSync", "access", "realpathSync", "realpath",
   "openSync", "open", "writeFileSync", "writeFile", "appendFileSync", "appendFile", "unlinkSync", "unlink", "mkdirSync", "mkdir",
   "rmSync", "rm", "renameSync", "rename", "copyFileSync", "copyFile", "cpSync", "cp", "createWriteStream", "symlinkSync", "symlink",
-]);
+  ...WRITE_CALLS, "statfsSync", "statfs", "readlinkSync", "readlink", "lstatSync",
+].filter((name, index, all) => all.indexOf(name) === index));
 /** Calls whose result is still the path they were given: node:path builders and string methods. */
 const PATH_CALLS = new Set(["join", "resolve", "dirname", "normalize", "relative", "basename", "toNamespacedPath", "String", "concat", "replace", "replaceAll", "slice", "trim", "toString", "split", "fileURLToPath", "pathToFileURL"]);
 const FS_MODULES = new Set(["fs", "node:fs", "fs/promises", "node:fs/promises"]);
@@ -244,7 +266,7 @@ export function analyse(sf, checker, helpers = new Set(HELPERS)) {
         : ts.isPropertyAccessExpression(expr) && ts.isIdentifier(expr.expression) && childNamespaces.has(expr.expression.text) && CHILD_CALLS.has(expr.name.text);
       if (childCall) gitShow = node.arguments.some(arg => /\bshow\b/.test(arg.getText(sf))) && node.arguments.some(arg => /\bgit\b/.test(arg.getText(sf)));
       if (call || gitShow) {
-        const pair = call && /^(?:rename|copyFile|cp|symlink)/.test(call);
+        const pair = call && /^(?:rename|copyFile|cp|symlink|link)/.test(call);
         const args = call ? node.arguments.slice(0, pair ? 2 : 1) : node.arguments;
         if (args.some(derived)) {
           const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
@@ -290,10 +312,58 @@ export function analyseFiles(root, files) {
   }
 }
 
-/** All findings under a repository root: [{ file, line, call, text }]. */
-export function check(root) {
-  return analyseFiles(root, scopeFiles(root).filter(file => file !== READER && file !== WRITER));
+/** Writer scan: write calls on slot-model paths inside READER (only WRITER writes). */
+export function readerWrites(root) {
+  const files = scopeFiles(root);
+  if (!files.includes(READER)) return [];
+  return analyseFiles(root, [READER]).filter(finding => WRITE_CALLS.includes(finding.call)).map(finding => ({ ...finding, kind: "writer" }));
 }
+
+/** Resolver scan: [{ file, line, call, text, kind: "resolver" }] for every citation-parser import outside its homes. */
+export function citationParsers(root) {
+  const findings = [];
+  for (const file of scopeFiles(root)) {
+    if (PARSER_HOMES.some(home => (home.endsWith("/") ? file.startsWith(home) : file === home))) continue;
+    const text = readFileSync(join(root, file), "utf8");
+    if (!CITATION_PARSERS.some(name => text.includes(name))) continue;
+    const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, /\.[jt]sx$/.test(file) ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+    const record = (node, name) => findings.push({ file, line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, call: name, kind: "resolver", text: node.getText(sf).replace(/\s+/g, " ").slice(0, 140) });
+    const citationModule = spec => spec === "@clossys/director" || /(?:^|\/)(?:records\/citations|format\/citation)(?:\.[cm]?[jt]s)?$/.test(spec);
+    const visit = node => {
+      if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier) && citationModule(node.moduleSpecifier.text)) {
+        const bindings = node.importClause?.namedBindings;
+        if (bindings && ts.isNamedImports(bindings)) for (const element of bindings.elements) {
+          const name = (element.propertyName ?? element.name).text;
+          if (CITATION_PARSERS.includes(name)) record(node, name);
+        } else if (bindings && ts.isNamespaceImport(bindings)) record(node, `* as ${bindings.name.text}`);
+      }
+      let call = ts.isPropertyAccessExpression(node) && CITATION_PARSERS.includes(node.name.text) ? node.expression : undefined;
+      while (call && (ts.isParenthesizedExpression(call) || ts.isAwaitExpression(call))) call = call.expression;
+      if (call && ts.isCallExpression(call)) {
+        const isLoad = (ts.isIdentifier(call.expression) && call.expression.text === "require") || call.expression.kind === ts.SyntaxKind.ImportKeyword;
+        if (isLoad && call.arguments[0] && ts.isStringLiteralLike(call.arguments[0]) && citationModule(call.arguments[0].text)) record(node, node.name.text);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sf);
+  }
+  return findings;
+}
+
+/** All findings under a repository root: [{ file, line, call, text, kind }]; kind is reader, writer or resolver. */
+export function check(root) {
+  return [
+    ...analyseFiles(root, scopeFiles(root).filter(file => file !== READER && file !== WRITER)).map(finding => ({ ...finding, kind: "reader" })),
+    ...readerWrites(root),
+    ...citationParsers(root),
+  ];
+}
+
+const MESSAGES = {
+  reader: "opens a slot-model path outside the reader",
+  writer: `writes a slot-model path in the reader; only ${WRITER} writes`,
+  resolver: "imports a citation parser outside the one resolver; resolve citations with resolveCitation()",
+};
 
 function main(argv) {
   let root = resolve(here, "..");
@@ -305,9 +375,9 @@ function main(argv) {
   }
   let findings;
   try { findings = check(root); } catch (error) { console.error(`check:single-reader: ${error.message}`); return 2; }
-  if (json) console.log(JSON.stringify({ reader: READER, writer: WRITER, findings }, null, 2));
+  if (json) console.log(JSON.stringify({ reader: READER, writer: WRITER, resolver: RESOLVER, findings }, null, 2));
   else {
-    for (const finding of findings) console.log(`${finding.file}:${finding.line}: ${finding.call} opens a slot-model path outside the reader: ${finding.text}`);
+    for (const finding of findings) console.log(`${finding.file}:${finding.line}: ${finding.call} ${MESSAGES[finding.kind]}: ${finding.text}`);
     console.log(findings.length
       ? `check:single-reader: ${findings.length} finding(s) in ${new Set(findings.map(finding => finding.file)).size} file(s); import ${READER} instead`
       : `check:single-reader: ok; only ${READER} reads and ${WRITER} writes the slot model`);

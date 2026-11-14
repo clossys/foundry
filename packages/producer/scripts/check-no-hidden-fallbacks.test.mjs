@@ -42,3 +42,25 @@ test("a catch that rethrows, reads the error, reports it, hands on an error reco
   try { assert.deepEqual(findHiddenFallbacks(root).findings, []); }
   finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test("W2-D: a registry lookup with a ?? default is a finding; handing the miss on or a lowercase local is not", () => {
+  const root = pkg({
+    "studio/lib/icons.tsx": "const NoIcon = () => null;\nexport function icon(asset) {\n  return (asset ? STUDIO_ICONS[asset] : undefined) ?? NoIcon;\n}\n",
+    "src/mime.ts": "export const mime = file => TYPES[extname(file)] ?? 'application/octet-stream';\n",
+    "src/tone.ts": "export const tone = status => STATUS_TONE.get(status) ?? 'outline';\n",
+    "src/ok.ts": [
+      "export const a = id => ICONS[id] ?? undefined;",
+      "export const b = id => ICONS[id] ?? null;",
+      "export const c = code => STATE[code] ?? 'unavailable';",
+      "export const d = id => ICONS[id] ?? { error: 'unknown icon' };",
+      "export const e = (counts, key) => counts[key] ?? 0;",
+      "export const f = options => options.now ?? Date.now;",
+      "",
+    ].join("\n"),
+  });
+  try {
+    const findings = findHiddenFallbacks(root).findings;
+    assert.deepEqual(findings.map(finding => [finding.path, finding.kind]), [["src/mime.ts:1", "registry-default"], ["src/tone.ts:1", "registry-default"], ["studio/lib/icons.tsx:3", "registry-default"]]);
+    assert.match(findings[2].message, /STUDIO_ICONS lookup substitutes a default/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

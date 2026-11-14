@@ -36,8 +36,8 @@ export interface RunOptions extends ContextOptions {
   readonly root: string;
   /** The consumer folder holding `agents/`. */
   readonly consumer: string;
-  /** Only this rule (R01..R14). */
-  readonly rule?: string;
+  /** Only these rules (R01..R14). */
+  readonly rule?: string | readonly string[];
   /** Only the rows about this agent's records, plus rows about no one agent (`*`, pending rows); record counts narrow to it. */
   readonly agent?: string;
   /** Clock for the timing field; tests pass a fixed one. */
@@ -53,8 +53,10 @@ const tally = (rows: readonly Row[], key: (row: Row) => string) => {
 export function runConstitution(options: RunOptions): ConstitutionReport {
   const now = options.now ?? (() => performance.now());
   const started = now();
-  const rules = registeredRules().filter(rule => !options.rule || rule.id === options.rule);
-  if (options.rule && !rules.length) throw new Error(`Unknown constitution rule ${options.rule} (R01..R14)`);
+  const only = options.rule === undefined ? undefined : new Set(typeof options.rule === "string" ? [options.rule] : options.rule);
+  const rules = registeredRules().filter(rule => !only || only.has(rule.id));
+  const unknown = only && [...only].filter(id => !rules.some(rule => rule.id === id));
+  if (unknown?.length) throw new Error(`Unknown constitution rule ${unknown.join(", ")} (R01..R14)`);
   const ctx = buildContext(options.root, options.consumer, options);
   const summaries: RuleSummary[] = [];
   const rows: Row[] = [];
