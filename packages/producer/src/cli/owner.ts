@@ -9,8 +9,8 @@
  *   clossys rule --init [--root <dir>]
  *   clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]
  *   clossys approve writer/<slot> <candidate-id> [--by owner[:<ref>]] [--at <iso>] [--root <dir>]
- *   clossys retire <agent>/<slot> <candidate> --by <who> --reason <text> [--at <iso>] [--root <dir>]
- *   clossys retire <agent>/<slot> --slot --by <who> --reason <text> [--at <iso>] [--root <dir>]
+ *   clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]
+ *   clossys retire <agent>/<slot> --slot --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]
  *
  * Every write is validated against its schema and the slot model check: a write that adds a slot
  * model issue is rolled back and refused (exit 1). A refusal is recorded like any run (exit 1).
@@ -35,6 +35,7 @@ import { readSeat } from "../pipeline/seats.js";
 import { SEAT_POLICY_FILE, SEAT_POLICY_SCHEMA, validateSeatPolicy } from "../pipeline/seat-policy.js";
 import { writerKeysUnapproved } from "../pipeline/status.js";
 import { STEPS } from "../pipeline/steps/index.js";
+import { RETIRE_CODES, RETIRE_REASON } from "../constitution/checks/R10-retire.js";
 import { resolveCandidate } from "./pin.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
@@ -490,8 +491,9 @@ export async function runApproveCli(argv: readonly string[], cwd: string): Promi
 }
 
 // ---------------------------------------------------------------- clossys retire
-export const RETIRE_USAGE = "Usage: clossys retire <agent>/<slot> <candidate> --by <who> --reason <text> [--at <iso>] [--root <dir>]\n"
-  + "       clossys retire <agent>/<slot> --slot --by <who> --reason <text> [--at <iso>] [--root <dir>]\n"
+export const RETIRE_USAGE = "Usage: clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]\n"
+  + "       clossys retire <agent>/<slot> --slot --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]\n"
+  + "  <code> is one of uncertified, superseded, edited-in-place, not-needed, duplicate, shared-split (constitution R10).\n"
   + "  retires one candidate: writes <slot>/retired/<candidate>.json (clossys.retire/1: slot, candidate, sha256, by, reason, at) and moves\n"
   + "  the candidate file from candidates/ into retired/. The pinned candidate is refused: repin first.\n"
   + "  --slot retires a whole slot: it leaves its agent's ia.json, the removal is recorded in that ia.json's `retired` list, and its folder\n"
@@ -597,6 +599,7 @@ export async function runRetireCli(argv: readonly string[], cwd: string): Promis
   if (slash < 0 || !(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`retire target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${RETIRE_USAGE}`);
   const by = need(flags, "--by", RETIRE_USAGE), reason = need(flags, "--reason", RETIRE_USAGE);
   if (/[\r\n]/.test(by) || /[\r\n]/.test(reason)) return refuse("retire", "--by and --reason are one line each");
+  if (!RETIRE_REASON.test(reason)) throw new CliUsageError(`--reason must be a retire code (${RETIRE_CODES.join(", ")}), optionally followed by ": <note>", got ${reason}\n${RETIRE_USAGE}`);
   const at = one(flags, "--at") ?? new Date().toISOString();
   if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${RETIRE_USAGE}`);
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");

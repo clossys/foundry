@@ -8,6 +8,7 @@ import { checkSlotModel } from "../records/slot-check.js";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
 import "./main.js";
 import { RETIRE_SCHEMA, runRetireCli } from "./owner.js";
+import { RETIRE_REASON } from "../constitution/checks/R10-retire.js";
 
 let workspace: string;
 let agents: string;
@@ -45,7 +46,7 @@ beforeEach(() => {
 });
 afterEach(() => rmSync(workspace, { recursive: true, force: true }));
 
-const retire = (...args: string[]) => runRetireCli([...args, "--by", "owner:2026-11-13 retire", "--reason", "superseded by v2", "--at", AT], workspace);
+const retire = (...args: string[]) => runRetireCli([...args, "--by", "owner:2026-11-13 retire", "--reason", "superseded: by v2", "--at", AT], workspace);
 
 describe("clossys retire <agent>/<slot> <candidate>", () => {
   it("writes the clossys.retire/1 record and moves the candidate from candidates/ into retired/", async () => {
@@ -55,7 +56,7 @@ describe("clossys retire <agent>/<slot> <candidate>", () => {
     expect(existsSync(join(dir, "candidates", "example-v1.json"))).toBe(false);
     expect(readFileSync(join(dir, "retired", "example-v1.json"), "utf8")).toBe(v1);
     expect(load(join(dir, "retired", "example-v1.json.json"))).toEqual({
-      schema: RETIRE_SCHEMA, slot: `designer/${ID}`, candidate: "example-v1.json", sha256: sha256Hex(v1), by: "owner:2026-11-13 retire", reason: "superseded by v2", at: AT,
+      schema: RETIRE_SCHEMA, slot: `designer/${ID}`, candidate: "example-v1.json", sha256: sha256Hex(v1), by: "owner:2026-11-13 retire", reason: "superseded: by v2", at: AT,
     });
     // The pin is untouched and still resolves.
     expect(load(join(dir, "pin.json")).candidate).toBe("example-v2.json");
@@ -86,6 +87,28 @@ describe("clossys retire <agent>/<slot> <candidate>", () => {
     await expect(runRetireCli([`designer/${ID}`, "example-v1", "--reason", "x"], workspace)).rejects.toThrow(/--by is required/);
     await expect(runRetireCli([`designer/${ID}`, "example-v1", "--by", "owner"], workspace)).rejects.toThrow(/--reason is required/);
   });
+
+  it("accepts only a closed retire code, optionally followed by \": <note>\" (R10)", async () => {
+    for (const reason of ["uncertified", "superseded", "edited-in-place", "not-needed", "duplicate", "shared-split", "duplicate: same bytes as v2", "not-needed:  dropped"]) expect(RETIRE_REASON.test(reason), reason).toBe(true);
+    for (const reason of ["superseded by v2", "obsolete", "Superseded", "superseded:", "superseded: ", " superseded", "superseded-ish", "uncertified;note", "x"]) {
+      expect(RETIRE_REASON.test(reason), reason).toBe(false);
+      await expect(runRetireCli([`designer/${ID}`, "example-v1", "--by", "owner", "--reason", reason, "--at", AT], workspace)).rejects.toThrow(/--reason must be a retire code/);
+      await expect(runRetireCli([`designer/${OTHER}`, "--slot", "--by", "owner", "--reason", reason, "--at", AT], workspace)).rejects.toThrow(/--reason must be a retire code/);
+    }
+    // Nothing moved: the refused calls wrote no record and kept the candidate and the slot.
+    expect(existsSync(join(agents, ID, "retired"))).toBe(false);
+    expect(existsSync(join(agents, ID, "candidates", "example-v1.json"))).toBe(true);
+    expect(load(join(agents, "ia.json")).nodes[0].children[0].slots).toEqual([ID, OTHER, USER]);
+    const ok = await runRetireCli([`designer/${ID}`, "example-v1", "--by", "owner", "--reason", "duplicate: same bytes as v2", "--at", AT], workspace);
+    expect(ok).toMatchObject({ exitCode: 0 });
+    expect(load(join(agents, ID, "retired", "example-v1.json.json")).reason).toBe("duplicate: same bytes as v2");
+  });
+
+  it("writes reasons the constitution's retire schema accepts", () => {
+    const schema = JSON.parse(readFileSync(new URL("../constitution/schemas/retire.schema.json", import.meta.url), "utf8")) as { properties: { reason: { pattern: string } } };
+    const pattern = new RegExp(schema.properties.reason.pattern);
+    for (const reason of ["superseded", "duplicate: same bytes", "superseded by v2", "superseded:", "obsolete"]) expect(RETIRE_REASON.test(reason), reason).toBe(pattern.test(reason));
+  });
 });
 
 describe("clossys retire <agent>/<slot> --slot", () => {
@@ -95,7 +118,7 @@ describe("clossys retire <agent>/<slot> --slot", () => {
     expect(result).toMatchObject({ exitCode: 0 });
     const ia = load(join(agents, "ia.json"));
     expect(ia.nodes[0].children[0].slots).toEqual([OTHER, USER]);
-    expect(ia.retired).toEqual([{ schema: RETIRE_SCHEMA, slot: `designer/${ID}`, sha256: sha256Hex(before), by: "owner:2026-11-13 retire", reason: "superseded by v2", at: AT }]);
+    expect(ia.retired).toEqual([{ schema: RETIRE_SCHEMA, slot: `designer/${ID}`, sha256: sha256Hex(before), by: "owner:2026-11-13 retire", reason: "superseded: by v2", at: AT }]);
     expect(existsSync(join(agents, ID))).toBe(false);
     expect(load(join(agents, "_retired", ID, "pin.json")).candidate).toBe("example-v2.json");
     // The slots after it move up one place, and their slot.json follows.

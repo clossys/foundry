@@ -15,6 +15,11 @@ import type { AgentRecord, ConstitutionContext, RetiredRecord, Row, RuleModule, 
 import { allSlots, isObject, listed, row } from "./shared.js";
 
 export const RETIRE_CODES = ["uncertified", "superseded", "edited-in-place", "not-needed", "duplicate", "shared-split"] as const;
+/**
+ * A retire reason: one closed code, optionally followed by `: <note>` (schemas/retire.schema.json
+ * `reason`). The retire verb refuses any other reason, so every record it writes passes R10.
+ */
+export const RETIRE_REASON = new RegExp(`^(?:${RETIRE_CODES.join("|")})(?::\\s*\\S.*)?$`);
 const RECORD_NAME = /\.json$/;
 const CANDIDATE_FILE = /-v[1-9][0-9]*\.(?:md|json)$/;
 
