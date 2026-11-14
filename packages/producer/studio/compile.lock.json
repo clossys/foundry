@@ -19,7 +19,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.app-icon/slot.json",
-      "sha256": "6c62ccfa3021c630913d5e06d2718143dd0ef694d73ac2ce0a6e52014629c282"
+      "sha256": "69f02dba278996197f98851266a929b18e72ddcec1ad7374d7d5c525fcdc072b"
     },
     {
       "path": "clossys/agents/designer/assets.favicon/candidates/favicon-v2.json",
@@ -31,7 +31,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.favicon/slot.json",
-      "sha256": "cba543d7993be2233d4c0f636ef51f345cd2d810893f7b4f0e20eec76b5fc3ff"
+      "sha256": "e8f2eb75235c5b6774d14d768e787f0fe18d878fd071eba7bc4438fb33a12ebd"
     },
     {
       "path": "clossys/agents/designer/assets.icon-arrow-right/candidates/icon-arrow-right-v1.json",
@@ -43,7 +43,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-arrow-right/slot.json",
-      "sha256": "94ab4efdad95a2a384cb55d3711706651cc6c8b724a992dbec5e0ef65e51fdca"
+      "sha256": "7b6053c74038d2c533599029f6ac7e60c7242bc52663638f756b30547784d706"
     },
     {
       "path": "clossys/agents/designer/assets.icon-business/candidates/icon-business-v1.json",
@@ -55,7 +55,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-business/slot.json",
-      "sha256": "8d1cdbdeb6065e3b35815cdc154aaa579bd6500f5ca48e6a78de52d029eced9c"
+      "sha256": "ecc22a7f9a563e2aba1abf18b9ed3fef69f2bc27a4a42da20df0016d652b59f9"
     },
     {
       "path": "clossys/agents/designer/assets.icon-check/candidates/icon-check-v1.json",
@@ -67,7 +67,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-check/slot.json",
-      "sha256": "4d2b31bd2291609911e8bb4b5e195ffc49dddc29ba9720301d607a0f1296f779"
+      "sha256": "98aea03ba41b33f67420cf29690ab79892155dd5fc18d302ffdd9491003dd516"
     },
     {
       "path": "clossys/agents/designer/assets.icon-checks/candidates/icon-checks-v1.json",
@@ -79,7 +79,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-checks/slot.json",
-      "sha256": "93c24fb2df12c9a106b79e415934471cdc3449e8efa6d0c027d2f19317b37449"
+      "sha256": "0855aeea8c8874bcfe0446b148625cfbc56a3a9fc1a96ccbc5aa2558deac5c8b"
     },
     {
       "path": "clossys/agents/designer/assets.icon-chevron-down/candidates/icon-chevron-down-v1.json",
@@ -91,7 +91,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-chevron-down/slot.json",
-      "sha256": "b78e1843b193e1544e5ff323e880777d722cb2cf42359c4a30d08ef2b25baca4"
+      "sha256": "d34837fe8f527bf4813a3ff4f0738c46330bf5039a9719a9ed2e5e6b3f4d0c71"
     },
     {
       "path": "clossys/agents/designer/assets.icon-chevron-left/candidates/icon-chevron-left-v1.json",
@@ -103,7 +103,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-chevron-left/slot.json",
-      "sha256": "ae0b585da544ffeee651346f9a7c5dce4581abd6dc0f2ed5b63b789a5f324b39"
+      "sha256": "9f67aa26a4a8d56776bb01433a3e19dac4928f482429e1f28355cbfd4be4b0a3"
     },
     {
       "path": "clossys/agents/designer/assets.icon-chevron-right/candidates/icon-chevron-right-v1.json",
@@ -115,7 +115,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-chevron-right/slot.json",
-      "sha256": "4595450e22a3902c88b7d2453bd378b6b0596add0dd258bd0ed530cfa94bb6a8"
+      "sha256": "4745a23695322b8976a4e6ac8efeecd603baa39afb0cfa8b7b124d59e2b2a3c3"
     },
     {
       "path": "clossys/agents/designer/assets.icon-chevron-up/candidates/icon-chevron-up-v1.json",
@@ -127,7 +127,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-chevron-up/slot.json",
-      "sha256": "af7c3ddbfd0f8806ba03659626facb0e2c443caa8e1b48e0812392668d6184b9"
+      "sha256": "98583d3615363951ec41bd9539e8bc355c64034297e0abec734b66d4e0552902"
     },
     {
       "path": "clossys/agents/designer/assets.icon-close/candidates/icon-close-v1.json",
@@ -139,7 +139,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-close/slot.json",
-      "sha256": "cdb328e99f1c3067c918a2f6c5789ff570cfeffe742fb5415031a03db1bac275"
+      "sha256": "fa5a1e446e576228f6dc7a648ebca654c089e10a92212525da814f572060d6ba"
     },
     {
       "path": "clossys/agents/designer/assets.icon-danger/candidates/icon-danger-v1.json",
@@ -151,7 +151,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-danger/slot.json",
-      "sha256": "bc03038a605872f68d7e38e8a1b881e8eadb9ff0fe0581fbfaff7ee753f6debd"
+      "sha256": "1792bfe0bf09c7dffba250426960e5f589888f9aa011f04266f0bdb376e58dd1"
     },
     {
       "path": "clossys/agents/designer/assets.icon-date/candidates/icon-date-v1.json",
@@ -163,7 +163,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-date/slot.json",
-      "sha256": "16c77c3ef474df701e656a25eb3face6176af835628798861306fc0fefb92301"
+      "sha256": "67d74de159b3e8d33f2d273c1c0c937a92f0e82bb0fbf21a6522233f007c9e7e"
     },
     {
       "path": "clossys/agents/designer/assets.icon-document-approved/candidates/icon-document-approved-v1.json",
@@ -175,7 +175,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-document-approved/slot.json",
-      "sha256": "ab1847cf8e78c7393135338f2ce5bb69bded0e7211d8afbdafee88f4547ce526"
+      "sha256": "a8e9279ffdda4d45444ea551286c682cd5e6209564a053ca3610c00d63a3af30"
     },
     {
       "path": "clossys/agents/designer/assets.icon-document/candidates/icon-document-v1.json",
@@ -187,7 +187,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-document/slot.json",
-      "sha256": "ed75435d0163bba03b0cc38e5bffa0a1e175ee14ca76ea062e7543a4e18d86d8"
+      "sha256": "a06dca58c3ae1bcae114b94a2d086385d1c8254358f3ef206753cb6c85492757"
     },
     {
       "path": "clossys/agents/designer/assets.icon-external-link/candidates/icon-external-link-v1.json",
@@ -199,7 +199,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-external-link/slot.json",
-      "sha256": "132219efffd0064ed747907b2674779c74c14455e84880327909b0e163ea0a26"
+      "sha256": "97de6dd7dac0efdbb6614b62bd94a00f2780799d33c5490809a42c9dfea972e9"
     },
     {
       "path": "clossys/agents/designer/assets.icon-folder/candidates/icon-folder-v1.json",
@@ -211,7 +211,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-folder/slot.json",
-      "sha256": "ba8299c70a532e68acc5fd2adc0205af49fdc7072f45e7ebe0bc8c834e8fe662"
+      "sha256": "2ae15006873e13dbe6c7420b90b950a4a1bc1e86615e0bc40c7eb895117457d2"
     },
     {
       "path": "clossys/agents/designer/assets.icon-grid-view/candidates/icon-grid-view-v1.json",
@@ -223,7 +223,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-grid-view/slot.json",
-      "sha256": "c5bfd518b99be0914ad57de99963f4cc6e0026196387165fd67e74b7972d373b"
+      "sha256": "bb8ddaff41023e96eba2688da9a109eddb5ddede8004b444a20402047bd214c6"
     },
     {
       "path": "clossys/agents/designer/assets.icon-guide/candidates/icon-guide-v1.json",
@@ -235,7 +235,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-guide/slot.json",
-      "sha256": "8624d519509e57c751fc6d60302964b82db5d75cbc8c95effd0441e3c8f7ee19"
+      "sha256": "28c097e0c14d052bbbc0d6effb61928782e75f0e502d2eb212cdd949edc65cbf"
     },
     {
       "path": "clossys/agents/designer/assets.icon-home/candidates/icon-home-v1.json",
@@ -247,7 +247,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-home/slot.json",
-      "sha256": "0a19cafab988e1ed11f4c98ec90091ddf5e17fb6a77a8e89fbbd968c8da4ba55"
+      "sha256": "bc8b897912e5778203fe81662000c3271c25ece734df8e4786a153493dbe6d1a"
     },
     {
       "path": "clossys/agents/designer/assets.icon-info/candidates/icon-info-v1.json",
@@ -259,7 +259,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-info/slot.json",
-      "sha256": "9514e2f61d1f73c6b35e48f0d9bda94a950786cf95441777546c556d2c30b203"
+      "sha256": "b7b56dada6bd49ee88881d690c1ec505c78886c78f6ceeaa449e232656b53c48"
     },
     {
       "path": "clossys/agents/designer/assets.icon-institution/candidates/icon-institution-v1.json",
@@ -271,7 +271,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-institution/slot.json",
-      "sha256": "60b483c714382b0a60efdeff34a8dd3390670ede3a603c88bdf2be86a2eaeae2"
+      "sha256": "f32f1cbace532fca95308b572394f5dff04119093732aaa342380ac05aa0e97c"
     },
     {
       "path": "clossys/agents/designer/assets.icon-integration/candidates/icon-integration-v1.json",
@@ -283,7 +283,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-integration/slot.json",
-      "sha256": "7d565894c533efa89c31919001a30fc7cc7927cb64073c2059b351e20c2374a0"
+      "sha256": "58bf0cc32cc2af054684a67fda4f9f3d7bbc213355f168383185eb07c3554b8f"
     },
     {
       "path": "clossys/agents/designer/assets.icon-layers/candidates/icon-layers-v1.json",
@@ -295,7 +295,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-layers/slot.json",
-      "sha256": "2592ef7e3861defb209ad0a9af9d5d45daa24a7e9274629da0f44484b9811ea9"
+      "sha256": "e78d35b98e5ee428c110cbb871293127e68d36d9546b598c3bedca1586dcec15"
     },
     {
       "path": "clossys/agents/designer/assets.icon-legal/candidates/icon-legal-v1.json",
@@ -307,7 +307,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-legal/slot.json",
-      "sha256": "3c9f34f87090eac088ed7f4610c6f63a5d04488984062b4f8e6a6f8b8720e889"
+      "sha256": "1b50b2dc1702570980cad10917edb4febeab38e55b6deaa25a7688fe1567e3c0"
     },
     {
       "path": "clossys/agents/designer/assets.icon-list-view/candidates/icon-list-view-v1.json",
@@ -319,7 +319,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-list-view/slot.json",
-      "sha256": "3ad02ea36af544dec966fd3916637516822eca19dfe6f8f6effc1f4f9f4c1eb3"
+      "sha256": "040c69b3eb12cf3c891b606b78009af058f18aa8b38f296919d3ab294db8bbf8"
     },
     {
       "path": "clossys/agents/designer/assets.icon-locked/candidates/icon-locked-v1.json",
@@ -331,7 +331,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-locked/slot.json",
-      "sha256": "85eb2daf83d553a10bbc8b2acdbc59394e362852efa652dd3d82bbf5d901e8ad"
+      "sha256": "a1683aaa90a9ae81489229bad6ffc4d956075f96e1e49caadc024d3b0e99af67"
     },
     {
       "path": "clossys/agents/designer/assets.icon-needs/candidates/icon-needs-v1.json",
@@ -343,7 +343,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-needs/slot.json",
-      "sha256": "666630cd5b4e04e71a5b6eb2f2dd6f797bfd10bf1e561830491ddcb9828239a9"
+      "sha256": "8f336ffa503d799d70ac1d76bfbff55a256b1fac01ac19e71b005ec73c92512c"
     },
     {
       "path": "clossys/agents/designer/assets.icon-organization/candidates/icon-organization-v1.json",
@@ -355,7 +355,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-organization/slot.json",
-      "sha256": "1e6670098d4ba80d902feb5b1d8985807560d812d29aa192fca1f561005220e9"
+      "sha256": "05921ec845e8b91e3f380feb0b167025deb282e089b6bd69ccb6ca3dd9e670c8"
     },
     {
       "path": "clossys/agents/designer/assets.icon-outline/candidates/icon-outline-v1.json",
@@ -367,7 +367,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-outline/slot.json",
-      "sha256": "0e48c39c6ab21e5b607fc3e7722ff195a0b6d1cb5e66d84f876460e09fa9d2b8"
+      "sha256": "68e236d9683a9423ae1c183b5963d5adf111d29ac8dbf8aa235c10ac0e1cf464"
     },
     {
       "path": "clossys/agents/designer/assets.icon-package/candidates/icon-package-v1.json",
@@ -379,7 +379,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-package/slot.json",
-      "sha256": "d85781c14ef4c0df604354e50e33fd9845e338712aab365e2b4bb8eaa45aa663"
+      "sha256": "1ef7da6ade54fdf891918b4a3a8fb86d077fb66bbfd27599f29123574e292277"
     },
     {
       "path": "clossys/agents/designer/assets.icon-panel-left/candidates/icon-panel-left-v1.json",
@@ -391,7 +391,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-panel-left/slot.json",
-      "sha256": "5d4f86bafaf9bdf2df39dc65d592662f03523dad44b74655a1607b00d1ff896f"
+      "sha256": "ed67c43f17f69ee57451a8e4533a15d1f419b58581854df7e3a8b99b0b154af7"
     },
     {
       "path": "clossys/agents/designer/assets.icon-payment/candidates/icon-payment-v1.json",
@@ -403,7 +403,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-payment/slot.json",
-      "sha256": "3345fd05adcd7db38f2323dc7733a12ddf1a4fde2ed420d16774e0515ba98e3f"
+      "sha256": "7f8cd99811a5b38179cac74a96aceccda691bc9bf9defce56b9b39773c7c3ec4"
     },
     {
       "path": "clossys/agents/designer/assets.icon-receipt/candidates/icon-receipt-v1.json",
@@ -415,7 +415,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-receipt/slot.json",
-      "sha256": "efbbf3682827c8cb60081864bda95c9b7f0872addad23b609a31e87f94e99a8f"
+      "sha256": "ea147d209584b7cc3199673be54d4b68e4755d83149738fac02666c7a3c25b02"
     },
     {
       "path": "clossys/agents/designer/assets.icon-request/candidates/icon-request-v1.json",
@@ -427,7 +427,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-request/slot.json",
-      "sha256": "3bc91cd2d1294a9fa00331db32dd9116d9717e409d09146a176929ff77907bf5"
+      "sha256": "42c0d639f06b0101b98d6277aa29c3de24a59e94a5bc0837783ef8e13beb700a"
     },
     {
       "path": "clossys/agents/designer/assets.icon-search/candidates/icon-search-v1.json",
@@ -439,7 +439,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-search/slot.json",
-      "sha256": "b3d964734b2c255d850eaded8c505b025b80553ac559aa34ff8b4fa8f79f2a1c"
+      "sha256": "610cea99d5dceac61508d36804a8ba14244b9f03b02e8e32b1b3f3f69765133b"
     },
     {
       "path": "clossys/agents/designer/assets.icon-security/candidates/icon-security-v1.json",
@@ -451,7 +451,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-security/slot.json",
-      "sha256": "3fdaffbd9685efddab090067908b589518e13f02f2864098b2434256da1a3a0a"
+      "sha256": "a5188d3d701a57a43aa28a483fd0932e4418c182b5f71caf3caab7d31eefb721"
     },
     {
       "path": "clossys/agents/designer/assets.icon-settings/candidates/icon-settings-v1.json",
@@ -463,7 +463,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-settings/slot.json",
-      "sha256": "54bdcff30c9ee7506aee94c4f551102442917cb9f506ce7faa108787cc8878b2"
+      "sha256": "72873ff203b9a6683cb1215e62879fe50bb5dfcc3489062ae0357ba20086223f"
     },
     {
       "path": "clossys/agents/designer/assets.icon-success/candidates/icon-success-v1.json",
@@ -475,7 +475,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-success/slot.json",
-      "sha256": "e5e23ea47f4707b2c4e6348698ab38488a816cc04ad41afa7afc76ed748c457f"
+      "sha256": "0f2d8062771eed5df4302809846f3d7f4f74f3f322676cd650a43506cdbe54f3"
     },
     {
       "path": "clossys/agents/designer/assets.icon-team/candidates/icon-team-v1.json",
@@ -487,7 +487,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-team/slot.json",
-      "sha256": "ca37233001b6a67360022ca5019219a17456afb5a8598d8d009d8123b0b6413c"
+      "sha256": "f84381b0575efaaf5c77542dd937f7e62e495b0a683a4f800ffc8cf438241e67"
     },
     {
       "path": "clossys/agents/designer/assets.icon-theme-dark/candidates/icon-theme-dark-v1.json",
@@ -499,7 +499,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-theme-dark/slot.json",
-      "sha256": "a35b8634a1291b972872083724d40f7b94bac411619a7df16a6f60b54f80e8d4"
+      "sha256": "b4f9d739b826bcf60dc820dff43197c240faad0cf42406fbeff415a26e07fb50"
     },
     {
       "path": "clossys/agents/designer/assets.icon-theme-light/candidates/icon-theme-light-v1.json",
@@ -511,7 +511,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-theme-light/slot.json",
-      "sha256": "6336924f5b10410087ca3f19e342d320fbc567c9c6b0ac9c7d7a5e83419ef2dd"
+      "sha256": "42ee90be68735f358ae5db6f8eb6f5d6fafc768827258566d7d7060ee95eb843"
     },
     {
       "path": "clossys/agents/designer/assets.icon-theme-system/candidates/icon-theme-system-v1.json",
@@ -523,7 +523,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-theme-system/slot.json",
-      "sha256": "8b49eee3490b99b965f5b2fbf12aa9e4f8f915eca127e954943b6093f9ea352e"
+      "sha256": "119a2d7c202f6e4a9a9c71d9930b87af15bb1da88bf20f2d790ca611ff81de47"
     },
     {
       "path": "clossys/agents/designer/assets.icon-time/candidates/icon-time-v1.json",
@@ -535,7 +535,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-time/slot.json",
-      "sha256": "1422a95b18615b5351bd90a412fc29f6a9ebe98e6135e5d33c8588f4485c07d5"
+      "sha256": "a7e6c16902444e7ff6723d6adc827da62619a3e41bab4bfb17b1a6a638f296de"
     },
     {
       "path": "clossys/agents/designer/assets.icon-user/candidates/icon-user-v1.json",
@@ -547,7 +547,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-user/slot.json",
-      "sha256": "7cfa05331a104e881b8326e4f821673e18c3ca1dcadb5aac7dbdea6806057957"
+      "sha256": "d51fa95b51176a0164a73155983afb477c92e20a9e19c0860f9f066c09f3a234"
     },
     {
       "path": "clossys/agents/designer/assets.icon-versions/candidates/icon-versions-v1.json",
@@ -559,7 +559,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-versions/slot.json",
-      "sha256": "5ebfdfad33fc58f111b0b22fb316886bc5781a64bea1adca3463a56790e3e0a1"
+      "sha256": "e3cf91bb1ab27bb307ee17143ebda8e9fca2a64b9403d10384b1846f3d5ffd60"
     },
     {
       "path": "clossys/agents/designer/assets.icon-warning/candidates/icon-warning-v1.json",
@@ -571,7 +571,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-warning/slot.json",
-      "sha256": "bf0a1255bcc0c55bce994ffa53e671979a5d3cd8ef76b3b3bcac996089fc1774"
+      "sha256": "6525aa0f54b72cef34470e56a18723ef6186f96cf475b2fc177289bee74a12cf"
     },
     {
       "path": "clossys/agents/designer/assets.icon-website/candidates/icon-website-v1.json",
@@ -583,7 +583,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.icon-website/slot.json",
-      "sha256": "aec149ef1f5c5cb30e80400093ec8e03376ba5ea4e8a0a70ea3fcb81a8059bc5"
+      "sha256": "82edef7206195b39edd80ae6db65a2a7e819c1b6a54c59a7998be5e9bf385ad1"
     },
     {
       "path": "clossys/agents/designer/assets.image-ratio/candidates/image-ratio-v3.json",
@@ -595,7 +595,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.image-ratio/slot.json",
-      "sha256": "ac1344a721f87944ea6cda052145beee583bd1cb29beca60d05e79ce5b11a176"
+      "sha256": "fd7a0eb96d9d50ffd0d7ac4415ebdb5cf8c4d25412cd4016e3a36859e735a353"
     },
     {
       "path": "clossys/agents/designer/assets.image/candidates/image-v2.json",
@@ -607,7 +607,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.image/slot.json",
-      "sha256": "5098a3963437ba99787439c7dd118017fa967448db2a845ca0871eb70bdae0c5"
+      "sha256": "86f7568f227086ab1a7309a1248555d832ab68a6ae8dc3da19e6a968b616d755"
     },
     {
       "path": "clossys/agents/designer/assets.lockup/candidates/lockup-v4.json",
@@ -619,7 +619,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.lockup/slot.json",
-      "sha256": "845184cd30a1950e0587207558769318246a848c3734b795889920aef8072c88"
+      "sha256": "8d595d65c069b79446b9bb3af8c6edee08c2fcab98c44d5df4516a5f0ab8a05a"
     },
     {
       "path": "clossys/agents/designer/assets.mark/candidates/mark-v4.json",
@@ -631,7 +631,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.mark/slot.json",
-      "sha256": "28f7def9c115882bed5b515fdde4c4260fd0e5d58a2582b5e8b22bf1c730933c"
+      "sha256": "d64a14b4140271cff9c73866abc02a9e13524b4fea7a472211ab1d2479ea284c"
     },
     {
       "path": "clossys/agents/designer/assets.pattern/candidates/pattern-v3.json",
@@ -643,7 +643,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.pattern/slot.json",
-      "sha256": "d96a42f9fbaa0ffe75c93e76010d37a57bb079da87143fd187e3ea9809872a5c"
+      "sha256": "ccd22df8d12f7d9f2a2cc7504be917b5d765272695d79c75bee2fef2ce448e12"
     },
     {
       "path": "clossys/agents/designer/assets.video/candidates/video-v1.json",
@@ -655,7 +655,7 @@
     },
     {
       "path": "clossys/agents/designer/assets.video/slot.json",
-      "sha256": "b3f74fbe3572fa2e9b2834708bfe1f5bdc601d1308492c9b069690c328f99f26"
+      "sha256": "62a21847df5db001a1dfe8e89712b09c6f5c9c91c9cc7abc6f35313b6595e449"
     },
     {
       "path": "clossys/agents/designer/components.avatar/candidates/avatar-v2.json",
@@ -667,7 +667,7 @@
     },
     {
       "path": "clossys/agents/designer/components.avatar/slot.json",
-      "sha256": "6ecf810ce04c180d77d56d5a053b8265b667275a48b9714c7d530473696cd0b9"
+      "sha256": "5d865e0520da202018008b5f09b81e3e73e5c66bbdcb6892b6e8c66c63f6c228"
     },
     {
       "path": "clossys/agents/designer/components.badge/candidates/badge-v2.json",
@@ -679,7 +679,7 @@
     },
     {
       "path": "clossys/agents/designer/components.badge/slot.json",
-      "sha256": "8247b099920c1450109531da222e0c9acd6cf8ad552af0e3a75fb5a795d0d358"
+      "sha256": "2c7227bb5ed9a7c263010c0b27a5a494a3afdb01311585b8197d1c13d417f4a5"
     },
     {
       "path": "clossys/agents/designer/components.banner/candidates/banner-v2.json",
@@ -691,7 +691,7 @@
     },
     {
       "path": "clossys/agents/designer/components.banner/slot.json",
-      "sha256": "69da0712e38ad0b946bbb7f8400383b314c79a625a40bd0e8b2f356ff77a93de"
+      "sha256": "b9c5aafd7cd8c969cbe3c39dbe11601587f2e6a5f958ee9d4d1e5d3d40d983f5"
     },
     {
       "path": "clossys/agents/designer/components.breadcrumbs/candidates/breadcrumbs-v2.json",
@@ -703,7 +703,7 @@
     },
     {
       "path": "clossys/agents/designer/components.breadcrumbs/slot.json",
-      "sha256": "c5ed8ad4e6efdb435850544cbdd05068cbe2028e12e1f7a5dbabdc7c6ac14e1e"
+      "sha256": "a7c9a8d18373c0760f090194fdd7deb963962c6af438a35fc53b3a2473b84f8c"
     },
     {
       "path": "clossys/agents/designer/components.button/candidates/button-v2.json",
@@ -715,7 +715,7 @@
     },
     {
       "path": "clossys/agents/designer/components.button/slot.json",
-      "sha256": "16391d9dd47d49f83bed2a9a9649d2bce6936db7794bee7e9b82ccd6ddc5c350"
+      "sha256": "e19c7e774657fd988c9dd6cf312a5e4a1bdcf1b57053d451f959e13c2cbef0f0"
     },
     {
       "path": "clossys/agents/designer/components.calendar/candidates/calendar-v2.json",
@@ -727,7 +727,7 @@
     },
     {
       "path": "clossys/agents/designer/components.calendar/slot.json",
-      "sha256": "4c170287db6bdf60773444107926917bdc43b216b3edf891183a5a6804f01137"
+      "sha256": "a6a4c6c53375241cff46599955422097ffad021ef3462b54e4a004d9f46f066f"
     },
     {
       "path": "clossys/agents/designer/components.card/candidates/card-v3.json",
@@ -739,7 +739,7 @@
     },
     {
       "path": "clossys/agents/designer/components.card/slot.json",
-      "sha256": "3228e6e23efa49611d949420a20b22867d73061d89a9ccc17d1d4f08943ef168"
+      "sha256": "913a8d305b1311417fc692f8d6dadac481a8f945d8729dd2151219fc91408c90"
     },
     {
       "path": "clossys/agents/designer/components.chart-area/candidates/chart-area-v3.json",
@@ -751,7 +751,7 @@
     },
     {
       "path": "clossys/agents/designer/components.chart-area/slot.json",
-      "sha256": "9bdda5e9e76bdc132c651e236eef8d77f4384644263c9ebfe80460e6d26dcff3"
+      "sha256": "ecec76021d5571d59de77dabc603db1c257b9b9fdf8c4723e59b5cc59a64991a"
     },
     {
       "path": "clossys/agents/designer/components.chart-bar/candidates/chart-bar-v3.json",
@@ -763,11 +763,11 @@
     },
     {
       "path": "clossys/agents/designer/components.chart-bar/slot.json",
-      "sha256": "532ba18efaaf7027c2dc913c117956799b02ac4a87093553ee2a6377593d0193"
+      "sha256": "c42d463eae98ccb9f0ec87d8575ac575bb6e36a0c369c8a9cc1cfd70bfdd6e7b"
     },
     {
       "path": "clossys/agents/designer/components.chart-heatmap/slot.json",
-      "sha256": "fe7693e288a4b07ea32064da66e4ff022e7b87291d9590aeaf3499462c3f67ed"
+      "sha256": "696b0e809269b11280a59126751b3db828ccc0fcbb1b31b883e6075f2f60117e"
     },
     {
       "path": "clossys/agents/designer/components.chart-line/candidates/chart-line-v3.json",
@@ -779,27 +779,27 @@
     },
     {
       "path": "clossys/agents/designer/components.chart-line/slot.json",
-      "sha256": "190466a8b64ebffc5f5f370ae4fff7fd310d5b850bb77eb3cc238236a85f88c7"
+      "sha256": "4d234980693eca10589ee36190f934c6a2fc6419caa1aa1dc6137b4a08b924cb"
     },
     {
       "path": "clossys/agents/designer/components.chart-range/slot.json",
-      "sha256": "5da66cf9af2dcc55e21a524aa5ca2668a85f184e149aea115b50dbfd7a15dfcc"
+      "sha256": "e2e04f4f56a0548aa1a9668009c6e89846cb1f6beac27a11e985a43ddd48ef9c"
     },
     {
       "path": "clossys/agents/designer/components.chart-scatter/slot.json",
-      "sha256": "f890f0215c702cab0c9b894e9ccaca73a43c62de2114a1da374b835b95eddfa7"
+      "sha256": "6bc29615c053c01151cfc0a1725193cb9d1311d1633b118e03b8ac1c0476659f"
     },
     {
       "path": "clossys/agents/designer/components.chart-sparkline/slot.json",
-      "sha256": "64ce85c3b75a8c295a18d00580bf7aa736b425835d7776183f66ea7e668a9aa6"
+      "sha256": "551de34c55ed9717a88999e70aa22f6bbb905cb53dfa938faaa141328641bf3f"
     },
     {
       "path": "clossys/agents/designer/components.chart-status-strip/slot.json",
-      "sha256": "77e17f05dbb68aae19f56dcb1c80f978918c3db7520b3ff1dbf82709a4abf4a8"
+      "sha256": "66348c456e0b8c1ed7d786e3e6fd75b4c85090f12e02345bc24798a0f377a67d"
     },
     {
       "path": "clossys/agents/designer/components.chart-waterfall/slot.json",
-      "sha256": "313e2073216d3979f938fb09efdab706b900aaf4fa49d88cc75b0f7e0f9cd117"
+      "sha256": "742f2d8d1d87304c54435a1b970f25c1befca06976cb7981643652f101802a13"
     },
     {
       "path": "clossys/agents/designer/components.checkbox/candidates/checkbox-v2.json",
@@ -811,11 +811,11 @@
     },
     {
       "path": "clossys/agents/designer/components.checkbox/slot.json",
-      "sha256": "0828ade47e3109a7d64db89f94453f61ffde9bb8ef2ee68cd7b9aa7ae7f03ead"
+      "sha256": "24cdc50af3d13a092a1af24ec5fa3963ad9f1cb908cb198d6d626cd80cb2085d"
     },
     {
       "path": "clossys/agents/designer/components.color-picker/slot.json",
-      "sha256": "a26b10c05ee9f538a979d9861beec973ad475d80d0ea3157a84b722c401f167f"
+      "sha256": "554bd02d13e975315c0d5ba1217bb0f8b87181b1602c185d45a3235356abee20"
     },
     {
       "path": "clossys/agents/designer/components.combo-box/candidates/combo-box-v2.json",
@@ -827,7 +827,7 @@
     },
     {
       "path": "clossys/agents/designer/components.combo-box/slot.json",
-      "sha256": "0acb2c5a86ee8b699dbfc9733a9504d231c6b919c17cb6ae438b043c4d791097"
+      "sha256": "eda866a62783add04f237330db9e8fc0efb2feee34aae9523883f3336225539f"
     },
     {
       "path": "clossys/agents/designer/components.command/candidates/command-v2.json",
@@ -839,11 +839,11 @@
     },
     {
       "path": "clossys/agents/designer/components.command/slot.json",
-      "sha256": "e0ea7fcf8abdd158d9814d9e11e140c5fddeb8913de2802a8965d0a31c0a6861"
+      "sha256": "54b1e7df70e4ad990a9cbae67a9f46df18a4550c8946de5a3322926ea390e0e0"
     },
     {
       "path": "clossys/agents/designer/components.date-field/slot.json",
-      "sha256": "0a0c8e81ab7d382d166f9bd8bc373fd617be26dd9da2e9a95966910d88317bd6"
+      "sha256": "1f0d0244be9f35a1c3fdda4a4ed9383a507aaa8e9c66e32456fd2f3057b0949a"
     },
     {
       "path": "clossys/agents/designer/components.date-picker/candidates/date-picker-v2.json",
@@ -855,7 +855,7 @@
     },
     {
       "path": "clossys/agents/designer/components.date-picker/slot.json",
-      "sha256": "700f367e9ac83cba6e4fa190bf922414153635c1611fbe3696c195112e62dadd"
+      "sha256": "d9e05de281af2e61b38981bc7ff2c535e0e0fa11edbf45f45b23b9801868db16"
     },
     {
       "path": "clossys/agents/designer/components.dialog/candidates/dialog-v2.json",
@@ -867,7 +867,7 @@
     },
     {
       "path": "clossys/agents/designer/components.dialog/slot.json",
-      "sha256": "5ad4d4546ddb54b451f506becf7204ee5dee318d93824e67c87ca72dc97fdd59"
+      "sha256": "606347a8e9d245ca74579e6d77540937f0e3bb51a9d3265091d24c238a321ece"
     },
     {
       "path": "clossys/agents/designer/components.disclosure/candidates/disclosure-v2.json",
@@ -879,7 +879,7 @@
     },
     {
       "path": "clossys/agents/designer/components.disclosure/slot.json",
-      "sha256": "d2e99473fff1e3f3edcb5abf21882742351bebecfeaf48a0297e3174d01f1ef4"
+      "sha256": "45067d44149ae0fbb24c5d2f87faef3a7bd939b0436f02949dee0cb0bbc6c178"
     },
     {
       "path": "clossys/agents/designer/components.dropdown-menu/candidates/dropdown-menu-v2.json",
@@ -891,7 +891,7 @@
     },
     {
       "path": "clossys/agents/designer/components.dropdown-menu/slot.json",
-      "sha256": "02026bfb98c99a5d401ce69ea88368b4d218e419eb7eab1655f887aafbebfd17"
+      "sha256": "78f8cadcf6189091e1734fcf5dee79087825b8f4b590925f3e8305997c1e5aa8"
     },
     {
       "path": "clossys/agents/designer/components.empty/candidates/empty-v2.json",
@@ -903,7 +903,7 @@
     },
     {
       "path": "clossys/agents/designer/components.empty/slot.json",
-      "sha256": "8f34cd5b585636322ea9e8128bb8609bb679a1df4d86ec59cca71413764caed2"
+      "sha256": "90176bb02642d260aedcd5c5de616b40a42b855a12bedc760d6d9223a645c79b"
     },
     {
       "path": "clossys/agents/designer/components.field/candidates/field-v3.json",
@@ -915,11 +915,11 @@
     },
     {
       "path": "clossys/agents/designer/components.field/slot.json",
-      "sha256": "3bac7cb1d679620382054400eedf95f86ec5b99c169c45ad0852945f5193a23e"
+      "sha256": "2a193fcf25db886048c9bf1ac311767731188bc9849f7df8690ba3fb22c77bee"
     },
     {
       "path": "clossys/agents/designer/components.file-trigger/slot.json",
-      "sha256": "bee4424a8dfde51fbecb4e3b1606fc1f233b2f5dbeeb176abe6e43d03009f0b8"
+      "sha256": "bde668397252a6a43194c10114b8f30f8bc8d7e98a7ccfbc5a9a104c7eead93c"
     },
     {
       "path": "clossys/agents/designer/components.flow.base-handle/candidates/base-handle-v1.json",
@@ -931,7 +931,7 @@
     },
     {
       "path": "clossys/agents/designer/components.flow.base-handle/slot.json",
-      "sha256": "5256f0c9354e1db1316dd2a51faa2071bae23897f966d385517a4ec31a976004"
+      "sha256": "bc8246e1d81369e2b2a55d6e869079b61c586a80a921a271ff46008e13789bf4"
     },
     {
       "path": "clossys/agents/designer/components.flow.base-node/candidates/base-node-v1.json",
@@ -943,7 +943,7 @@
     },
     {
       "path": "clossys/agents/designer/components.flow.base-node/slot.json",
-      "sha256": "327f37e74949276d6f440c1d378236745a181094616af61e6327fa16b68db8d8"
+      "sha256": "3a162bcbf59118ef9ba1e1b62ea6d9aa0fdc1739f7c280c5d713e2c99543eeda"
     },
     {
       "path": "clossys/agents/designer/components.flow.canvas/candidates/canvas-v4.json",
@@ -955,7 +955,7 @@
     },
     {
       "path": "clossys/agents/designer/components.flow.canvas/slot.json",
-      "sha256": "1531ff83c5095c4ea3c6ef4b6bdc0eee60aa528237c6f03ad4c16fdac20a2410"
+      "sha256": "5f346140927f14c2f70293929c4050f4344221bd57767e01096bb179750caa33"
     },
     {
       "path": "clossys/agents/designer/components.flow.edge/candidates/edge-v2.json",
@@ -967,7 +967,7 @@
     },
     {
       "path": "clossys/agents/designer/components.flow.edge/slot.json",
-      "sha256": "f2c5a4ff6ab066aae631496cf5b0dcd7f63a0a51fbee4faee972a446cf239a77"
+      "sha256": "4b22e2ad1c02131b854730868af52090a3764a9f370d36f272690a981f4e833d"
     },
     {
       "path": "clossys/agents/designer/components.flow.labeled-handle/candidates/labeled-handle-v1.json",
@@ -979,7 +979,7 @@
     },
     {
       "path": "clossys/agents/designer/components.flow.labeled-handle/slot.json",
-      "sha256": "311bc2ec069a28b0c65e4f1cb185a5d3369b7fc7d181703bfef8857468ac8421"
+      "sha256": "626f4aef494f0d977b86e6cb58a35c695e68308a216e8c77cae462ec1056a7ac"
     },
     {
       "path": "clossys/agents/designer/components.flow.node-header/candidates/node-header-v2.json",
@@ -991,7 +991,7 @@
     },
     {
       "path": "clossys/agents/designer/components.flow.node-header/slot.json",
-      "sha256": "8ebc0f5924fb91fc6f8739e36b6449d2e18fa941e07bf72ab558865e5b6418d2"
+      "sha256": "08a5ce1072ca47b7fbb9a9be22f4286976a2a823fac6b531528b295d2858996d"
     },
     {
       "path": "clossys/agents/designer/components.flow.node-status/candidates/node-status-v2.json",
@@ -1003,7 +1003,7 @@
     },
     {
       "path": "clossys/agents/designer/components.flow.node-status/slot.json",
-      "sha256": "36f99307227e0115b16b1946bb25a4b52ef881cefb117641093d716a9a135f82"
+      "sha256": "9266131a18b6244e043e0fe2a8e9b2689ee9a2621b965ed8c1edc3170a6eb9d2"
     },
     {
       "path": "clossys/agents/designer/components.form/candidates/form-v2.json",
@@ -1015,7 +1015,7 @@
     },
     {
       "path": "clossys/agents/designer/components.form/slot.json",
-      "sha256": "2365b9d282b4f57e12dbf187c4685816c829e405c10519a5fdd12df663f8ba85"
+      "sha256": "de75b0dadd5daabb8bf42ef9ea4867fa1947759c597a0ddce4c1b84c6b5cb973"
     },
     {
       "path": "clossys/agents/designer/components.grid-list/candidates/grid-list-v2.json",
@@ -1027,11 +1027,11 @@
     },
     {
       "path": "clossys/agents/designer/components.grid-list/slot.json",
-      "sha256": "127c4e5685c4f3d281999de9c7a15ea9ea8304060fb22ac56d87366b46d5b0ad"
+      "sha256": "31c1c1cf1e7e2d237ba8a5d8fbcaa8d5a9521bce384679bb4bd477ba445dc871"
     },
     {
       "path": "clossys/agents/designer/components.icon/slot.json",
-      "sha256": "69f436b35887e7fabec23828a7d3577c142b3212fe9b727e7fd103c028ab6baf"
+      "sha256": "aed3dad734edf4ab31bd7419c06377e512ad0b2977f8013d8415ff7be8670b44"
     },
     {
       "path": "clossys/agents/designer/components.item/candidates/item-v2.json",
@@ -1043,7 +1043,7 @@
     },
     {
       "path": "clossys/agents/designer/components.item/slot.json",
-      "sha256": "79d9965ebd6dc35f4ffb7824c13d8c38bcfab73d811d2444880c80a7164ea5ab"
+      "sha256": "347470e76d718bdef39a0ae463f00fc9827d189621f569aa2f25ecba5adffd84"
     },
     {
       "path": "clossys/agents/designer/components.keyboard/candidates/keyboard-v2.json",
@@ -1055,7 +1055,7 @@
     },
     {
       "path": "clossys/agents/designer/components.keyboard/slot.json",
-      "sha256": "13abaeab01817013d02cb659c8c42a2224ac951da62072143a1c5dc5d7e83f31"
+      "sha256": "2228ed9de6372e21541cda9134f5ccf926ed72210bcd25bff9f82e1178db2570"
     },
     {
       "path": "clossys/agents/designer/components.link/candidates/link-v2.json",
@@ -1067,7 +1067,7 @@
     },
     {
       "path": "clossys/agents/designer/components.link/slot.json",
-      "sha256": "0d1300b391374ad3b6b1b33facbe617c02667d9cd37d7bd325f56b60346404ff"
+      "sha256": "bb13e54cb790eea5e2be17813b4f87de8a99129921a963d2fc02d523a028f039"
     },
     {
       "path": "clossys/agents/designer/components.logo/candidates/logo-v3.json",
@@ -1079,11 +1079,11 @@
     },
     {
       "path": "clossys/agents/designer/components.logo/slot.json",
-      "sha256": "4408ff66621c20a64e8b8b9e7bd750009dcd04b77fa253dc6869a2befd3e5d8a"
+      "sha256": "49bc4e64635d39059a60d27fe878b1599ab5adfdf69bb15e1a7dd9d417059283"
     },
     {
       "path": "clossys/agents/designer/components.media-player/slot.json",
-      "sha256": "1646cfe723efa457844be15f16760852d8d8cec24e10a91e307a45dd43e065ae"
+      "sha256": "90a09e952ef8e418960037125c5f7fbc365f227d82ecdb701ff97a421bf9dcff"
     },
     {
       "path": "clossys/agents/designer/components.menu/candidates/menu-v2.json",
@@ -1095,7 +1095,7 @@
     },
     {
       "path": "clossys/agents/designer/components.menu/slot.json",
-      "sha256": "d09db0acb980c2789f83dc684196c7e9d6c04d7615aa8a5f5c2b2fb383860f7a"
+      "sha256": "2b7501882670132aea243040952ffc3c277eb986749fa1d872976032c191936c"
     },
     {
       "path": "clossys/agents/designer/components.meter/candidates/meter-v1.json",
@@ -1107,11 +1107,11 @@
     },
     {
       "path": "clossys/agents/designer/components.meter/slot.json",
-      "sha256": "8fef189803aa3368daf8c2522f88cade5e749c550235ae7de5ebb2d18d8cf73c"
+      "sha256": "e94f51179825823c0cf348a6f5be3a71704513524677bf3eb57ae1f354dcd530"
     },
     {
       "path": "clossys/agents/designer/components.native-action/slot.json",
-      "sha256": "99e45c98706321fdff9d988a8405a5619e485ee7ece52d22dc3dd074d9f258dc"
+      "sha256": "89c8eab0c789b6a3525ab401862e32211aa7764cf469d367e769de51ca0bdeeb"
     },
     {
       "path": "clossys/agents/designer/components.navigation-tree/candidates/navigation-tree-v2.json",
@@ -1123,11 +1123,11 @@
     },
     {
       "path": "clossys/agents/designer/components.navigation-tree/slot.json",
-      "sha256": "6c574f616e463415ba8f349826d1e8fa3f942b3d4177017a42ed19f5887a3e22"
+      "sha256": "be1e8d6b720a11e76ebebea64f25218c53ea9ddcacb75b482c9e21edc3d9ff75"
     },
     {
       "path": "clossys/agents/designer/components.number-field/slot.json",
-      "sha256": "15dc1c979a85455ee8f2c8d536ac0b44daba247ae0ff29989a212feecd8141e9"
+      "sha256": "7d0432d5df937118f84010e064a9b54a5a2ac5dffc3628fa9ae1d3d602ff9b24"
     },
     {
       "path": "clossys/agents/designer/components.popover/candidates/popover-v2.json",
@@ -1139,7 +1139,7 @@
     },
     {
       "path": "clossys/agents/designer/components.popover/slot.json",
-      "sha256": "a58022cdbba4ba2ef580ef887a961bc838ab2d3dae99cc6c5bd08ed7459cbcbc"
+      "sha256": "c88f7e753e48a5acc94c348c16f79623c9be624b0ae89ed4c2e0183cfdcc555b"
     },
     {
       "path": "clossys/agents/designer/components.progress-bar/candidates/progress-bar-v2.json",
@@ -1151,7 +1151,7 @@
     },
     {
       "path": "clossys/agents/designer/components.progress-bar/slot.json",
-      "sha256": "7e6b23b88d05e29f43a1efc70b09bf834d8a8d61b11699df9e63fb8a2acc5a3f"
+      "sha256": "91357fab9a3783cc8ab0a2830cdff7e5688c4726c56c251dd2ca27d673bbf162"
     },
     {
       "path": "clossys/agents/designer/components.radio-group/candidates/radio-group-v2.json",
@@ -1163,7 +1163,7 @@
     },
     {
       "path": "clossys/agents/designer/components.radio-group/slot.json",
-      "sha256": "7de177009abb2099d7d5aa4a36e3f53b9b320e26a94591bace58146d201f5d5b"
+      "sha256": "8c19cc3bb7697d6442ca5314cb8d27168a076db8013aab5056bd50fe5889ac96"
     },
     {
       "path": "clossys/agents/designer/components.resize-handle/candidates/resize-handle-v2.json",
@@ -1175,11 +1175,11 @@
     },
     {
       "path": "clossys/agents/designer/components.resize-handle/slot.json",
-      "sha256": "8ece2448a74e0ad074d881a955b79215a228a2d294bc4d67afa79b891b6b010f"
+      "sha256": "5c7e99c6d180f2b747c0afe4fd8abf75ec1a75742eb22163db4527340e4c627e"
     },
     {
       "path": "clossys/agents/designer/components.rich-text/slot.json",
-      "sha256": "7f229661de9cc1623a2518df8fd98b1a5a49e1096a38e22074db57c6e9f45469"
+      "sha256": "17d9e43921ca7bae1da483155bee439075fdadc70a020121f1eabbc9c1e99d29"
     },
     {
       "path": "clossys/agents/designer/components.scroll-area/candidates/scroll-area-v2.json",
@@ -1191,7 +1191,7 @@
     },
     {
       "path": "clossys/agents/designer/components.scroll-area/slot.json",
-      "sha256": "22f1aab28f81c7e8649907eb1af2b13d9f183bea02422dedd7cb9fbd95c76260"
+      "sha256": "099431d1b48cd4ee67567257c4de033f1d9dcefbfccec8ccc0524ead6df98705"
     },
     {
       "path": "clossys/agents/designer/components.search-field/candidates/search-field-v2.json",
@@ -1203,7 +1203,7 @@
     },
     {
       "path": "clossys/agents/designer/components.search-field/slot.json",
-      "sha256": "cd7c1eeb1cf373c69d5f3e43b9a1cdcd5654f92a01dbd801ad017821d3c4ff90"
+      "sha256": "944ad617d936c34b41fee7ffd26693c834ee4096db723046aecfaf794744602f"
     },
     {
       "path": "clossys/agents/designer/components.select/candidates/select-v2.json",
@@ -1215,7 +1215,7 @@
     },
     {
       "path": "clossys/agents/designer/components.select/slot.json",
-      "sha256": "71f8f536d5704e47828e40ab756a25c40e08fc740f64727277e8d83a9abcb4b8"
+      "sha256": "9c7b743492682b11e47aee33b564026e3f6d900b957e7f466609daa23937546d"
     },
     {
       "path": "clossys/agents/designer/components.semantic-content/candidates/semantic-content-v4.json",
@@ -1227,7 +1227,7 @@
     },
     {
       "path": "clossys/agents/designer/components.semantic-content/slot.json",
-      "sha256": "4fdd36e8dbb3db6f6ce71ba24cbb682670a6c97bacd92aa78a6757947604a8f2"
+      "sha256": "7395ba89b3b7d1bf8c2679edd0e943275003d8e3edae49a4923da4cb6d5a31b7"
     },
     {
       "path": "clossys/agents/designer/components.separator/candidates/separator-v2.json",
@@ -1239,7 +1239,7 @@
     },
     {
       "path": "clossys/agents/designer/components.separator/slot.json",
-      "sha256": "bec5964c70b49c269fecef61f50110dcad318f5c25625e7d0d7b2e41c4f9be9d"
+      "sha256": "ecbf9033d0eebc145b52e73aeb9b7d67eecfba38f7b63cd05d703ee40255da4c"
     },
     {
       "path": "clossys/agents/designer/components.sheet/candidates/sheet-v2.json",
@@ -1251,7 +1251,7 @@
     },
     {
       "path": "clossys/agents/designer/components.sheet/slot.json",
-      "sha256": "1d7ccb498a6073812347d4333ffb21b27bc78a25affaaca6539bfa9330477119"
+      "sha256": "7b5363a67a62b2df1c85687d82f9917f67651e0f9c74378de64d2d6a4e480917"
     },
     {
       "path": "clossys/agents/designer/components.sidebar/candidates/sidebar-v2.json",
@@ -1263,7 +1263,7 @@
     },
     {
       "path": "clossys/agents/designer/components.sidebar/slot.json",
-      "sha256": "12a70fe7156119da1908130b8effff8318103c23cc4c5fc0f90bf28e8e49da1a"
+      "sha256": "03f3286d6e20470ff2519789d91a0f5b1bdbb94fef7aba8a3e68aa3056fc6741"
     },
     {
       "path": "clossys/agents/designer/components.skeleton/candidates/skeleton-v2.json",
@@ -1275,7 +1275,7 @@
     },
     {
       "path": "clossys/agents/designer/components.skeleton/slot.json",
-      "sha256": "dec3d2b7eaecd5cca177c6bb0f697883a997bf14bfa3d4906dd1376026479095"
+      "sha256": "072f50f890e87329e9e018c754b915ca17e558b26787e0a332f46c92a34eb33d"
     },
     {
       "path": "clossys/agents/designer/components.slider/candidates/slider-v2.json",
@@ -1287,7 +1287,7 @@
     },
     {
       "path": "clossys/agents/designer/components.slider/slot.json",
-      "sha256": "687d437b7b9fa2c7a295767d2729dfa2d1cf4dbfc52f5fd7d011074c600a6461"
+      "sha256": "a4a017bcc2b8b6c5ef891f99a694f5f7f6d0d8ff068ab42b03c782c1a19266f3"
     },
     {
       "path": "clossys/agents/designer/components.spinner/candidates/spinner-v2.json",
@@ -1299,11 +1299,11 @@
     },
     {
       "path": "clossys/agents/designer/components.spinner/slot.json",
-      "sha256": "a74f8527892d226b25059bb7321f449bb737db4574e3d972107ea1b59366fed1"
+      "sha256": "e253ee378f042049dd17b3530ed6357b65fb764a0ea0fe0bf36ddbef9a9ff7ef"
     },
     {
       "path": "clossys/agents/designer/components.status-mark/slot.json",
-      "sha256": "c073e2ed3e37d76da3d6119f8192cbe427ec483c65965249a7d0d548c6a63605"
+      "sha256": "6ddaaee1660a0e7981c6f51e82f7ca9236a2347bd1c6a3a05ee0790d58d4abf0"
     },
     {
       "path": "clossys/agents/designer/components.studio.block-viewer-iframe/candidates/block-viewer-iframe-v6.json",
@@ -1315,7 +1315,7 @@
     },
     {
       "path": "clossys/agents/designer/components.studio.block-viewer-iframe/slot.json",
-      "sha256": "9575c43771050fb04a407bd0c32ed1531909e8c3ce2f4e7c341779b98ef85dd0"
+      "sha256": "393e75fd54c6762eb522870139fd436b6e8c5f050c6af95fe352639d4bccbecd"
     },
     {
       "path": "clossys/agents/designer/components.studio.card-grid/candidates/card-grid-v3.json",
@@ -1327,7 +1327,7 @@
     },
     {
       "path": "clossys/agents/designer/components.studio.card-grid/slot.json",
-      "sha256": "acadd3bc737470ad8c84c208775081d8984d24bb0469b79de9d32ccfe9a6b566"
+      "sha256": "eec78c8a447881fde3e6e4266b49e8ed3e8bbc557894c27dbbc530373a53b54c"
     },
     {
       "path": "clossys/agents/designer/components.studio.card-stack/candidates/card-stack-v3.json",
@@ -1339,7 +1339,7 @@
     },
     {
       "path": "clossys/agents/designer/components.studio.card-stack/slot.json",
-      "sha256": "750b584a6108b946441e0a3657398a9e58a55661117e693e5b8257a308e68220"
+      "sha256": "bcb8de93a80fbff8dd63f630fdec0881113d4215979cab059cae9035c3068ea0"
     },
     {
       "path": "clossys/agents/designer/components.studio.home-grid/candidates/home-grid-v3.json",
@@ -1351,7 +1351,7 @@
     },
     {
       "path": "clossys/agents/designer/components.studio.home-grid/slot.json",
-      "sha256": "b6869263ab1b451e2fbd197a1d257547b1f07f0e876fc342a9b535e5f5b2a539"
+      "sha256": "8d1b0ddf34c33cd82b3599e715d49793077e2ed0977dc178c735b562ceacd926"
     },
     {
       "path": "clossys/agents/designer/components.studio.sidebar-static-row/candidates/sidebar-static-row-v3.json",
@@ -1363,7 +1363,7 @@
     },
     {
       "path": "clossys/agents/designer/components.studio.sidebar-static-row/slot.json",
-      "sha256": "f16470528d7740ef57541f7de32a411738e0ec80b3a6be62bb50b0a23742a209"
+      "sha256": "df91186212008865f6b69f89763bfead222100c5f31afb7a8c69f0ab369bf26d"
     },
     {
       "path": "clossys/agents/designer/components.studio.specimen-document/candidates/specimen-document-v5.json",
@@ -1375,7 +1375,7 @@
     },
     {
       "path": "clossys/agents/designer/components.studio.specimen-document/slot.json",
-      "sha256": "a4dffc937d56819b7861a731487a8f5f195d6a5c978c79ce2d1ba3bfe29e7cea"
+      "sha256": "819ea9d661440e373242e1cbfbf724cb5e855b8e89bb87c1c8a6f36434a8f7b7"
     },
     {
       "path": "clossys/agents/designer/components.studio.specimen-figure/candidates/specimen-figure-v3.json",
@@ -1387,7 +1387,7 @@
     },
     {
       "path": "clossys/agents/designer/components.studio.specimen-figure/slot.json",
-      "sha256": "3659302a693af884b697ebff2317f19dc43e2b7fc66cc6f0d36e7bb77503610e"
+      "sha256": "b94b5984a63f8690e05d1373ea46a4759dc63737f14651d7e02fbbd2ec329de5"
     },
     {
       "path": "clossys/agents/designer/components.studio.specimen-frame/candidates/specimen-frame-v3.json",
@@ -1399,7 +1399,7 @@
     },
     {
       "path": "clossys/agents/designer/components.studio.specimen-frame/slot.json",
-      "sha256": "7641072624a230e377ee443953a0c8849e28f97ae1c1886c1a830e08b1f16e99"
+      "sha256": "24d94b83fcb38f0164de325277814ab52f94de1f3cd03910600ec588d12a2ec8"
     },
     {
       "path": "clossys/agents/designer/components.studio.text-link/candidates/text-link-v3.json",
@@ -1411,7 +1411,7 @@
     },
     {
       "path": "clossys/agents/designer/components.studio.text-link/slot.json",
-      "sha256": "2aa7dabf33442e8be6e77a67c89edb7b1b3f59ef442d68f6d5d497f2e66324a5"
+      "sha256": "d36df23aa2e7b24ed2f514944d3ae129f7f509222be294f0f989d19f5a3bc15a"
     },
     {
       "path": "clossys/agents/designer/components.switch/candidates/switch-v2.json",
@@ -1423,7 +1423,7 @@
     },
     {
       "path": "clossys/agents/designer/components.switch/slot.json",
-      "sha256": "e4728d0a941bb7b6497178cf4d14c371c1c502490029e3784f02f84f86782a9b"
+      "sha256": "ee667af9053701b6a40be331d97c17576fbbbb4f90c30a95dfd470c0be9def4c"
     },
     {
       "path": "clossys/agents/designer/components.table/candidates/table-v2.json",
@@ -1435,7 +1435,7 @@
     },
     {
       "path": "clossys/agents/designer/components.table/slot.json",
-      "sha256": "a95627278c4c9f666ea7b8bb5514470e06d3c4f848aabd298f9e15400944a283"
+      "sha256": "fa9fa1a2b67ed158ba8dd0efa1772ec740b537fede8de3991a0d700d5afb87df"
     },
     {
       "path": "clossys/agents/designer/components.tabs/candidates/tabs-v3.json",
@@ -1447,7 +1447,7 @@
     },
     {
       "path": "clossys/agents/designer/components.tabs/slot.json",
-      "sha256": "4bd0be4fed051a3980dad3662154c70400524bbfa1e365a6035eaf625a24dd37"
+      "sha256": "79ff555170f17f1d77c3b0c90035e344abe25b42103f5a54854eca75e504f02a"
     },
     {
       "path": "clossys/agents/designer/components.tag-group/candidates/tag-group-v2.json",
@@ -1459,7 +1459,7 @@
     },
     {
       "path": "clossys/agents/designer/components.tag-group/slot.json",
-      "sha256": "263e0f6f706da5dbf70fb0ef750c559436f1a5390c603b03f36dbef981cc09e3"
+      "sha256": "634d181307ce6b93bc8f3e81dea1bc735d3b1954a46b633178c2a333fcbfb723"
     },
     {
       "path": "clossys/agents/designer/components.text-field/candidates/text-field-v3.json",
@@ -1471,7 +1471,7 @@
     },
     {
       "path": "clossys/agents/designer/components.text-field/slot.json",
-      "sha256": "8d1447d94e3ed7704ce8163c6a29c494675d5744597b141799c0e68fbcec0d0c"
+      "sha256": "49fb80047c1172ed45ebf33457febce67b14e7d02effd6b5bb35a1725815482e"
     },
     {
       "path": "clossys/agents/designer/components.toast/candidates/toast-v1.json",
@@ -1483,7 +1483,7 @@
     },
     {
       "path": "clossys/agents/designer/components.toast/slot.json",
-      "sha256": "4b31c2e80b86d7d8305df8aa5a5b3d2d09fbb8e7fa20bc6e9db91ffc5e745a9f"
+      "sha256": "4c5b8df4e27550cc678d5ef6e59aab6874569b7fe01ea86a559797f9fdf36df9"
     },
     {
       "path": "clossys/agents/designer/components.toggle-button/candidates/toggle-button-v2.json",
@@ -1495,7 +1495,7 @@
     },
     {
       "path": "clossys/agents/designer/components.toggle-button/slot.json",
-      "sha256": "5b3e1aa3e781c654661ce770fa0f9ee7f7a4c107495e1b45a54fe4ad23ceb189"
+      "sha256": "f24ee8bd43546a9158978f27100370206860644c89737660a904c206897ae22a"
     },
     {
       "path": "clossys/agents/designer/components.toggle-group/candidates/toggle-group-v2.json",
@@ -1507,7 +1507,7 @@
     },
     {
       "path": "clossys/agents/designer/components.toggle-group/slot.json",
-      "sha256": "0d4ed3a5e388ef3d4fe36fdf9936af0669bc9b3e9d98524fcaf7b5e11985716c"
+      "sha256": "0dabfb780b033d49321573a7a959c58ccec518b1a9c6f8b4f650ae6c759bf3c2"
     },
     {
       "path": "clossys/agents/designer/components.toolbar/candidates/toolbar-v1.json",
@@ -1519,7 +1519,7 @@
     },
     {
       "path": "clossys/agents/designer/components.toolbar/slot.json",
-      "sha256": "ea0ccc22a3dc861c5d06c3758e58ff5f5b1a726dd50d433b9c87d2ffd8514c2a"
+      "sha256": "a44a8d8e68663fc4a5c173e09f2fb7a44e9eb73582a6366ecefa4c80a3c8fe03"
     },
     {
       "path": "clossys/agents/designer/components.tooltip/candidates/tooltip-v2.json",
@@ -1531,11 +1531,11 @@
     },
     {
       "path": "clossys/agents/designer/components.tooltip/slot.json",
-      "sha256": "48827e217425c8510a544279ae2c442e00ff88b3e35644666d8d3d0ea32033c5"
+      "sha256": "dfc8ee9b5a5332e3431fd3b5c160eefe93270cf5a19235df6eb20f2aa1543161"
     },
     {
       "path": "clossys/agents/designer/components.tree/slot.json",
-      "sha256": "1b90f9a6f228ea59984f5b6c534696c776544a6546526e8f806ff974b2e7e5bc"
+      "sha256": "cd1a74a756ecc35ea942fb981dc87c42895329c6b831180d6938a18e63c79748"
     },
     {
       "path": "clossys/agents/designer/frames.app-header/candidates/app-header-v1.json",
@@ -1547,7 +1547,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.app-header/slot.json",
-      "sha256": "850f985748fad414c854e6a14b61c2a4c8b336517c3ae8019defd54e058c81fe"
+      "sha256": "d4d11c60d652d4ce1823a8ed2c559bc75e8b8e490114f1f277915ce9d6638192"
     },
     {
       "path": "clossys/agents/designer/frames.app-shell/candidates/app-shell-v1.json",
@@ -1559,7 +1559,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.app-shell/slot.json",
-      "sha256": "f3f93023138870b033f170e67fa00eb1e642fec6c473c99e34ac99ae81a4ff4e"
+      "sha256": "ab71f22e8c0ddab5f36e6cc5ef2266130142f5563aed18327d1dffb6e9a44d92"
     },
     {
       "path": "clossys/agents/designer/frames.app-sidebar/candidates/app-sidebar-v1.json",
@@ -1571,7 +1571,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.app-sidebar/slot.json",
-      "sha256": "0198abe465948c4ad411e371d6e05707e504db245495f3f93ff822fd4c3ce2ae"
+      "sha256": "625f6291e67881cad93a29b010192e83f8606c39ad827dead072ed1786640185"
     },
     {
       "path": "clossys/agents/designer/frames.auth-shell/candidates/auth-shell-v1.json",
@@ -1583,7 +1583,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.auth-shell/slot.json",
-      "sha256": "b0311d339d30135eddd861a93992c5e7883a34b47cc16835e0421f6a989f353f"
+      "sha256": "18155e0a6a8c3f509390e1e79bf8ca07236582022b89f6640ffa5ca91b8c7c71"
     },
     {
       "path": "clossys/agents/designer/frames.command/candidates/command-v3.json",
@@ -1595,11 +1595,11 @@
     },
     {
       "path": "clossys/agents/designer/frames.command/slot.json",
-      "sha256": "727e9e242f67aed48a43dd33bf467d5c777d74d7cfa768fca8528de8f17df767"
+      "sha256": "9eda0c525d8c5da934057e35e6d9e00d9c0dec2fc4095c11cf1f24b7732437cd"
     },
     {
       "path": "clossys/agents/designer/frames.document/slot.json",
-      "sha256": "a61bc980571b46510ff9c60f8d42b853713cd527c38b1c87fa00f14f96e031c6"
+      "sha256": "00896c6a4d3df3ea1e53cd2e597a96322ab94dc531a7d0cc546711bd99d7d1d7"
     },
     {
       "path": "clossys/agents/designer/frames.inspector/candidates/inspector-v3.json",
@@ -1611,7 +1611,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.inspector/slot.json",
-      "sha256": "e629e9f70fec6133a594dfc39a2d246a5fcb1207ff56a9e801d29ae63a540668"
+      "sha256": "9ddf17e4b279abdbf8e41d52f9fb462f6b2c12a230ea55d1a4cbdb7ce1533c1e"
     },
     {
       "path": "clossys/agents/designer/frames.sheet/candidates/sheet-v3.json",
@@ -1623,7 +1623,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.sheet/slot.json",
-      "sha256": "7b117a516faf9faf5bb9665de14f35ac93f4772bbebf5907c5073e68cad7fd96"
+      "sha256": "b4ac91d6da23554b509a2e4dbe79b7a8c665a428f2e681bc3392080914ca1cd9"
     },
     {
       "path": "clossys/agents/designer/frames.site-footer/candidates/site-footer-v1.json",
@@ -1635,7 +1635,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.site-footer/slot.json",
-      "sha256": "58ab01fce3abde2ffb1488fe3ee922c47ccc657194f70538808feac97228ba30"
+      "sha256": "89d8ee28ff626d0ff50ad9408559002eb6434a338615b133340e22eb47d1d8d6"
     },
     {
       "path": "clossys/agents/designer/frames.site-header/candidates/site-header-v5.json",
@@ -1647,7 +1647,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.site-header/slot.json",
-      "sha256": "524f3eefc2e12b319f7ee3f135bd005261ae134fb386ea03a147c54b6d4d1621"
+      "sha256": "46c168b6ac93eaa87969ffe140c30e8e747f01299409aacfecaf7cdaf79c99ad"
     },
     {
       "path": "clossys/agents/designer/frames.site-shell/candidates/site-shell-v1.json",
@@ -1659,7 +1659,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.site-shell/slot.json",
-      "sha256": "c8d971fb7d5f92d3dba3854b9932926b1749f7f70d15dedf510acf3d62315ec0"
+      "sha256": "81d16aa6bb26a9fef29f0dc4d200ca35cb9650db8c931926f340dd812f233c78"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v21.json",
@@ -1671,7 +1671,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/slot.json",
-      "sha256": "6917ee71bc6b041ac566c879d35f78c1f0f984daef5e6428b0fa4cb20bdb4fa0"
+      "sha256": "9c719b092a7e21f28cff0656a620a04a57b43467436a00e3eb048d73362de814"
     },
     {
       "path": "clossys/agents/designer/ia.json",
@@ -1687,11 +1687,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.access-matrix/slot.json",
-      "sha256": "20aef7436c4949b3a7fd47377d9477c7bea5a3d8db33b38621638cd98da3934f"
+      "sha256": "c80994b0fb997900d1d027a0f815d895af22533b088f1610074c12f8be2752b1"
     },
     {
       "path": "clossys/agents/designer/sections.account-summary/slot.json",
-      "sha256": "b59f09fbaf90f77af6eccdd890f721bb50c7d8301eff28f85c11821e9eb7fa1a"
+      "sha256": "e64566b27309f00fc026908235701a870a8a23157984860507b8a43d9ef86728"
     },
     {
       "path": "clossys/agents/designer/sections.activity-feed/candidates/activity-feed-v3.json",
@@ -1703,7 +1703,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.activity-feed/slot.json",
-      "sha256": "b2359d15a73c075b9e5ebba680616960407785559491161f5fddfe0f6f8f99b1"
+      "sha256": "a1d800e9118435e46051e3a72f689ba9b3ce0ec505c39ba356e3954aa404af27"
     },
     {
       "path": "clossys/agents/designer/sections.article/candidates/article-v3.json",
@@ -1715,7 +1715,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.article/slot.json",
-      "sha256": "349121c41b983a4b197c6e831837f7a197f056f779b6ec631ce495743d8fd58c"
+      "sha256": "eb233763e0eb5be9b8458f417a1759fd6e26aa83094351362c9bf58c45418832"
     },
     {
       "path": "clossys/agents/designer/sections.audit-log/candidates/audit-log-v3.json",
@@ -1727,7 +1727,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.audit-log/slot.json",
-      "sha256": "2f82b5070acb787a38eb42c6388203c577a9f50273e78e73f5af56493600ce5f"
+      "sha256": "085d362dc9e9c0e7e2649d5f4253492ccb91527ba458e596f7551555de312ea8"
     },
     {
       "path": "clossys/agents/designer/sections.band/candidates/band-v3.json",
@@ -1739,11 +1739,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.band/slot.json",
-      "sha256": "064998040179131e55757e568d4431e6a024df89ba4c07e785514258ce2a6c2f"
+      "sha256": "64c32b79a4dedbde789a9dc7aecec9ecfa2dc577d7a014fcfa346723b85e2d70"
     },
     {
       "path": "clossys/agents/designer/sections.boundary-message/slot.json",
-      "sha256": "a7c989cd0bfb61209ec36952bf994192424586052f86be2de970049d6f52e55b"
+      "sha256": "b44394bd600baf0ee95948da7c2262d9e9fc35c5cd0472082783a05090ebb1b6"
     },
     {
       "path": "clossys/agents/designer/sections.call-to-action/candidates/call-to-action-v5.json",
@@ -1755,11 +1755,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.call-to-action/slot.json",
-      "sha256": "14309291d3c3d6ff1f8d7895aa6dacf9f1d31e1717614bfb3d5813bf12f06def"
+      "sha256": "971467747cf24793e6944be9fdefc53fea1b96d4d90d56caa4742291d98cd9f7"
     },
     {
       "path": "clossys/agents/designer/sections.cards/slot.json",
-      "sha256": "9a6d113fd85b1181b931372d92fc5614acfbe76a631eaffaa2d86536fca8d2c2"
+      "sha256": "b2da1bd3adf507721e49c4c63b083fc2cb3a9263193f3c10c5c26f0a0d9d17e5"
     },
     {
       "path": "clossys/agents/designer/sections.chat/candidates/chat-v1.json",
@@ -1771,11 +1771,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.chat/slot.json",
-      "sha256": "1c77704d758a0f941e26eef00663286017bd3045799fb7e873dfa17a0177488d"
+      "sha256": "ecdfb72cafbf377d6b7a96b9f35eaf5b848541ddc7eca6dc75e2010fe9865f2d"
     },
     {
       "path": "clossys/agents/designer/sections.column-mapper/slot.json",
-      "sha256": "a56b24a047b06c4cf3cac65c95d1509c9feb425dd56062a7459123bb028dfc64"
+      "sha256": "be9462450b57f0a2c626b175f1f7babf03e39f547796eaea0b7c39dd4b924b26"
     },
     {
       "path": "clossys/agents/designer/sections.comparison/candidates/comparison-v1.json",
@@ -1787,11 +1787,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.comparison/slot.json",
-      "sha256": "64126fa22882e3e937d410158d2419105d36b12cb315df2c99e93c52abf6169e"
+      "sha256": "3b52fbcc35b49fcaf59e8c0fef021444279bb6a271dc3d7ab87a07c822dc7d0c"
     },
     {
       "path": "clossys/agents/designer/sections.consent/slot.json",
-      "sha256": "3e7ebcf057205b8da313d71e4714811426a471ecaccff14f3ab92820ef3249d0"
+      "sha256": "92b68bc14beba2280f33bc8a050058ddd08ae1fbe8acb2bde6333ab44bd2eb44"
     },
     {
       "path": "clossys/agents/designer/sections.content/candidates/content-v3.json",
@@ -1803,7 +1803,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.content/slot.json",
-      "sha256": "53c248db2b4511037e37dbcdb960ee0c2990664dbd740d65530443b5bfdb8646"
+      "sha256": "05ee2427f9086b7574025fea7fec922142f3de5d2b82afc0769d3a55161b9bb8"
     },
     {
       "path": "clossys/agents/designer/sections.data-grid/candidates/data-grid-v3.json",
@@ -1815,7 +1815,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.data-grid/slot.json",
-      "sha256": "58f7d6ac0b5d73db1925ffc77d6a4c230934db3d69bfce0c3ada3a5bbae0f9e2"
+      "sha256": "2a8986bca19aed2351e072a22df4c98562451bd40edf17221696d855faaec1fc"
     },
     {
       "path": "clossys/agents/designer/sections.data-table/candidates/data-table-v3.json",
@@ -1827,7 +1827,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.data-table/slot.json",
-      "sha256": "79f147b0bef1e3f2fe79ca2f26b4d753f6a5cb77d5ffc0cdd2e087232fb0b18b"
+      "sha256": "af39c70050611f5e4055f1e36eedf7d324b5d6c3cacac88d8baa628810707d18"
     },
     {
       "path": "clossys/agents/designer/sections.empty-state/candidates/empty-state-v3.json",
@@ -1839,7 +1839,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.empty-state/slot.json",
-      "sha256": "2c8834b2e97175d6e7a22cbaf49198bc9c969772d4b588e7480d8ea4a2a750c9"
+      "sha256": "8cf3bb3acd349647798ea1e277562a70b8f71e910faf7391f951e013ee5eb075"
     },
     {
       "path": "clossys/agents/designer/sections.error-state/candidates/error-state-v3.json",
@@ -1851,11 +1851,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.error-state/slot.json",
-      "sha256": "c6771c2c38a70ef529ad108a67cf76deced2d368719022dca16ba149b5d4fc4d"
+      "sha256": "390ecfb84a4e145419094c137bd5cdd069c0737c4d87467fef30cac44a0bb2bb"
     },
     {
       "path": "clossys/agents/designer/sections.explorer/slot.json",
-      "sha256": "0bbeb589e916379971d4fd0936758ca4dc26438dbb1b64d7a265fd76a3a68659"
+      "sha256": "c868554f0125fc66b2d280d9f67d6058a6b6e87184d32f93fb12aeb5845dfd3f"
     },
     {
       "path": "clossys/agents/designer/sections.faq/candidates/faq-v1.json",
@@ -1867,7 +1867,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.faq/slot.json",
-      "sha256": "de59ee4afd1b8b236f87e445ad7efbdd45d479a8742680ad4093ef1cdd19e80d"
+      "sha256": "7b2ddf2979f43bcbe85d879d40599d66692b7c58fd4e882ce4c6f74ca0faf799"
     },
     {
       "path": "clossys/agents/designer/sections.features/candidates/features-v2.json",
@@ -1879,11 +1879,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.features/slot.json",
-      "sha256": "a80903597322cd4fcc3f8ae15a9ae47954af18636a0160084669bb4467539472"
+      "sha256": "6499e052d86a3d2b3c3a017b1e4c2b5d47c63f310886e903a8dc02260bc804cd"
     },
     {
       "path": "clossys/agents/designer/sections.filter-builder/slot.json",
-      "sha256": "fe81fbee6b2b1c8aea3288ae6de7e8e3165a58d199edb1f013ec658d74e7e9e3"
+      "sha256": "5ef7e3fa1d8ab2cfacc3d06e637a7f19957616ed0a31a9a6204a8ce0a50cc0fd"
     },
     {
       "path": "clossys/agents/designer/sections.form/candidates/form-v1.json",
@@ -1895,7 +1895,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.form/slot.json",
-      "sha256": "ea63bdc72d9739f19dd52eb2431d18cee8860925442414119a1f7be82484cfbe"
+      "sha256": "9a8ebdf74a969806d081cec571a854218e9674f16753e99f24fb856337cb9c31"
     },
     {
       "path": "clossys/agents/designer/sections.gallery/candidates/gallery-v1.json",
@@ -1907,7 +1907,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.gallery/slot.json",
-      "sha256": "a0d86a7568c39d6b000d4a120ccbc2bf5ed701bc81cbdd8913c3ac3c1f40aae7"
+      "sha256": "f5c2b7e42f2f87d22beb5f69b5f855380a7eda4bb953945edc3971a212674965"
     },
     {
       "path": "clossys/agents/designer/sections.hero/candidates/hero-v1.json",
@@ -1919,11 +1919,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.hero/slot.json",
-      "sha256": "d3e53c87aaca2cd14e3f49d78c2c081fa6d69dae0d6776837bb1047d07db6b4d"
+      "sha256": "f79da2fb03f176e03a9783b34cfc485b04132b3cbd5227f4f614147a9c2e6ab1"
     },
     {
       "path": "clossys/agents/designer/sections.legal-prose/slot.json",
-      "sha256": "96aeaaecc6a2992331b0792c96e464d2660ecbd1ed2d9b481b17f330ef1b3465"
+      "sha256": "8d681ba97e86cf199e4eb33601f1dc9d5ee4493cb2e46498a2568306468e12f9"
     },
     {
       "path": "clossys/agents/designer/sections.link-index/candidates/link-index-v3.json",
@@ -1935,7 +1935,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.link-index/slot.json",
-      "sha256": "377575321382b05fc1351f056a13c5a3b95393fc531e35cb8aad64830e7eacdc"
+      "sha256": "268c4b93798598969fb5f077833fd5bc60b3100040cca02a4c7148cb8dd7df18"
     },
     {
       "path": "clossys/agents/designer/sections.logo-cloud/candidates/logo-cloud-v1.json",
@@ -1947,15 +1947,15 @@
     },
     {
       "path": "clossys/agents/designer/sections.logo-cloud/slot.json",
-      "sha256": "438f41916b0ae1083e1ae0ca36d74f57e7dbbe69b9a693e4a393e362a9092f63"
+      "sha256": "e0abf472173240e233d4d6e63c6425d53bf68452e1fcc286eb7d08f1ac084301"
     },
     {
       "path": "clossys/agents/designer/sections.logo-hero/slot.json",
-      "sha256": "c0a43c6a6fca1db41ce23f4f05e6a99b6cef045f0cc9843bff7492ef0909a972"
+      "sha256": "3b1bc492aba419c966d46ed0c00bdc5670fd0b4f426c62fe984ee31bed5f3eb5"
     },
     {
       "path": "clossys/agents/designer/sections.logo-mark/slot.json",
-      "sha256": "da6b6d55b0fff008144718e2a0403a59cd5de5812fc6b85be9aae24e6e177e9d"
+      "sha256": "9443fa7c1bc36db154fe1f5de71835857f1ba97b9267cba1a4a8563a0142b501"
     },
     {
       "path": "clossys/agents/designer/sections.media/candidates/media-v4.json",
@@ -1967,7 +1967,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.media/slot.json",
-      "sha256": "3e89e72a6bd4aff509d66586307abcfd15fffd842c7b369ae228076970de224f"
+      "sha256": "d444aec830554e5f0a4f5d397be2b510fcf906e6233210c6fe926b606b711079"
     },
     {
       "path": "clossys/agents/designer/sections.module.checks/candidates/module-checks-v6.json",
@@ -1979,7 +1979,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.module.checks/slot.json",
-      "sha256": "663a9aacfbf73b9496514959761f84d24fbe105eaec606ece90b2470db4b970e"
+      "sha256": "c0f2cc0ced645d502f6d974a36f749862b19019d9133cf5ac62b2bfd83d563cb"
     },
     {
       "path": "clossys/agents/designer/sections.module.outline/candidates/module-outline-v7.json",
@@ -1991,11 +1991,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.module.outline/slot.json",
-      "sha256": "e6ed795d94fe3b0c3e497dd6f69ddd8e6c20c8690816f74ec24cedc5f3919b08"
+      "sha256": "4fecc7f1a75a514a3358410a44ff414d664679926ced56593e36f4a4b3180c1b"
     },
     {
       "path": "clossys/agents/designer/sections.newsletter/slot.json",
-      "sha256": "cb6389f28224f9fc68ccb8f38e3be0194fb0e4ae399f0af5eeef1eecadae7b7c"
+      "sha256": "f4e0983f99b42e186347c874563be3dc84c664ce08ee6eb78cc80040c65bfeb3"
     },
     {
       "path": "clossys/agents/designer/sections.notices/candidates/notices-v3.json",
@@ -2007,7 +2007,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.notices/slot.json",
-      "sha256": "c41a7ef953b76c25e5cf0092f1aff91011fed568fd59cacacb6a7fbbc5702179"
+      "sha256": "0c0af886b9e787623b15558331f78dc3adb7e93f4b54a06cc1df32fba00eb6f1"
     },
     {
       "path": "clossys/agents/designer/sections.page-header/candidates/page-header-v6.json",
@@ -2019,7 +2019,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.page-header/slot.json",
-      "sha256": "6d2a894bc4076607932a6bda229d993e3923f630792b2c9661e483c1f2061f50"
+      "sha256": "a3e52d41b863d5dcc0b82944b2441439eb6b04634b2874de44d6a6cc75410d9d"
     },
     {
       "path": "clossys/agents/designer/sections.pagination/candidates/pagination-v4.json",
@@ -2031,7 +2031,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.pagination/slot.json",
-      "sha256": "bb2c446c045627bbb8a90e7b93ba2f645ba7afd79022345f80e394ff71222c0d"
+      "sha256": "3a20ffca45a4e6175726bbf066b9c47332c1697996cdffe6b8652ef102e0084f"
     },
     {
       "path": "clossys/agents/designer/sections.people/candidates/people-v1.json",
@@ -2043,11 +2043,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.people/slot.json",
-      "sha256": "fbeea5f4daebdbd8342a6ef2504847cf5a397ba0082d6b16052232289d75699e"
+      "sha256": "7a697ef7d7cdd4c3e13bfdfadfd91f560b2959eed343e848e69ee267f3583c03"
     },
     {
       "path": "clossys/agents/designer/sections.pricing/slot.json",
-      "sha256": "818e510e4d04a2e4cfd61e881658796c169960bdac9563aa9512a3aa3673a9fc"
+      "sha256": "54de4842fab2a79f79f34c91091445999e3b85ed4c8f3035ea79b54bb9ae33b6"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v14.json",
@@ -2059,11 +2059,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/slot.json",
-      "sha256": "d262d9728fd8806cf017f4e476e8da241bc4d9e02af3307b25579b8a4dad7e70"
+      "sha256": "7c64fb80aece7ec4d3a0a137d9e54f1c629ad485d1f678d4109ec7c0b004df23"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-header/slot.json",
-      "sha256": "6d6d1c1ee9ad5adddd427a1fd4b4e920238aaa4865f7836c5fc748a59b358674"
+      "sha256": "fcbbf2e4b0bc886a9d9dd516f7546c9c5d7c86a866c5992d5015a7a1a7efaadc"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-legend/candidates/producer-pipeline-legend-v3.json",
@@ -2075,11 +2075,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-legend/slot.json",
-      "sha256": "124a27787569a10f97c53145aa2b62396790036c486adb070f3c982c48c61ef2"
+      "sha256": "70c0eb0585b491c87bd5e2a6c7d0a51d263fcd501129d7d1072332acb54e4d62"
     },
     {
       "path": "clossys/agents/designer/sections.producer.step-sheet/slot.json",
-      "sha256": "b8804c3469efece780dc689580874fc1ba4e2737d6f6cd3ecbe2dae09255b6ae"
+      "sha256": "e2127f32def1fd0bb8d24e324f404c85ed3a313700ed53dafa3a2c094a564c5b"
     },
     {
       "path": "clossys/agents/designer/sections.producer.system-empty/candidates/producer-system-empty-v1.json",
@@ -2091,7 +2091,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.producer.system-empty/slot.json",
-      "sha256": "c1744935cfdddeb0a2dc3f1499e44d728ed41180b6aee8825c1ce3e4c6cf7a7f"
+      "sha256": "0c736382ff5a1e6d922b983b920b5c05229919a1df285ce48bd2f9b8199638b3"
     },
     {
       "path": "clossys/agents/designer/sections.producer.team-strip/candidates/producer-team-strip-v3.json",
@@ -2103,11 +2103,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.producer.team-strip/slot.json",
-      "sha256": "44e1d374bf124348bea43d25a9a6f7be09c9fa72420f7de7ced54e4c068428d3"
+      "sha256": "64340a9688bd2d96eaf885a35b14a5d7782ffe5e0213528adeb2cca1ed6f603f"
     },
     {
       "path": "clossys/agents/designer/sections.record-detail/slot.json",
-      "sha256": "f287270da8492f30e0857cbc0fb3044c877023e8cbfe1eb32c81214e94f1666d"
+      "sha256": "552169dbdf68458951a65f907cd7e0e7bc808de23d60846e2596ff1b43fff6d7"
     },
     {
       "path": "clossys/agents/designer/sections.resource-list/candidates/resource-list-v3.json",
@@ -2119,7 +2119,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.resource-list/slot.json",
-      "sha256": "3c94534204fde0cca943a43dcb035c811639e6cec53f96e319ab45e3846ccc31"
+      "sha256": "d4b27f5ed4d38a26116b6cdbf5ebdbff61ec2c9a7cae244040e513059dc09342"
     },
     {
       "path": "clossys/agents/designer/sections.section-header/candidates/section-header-v6.json",
@@ -2131,7 +2131,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.section-header/slot.json",
-      "sha256": "d7fa7081ae1e832bce000f200d7ed07aa2c56d7cb5f939ce1ecfd35177332483"
+      "sha256": "3b8da84c51c930745894cdb6e64675a0c276dd8680b2014b4418e8b0e6655aa4"
     },
     {
       "path": "clossys/agents/designer/sections.sectioned-document/candidates/sectioned-document-v3.json",
@@ -2143,7 +2143,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.sectioned-document/slot.json",
-      "sha256": "f3d5ac78f2d4dee7f4408929b023f6f2161ed9b0833987fafce3c73e3b0882ff"
+      "sha256": "d6cafbca576e44f247e8b9badcf7d13067659898032c399bbb983cbe3b4127c7"
     },
     {
       "path": "clossys/agents/designer/sections.settings/candidates/settings-v1.json",
@@ -2155,7 +2155,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.settings/slot.json",
-      "sha256": "651691a70f30d655a241d62dd589183db2d7d05275fece310bd144b0c3c5ee76"
+      "sha256": "e24ddc745146c50be0e4767c715b3752f55183b6d5eb6c5ae0564102668eb389"
     },
     {
       "path": "clossys/agents/designer/sections.sign-in-form/candidates/sign-in-form-v1.json",
@@ -2167,7 +2167,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.sign-in-form/slot.json",
-      "sha256": "c2ec3f4a8233b4696538548b88e9a0d7ed7f597449defa52d432ef1e8393f3b9"
+      "sha256": "795a0391233b4c7f890704610f485c6c90a759f0bf01c5b81794038534f86008"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-asset-grid/candidates/specimen-asset-grid-v3.json",
@@ -2179,7 +2179,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-asset-grid/slot.json",
-      "sha256": "56c9cd993efa598d13cd32aff37915759cefdea7a5380ce2c4b346282edfbb0d"
+      "sha256": "ad0fba92c617a4462f2de9637e7f48d168406264eb745bb368f35052fbf96b05"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-color-ramp/candidates/specimen-color-ramp-v3.json",
@@ -2191,7 +2191,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-color-ramp/slot.json",
-      "sha256": "5a1aa35c0a07e8318529b7fbcbf36b0ad9c523217cb04ecb125b4ff962eeb319"
+      "sha256": "05f531ea6ac6bea97876d81be322a7d73e44f74a99cb049d5877571b99c77795"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-copy-in-context/candidates/specimen-copy-in-context-v3.json",
@@ -2203,7 +2203,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-copy-in-context/slot.json",
-      "sha256": "93cd8759fb3655f56e1a7ce07e23025cf566aec2490b32cb94555901e1a279a4"
+      "sha256": "a2797cd650e82d1b480bca9f51de56e2a6a462ebdab4320e430ae3d896acf41a"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-frame-viewports/candidates/specimen-frame-viewports-v3.json",
@@ -2215,7 +2215,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-frame-viewports/slot.json",
-      "sha256": "06ec028a3eb1b6929ece12ad6dc9298105136ec03bff637897b602ab68033c17"
+      "sha256": "e2cd11470a36b11ce7e2960178e7ac6e8bf35d861f6de25de06571e0b76c701d"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-icon-grid/candidates/specimen-icon-grid-v3.json",
@@ -2227,7 +2227,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-icon-grid/slot.json",
-      "sha256": "faaae38e6886202071a5b35aeaa08023148c801829c141efd37af2a507eca650"
+      "sha256": "92e3b3fd622abb98429296adc8093569f0adf98758ab0b527d232b9f38fc6f5c"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-motion-player/candidates/specimen-motion-player-v3.json",
@@ -2239,7 +2239,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-motion-player/slot.json",
-      "sha256": "ee5b2d349289c770fe2a61e4a0066868d367a69b3829f27f78ad46b23f201be5"
+      "sha256": "449b61657962cef91f2b151de0a42a04d29dfc0d3bb9a568439a4a0c2496a0fb"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-page-viewports/candidates/specimen-page-viewports-v3.json",
@@ -2251,7 +2251,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-page-viewports/slot.json",
-      "sha256": "86173e4270a16af5c608cec0c735c1ec55fefeb1b298950a3f237f0596accf03"
+      "sha256": "775ff72431d296e9aeca8e38af304330283023c9a4cf1667f6168e11515898a6"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-radius-ladder/candidates/specimen-radius-ladder-v3.json",
@@ -2263,7 +2263,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-radius-ladder/slot.json",
-      "sha256": "d00dc02eeac72de00b75633bc05c38a6be43070a57e4349be3edc8181bb7920e"
+      "sha256": "510ad9ea8152a02e9313fecf66c86fc72e7f6a15352c7501d0424ba91b4f3da5"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-rich-passage/candidates/specimen-rich-passage-v3.json",
@@ -2275,7 +2275,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-rich-passage/slot.json",
-      "sha256": "2666e5f9c425a5c23b4602c29766e01b5a9865269dc66e5ba576440cd1582e13"
+      "sha256": "c59c20a7045b8c6ad615924a826c705d911be2d654c9d3103c028130299f1b39"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-section-viewports/candidates/specimen-section-viewports-v3.json",
@@ -2287,7 +2287,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-section-viewports/slot.json",
-      "sha256": "092f9b00ae55172996c055d5dfccf98224108931e7deedc9960dd760a84aca32"
+      "sha256": "aaabc180914e47efc989b686572e571242ce79e653ef793e66db1913b6b84c90"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-spacing-ladder/candidates/specimen-spacing-ladder-v3.json",
@@ -2299,7 +2299,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-spacing-ladder/slot.json",
-      "sha256": "0ce6dd5ae474bbc3fa47286b8cc9077eeb1c3977a08eebfe15571afbf7a67372"
+      "sha256": "7541183429c553b515ddf8e48ccb652076c9ac12d0e01c4f0fb656a68fd6fd3f"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-swatch/candidates/specimen-swatch-v3.json",
@@ -2311,7 +2311,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-swatch/slot.json",
-      "sha256": "149b8b2b30b6f5607ec492927a46d7b5565e7413b109600930030aac3f8e641a"
+      "sha256": "f23d4c36c1036032a2e7441d2669b8f34c01519e80b36410c442af1ec6e33177"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-type-ladder/candidates/specimen-type-ladder-v3.json",
@@ -2323,7 +2323,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-type-ladder/slot.json",
-      "sha256": "c66fffe6c6b8d320d878bb56c6a0bd39f13261ae29a8cbbfeced649b4cb672fb"
+      "sha256": "f44dd8b9858cea51fe8711783270f23381bd3f74c8d79b184513c46779055ba1"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-variant-matrix/candidates/specimen-variant-matrix-v3.json",
@@ -2335,7 +2335,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.specimen-variant-matrix/slot.json",
-      "sha256": "f880664d049075363ba3e804b4864c89c7694dd81f0e21a72c4b0f30b148d506"
+      "sha256": "499ffd4dcebcf5c24a10afbdc2991c69c7743620cda59e4f75273189ce6b0908"
     },
     {
       "path": "clossys/agents/designer/sections.stats/candidates/stats-v1.json",
@@ -2347,7 +2347,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.stats/slot.json",
-      "sha256": "6450ed900b6bd61b6f8fddd32df426c6523b282cf6030b6efdc75390cbbe7a80"
+      "sha256": "805e6bb821ff847291b31073fe58ca2e0867199d03f446bcd5af2151030ed8b9"
     },
     {
       "path": "clossys/agents/designer/sections.status-list/candidates/status-list-v3.json",
@@ -2359,11 +2359,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.status-list/slot.json",
-      "sha256": "31cffbae273e85e6240d7cea4b77c222d690807fdd68904ac2557de892cc3e1f"
+      "sha256": "da6e5f834e36873b61aac84e9eea5fbf9629534f19c4e35b35b33bc8b1aac210"
     },
     {
       "path": "clossys/agents/designer/sections.steps/slot.json",
-      "sha256": "ef22909fdc26570ad20e3b8d78d6550e50e8f0bccbc2ef22dfcf37db3982c582"
+      "sha256": "3e7402c77d2786b1aa38f675b01e191f5ff4153c516efdc903c94cae9e9a6a04"
     },
     {
       "path": "clossys/agents/designer/sections.studio.checks/candidates/studio-checks-v6.json",
@@ -2375,7 +2375,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.checks/slot.json",
-      "sha256": "38f87678f9db55f53412c9f0814aa032997786806dbbed7536b9b78da85117dd"
+      "sha256": "a5cd8d133c16096aeccac5068396ea30b06ceda372fa954e84d2f0f83fe221f7"
     },
     {
       "path": "clossys/agents/designer/sections.studio.contract/candidates/studio-contract-v6.json",
@@ -2387,7 +2387,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.contract/slot.json",
-      "sha256": "96bf21951e78a74e50bc55ab8966156b9969742ece4ab700bb040ee68bab733e"
+      "sha256": "48dada7f56577c06bb3d7481fdc8cb14d97edcad2f5422e49bbbe4ff71414fcf"
     },
     {
       "path": "clossys/agents/designer/sections.studio.history/candidates/studio-history-v6.json",
@@ -2399,7 +2399,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.history/slot.json",
-      "sha256": "a434c1f687ff8df80223805c5279677dc7bf4d8c27256d92af25c17a8ad61fa1"
+      "sha256": "f85f9749ef8d773ea1893fd88f33002522e86cfbf38d2f8fa6a25d50c63ccbb5"
     },
     {
       "path": "clossys/agents/designer/sections.studio.home/candidates/studio-home-v10.json",
@@ -2411,7 +2411,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.home/slot.json",
-      "sha256": "78e18650a4db460ae506a3c4f37c4ab65b5610afa80ac22e8cb49939e02ad074"
+      "sha256": "d3947544c78007497ba0cae3aaeeaf08a28d6208337f06e4b188cb40958b4472"
     },
     {
       "path": "clossys/agents/designer/sections.studio.leaf-header/candidates/studio-leaf-header-v8.json",
@@ -2423,7 +2423,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.leaf-header/slot.json",
-      "sha256": "b2121591775d766820de45ca306b4c12252e4d69baeee75c4e447d99d75c99d0"
+      "sha256": "084994992d75fcb827b77f45d60c2367a218855e9159821dd47daf1fb566921a"
     },
     {
       "path": "clossys/agents/designer/sections.studio.options/candidates/studio-options-v9.json",
@@ -2435,7 +2435,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.options/slot.json",
-      "sha256": "4eb5a0baad88fa162de91a4e5b0ba914782ad4f0f5f7a65d5559ddf40e7918da"
+      "sha256": "a22b662949855117229c7af8f211e49760a6df777d113863ce1c44e36bf02a9c"
     },
     {
       "path": "clossys/agents/designer/sections.studio.page-header/candidates/studio-page-header-v5.json",
@@ -2447,7 +2447,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.page-header/slot.json",
-      "sha256": "3b21a043549004d6df6247545d9385fab068b97423840fdb50b4cd350efcabff"
+      "sha256": "d00f17bf733eb23feb8762beebabf82cb301cabd1febddafd4e13d650e98cb11"
     },
     {
       "path": "clossys/agents/designer/sections.studio.page-tabs/candidates/studio-page-tabs-v6.json",
@@ -2459,7 +2459,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.page-tabs/slot.json",
-      "sha256": "a5ba1f487d58287668b1a081a557c3bdf5f18ffdca4d570d91093d93529b80f4"
+      "sha256": "09ece90dadd976b34e28517e7f1642c3d46747a74db4bbe7f4349d804fa297b5"
     },
     {
       "path": "clossys/agents/designer/sections.studio.publications/candidates/studio-publications-v4.json",
@@ -2471,7 +2471,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.publications/slot.json",
-      "sha256": "bd229c83a11dd852fae5c8c464c116aa09de7eae7df46142d558b83ca249c61c"
+      "sha256": "067b04b1f30159a2b213fd7bca393375cb07778dc19dcfe5771d837f65e428d9"
     },
     {
       "path": "clossys/agents/designer/sections.studio.references/candidates/studio-references-v6.json",
@@ -2483,7 +2483,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.references/slot.json",
-      "sha256": "7eb08eac15e8353c8d68daca6e2bf21b5043c4c16a13ee1b6d9d51941a561e00"
+      "sha256": "c363f05a6d2674a8ab9bcde8c104e3a636a740c513d6b1e3d0f8f740ce68e7de"
     },
     {
       "path": "clossys/agents/designer/sections.studio.slot-groups/candidates/studio-slot-groups-v13.json",
@@ -2495,7 +2495,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.slot-groups/slot.json",
-      "sha256": "50348af82f3fd25853c4b33c60b5612ab0b7314afb5d64ad4370a2fef41b3ff0"
+      "sha256": "c55b45edf6e1bf9a3291f1134241ac6656a4bbbd2e1ee2910634486955a9b92b"
     },
     {
       "path": "clossys/agents/designer/sections.studio.specimen/candidates/studio-specimen-v14.json",
@@ -2507,11 +2507,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.studio.specimen/slot.json",
-      "sha256": "1d46eb7947bf06e5ee9e8fd724df6df61746d9fd2c21522c4a35203d3bf72b66"
+      "sha256": "8cec88e24f7313a1c1cf9163bc8be6979e2b51b5daf0974554f944ea19de6b37"
     },
     {
       "path": "clossys/agents/designer/sections.table-of-contents/slot.json",
-      "sha256": "a242f6c474a627eb7d45e2f3d98f7ec4fb4f7e4cff3d14cb0a39b547a2e45335"
+      "sha256": "a8788e40e4c26a1680a8d6f352570121579549ddacbcba11a8c94c46db2897b6"
     },
     {
       "path": "clossys/agents/designer/sections.task-list/candidates/task-list-v3.json",
@@ -2523,7 +2523,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.task-list/slot.json",
-      "sha256": "e83406a5c4d1d060937b765ccb02f56abc8bdb31808d75b36dd208baa7d60aa2"
+      "sha256": "4fcabf8ecdaa64e51d1128540147881625aea2424540db5b8947a53dda31c5bc"
     },
     {
       "path": "clossys/agents/designer/sections.testimonials/candidates/testimonials-v1.json",
@@ -2535,11 +2535,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.testimonials/slot.json",
-      "sha256": "6b6eb69b73cef6197428241d55b0c9aac6322b7c84b6709004fd69a47fbc2b1e"
+      "sha256": "fc2d028837bd27d8dd8e5d1bec3af8941d6dc3cc9116a5126cf4f777c2eca93d"
     },
     {
       "path": "clossys/agents/designer/sections.timeline/slot.json",
-      "sha256": "0de44b35125dea3a082e3ac9aa4dfe4161f993db11397c4a992b93b78e5b172d"
+      "sha256": "b6658480d8929583e900898fd022d9d81a8a7a102788ab2d498eed41cc6407fe"
     },
     {
       "path": "clossys/agents/designer/sections.usage/candidates/usage-v3.json",
@@ -2551,11 +2551,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.usage/slot.json",
-      "sha256": "1a636752b7ba7b46fb58b3a3f7916d1f614c25f5e49ed4be029951ef84fe53f9"
+      "sha256": "03eb0e7dc3d5febd319bcf8d403ed70dc8b414c064b1e5744aaa2af8f09e5f3b"
     },
     {
       "path": "clossys/agents/designer/sections.wizard/slot.json",
-      "sha256": "87f2ff6cc2dca9aff7c0f2c6349c875bd3342b9fa784c9af32dadb01f975108c"
+      "sha256": "152a8b786807a00c5f5ecffa7719151f435579d18307be9049686279f1aa1d67"
     },
     {
       "path": "clossys/agents/designer/themes.accent-foreground/candidates/accent-foreground-v1.json",
@@ -2567,7 +2567,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.accent-foreground/slot.json",
-      "sha256": "0c5a44da96545f020fdd5b0e4cc857c2cb6f657dd7f086af6e61f88166323853"
+      "sha256": "71316b1af62e7f4699f81722a3f939198e1d21ba5272daf76bdddd6788f40c54"
     },
     {
       "path": "clossys/agents/designer/themes.accent/candidates/accent-v1.json",
@@ -2579,11 +2579,11 @@
     },
     {
       "path": "clossys/agents/designer/themes.accent/slot.json",
-      "sha256": "98be2b6a2b6c01761b671f0b924aca12520b7bb7c9056932d312d64b2b59ce2d"
+      "sha256": "0715292618c059fe664a0b77ee7e427ee7d38dee6e86655280a667b0a88791d6"
     },
     {
       "path": "clossys/agents/designer/themes.animate-marquee-vertical/slot.json",
-      "sha256": "c468e57a8dc12caf9bf2216f420de8263ed719a15b89a953b4d51f2a5bf759bc"
+      "sha256": "a640933bf5396f9137a5c48d45723ec89b968dbf6d250dcaccc7d0eae8d69222"
     },
     {
       "path": "clossys/agents/designer/themes.animate-marquee/candidates/animate-marquee-v2.json",
@@ -2595,11 +2595,11 @@
     },
     {
       "path": "clossys/agents/designer/themes.animate-marquee/slot.json",
-      "sha256": "70d426e5ffd562168a662e8d0a7b4beae65063a739ae8bd39b71cf1dd5196627"
+      "sha256": "7a9d8358a088969f093d685f1eff0a015eb725b5ea2b3ece823f28fb4ff3cdde"
     },
     {
       "path": "clossys/agents/designer/themes.animate-shiny-text/slot.json",
-      "sha256": "7083f635dee2805f480d0218104aa16fcbc774886b0528119cd933aa972a1f8b"
+      "sha256": "1ec65d0e35cc1c10724167d0a3ec3f891c89d407b7ebebdff377d067cbbeeaa1"
     },
     {
       "path": "clossys/agents/designer/themes.background/candidates/background-v1.json",
@@ -2611,7 +2611,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.background/slot.json",
-      "sha256": "70442555483d9a5b50aa3de155c7f3dba1b8e2527e8f15c4826cefb87efcd81b"
+      "sha256": "d294bc894878fbd5de5f027f81844b4193ae4d86733b46bbb07019472c1eace2"
     },
     {
       "path": "clossys/agents/designer/themes.border/candidates/border-v1.json",
@@ -2623,7 +2623,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.border/slot.json",
-      "sha256": "3a3cea92b4cfd910cfd054cac86155d4658951036e800fa28c58f1e25b88ebb3"
+      "sha256": "114ec1f9af24279901bdc2a06adc6d512caa2c2ff0207c23236aa6214eb045db"
     },
     {
       "path": "clossys/agents/designer/themes.card-foreground/candidates/card-foreground-v1.json",
@@ -2635,7 +2635,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.card-foreground/slot.json",
-      "sha256": "ae3a9562ced0a1169b887d956983b6addaaa5f92e1402874395147bc5d62947b"
+      "sha256": "31b81622bbea4cf9439dc0595e272431075ab2a65352710c032d3dfce04fa64a"
     },
     {
       "path": "clossys/agents/designer/themes.card/candidates/card-v1.json",
@@ -2647,7 +2647,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.card/slot.json",
-      "sha256": "779adf61cb3f09516df7dff7b1f35d94d0dfa6bfae666f994c7e63f3e1fc67a6"
+      "sha256": "8b333bbc2608561d1577960045e00d105aa5499c6241af680823483a7cb9d910"
     },
     {
       "path": "clossys/agents/designer/themes.chart-1/candidates/chart-1-v1.json",
@@ -2659,7 +2659,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.chart-1/slot.json",
-      "sha256": "edaf39c0c8675b3ab4d1bfff7399a442a5165d7146d34a7d39208d975372db10"
+      "sha256": "3c59a71a6a8ce0197956292f8c87b8cee038e7d32650023075591b11a3bc3946"
     },
     {
       "path": "clossys/agents/designer/themes.chart-2/candidates/chart-2-v1.json",
@@ -2671,7 +2671,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.chart-2/slot.json",
-      "sha256": "3ba3de83718b4ae43e030b4a33c23c74c9037c43d00c5de17b7a7751fbe1fe3e"
+      "sha256": "94b6b376579dfc7187b931af1fe6fac72ba9408a8d24d55d33ba720f01bc319f"
     },
     {
       "path": "clossys/agents/designer/themes.chart-3/candidates/chart-3-v1.json",
@@ -2683,7 +2683,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.chart-3/slot.json",
-      "sha256": "012942a29268d0115e326eaf6f65eaac1aa3a239e18c5f8813846b40c17b2a6c"
+      "sha256": "bce02901da3ffadd8c6ece0aff2eeac78cd6a436b54b2849a70fdd42519107b5"
     },
     {
       "path": "clossys/agents/designer/themes.chart-4/candidates/chart-4-v1.json",
@@ -2695,7 +2695,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.chart-4/slot.json",
-      "sha256": "40a573696c13e213e78f687ab0b1a637ded76d109c16815f6329d3c6e8a19c42"
+      "sha256": "3f659d9f23d9a02da91a6b02dfe3ab468e486a79511d368a823f28cd2ba6bb2a"
     },
     {
       "path": "clossys/agents/designer/themes.chart-5/candidates/chart-5-v1.json",
@@ -2707,7 +2707,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.chart-5/slot.json",
-      "sha256": "0b78026b97931f2f6722206347eaf93c9c2c9913880758e84f715f7ba108b5ac"
+      "sha256": "d9858074a45a8f40f4574b661748bda33ab83d9640757c1e4546e50eac6377e6"
     },
     {
       "path": "clossys/agents/designer/themes.destructive/candidates/destructive-v1.json",
@@ -2719,7 +2719,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.destructive/slot.json",
-      "sha256": "629605a35274366b8a59ccee7400b5e27fd4e206cedfe66a0194b53d75e7baf6"
+      "sha256": "cfd058f8cfcfc6612b4c185d16afd2f4bfeabe7d6e42adaf0d6cb189f58d7b9b"
     },
     {
       "path": "clossys/agents/designer/themes.font-heading/candidates/font-heading-v1.json",
@@ -2731,7 +2731,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.font-heading/slot.json",
-      "sha256": "c1d647324b46ae33565f46480e2a6051078015ccb5348589a40265c543ebb3de"
+      "sha256": "3d9bd3af8bd5428cb2900165914f4673c68b685a9808e38e4cfac191819f90af"
     },
     {
       "path": "clossys/agents/designer/themes.font-mono/candidates/font-mono-v1.json",
@@ -2743,7 +2743,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.font-mono/slot.json",
-      "sha256": "a017687bce8a74f98fc3da396f720f1813d8f551cacf95bb51dcf1a27d72cdcb"
+      "sha256": "4727d97af5cb724b81360de7b1bacfdcecdb192459eca3cc626b31fba21c5463"
     },
     {
       "path": "clossys/agents/designer/themes.font-sans/candidates/font-sans-v1.json",
@@ -2755,7 +2755,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.font-sans/slot.json",
-      "sha256": "613ac7a6c19ad9db8300430931b0a09d31d665d7de925df5c96fe0caf88a361d"
+      "sha256": "09226815b6826c05308108f1c74f33ad9a0b64c35dec3bb95403526cd38f0027"
     },
     {
       "path": "clossys/agents/designer/themes.font-serif/candidates/font-serif-v1.json",
@@ -2767,7 +2767,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.font-serif/slot.json",
-      "sha256": "b11810abd34f7c79bfb72277292f2a0ca7091c05dd825ef43571ae569d46ba7c"
+      "sha256": "889fe90df061e6bc96cbdfec15252aad3173b4d5ab4b468a7897ba67b76ac8a8"
     },
     {
       "path": "clossys/agents/designer/themes.foreground/candidates/foreground-v1.json",
@@ -2779,7 +2779,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.foreground/slot.json",
-      "sha256": "691005b6a7db89d1d186a330e02d6ee01fcbd4e5c4e9310e0b2923f7c089a154"
+      "sha256": "40bf19d50840460bb201a08d6354583fd1c4e54e073a932c7c559604a95e0d64"
     },
     {
       "path": "clossys/agents/designer/themes.info/candidates/info-v1.json",
@@ -2791,7 +2791,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.info/slot.json",
-      "sha256": "2f5c63cedf4f6d1f194acdfc300db33293a9f28c0af5e1df28b9f8d8830a5f96"
+      "sha256": "4e0e0061f9ccbf170d3d9180c4e9af5ed2759a921892767ba0de35f7257ad310"
     },
     {
       "path": "clossys/agents/designer/themes.input/candidates/input-v1.json",
@@ -2803,7 +2803,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.input/slot.json",
-      "sha256": "7957fd1516e1034c7dc3a637e4a4a4b20fd386aaee154db439976b3b9ed506af"
+      "sha256": "32467f9f51cd474378edb3ed911f5e83a3cb3ee2af1637753ee1bc7b05da0819"
     },
     {
       "path": "clossys/agents/designer/themes.muted-foreground/candidates/muted-foreground-v1.json",
@@ -2815,7 +2815,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.muted-foreground/slot.json",
-      "sha256": "cec0190c874a7cc022ad191fe9c7cb63bd51af53f0c263af03f6626419900f6f"
+      "sha256": "7593580f9763111c4b36055bb0babd01ab3967888dbf73ae3966df20e4d2735e"
     },
     {
       "path": "clossys/agents/designer/themes.muted/candidates/muted-v1.json",
@@ -2827,7 +2827,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.muted/slot.json",
-      "sha256": "dca2cc1f02e91737ff7f07e950a0f07ea5e6d106577e1a0bcf7a39254e0218b2"
+      "sha256": "a72b95bc284124e9b92de9cc4aa5c914a23d5c668686898221a4b9b43935545d"
     },
     {
       "path": "clossys/agents/designer/themes.popover-foreground/candidates/popover-foreground-v1.json",
@@ -2839,7 +2839,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.popover-foreground/slot.json",
-      "sha256": "8e17cb74485edfa3067f07c3e70113d0711c494e3cbef34f0162663817b027f6"
+      "sha256": "fd5d884c11ab00c2acea852c005a8d29c1ceda8ccb82d0c7e5b998b4f4c13b74"
     },
     {
       "path": "clossys/agents/designer/themes.popover/candidates/popover-v1.json",
@@ -2851,7 +2851,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.popover/slot.json",
-      "sha256": "68f7e779d1c880aff1fbd7adf7edf3ca381a79aa35ae29919d3e04e67afe79d2"
+      "sha256": "c108bab77d75022bd7832833363a37a974c172ba8a8a495f0bba1989b54b3aa3"
     },
     {
       "path": "clossys/agents/designer/themes.primary-foreground/candidates/primary-foreground-v1.json",
@@ -2863,7 +2863,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.primary-foreground/slot.json",
-      "sha256": "0740a8299e22c364e36266d2b79de3a0993440c4bbdc9aec69c160a65305c0a4"
+      "sha256": "b237d2ca22b6143c528413f1b9bfa3405e49ff58452540848d122d7b0daec287"
     },
     {
       "path": "clossys/agents/designer/themes.primary/candidates/primary-v1.json",
@@ -2875,7 +2875,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.primary/slot.json",
-      "sha256": "f738d4e1f1967682458876a7ff73b65ef67cffc75b4c5dcbd51319ca12899e48"
+      "sha256": "dc62d151a8da0eaf69c36466971235f3466dc18626e82bbe1c9be4b23b3a594c"
     },
     {
       "path": "clossys/agents/designer/themes.radius/candidates/radius-v1.json",
@@ -2887,7 +2887,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.radius/slot.json",
-      "sha256": "c242c50441e94c5d8e3a863af8bf0a02721e2bd54853143989070ded15fb575a"
+      "sha256": "e17262f6d534d9a66598bcb1f8d6393d9c12c424a53f31fec75ea0553bdf72a1"
     },
     {
       "path": "clossys/agents/designer/themes.ring/candidates/ring-v1.json",
@@ -2899,7 +2899,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.ring/slot.json",
-      "sha256": "c2d88c66c34d40c51d3b0251a3570276638086f112aeb7e346586246d728dfb4"
+      "sha256": "f5b55fb73c5f34458669d0de27d58e4c44c39767281e4d17f220af7f34b0700c"
     },
     {
       "path": "clossys/agents/designer/themes.secondary-foreground/candidates/secondary-foreground-v1.json",
@@ -2911,7 +2911,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.secondary-foreground/slot.json",
-      "sha256": "ae23e9d961407a0f9615c7d086185cf9483f6734dde7f0448d023c42ece3477f"
+      "sha256": "472e001c3970ce2fd63d3fbd0ed5053f4ed72936f96e988c5c3002be711c7643"
     },
     {
       "path": "clossys/agents/designer/themes.secondary/candidates/secondary-v1.json",
@@ -2923,11 +2923,11 @@
     },
     {
       "path": "clossys/agents/designer/themes.secondary/slot.json",
-      "sha256": "7ccf386570284e8440300b7b0849cb4cd1725029c82bd1cea2ee64178a8e4e07"
+      "sha256": "a418398e7cadb4012d4240ba8dbb188da745fefb84f755c0f4f680ac92a12851"
     },
     {
       "path": "clossys/agents/designer/themes.shadow/slot.json",
-      "sha256": "c5bbc0e0820006ec6a0da0a73dea8a943f3151475c4ceca1282079379c36704a"
+      "sha256": "8bd4e4dc4850d2933ab31fc4965fd7379d6e3129616de6078937b0eb0fffcd61"
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-accent-foreground/candidates/sidebar-accent-foreground-v1.json",
@@ -2939,7 +2939,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-accent-foreground/slot.json",
-      "sha256": "62219f656245479132bf8389073a0c4debb6e181abaf5eac70ed297a367ed30b"
+      "sha256": "4b647d0c40bf2f7ad3c57491113db924c309e9df6924194e9cb18ab507737700"
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-accent/candidates/sidebar-accent-v1.json",
@@ -2951,7 +2951,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-accent/slot.json",
-      "sha256": "894d8aee4c0b562dc9755877d5d3dc386aef9ce980b5210d0eca14f6a238d442"
+      "sha256": "0e5c2e95403835409adcfbf776d875eb14836207ddb9a7c5cdca20d935bc0e76"
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-border/candidates/sidebar-border-v1.json",
@@ -2963,7 +2963,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-border/slot.json",
-      "sha256": "4220a14c042b060c3cd7c7d286d1f063d18c25070450ed45a5bc2603da167f79"
+      "sha256": "5ff79c2ee766dc468592f6ea43955f466f2432f9b57b6793c0ed9b0a7164ab21"
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-foreground/candidates/sidebar-foreground-v1.json",
@@ -2975,7 +2975,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-foreground/slot.json",
-      "sha256": "f472ffbaea7fe4e1abed29b4bb7aca636c3ba85b9a53a63d0b6044113a2790c5"
+      "sha256": "1b0d251ba0f6257b9a0c11f0778c2e07e370ca9a0b408b97880730eeeaa0b486"
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-primary-foreground/candidates/sidebar-primary-foreground-v1.json",
@@ -2987,7 +2987,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-primary-foreground/slot.json",
-      "sha256": "2d7e8b41c077a46a1a3edbf20feb0ba62c913fad58b749ee4a070d1ec83c5bb5"
+      "sha256": "c5d576bf5c984db28f13485721d0e82e1ec923d6e16ab523808253c6410362b1"
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-primary/candidates/sidebar-primary-v1.json",
@@ -2999,7 +2999,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-primary/slot.json",
-      "sha256": "e40f99254084ab73576b1f255c7398db4bf363af5231e4c1ee3efc3fe80eafbe"
+      "sha256": "8aca77d0fb21b73c66a0c91b6c2376c7136f94111473af15561f9d26d0ef8872"
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-ring/candidates/sidebar-ring-v1.json",
@@ -3011,7 +3011,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.sidebar-ring/slot.json",
-      "sha256": "63df43778245ec48c20f638793ff05093701ca3bfb16255ccab773718aa4f88d"
+      "sha256": "f6a8aaf7420a02753d36dce44a2542b7dac7e76c4605d6526b3a9c0bba23e91a"
     },
     {
       "path": "clossys/agents/designer/themes.sidebar/candidates/sidebar-v1.json",
@@ -3023,11 +3023,11 @@
     },
     {
       "path": "clossys/agents/designer/themes.sidebar/slot.json",
-      "sha256": "9aba817847bf8d113df0308239c8bd37a6dc1c993eb8777ea40327e8d1e5a872"
+      "sha256": "4c1fb3308d20c5f29a187a4ca112cb785cbc0f93337e8479cfda4890c262a40f"
     },
     {
       "path": "clossys/agents/designer/themes.spacing/slot.json",
-      "sha256": "a11512a059c964ca369a432acb33efaeb92f89b34172c4162a705a8c04bad3af"
+      "sha256": "0a7710c275cb55cad8a02798a2f0ecc2b84ce5e5bf074a9005d1378f3284bfd3"
     },
     {
       "path": "clossys/agents/designer/themes.success/candidates/success-v1.json",
@@ -3039,11 +3039,11 @@
     },
     {
       "path": "clossys/agents/designer/themes.success/slot.json",
-      "sha256": "2bce5af8c2694f03caceee7d03393952abb67962ad8f6c763822c7f1cd364c2f"
+      "sha256": "e98aebe9512ef098f349888ca22a7b88b4754e8039985f1387c79384b778afeb"
     },
     {
       "path": "clossys/agents/designer/themes.tracking-tight/slot.json",
-      "sha256": "38d299420b249094d8ea40b74d91fc3e5235c8afca9621a65ab0d9d33d08cfe8"
+      "sha256": "8011bac1d6b30bf5473e2ebbac3df2f75fbc8c466825c4b30374319527a2a3dc"
     },
     {
       "path": "clossys/agents/designer/themes.warning/candidates/warning-v1.json",
@@ -3055,7 +3055,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.warning/slot.json",
-      "sha256": "2c15a037258cc0055aabf21903fdb71901ae6c7f39fdb76cc045d6beac9bc5da"
+      "sha256": "3306766a74f073a867e77c53c32f4c6a15644fbbee9e57a8d634a32840a6d4a9"
     },
     {
       "path": "clossys/agents/director/advantage.defensibility.differentiator/candidates/studio-differentiator-v6.md",
