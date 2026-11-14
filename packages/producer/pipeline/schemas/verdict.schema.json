@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/verdict.schema.json",
+  "title": "P1 verdict (verdict.json, recorded by clossys verdict --record)",
+  "description": "The P1 decider's structured verdict on one slot (slot-constitution.md section 5, P1.2): a pick of one candidate with the taste criteria it rests on, or create with the gaps no candidate meets. Ids are checked in code against the slot's standard (taste criteria, requirement checks) and its brief (brief:<contract key>); a create under an adopt-first standard needs a gap whose class is in createGaps (R03.5).",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["schema", "slot", "pick", "reason", "criteria"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "clossys.verdict/1" },
+        "slot": { "$ref": "#/$defs/id" },
+        "inputsHash": { "type": "string", "minLength": 1 },
+        "pick": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*-v[1-9][0-9]*\\.(md|json)$" },
+        "reason": { "type": "string", "minLength": 1 },
+        "criteria": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["schema", "slot", "create", "reason", "gaps"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "clossys.verdict/1" },
+        "slot": { "$ref": "#/$defs/id" },
+        "inputsHash": { "type": "string", "minLength": 1 },
+        "create": { "const": true },
+        "reason": { "type": "string", "minLength": 1 },
+        "gaps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^(brief:[A-Za-z][A-Za-z0-9_-]*|[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*)$" },
+              "class": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$" }
+  }
+}

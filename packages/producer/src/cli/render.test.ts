@@ -137,7 +137,7 @@ describe("clossys render <slot> <candidate>", () => {
     expect((await runRenderCli([slot, "--draft", "draft.json"], root, snapshot)).message).toContain("names no element");
     expect(() => parseRenderArgs([slot, candidate, "--draft", "draft.json"])).toThrow(/separate calls/);
     expect(tree()).toEqual(before);
-  });
+  }, 30_000); // seven render calls, each over a copy of the repository consumer
 
   it("refuses usage errors with exit 2: a missing candidate, a non-element name, a Writer slot", async () => {
     const harness = fakeHarness(root);

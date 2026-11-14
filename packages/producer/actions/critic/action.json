@@ -1,0 +1,73 @@
+{
+  "schema": "clossys.action/1",
+  "id": "critic",
+  "agent": "producer",
+  "kind": "decide:judgment",
+  "stage": "publish.assemble",
+  "open": "on-demand",
+  "summary": "The fresh P2 critic (section 5b stage 4): score anonymised renders against the standard's taste criteria from the critique packet only, and record the critique (clossys critique --record) as critiques/<leaf>-v<n>.json with its craft:critique event. It never sees the recipe, directions, brief or maker (R16.2).",
+  "run": "clossys critique <agent>/<slot> --record <critique.json> --model <id> --tier <tier>",
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/*/*/critiques/*",
+      "schema": "critique"
+    },
+    {
+      "glob": "clossys/agents/*/*/ledger.json#events",
+      "schema": "ledger"
+    }
+  ],
+  "pass": {
+    "command": "clossys check --slots",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": [],
+  "decider": "agent",
+  "packet": {
+    "inputs": [
+      "clossys/agents/*/*/slot.json"
+    ],
+    "write": [
+      {
+        "glob": "clossys/agents/*/*/critiques/*",
+        "schema": "critique"
+      },
+      {
+        "glob": "clossys/agents/*/*/ledger.json#events",
+        "schema": "ledger"
+      }
+    ],
+    "checks": [
+      "workspace"
+    ]
+  },
+  "skill": "skill.md"
+}

@@ -17,7 +17,7 @@ import { hostname } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStore, DirectorStoreChange, DirectorStoreWriter } from "@clossys/director";
 import {
-  CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
+  CANDIDATE_NAME, KIND_EXT, SEAT_AGENT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
@@ -418,14 +418,14 @@ export function craftOrderIssue(open: readonly CraftStage[], stage: CraftStage, 
  * order or a diverge outside 3-4 directions. `fields` are the stage's own record (directions,
  * recipe, renders); verb submit, by the seat, with the step's skill, model and tier.
  */
-export function appendCraftEvent(consumer: string, agent: SlotAgent, id: string, stage: CraftStage, fields: Readonly<Record<string, unknown>>, given: WriteProvenance & { readonly at?: string }): LedgerEvent {
+export function appendCraftEvent(consumer: string, agent: ModelAgent, id: string, stage: CraftStage, fields: Readonly<Record<string, unknown>>, given: WriteProvenance & { readonly at?: string }): LedgerEvent {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
     const issue = craftOrderIssue(openCraftStages(events), stage, fields);
     if (issue) throw new Error(issue);
     const { op: _op, at: _at, by: _by, verb: _verb, skill: _skill, model: _model, tier: _tier, records: _records, ...own } = fields as Record<string, unknown>;
-    const event = ledgerEvent(`craft:${stage}`, given.at ?? nowIso(), provenance({ verb: "submit", by: "planner", skill: skillPath(agent, `${agent}.candidates`) }, given), own);
+    const event = ledgerEvent(`craft:${stage}`, given.at ?? nowIso(), provenance({ verb: "submit", by: "planner", skill: agent === SEAT_AGENT ? skillPath("producer", "seats") : skillPath(agent, `${agent}.candidates`) }, given), own);
     appendEvent(entry.dir, "slot", event);
     return event;
   });
@@ -437,7 +437,7 @@ export const CRITIQUES_DIR = "critiques";
  * unless `candidate` names one) and append its `craft:critique` event (verb critique), refused
  * when the critique stage may not come next or the record exists. `validate` is the record's schema check.
  */
-export function writeCritique(consumer: string, agent: SlotAgent, id: string, record: unknown, input: { readonly candidate?: string; readonly at?: string; readonly validate: (value: unknown) => readonly string[] }, given: WriteProvenance): { file: string; event: LedgerEvent } {
+export function writeCritique(consumer: string, agent: ModelAgent, id: string, record: unknown, input: { readonly candidate?: string; readonly at?: string; readonly validate: (value: unknown) => readonly string[] }, given: WriteProvenance): { file: string; event: LedgerEvent } {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
     const { entry: current } = located(consumer, agent, id);
@@ -457,7 +457,7 @@ export function writeCritique(consumer: string, agent: SlotAgent, id: string, re
     writeFileSync(path, jsonBytes(record), { flag: "wx" });
     forgetSlotReads();
     try {
-      const event = ledgerEvent("craft:critique", input.at ?? nowIso(), provenance({ verb: "critique", by: "planner", skill: skillPath("producer", "critique") }, given), { critique: `${CRITIQUES_DIR}/${file}`, sha256: sha256Of(readFileSync(path)) });
+      const event = ledgerEvent("craft:critique", input.at ?? nowIso(), provenance({ verb: "critique", by: "planner", skill: skillPath("producer", "critic") }, given), { critique: `${CRITIQUES_DIR}/${file}`, sha256: sha256Of(readFileSync(path)) });
       appendEvent(entry.dir, "slot", event);
       return { file: `${CRITIQUES_DIR}/${file}`, event };
     } catch (error) { unlinkSync(path); forgetSlotReads(); throw error; }
@@ -526,8 +526,11 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
   readonly fields?: Readonly<Record<string, unknown>>;
 } = {}): PinDoc {
   const { entry } = located(consumer, agent, id);
-  return slotLocked(entry.dir, () => {
-  const { doc } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => pinUnderLock(consumer, agent, id, candidate, input, given, options));
+}
+/** writePin's body; the caller holds the slot lock (writePin, or writeVerdict for a pick). */
+function pinUnderLock(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }, given: WriteProvenance | undefined, options: { readonly guard?: WriteGuard; readonly fields?: Readonly<Record<string, unknown>> }): PinDoc {
+  const { doc, entry } = located(consumer, agent, id);
   if (!entry.candidates.includes(candidate)) throw new Error(`${agent} slot ${id} has no candidate ${candidate}`);
   const read = readCandidate(consumer, agent, id, candidate);
   const issues = validateCandidate(doc.kind, id, candidate, read.bytes);
@@ -556,6 +559,44 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
     if (options.guard) enforceGuard(consumer, pick ? "pick" : "pin", options.guard, [{ agent, slot: id, candidate, records: [recordPath(consumer, entry.dir, "pin.json"), recordPath(consumer, entry.dir, "slot.json")] }]);
   } catch (error) { if (options.guard) restoreFiles(before); throw error; }
   return pin;
+}
+
+/** A P1 verdict as `clossys verdict --record` validated it (verdict.schema.json plus the slot's standard). */
+export type VerdictInput =
+  | { readonly verdict: "pick"; readonly pick: string; readonly reason: string; readonly criteria: readonly string[] }
+  | { readonly verdict: "create"; readonly reason: string; readonly gaps: readonly { readonly id: string; readonly class?: string }[] };
+/**
+ * Append a P1 `verdict` event (section 5, P1.4) to the slot ledger under the slot lock, verb verdict
+ * with the Producer's `actions/verdict/skill.md`. The event carries the latest `options` event's
+ * inputsHash (refused when `inputsHash` is given and differs). A pick names an existing candidate by
+ * its sha256 and is pinned in the same lock with basis agent (a `pick` event after the verdict). A
+ * create (`create: true`) routes the slot to P2. `guard` runs the verdict guard on the ledger, then
+ * the pick guard on the pin; any finding restores ledger.json, pin.json and slot.json.
+ */
+export function writeVerdict(consumer: string, agent: ModelAgent, id: string, verdict: VerdictInput, input: { readonly by: string; readonly at: string; readonly inputsHash?: string }, given: WriteProvenance, options: { readonly guard?: WriteGuard } = {}): { event: LedgerEvent; pin?: PinDoc } {
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+    const { entry: current } = located(consumer, agent, id);
+    const events = (readLedger(current.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
+    const latest = [...events].reverse().find(event => event.op === "options")?.inputsHash;
+    const inputsHash = typeof latest === "string" ? latest : undefined;
+    if (input.inputsHash !== undefined && input.inputsHash !== inputsHash) throw new Error(`verdict refused: the record is for inputsHash ${input.inputsHash}, not the latest options packet's ${inputsHash ?? "none"}; re-run clossys options`);
+    let fields: Record<string, unknown>;
+    if (verdict.verdict === "pick") {
+      if (agent === SEAT_AGENT) throw new Error(`verdict refused: a Producer seat is pinned by clossys seat ${id.slice("seat.".length)}, not by a verdict pick`);
+      if (!current.candidates.includes(verdict.pick)) throw new Error(`verdict refused: ${agent} slot ${id} has no candidate ${verdict.pick}`);
+      fields = { verdict: "pick", pick: verdict.pick, sha256: readCandidate(consumer, agent, id, verdict.pick).sha256, reason: verdict.reason, criteria: [...verdict.criteria] };
+    } else fields = { verdict: "create", create: true, reason: verdict.reason, gaps: verdict.gaps.map(gap => ({ ...gap })) };
+    if (inputsHash !== undefined) fields.inputsHash = inputsHash;
+    const event = ledgerEvent("verdict", input.at, provenance({ verb: "verdict", by: input.by, skill: skillPath("producer", "verdict") }, given), fields);
+    const before = snapshotFiles([pinFile(current.dir), slotFile(current.dir), join(current.dir, LEDGER_FILE)]);
+    try {
+      appendEvent(current.dir, "slot", event);
+      if (options.guard) enforceGuard(consumer, "verdict", options.guard, [{ agent, slot: id, records: [recordPath(consumer, current.dir, LEDGER_FILE)] }]);
+      if (verdict.verdict !== "pick") return { event };
+      const pin = pinUnderLock(consumer, agent as SlotAgent, id, verdict.pick, { decidedBy: input.by, basis: "agent", at: input.at }, undefined, options.guard ? { guard: options.guard } : {});
+      return { event, pin };
+    } catch (error) { restoreFiles(before); throw error; }
   });
 }
 

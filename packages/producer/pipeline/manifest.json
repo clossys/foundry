@@ -253,6 +253,9 @@
         "options",
         "specimen",
         "render",
+        "critique-packet",
+        "critic",
+        "verdict",
         "migrate",
         "reissue",
         "derive.uses",
@@ -270,6 +273,8 @@
       "verbs": [
         "check",
         "compile",
+        "critique",
+        "critique-packet",
         "decisions",
         "migrate",
         "options",
@@ -277,7 +282,8 @@
         "produce",
         "reissue",
         "render",
-        "specimen"
+        "specimen",
+        "verdict"
       ],
       "commands": [
         "node scripts/check-generated-derived.mjs --write",
@@ -289,7 +295,9 @@
         "npm run studio:compose"
       ],
       "skills": [
+        "packages/producer/actions/critic/skill.md",
         "packages/producer/actions/reissue/skill.md",
+        "packages/producer/actions/verdict/skill.md",
         "packages/producer/skill/SKILL.md"
       ],
       "code": [
@@ -302,6 +310,9 @@
         "packages/producer/src/cli/check.ts#runCheck",
         "packages/producer/src/cli/compile.ts",
         "packages/producer/src/cli/compile.ts#runCompileCli",
+        "packages/producer/src/cli/critique.ts",
+        "packages/producer/src/cli/critique.ts#runCritiqueCli",
+        "packages/producer/src/cli/critique.ts#runCritiquePacketCli",
         "packages/producer/src/cli/migrate.ts",
         "packages/producer/src/cli/migrate.ts#runMigrateCli",
         "packages/producer/src/cli/options.ts",
@@ -317,6 +328,8 @@
         "packages/producer/src/cli/render.ts#runRenderCli",
         "packages/producer/src/cli/specimen.ts",
         "packages/producer/src/cli/specimen.ts#runSpecimenCli",
+        "packages/producer/src/cli/verdict.ts",
+        "packages/producer/src/cli/verdict.ts#runVerdictCli",
         "packages/producer/studio/checks/p0-studio-check.cjs"
       ],
       "exceptions": []

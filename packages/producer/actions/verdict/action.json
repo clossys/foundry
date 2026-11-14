@@ -1,0 +1,70 @@
+{
+  "schema": "clossys.action/1",
+  "id": "verdict",
+  "agent": "producer",
+  "kind": "decide:judgment",
+  "stage": "publish.assemble",
+  "open": "on-demand",
+  "summary": "Record the P1 verdict on one slot (clossys verdict --record): a pick of one candidate with the taste criteria it rests on, pinned with basis agent, or create with the gaps no candidate meets, which opens P2 craft (clossys next --stage). Every id must exist in the slot's standard or brief; an adopt-first create names a createGaps gap (R03.5). It claims only its slot-ledger events: the pin it writes is owned by the pick steps, and every write goes through records/slot-write.ts under the verdict guard.",
+  "run": "clossys verdict <agent>/<slot> --record <verdict.json> --model <id> --tier <tier> --by agent:<seat>",
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/*/*/ledger.json#events",
+      "schema": "ledger"
+    }
+  ],
+  "outputs": [
+    {
+      "glob": "clossys/agents/*/*/ledger.json#events",
+      "schema": "ledger"
+    }
+  ],
+  "pass": {
+    "command": "clossys check --slots",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": [],
+  "decider": "agent",
+  "packet": {
+    "inputs": [
+      "clossys/agents/*/*/slot.json",
+      "clossys/agents/*/*/pin.json"
+    ],
+    "write": [
+      {
+        "glob": "clossys/agents/*/*/ledger.json#events",
+        "schema": "ledger"
+      }
+    ],
+    "checks": [
+      "workspace"
+    ]
+  },
+  "skill": "skill.md"
+}

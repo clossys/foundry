@@ -54,6 +54,10 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "specimen": { entry: "src/cli/specimen.ts#runSpecimenCli", parser: "src/cli/specimen.ts" },
   // P2 renders one candidate in context, cached by (candidate sha256, dependency pin-set hash) (W2-G).
   "render": { entry: "src/cli/render.ts#runRenderCli", parser: "src/cli/render.ts" },
+  // P1 records its verdict (section 5, P1.3); P2's blind critic lists its packet and records its critique (section 5b, stage 4; R16.2).
+  "verdict": { entry: "src/cli/verdict.ts#runVerdictCli", parser: "src/cli/verdict.ts" },
+  "critique-packet": { entry: "src/cli/critique.ts#runCritiquePacketCli", parser: "src/cli/critique.ts" },
+  "critic": { entry: "src/cli/critique.ts#runCritiqueCli", parser: "src/cli/critique.ts" },
   "migrate": { entry: "src/cli/migrate.ts#runMigrateCli", parser: "src/cli/migrate.ts" },
   "pipeline": { entry: "src/cli/pipeline.ts#runPipelineCli", parser: "src/cli/pipeline.ts" },
   // Traced script steps: `clossys pipeline trace <id> -- <command>` records their run.
