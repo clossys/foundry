@@ -1,0 +1,9 @@
+{
+  "schema": "clossys.retire/1",
+  "slot": "passages.account-summary",
+  "candidate": "studio-v1.md",
+  "sha256": "f6dbbf956d4996e262aef0a4a91c89192c57c28b51490e7cb609d1380519430a",
+  "by": "agent:writer.reissue",
+  "reason": "superseded: reissued as account-summary-v3.md",
+  "at": "2026-11-14T15:48:10.836Z"
+}

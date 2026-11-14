@@ -202,6 +202,64 @@
           "sha256": "6221410da06f04b78664c440c9889d97807ee1df81194fdae543a0c80d867b74"
         }
       ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-14T15:48:13.889Z",
+      "by": "agent:writer.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adopt",
+      "seed": "passages.filter-builder/studio-v1.md@5ef41591dd206e60e21bc1f2b77baa8c602d6db5e312eecb09672559fe85e9c1",
+      "ladder": {
+        "rung": "adopt",
+        "seed": "passages.filter-builder/studio-v1.md@5ef41591dd206e60e21bc1f2b77baa8c602d6db5e312eecb09672559fe85e9c1"
+      },
+      "name": "filter-builder-v3.md",
+      "sha256": "5ef41591dd206e60e21bc1f2b77baa8c602d6db5e312eecb09672559fe85e9c1"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-14T15:48:13.889Z",
+      "by": "agent:writer.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "filter-builder-v3.md",
+      "sha256": "5ef41591dd206e60e21bc1f2b77baa8c602d6db5e312eecb09672559fe85e9c1",
+      "decidedBy": "owner:2026-11-03 pin-if-agree",
+      "basis": "bulk",
+      "reissue": true,
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "026134cf3d54e911007c9428f71d9830e615f6d24217b125bd95a9c07a7ac3d1"
+        }
+      ]
+    },
+    {
+      "op": "retire-candidate",
+      "at": "2026-11-14T15:48:13.889Z",
+      "by": "agent:writer.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-v1.md",
+      "sha256": "5ef41591dd206e60e21bc1f2b77baa8c602d6db5e312eecb09672559fe85e9c1",
+      "code": "superseded"
     }
   ]
 }

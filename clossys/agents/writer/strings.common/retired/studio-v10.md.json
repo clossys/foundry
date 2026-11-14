@@ -1,0 +1,9 @@
+{
+  "schema": "clossys.retire/1",
+  "slot": "strings.common",
+  "candidate": "studio-v10.md",
+  "sha256": "07037b8bf00a19a3a25fd3bf7672ba7a53618b70f7eb4234880e71bf68f55b29",
+  "by": "agent:writer.reissue",
+  "reason": "edited-in-place: reissued as common-v27.md",
+  "at": "2026-11-14T15:48:25.048Z"
+}

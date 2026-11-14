@@ -1,0 +1,9 @@
+{
+  "schema": "clossys.retire/1",
+  "slot": "passages.pricing",
+  "candidate": "studio-v1.md",
+  "sha256": "1a0ace1ac29e9ab2bdeedcc81b49bcfccde7b433bb7733029d047415aeb63e83",
+  "by": "agent:writer.reissue",
+  "reason": "superseded: reissued as pricing-v3.md",
+  "at": "2026-11-14T15:48:19.441Z"
+}

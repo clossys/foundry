@@ -1,0 +1,9 @@
+{
+  "schema": "clossys.retire/1",
+  "slot": "strings.names",
+  "candidate": "admin-studio-draft-v4.md",
+  "sha256": "aa20e975c319523b9097a9727e4911659e7c3e0e70931d2802835d0eae8bd634",
+  "by": "agent:writer.reissue",
+  "reason": "superseded: reissued as names-v5.md",
+  "at": "2026-11-14T15:48:26.055Z"
+}

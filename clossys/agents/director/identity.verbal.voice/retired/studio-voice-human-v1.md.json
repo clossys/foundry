@@ -1,0 +1,9 @@
+{
+  "schema": "clossys.retire/1",
+  "slot": "identity.verbal.voice",
+  "candidate": "studio-voice-human-v1.md",
+  "sha256": "46645d40d1fe155309fa714b75d4bbdbc63b082dd6adc895d2a0af6d0cb2ae00",
+  "by": "agent:director.reissue",
+  "reason": "edited-in-place: reissued as voice-v8.md",
+  "at": "2026-11-14T15:48:07.695Z"
+}

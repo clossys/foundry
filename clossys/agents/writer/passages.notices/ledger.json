@@ -270,6 +270,41 @@
           "sha256": "3dbb7d43478017e08f8dddcc545c3087ae1613221602ee992a54931445a651ac"
         }
       ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-14T15:48:17.278Z",
+      "by": "agent:writer.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adopt",
+      "seed": "passages.notices/studio-v1.md@ffb2930a6fb9419b20f8856752d8073eb9d293b998f652cb1a6dd91778903f58",
+      "ladder": {
+        "rung": "adopt",
+        "seed": "passages.notices/studio-v1.md@ffb2930a6fb9419b20f8856752d8073eb9d293b998f652cb1a6dd91778903f58"
+      },
+      "name": "notices-v3.md",
+      "sha256": "ffb2930a6fb9419b20f8856752d8073eb9d293b998f652cb1a6dd91778903f58"
+    },
+    {
+      "op": "retire-candidate",
+      "at": "2026-11-14T15:48:17.278Z",
+      "by": "agent:writer.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-v1.md",
+      "sha256": "ffb2930a6fb9419b20f8856752d8073eb9d293b998f652cb1a6dd91778903f58",
+      "code": "edited-in-place"
     }
   ]
 }

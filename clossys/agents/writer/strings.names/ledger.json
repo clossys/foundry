@@ -283,6 +283,64 @@
           "sha256": "ebc7b18ffa2413a9df781061f0d79f81567695324a65d1f58dada0a2117fc908"
         }
       ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-14T15:48:26.055Z",
+      "by": "agent:writer.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adopt",
+      "seed": "strings.names/admin-studio-draft-v4.md@aa20e975c319523b9097a9727e4911659e7c3e0e70931d2802835d0eae8bd634",
+      "ladder": {
+        "rung": "adopt",
+        "seed": "strings.names/admin-studio-draft-v4.md@aa20e975c319523b9097a9727e4911659e7c3e0e70931d2802835d0eae8bd634"
+      },
+      "name": "names-v5.md",
+      "sha256": "aa20e975c319523b9097a9727e4911659e7c3e0e70931d2802835d0eae8bd634"
+    },
+    {
+      "op": "pin",
+      "at": "2026-11-14T15:48:26.055Z",
+      "by": "agent:writer.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "candidate": "names-v5.md",
+      "sha256": "aa20e975c319523b9097a9727e4911659e7c3e0e70931d2802835d0eae8bd634",
+      "decidedBy": "planner:W2-G Studio icon names; AUTO-DECIDED planner, sibling 'Icon <name>' form",
+      "basis": "planner",
+      "reissue": true,
+      "records": [
+        {
+          "file": "pin.json",
+          "sha256": "149d766b90ba0dc5ede3a37a4ec1bc57e2e95167bdd63092e7a223a6bd483fa3"
+        }
+      ]
+    },
+    {
+      "op": "retire-candidate",
+      "at": "2026-11-14T15:48:26.055Z",
+      "by": "agent:writer.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "admin-studio-draft-v4.md",
+      "sha256": "aa20e975c319523b9097a9727e4911659e7c3e0e70931d2802835d0eae8bd634",
+      "code": "superseded"
     }
   ]
 }

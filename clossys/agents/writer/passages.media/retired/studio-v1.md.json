@@ -1,0 +1,9 @@
+{
+  "schema": "clossys.retire/1",
+  "slot": "passages.media",
+  "candidate": "studio-v1.md",
+  "sha256": "901557d7c2e3c071f6ecc770d4a56ff088aac6dae57e3eb6ad5f2854154f0290",
+  "by": "agent:writer.reissue",
+  "reason": "superseded: reissued as media-v3.md",
+  "at": "2026-11-14T15:48:14.984Z"
+}

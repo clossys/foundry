@@ -384,6 +384,111 @@
           "sha256": "1c29adfff222745b93fcedf01182e0066d9274548dbde3055584255a5b2a428a"
         }
       ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-14T15:48:06.562Z",
+      "by": "agent:director.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adopt",
+      "seed": "identity.verbal.voice/studio-voice-ambitious-v1.md@c10d34cd1b0cb00f257215d258da83dbabd4dbf964b4887d089e5d394b38afb2",
+      "ladder": {
+        "rung": "adopt",
+        "seed": "identity.verbal.voice/studio-voice-ambitious-v1.md@c10d34cd1b0cb00f257215d258da83dbabd4dbf964b4887d089e5d394b38afb2"
+      },
+      "name": "voice-v7.md",
+      "sha256": "c10d34cd1b0cb00f257215d258da83dbabd4dbf964b4887d089e5d394b38afb2"
+    },
+    {
+      "op": "retire-candidate",
+      "at": "2026-11-14T15:48:06.562Z",
+      "by": "agent:director.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-voice-ambitious-v1.md",
+      "sha256": "c10d34cd1b0cb00f257215d258da83dbabd4dbf964b4887d089e5d394b38afb2",
+      "code": "edited-in-place"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-14T15:48:07.695Z",
+      "by": "agent:director.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adopt",
+      "seed": "identity.verbal.voice/studio-voice-human-v1.md@46645d40d1fe155309fa714b75d4bbdbc63b082dd6adc895d2a0af6d0cb2ae00",
+      "ladder": {
+        "rung": "adopt",
+        "seed": "identity.verbal.voice/studio-voice-human-v1.md@46645d40d1fe155309fa714b75d4bbdbc63b082dd6adc895d2a0af6d0cb2ae00"
+      },
+      "name": "voice-v8.md",
+      "sha256": "46645d40d1fe155309fa714b75d4bbdbc63b082dd6adc895d2a0af6d0cb2ae00"
+    },
+    {
+      "op": "retire-candidate",
+      "at": "2026-11-14T15:48:07.695Z",
+      "by": "agent:director.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-voice-human-v1.md",
+      "sha256": "46645d40d1fe155309fa714b75d4bbdbc63b082dd6adc895d2a0af6d0cb2ae00",
+      "code": "edited-in-place"
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-14T15:48:08.782Z",
+      "by": "agent:director.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adopt",
+      "seed": "identity.verbal.voice/studio-voice-v1.md@896485222bb24915069edcd162fe8f8e8142bfb76dd09c6621129b3685bd75f1",
+      "ladder": {
+        "rung": "adopt",
+        "seed": "identity.verbal.voice/studio-voice-v1.md@896485222bb24915069edcd162fe8f8e8142bfb76dd09c6621129b3685bd75f1"
+      },
+      "name": "voice-v9.md",
+      "sha256": "896485222bb24915069edcd162fe8f8e8142bfb76dd09c6621129b3685bd75f1"
+    },
+    {
+      "op": "retire-candidate",
+      "at": "2026-11-14T15:48:08.782Z",
+      "by": "agent:director.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-voice-v1.md",
+      "sha256": "896485222bb24915069edcd162fe8f8e8142bfb76dd09c6621129b3685bd75f1",
+      "code": "edited-in-place"
     }
   ]
 }

@@ -1,0 +1,9 @@
+{
+  "schema": "clossys.retire/1",
+  "slot": "passages.activity-feed",
+  "candidate": "studio-v1.md",
+  "sha256": "f2ed22fea002ab904e2d368c74571b0a7457dbb5ec67c2d6ecfae9062e858177",
+  "by": "agent:writer.reissue",
+  "reason": "edited-in-place: reissued as activity-feed-v5.md",
+  "at": "2026-11-14T15:48:11.836Z"
+}

@@ -1,0 +1,9 @@
+{
+  "schema": "clossys.retire/1",
+  "slot": "passages.notices",
+  "candidate": "studio-v1.md",
+  "sha256": "ffb2930a6fb9419b20f8856752d8073eb9d293b998f652cb1a6dd91778903f58",
+  "by": "agent:writer.reissue",
+  "reason": "edited-in-place: reissued as notices-v3.md",
+  "at": "2026-11-14T15:48:17.278Z"
+}

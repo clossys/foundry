@@ -376,6 +376,41 @@
           "sha256": "fd66a15dd8f00181f2b372a5d3265e1993366113d3503a123ea7620e688d948c"
         }
       ]
+    },
+    {
+      "op": "submit",
+      "at": "2026-11-14T15:48:03.398Z",
+      "by": "agent:director.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "rung": "adopt",
+      "seed": "context.company.strength/studio-strength-v1.md@5326295addd30810f5fc4318abd9ef2f5dfb48ee4b257c2115192ff0815dce6c",
+      "ladder": {
+        "rung": "adopt",
+        "seed": "context.company.strength/studio-strength-v1.md@5326295addd30810f5fc4318abd9ef2f5dfb48ee4b257c2115192ff0815dce6c"
+      },
+      "name": "strength-v7.md",
+      "sha256": "5326295addd30810f5fc4318abd9ef2f5dfb48ee4b257c2115192ff0815dce6c"
+    },
+    {
+      "op": "retire-candidate",
+      "at": "2026-11-14T15:48:03.398Z",
+      "by": "agent:director.reissue",
+      "verb": "reissue",
+      "skill": {
+        "path": "packages/producer/actions/reissue/skill.md",
+        "sha256": "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+      },
+      "model": "none",
+      "tier": "none",
+      "name": "studio-strength-v1.md",
+      "sha256": "5326295addd30810f5fc4318abd9ef2f5dfb48ee4b257c2115192ff0815dce6c",
+      "code": "edited-in-place"
     }
   ]
 }
