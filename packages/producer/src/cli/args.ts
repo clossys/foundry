@@ -59,6 +59,10 @@ export interface CliArgs {
   rule?: string[];
   /** check --constitution: only the rows about this agent's records (director, designer, writer, publisher or producer). */
   agent?: string;
+  /** check --constitution: the per-slot preflight, only the rows about these slots (`<agent>/<slot>`); repeated --slot flags accumulate. */
+  slot?: string[];
+  /** check --constitution: only the slots whose records changed against this git ref (`npm run check:changed`). */
+  changed?: string;
 }
 
 export class CliUsageError extends Error {
@@ -76,10 +80,11 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Slots: clossys check [--slots] [--readiness [--strict]] [--root <dir>] (enforced by default; --readiness --strict fails on every blocked slot)\n"
   + "Chain: clossys run [--from <step>] [--until <step>] [--dry] [--explain] [--json] (runs every stale plumb step in order, stops at the first open decide step); clossys next [--owner [--agent <id>]] [--json] (that step's packet; --owner the interview's questions); clossys gaps [--agent <id>] [--json] (coverage, wiring and request gaps, read-only)\n"
   + "Submit: clossys next <agent>/<slot> --submit <file> --model <id> --tier <tier> --basis <basis> --skill <path> --rung <rung> [--seed <id>] [--reason <text>] (an agent's candidate, checked and recorded with its skill hash and selection-ladder rung)\n"
+  + "Craft: clossys craft brief|diverge|render|critique|refine <agent>/<slot> --model <id> --tier <tier> --skill <path> [--file <json>] [--recipe <id>] (the P2 stages in order, as next --stage; brief assembles the pinned inputs, contract and standard; diverge refuses directions that share an axis value)\n"
   + "Owner: clossys ia <agent>/<slot> --contract <file> | --remove; clossys ia <agent> --adopt | --start; clossys evidence <id> --source <s> --observed <date> --by <who> --body <file>; clossys config --init; clossys seat <step> --by <who> ...; clossys rule <R-ID> --quote <text> --date <date> --status <status>; clossys approve writer/<slot> <candidate-id>\n"
   + "Decisions: clossys pin <agent>/<slot> <candidate-id> [--by <who>] | clossys pin <agent>/<slot> --not-needed --reason <text>; clossys decisions [--json]\n"
   + "Candidate options: clossys options [<agent>/<slot> [--more]] | clossys options --classes [--check]; clossys pick <agent>/<slot> <candidate-id> --by agent:<seat>\n"
-  + "Constitution: clossys check --constitution [--enforced | --strict] [--record-green] [--green <file>] [--rule <R01..R16|R20>] [--agent <agent>] [--json] [--root <dir>] (every rule over every record; exits 1 on any enforced or pending row; building checks report only unless --strict; warn checks never fail; --enforced, the chain's constitution step, exits 1 until E2 only on a new finding (an enforced row whose key the last green report lacks) or a hand-edited report; rows on records changed since that report (and their R07 dependants) and stale keys are counted, never blocking; --strict exits 1 on every enforced row, building rows included (the full gate); every run prints the new, changed-record, stale and total counts; --record-green seeds a missing green report, or rewrites it only when it adds no key (removals only); --agent keeps the rows about one agent's records)\n"
+  + "Constitution: clossys check --constitution [--enforced | --strict] [--record-green] [--green <file>] [--rule <R01..R16|R20>] [--agent <agent>] [--slot <agent>/<slot>]... [--changed <ref>] [--json] [--root <dir>] (every rule over every record; exits 1 on any enforced or pending row; building checks report only unless --strict; warn checks never fail; --enforced, the chain's constitution step, exits 1 until E2 only on a new finding (an enforced row whose key the last green report lacks) or a hand-edited report; rows on records changed since that report (and their R07 dependants) and stale keys are counted, never blocking; --strict exits 1 on every enforced row, building rows included (the full gate); every run prints the new, changed-record, stale and total counts; --record-green seeds a missing green report, or rewrites it only when it adds no key (removals only); --agent keeps the rows about one agent's records; --slot <agent>/<slot> (repeatable) is the per-slot preflight: only that slot's rows, each with its one-line fix; --changed <git ref> runs it on every slot whose records changed against the ref, npm run check:changed)\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"
@@ -128,6 +133,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--green": args.green = value(); break;
       case "--rule": args.rule = [...(args.rule ?? []), value()]; break;
       case "--agent": args.agent = value(); break;
+      case "--slot": args.slot = [...(args.slot ?? []), value()]; break;
+      case "--changed": args.changed = value(); break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -155,6 +162,9 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if (args.rule !== undefined && !args.rule.every(id => /^R(?:0[1-9]|1[0-6]|20)$/.test(id))) throw new CliUsageError("--rule must be a rule id R01..R16 or R20");
   if (args.agent !== undefined && !args.constitution) throw new CliUsageError("--agent requires check --constitution");
   if (args.agent !== undefined && !["director", "designer", "writer", "publisher", "producer"].includes(args.agent)) throw new CliUsageError("--agent must be director, designer, writer, publisher or producer");
+  if ((args.slot !== undefined || args.changed !== undefined) && !args.constitution) throw new CliUsageError("--slot and --changed require check --constitution");
+  if (args.recordGreen && (args.slot !== undefined || args.changed !== undefined)) throw new CliUsageError("--record-green needs a full run: no --slot or --changed");
+  if (args.slot !== undefined && !args.slot.every(target => /^(director|designer|writer|publisher|producer)\/[a-z0-9][a-z0-9._-]*$/.test(target))) throw new CliUsageError("--slot must be <agent>/<slot> (agent director, designer, writer, publisher or producer)");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
   if ((args.install || args.page !== undefined || args.site !== undefined || args.build || args.origin !== undefined) && args.verb !== "publish") throw new CliUsageError("--install, --page, --site, --origin and --build require publish");
   if (args.page !== undefined && args.site !== undefined) throw new CliUsageError("publish --install takes --page or --site, not both");

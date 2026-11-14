@@ -293,10 +293,12 @@ export function p2Refusal(slotDir: string, agent: string, ladder: CandidateLadde
 }
 
 /**
- * `clossys next <agent>/<slot> --stage <stage> ...`: one P2 craft stage (section 5b) as a
- * `craft:<stage>` slot-ledger event through the writer, which refuses a stage out of order
- * (brief, diverge, render, critique, then at most 2 refine rounds) and a diverge outside 3 to 4
- * directions. Craft runs only on a P2 slot: its latest verdict is create.
+ * `clossys next <agent>/<slot> --stage <stage> ...` (also `clossys craft <stage> <agent>/<slot> ...`,
+ * cli/craft.ts): one P2 craft stage (section 5b) as a `craft:<stage>` slot-ledger event through the
+ * writer, which refuses a stage out of order (brief, diverge, render, critique, then at most 2
+ * refine rounds), a diverge outside 3 to 4 directions and a diverge whose directions share a value
+ * on an axis. The brief is assembled here (cli/craft-brief.ts). Craft runs only on a P2 slot: its
+ * latest verdict is create.
  */
 export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): Promise<CliResult> {
   const refuse = (message: string): CliResult => ({ exitCode: 1, unrecorded: true, message: `next --stage refused: ${message}` });
@@ -333,6 +335,15 @@ export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly
     if (!fields || typeof fields !== "object") return refuse(`${flags.file} is not a JSON object`);
   }
   if (flags.recipe !== undefined) fields = { ...fields, recipe: flags.recipe };
+  if (stage === "brief") {
+    // Stage 1 is assembled, not typed (foundry-feedback-0018): the pinned inputs, the contract and
+    // the standard's requirements and taste anchors, refused here when any of them is missing.
+    if (Object.hasOwn(fields, "assembled")) return refuse("the brief's assembled part is the CLI's (pinned inputs, contract, standard); drop assembled from --file");
+    const { assembleBrief } = await import("./craft-brief.js");
+    const made = assembleBrief(root, consumer, agent as SlotAgent, slot, flags.recipe);
+    if ("refusal" in made) return refuse(`craft:brief refused: ${made.refusal}`);
+    fields = { ...fields, assembled: made.brief };
+  }
   let event;
   try {
     event = appendCraftEvent(consumer, agent as SlotAgent, slot, stage as CraftStage, fields, {

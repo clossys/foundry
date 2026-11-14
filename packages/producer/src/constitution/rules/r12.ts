@@ -18,7 +18,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isObject, liveSlotRecords, pending } from "../checks/shared.js";
 import type { ConstitutionContext, Row, RuleModule } from "../types.js";
-import { brokenScript, codeRow, hasCode, runScript } from "./r11.js";
+import { brokenScript, codeRow, hasCode, judgesCode, runScript } from "./r11.js";
 
 export const COMPILE_LOCK = "packages/producer/studio/compile.lock.json";
 
@@ -74,7 +74,7 @@ export const R12: RuleModule = {
   checks: {
     "R12.1": ctx => (hasCode(ctx.root) ? lockRows(readLock(ctx.root), pinSetHash(pinSet(ctx))) : []),
     "R12.2": ctx => {
-      if (!hasCode(ctx.root)) return [];
+      if (!judgesCode(ctx)) return [];
       if (!existsSync(join(ctx.root, "packages/producer/dist/cli/index.js"))) return [codeRow("R12", "R12.2", "the Producer CLI is not built (npm run build), so the compile cannot be proved pure", "packages/producer/dist")];
       return compilePureRows(runScript(COMPILE_PURE, ["--root", ctx.root]));
     },

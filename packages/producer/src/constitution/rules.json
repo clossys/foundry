@@ -181,8 +181,11 @@
         "owner": "W2-C",
         "guard": [
           "submit",
-          "reissue"
-        ]
+          "reissue",
+          "pin",
+          "pick"
+        ],
+        "fix": "adopt verbatim: copy the seed or the vendored registry item byte for byte, or submit at the adapt or create rung"
       },
       {
         "id": "R03.3",
@@ -248,8 +251,10 @@
         "guard": [
           "pin",
           "pick",
-          "submit"
-        ]
+          "submit",
+          "reissue"
+        ],
+        "fix": "meet the failing requirement named in brackets (the slot standard's requirements.json, or the contract fixture), then resubmit"
       },
       {
         "id": "R05.2",
@@ -258,8 +263,10 @@
         "guard": [
           "pin",
           "pick",
-          "submit"
-        ]
+          "submit",
+          "reissue"
+        ],
+        "fix": "pin only a certified candidate: fix and resubmit it, or pin a certified option"
       },
       {
         "id": "R05.3",
@@ -268,8 +275,10 @@
         "guard": [
           "pin",
           "pick",
-          "submit"
-        ]
+          "submit",
+          "reissue"
+        ],
+        "fix": "read the fixture only from slot.json contract.fixture"
       }
     ]
   },
@@ -344,8 +353,11 @@
         "owner": "FIX-ENF",
         "guard": [
           "submit",
-          "reissue"
-        ]
+          "reissue",
+          "pin",
+          "pick"
+        ],
+        "fix": "name the slot id instead of another slot's candidate file, so the reference resolves through that slot's pin"
       }
     ]
   },
@@ -839,12 +851,26 @@
       {
         "id": "R20.1",
         "status": "building",
-        "owner": "FIX-ENF"
+        "owner": "FIX-ENF",
+        "guard": [
+          "submit",
+          "pin",
+          "pick",
+          "reissue"
+        ],
+        "fix": "cite the pinned Director slot it realises in meta.element.reason (director:<slot-id>), or default:<ref> plus a director: citation"
       },
       {
         "id": "R20.2",
         "status": "building",
-        "owner": "FIX-ENF"
+        "owner": "FIX-ENF",
+        "guard": [
+          "submit",
+          "pin",
+          "pick",
+          "reissue"
+        ],
+        "fix": "cite the pinned Director slot it realises in the frontmatter reason (director:<slot-id>), or default:<ref> plus a director: citation"
       }
     ]
   }

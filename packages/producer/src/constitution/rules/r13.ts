@@ -11,7 +11,7 @@
  * root without packages/producer/package.json has no code to judge and gives no row.
  */
 import type { ConstitutionContext, Row, RuleModule } from "../types.js";
-import { brokenScript, codeRow, hasCode, runScript, type ScriptRun } from "./r11.js";
+import { brokenScript, codeRow, judgesCode, runScript, type ScriptRun } from "./r11.js";
 
 const COPY_SOURCE = "packages/producer/scripts/check-copy-source.mjs";
 const ASSEMBLE_ONLY = "packages/producer/scripts/check-assemble-only.mjs";
@@ -65,8 +65,8 @@ function copySource(ctx: ConstitutionContext): { r131: Row[]; r133: Row[] } {
 export const R13: RuleModule = {
   rule: "R13",
   checks: {
-    "R13.1": ctx => (hasCode(ctx.root) ? copySource(ctx).r131 : []),
-    "R13.2": ctx => (hasCode(ctx.root) ? assembleRows(runScript(ASSEMBLE_ONLY, ["--root", ctx.root, "--json"])) : []),
-    "R13.3": ctx => (hasCode(ctx.root) ? copySource(ctx).r133 : []),
+    "R13.1": ctx => (judgesCode(ctx) ? copySource(ctx).r131 : []),
+    "R13.2": ctx => (judgesCode(ctx) ? assembleRows(runScript(ASSEMBLE_ONLY, ["--root", ctx.root, "--json"])) : []),
+    "R13.3": ctx => (judgesCode(ctx) ? copySource(ctx).r133 : []),
   },
 };

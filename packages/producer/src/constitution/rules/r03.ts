@@ -27,7 +27,7 @@ import { ledgerEvents, standardFor, type Standard } from "../../records/standard
 import { certifyEnv, slotDocOf } from "../certify/index.js";
 import { CERTIFY_INPUT_FIELDS } from "../certify/types.js";
 import { candidateLineage, lineageFindings, verbatimFindings, type ProvenanceRule, type ReferenceManifest } from "../certify/source.js";
-import { candidateMeta, isObject, liveSlotRecords, registryFiles, row } from "../checks/shared.js";
+import { candidateMeta, focusedLiveSlots, isObject, liveSlotRecords, registryFiles, row } from "../checks/shared.js";
 import type { CandidateRecord, Check, ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 
 /** The Designer's provenance rule and reference manifest (workspace-relative). */
@@ -117,7 +117,7 @@ function seedCandidate(ctx: ConstitutionContext, slot: SlotRecord, seed: string)
 /** R03.2: adopted candidates are verbatim (every candidate, not only pins). */
 export const r03_2: Check = ctx => {
   const rows: Row[] = [];
-  for (const slot of liveSlotRecords(ctx)) {
+  for (const slot of focusedLiveSlots(ctx)) {
     for (const candidate of slot.candidates) {
       const { submit } = submitOf(slot, candidate.name);
       const rung = rungOf(slot, submit);

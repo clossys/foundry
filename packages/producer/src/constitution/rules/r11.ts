@@ -29,6 +29,14 @@ export const MODULE_REPO = resolve(dirname(fileURLToPath(import.meta.url)), "../
 /** Whether `root` holds code to judge (the Producer package). */
 export const hasCode = (root: string): boolean => existsSync(join(root, "packages/producer/package.json"));
 
+/**
+ * Whether the repository code scripts run: `root` holds code and the run is not focused. A focused
+ * run (`check --slot`, `check --changed`, a write guard) keeps only the rows on its slots, and a
+ * code finding belongs to no slot (codeRow), so the scripts would cost seconds for rows the run
+ * drops; the unfocused root check runs them (foundry-feedback-0018).
+ */
+export const judgesCode = (ctx: ConstitutionContext): boolean => !ctx.focus && hasCode(ctx.root);
+
 /** A code finding: no slot owns it. */
 export function codeRow(rule: RuleId, check: string, reason: string, path: string): Row {
   return { rule, check, agent: "*", slot: "*", reason, path };
@@ -164,9 +172,9 @@ function readStudioMap(root: string): { present: boolean; doc?: unknown; error?:
 export const R11: RuleModule = {
   rule: "R11",
   checks: {
-    "R11.1": ctx => (hasCode(ctx.root) ? singleReader(ctx).r111 : []),
+    "R11.1": ctx => (judgesCode(ctx) ? singleReader(ctx).r111 : []),
     "R11.2": ctx => [
-      ...(hasCode(ctx.root) ? singleReader(ctx).r112 : []),
+      ...(judgesCode(ctx) ? singleReader(ctx).r112 : []),
       ...danglingRows(ctx, hasCode(ctx.root) ? readStudioMap(ctx.root) : undefined),
     ],
   },

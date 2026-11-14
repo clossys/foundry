@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { buildContext } from "../context.js";
 import { cleanSpec, contextOf, expectCatches, NO_HISTORY } from "../__fixtures__/workspace.js";
-import { danglingReferences, MODULE_REPO, R11, singleReaderRows } from "./r11.js";
+import { danglingReferences, judgesCode, MODULE_REPO, R11, singleReaderRows } from "./r11.js";
 
 describe("R11.1 one reader, one writer", () => {
   it("maps single-reader findings: reader-scan and writer-scan findings are R11.1 rows, resolver findings R11.2", () => {
@@ -60,5 +60,16 @@ describe.skipIf(!existsSync(`${MODULE_REPO}/packages/producer/package.json`))("R
     const rows = [...R11.checks["R11.1"]!(ctx), ...R11.checks["R11.2"]!(ctx)];
     expect(rows.filter(row => /gave no verdict/.test(row.reason))).toEqual([]);
     for (const row of rows) expect(row.path).toMatch(/^(packages|clossys)\//);
+  }, 120_000);
+});
+
+describe.skipIf(!existsSync(`${MODULE_REPO}/packages/producer/package.json`))("code scripts under a focused run", () => {
+  it("are not run when the run is focused: a code row has no slot, so the focus would drop it", () => {
+    const whole = buildContext(MODULE_REPO, `${MODULE_REPO}/clossys`, { history: () => NO_HISTORY });
+    expect(judgesCode(whole)).toBe(true);
+    const focused = buildContext(MODULE_REPO, `${MODULE_REPO}/clossys`, { history: () => NO_HISTORY, focus: [{ agent: "designer", slot: "ui.button" }] });
+    expect(judgesCode(focused)).toBe(false);
+    expect(judgesCode(buildContext(MODULE_REPO, `${MODULE_REPO}/clossys`, { history: () => NO_HISTORY, focus: [] }))).toBe(false);
+    expect(R11.checks["R11.1"]!(focused)).toEqual([]);
   }, 120_000);
 });

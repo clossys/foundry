@@ -6,12 +6,27 @@
  *
  * The verbs call this from the one writer (records/slot-write.ts) after the records and their ledger
  * event are in place and before the slot lock is released; a refusal undoes the write.
+ *
+ * Per-slot (INLINE-GATES, foundry-feedback-0018): the context is focused on the targets
+ * (ConstitutionContext.focus), so the per-candidate checks judge only the one candidate being written
+ * and R20 judges it before it is pinned; rows on other slots never refuse (the delta model). Every
+ * refusal line ends with the check's one-line fix (rules.json `fix`). Pure and mechanical: no model,
+ * network, clock or randomness; R05 certification is cached by (candidate, standard, contract, pin set).
+ *
+ * For an adopt (a Designer candidate the ladder or its lineage says is byte-exact) the Designer's
+ * ref-verbatim gate (`@clossys/designer/ref-verbatim`) runs too, on submit, pin, pick and reissue.
+ * It is the Designer's own check with its own codes, not a rules.json check, so its verb list and fix
+ * line live here (REF_VERBATIM_GUARD).
  */
 import { dirname } from "node:path";
+import { byteExactAdoption, checkRegistryItem } from "@clossys/designer/ref-verbatim";
+import { rungKind } from "../pipeline/candidate-ladder.js";
 import { buildContext, type ContextOptions } from "./context.js";
+import { fixHint, REF_VERBATIM_FIX, REF_VERBATIM_ID } from "./fix.js";
 import { registeredRules, type RegisteredRule } from "./registry.js";
+import { submitOf } from "./rules/r03.js";
 import { registerGuardRunner } from "../records/slot-write.js";
-import type { Check, Row, RuleId } from "./types.js";
+import type { Check, ConstitutionContext, Row, RuleId } from "./types.js";
 
 /** The verbs a rules.json `guard` list may name: the ledger verb table plus `reject` (section 6). */
 export const GUARD_VERBS = ["submit", "options", "verdict", "pick", "pin", "retire", "reissue", "ia", "migrate", "standard", "critique", "request", "task", "triage", "reject"] as const;
@@ -60,6 +75,45 @@ export interface GuardOptions extends ContextOptions {
   readonly root?: string;
   /** The registry; defaults to rules.json joined to the rule modules. */
   readonly rules?: readonly RegisteredRule[];
+  /**
+   * Run the Designer ref-verbatim gate on adopt targets. Default: on with the real registry, off
+   * when `rules` injects one (a test's registry is its whole guard); pass true to run it with an
+   * injected registry.
+   */
+  readonly refVerbatim?: boolean;
+}
+
+/** The Designer ref-verbatim gate as a guard: the verbs it runs on and the fix its refusals print (fix.ts). */
+export const REF_VERBATIM_GUARD = { id: REF_VERBATIM_ID, verbs: ["submit", "pin", "pick", "reissue"] as readonly GuardVerb[], fix: REF_VERBATIM_FIX } as const;
+
+/** Why a target Designer candidate is an adopt (its submit's ladder rung, or its lineage), or undefined. */
+export function adoptOf(ctx: ConstitutionContext, target: GuardTarget): string | undefined {
+  if (target.agent !== "designer" || !target.candidate?.endsWith(".json")) return undefined;
+  const slot = ctx.agents.find(agent => agent.agent === "designer")?.slots.get(target.slot);
+  const candidate = slot?.candidates.find(each => each.name === target.candidate);
+  if (!slot || !candidate) return undefined;
+  const { submit } = submitOf(slot, candidate.name);
+  if (submit && typeof submit.rung === "string" && rungKind("designer", submit.rung) === "adopt") return `ladder rung ${submit.rung}`;
+  return candidate.json === undefined ? undefined : byteExactAdoption(slot.id, candidate.json);
+}
+
+/** The ref-verbatim rows of the adopt targets: the Designer gate's strict findings, one row each. */
+export function refVerbatimRows(ctx: ConstitutionContext, targets: readonly GuardTarget[]): Row[] {
+  const rows: Row[] = [];
+  for (const target of targets) {
+    const why = adoptOf(ctx, target);
+    if (!why) continue;
+    const slot = ctx.agents.find(agent => agent.agent === "designer")!.slots.get(target.slot)!;
+    const candidate = slot.candidates.find(each => each.name === target.candidate)!;
+    const base = { rule: "R03" as RuleId, check: REF_VERBATIM_GUARD.id, agent: target.agent, slot: target.slot, candidate: candidate.name, path: candidate.path };
+    let findings: readonly { code: string; detail: string; file?: string }[];
+    try {
+      const slotDoc = slot.slot?.value as { uses?: readonly string[] } | undefined;
+      findings = checkRegistryItem(ctx.consumer, slot.id, candidate.json, { strict: true, ...(slotDoc ? { slotDoc } : {}) }).findings;
+    } catch (error) { findings = [{ code: "REF-NO-SOURCE", detail: `ref-verbatim could not run: ${error instanceof Error ? error.message : String(error)}` }]; }
+    for (const finding of findings) rows.push({ ...base, reason: `${finding.code} ${finding.detail}${finding.file ? ` (${finding.file})` : ""} [adopt: ${why}]` });
+  }
+  return rows;
 }
 
 /**
@@ -69,9 +123,11 @@ export interface GuardOptions extends ContextOptions {
  */
 export function runGuard(consumer: string, verb: GuardVerb, targets: readonly GuardTarget[], options: GuardOptions = {}): Row[] {
   const checks = guardChecks(verb, options.rules);
-  if (!checks.length || !targets.length) return [];
-  const ctx = buildContext(options.root ?? dirname(consumer), consumer, options);
-  const rows: Row[] = [];
+  const refVerbatim = (options.refVerbatim ?? options.rules === undefined) && REF_VERBATIM_GUARD.verbs.includes(verb);
+  if ((!checks.length && !refVerbatim) || !targets.length) return [];
+  const focus = targets.map(target => ({ agent: target.agent, slot: target.slot, ...(target.candidate ? { candidate: target.candidate } : {}) }));
+  const ctx = buildContext(options.root ?? dirname(consumer), consumer, { ...options, focus });
+  const rows: Row[] = refVerbatim ? refVerbatimRows(ctx, targets) : [];
   for (const check of checks) {
     let found: Row[];
     try { found = check.fn(ctx); }
@@ -84,8 +140,8 @@ export function runGuard(consumer: string, verb: GuardVerb, targets: readonly Gu
   return rows;
 }
 
-/** The refusal lines of guard rows: `<check> <reason> (<path>)`. */
-export const guardMessages = (rows: readonly Row[]): string[] => rows.map(row => `${row.check} ${row.reason} (${row.path})`);
+/** The refusal lines of guard rows: `<check> <reason> (<path>); fix: <one line>`. */
+export const guardMessages = (rows: readonly Row[]): string[] => rows.map(row => `${row.check} ${row.reason} (${row.path}); fix: ${fixHint(row.check)}`);
 
 // The writers in records/slot-write.ts run this guard; they hold no value import of the registry.
 registerGuardRunner({ run: runGuard, messages: guardMessages });

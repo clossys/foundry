@@ -388,7 +388,7 @@ export function openCraftStages(events: readonly Record<string, unknown>[]): Cra
   return stages;
 }
 /** Why `stage` may not come next after `open`, or undefined. */
-export function craftOrderIssue(open: readonly CraftStage[], stage: CraftStage, fields: Readonly<Record<string, unknown>> = {}): string | undefined {
+export function craftOrderIssue(open: readonly CraftStage[], stage: CraftStage, fields: Readonly<Record<string, unknown>> = {}, context: { readonly axes?: readonly string[] } = {}): string | undefined {
   const sequence = [...open, stage].join(" ");
   if (!CRAFT_PREFIX.test(sequence)) {
     const refines = open.filter(each => each === "refine").length;
@@ -401,19 +401,51 @@ export function craftOrderIssue(open: readonly CraftStage[], stage: CraftStage, 
     for (const [index, direction] of directions.entries()) {
       if (!isRecord(direction) || !isRecord(direction.axes) || !Object.keys(direction.axes).length) return `craft:diverge refused: direction ${index + 1} carries no axes`;
     }
+    return axesIssue(directions as readonly { axes: Record<string, unknown> }[], context.axes);
   }
   return undefined;
 }
 /**
+ * Section 5b stage 2: every direction carries a value on every axis (the brief's recipe axes, else
+ * every axis any direction names) and no two directions share a value on any axis, so a cosmetic
+ * variant fails at diverge, not at critique. Values compare by canonical JSON.
+ */
+function axesIssue(directions: readonly { readonly axes: Readonly<Record<string, unknown>> }[], recipeAxes?: readonly string[]): string | undefined {
+  const axes = recipeAxes?.length ? [...recipeAxes] : [...new Set(directions.flatMap(direction => Object.keys(direction.axes)))].sort();
+  for (const axis of axes) {
+    const seen = new Map<string, number>();
+    for (const [index, direction] of directions.entries()) {
+      if (!Object.hasOwn(direction.axes, axis)) return `craft:diverge refused: direction ${index + 1} has no value on axis ${axis}; fix: give every direction a value on every axis${recipeAxes?.length ? ` (the recipe's axes: ${recipeAxes.join(", ")})` : ""}`;
+      const value = JSON.stringify(direction.axes[axis]);
+      const twin = seen.get(value);
+      if (twin !== undefined) return `craft:diverge refused: directions ${twin + 1} and ${index + 1} share ${axis} ${value}; fix: make every direction's value distinct on every axis, so no direction is a cosmetic variant`;
+      seen.set(value, index);
+    }
+  }
+  return undefined;
+}
+/** The recipe axes the open run's brief recorded (`assembled.recipe.axes`), if any. */
+export function openBriefAxes(events: readonly Record<string, unknown>[]): readonly string[] | undefined {
+  let axes: readonly string[] | undefined;
+  for (const event of events) {
+    if (event.op === "submit") axes = undefined;
+    else if (event.op === "craft:brief") {
+      const recipe = isRecord(event.assembled) && isRecord(event.assembled.recipe) ? event.assembled.recipe : undefined;
+      axes = recipe && Array.isArray(recipe.axes) ? recipe.axes.filter((axis): axis is string => typeof axis === "string") : undefined;
+    }
+  }
+  return axes;
+}
+/**
  * Append one `craft:<stage>` event to the slot ledger under the slot lock, refusing a stage out of
- * order or a diverge outside 3-4 directions. `fields` are the stage's own record (directions,
+ * order, a diverge outside 3-4 directions or one whose directions share an axis value. `fields` are the stage's own record (directions,
  * recipe, renders); verb submit, by the seat, with the step's skill, model and tier.
  */
 export function appendCraftEvent(consumer: string, agent: SlotAgent, id: string, stage: CraftStage, fields: Readonly<Record<string, unknown>>, given: WriteProvenance & { readonly at?: string }): LedgerEvent {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
     const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
-    const issue = craftOrderIssue(openCraftStages(events), stage, fields);
+    const issue = craftOrderIssue(openCraftStages(events), stage, fields, { axes: openBriefAxes(events) });
     if (issue) throw new Error(issue);
     const { op: _op, at: _at, by: _by, verb: _verb, skill: _skill, model: _model, tier: _tier, records: _records, ...own } = fields as Record<string, unknown>;
     const event = ledgerEvent(`craft:${stage}`, given.at ?? nowIso(), provenance({ verb: "submit", by: "planner", skill: skillPath(agent, `${agent}.candidates`) }, given), own);

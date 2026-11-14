@@ -62,6 +62,10 @@ export interface RunOptions extends ContextOptions {
   readonly now?: () => number;
   /** Also return the record index (green.ts) built from the same context. */
   readonly index?: boolean;
+  // `focus` (ContextOptions): the `--slot` preflight and `check:changed`. Only the rows about the
+  // focused slots are kept (no workspace-wide or pending row), and the record counts narrow to them.
+  /** Under a focus, also keep the rows on these workspace-relative files (agent-level files a change touched). */
+  readonly paths?: readonly string[];
 }
 
 const tally = (rows: readonly Row[], key: (row: Row) => string) => {
@@ -78,6 +82,10 @@ export function runConstitution(options: RunOptions): ConstitutionReport {
   const unknown = only && [...only].filter(id => !rules.some(rule => rule.id === id));
   if (unknown?.length) throw new Error(`Unknown constitution rule ${unknown.join(", ")} (R01..R16, R20)`);
   const ctx = buildContext(options.root, options.consumer, options);
+  const focus = options.focus;
+  const focused = (item: { agent: string; slot: string }) => !focus || focus.some(target => target.agent === item.agent && target.slot === item.slot);
+  const paths = new Set(options.paths ?? []);
+  const kept = (item: Row) => focused(item) || (!!focus && paths.has(item.path));
   const strict = options.strict === true;
   const fails = (item: Row) => item.level !== "building" || strict;
   const summaries: RuleSummary[] = [];
@@ -86,7 +94,7 @@ export function runConstitution(options: RunOptions): ConstitutionReport {
   for (const rule of rules) {
     const ruleRows: Row[] = [], ruleWarnings: Row[] = [];
     for (const check of rule.run) {
-      const found = check.fn(ctx).filter(item => !options.agent || item.agent === options.agent || item.agent === "*");
+      const found = check.fn(ctx).filter(item => (!options.agent || item.agent === options.agent || item.agent === "*") && kept(item));
       if (check.status === "warn") ruleWarnings.push(...found.map(item => ({ ...item, level: "warn" as const })));
       else ruleRows.push(...(check.status === "building" ? found.map(item => ({ ...item, level: "building" as const })) : found));
     }
@@ -101,6 +109,7 @@ export function runConstitution(options: RunOptions): ConstitutionReport {
   }
   let slots = 0, liveSlots = 0, pins = 0, candidates = 0;
   for (const agent of ctx.agents) if (!options.agent || agent.agent === options.agent) for (const slot of agent.slots.values()) {
+    if (!focused({ agent: slot.agent, slot: slot.id })) continue;
     slots++; if (slot.live) liveSlots++; if (slot.pin) pins++; candidates += slot.candidates.length;
   }
   const pending = rows.filter(item => item.pending).length;
@@ -113,8 +122,8 @@ export function runConstitution(options: RunOptions): ConstitutionReport {
 
 const counts = (record: Readonly<Record<string, number>>) => Object.entries(record).map(([key, value]) => `${key} ${value}`).join(", ");
 
-/** The human table: every row, grouped by rule, with per-rule and per-agent counts, then a total line. */
-export function formatReport(report: ConstitutionReport): string {
+/** The human table: every row, grouped by rule, with per-rule and per-agent counts, then a total line; `fix` appends each row's one-line fix (the `--slot` preflight). */
+export function formatReport(report: ConstitutionReport, options: { readonly fix?: (check: string) => string } = {}): string {
   const lines: string[] = [];
   for (const rule of report.rules) {
     const head = `${rule.id} ${rule.status === "pending" ? "PENDING" : rule.failing ? "FAIL" : rule.rows ? "BUILDING" : "ok"}  rows ${rule.rows}`;
@@ -122,7 +131,7 @@ export function formatReport(report: ConstitutionReport): string {
     lines.push(`  ${rule.statement}`);
     const line = (item: Row) => {
       const where = item.candidate ? `${item.slot} ${item.candidate}` : item.slot;
-      return `  ${item.check.padEnd(8)} ${item.agent.padEnd(9)} ${where}: ${item.reason}${item.path && !item.pending ? `  [${item.path}]` : ""}`;
+      return `  ${item.check.padEnd(8)} ${item.agent.padEnd(9)} ${where}: ${item.reason}${item.path && !item.pending ? `  [${item.path}]` : ""}${options.fix && !item.pending ? `\n           fix: ${options.fix(item.check)}` : ""}`;
     };
     for (const item of report.rows.filter(entry => entry.rule === rule.id)) lines.push(line(item));
     const warned = report.warnings.filter(entry => entry.rule === rule.id);

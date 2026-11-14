@@ -13,7 +13,7 @@ import { isModelDir, isSlotFolderName, listModelDir, readModelBytes, withSlotRea
 import { skillFile } from "../records/ledger.js";
 import { loadActions } from "../pipeline/actions.js";
 import { readCandidateHistory } from "./git.js";
-import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, FoundryAgent, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
+import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, FocusTarget, FoundryAgent, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
 
 const posix = (path: string) => path.split(sep).join("/");
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -132,6 +132,8 @@ export interface ContextOptions {
   readonly skillShas?: (path: string) => ReadonlySet<string>;
   /** Action kinds (R14.2); tests substitute one. Defaults to the installed registry (pipeline/actions.json). */
   readonly actionKind?: (pkg: string, step: string) => string | undefined;
+  /** The slots a guard or a `--slot` preflight judges (ConstitutionContext.focus); absent, the whole tree. */
+  readonly focus?: readonly FocusTarget[];
 }
 
 const FOUNDRY_IA: Record<FoundryAgent, () => FoundryIa> = { director: directorIa, designer: designerIa, writer: writerIa };
@@ -205,5 +207,5 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
   };
   let kindOf = options.actionKind;
   const actionKind = (pkg: string, step: string) => (kindOf ??= installedActionKinds())(pkg, step);
-  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), ...(migrations ? { migrations } : {}), history: () => (history ??= read(root, consumer)), foundryLeaves, skillShas, actionKind };
+  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), ...(migrations ? { migrations } : {}), history: () => (history ??= read(root, consumer)), foundryLeaves, skillShas, actionKind, ...(options.focus ? { focus: options.focus } : {}) };
 }

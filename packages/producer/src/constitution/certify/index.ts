@@ -22,7 +22,7 @@ import { fixtureShapeIssues, validateCandidate, type SlotKind } from "../../reco
 import { standardFits, standardFor } from "../../records/standards.js";
 import { CORE_CRITERIA } from "../criteria/core/index.js";
 import { canonicalJson, certifyKey, type CertifyKey } from "../criteria/core/verdict.js";
-import { candidateCitations, dependencySet, isObject, liveSlotRecords, registryFiles, stringList } from "../checks/shared.js";
+import { candidateCitations, dependencySet, focusedLiveSlots, isObject, registryFiles, stringList } from "../checks/shared.js";
 import type { CandidateRecord, ConstitutionContext, SlotRecord } from "../types.js";
 import { cachePath, openCache, type CertifyCache } from "./cache.js";
 import { certifyBrief } from "./brief.js";
@@ -219,7 +219,7 @@ export interface CertifyWorldOptions {
 export const resultKey = (agent: string, slot: string, candidate: string) => `${agent}:${slot}/${candidate}`;
 
 const worlds = new WeakMap<ConstitutionContext, CertifyWorld>();
-/** Every live candidate certified once per context, through the cache. */
+/** Every live candidate (of the focused slots, under a focus) certified once per context, through the cache. */
 export function certifyWorld(ctx: ConstitutionContext, options: CertifyWorldOptions = {}): CertifyWorld {
   const hit = worlds.get(ctx);
   if (hit) return hit;
@@ -227,7 +227,7 @@ export function certifyWorld(ctx: ConstitutionContext, options: CertifyWorldOpti
   const path = options.cache === false ? undefined : options.cache ?? (existsSync(join(ctx.root, "node_modules")) ? cachePath(ctx.root) : undefined);
   const cache: CertifyCache = openCache(path, certifierVersion(), certifyEnvHash(env));
   const results = new Map<string, CertifiedCandidate>();
-  for (const slot of liveSlotRecords(ctx)) {
+  for (const slot of focusedLiveSlots(ctx)) {
     const { doc, kind, contract } = slotDocOf(slot);
     const standard = typeof doc.standard === "string" ? standardFor(env.standards, slot.agent, doc.standard) : undefined;
     for (const candidate of slot.candidates) {
