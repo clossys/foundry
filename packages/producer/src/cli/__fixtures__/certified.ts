@@ -48,6 +48,19 @@ export function fittingFixture(agent: CertifiedAgent, texts: readonly string[]):
   return keys.every(set => set.length === shared.length) ? { fixture } : { fixture, open: true };
 }
 
+/**
+ * A Writer candidate's bytes with a frontmatter `reason` citing the pinned Director slot it realises
+ * (R20.2: a pinned Writer candidate names the Director decision it realises; `source.ref` alone is
+ * not a trace). An existing reason line is replaced.
+ */
+export function directorTraced(text: string, director: string): string {
+  const match = /^---\n([\s\S]*?)\n---\n/.exec(text);
+  if (!match) throw new Error("directorTraced: the candidate has no frontmatter");
+  const fields = match[1]!.split("\n").filter(line => !line.startsWith("reason:"));
+  fields.push(`reason: ${JSON.stringify(`Realises director:${director}.`)}`);
+  return `---\n${fields.join("\n")}\n---\n${text.slice(match[0].length)}`;
+}
+
 /** The slot ids a candidate's `source.ref` cites (a `finding:`-style ref is not a slot). */
 function citedSlots(text: string): string[] {
   const parsed = parseFrontmatter(text);

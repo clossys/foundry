@@ -70,7 +70,7 @@ describe("craft.md runs the fixed 5b stages with a check at each", () => {
       assert.match(section(1), /stage-check\.mjs brief <slot> brief\.json\n.*--stage brief /, `${id} checks the brief before recording it`);
       assert.match(section(2), /stage-check\.mjs diverge <slot> directions\.json\n.*--stage diverge /, `${id} checks the axes before recording diverge`);
       const render = section(3);
-      assert.ok(render.indexOf("clossys render <slot> <candidate>") >= 0 && render.indexOf("clossys check --constitution --slot designer/<slot>") > render.indexOf("clossys render <slot> <candidate>"), `${id} preflights after each render`);
+      assert.ok(render.indexOf("clossys render <slot> --draft <direction file>") >= 0 && render.indexOf("clossys check --constitution --slot designer/<slot>") > render.indexOf("clossys render <slot> --draft <direction file>"), `${id} preflights after each render`);
       assert.match(section(4), /clossys critique-packet designer\/<slot> --standard <standard>/);
       assert.match(section(4), /clossys critique designer\/<slot> --record critique\.json/);
       assert.match(section(5), /stage-check\.mjs diverge <slot> directions\.json/, `${id} re-checks a refine against the other directions`);

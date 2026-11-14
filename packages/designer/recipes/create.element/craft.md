@@ -90,14 +90,13 @@ sections, the rules value for media rules). Nothing is generated; the preflight 
 For each direction's draft candidate:
 
 ```sh
-clossys render <slot> <candidate>          # cached by (candidate sha256, dependency pin-set hash)
+clossys render <slot> --draft <direction file>   # a draft before submit; cached by (sha256, dependency pin-set hash)
 clossys check --constitution --slot designer/<slot>       # per-slot preflight, under 10s, cached by sha
 ```
 
 A failing preflight prints the rule id and the fix: fix the draft and re-render; never edit the check.
-Open tooling gaps (foundry-feedback-0015, -0018): `clossys render` renders submitted candidates only, and
-`clossys check --constitution --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
-the missing verb; it never renders by hand or skips the preflight.
+Both verbs have landed: a draft renders before it is submitted (`--draft`), and the preflight is the
+constitution on this one slot. This stage never renders by hand or skips the preflight.
 Then record the render set (`renders.json`: `{"renders": [{"direction": "<id>", "candidate": "<name>",
 "path": "<render path>", "sha256": "<render sha>"}]}`):
 

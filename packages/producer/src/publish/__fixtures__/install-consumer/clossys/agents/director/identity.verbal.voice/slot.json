@@ -1,0 +1,15 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.verbal.voice",
+  "agent": "director",
+  "kind": "brief",
+  "ia": {
+    "l0": "identity",
+    "l1": "identity",
+    "l2": "identity.verbal",
+    "order": 0
+  },
+  "contract": {},
+  "inputs": [],
+  "uses": []
+}

@@ -86,14 +86,13 @@ check is named in its clean line as left to `clossys check --constitution --slot
 
 ```sh
 node packages/writer/recipes/stage-check.mjs draft <slot> <draft>
-clossys render <slot> <candidate>          # cached by (candidate sha256, dependency pin-set hash)
+clossys render <slot> --draft <direction file>   # a draft before submit; cached by (sha256, dependency pin-set hash)
 clossys check --constitution --slot writer/<slot>       # per-slot preflight, under 10s, cached by sha
 ```
 
 A failing check prints the rule id, the requirement and the fix: fix the draft and re-check; never edit the check.
-Open tooling gaps (foundry-feedback-0015, -0018): `clossys render` renders submitted candidates only, and
-`clossys check --constitution --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
-the missing verb; it never renders by hand or skips the preflight. The draft check above is the maker's
+Both verbs have landed: a draft renders before it is submitted (`--draft`), and the preflight is the
+constitution on this one slot. This stage never renders by hand or skips the preflight. The draft check above is the maker's
 own preflight and runs now; it does not replace `clossys check --constitution --slot`.
 Then record the render set (`renders.json`: `{"renders": [{"direction": "<id>", "candidate": "<name>",
 "path": "<render path>", "sha256": "<render sha>"}]}`):

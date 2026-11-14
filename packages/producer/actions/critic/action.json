@@ -5,7 +5,7 @@
   "kind": "decide:judgment",
   "stage": "publish.assemble",
   "open": "on-demand",
-  "summary": "The fresh P2 critic (section 5b stage 4): score anonymised renders against the standard's taste criteria from the critique packet only, and record the critique (clossys critique --record) as critiques/<leaf>-v<n>.json with its craft:critique event. It never sees the recipe, directions, brief or maker (R16.2).",
+  "summary": "The fresh P2 critic (section 5b stage 4): score anonymised renders against the standard's taste criteria from the critique packet only, and record the critique (clossys critique --record) as critiques/<leaf>-v<n>.json with its craft:critique event appended through records/slot-write.ts (the migrate step owns the ledger file). It never sees the recipe, directions, brief or maker (R16.2).",
   "run": "clossys critique <agent>/<slot> --record <critique.json> --model <id> --tier <tier>",
   "inputs": [
     {
@@ -25,10 +25,6 @@
     {
       "glob": "clossys/agents/*/*/critiques/*",
       "schema": "critique"
-    },
-    {
-      "glob": "clossys/agents/*/*/ledger.json#events",
-      "schema": "ledger"
     }
   ],
   "pass": {
@@ -59,10 +55,6 @@
       {
         "glob": "clossys/agents/*/*/critiques/*",
         "schema": "critique"
-      },
-      {
-        "glob": "clossys/agents/*/*/ledger.json#events",
-        "schema": "ledger"
       }
     ],
     "checks": [

@@ -17,7 +17,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it } from "vitest";
 import { NEXT_ROUTE_MARKER } from "@clossys/publisher/install";
 import { parseArgs } from "../cli/args.js";
-import { certifySlots } from "../cli/__fixtures__/certified.js";
+import { certifySlots, directorTraced } from "../cli/__fixtures__/certified.js";
 import { runPinCli } from "../cli/pin.js";
 import { writeCandidate } from "../records/slot-write.js";
 import { withDesignerSlots } from "../specimen/__fixtures__/canonical-library.js";
@@ -120,8 +120,9 @@ describe("clossys publish --install --next --bind", () => {
     expect(blocking(await install(root, app))).toEqual([]);
     const strings = join(root, "clossys", "agents", "writer", "strings.site", "candidates");
     const current = JSON.parse(readFileSync(join(strings, "..", "pin.json"), "utf8")).candidate as string;
-    // The re-pin is guarded (R05.1, R05.2, R14.1): the new version is submitted through the writer and the slot certified.
-    const next = writeCandidate(join(root, "clossys"), "writer", "strings.site", "site", readFileSync(join(strings, current), "utf8").replace("Pages assembled from records", "Pages reinstalled from a new pin")).name;
+    // The re-pin is guarded (R05.1, R05.2, R14.1, R20.2): the new version is submitted through the writer, cites the
+    // fixture's pinned Director voice, and the slot is certified.
+    const next = writeCandidate(join(root, "clossys"), "writer", "strings.site", "site", directorTraced(readFileSync(join(strings, current), "utf8").replace("Pages assembled from records", "Pages reinstalled from a new pin"), "identity.verbal.voice")).name;
     await certifySlots(root, "writer", { "strings.site": [next] });
     const pinned = await runPinCli(["writer/strings.site", next.replace(/\.md$/, ""), "--by", "planner:SITE-TEMPLATE", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
     expect(pinned.exitCode, pinned.message).toBe(0);

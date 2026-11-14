@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { certifySlots } from "../cli/__fixtures__/certified.js";
+import { certifySlots, directorTraced } from "../cli/__fixtures__/certified.js";
 import { runCli } from "../cli/main.js";
 import { readCandidate } from "../records/slots.js";
 import { writeCandidate, writePin } from "../records/slot-write.js";
@@ -26,20 +26,24 @@ afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: tru
 const SLOT = "strings.actions";
 const ITEM = `writer/${SLOT}`;
 const REF = "clossys/workspace#46 issuecomment-1";
+/** The pinned Director slot the fixture copy realises. */
+const VOICE = "identity.verbal.voice";
 /**
  * The fixture wording finding: a bulk-pinned candidate whose first action ends with "!", which the pinned
- * lexicon's `studio.pattern.exclamation` rule (W-VOICE) reports. The slot's older candidates hold the same
- * record without it: the Writer's rewrite.
+ * lexicon's `studio.pattern.exclamation` rule (W-VOICE) reports. The Writer's rewrite is the newest other
+ * candidate: the same record without it. Both cite the pinned Director voice they realise (R20.2), so
+ * either can be pinned.
  */
-function exclaimed(root: string): { pinned: string; original: string } {
+function exclaimed(root: string): { pinned: string; original: string; rewrite: string } {
   const consumer = join(root, "clossys");
   const pin = JSON.parse(readFileSync(join(consumer, "agents", "writer", SLOT, "pin.json"), "utf8")) as { candidate: string };
-  const bytes = readCandidate(consumer, "writer", SLOT, pin.candidate).bytes;
+  const bytes = directorTraced(readCandidate(consumer, "writer", SLOT, pin.candidate).bytes, VOICE);
   const fixture = bytes.replace(/^Request change$/m, "Request change!");
   expect(fixture).not.toBe(bytes);
+  const rewrite = writeCandidate(consumer, "writer", SLOT, "studio", bytes).name;
   const written = writeCandidate(consumer, "writer", SLOT, "studio", fixture);
   writePin(consumer, "writer", SLOT, written.name, { decidedBy: "owner", basis: "bulk", at: "2026-11-12T00:00:00.000Z" });
-  return { pinned: written.name, original: pin.candidate };
+  return { pinned: written.name, original: pin.candidate, rewrite };
 }
 /** The fixture slot's wording question (the real records carry wording findings of their own on other slots). */
 const wordingOf = (root: string) => interviewOf(root, { agent: "writer" }).rounds.flat().filter(question => question.id === `writer.wording:${ITEM}`);
@@ -80,9 +84,9 @@ describe("Writer wording findings reach the Writer's owner questions (R2F-W1)", 
   it("with no rewrite drafted yet, the Writer drafts first and nothing is asked", () => {
     const root = workspace();
     const consumer = join(root, "clossys");
-    const { original } = exclaimed(root);
+    const { original, rewrite } = exclaimed(root);
     // Every other candidate carries the same finding: no candidate rewrites the record.
-    for (const name of ["studio-v1.md", "studio-v2.md", original]) {
+    for (const name of new Set(["studio-v1.md", "studio-v2.md", original, rewrite])) {
       const path = join(consumer, "agents", "writer", SLOT, "candidates", name);
       writeFileSync(path, readFileSync(path, "utf8").replace(/^Request change$/m, "Request change!"));
     }

@@ -163,7 +163,7 @@
         "stage": "direct.brief",
         "rank": 0,
         "x": 0,
-        "y": 172
+        "y": 0
       }
     },
     {
@@ -276,7 +276,7 @@
       "layout": {
         "lane": "you",
         "stage": "direct.brief",
-        "rank": 13,
+        "rank": 14,
         "x": 840,
         "y": 0
       }
@@ -360,7 +360,7 @@
         "stage": "direct.brief",
         "rank": 0,
         "x": 280,
-        "y": 0
+        "y": 172
       }
     },
     {
@@ -435,8 +435,8 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 0,
-        "y": 344
+        "x": 280,
+        "y": 0
       }
     },
     {
@@ -517,7 +517,7 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 0,
+        "x": 560,
         "y": 0
       }
     },
@@ -590,7 +590,7 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 280,
+        "x": 0,
         "y": 172
       }
     },
@@ -663,8 +663,8 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 560,
-        "y": 0
+        "x": 0,
+        "y": 344
       }
     },
     {
@@ -925,7 +925,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "direct.pin",
-        "rank": 7,
+        "rank": 11,
         "x": 2040,
         "y": 1128
       }
@@ -1087,7 +1087,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "design.brief",
-        "rank": 7,
+        "rank": 11,
         "x": 2360,
         "y": 1128
       }
@@ -1149,7 +1149,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "design.brief",
-        "rank": 7,
+        "rank": 11,
         "x": 2360,
         "y": 1300
       }
@@ -1346,7 +1346,7 @@
       "layout": {
         "lane": "writer",
         "stage": "design.make",
-        "rank": 7,
+        "rank": 11,
         "x": 2960,
         "y": 932
       }
@@ -1518,7 +1518,7 @@
       "layout": {
         "lane": "writer",
         "stage": "design.pin",
-        "rank": 9,
+        "rank": 13,
         "x": 4120,
         "y": 932
       }
@@ -1600,7 +1600,7 @@
       "layout": {
         "lane": "you",
         "stage": "design.pin",
-        "rank": 8,
+        "rank": 12,
         "x": 3840,
         "y": 172
       }
@@ -1800,7 +1800,7 @@
       "layout": {
         "lane": "you",
         "stage": "design.pin",
-        "rank": 8,
+        "rank": 12,
         "x": 3840,
         "y": 0
       }
@@ -1902,7 +1902,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.make",
-        "rank": 10,
+        "rank": 7,
         "x": 4760,
         "y": 1128
       }
@@ -1988,7 +1988,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.pin",
-        "rank": 12,
+        "rank": 9,
         "x": 5360,
         "y": 1128
       }
@@ -2088,7 +2088,7 @@
       "layout": {
         "lane": "you",
         "stage": "publish.pin",
-        "rank": 11,
+        "rank": 8,
         "x": 5080,
         "y": 0
       }
@@ -2171,7 +2171,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.pin",
-        "rank": 13,
+        "rank": 14,
         "x": 5640,
         "y": 1128
       }
@@ -2240,8 +2240,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 7,
-        "x": 6520,
+        "rank": 11,
+        "x": 6800,
         "y": 1128
       }
     },
@@ -2309,8 +2309,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 10,
-        "x": 6800,
+        "rank": 14,
+        "x": 7360,
         "y": 1128
       }
     },
@@ -2390,8 +2390,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 13,
-        "x": 7360,
+        "rank": 14,
+        "x": 7640,
         "y": 1300
       }
     },
@@ -2570,9 +2570,9 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 10,
-        "x": 6800,
-        "y": 1472
+        "rank": 14,
+        "x": 7640,
+        "y": 1128
       }
     },
     {
@@ -2654,9 +2654,9 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 10,
-        "x": 6800,
-        "y": 1300
+        "rank": 14,
+        "x": 7360,
+        "y": 1472
       }
     },
     {
@@ -2721,9 +2721,9 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 13,
+        "rank": 14,
         "x": 7360,
-        "y": 1128
+        "y": 1300
       }
     },
     {
@@ -2731,7 +2731,7 @@
       "kind": "decide:judgment",
       "actor": "agent:judge",
       "stage": "publish.assemble",
-      "summary": "The fresh P2 critic (section 5b stage 4): score anonymised renders against the standard's taste criteria from the critique packet only, and record the critique (clossys critique --record) as critiques/<leaf>-v<n>.json with its craft:critique event. It never sees the recipe, directions, brief or maker (R16.2).",
+      "summary": "The fresh P2 critic (section 5b stage 4): score anonymised renders against the standard's taste criteria from the critique packet only, and record the critique (clossys critique --record) as critiques/<leaf>-v<n>.json with its craft:critique event appended through records/slot-write.ts (the migrate step owns the ledger file). It never sees the recipe, directions, brief or maker (R16.2).",
       "inputs": [
         {
           "glob": "clossys/agents/*/ia.json",
@@ -2750,10 +2750,6 @@
         {
           "glob": "clossys/agents/*/*/critiques/*",
           "schema": "critique"
-        },
-        {
-          "glob": "clossys/agents/*/*/ledger.json#events",
-          "schema": "ledger"
         }
       ],
       "command": {
@@ -2795,10 +2791,6 @@
           {
             "glob": "clossys/agents/*/*/critiques/*",
             "schema": "critique"
-          },
-          {
-            "glob": "clossys/agents/*/*/ledger.json#events",
-            "schema": "ledger"
           }
         ],
         "checks": [
@@ -2816,7 +2808,7 @@
       "layout": {
         "lane": "you",
         "stage": "publish.assemble",
-        "rank": 13,
+        "rank": 14,
         "x": 7360,
         "y": 0
       }
@@ -2826,7 +2818,7 @@
       "kind": "decide:judgment",
       "actor": "agent:judge",
       "stage": "publish.assemble",
-      "summary": "Record the P1 verdict on one slot (clossys verdict --record): a pick of one candidate with the taste criteria it rests on, pinned with basis agent, or create with the gaps no candidate meets, which opens P2 craft (clossys next --stage). Every id must exist in the slot's standard or brief; an adopt-first create names a createGaps gap (R03.5). It claims only its slot-ledger events: the pin it writes is owned by the pick steps, and every write goes through records/slot-write.ts under the verdict guard.",
+      "summary": "Record the P1 verdict on one slot (clossys verdict --record): a pick of one candidate with the taste criteria it rests on, pinned with basis agent, or create with the gaps no candidate meets, which opens P2 craft (clossys next --stage). Every id must exist in the slot's standard or brief; an adopt-first create names a createGaps gap (R03.5). It is the one step that claims the slot-ledger events field: every verb (reissue, critique, submit, pin) appends its event through the one ledger append in records/slot-write.ts, the migrate step owns the ledger file, and the pin it writes is owned by the pick steps.",
       "inputs": [
         {
           "glob": "clossys/agents/*/ia.json",
@@ -2909,8 +2901,8 @@
         "lane": "you",
         "stage": "publish.assemble",
         "rank": 14,
-        "x": 7640,
-        "y": 0
+        "x": 7360,
+        "y": 172
       }
     },
     {
@@ -2918,7 +2910,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "publish.assemble",
-      "summary": "One-shot codemods: copy keys to port ids, and the ledger backfill from git history (clossys migrate ledger, the one whole-ledger writer); --check reports only.",
+      "summary": "One-shot codemods: copy keys to port ids, and the ledger backfill from git history (clossys migrate ledger). It owns every ledger.json file; its events field has one claimer (verdict), and every other verb appends through the one ledger append in records/slot-write.ts instead of claiming it; --check reports only.",
       "inputs": [
         {
           "glob": "clossys/agents/director/*/candidates/*",
@@ -2985,7 +2977,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 11,
+        "rank": 12,
         "x": 7080,
         "y": 1128
       }
@@ -2995,7 +2987,7 @@
       "kind": "decide:judgment",
       "actor": "agent:judge",
       "stage": "publish.assemble",
-      "summary": "Reissue a slot's candidate as its next version under the slot rules (leaf name, exact deps, uses, no preview props, line anchors as slot ids), retiring the old file and repinning a pinned one (clossys reissue). It claims only its slot-ledger events: the candidate, pin and retire files it writes are owned by the make, pin and retire steps, and every write goes through records/slot-write.ts.",
+      "summary": "Reissue a slot's candidate as its next version under the slot rules (leaf name, exact deps, uses, no preview props, line anchors as slot ids), retiring the old file and repinning a pinned one (clossys reissue). It claims only the pin's candidate field it moves to the new version: the candidate, pin and retire files it writes are owned by the make, pin and retire steps, and its slot-ledger event is appended through records/slot-write.ts, whose events field the verdict step claims.",
       "inputs": [
         {
           "glob": "clossys/agents/*/*/slot.json",
@@ -3008,8 +3000,8 @@
       ],
       "outputs": [
         {
-          "glob": "clossys/agents/*/*/ledger.json#events",
-          "schema": "ledger"
+          "glob": "clossys/agents/*/*/pin.json#candidate",
+          "schema": "pin"
         }
       ],
       "command": {
@@ -3050,8 +3042,8 @@
         ],
         "write": [
           {
-            "glob": "clossys/agents/*/*/ledger.json#events",
-            "schema": "ledger"
+            "glob": "clossys/agents/*/*/pin.json#candidate",
+            "schema": "pin"
           }
         ],
         "checks": [
@@ -3071,9 +3063,9 @@
       "layout": {
         "lane": "you",
         "stage": "publish.assemble",
-        "rank": 13,
-        "x": 7360,
-        "y": 172
+        "rank": 10,
+        "x": 6520,
+        "y": 0
       }
     },
     {
@@ -3259,8 +3251,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 13,
-        "x": 7360,
+        "rank": 14,
+        "x": 7640,
         "y": 1472
       }
     },
@@ -3321,8 +3313,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 7,
-        "x": 6520,
+        "rank": 11,
+        "x": 6800,
         "y": 1300
       }
     },
@@ -3378,8 +3370,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 7,
-        "x": 6520,
+        "rank": 11,
+        "x": 6800,
         "y": 1472
       }
     },
@@ -3437,7 +3429,7 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 7,
+        "rank": 11,
         "x": 7960,
         "y": 1668
       }
@@ -3503,7 +3495,7 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 7,
+        "rank": 11,
         "x": 7960,
         "y": 1840
       }
@@ -3569,9 +3561,9 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 10,
+        "rank": 14,
         "x": 8240,
-        "y": 1668
+        "y": 1840
       }
     },
     {
@@ -3636,9 +3628,9 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 13,
+        "rank": 14,
         "x": 8520,
-        "y": 1840
+        "y": 1668
       }
     },
     {
@@ -3726,7 +3718,7 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 15,
+        "rank": 16,
         "x": 9080,
         "y": 1668
       }
@@ -3786,9 +3778,9 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 13,
-        "x": 8520,
-        "y": 1668
+        "rank": 14,
+        "x": 8240,
+        "y": 2012
       }
     },
     {
@@ -3874,9 +3866,9 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 13,
-        "x": 8520,
-        "y": 2012
+        "rank": 14,
+        "x": 8240,
+        "y": 1668
       }
     },
     {
@@ -3959,7 +3951,7 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 14,
+        "rank": 15,
         "x": 8800,
         "y": 1668
       }
@@ -4038,7 +4030,7 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 14,
+        "rank": 15,
         "x": 8800,
         "y": 2012
       }
@@ -4100,7 +4092,7 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 14,
+        "rank": 15,
         "x": 8800,
         "y": 1840
       }
@@ -4174,7 +4166,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.publish",
-        "rank": 13,
+        "rank": 11,
         "x": 9400,
         "y": 1128
       }
@@ -4261,7 +4253,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.publish",
-        "rank": 14,
+        "rank": 15,
         "x": 9680,
         "y": 1128
       }
@@ -8585,17 +8577,6 @@
       ]
     },
     {
-      "from": "critic",
-      "to": "verdict",
-      "via": [
-        {
-          "output": "clossys/agents/*/*/ledger.json#events",
-          "input": "clossys/agents/*/*/ledger.json#events",
-          "schema": "ledger"
-        }
-      ]
-    },
-    {
       "from": "migrate",
       "to": "verdict",
       "via": [
@@ -8608,12 +8589,387 @@
     },
     {
       "from": "reissue",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "director.store",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "designer.brief",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "writer.brief",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "designer.candidates",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "writer.candidates",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "publisher.candidates",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "constitution",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "designer.compile",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "writer.compile",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "compile",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "options",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "specimen",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "render",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "critique-packet",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "critic",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
       "to": "verdict",
       "via": [
         {
-          "output": "clossys/agents/*/*/ledger.json#events",
-          "input": "clossys/agents/*/*/ledger.json#events",
-          "schema": "ledger"
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "derive.uses",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "studio.map",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "specimen.evidence",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "studio.compose",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "director.check",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "designer.check",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "writer.check",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "publish.page",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/publisher/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "workspace.check",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "decisions",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "pipeline",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "build.receipt",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "publish.install",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/publisher/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "reissue",
+      "to": "studio.produce",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json#candidate",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -9001,8 +9357,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 16240,
-      "after": 15838
+      "before": 20260,
+      "after": 19824
     },
     "lanes": [
       {
@@ -9253,6 +9609,14 @@
         "to": "options"
       },
       {
+        "from": "pick.writer",
+        "to": "publisher.candidates"
+      },
+      {
+        "from": "pick.writer",
+        "to": "reissue"
+      },
+      {
         "from": "pin.designer",
         "to": "derive.uses"
       },
@@ -9302,6 +9666,14 @@
       },
       {
         "from": "pin.writer",
+        "to": "publisher.candidates"
+      },
+      {
+        "from": "pin.writer",
+        "to": "reissue"
+      },
+      {
+        "from": "pin.writer",
         "to": "writer.candidates"
       },
       {
@@ -9313,6 +9685,22 @@
         "to": "options"
       },
       {
+        "from": "reissue",
+        "to": "derive.uses"
+      },
+      {
+        "from": "reissue",
+        "to": "designer.candidates"
+      },
+      {
+        "from": "reissue",
+        "to": "options"
+      },
+      {
+        "from": "reissue",
+        "to": "publisher.candidates"
+      },
+      {
         "from": "writer.approve",
         "to": "derive.uses"
       },
@@ -9321,12 +9709,24 @@
         "to": "options"
       },
       {
+        "from": "writer.approve",
+        "to": "publisher.candidates"
+      },
+      {
+        "from": "writer.approve",
+        "to": "reissue"
+      },
+      {
         "from": "writer.candidates",
         "to": "derive.uses"
       },
       {
         "from": "writer.candidates",
         "to": "options"
+      },
+      {
+        "from": "writer.candidates",
+        "to": "publisher.candidates"
       }
     ]
   },

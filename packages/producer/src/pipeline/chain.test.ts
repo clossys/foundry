@@ -19,11 +19,17 @@ import { appendRecord, buildRecord, readStore, STEP_ENV, storeFile } from "./tra
 /** The foundry consumer this package ships beside: a real slot model to copy. */
 const FOUNDRY = join(PACKAGE_ROOT, "..", "..", "clossys");
 const dirs: string[] = [];
+/**
+ * The package data the submit guard reads off the workspace root (R03.2 provenance and reference
+ * manifest, R05.1 standards), copied beside the scratch consumer as a checkout has it.
+ */
+const GUARD_DATA = ["designer/src/catalog/rules/provenance.json", "designer/references/manifest.json", "designer/standards", "writer/standards", "director/standards", "publisher/standards"];
 /** A scratch copy of the foundry consumer (never the real records), keeping run records. */
 function workspace(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "chain-")));
   dirs.push(root);
   cpSync(FOUNDRY, join(root, "clossys"), { recursive: true });
+  for (const path of GUARD_DATA) if (existsSync(join(PACKAGE_ROOT, "..", path))) cpSync(join(PACKAGE_ROOT, "..", path), join(root, "packages", path), { recursive: true });
   writeFileSync(join(root, ".gitignore"), "node_modules/\n/.clossys/runs/\n");
   return root;
 }
@@ -276,10 +282,12 @@ describe("clossys next", { timeout: 60_000 }, () => {
     writeFileSync(source, held.replace('rx=\\"21.875\\"', 'rx=\\"20\\"'));
     createVerdict(root, "designer", slot);
     const argv = [`designer/${slot}`, "--submit", source, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, "--rung", "L3", "--seed", `${slot}/favicon-v2`, "--root", root];
-    // The guard is absolute (section 4): the copy's favicon slot names no standard, so R05.1 refuses and nothing is written.
+    // The guard is absolute (section 4): the adapted favicon's reason cites no Director trait, so its standard
+    // (R05.1 derive.director) and the Director trace (R20.1) refuse it and nothing is written.
     const guarded = await runPipeline(["next", ...argv], root);
     expect(guarded.exitCode).toBe(1);
-    expect(guarded.message).toContain("R05.1 [no-standard]");
+    expect(guarded.message).toContain("R05.1 [requirement] derive.director");
+    expect(guarded.message).toContain("R20.1 favicon-v3.json: meta.element.reason cites no Director slot");
     expect(existsSync(join(dir, "favicon-v3.json"))).toBe(false);
     expect(readStore(root, storeFile("designer.candidates"))).toEqual([]);
     // The recording itself, under a registry that guards nothing (guard.e2e.test.ts proves the guard).
@@ -319,7 +327,9 @@ describe("clossys next", { timeout: 60_000 }, () => {
     // P2 (section 5): a create rung with no create verdict is refused; with one it is recorded.
     expect((await submit(varied, "--rung", "L4", "--reason", "fixture: no stock or partner mark fits")).message).toContain("needs the slot's latest verdict to be create");
     createVerdict(root, "designer", slot);
-    expect((await submit(varied, "--rung", "L4", "--reason", "fixture: no stock or partner mark fits")).message).toContain("R05.1 [no-standard]");
+    const refused = (await submit(varied, "--rung", "L4", "--reason", "fixture: no stock or partner mark fits")).message;
+    expect(refused).toContain("R05.1 [requirement] derive.director");
+    expect(refused).toContain("R20.1 favicon-v3.json");
     const createArgv = [`designer/${slot}`, "--submit", varied, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, "--rung", "L4", "--reason", "fixture: no stock or partner mark fits", "--root", root];
     expect((await runNextSubmitCli(createArgv, root, undefined, undefined, UNGUARDED)).exitCode).toBe(0);
   });

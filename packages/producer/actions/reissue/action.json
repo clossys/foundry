@@ -5,7 +5,7 @@
   "kind": "decide:judgment",
   "stage": "publish.assemble",
   "open": "on-demand",
-  "summary": "Reissue a slot's candidate as its next version under the slot rules (leaf name, exact deps, uses, no preview props, line anchors as slot ids), retiring the old file and repinning a pinned one (clossys reissue). It claims only its slot-ledger events: the candidate, pin and retire files it writes are owned by the make, pin and retire steps, and every write goes through records/slot-write.ts.",
+  "summary": "Reissue a slot's candidate as its next version under the slot rules (leaf name, exact deps, uses, no preview props, line anchors as slot ids), retiring the old file and repinning a pinned one (clossys reissue). It claims only the pin's candidate field it moves to the new version: the candidate, pin and retire files it writes are owned by the make, pin and retire steps, and its slot-ledger event is appended through records/slot-write.ts, whose events field the verdict step claims.",
   "run": "clossys reissue <agent>/<slot> <candidate> --by agent:<seat>",
   "inputs": [
     {
@@ -19,8 +19,8 @@
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/*/*/ledger.json#events",
-      "schema": "ledger"
+      "glob": "clossys/agents/*/*/pin.json#candidate",
+      "schema": "pin"
     }
   ],
   "pass": {
@@ -52,8 +52,8 @@
     ],
     "write": [
       {
-        "glob": "clossys/agents/*/*/ledger.json#events",
-        "schema": "ledger"
+        "glob": "clossys/agents/*/*/pin.json#candidate",
+        "schema": "pin"
       }
     ],
     "checks": [

@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { CliUsageError, parseArgs, USAGE, VERBS } from "../cli/args.js";
 import type { CliArgs } from "../cli/args.js";
 import type { CliResult } from "../cli/main.js";
+import { runNextCli, submitTarget } from "../cli/next.js";
 import { discoverRoot } from "../cli/root.js";
 import type { Step } from "./define.js";
 import { HANDLERS, MODULE_HANDLERS } from "./handlers.js";
@@ -92,7 +93,7 @@ export async function runPipeline(argv: readonly string[], cwd: string, steps: r
   const named = process.env[STEP_ENV];
   delete process.env[STEP_ENV];
   // A bare `clossys next --submit <file>` submits to the first open candidates slot (cli/next.ts).
-  if (argv[0] === "next" && argv.includes("--submit")) argv = (await import("../cli/next.js")).submitTarget(argv, cwd, steps);
+  if (argv[0] === "next" && argv.includes("--submit")) argv = submitTarget(argv, cwd, steps);
   if (!tracingEnabled()) return run(argv, cwd, steps, resolved, named);
   const start = new Date();
   const watch = observe();
@@ -131,7 +132,7 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     const head = argv[0];
     // The chain orchestrators are not steps: they run (and record through) the steps they walk.
     if (head === "run") return await (await import("../cli/run.js")).runRunCli(argv.slice(1), cwd, steps);
-    if (head === "next" && !argv.includes("--submit")) return await (await import("../cli/next.js")).runNextCli(argv.slice(1), cwd, steps);
+    if (head === "next" && !argv.includes("--submit")) return await runNextCli(argv.slice(1), cwd, steps);
     // The craft stages by name: `next <agent>/<slot> --stage <stage>` under one implementation.
     if (head === "craft") return await (await import("../cli/craft.js")).runCraftCli(argv.slice(1), cwd, steps);
     // The gap finder reads only; the interview (next --owner) asks what it finds.

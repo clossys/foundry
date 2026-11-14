@@ -4,7 +4,7 @@
   "agent": "producer",
   "kind": "plumb",
   "stage": "publish.assemble",
-  "summary": "One-shot codemods: copy keys to port ids, and the ledger backfill from git history (clossys migrate ledger, the one whole-ledger writer); --check reports only.",
+  "summary": "One-shot codemods: copy keys to port ids, and the ledger backfill from git history (clossys migrate ledger). It owns every ledger.json file; its events field has one claimer (verdict), and every other verb appends through the one ledger append in records/slot-write.ts instead of claiming it; --check reports only.",
   "run": "clossys migrate copy-keys",
   "inputs": [
     {

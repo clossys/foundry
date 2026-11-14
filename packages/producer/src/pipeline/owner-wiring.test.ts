@@ -2,11 +2,11 @@ import { mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFile
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { certifySlots } from "../cli/__fixtures__/certified.js";
+import { certifySlots, directorTraced } from "../cli/__fixtures__/certified.js";
 import { flatConsumer } from "../cli/__fixtures__/flat-consumer.js";
 import { runCli } from "../cli/main.js";
 import { listSlots } from "../records/slots.js";
-import { writeCandidate } from "../records/slot-write.js";
+import { writeCandidate, writePin } from "../records/slot-write.js";
 import { writerCopyDuplicates } from "../records/writer-copy.js";
 import { interviewOf, type Interview, type InterviewAgent } from "./interview.js";
 import { ownerWiringIssues } from "./owner-wiring.js";
@@ -35,6 +35,9 @@ function openConsumer(): string {
   }
   return root;
 }
+
+/** The pinned Director slot the fixture copy realises (R20.2). */
+const VOICE = "identity.verbal.voice";
 
 describe("owner.wiring (clossys pipeline check)", () => {
   const root = openConsumer();
@@ -85,10 +88,15 @@ describe("owner.wiring (clossys pipeline check)", () => {
   }, 300_000);
 
   it("fails an answer the gaps do not see: it re-records a slot no gap is about", async () => {
-    const settled = listSlots(`${root}/clossys`, "writer").find(entry => entry.pin?.basis === "bulk")!;
-    // The pin is guarded (R05.1, R05.2): the slot is certified for the candidate it re-records.
-    await certifySlots(root, "writer", { [settled.id]: [settled.pin!.candidate] });
-    const unseen = rewritten(() => [["clossys", "pin", `writer/${settled.id}`, settled.pin!.candidate, "--basis", "picked"]]);
+    const consumer = join(root, "clossys");
+    const settled = listSlots(consumer, "writer").find(entry => entry.pin?.basis === "bulk")!;
+    // The pin is guarded (R05.1, R05.2, R20.2): the settled slot's bulk pin is a copy that cites the pinned
+    // Director voice it realises, and the slot is certified for the candidate it re-records.
+    const bytes = readFileSync(join(settled.dir, "candidates", settled.pin!.candidate), "utf8");
+    const traced = writeCandidate(consumer, "writer", settled.id, settled.pin!.candidate.replace(/-v\d+\.md$/, ""), directorTraced(bytes, VOICE)).name;
+    writePin(consumer, "writer", settled.id, traced, { decidedBy: "owner", basis: "bulk", at: "2026-11-12T00:00:00.000Z" });
+    await certifySlots(root, "writer", { [settled.id]: [traced] });
+    const unseen = rewritten(() => [["clossys", "pin", `writer/${settled.id}`, traced, "--basis", "picked"]]);
     const result = await ownerWiringIssues(root, { run: runCli, agents: ["writer"], interviewOf: firstOnly(unseen) });
     expect(result.issues.map(issue => issue.message).join("\n")).toContain("writer writer.policy a: the answer ran, but clossys gaps --agent writer reports the same gaps");
   }, 300_000);
@@ -101,9 +109,10 @@ describe("owner.wiring (clossys pipeline check)", () => {
     // The other slot's first record, appended to the owner slot's pinned bytes as a new candidate of that slot.
     const record = /^### .*\n<!-- .* -->\n.*\n/m.exec(read(other))![0];
     const key = JSON.parse(/<!-- (.*) -->/.exec(record)![1]!).id as string;
-    // The pin is guarded (R05.1, R05.2, R14.1): the candidate is submitted through the writer and the slot certified.
+    // The pin is guarded (R05.1, R05.2, R14.1, R20.2): the candidate is submitted through the writer, cites the pinned
+    // Director voice, and the slot is certified.
     const prefix = owner!.pin!.candidate.replace(/-v\d+\.md$/, "");
-    const name = writeCandidate(consumer, "writer", owner!.id, prefix, `${read(owner).replace(/\n*$/, "\n\n")}${record}`).name;
+    const name = writeCandidate(consumer, "writer", owner!.id, prefix, directorTraced(`${read(owner).replace(/\n*$/, "\n\n")}${record}`, VOICE)).name;
     await certifySlots(dup, "writer", { [owner!.id]: [name] });
     expect(writerCopyDuplicates(consumer).map(row => row.id)).not.toContain(key);
     const duplicating = rewritten(() => [["clossys", "pin", `writer/${owner!.id}`, name, "--basis", "picked"]]);
