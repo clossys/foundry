@@ -1,7 +1,7 @@
 {
   "candidate": "fixture-v1.md",
-  "sha256": "b850d3d78797e4f325785d560caacd80e52f3f02ec9dccde94f76e495e3dd09d",
-  "decidedBy": "fixture",
-  "basis": "test",
+  "sha256": "dd2c2c2d37fb657c7c0b7caeaf1998b436adeaa04e2edf680d5b19c78f0cf6c4",
+  "decidedBy": "owner:fixture",
+  "basis": "picked",
   "at": "2026-10-29T00:00:00Z"
 }

@@ -1,6 +1,6 @@
 ---
 slot: "identity.visual.style"
-source: {"kind":"derived","ref":["identity.brand.essence@1","identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["identity.brand.essence","identity.verbal.voice"]}
 feeds: []
 functions: []
 ---

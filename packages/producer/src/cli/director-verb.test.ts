@@ -63,7 +63,8 @@ describe("clossys director", () => {
     expect(uncoveredCode).toBe(1);
     expect(uncovered.findings.map((finding: { cell: string }) => finding.cell)).toContain("identity.brand.essence");
     expect(verdict("direction", "--root", root("identity"))).toMatchObject([0, { state: "satisfied" }]);
-    expect(verdict("direction", "--root", root("superseded"))).toMatchObject([1, { findings: [{ rule: "direction-superseded", cell: "identity.verbal.voice" }] }]);
+    // A citation that still names a version (identity.brand.essence@1) is the superseded form under D2: refused, and reported.
+    expect(verdict("direction", "--root", root("superseded"))).toMatchObject([1, { findings: [{ rule: "direction-versioned", cell: "identity.verbal.voice" }] }]);
     expect(verdict("direction", "--root", root("unpinned"))).toMatchObject([2, { state: "indeterminate" }]);
     expect(verdict("apply", join(fx, "pages", "applied"), "--root", root("identity"))).toMatchObject([0, { state: "satisfied" }]);
     expect(verdict("apply", join(fx, "pages", "grounded"), "--root", root("identity"))).toMatchObject([1, { findings: [{ rule: "apply-uncited" }] }]);

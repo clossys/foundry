@@ -47,11 +47,13 @@ function brand(model: StrategyModel): Finding[] {
  * (`direction-versioned`: the store refuses that candidate and says so). A re-pin of a cited slot is
  * no finding: the citation resolves to the new pin, and the checks re-run on it (the cascade).
  */
+const versionedCitationIssue = (issue: { message: string }) => issue.message.includes(": versioned citation ");
+
 function direction(model: StrategyModel): Finding[] {
   const pinned = pinnedVersions(model);
   const findings: Finding[] = [];
   for (const issue of model.issues) {
-    if (!issue.message.includes(": versioned citation ")) continue;
+    if (!versionedCitationIssue(issue)) continue;
     const cell = issue.path.split("/")[0] ?? issue.path;
     findings.push({ rule: "direction-versioned", cell, path: issue.path, message: issue.message });
   }
@@ -124,8 +126,10 @@ export function runDirectorCheck(argv: readonly string[], cwd = process.cwd()): 
   try { root = args.root !== undefined ? resolve(cwd, args.root) : resolve(discoverRoot(cwd), "clossys", "agents", "director"); }
   catch (error) { return done(check, args.json, 2, [], error instanceof Error ? error.message : String(error)); }
   const model = readStrategyRoot(root, directorStoreReader);
-  if (model.issues.length) {
-    return done(check, args.json, 2, [], `Strategy root could not be read in full: ${model.issues.map(issue => `${issue.path}: ${issue.message}`).join("; ")}`);
+  // A versioned citation is direction's own finding (direction-versioned), not an unreadable root.
+  const blocking = check === "direction" ? model.issues.filter(issue => !versionedCitationIssue(issue)) : model.issues;
+  if (blocking.length) {
+    return done(check, args.json, 2, [], `Strategy root could not be read in full: ${blocking.map(issue => `${issue.path}: ${issue.message}`).join("; ")}`);
   }
   if (check === "direction" && !model.cells.length) return done(check, args.json, 2, [], "No pinned Director cell; nothing to check.");
   let findings: Finding[] | string;
