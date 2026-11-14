@@ -9,6 +9,10 @@
  *   `react@18`, a path), or whose agent prefix names another agent's slot, stays as written;
  *   an apply marker or judgement id (`strategy:<cell>@<n>`, `Q<n>:<cell>@<n>`) is not a citation
  *   token and is never matched.
+ * - the pinned candidate's line anchors (`<ref>@<n>#L<line>`, Writer `directorSources`), which keep a
+ *   version, are first re-addressed to the version the pin's `recited` overlay gave them
+ *   (`reciteLineAnchors`): readers saw the overlaid bytes, and once `recited` is gone the anchors
+ *   must still name those lines.
  * - every pin drops `recited`, and its sha256 is carried to its candidate's rewritten bytes when it
  *   matched those bytes before (or already matches the rewritten ones). The decision itself
  *   (candidate, decidedBy, basis, at, confirmed) is kept. A pin whose sha256 matches neither is a
@@ -19,7 +23,7 @@
  * a dry run unless `--apply` is given. An apply records one `migrated` event per rewritten file in
  * `<consumer>/evidence/migrations.json`, which is what lets R08.2 accept the in-place change.
  */
-import { slotCitationsInText, type CitationAgent } from "@clossys/director";
+import { reciteLineAnchors, slotCitationsInText, type CitationAgent } from "@clossys/director";
 import { sha256Hex } from "../records/hash.js";
 import { listSlots, readCandidate, readSlotRecordText } from "../records/slots.js";
 import { appendMigrationEvents, rewriteCitationsInPlace, type InPlaceRewrite, type RewrittenFile } from "../records/slot-write.js";
@@ -31,6 +35,8 @@ export interface CitationSlotChange {
   readonly candidates: readonly InPlaceRewrite[];
   /** Versioned citations rewritten across the slot's candidates. */
   readonly citations: number;
+  /** Line anchors of the pinned candidate re-addressed to the pin's recited version. */
+  readonly anchors: number;
   readonly pin?: { readonly before: string; readonly after: string; readonly recited: boolean; readonly rehashed: boolean };
 }
 export interface CitationAgentCounts {
@@ -38,6 +44,8 @@ export interface CitationAgentCounts {
   readonly candidates: number;
   /** Versioned citation tokens rewritten. */
   readonly citations: number;
+  /** Line anchors re-addressed to a dropped recite's version. */
+  readonly anchors: number;
   /** Pins that drop `recited`. */
   readonly pins: number;
   /** Pins whose sha256 is carried to rewritten candidate bytes. */
@@ -63,21 +71,23 @@ export function planCitationsToSlots(consumer: string): CitationsPlan {
   const findings: CitationFinding[] = [];
   for (const [agent, slots] of slotsOf) for (const entry of slots) {
     const candidates: InPlaceRewrite[] = [];
-    let citations = 0;
+    let citations = 0, anchors = 0;
+    const raw = readSlotRecordText(entry.dir, "pin.json");
+    let value: unknown;
+    if (raw !== undefined) { try { value = JSON.parse(raw); } catch { value = undefined; } }
+    const recite = object(value) && object(value.recited) && object(value.recited.cites) ? { candidate: value.candidate, cites: value.recited.cites } : undefined;
     const afterOf = new Map<string, { before: string; after: string }>();
     for (const name of entry.candidates) {
       let before: string;
       try { before = readCandidate(consumer, agent, entry.id, name).bytes; }
       catch (error) { findings.push({ agent, slot: entry.id, message: `${name} could not be read: ${(error as Error).message}` }); continue; }
-      const rewritten = slotCitationsInText(before, owner);
+      const anchored = recite?.candidate === name ? reciteLineAnchors(before, agent, recite.cites) : { text: before, count: 0 };
+      const rewritten = slotCitationsInText(anchored.text, owner);
       afterOf.set(name, { before, after: rewritten.text });
-      if (rewritten.count) { candidates.push({ name, before, after: rewritten.text }); citations += rewritten.count; }
+      if (rewritten.count || anchored.count) { candidates.push({ name, before, after: rewritten.text }); citations += rewritten.count; anchors += anchored.count; }
     }
     let pin: CitationSlotChange["pin"];
-    const raw = readSlotRecordText(entry.dir, "pin.json");
     if (raw !== undefined) {
-      let value: unknown;
-      try { value = JSON.parse(raw); } catch { value = undefined; }
       if (!object(value)) findings.push({ agent, slot: entry.id, message: "pin.json is not a JSON object; left as it is" });
       else {
         const { recited, ...kept } = value;
@@ -93,13 +103,14 @@ export function planCitationsToSlots(consumer: string): CitationsPlan {
         if (recitedKey || rehashed) pin = { before: raw, after: jsonBytes(kept), recited: recitedKey, rehashed };
       }
     }
-    if (candidates.length || pin) changes.push({ agent, slot: entry.id, candidates, citations, ...(pin ? { pin } : {}) });
+    if (candidates.length || pin) changes.push({ agent, slot: entry.id, candidates, citations, anchors, ...(pin ? { pin } : {}) });
   }
-  const zero = (): CitationAgentCounts => ({ candidates: 0, citations: 0, pins: 0, rehashed: 0 });
+  const zero = (): CitationAgentCounts => ({ candidates: 0, citations: 0, anchors: 0, pins: 0, rehashed: 0 });
   const counts = Object.fromEntries(SLOT_AGENTS.map(agent => [agent, zero()])) as Record<SlotAgent, CitationAgentCounts>;
   const add = (into: CitationAgentCounts, change: CitationSlotChange): CitationAgentCounts => ({
     candidates: into.candidates + change.candidates.length,
     citations: into.citations + change.citations,
+    anchors: into.anchors + change.anchors,
     pins: into.pins + (change.pin?.recited ? 1 : 0),
     rehashed: into.rehashed + (change.pin?.rehashed ? 1 : 0),
   });

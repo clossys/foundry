@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { reader } from "../../test/store.js";
 import { stageSlot, strategyRoot } from "../__fixtures__/slot-model.js";
 import { readStrategyRoot } from "../store.js";
-import { parseSlotCitation, slotCitationsInText, versionedCitation, versionedCitationsInText } from "./citation.js";
+import { parseSlotCitation, reciteLineAnchors, slotCitationsInText, versionedCitation, versionedCitationsInText } from "./citation.js";
 import { slotCandidateCell } from "./slot.js";
 
 const NEED = "context.customer.need", PROMISE = "advantage.proposition.promise";
@@ -38,6 +38,16 @@ describe("slot citations (planner D2)", () => {
     expect(once.count).toBe(1);
     expect(once.text).toBe(text.replace(`(${NEED}@2)`, `(${NEED})`));
     expect(versionedCitationsInText(once.text)).toEqual([]);
+  });
+
+  it("re-addresses only line anchors to the recited version, as the dropped overlay read them, idempotently", () => {
+    const cites = { [`director:${NEED}`]: 5, "writer:copy.hero": 4 };
+    const text = `Cites ${NEED}@2. <!-- {"id":"x","directorSources":[{"ref":"director:${NEED}@2","line":12}]} --> trait director:${NEED}@2#direction-L18, own copy.hero@3#L4, other designer:${NEED}@2#L9, unrecited director:${PROMISE}@1#L2.`;
+    const once = reciteLineAnchors(text, "writer", cites);
+    expect(once).toEqual({ text: `Cites ${NEED}@2. <!-- {"id":"x","directorSources":[{"ref":"director:${NEED}@5","line":12}]} --> trait director:${NEED}@5#direction-L18, own copy.hero@4#L4, other designer:${NEED}@2#L9, unrecited director:${PROMISE}@1#L2.`, count: 3 });
+    expect(reciteLineAnchors(once.text, "writer", cites)).toEqual({ text: once.text, count: 0 });
+    // A bare ref names the candidate's own agent: a Director candidate's bare `copy.hero@3` is not the Writer slot.
+    expect(reciteLineAnchors(`own copy.hero@3#L4`, "director", cites).count).toBe(0);
   });
 
   it("resolves a candidate's slot citation through the pin, and refuses the versioned form", () => {

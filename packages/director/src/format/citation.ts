@@ -79,6 +79,27 @@ export function slotCitationsInText(text: string, owner: (slot: string) => Citat
   return { text: rewritten, count };
 }
 
+/**
+ * `text` (a pinned candidate of `agent`) with each line anchor re-addressed to the version its pin's
+ * retired `recited` overlay gave it (`cites`: `<agent>:<slot>` -> version), and how many moved. The
+ * overlay re-addressed every versioned ref of the pinned bytes when they were read; a pointer-only
+ * recite attested that the cited lines are unchanged in that version. `slotCitationsInText` turns the
+ * citations into slot ids but keeps line anchors, so the codemod writes this first and the anchors
+ * still name the lines readers saw once `recited` is dropped. A bare ref names `agent`'s own slot, as
+ * the overlay read it. Idempotent.
+ */
+export function reciteLineAnchors(text: string, agent: CitationAgent, cites: Readonly<Record<string, unknown>>): { text: string; count: number } {
+  let count = 0;
+  const rewritten = text.replace(VERSIONED_CITATION_IN_TEXT, (token: string, cited: string | undefined, slot: string, version: string, index: number, whole: string) => {
+    if (!isLineAnchor(whole, index, token)) return token;
+    const to = cites[`${cited ?? agent}:${slot}`];
+    if (typeof to !== "number" || !Number.isInteger(to) || to < 1 || to === Number(version)) return token;
+    count++;
+    return `${cited ? `${cited}:` : ""}${slot}@${to}`;
+  });
+  return { text: rewritten, count };
+}
+
 /** `<agent>:<slot>`, or the bare slot for a citation that names no agent. */
 export function formatSlotCitation(citation: SlotCitation): string {
   return citation.agent ? `${citation.agent}:${citation.slot}` : citation.slot;

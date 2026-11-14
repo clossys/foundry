@@ -5,7 +5,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { citationConsumer, HERO, HOME, NEED, writerBytes, type CitationConsumer } from "../records/__fixtures__/citation-consumer.js";
+import { citationConsumer, HERO, HOME, NEED, pinBytes, writerBytes, type CitationConsumer } from "../records/__fixtures__/citation-consumer.js";
 import { sha256Hex } from "../records/hash.js";
 import { validatePin } from "../records/slot-model/validate.js";
 import { gitBlobId, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations } from "../records/migrations.js";
@@ -22,11 +22,11 @@ describe("migrate citations-to-slots", () => {
     const before = read(hero);
     const plan = planCitationsToSlots(fixture.consumer);
     expect(plan.findings).toEqual([]);
-    expect(plan.counts.director).toEqual({ candidates: 0, citations: 0, pins: 0, rehashed: 0 });
+    expect(plan.counts.director).toEqual({ candidates: 0, citations: 0, anchors: 0, pins: 0, rehashed: 0 });
     // source.ref and the in-text citation; react@18.3.1 and npm/x@1.2.3 are not slot citations.
-    expect(plan.counts.writer).toEqual({ candidates: 1, citations: 2, pins: 1, rehashed: 1 });
-    expect(plan.counts.publisher).toEqual({ candidates: 1, citations: 1, pins: 0, rehashed: 1 });
-    expect(plan.totals).toEqual({ candidates: 2, citations: 3, pins: 1, rehashed: 2 });
+    expect(plan.counts.writer).toEqual({ candidates: 1, citations: 2, anchors: 0, pins: 1, rehashed: 1 });
+    expect(plan.counts.publisher).toEqual({ candidates: 1, citations: 1, anchors: 0, pins: 0, rehashed: 1 });
+    expect(plan.totals).toEqual({ candidates: 2, citations: 3, anchors: 0, pins: 1, rehashed: 2 });
     expect(read(hero)).toBe(before);
   });
 
@@ -72,6 +72,28 @@ describe("migrate citations-to-slots", () => {
     expect(read(manifest)).toBe(bytes);
   });
 
+  it("re-addresses the pinned candidate's line anchors to its pin's recited version before dropping recited", () => {
+    fixture = citationConsumer("versioned");
+    const dir = fixture.dir("writer", HERO);
+    const heroPin = join(dir, "pin.json"), heroPath = join(dir, "candidates", "hero-v1.md"), draftPath = join(dir, "candidates", "hero-v2.md");
+    // A pointer-only recite to need-v2: the overlay read the record's `directorSources` anchor @1 as @2.
+    const before = read(heroPath);
+    writeFileSync(heroPin, pinBytes("hero-v1.md", before, "2026-11-02T00:00:00Z", { recited: { at: "2026-11-02T00:00:00Z", cites: { [`director:${NEED}`]: 2 } } }));
+    // An unpinned candidate is no pin's overlay: its anchor keeps its version.
+    writeFileSync(draftPath, before);
+    const plan = planCitationsToSlots(fixture.consumer);
+    expect(plan.findings).toEqual([]);
+    expect(plan.counts.writer).toEqual({ candidates: 2, citations: 4, anchors: 1, pins: 1, rehashed: 1 });
+    expect(applyCitationsToSlots(fixture.consumer, plan)).toEqual([]);
+    const hero = read(heroPath);
+    expect(hero).toBe(writerBytes(`director:${NEED}`).replace(`"ref":"director:${NEED}@1","line":3`, `"ref":"director:${NEED}@2","line":3`));
+    expect(read(draftPath)).toBe(writerBytes(`director:${NEED}`));
+    const pin = JSON.parse(read(heroPin));
+    expect(pin).toEqual({ candidate: "hero-v1.md", sha256: sha256Hex(hero), decidedBy: "owner:fixture", basis: "picked", at: "2026-11-02T00:00:00Z" });
+    const again = planCitationsToSlots(fixture.consumer);
+    expect([again.changes, again.findings]).toEqual([[], []]);
+  });
+
   it("refuses a slot whose records moved since the plan and leaves it as it is", () => {
     fixture = citationConsumer("versioned");
     const plan = planCitationsToSlots(fixture.consumer);
@@ -88,6 +110,6 @@ describe("migrate citations-to-slots", () => {
   it("leaves a model already in slot citations unchanged", () => {
     fixture = citationConsumer("slot");
     const plan = planCitationsToSlots(fixture.consumer);
-    expect([plan.changes, plan.findings, plan.totals]).toEqual([[], [], { candidates: 0, citations: 0, pins: 0, rehashed: 0 }]);
+    expect([plan.changes, plan.findings, plan.totals]).toEqual([[], [], { candidates: 0, citations: 0, anchors: 0, pins: 0, rehashed: 0 }]);
   });
 });

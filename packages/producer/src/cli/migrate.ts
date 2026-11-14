@@ -11,7 +11,7 @@ export const MIGRATE_USAGE = "Usage: clossys migrate copy-keys|inputs [--check] 
   + "       clossys migrate citations-to-slots [--apply] [--root <dir>] [--json]\n"
   + "copy-keys renames camelCase copy ids in Designer and Writer slot.json and Writer candidates to the catalog's kebab-case ids; record text is unchanged.\n"
   + "inputs declares Designer and Writer slot.json inputs from the read graph (the Designer brief, slot-contract theme and asset reads, pinned Writer source refs); inputs are only added.\n"
-  + "citations-to-slots rewrites citations to slot ids, which resolve through the cited slot's pin: every versioned citation of a known slot (<slot>@<n>, <agent>:<slot>@<n>) in a candidate becomes <slot> or <agent>:<slot>, and every pin drops recited, its sha256 carried to the rewritten pinned bytes (the decision is kept). It is a dry run that reports counts per agent unless --apply is given; --apply records one migrated event per rewritten file in clossys/evidence/migrations.json (the provenance constitution R08.2 accepts); a second run plans nothing.\n"
+  + "citations-to-slots rewrites citations to slot ids, which resolve through the cited slot's pin: every versioned citation of a known slot (<slot>@<n>, <agent>:<slot>@<n>) in a candidate becomes <slot> or <agent>:<slot> (a line anchor <ref>@<n>#L<line> keeps a version: in the pinned candidate it moves to the version the pin's recited gave it), and every pin drops recited, its sha256 carried to the rewritten pinned bytes (the decision is kept). It is a dry run that reports counts per agent unless --apply is given; --apply records one migrated event per rewritten file in clossys/evidence/migrations.json (the provenance constitution R08.2 accepts); a second run plans nothing.\n"
   + "--check reports pending changes and exits 1 when any remain.";
 
 export async function runMigrateCli(argv: readonly string[], cwd: string): Promise<CliResult> {
@@ -63,8 +63,8 @@ function migrateCitationsToSlots(consumer: string, dir: string, apply: boolean, 
   const plan = planCitationsToSlots(consumer);
   const refused = apply ? applyCitationsToSlots(consumer, plan) : [];
   const verb = apply ? "rewritten" : "pending";
-  const row = (name: string, counts: { candidates: number; citations: number; pins: number; rehashed: number }) =>
-    `${name}: ${counts.candidates} candidate(s) ${verb} (${counts.citations} citation(s)), ${counts.pins} pin(s) drop recited, ${counts.rehashed} pin sha256(s) carried`;
+  const row = (name: string, counts: { candidates: number; citations: number; anchors: number; pins: number; rehashed: number }) =>
+    `${name}: ${counts.candidates} candidate(s) ${verb} (${counts.citations} citation(s), ${counts.anchors} line anchor(s) re-addressed to the recited version), ${counts.pins} pin(s) drop recited, ${counts.rehashed} pin sha256(s) carried`;
   const lines = [
     `migrate citations-to-slots${apply ? "" : " (dry run; --apply rewrites)"}: ${plan.changes.length} slot(s) ${verb}; ${plan.findings.length} finding(s)${apply ? `, ${refused.length} refused` : ""}`,
     ...SLOT_AGENTS.map(agent => row(agent, plan.counts[agent])),

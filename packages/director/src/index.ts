@@ -32,7 +32,7 @@ export { validateTree } from "./format/tree.js";
 export { EVIDENCE_PREFIX, readStrategyFile, readStrategyRoot } from "./store.js";
 export { isSlotCandidatePath, parseSlotCandidateDocument, parseSlotPin, slotCandidateCell, slotCandidateVersion, SLOT_CANDIDATE_NAME } from "./format/slot.js";
 export type { SlotCandidateInput, SlotPin } from "./format/slot.js";
-export { CITATION_AGENTS, CITATION_SLOT_ID, formatSlotCitation, parseSlotCitation, versionedCitation, versionedCitationMessage, versionedCitationsInText, slotCitationsInText } from "./format/citation.js";
+export { CITATION_AGENTS, CITATION_SLOT_ID, formatSlotCitation, parseSlotCitation, versionedCitation, versionedCitationMessage, versionedCitationsInText, slotCitationsInText, reciteLineAnchors } from "./format/citation.js";
 export type { CitationAgent, SlotCitation, VersionedCitation } from "./format/citation.js";
 export { CONFIRMED_BY, DECIDED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, PIN_CANDIDATE_NAME, PIN_CONFIRMED_KEYS, PIN_KEYS, pinIssues } from "./format/pin.js";
 export { storeFault } from "./store-io.js";
