@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/constitution/pin.schema.json",
+  "title": "Slot pin (pin.json), constitution R09",
+  "description": "The one pin shape (R09): keys exactly candidate, sha256, decidedBy, basis, at and the optional confirmed. Drafted read-only from src/records/slot-model/validate.ts validatePin; recited is not a pin key (R07.3). Pairing rules a schema cannot state (basis agent iff decidedBy agent:<seat>) are checked by checks/R09-pin-schema.ts.",
+  "type": "object",
+  "required": [
+    "candidate",
+    "sha256",
+    "decidedBy",
+    "basis",
+    "at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "candidate": {
+      "type": "string",
+      "pattern": "^([a-z0-9][a-z0-9.-]*)-v([1-9][0-9]*)\\.(md|json)$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "decidedBy": {
+      "type": "string",
+      "pattern": "^(?:(?:owner|planner|migration)(?::\\S.*)?|agent:\\S+|migrated)$"
+    },
+    "basis": {
+      "enum": [
+        "picked",
+        "bulk",
+        "planner",
+        "agent"
+      ]
+    },
+    "at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "confirmed": {
+      "type": "object",
+      "required": [
+        "by",
+        "ref",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "by": {
+          "type": "string",
+          "pattern": "^owner(?::\\S.*)?$"
+        },
+        "ref": {
+          "type": "string",
+          "pattern": "^(?:[\\w.-]+\\/[\\w.-]+#\\d+ issuecomment-\\d+|https:\\/\\/github\\.com\\/[\\w.-]+\\/[\\w.-]+\\/issues\\/\\d+#issuecomment-\\d+)(?: \\([^()]*\\))?$"
+        },
+        "at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$"
+        }
+      }
+    }
+  }
+}

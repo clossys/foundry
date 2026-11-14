@@ -1,0 +1,363 @@
+[
+  {
+    "id": "R01",
+    "statement": "Catalog and contract. Every agent has one valid IA, and every live slot has one contract.",
+    "scope": "all-records",
+    "status": "pending",
+    "owner": "W2-A",
+    "check": "src/constitution/checks/R01-catalog.ts",
+    "test": "src/constitution/constitution.test.ts",
+    "checks": [
+      {
+        "id": "R01.1",
+        "status": "pending",
+        "owner": "W2-A"
+      },
+      {
+        "id": "R01.2",
+        "status": "pending",
+        "owner": "W2-A"
+      },
+      {
+        "id": "R01.3",
+        "status": "pending",
+        "owner": "W2-A"
+      },
+      {
+        "id": "R01.4",
+        "status": "pending",
+        "owner": "W2-A"
+      },
+      {
+        "id": "R01.5",
+        "status": "pending",
+        "owner": "W2-A"
+      },
+      {
+        "id": "R01.6",
+        "status": "pending",
+        "owner": "W2-A"
+      }
+    ]
+  },
+  {
+    "id": "R02",
+    "statement": "Pins and order. Pins carry a closed basis and decidedBy, upstream is pinned before downstream, and each pin equals its last ledger pin event.",
+    "scope": "all-records",
+    "status": "pending",
+    "owner": "W2-B",
+    "check": "src/constitution/checks/R02-pins-order.ts",
+    "test": "src/constitution/constitution.test.ts",
+    "checks": [
+      {
+        "id": "R02.1",
+        "status": "pending",
+        "owner": "W2-B"
+      },
+      {
+        "id": "R02.2",
+        "status": "pending",
+        "owner": "W2-B"
+      },
+      {
+        "id": "R02.3",
+        "status": "pending",
+        "owner": "W2-B"
+      }
+    ]
+  },
+  {
+    "id": "R03",
+    "statement": "Adopt or create, one certification. Every candidate names its rung, adopted bytes are verbatim, and one certifier serves every rung.",
+    "scope": "all-records",
+    "status": "pending",
+    "owner": "W2-C",
+    "check": "src/constitution/checks/R03-adopt-create.ts",
+    "test": "src/constitution/constitution.test.ts",
+    "checks": [
+      {
+        "id": "R03.1",
+        "status": "pending",
+        "owner": "W2-C"
+      },
+      {
+        "id": "R03.2",
+        "status": "pending",
+        "owner": "W2-C"
+      },
+      {
+        "id": "R03.3",
+        "status": "pending",
+        "owner": "W2-C"
+      }
+    ]
+  },
+  {
+    "id": "R04",
+    "statement": "Cardinality. Every live slot has at least one candidate, exactly one pin.json, and that pinned file exists with a matching sha256. slot.json has no notNeeded key.",
+    "scope": "all-records",
+    "status": "enforced",
+    "check": "src/constitution/checks/R04-cardinality.ts",
+    "test": "src/constitution/checks/R04-cardinality.test.ts",
+    "checks": [
+      {
+        "id": "R04",
+        "status": "enforced"
+      }
+    ]
+  },
+  {
+    "id": "R05",
+    "statement": "Certification. Every candidate in every live slot is certified against its own contract fixture, and a pin only points to a certified candidate.",
+    "scope": "all-records",
+    "status": "pending",
+    "owner": "W2-C",
+    "check": "src/constitution/checks/R05-certification.ts",
+    "test": "src/constitution/constitution.test.ts",
+    "checks": [
+      {
+        "id": "R05.1",
+        "status": "pending",
+        "owner": "W2-C"
+      },
+      {
+        "id": "R05.2",
+        "status": "pending",
+        "owner": "W2-C"
+      },
+      {
+        "id": "R05.3",
+        "status": "pending",
+        "owner": "W2-C"
+      }
+    ]
+  },
+  {
+    "id": "R06",
+    "statement": "Package and code dependencies. Dependencies are exact and locked, nothing is vendored, registryDependencies is empty, no source.ref names a candidate, install paths are unique across slots, and no two slots hold identical bytes.",
+    "scope": "all-records",
+    "status": "enforced",
+    "check": "src/constitution/checks/R06-dependencies.ts",
+    "test": "src/constitution/checks/R06-dependencies.test.ts",
+    "checks": [
+      {
+        "id": "R06.1",
+        "status": "enforced"
+      },
+      {
+        "id": "R06.2",
+        "status": "enforced"
+      },
+      {
+        "id": "R06.2-installed-bytes",
+        "status": "pending",
+        "owner": "unassigned (sweep after W1-A)"
+      },
+      {
+        "id": "R06.3",
+        "status": "enforced"
+      },
+      {
+        "id": "R06.4",
+        "status": "enforced"
+      },
+      {
+        "id": "R06.5",
+        "status": "enforced"
+      },
+      {
+        "id": "R06.6",
+        "status": "enforced"
+      }
+    ]
+  },
+  {
+    "id": "R07",
+    "statement": "Slot dependencies and cascade. Every citation names a slot in the dependency set, carries no version, pins carry no recited key, and the dependency graph is acyclic and points upstream.",
+    "scope": "all-records",
+    "status": "enforced",
+    "check": "src/constitution/checks/R07-citations.ts",
+    "test": "src/constitution/checks/R07-citations.test.ts",
+    "checks": [
+      {
+        "id": "R07.1",
+        "status": "enforced"
+      },
+      {
+        "id": "R07.2",
+        "status": "enforced"
+      },
+      {
+        "id": "R07.3",
+        "status": "enforced"
+      },
+      {
+        "id": "R07.4",
+        "status": "enforced"
+      },
+      {
+        "id": "R07.5",
+        "status": "pending",
+        "owner": "W2-C"
+      }
+    ]
+  },
+  {
+    "id": "R08",
+    "statement": "Immutability and naming. A candidate is <leaf>-v<n>.<ext> with n never reused, and its bytes never change after it is written.",
+    "scope": "all-records",
+    "status": "enforced",
+    "check": "src/constitution/checks/R08-immutability.ts",
+    "test": "src/constitution/checks/R08-immutability.test.ts",
+    "checks": [
+      {
+        "id": "R08.1",
+        "status": "enforced"
+      },
+      {
+        "id": "R08.2",
+        "status": "enforced"
+      },
+      {
+        "id": "R08.3",
+        "status": "pending",
+        "owner": "W2-B"
+      }
+    ]
+  },
+  {
+    "id": "R09",
+    "statement": "One pin schema. pin.schema.json is the only definition of a pin: keys exactly {candidate, sha256, decidedBy, basis, at, confirmed?}.",
+    "scope": "all-records",
+    "status": "enforced",
+    "check": "src/constitution/checks/R09-pin-schema.ts",
+    "test": "src/constitution/checks/R09-pin-schema.test.ts",
+    "checks": [
+      {
+        "id": "R09",
+        "status": "enforced"
+      }
+    ]
+  },
+  {
+    "id": "R10",
+    "statement": "Retire. Candidates and slots leave only through retire records with a closed reason code, and a retired id or name is never placed or written again.",
+    "scope": "all-records",
+    "status": "enforced",
+    "check": "src/constitution/checks/R10-retire.ts",
+    "test": "src/constitution/checks/R10-retire.test.ts",
+    "checks": [
+      {
+        "id": "R10.1",
+        "status": "enforced"
+      },
+      {
+        "id": "R10.2",
+        "status": "enforced"
+      },
+      {
+        "id": "R10.3",
+        "status": "enforced"
+      }
+    ]
+  },
+  {
+    "id": "R11",
+    "statement": "One resolver. Only records/slots.ts reads the agent trees, only records/slot-write.ts writes them, and only resolveCitation() turns a citation into a candidate.",
+    "scope": "all-records",
+    "status": "pending",
+    "owner": "W2-D",
+    "check": "src/constitution/checks/R11-resolver.ts",
+    "test": "src/constitution/constitution.test.ts",
+    "checks": [
+      {
+        "id": "R11.1",
+        "status": "pending",
+        "owner": "W2-D"
+      },
+      {
+        "id": "R11.2",
+        "status": "pending",
+        "owner": "W2-D"
+      }
+    ]
+  },
+  {
+    "id": "R12",
+    "statement": "Deterministic build. compile.lock.json records the current pin-set hash, the compile is pure, and building twice is byte-identical.",
+    "scope": "all-records",
+    "status": "pending",
+    "owner": "W2-D",
+    "check": "src/constitution/checks/R12-deterministic-build.ts",
+    "test": "src/constitution/constitution.test.ts",
+    "checks": [
+      {
+        "id": "R12.1",
+        "status": "pending",
+        "owner": "W2-D"
+      },
+      {
+        "id": "R12.2",
+        "status": "pending",
+        "owner": "W2-D"
+      },
+      {
+        "id": "R12.3",
+        "status": "pending",
+        "owner": "W2-D"
+      }
+    ]
+  },
+  {
+    "id": "R13",
+    "statement": "Strings and pages. Every visible string is a Writer key, every page is one frame plus sections, and every copy key resolves.",
+    "scope": "all-records",
+    "status": "pending",
+    "owner": "W2-D",
+    "check": "src/constitution/checks/R13-strings-pages.ts",
+    "test": "src/constitution/constitution.test.ts",
+    "checks": [
+      {
+        "id": "R13.1",
+        "status": "pending",
+        "owner": "W2-D"
+      },
+      {
+        "id": "R13.2",
+        "status": "pending",
+        "owner": "W2-D"
+      },
+      {
+        "id": "R13.3",
+        "status": "pending",
+        "owner": "W2-D"
+      }
+    ]
+  },
+  {
+    "id": "R14",
+    "statement": "Provenance. Every record byte state matches a ledger event naming its verb, action skill, model and tier.",
+    "scope": "all-records",
+    "status": "pending",
+    "owner": "W2-B",
+    "check": "src/constitution/checks/R14-provenance.ts",
+    "test": "src/constitution/constitution.test.ts",
+    "checks": [
+      {
+        "id": "R14.1",
+        "status": "pending",
+        "owner": "W2-B"
+      },
+      {
+        "id": "R14.2",
+        "status": "pending",
+        "owner": "W2-B"
+      },
+      {
+        "id": "R14.3",
+        "status": "pending",
+        "owner": "W2-B"
+      }
+    ]
+  }
+]
