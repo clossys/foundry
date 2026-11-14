@@ -1,0 +1,41 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "standard",
+      "at": "2026-11-14T16:00:00.000Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "director",
+        "id": "brief.profile",
+        "sha256": "d121e576952ae6c370d2770da5a0f7cba4b26907defbb96af061f0d33b5a45f7"
+      },
+      "files": {
+        "exemplars/exemplars.json": "7e254452ab614230d5a2ab1f03f5806f93c40958874c25047c4cb68bcca8c0a0",
+        "requirements.json": "db0cf7d69af4e7eec51c25482360a6d9a7b1171aa21098b3357520ceb92e2921",
+        "taste.md": "20cec1f63d74b371a6a5538341159b949ac1ec8275f85851e7ec75926d72f544"
+      }
+    },
+    {
+      "op": "standard",
+      "at": "2026-11-14T18:00:00.000Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "director",
+        "id": "brief.profile",
+        "sha256": "78bd220d427710ebf8bf9f6db4b8c86513459eafbb9f232d3692f073df879b77"
+      },
+      "files": {
+        "exemplars/exemplars.json": "7e254452ab614230d5a2ab1f03f5806f93c40958874c25047c4cb68bcca8c0a0",
+        "requirements.json": "675132704420409b04f10be7247bb6196ea8b1eb963ce73a438b3e85eab7c04e",
+        "taste.md": "20cec1f63d74b371a6a5538341159b949ac1ec8275f85851e7ec75926d72f544"
+      }
+    }
+  ]
+}

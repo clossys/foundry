@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "brief.measure",
+  "kinds": [
+    "brief"
+  ],
+  "mode": "craft",
+  "craftTier": "mid",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "brief.sections",
+      "params": {}
+    },
+    {
+      "check": "brief.keys",
+      "params": {
+        "contract": "$contract"
+      }
+    },
+    {
+      "check": "brief.derived-upstream",
+      "params": {}
+    },
+    {
+      "check": "brief.because-cited",
+      "params": {}
+    },
+    {
+      "check": "brief.watch-trigger",
+      "params": {}
+    },
+    {
+      "check": "brief.plain-direction",
+      "params": {}
+    },
+    {
+      "check": "brief.quantified",
+      "params": {
+        "min": 2
+      }
+    },
+    {
+      "check": "brief.direction-values",
+      "params": {
+        "maxWords": 45,
+        "maxSentences": 2
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-brief-metric]",
+        "[data-brief-metric-name]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

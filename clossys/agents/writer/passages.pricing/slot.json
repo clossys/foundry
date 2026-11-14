@@ -133,5 +133,6 @@
     "focus.lifecycle.acquisition",
     "focus.offer.included"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

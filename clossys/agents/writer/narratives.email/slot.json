@@ -18,5 +18,6 @@
     "focus.lifecycle.acquisition",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "narrative"
 }

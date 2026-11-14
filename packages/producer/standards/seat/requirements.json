@@ -1,0 +1,37 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "seat",
+  "kinds": [
+    "seat"
+  ],
+  "mode": "craft",
+  "craftTier": "mid",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "seat.assigned",
+      "params": {}
+    },
+    {
+      "check": "seat.prompt-owner",
+      "params": {}
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-seat-name]",
+        "[data-seat-tier]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

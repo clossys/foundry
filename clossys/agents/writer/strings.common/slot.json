@@ -20,5 +20,6 @@
     "identity.verbal.voice",
     "identity.brand.personality"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }

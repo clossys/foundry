@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "standard",
+      "at": "2026-11-14T16:00:00.000Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "writer",
+        "id": "lexicon.format-rule",
+        "sha256": "e853022051d6493fda2be854b80a3c43441069fa0f3e5ec6b18b5bb76ca292dd"
+      },
+      "files": {
+        "exemplars/exemplars.json": "994b2250f48d74524f47791337d49049a5161ae0a17072b05f8f1e28fe261078",
+        "requirements.json": "f161e0b8cd2f14756916937b267508751e867768f8b7907ed55314955e4e9acf",
+        "taste.md": "8e61645bf92cf454cd68626a2b66fac73b72d774376f7d8155e48d2910256ce3"
+      }
+    }
+  ]
+}

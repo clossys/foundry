@@ -34,5 +34,6 @@
   "inputs": [
     "advantage.proposition.proof"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "pattern"
 }

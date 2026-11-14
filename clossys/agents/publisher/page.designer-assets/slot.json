@@ -45,5 +45,6 @@
     "strings.common",
     "strings.descriptions",
     "strings.page-titles"
-  ]
+  ],
+  "standard": "page"
 }

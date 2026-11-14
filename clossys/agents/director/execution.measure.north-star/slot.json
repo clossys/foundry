@@ -29,5 +29,6 @@
   "inputs": [
     "aspiration.goal.long-term"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "brief.measure"
 }

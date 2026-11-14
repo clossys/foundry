@@ -5,7 +5,7 @@
   "ia": {
     "l1": "direct",
     "l2": "direct.pin",
-    "order": 6
+    "order": 8
   },
   "kind": "seat",
   "contract": {
@@ -27,5 +27,6 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [],
+  "standard": "seat"
 }

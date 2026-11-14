@@ -32,5 +32,6 @@
   "inputs": [
     "identity.naming.name"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "copy.headline"
 }

@@ -20,5 +20,6 @@
     "advantage.proposition.promise",
     "focus.segment.core"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }

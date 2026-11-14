@@ -81,5 +81,6 @@
     "execution.measure.north-star",
     "execution.roadmap.release"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "passage"
 }

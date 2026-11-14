@@ -21,5 +21,6 @@
   ],
   "uses": [],
   "options": 3,
-  "varyOn": "arc"
+  "varyOn": "arc",
+  "standard": "narrative"
 }

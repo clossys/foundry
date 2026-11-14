@@ -1,0 +1,58 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "shadcn-blocks",
+      "ref": "https://ui.shadcn.com/blocks",
+      "source": "shadcn/ui",
+      "license": "MIT",
+      "description": "Page blocks assembled from stock components, each block one job.",
+      "why": {
+        "fit-to-purpose": "Each block does one job.",
+        "section-rhythm": "Blocks of varied weight."
+      }
+    },
+    {
+      "id": "gov-uk-page-template",
+      "ref": "https://design-system.service.gov.uk/styles/page-template/",
+      "source": "GOV.UK Design System",
+      "license": "OGL-UK-3.0",
+      "description": "One page template: header, main content and footer, with the page purpose first.",
+      "why": {
+        "hierarchy": "Purpose first in the main region."
+      }
+    },
+    {
+      "id": "nextjs-layouts",
+      "ref": "https://nextjs.org/docs/app/getting-started/layouts-and-pages",
+      "source": "Next.js docs",
+      "license": "MIT",
+      "description": "Layouts wrap pages: the frame persists and each page supplies only its content.",
+      "why": {
+        "fit-to-purpose": "A page is the frame plus its own sections."
+      }
+    },
+    {
+      "id": "vercel-templates",
+      "ref": "https://vercel.com/templates",
+      "source": "Vercel",
+      "license": "proprietary (link only)",
+      "description": "Starter pages where every section earns its place and the lead states the product.",
+      "why": {
+        "hierarchy": "One clear lead.",
+        "section-rhythm": "Dense and light sections alternate."
+      }
+    },
+    {
+      "id": "gov-uk-start-page",
+      "ref": "https://design-system.service.gov.uk/patterns/start-using-a-service/",
+      "source": "GOV.UK Design System",
+      "license": "OGL-UK-3.0",
+      "description": "The start page pattern: what the service does, what you need, one start button.",
+      "why": {
+        "fit-to-purpose": "Only the sections the job needs.",
+        "hierarchy": "One primary action."
+      }
+    }
+  ]
+}

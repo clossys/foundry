@@ -202,6 +202,44 @@
           "sha256": "ca4b2cd18de9d25244e3c65cf423f2b153bbf901493c3e7ff53211cb011aff2d"
         }
       ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T17:05:12.135Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "96d528c5f196d22a2e763c29bf285c90aba25b4606adb03e8daf2160d7bed222"
+        }
+      ]
+    },
+    {
+      "op": "slot",
+      "at": "2026-11-14T17:24:13.424Z",
+      "by": "planner",
+      "verb": "ia",
+      "skill": {
+        "path": "packages/producer/actions/ia/skill.md",
+        "sha256": "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
+      },
+      "model": "none",
+      "tier": "none",
+      "kind": "ia",
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "ca85983da3dc7ec9d1d3d5562665064db916f3b177490073fa39df75aa73eaa2"
+        }
+      ]
     }
   ]
 }

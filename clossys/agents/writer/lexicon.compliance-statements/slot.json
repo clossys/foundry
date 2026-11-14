@@ -19,5 +19,6 @@
     "advantage.proposition.proof",
     "focus.reach.geography"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "lexicon.claim-list"
 }

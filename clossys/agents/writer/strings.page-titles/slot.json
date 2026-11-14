@@ -20,5 +20,6 @@
     "aspiration.purpose.mission",
     "identity.naming.name"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }

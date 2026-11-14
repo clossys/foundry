@@ -25,5 +25,6 @@
     "sections.studio.page-header",
     "strings.common",
     "strings.page-titles"
-  ]
+  ],
+  "standard": "page"
 }

@@ -23,5 +23,6 @@
   "inputs": [
     "identity.verbal.narrative"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "string"
 }
