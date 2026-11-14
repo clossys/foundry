@@ -3,5 +3,17 @@
   "sha256": "7eb096fff49a5c8e5e4c4451af7ca01c84cd1dc9f20b7602ebe0a21195085f15",
   "decidedBy": "owner:https://github.com/clossys/workspace/issues/46#issuecomment-6867459781",
   "basis": "picked",
-  "at": "2026-11-13T23:24:17.034Z"
+  "at": "2026-11-13T23:24:17.034Z",
+  "recited": {
+    "by": "agent:producer",
+    "at": "2026-11-13T23:24:27.298Z",
+    "cites": {
+      "director:identity.brand.personality": 5,
+      "director:identity.verbal.voice": 6
+    },
+    "proof": {
+      "director:identity.brand.personality": "sha256:b623ac395493d9154d0f61fdc705f6bb1098d1afba65da20c5d046629b2f40b9",
+      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013"
+    }
+  }
 }
