@@ -5527,11 +5527,11 @@
     },
     {
       "path": "clossys/agents/writer/strings.common/candidates/studio-v23.md",
-      "sha256": "fcea08be993d16dc89133a0feb47c60db59ea09bedc11aa3a037952573f21c75"
+      "sha256": "ea9822b1f74e3516c98092709fe37f106a87a7a659bf08ed820e7ae4b40cba6d"
     },
     {
       "path": "clossys/agents/writer/strings.common/pin.json",
-      "sha256": "9fca7bcf4370a9c68d2e5a7b0dbed13fa83b54352c998c6041d5494eae36b998"
+      "sha256": "741f8461746428c93fe062f49a572ebbc3a1ed16846b2f253d9813e80ca8e11d"
     },
     {
       "path": "clossys/agents/writer/strings.common/slot.json",
@@ -6601,7 +6601,7 @@
     },
     {
       "path": "generated/studio-copy.json",
-      "sha256": "5ebb953de02a1d739162c68135b6e0755bbb045eadcde1c5e8ad14719af2f767"
+      "sha256": "fade233c1f6e92cdf0443534a8745525e994a44f7f44e98d009c802e48e4bf17"
     },
     {
       "path": "generated/studio-flow-theme.css",
