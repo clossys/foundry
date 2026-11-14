@@ -8,6 +8,7 @@
           "id": "direct.brief",
           "actions": [
             "ia",
+            "standard",
             "retire",
             "evidence",
             "workspace.config",

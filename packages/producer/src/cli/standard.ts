@@ -1,6 +1,6 @@
 /**
  * `clossys standard <agent>/<id> --by owner|planner [--requirements <file>] [--taste <file>]
- *   [--exemplars <file>] [--exemplar-file <file>]... [--at <iso>] [--root <dir>]`
+ *   [--exemplars <file>] [--exemplar-file <file>]... [--at <iso>] [--root <dir>] [--dry]`
  *
  * The one way a standard changes (R16.3, slot-constitution.md sections 3 and 5b): only the owner or
  * the planner, never an agent seat. It writes the named parts into `packages/<agent>/standards/<id>/`,
@@ -8,6 +8,10 @@
  * `standard` event to the standard's ledger.json naming every file's sha256. An invalid result is
  * rolled back byte for byte and refused (exit 1). Recipes are never touched here: a recipe edit is an
  * agent skill unit's, and one change never holds both (R16.3).
+ *
+ * `--dry` runs the same write and validation, then always restores every byte: it prints the event the
+ * write would append and whether it equals the ledger's last event (every field but `at`), so a recorded
+ * standard can be proved idempotent through the verb itself.
  */
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
@@ -23,19 +27,21 @@ import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
-export const STANDARD_USAGE = "Usage: clossys standard <agent>/<id> --by owner|planner [--requirements <file>] [--taste <file>] [--exemplars <file>] [--exemplar-file <file>]... [--at <iso>] [--root <dir>]\n"
+export const STANDARD_USAGE = "Usage: clossys standard <agent>/<id> --by owner|planner [--requirements <file>] [--taste <file>] [--exemplars <file>] [--exemplar-file <file>]... [--at <iso>] [--root <dir>] [--dry]\n"
   + "  writes the named parts of packages/<agent>/standards/<id>/ (requirements.json, taste.md, exemplars/exemplars.json, exemplar files),\n"
-  + "  validates the whole standard and appends a `standard` ledger event; only the owner or the planner changes a standard (R16.3).";
+  + "  validates the whole standard and appends a `standard` ledger event; only the owner or the planner changes a standard (R16.3).\n"
+  + "  --dry validates the same write, restores every byte and prints the event it would append (and whether it matches the last one).";
 
 const VALUED = ["--by", "--requirements", "--taste", "--exemplars", "--exemplar-file", "--at", "--root"] as const;
 
-interface StandardFlags { positional: string[]; values: Map<string, string[]>; help: boolean }
+interface StandardFlags { positional: string[]; values: Map<string, string[]>; help: boolean; dry: boolean }
 function parseStandard(argv: readonly string[]): StandardFlags {
-  const flags: StandardFlags = { positional: [], values: new Map(), help: false };
+  const flags: StandardFlags = { positional: [], values: new Map(), help: false, dry: false };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     if (arg === "--json") continue;
     if (arg === "--help") { flags.help = true; continue; }
+    if (arg === "--dry") { flags.dry = true; continue; }
     if ((VALUED as readonly string[]).includes(arg)) {
       const next = argv[++index];
       if (next === undefined || (next.startsWith("--") && next.length > 2)) throw new CliUsageError(`${arg} requires a value\n${STANDARD_USAGE}`);
@@ -56,6 +62,15 @@ function replaceFile(path: string, bytes: Buffer | string): void {
   const staged = join(dirname(path), `.${randomUUID()}.tmp`);
   writeFileSync(staged, bytes, { flag: "wx" });
   try { renameSync(staged, path); } catch (error) { rmSync(staged, { force: true }); throw error; }
+}
+
+/** Whether two standard ledger events agree on every field but `at` (key order ignored). */
+export function sameEvent(recorded: unknown, event: Readonly<Record<string, unknown>>): boolean {
+  if (!recorded || typeof recorded !== "object" || Array.isArray(recorded)) return false;
+  const canonical = (value: unknown): unknown => Array.isArray(value) ? value.map(canonical)
+    : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, canonical(v)])) : value;
+  const strip = ({ at: _at, ...rest }: Record<string, unknown>) => canonical(rest);
+  return JSON.stringify(strip(recorded as Record<string, unknown>)) === JSON.stringify(strip({ ...event }));
 }
 
 /** Every issue of a standard as R15 judges it: read and schema issues, criteria, taste, exemplars, seeds. */
@@ -143,6 +158,16 @@ export async function runStandardCli(argv: readonly string[], cwd: string): Prom
   }
   const files = Object.fromEntries(Object.entries(standard.files).sort(([a], [b]) => a.localeCompare(b)));
   const event = { op: "standard", at, by, verb: "standard", model: "none", tier: "none", standard: { agent, id, sha256: standard.sha256 }, files };
+  if (flags.dry) {
+    undo();
+    const last = ledger.events.at(-1);
+    const same = sameEvent(last, event);
+    return {
+      exitCode: 0, root,
+      output: { schema: "clossys.standard-dry/1", standard: target, valid: true, written: false, event, last: last ?? null, matches: same },
+      message: `standard --dry: ${target} valid; would append ${JSON.stringify(event)}; ${last === undefined ? "the ledger has no event" : same ? "matches the ledger's last event (every field but at)" : `differs from the ledger's last event ${JSON.stringify(last)}`}; nothing written`,
+    };
+  }
   const bytes = `${JSON.stringify({ ...ledger, events: [...ledger.events, event] }, null, 2)}\n`;
   try { replaceFile(ledgerPath, bytes); } catch (error) { undo(); return refuse(`ledger write failed: ${(error as Error).message}`); }
   return { exitCode: 0, root, message: `standard: ${target} ${[...rels].sort().join(", ")} written by ${by}; sha ${standard.sha256.slice(0, 12)}; ledger ${sha256Hex(bytes).slice(0, 12)}` };
