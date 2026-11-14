@@ -30,7 +30,7 @@ import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, 
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
-import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy } from "../records/slots.js";
+import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
 import { writePin } from "../records/slot-write.js";
 import { isDecide, roundOf, ROUNDS, STAGES } from "../pipeline/define.js";
 import type { Step } from "../pipeline/define.js";
@@ -42,7 +42,7 @@ import { STEPS } from "../pipeline/steps/index.js";
 import { RETIRE_CODES, RETIRE_REASON } from "../constitution/checks/R10-retire.js";
 import { resolveCandidate } from "./pin.js";
 import { CliUsageError } from "./args.js";
-import { addGroup, assignGroup, dropGroup, mergeGroups, moveSlot, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile } from "./ia-regroup.js";
+import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
@@ -135,12 +135,18 @@ function snapshot(paths: readonly string[]): () => void {
 }
 interface ModelIssue { code: string; path: string; message: string }
 const issueKey = (issue: ModelIssue) => `${issue.code} ${issue.path} ${issue.message}`;
+const modelIssues = (consumer: string, allow?: (issue: ModelIssue) => boolean) => checkSlotModel(consumer).filter(issue => !allow?.(issue)).map(issueKey);
+/** The slot model issues `writes` would add, judged in memory (the reader's overlay): what `guarded` would undo, with nothing written. */
+function plannedIssues(consumer: string, writes: readonly (readonly [string, string])[]): string[] {
+  const before = new Set(modelIssues(consumer));
+  return withModelOverlay(writes, () => modelIssues(consumer)).filter(issue => !before.has(issue));
+}
 /**
  * Runs `write`; when the slot model check then has an issue it did not have before, undoes it and returns the issues.
  * `allow` names an issue the write is expected to add (none but retire's own folder); `undo` reverses what the file snapshot cannot (a moved folder).
  */
 function guarded(consumer: string, paths: readonly string[], write: () => void, options: { allow?: (issue: ModelIssue) => boolean; undo?: () => void } = {}): string[] {
-  const issues = () => checkSlotModel(consumer).filter(issue => !options.allow?.(issue)).map(issueKey);
+  const issues = () => modelIssues(consumer, options.allow);
   const before = new Set(issues());
   const files = snapshot(paths);
   const undo = () => { options.undo?.(); files(); };
@@ -171,16 +177,23 @@ const GATE_FLAGS = ["--owner-ref", "--at", "--root"];
 
 /**
  * Apply one ia write list through the guarded writer, or under `--dry` print it and write nothing.
- * A dry run validates what a write validates before it writes; the slot model check runs only on a real write.
+ * A dry run validates what a write validates and runs the same slot model check on the planned files in
+ * memory: it refuses (exit 1) exactly where the write would be refused, and lists the files either way.
  */
 function commitIa(consumer: string, root: string, writes: readonly (readonly [string, string])[], dry: boolean, summary: string, lines: readonly string[] = [], message = `ia: ${summary}`): CliResult {
   const rel = (path: string) => relative(root, path).split(sep).join("/");
   if (dry) {
     const files = writes.map(([path]) => rel(path));
     const shown = files.length > 25 ? [...files.slice(0, 25), `... and ${files.length - 25} more`] : files;
+    const listed = [...lines.map(line => `  ${line}`), ...shown.map(file => `  write ${file}`)];
+    const added = plannedIssues(consumer, writes);
+    if (added.length) return {
+      exitCode: 1, root, output: { dry: true, refused: true, summary, changes: lines, writes: files, issues: added },
+      message: [`ia --dry refused: the slot model check would fail after the write: ${added.slice(0, 5).join("; ")}${added.length > 5 ? ` (and ${added.length - 5} more)` : ""}`, `  ${summary}; would write ${files.length} file${files.length === 1 ? "" : "s"}, wrote nothing`, ...listed].join("\n"),
+    };
     return {
       exitCode: 0, root, output: { dry: true, summary, changes: lines, writes: files },
-      message: [`ia --dry: ${summary}; would write ${files.length} file${files.length === 1 ? "" : "s"}, wrote nothing`, ...lines.map(line => `  ${line}`), ...shown.map(file => `  write ${file}`)].join("\n"),
+      message: [`ia --dry: ${summary}; would write ${files.length} file${files.length === 1 ? "" : "s"}, wrote nothing`, ...listed].join("\n"),
     };
   }
   const added = guarded(consumer, writes.map(([path]) => path), () => { for (const [path, bytes] of writes) replaceFile(path, bytes); });
@@ -256,6 +269,9 @@ type AgentIaFile = { extensions?: string[]; nodes: { id: string; label: string; 
 const isPlaced = (ia: AgentIaFile, slot: string) => ia.nodes.some(node => node.children.some(child => child.slots.includes(slot)));
 /** The agent IA with `slot` taken out of its group and its extensions (ia --remove, retire --slot). */
 const withoutSlot = (ia: AgentIaFile, slot: string): AgentIaFile => ({ ...ia, nodes: ia.nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child, slots: child.slots.filter(id => id !== slot) })) })), extensions: (ia.extensions ?? []).filter(id => id !== slot) });
+/** The renumbered slot.json files of a placement or removal, for its change record and its output lines. */
+const renumbered = (follow: PositionFollow) => follow.writes.length ? `; ${follow.writes.length} later slot.json renumbered (order only)` : "";
+const followLines = (follow: PositionFollow) => [...follow.moved, ...(follow.reordered ? [`${follow.reordered} other slot.json renumbered (order only)`] : [])];
 /** ia.json with one owner-authorized change appended (the record every gated write carries). */
 const withChange = (ia: AgentIaFile, change: { op: string; ownerRef: string; at: string; detail: string; slotFiles: number }): AgentIaFile =>
   ({ ...ia, changes: [...(Array.isArray(ia.changes) ? ia.changes : []), change] });
@@ -349,10 +365,13 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
     for (const file of [slotFile(dir), pinFile(dir)]) if (modelExists(file)) return refuse("ia", `${target} has ${file.slice(dir.length + 1)}; only a slot with no records leaves the IA`);
     if (listModelDir(candidatesDir(dir)).some(name => !name.startsWith("."))) return refuse("ia", `${target} has candidates; only a slot with no records leaves the IA`);
     let next = withoutSlot(ia, slot);
-    if (owner.ref) next = withChange(next, { op: "remove", ownerRef: owner.ref, at, detail: `removed ${slot}`, slotFiles: 0 });
+    // Later slots move up one order: their slot.json positions follow, as retire --slot renumbers.
+    const follow = followPositions(consumer, agent, ia as unknown as IaFile, next as unknown as IaFile, undefined, slot);
+    if ("error" in follow) return refuse("ia", follow.error);
+    if (owner.ref) next = withChange(next, { op: "remove", ownerRef: owner.ref, at, detail: `removed ${slot}${renumbered(follow)}`, slotFiles: follow.writes.length });
     const issues = validateIa(next, iaFile);
     if (issues.length) return refuse("ia", issues.map(issue => issue.message).join("; "));
-    return commitIa(consumer, root, [[iaFile, jsonBytes(next)]], dry, `remove ${target} from ${agent} ia.json`, [], `ia: removed ${target} from ${agent} ia.json`);
+    return commitIa(consumer, root, [[iaFile, jsonBytes(next)], ...follow.writes], dry, `remove ${target} from ${agent} ia.json`, followLines(follow), `ia: removed ${target} from ${agent} ia.json`);
   }
   const contractFile = need(flags, "--contract", IA_USAGE);
   let contract: unknown;
@@ -372,7 +391,10 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
     if (!node || !child) return refuse("ia", `${agent} ia.json has no ${under} (L1/L2 ids as ia.json lists them)`);
     next = { ...ia, nodes: base.map(each => each !== node ? each : { ...each, children: each.children.map(group => group !== child ? group : { ...group, slots: [...group.slots, slot] }) }) };
   } else if (one(flags, "--under")) return refuse("ia", `${target} is already placed; --under only places a new slot`);
-  if (owner.ref) next = withChange(next, { op: placed ? "contract" : "place", ownerRef: owner.ref, at, detail: placed ? `wrote the contract of ${slot}` : `placed ${slot} under ${one(flags, "--under")}`, slotFiles: 1 });
+  // A slot placed before the end shifts every later slot's agent-wide order: their slot.json positions follow (order only).
+  const follow = followPositions(consumer, agent, ia as unknown as IaFile, next as unknown as IaFile, undefined, slot);
+  if ("error" in follow) return refuse("ia", follow.error);
+  if (owner.ref) next = withChange(next, { op: placed ? "contract" : "place", ownerRef: owner.ref, at, detail: placed ? `wrote the contract of ${slot}` : `placed ${slot} under ${one(flags, "--under")}${renumbered(follow)}`, slotFiles: 1 + follow.writes.length });
   const iaIssues = validateIa(next, iaFile);
   if (iaIssues.length) return refuse("ia", iaIssues.map(issue => issue.message).join("; "));
   const position = slotPositions(agent, next as unknown as IaDoc).get(slot);
@@ -387,8 +409,8 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   };
   const docIssues = validateSlotDoc(doc, slotFile(dir));
   if (docIssues.length) return refuse("ia", docIssues.map(issue => issue.message).join("; "));
-  const writes: [string, string][] = [...(next !== ia ? [[iaFile, jsonBytes(next)] as [string, string]] : []), [slotFile(dir), jsonBytes(doc)]];
-  return commitIa(consumer, root, writes, dry, `${target} ${placed ? "contract" : `placed under ${one(flags, "--under")} and contract`}`, [],
+  const writes: [string, string][] = [...(next !== ia ? [[iaFile, jsonBytes(next)] as [string, string]] : []), [slotFile(dir), jsonBytes(doc)], ...follow.writes];
+  return commitIa(consumer, root, writes, dry, `${target} ${placed ? "contract" : `placed under ${one(flags, "--under")} and contract`}`, followLines(follow),
     `ia: ${target} ${placed ? "contract written" : `placed under ${one(flags, "--under")} and its contract written`} (clossys/agents/${agent}/${slot}/slot.json)`);
 }
 
