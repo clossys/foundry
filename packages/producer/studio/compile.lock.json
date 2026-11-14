@@ -3739,7 +3739,7 @@
     },
     {
       "path": "clossys/agents/producer/ia.json",
-      "sha256": "0a6a3848e80bb86814f3d8c9173a5dbdc1b980e03e6ce2f831aee7088cb1d539"
+      "sha256": "f31d1a81baebf2eb6a36da60ab0bb3c5f222377912f11ee12e42341ce5becb9d"
     },
     {
       "path": "clossys/agents/producer/seat.designer.candidates/candidates/designer.candidates-v1.json",
@@ -3896,6 +3896,18 @@
     {
       "path": "clossys/agents/producer/seat.publisher.candidates/slot.json",
       "sha256": "8eb9a9931389040a3017d8f4ed6300d25a76e5a3135b865801589f4a038b4ad7"
+    },
+    {
+      "path": "clossys/agents/producer/seat.retire/candidates/retire-v1.json",
+      "sha256": "fa2f668babc6b5814cdb6c8aa441c6ca692d357315039e2d32320c29f830f452"
+    },
+    {
+      "path": "clossys/agents/producer/seat.retire/pin.json",
+      "sha256": "755ac3ed418259d95a6a4c39de1a3c0ec0948da0ffb00651a1270b7d7b0aec5c"
+    },
+    {
+      "path": "clossys/agents/producer/seat.retire/slot.json",
+      "sha256": "5bce4ab9742e74bda89e2e2135a6e7d43646a88bc706894439eef57d479a9826"
     },
     {
       "path": "clossys/agents/producer/seat.rules/candidates/rules-v1.json",
@@ -6756,5 +6768,5 @@
       "sha256": "d625b721c766c95057120630d30bde88b2a61f5877abe1e0cb726fba22f182ad"
     }
   ],
-  "pinSetHash": "74f423da0bb4af1aa4c0cd5d036a3d0ca53ef61f663c30f09b2ce362aebe12b4"
+  "pinSetHash": "f52e9ff7c715e2b335cad21de02385bb94d0f974bf8d274f9b5aacf7452c157d"
 }

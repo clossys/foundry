@@ -133,6 +133,7 @@
       "checks": [
         "workspace"
       ],
+      "open": "on-demand",
       "agent": "owner",
       "package": "producer",
       "run": "clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>",
@@ -187,8 +188,8 @@
       "holder": {
         "id": "you",
         "kind": "you",
-        "source": "derived",
-        "tier": null
+        "source": "file",
+        "tier": "mid"
       },
       "layout": {
         "lane": "you",
@@ -8123,10 +8124,17 @@
     },
     "retire": {
       "path": "clossys/agents/producer/seat.retire/pin.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
+      "state": "assigned",
+      "by": "owner",
+      "llm": {
+        "model": "claude-opus-5-5",
+        "tier": "mid",
+        "promptFile": "packages/producer/actions/retire/skill.md"
+      },
+      "human": {
+        "procedure": "Retire what a slot no longer needs, through the verb, never by moving files by hand.",
+        "command": "clossys retire"
+      },
       "issues": []
     },
     "evidence": {
@@ -8393,8 +8401,7 @@
       ],
       "steps": 11,
       "sources": [
-        "file",
-        "derived"
+        "file"
       ],
       "tiers": [
         "mid"

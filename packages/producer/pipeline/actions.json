@@ -74,6 +74,7 @@
         "agent": "owner",
         "kind": "decide:judgment",
         "stage": "direct.brief",
+        "open": "on-demand",
         "summary": "Retire a candidate (into its slot's retired/) or a whole slot (out of ia.json), with a clossys.retire/1 record (clossys retire).",
         "run": "clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>",
         "inputs": [

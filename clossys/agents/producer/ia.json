@@ -15,7 +15,8 @@
             "seat.evidence",
             "seat.workspace.config",
             "seat.seats",
-            "seat.rules"
+            "seat.rules",
+            "seat.retire"
           ]
         },
         {

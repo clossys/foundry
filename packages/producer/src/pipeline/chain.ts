@@ -139,6 +139,8 @@ export function openItems(step: Step, context: Context): string[] {
   if (!isDecide(step)) return [];
   const counter = step.open;
   const root = context.root;
+  // An on-demand verb is never owed: no open item, whether or not its outputs exist yet.
+  if (counter === "on-demand") return [];
   if (counter === "slots-without-slot-json") {
     const dir = join(root, "clossys", "agents");
     // An agent with a Foundry IA and no ia.json is one open item (its bare id), once the agents it reads have theirs.

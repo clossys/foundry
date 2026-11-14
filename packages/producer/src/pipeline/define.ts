@@ -84,8 +84,11 @@ export interface StepCommand {
 /** A step that lands (`adds`) or goes away (`removes`) on another branch. Pending is never passing. */
 export interface Pending { readonly branch: string; readonly change: "adds" | "removes" }
 
-/** Named counters of open decisions a decide step leaves, read from real files. */
-export type OpenCounter = "slots-without-slot-json" | `slots-without-candidates:${string}` | "writer-keys-unapproved" | `slots-undecided:${string}` | "seats-open";
+/**
+ * Named counters of open decisions a decide step leaves, read from real files. `on-demand` marks a
+ * verb the owner runs when a case arises (clossys retire): it is never owed, so it counts nothing.
+ */
+export type OpenCounter = "slots-without-slot-json" | `slots-without-candidates:${string}` | "writer-keys-unapproved" | `slots-undecided:${string}` | "seats-open" | "on-demand";
 
 export interface StepInput {
   readonly id: string;
