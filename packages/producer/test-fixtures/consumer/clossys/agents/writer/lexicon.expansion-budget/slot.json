@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.expansion-budget",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.formats",
+    "l2": "formats-direction-and-expansion",
+    "order": 26
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "format",
+    "valueType": "expansion-ratio"
+  },
+  "inputs": [
+    "focus.reach.geography"
+  ],
+  "uses": []
+}

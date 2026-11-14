@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.risk.threat",
+  "agent": "director",
+  "ia": {
+    "l1": "execution",
+    "l2": "execution.risk",
+    "order": 55
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What could kill the strategy, how likely is it, and how bad would it be?",
+    "mustContain": [
+      {
+        "key": "Threat",
+        "hint": "the threat"
+      },
+      {
+        "key": "Likelihood",
+        "hint": "low, medium or high, with a reason"
+      },
+      {
+        "key": "Impact",
+        "hint": "what it would break"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "aspiration.goal.long-term",
+  "agent": "director",
+  "ia": {
+    "l1": "aspiration",
+    "l2": "aspiration.goal",
+    "order": 12
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What measurable position do we aim to hold, and by when?",
+    "mustContain": [
+      {
+        "key": "Target",
+        "hint": "the position, with a number"
+      },
+      {
+        "key": "Date",
+        "hint": "the date it is due"
+      },
+      {
+        "key": "Scope",
+        "hint": "what the target covers and excludes"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

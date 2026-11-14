@@ -6,6 +6,7 @@
  */
 import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { packagePath } from "../package-path.js";
 import { CRITERION_ID } from "../constitution/criteria/core/catalog.js";
 import { resolveRequirements, type Requirement } from "../constitution/criteria/core/verdict.js";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
@@ -155,7 +156,7 @@ export function ledgerEvents(value: unknown): Record<string, unknown>[] {
 /** Reads one standard folder. `root` is the workspace (repository) root. */
 export function readStandard(root: string, agent: ModelAgent, id: string): Standard {
   const dir = posix(join("packages", agent, "standards", id));
-  const abs = join(root, dir);
+  const abs = packagePath(root, dir);
   const issues: string[] = [];
   let names: string[] = [];
   try { names = filesBelow(abs); } catch (error) { issues.push((error as Error).message); }
@@ -214,7 +215,7 @@ export function readStandard(root: string, agent: ModelAgent, id: string): Stand
 export function loadStandards(root: string): Standard[] {
   const out: Standard[] = [];
   for (const agent of STANDARD_AGENTS) {
-    const base = join(root, "packages", agent, "standards");
+    const base = packagePath(root, `packages/${agent}/standards`);
     if (!existsSync(base)) continue;
     for (const id of readdirSync(base).sort()) {
       if (id.startsWith(".")) continue;

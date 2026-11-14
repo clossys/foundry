@@ -1,0 +1,24 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.descriptions",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.metadata",
+    "l2": "metadata-descriptions",
+    "order": 45
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 160,
+    "maxWords": 30
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.segment.core"
+  ],
+  "uses": []
+}

@@ -1,0 +1,24 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.empty",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.feedback",
+    "l2": "feedback-empty",
+    "order": 36
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 320,
+    "maxWords": 60
+  },
+  "inputs": [
+    "focus.offer.included",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

@@ -1,0 +1,24 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.names",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.identity",
+    "l2": "identity-names",
+    "order": 38
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 100,
+    "maxWords": 16
+  },
+  "inputs": [
+    "identity.naming.architecture",
+    "identity.naming.name"
+  ],
+  "uses": []
+}

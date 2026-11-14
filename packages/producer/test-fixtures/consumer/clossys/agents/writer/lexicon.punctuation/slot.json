@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.punctuation",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.formats",
+    "l2": "formats-punctuation-and-capitalization",
+    "order": 24
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "format",
+    "valueType": "punctuation-rule"
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

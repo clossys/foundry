@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.measure.driver",
+  "agent": "director",
+  "ia": {
+    "l1": "execution",
+    "l2": "execution.measure",
+    "order": 54
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which inputs move the north star, with which targets and owners?",
+    "mustContain": [
+      {
+        "key": "Drivers",
+        "hint": "the input metrics"
+      },
+      {
+        "key": "Targets",
+        "hint": "a target for each"
+      },
+      {
+        "key": "Owner",
+        "hint": "who owns each"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

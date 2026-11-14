@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.risk.mitigation",
+  "agent": "director",
+  "ia": {
+    "l1": "execution",
+    "l2": "execution.risk",
+    "order": 56
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we do about each top threat, and who owns it?",
+    "mustContain": [
+      {
+        "key": "Threat",
+        "hint": "the threat it answers"
+      },
+      {
+        "key": "Action",
+        "hint": "the mitigating action"
+      },
+      {
+        "key": "Owner",
+        "hint": "who owns it"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

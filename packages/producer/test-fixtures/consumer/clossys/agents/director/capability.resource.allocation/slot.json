@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.resource.allocation",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.resource",
+    "order": 48
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How do we split time and money across the bets?",
+    "mustContain": [
+      {
+        "key": "Split",
+        "hint": "the split, in percentages"
+      },
+      {
+        "key": "Rule",
+        "hint": "the rule that sets it"
+      },
+      {
+        "key": "Reserve",
+        "hint": "what is held back"
+      }
+    ]
+  },
+  "inputs": [
+    "execution.priority.bet"
+  ],
+  "uses": []
+}

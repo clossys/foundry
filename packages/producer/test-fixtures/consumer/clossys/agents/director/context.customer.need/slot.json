@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "context.customer.need",
+  "agent": "director",
+  "ia": {
+    "l1": "context",
+    "l2": "context.customer",
+    "order": 2
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What job is the core customer trying to get done, and what hurts today?",
+    "mustContain": [
+      {
+        "key": "Job",
+        "hint": "the job in the customer's words"
+      },
+      {
+        "key": "Pain",
+        "hint": "what goes wrong today, observable"
+      },
+      {
+        "key": "Trigger",
+        "hint": "the event that makes them look for help now"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

@@ -21,6 +21,9 @@
   "files": [
     "dist",
     "src",
+    "standards",
+    "recipes",
+    "actions",
     "README.md",
     "LICENSE",
     "skill",

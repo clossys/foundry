@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.category.definition",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.category",
+    "order": 14
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which category do we tell buyers we belong to?",
+    "mustContain": [
+      {
+        "key": "Category",
+        "hint": "the category name"
+      },
+      {
+        "key": "Frame",
+        "hint": "how buyers already understand it"
+      },
+      {
+        "key": "Adjacent",
+        "hint": "the categories we get confused with"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

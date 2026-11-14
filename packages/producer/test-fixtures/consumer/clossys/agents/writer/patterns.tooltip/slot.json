@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.tooltip",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.messages",
+    "l2": "messages-help",
+    "order": 61
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "text",
+          "required": true,
+          "maxChars": 240,
+          "maxWords": 45
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

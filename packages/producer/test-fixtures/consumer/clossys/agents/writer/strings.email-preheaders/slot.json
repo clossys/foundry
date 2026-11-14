@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.email-preheaders",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.metadata",
+    "l2": "metadata-email-subject-and-preheader",
+    "order": 48
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 120,
+    "maxWords": 24
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

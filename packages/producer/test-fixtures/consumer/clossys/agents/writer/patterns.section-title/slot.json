@@ -1,0 +1,38 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.section-title",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.headings",
+    "l2": "headings-section-titles",
+    "order": 52
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "title",
+          "required": true,
+          "maxChars": 100,
+          "maxWords": 18
+        },
+        {
+          "id": "description",
+          "required": false,
+          "maxChars": 240,
+          "maxWords": 45
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.competency.critical",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.competency",
+    "order": 38
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which capabilities must be world class for the strategy to work?",
+    "mustContain": [
+      {
+        "key": "Capability",
+        "hint": "the capability"
+      },
+      {
+        "key": "Why",
+        "hint": "which choice depends on it"
+      },
+      {
+        "key": "Bar",
+        "hint": "the bar it must clear, testable"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

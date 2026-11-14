@@ -1,0 +1,21 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "narratives.notification",
+  "agent": "writer",
+  "ia": {
+    "l0": "narratives",
+    "l1": "narratives.communications",
+    "l2": "communications-messages",
+    "order": 135
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "narrative",
+    "source": "writer",
+    "structure": "passage-sequence"
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

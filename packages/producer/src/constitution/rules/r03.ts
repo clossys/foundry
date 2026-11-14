@@ -22,6 +22,7 @@
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
+import { packagePath } from "../../package-path.js";
 import { ladderIssues, rungKind, type GenericRung } from "../../pipeline/candidate-ladder.js";
 import { ledgerEvents, standardFor, type Standard } from "../../records/standards.js";
 import { certifyEnv, slotDocOf } from "../certify/index.js";
@@ -95,8 +96,8 @@ export function provenanceOf(ctx: ConstitutionContext): Provenance {
   if (!found) {
     try {
       found = {
-        rule: JSON.parse(readFileSync(join(ctx.root, PROVENANCE_RULE_PATH), "utf8")) as ProvenanceRule,
-        manifest: JSON.parse(readFileSync(join(ctx.root, REFERENCE_MANIFEST_PATH), "utf8")) as ReferenceManifest,
+        rule: JSON.parse(readFileSync(packagePath(ctx.root, PROVENANCE_RULE_PATH), "utf8")) as ProvenanceRule,
+        manifest: JSON.parse(readFileSync(packagePath(ctx.root, REFERENCE_MANIFEST_PATH), "utf8")) as ReferenceManifest,
       };
     } catch (error) {
       found = { error: `cannot read ${PROVENANCE_RULE_PATH} or ${REFERENCE_MANIFEST_PATH}: ${(error as Error).message}` };

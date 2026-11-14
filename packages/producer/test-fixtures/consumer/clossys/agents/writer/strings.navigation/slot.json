@@ -1,0 +1,24 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.navigation",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.interface",
+    "l2": "interface-navigation",
+    "order": 28
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 40,
+    "maxWords": 6
+  },
+  "inputs": [
+    "identity.naming.architecture",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

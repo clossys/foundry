@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.offer.included",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.offer",
+    "order": 18
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What exactly do customers get, and what outcome does it produce?",
+    "mustContain": [
+      {
+        "key": "Offer",
+        "hint": "what they get, itemised"
+      },
+      {
+        "key": "Outcome",
+        "hint": "the result it produces"
+      },
+      {
+        "key": "Form",
+        "hint": "product, service or both, and how it is delivered"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

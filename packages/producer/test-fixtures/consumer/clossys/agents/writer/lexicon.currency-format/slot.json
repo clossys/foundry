@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.currency-format",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.formats",
+    "l2": "formats-currency-and-units",
+    "order": 21
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "format",
+    "valueType": "currency-format"
+  },
+  "inputs": [
+    "advantage.model.pricing",
+    "focus.reach.geography"
+  ],
+  "uses": [],
+  "notNeeded": {
+    "reason": "synthetic fixture: the example shop lists no prices",
+    "since": "2026-11-14",
+    "decidedBy": "planner"
+  }
+}

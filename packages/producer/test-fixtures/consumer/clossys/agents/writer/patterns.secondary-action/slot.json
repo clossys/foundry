@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.secondary-action",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.actions",
+    "l2": "actions-calls-to-action",
+    "order": 54
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "verb",
+          "required": true,
+          "maxChars": 24,
+          "maxWords": 3
+        },
+        {
+          "id": "object",
+          "required": true,
+          "maxChars": 48,
+          "maxWords": 6
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "focus.lifecycle.acquisition",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.offer.excluded",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.offer",
+    "order": 19
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we deliberately not offer, and where do we send people who want it?",
+    "mustContain": [
+      {
+        "key": "Not",
+        "hint": "what we do not offer"
+      },
+      {
+        "key": "Why",
+        "hint": "why we leave it out"
+      },
+      {
+        "key": "Redirect",
+        "hint": "where we send people who want it"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

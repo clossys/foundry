@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.comparison-claims",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.claims",
+    "l2": "claims-comparisons",
+    "order": 16
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "claim",
+    "valueType": "approved-comparison-list"
+  },
+  "inputs": [
+    "advantage.proposition.proof",
+    "context.competition.alternative"
+  ],
+  "uses": []
+}

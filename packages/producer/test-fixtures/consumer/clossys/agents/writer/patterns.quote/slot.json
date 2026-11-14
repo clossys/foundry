@@ -1,0 +1,38 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.quote",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.attribution",
+    "l2": "attribution-quotes",
+    "order": 69
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "quote",
+          "required": true,
+          "maxChars": 1200,
+          "maxWords": 220
+        },
+        {
+          "id": "attribution",
+          "required": true,
+          "maxChars": 160,
+          "maxWords": 28
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.proof"
+  ],
+  "uses": []
+}

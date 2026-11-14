@@ -1,0 +1,64 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.specimen-passage",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.display",
+    "l2": "display-specimens",
+    "order": 144
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [
+      "items",
+      "axes",
+      "context",
+      "need",
+      "renderParts",
+      "expanded",
+      "labels"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing"
+      ],
+      "assets": [],
+      "components": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.rich-text"
+      ]
+    },
+    "composes": [
+      "components.semantic-content",
+      "components.grid-list",
+      "components.disclosure",
+      "components.rich-text"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.disclosure",
+    "components.grid-list",
+    "components.rich-text",
+    "components.semantic-content"
+  ]
+}

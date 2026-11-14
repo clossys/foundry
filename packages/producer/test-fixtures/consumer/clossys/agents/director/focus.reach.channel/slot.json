@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.reach.channel",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.reach",
+    "order": 21
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Through which channels does the core segment find and buy from us?",
+    "mustContain": [
+      {
+        "key": "Primary",
+        "hint": "the main channel"
+      },
+      {
+        "key": "Secondary",
+        "hint": "the supporting channel"
+      },
+      {
+        "key": "Not",
+        "hint": "channels we do not use"
+      }
+    ]
+  },
+  "inputs": [
+    "focus.segment.core"
+  ],
+  "uses": []
+}

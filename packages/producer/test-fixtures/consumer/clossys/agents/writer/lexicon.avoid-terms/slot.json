@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.avoid-terms",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.terminology",
+    "l2": "terminology-avoid-list",
+    "order": 9
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "term",
+    "valueType": "term-list"
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

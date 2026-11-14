@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.category.stance",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.category",
+    "order": 15
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we stand against inside that category?",
+    "mustContain": [
+      {
+        "key": "Stance",
+        "hint": "our position, as a sentence"
+      },
+      {
+        "key": "Against",
+        "hint": "the practice we oppose"
+      },
+      {
+        "key": "Risk",
+        "hint": "what the stance could cost"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

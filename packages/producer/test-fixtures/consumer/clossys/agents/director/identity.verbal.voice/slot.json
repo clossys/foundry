@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.verbal.voice",
+  "agent": "director",
+  "ia": {
+    "l1": "identity",
+    "l2": "identity.verbal",
+    "order": 35
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How do we sound, and which words do we never use?",
+    "mustContain": [
+      {
+        "key": "Sound",
+        "hint": "how we sound"
+      },
+      {
+        "key": "Do",
+        "hint": "writing habits we keep"
+      },
+      {
+        "key": "Never",
+        "hint": "words and moves we never use, quoted"
+      }
+    ]
+  },
+  "inputs": [
+    "identity.brand.essence"
+  ],
+  "uses": []
+}

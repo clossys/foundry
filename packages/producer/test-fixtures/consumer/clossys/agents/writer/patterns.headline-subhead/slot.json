@@ -1,0 +1,40 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.headline-subhead",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.headings",
+    "l2": "headings-headlines",
+    "order": 50
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "headline",
+          "required": true,
+          "maxChars": 100,
+          "maxWords": 18
+        },
+        {
+          "id": "subhead",
+          "required": true,
+          "maxChars": 180,
+          "maxWords": 32
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.segment.core",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

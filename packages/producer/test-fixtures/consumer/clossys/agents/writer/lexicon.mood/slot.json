@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.mood",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.voice",
+    "l2": "voice-person-and-mood",
+    "order": 4
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "voice-rule",
+    "valueType": "grammatical-mood"
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

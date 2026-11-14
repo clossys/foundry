@@ -1,0 +1,38 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.inline-link",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.actions",
+    "l2": "actions-links",
+    "order": 55
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "label",
+          "required": true,
+          "maxChars": 80,
+          "maxWords": 12
+        },
+        {
+          "id": "accessible-name",
+          "required": false,
+          "maxChars": 160,
+          "maxWords": 24
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

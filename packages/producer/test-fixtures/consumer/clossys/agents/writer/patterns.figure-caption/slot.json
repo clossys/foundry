@@ -1,0 +1,38 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.figure-caption",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.attribution",
+    "l2": "attribution-figures",
+    "order": 71
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "caption",
+          "required": true,
+          "maxChars": 400,
+          "maxWords": 72
+        },
+        {
+          "id": "credit",
+          "required": false,
+          "maxChars": 160,
+          "maxWords": 28
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.visual.imagery"
+  ],
+  "uses": []
+}

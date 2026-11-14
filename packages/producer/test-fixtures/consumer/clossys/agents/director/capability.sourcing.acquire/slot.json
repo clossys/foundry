@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.sourcing.acquire",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.sourcing",
+    "order": 42
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Would we buy a capability, what would trigger it, and what is the limit?",
+    "mustContain": [
+      {
+        "key": "Target",
+        "hint": "what we would buy"
+      },
+      {
+        "key": "Trigger",
+        "hint": "the condition that starts it"
+      },
+      {
+        "key": "Limit",
+        "hint": "the price or scope limit"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

@@ -26,6 +26,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
+import { packagePath } from "../package-path.js";
 import { checkSlotModel, RETIRED_DIR } from "../records/slot-check.js";
 import { ledgerComment, OWNER_DECISION_SCOPES, OWNER_DECISIONS_FILE, OWNER_DECISIONS_SCHEMA, resolveOwnerRef, validateOwnerDecisions, type OwnerDecision } from "../records/owner-decisions.js";
 import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SEAT_AGENT, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId, seatStepOf } from "../records/slot-model/types.js";
@@ -401,7 +402,7 @@ function runIaSeatStandard(flags: Flags, cwd: string, target: string, slot: stri
     try { contract = readJsonFile(resolve(cwd, contractFile)); } catch { return refuse("ia", `--contract ${contractFile} is not a readable JSON file`); }
     if (!isRecordValue(contract) || contract.step !== step) return refuse("ia", `--contract must keep the seat's step ${JSON.stringify(step)}`);
   }
-  if (!existsSync(join(root, "packages", SEAT_AGENT, "standards", standardId, "requirements.json"))) return refuse("ia", `standard ${standardId} does not exist under packages/${SEAT_AGENT}/standards/`);
+  if (!existsSync(packagePath(root, `packages/${SEAT_AGENT}/standards/${standardId}/requirements.json`))) return refuse("ia", `standard ${standardId} does not exist under packages/${SEAT_AGENT}/standards/`);
   const standard = readStandard(root, SEAT_AGENT, standardId);
   if (!standard.doc || standard.issues.length) return refuse("ia", `standard ${standardId} is not valid: ${standard.issues.slice(0, 5).join("; ")}`);
   if (!standardFits(standard.doc, "seat", contract)) return refuse("ia", `standard ${standardId} serves ${standard.doc.kinds.join(", ")}, not ${slotKinds("seat", contract).join(" or ")}`);
@@ -521,7 +522,7 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   }
   if (standardId !== undefined) {
     // The standard lives in the slot's own agent package (R15.1): it must exist, read clean and serve this kind.
-    if (!existsSync(join(root, "packages", agent, "standards", standardId, "requirements.json"))) return refuse("ia", `standard ${standardId} does not exist under packages/${agent}/standards/`);
+    if (!existsSync(packagePath(root, `packages/${agent}/standards/${standardId}/requirements.json`))) return refuse("ia", `standard ${standardId} does not exist under packages/${agent}/standards/`);
     const standard = readStandard(root, agent as ModelAgent, standardId);
     if (!standard.doc || standard.issues.length) return refuse("ia", `standard ${standardId} is not valid: ${standard.issues.slice(0, 5).join("; ")}`);
     if (!standardFits(standard.doc, kind, contract)) return refuse("ia", `standard ${standardId} serves ${standard.doc.kinds.join(", ")}, not ${slotKinds(kind, contract).join(" or ")}`);

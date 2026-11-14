@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.roadmap.milestone",
+  "agent": "director",
+  "ia": {
+    "l1": "execution",
+    "l2": "execution.roadmap",
+    "order": 51
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which milestones mark progress, by when, and with what evidence?",
+    "mustContain": [
+      {
+        "key": "Milestone",
+        "hint": "the milestone"
+      },
+      {
+        "key": "Date",
+        "hint": "the due date"
+      },
+      {
+        "key": "Evidence",
+        "hint": "what proves it is reached"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

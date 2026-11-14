@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "advantage.defensibility.differentiator",
+  "agent": "director",
+  "ia": {
+    "l1": "advantage",
+    "l2": "advantage.defensibility",
+    "order": 26
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What makes our way different, and why is it hard to copy?",
+    "mustContain": [
+      {
+        "key": "Difference",
+        "hint": "how we work differently"
+      },
+      {
+        "key": "Versus",
+        "hint": "who we differ from"
+      },
+      {
+        "key": "Why-hard",
+        "hint": "why it is hard to copy"
+      }
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise"
+  ],
+  "uses": []
+}

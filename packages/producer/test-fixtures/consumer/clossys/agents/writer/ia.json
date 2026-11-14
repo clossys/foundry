@@ -1,0 +1,786 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "@clossys/writer#leaf-freeze:0b06a262bc9447787b9e79393125f1369bfb3470",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "lexicon.voice",
+      "label": "Voice",
+      "children": [
+        {
+          "id": "voice-tone",
+          "label": "Tone",
+          "slots": [
+            "lexicon.formality",
+            "lexicon.warmth",
+            "lexicon.energy"
+          ]
+        },
+        {
+          "id": "voice-person-and-mood",
+          "label": "Person and mood",
+          "slots": [
+            "lexicon.person",
+            "lexicon.mood"
+          ]
+        },
+        {
+          "id": "voice-rhythm",
+          "label": "Rhythm",
+          "slots": [
+            "lexicon.sentence-length",
+            "lexicon.reading-level"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lexicon.terminology",
+      "label": "Terminology",
+      "children": [
+        {
+          "id": "terminology-brand-names",
+          "label": "Brand names",
+          "slots": [
+            "lexicon.brand-names"
+          ]
+        },
+        {
+          "id": "terminology-glossary",
+          "label": "Glossary",
+          "slots": [
+            "lexicon.preferred-terms"
+          ]
+        },
+        {
+          "id": "terminology-avoid-list",
+          "label": "Avoid list",
+          "slots": [
+            "lexicon.avoid-terms",
+            "lexicon.avoid-patterns"
+          ]
+        },
+        {
+          "id": "terminology-spelling",
+          "label": "Spelling",
+          "slots": [
+            "lexicon.spelling-variant"
+          ]
+        },
+        {
+          "id": "terminology-pronunciation",
+          "label": "Pronunciation",
+          "slots": [
+            "lexicon.pronunciation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lexicon.claims",
+      "label": "Claims",
+      "children": [
+        {
+          "id": "claims-product-facts",
+          "label": "Product facts",
+          "slots": [
+            "lexicon.product-claims"
+          ]
+        },
+        {
+          "id": "claims-metrics",
+          "label": "Metrics",
+          "slots": [
+            "lexicon.metric-claims"
+          ]
+        },
+        {
+          "id": "claims-legal-and-compliance",
+          "label": "Legal and compliance",
+          "slots": [
+            "lexicon.compliance-statements"
+          ]
+        },
+        {
+          "id": "claims-comparisons",
+          "label": "Comparisons",
+          "slots": [
+            "lexicon.comparison-claims"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lexicon.formats",
+      "label": "Formats",
+      "children": [
+        {
+          "id": "formats-numbers-and-plurals",
+          "label": "Numbers and plurals",
+          "slots": [
+            "lexicon.number-format",
+            "lexicon.plural-rules"
+          ]
+        },
+        {
+          "id": "formats-dates-and-times",
+          "label": "Dates and times",
+          "slots": [
+            "lexicon.date-format",
+            "lexicon.time-format"
+          ]
+        },
+        {
+          "id": "formats-currency-and-units",
+          "label": "Currency and units",
+          "slots": [
+            "lexicon.currency-format",
+            "lexicon.unit-format"
+          ]
+        },
+        {
+          "id": "formats-punctuation-and-capitalization",
+          "label": "Punctuation and capitalization",
+          "slots": [
+            "lexicon.capitalization",
+            "lexicon.punctuation"
+          ]
+        },
+        {
+          "id": "formats-direction-and-expansion",
+          "label": "Direction and expansion",
+          "slots": [
+            "lexicon.direction",
+            "lexicon.expansion-budget"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strings.interface",
+      "label": "Interface",
+      "children": [
+        {
+          "id": "interface-actions",
+          "label": "Actions",
+          "slots": [
+            "strings.actions"
+          ]
+        },
+        {
+          "id": "interface-navigation",
+          "label": "Navigation",
+          "slots": [
+            "strings.navigation"
+          ]
+        },
+        {
+          "id": "interface-field-labels",
+          "label": "Field labels",
+          "slots": [
+            "strings.field-labels",
+            "strings.common"
+          ]
+        },
+        {
+          "id": "interface-statuses",
+          "label": "Statuses",
+          "slots": [
+            "strings.statuses"
+          ]
+        },
+        {
+          "id": "interface-counters",
+          "label": "Counters",
+          "slots": [
+            "strings.counters"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strings.feedback",
+      "label": "Feedback",
+      "children": [
+        {
+          "id": "feedback-errors",
+          "label": "Errors",
+          "slots": [
+            "strings.errors"
+          ]
+        },
+        {
+          "id": "feedback-warnings",
+          "label": "Warnings",
+          "slots": [
+            "strings.warnings"
+          ]
+        },
+        {
+          "id": "feedback-confirmations",
+          "label": "Confirmations",
+          "slots": [
+            "strings.confirmations"
+          ]
+        },
+        {
+          "id": "feedback-empty",
+          "label": "Empty",
+          "slots": [
+            "strings.empty"
+          ]
+        },
+        {
+          "id": "feedback-loading",
+          "label": "Loading",
+          "slots": [
+            "strings.loading"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strings.identity",
+      "label": "Identity",
+      "children": [
+        {
+          "id": "identity-names",
+          "label": "Names",
+          "slots": [
+            "strings.names"
+          ]
+        },
+        {
+          "id": "identity-taglines",
+          "label": "Taglines",
+          "slots": [
+            "strings.taglines"
+          ]
+        },
+        {
+          "id": "identity-legal-lines",
+          "label": "Legal lines",
+          "slots": [
+            "strings.legal-lines"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strings.media-text",
+      "label": "Media text",
+      "children": [
+        {
+          "id": "media-text-alt-text",
+          "label": "Alt text",
+          "slots": [
+            "strings.alt-text"
+          ]
+        },
+        {
+          "id": "media-text-captions",
+          "label": "Captions",
+          "slots": [
+            "strings.captions"
+          ]
+        },
+        {
+          "id": "media-text-transcripts",
+          "label": "Transcripts",
+          "slots": [
+            "strings.transcripts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strings.metadata",
+      "label": "Metadata",
+      "children": [
+        {
+          "id": "metadata-page-titles",
+          "label": "Page titles",
+          "slots": [
+            "strings.page-titles"
+          ]
+        },
+        {
+          "id": "metadata-descriptions",
+          "label": "Descriptions",
+          "slots": [
+            "strings.descriptions"
+          ]
+        },
+        {
+          "id": "metadata-share-text",
+          "label": "Share text",
+          "slots": [
+            "strings.share-text"
+          ]
+        },
+        {
+          "id": "metadata-email-subject-and-preheader",
+          "label": "Email subject and preheader",
+          "slots": [
+            "strings.email-subjects",
+            "strings.email-preheaders"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patterns.headings",
+      "label": "Headings",
+      "children": [
+        {
+          "id": "headings-headlines",
+          "label": "Headlines",
+          "slots": [
+            "patterns.headline",
+            "patterns.headline-subhead",
+            "patterns.eyebrow-headline"
+          ]
+        },
+        {
+          "id": "headings-section-titles",
+          "label": "Section titles",
+          "slots": [
+            "patterns.section-title"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patterns.actions",
+      "label": "Actions",
+      "children": [
+        {
+          "id": "actions-calls-to-action",
+          "label": "Calls to action",
+          "slots": [
+            "patterns.primary-action",
+            "patterns.secondary-action"
+          ]
+        },
+        {
+          "id": "actions-links",
+          "label": "Links",
+          "slots": [
+            "patterns.inline-link"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patterns.messages",
+      "label": "Messages",
+      "children": [
+        {
+          "id": "messages-problems",
+          "label": "Problems",
+          "slots": [
+            "patterns.error-message",
+            "patterns.warning-message"
+          ]
+        },
+        {
+          "id": "messages-outcomes",
+          "label": "Outcomes",
+          "slots": [
+            "patterns.confirmation"
+          ]
+        },
+        {
+          "id": "messages-states",
+          "label": "States",
+          "slots": [
+            "patterns.empty-state"
+          ]
+        },
+        {
+          "id": "messages-help",
+          "label": "Help",
+          "slots": [
+            "patterns.hint",
+            "patterns.tooltip"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patterns.forms",
+      "label": "Forms",
+      "children": [
+        {
+          "id": "forms-fields",
+          "label": "Fields",
+          "slots": [
+            "patterns.form-field"
+          ]
+        },
+        {
+          "id": "forms-consent",
+          "label": "Consent",
+          "slots": [
+            "patterns.consent-line"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patterns.data-and-lists",
+      "label": "Data and lists",
+      "children": [
+        {
+          "id": "data-and-lists-items",
+          "label": "Items",
+          "slots": [
+            "patterns.feature-bullet",
+            "patterns.stat",
+            "patterns.pricing-item"
+          ]
+        },
+        {
+          "id": "data-and-lists-tables",
+          "label": "Tables",
+          "slots": [
+            "patterns.table-header",
+            "patterns.table-caption"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patterns.attribution",
+      "label": "Attribution",
+      "children": [
+        {
+          "id": "attribution-quotes",
+          "label": "Quotes",
+          "slots": [
+            "patterns.quote",
+            "patterns.testimonial"
+          ]
+        },
+        {
+          "id": "attribution-figures",
+          "label": "Figures",
+          "slots": [
+            "patterns.figure-caption"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "patterns.identity",
+      "label": "Identity",
+      "children": [
+        {
+          "id": "identity-messaging-kit",
+          "label": "Messaging kit",
+          "slots": [
+            "patterns.messaging-kit"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passages.parts",
+      "label": "Parts",
+      "children": [
+        {
+          "id": "parts-structure",
+          "label": "Structure",
+          "slots": [
+            "passages.band",
+            "passages.section-header"
+          ]
+        },
+        {
+          "id": "parts-navigation",
+          "label": "Navigation",
+          "slots": [
+            "passages.pagination"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passages.explain",
+      "label": "Explain",
+      "children": [
+        {
+          "id": "explain-introductions",
+          "label": "Introductions",
+          "slots": [
+            "passages.hero",
+            "passages.logo-hero",
+            "passages.page-header",
+            "passages.logo-mark"
+          ]
+        },
+        {
+          "id": "explain-reading",
+          "label": "Reading",
+          "slots": [
+            "passages.content",
+            "passages.article",
+            "passages.sectioned-document",
+            "passages.legal-prose"
+          ]
+        },
+        {
+          "id": "explain-promotion",
+          "label": "Promotion",
+          "slots": [
+            "passages.features",
+            "passages.call-to-action"
+          ]
+        },
+        {
+          "id": "explain-social-proof",
+          "label": "Social proof",
+          "slots": [
+            "passages.testimonials",
+            "passages.logo-cloud",
+            "passages.people"
+          ]
+        },
+        {
+          "id": "explain-media",
+          "label": "Media",
+          "slots": [
+            "passages.media",
+            "passages.gallery"
+          ]
+        },
+        {
+          "id": "explain-guidance",
+          "label": "Guidance",
+          "slots": [
+            "passages.faq",
+            "passages.steps",
+            "passages.timeline"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passages.organize",
+      "label": "Organize",
+      "children": [
+        {
+          "id": "organize-collections",
+          "label": "Collections",
+          "slots": [
+            "passages.cards",
+            "passages.resource-list",
+            "passages.task-list"
+          ]
+        },
+        {
+          "id": "organize-comparison",
+          "label": "Comparison",
+          "slots": [
+            "passages.comparison",
+            "passages.pricing"
+          ]
+        },
+        {
+          "id": "organize-summaries",
+          "label": "Summaries",
+          "slots": [
+            "passages.stats",
+            "passages.status-list",
+            "passages.usage",
+            "passages.account-summary"
+          ]
+        },
+        {
+          "id": "organize-records",
+          "label": "Records",
+          "slots": [
+            "passages.data-table",
+            "passages.data-grid",
+            "passages.record-detail"
+          ]
+        },
+        {
+          "id": "organize-history",
+          "label": "History",
+          "slots": [
+            "passages.activity-feed",
+            "passages.audit-log"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passages.collect",
+      "label": "Collect",
+      "children": [
+        {
+          "id": "collect-forms",
+          "label": "Forms",
+          "slots": [
+            "passages.form",
+            "passages.newsletter"
+          ]
+        },
+        {
+          "id": "collect-workflows",
+          "label": "Workflows",
+          "slots": [
+            "passages.wizard"
+          ]
+        },
+        {
+          "id": "collect-preferences",
+          "label": "Preferences",
+          "slots": [
+            "passages.settings"
+          ]
+        },
+        {
+          "id": "collect-configuration",
+          "label": "Configuration",
+          "slots": [
+            "passages.column-mapper",
+            "passages.access-matrix"
+          ]
+        },
+        {
+          "id": "collect-conversation",
+          "label": "Conversation",
+          "slots": [
+            "passages.chat"
+          ]
+        },
+        {
+          "id": "collect-inputs",
+          "label": "Inputs",
+          "slots": [
+            "passages.sign-in-form"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passages.navigate",
+      "label": "Navigate",
+      "children": [
+        {
+          "id": "navigate-indexes",
+          "label": "Indexes",
+          "slots": [
+            "passages.link-index",
+            "passages.table-of-contents"
+          ]
+        },
+        {
+          "id": "navigate-discovery",
+          "label": "Discovery",
+          "slots": [
+            "passages.explorer",
+            "passages.filter-builder"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passages.respond",
+      "label": "Respond",
+      "children": [
+        {
+          "id": "respond-states",
+          "label": "States",
+          "slots": [
+            "passages.empty-state",
+            "passages.error-state",
+            "passages.boundary-message"
+          ]
+        },
+        {
+          "id": "respond-messages",
+          "label": "Messages",
+          "slots": [
+            "passages.notices",
+            "passages.consent"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "narratives.web",
+      "label": "Web",
+      "children": [
+        {
+          "id": "web-site-and-demo",
+          "label": "Site and demo",
+          "slots": [
+            "narratives.page-story"
+          ]
+        },
+        {
+          "id": "web-app-and-admin",
+          "label": "App and admin",
+          "slots": [
+            "narratives.screen"
+          ]
+        },
+        {
+          "id": "web-chrome",
+          "label": "Chrome",
+          "slots": [
+            "narratives.site-chrome",
+            "narratives.app-chrome"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "narratives.documents",
+      "label": "Documents",
+      "children": [
+        {
+          "id": "documents-docs",
+          "label": "Docs",
+          "slots": [
+            "narratives.article",
+            "narratives.guide",
+            "narratives.release-notes",
+            "narratives.legal-document"
+          ]
+        },
+        {
+          "id": "documents-slides",
+          "label": "Slides",
+          "slots": [
+            "narratives.deck-script"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "narratives.communications",
+      "label": "Communications",
+      "children": [
+        {
+          "id": "communications-messages",
+          "label": "Messages",
+          "slots": [
+            "narratives.email",
+            "narratives.notification"
+          ]
+        },
+        {
+          "id": "communications-videos",
+          "label": "Videos",
+          "slots": [
+            "narratives.video-script"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.reading-level",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.voice",
+    "l2": "voice-rhythm",
+    "order": 6
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "voice-rule",
+    "valueType": "grade-range"
+  },
+  "inputs": [
+    "focus.segment.core",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

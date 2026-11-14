@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.competency.gap",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.competency",
+    "order": 39
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which critical capability is missing, how big is the gap, and when do we close it?",
+    "mustContain": [
+      {
+        "key": "Gap",
+        "hint": "the missing capability"
+      },
+      {
+        "key": "Size",
+        "hint": "how far we are from the bar"
+      },
+      {
+        "key": "Close-by",
+        "hint": "the date and route to close it"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

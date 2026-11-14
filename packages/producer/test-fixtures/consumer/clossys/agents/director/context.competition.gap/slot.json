@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "context.competition.gap",
+  "agent": "director",
+  "ia": {
+    "l1": "context",
+    "l2": "context.competition",
+    "order": 5
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do current alternatives leave unsolved, and why is it still open?",
+    "mustContain": [
+      {
+        "key": "Gap",
+        "hint": "the unsolved part, specific"
+      },
+      {
+        "key": "Evidence",
+        "hint": "a finding or user message showing it"
+      },
+      {
+        "key": "Why-open",
+        "hint": "why nobody has closed it"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

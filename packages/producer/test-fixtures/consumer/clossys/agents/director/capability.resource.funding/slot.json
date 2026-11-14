@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.resource.funding",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.resource",
+    "order": 47
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How is the company funded, how long does it last, and what comes next?",
+    "mustContain": [
+      {
+        "key": "Source",
+        "hint": "where the money comes from"
+      },
+      {
+        "key": "Runway",
+        "hint": "months of runway"
+      },
+      {
+        "key": "Next",
+        "hint": "the next funding step and its trigger"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.compliance-statements",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.claims",
+    "l2": "claims-legal-and-compliance",
+    "order": 15
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "claim",
+    "valueType": "approved-statement-list"
+  },
+  "inputs": [
+    "advantage.proposition.proof",
+    "focus.reach.geography"
+  ],
+  "uses": []
+}

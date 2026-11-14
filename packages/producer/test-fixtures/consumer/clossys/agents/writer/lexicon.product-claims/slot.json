@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.product-claims",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.claims",
+    "l2": "claims-product-facts",
+    "order": 13
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "claim",
+    "valueType": "approved-claim-list"
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "advantage.proposition.proof"
+  ],
+  "uses": []
+}

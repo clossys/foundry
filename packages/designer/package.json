@@ -348,6 +348,9 @@
   "files": [
     "dist",
     "src",
+    "standards",
+    "recipes",
+    "actions",
     "styles",
     "templates",
     "README.md",

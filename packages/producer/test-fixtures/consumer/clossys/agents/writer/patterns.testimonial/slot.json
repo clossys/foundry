@@ -1,0 +1,50 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.testimonial",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.attribution",
+    "l2": "attribution-quotes",
+    "order": 70
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "quote",
+          "required": true,
+          "maxChars": 1200,
+          "maxWords": 220
+        },
+        {
+          "id": "person",
+          "required": true,
+          "maxChars": 80,
+          "maxWords": 12
+        },
+        {
+          "id": "role",
+          "required": true,
+          "maxChars": 100,
+          "maxWords": 18
+        },
+        {
+          "id": "company",
+          "required": true,
+          "maxChars": 100,
+          "maxWords": 18
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.proof"
+  ],
+  "uses": []
+}

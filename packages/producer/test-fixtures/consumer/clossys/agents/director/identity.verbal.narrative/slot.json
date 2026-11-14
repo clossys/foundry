@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.verbal.narrative",
+  "agent": "director",
+  "ia": {
+    "l1": "identity",
+    "l2": "identity.verbal",
+    "order": 34
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What change in the world do we describe, what is at stake, and what is our way through?",
+    "mustContain": [
+      {
+        "key": "Change",
+        "hint": "the change in the world"
+      },
+      {
+        "key": "Stakes",
+        "hint": "what happens to people who ignore it"
+      },
+      {
+        "key": "Way",
+        "hint": "our way through"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

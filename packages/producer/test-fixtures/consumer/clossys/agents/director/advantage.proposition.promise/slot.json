@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "advantage.proposition.promise",
+  "agent": "director",
+  "ia": {
+    "l1": "advantage",
+    "l2": "advantage.proposition",
+    "order": 24
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we promise the core segment that the alternative does not deliver?",
+    "mustContain": [
+      {
+        "key": "Promise",
+        "hint": "the promise, one sentence"
+      },
+      {
+        "key": "For",
+        "hint": "the segment it is made to"
+      },
+      {
+        "key": "Versus",
+        "hint": "the alternative it beats"
+      }
+    ]
+  },
+  "inputs": [
+    "context.customer.need"
+  ],
+  "uses": []
+}

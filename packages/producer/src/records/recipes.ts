@@ -6,6 +6,7 @@
  */
 import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { packagePath } from "../package-path.js";
 import { loadSchema, validateValue } from "../pipeline/schema.js";
 import { sha256Hex } from "./hash.js";
 import type { ModelAgent } from "./slot-model/index.js";
@@ -59,7 +60,7 @@ export function generatorIssues(source: string): string[] {
 /** Reads one recipe folder. */
 export function readRecipe(root: string, agent: ModelAgent, id: string): Recipe {
   const dir = join("packages", agent, "recipes", id).split("\\").join("/");
-  const abs = join(root, dir);
+  const abs = packagePath(root, dir);
   const issues: string[] = [];
   const files: Record<string, string> = {};
   const walk = (current: string, prefix: string) => {
@@ -101,7 +102,7 @@ export function readRecipe(root: string, agent: ModelAgent, id: string): Recipe 
 export function loadRecipes(root: string): Recipe[] {
   const out: Recipe[] = [];
   for (const agent of STANDARD_AGENTS) {
-    const base = join(root, "packages", agent, "recipes");
+    const base = packagePath(root, `packages/${agent}/recipes`);
     if (!existsSync(base)) continue;
     for (const id of readdirSync(base).sort()) {
       if (id.startsWith(".")) continue;

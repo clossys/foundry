@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.sourcing.build",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.sourcing",
+    "order": 40
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we build ourselves, and why?",
+    "mustContain": [
+      {
+        "key": "Build",
+        "hint": "what we build"
+      },
+      {
+        "key": "Why",
+        "hint": "why we build it rather than buy it"
+      },
+      {
+        "key": "Cost",
+        "hint": "what building costs"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

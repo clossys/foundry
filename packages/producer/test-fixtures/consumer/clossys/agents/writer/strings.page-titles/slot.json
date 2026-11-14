@@ -1,0 +1,24 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.page-titles",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.metadata",
+    "l2": "metadata-page-titles",
+    "order": 44
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 65,
+    "maxWords": 12
+  },
+  "inputs": [
+    "aspiration.purpose.mission",
+    "identity.naming.name"
+  ],
+  "uses": []
+}
