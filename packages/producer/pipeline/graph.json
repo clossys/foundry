@@ -2582,7 +2582,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "publish.assemble",
-      "summary": "One-shot codemod: migrate copy keys to port ids (--check reports only).",
+      "summary": "One-shot codemods: copy keys to port ids, and the ledger backfill from git history (clossys migrate ledger, the one whole-ledger writer); --check reports only.",
       "inputs": [
         {
           "glob": "clossys/agents/director/*/candidates/*",
@@ -2601,7 +2601,16 @@
           "schema": "candidate-publisher"
         }
       ],
-      "outputs": [],
+      "outputs": [
+        {
+          "glob": "clossys/agents/*/ledger.json",
+          "schema": "ledger"
+        },
+        {
+          "glob": "clossys/agents/*/*/ledger.json",
+          "schema": "ledger"
+        }
+      ],
       "command": {
         "cli": {
           "verb": "migrate",
