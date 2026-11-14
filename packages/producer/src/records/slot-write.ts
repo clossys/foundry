@@ -14,6 +14,7 @@ import {
   type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, listSlots, readCandidate, readSlot } from "./slots.js";
+import { fileState, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations, type FileState, type FormatMigration, type MigratedEvent, type MigrationsDoc } from "./migrations.js";
 
 // ---------------------------------------------------------------------------
 // Locks and atomic replacement, shared by slot decisions and the Director store.
@@ -224,9 +225,9 @@ export interface InPlaceRewrite { readonly name: string; readonly before: string
  * validation issue, and the rewritten pin must be valid. Candidates otherwise stay immutable: this
  * is the only writer that replaces candidate bytes, and only for a citation-format change.
  */
-export function rewriteCitationsInPlace(consumer: string, agent: SlotAgent, id: string, change: { readonly candidates: readonly InPlaceRewrite[]; readonly pin?: { readonly before: string; readonly after: string } }): void {
+export function rewriteCitationsInPlace(consumer: string, agent: SlotAgent, id: string, change: { readonly candidates: readonly InPlaceRewrite[]; readonly pin?: { readonly before: string; readonly after: string } }): RewrittenFile[] {
   const { entry } = located(consumer, agent, id);
-  slotLocked(entry.dir, () => {
+  return slotLocked(entry.dir, () => {
     const { doc } = located(consumer, agent, id);
     for (const rewrite of change.candidates) {
       if (!CANDIDATE_NAME.test(rewrite.name) || !entry.candidates.includes(rewrite.name)) throw new Error(`citation rewrite refused: ${agent}/${id} has no candidate ${rewrite.name}`);
@@ -243,8 +244,57 @@ export function rewriteCitationsInPlace(consumer: string, agent: SlotAgent, id: 
     }
     // The pin lands first: an interruption leaves a pin already naming the rewritten bytes, which a
     // re-run recognises (the plan carries a sha256 that matches either form) and completes.
-    if (change.pin) replaceFile(pinPath, change.pin.after);
-    for (const rewrite of change.candidates) replaceFile(join(candidatesDir(entry.dir), rewrite.name), rewrite.after);
+    // Each touched file's bytes are read from disk on both sides, so its recorded ids are exactly
+    // what git sees for this change (records/migrations.ts).
+    const touched: RewrittenFile[] = [];
+    const rewrite = (path: string, after: string) => {
+      const from = fileState(readFileSync(path));
+      replaceFile(path, after);
+      const to = fileState(readFileSync(path));
+      if (from.blob !== to.blob) touched.push({ file: posixRelative(consumer, path), from, to });
+    };
+    if (change.pin) rewrite(pinPath, change.pin.after);
+    for (const item of change.candidates) rewrite(join(candidatesDir(entry.dir), item.name), item.after);
+    return touched;
+  });
+}
+
+/** One file an in-place rewrite changed: its path under the consumer folder and its bytes' ids before and after. */
+export interface RewrittenFile { readonly file: string; readonly from: FileState; readonly to: FileState }
+
+const posixRelative = (from: string, to: string) => relative(from, to).split(sep).join("/");
+
+/**
+ * Record format-only rewrites in the migration manifest (`<consumer>/evidence/migrations.json`): one
+ * `migrated` event per file, appended in order. An event already recorded (same migration, file and
+ * blob ids) is not added again, so a re-run never duplicates. Returns the events added.
+ */
+export function appendMigrationEvents(consumer: string, migration: FormatMigration, files: readonly RewrittenFile[], input: { by: string; at: string }): MigratedEvent[] {
+  const path = join(consumer, MIGRATIONS_FILE);
+  mkdirSync(dirname(path), { recursive: true });
+  return withDirLock(`${path}.lock`, `migration manifest ${MIGRATIONS_FILE} is being written`, () => {
+    let doc: MigrationsDoc = { schema: MIGRATIONS_SCHEMA, events: [] };
+    if (existsSync(path)) {
+      const value = JSON.parse(readFileSync(path, "utf8")) as unknown;
+      const issues = validateMigrations(value);
+      if (issues.length) throw new Error(`${MIGRATIONS_FILE} is invalid: ${issues.slice(0, 3).join("; ")}`);
+      doc = value as MigrationsDoc;
+    }
+    const key = (event: Pick<MigratedEvent, "migration" | "file" | "from" | "to">) => `${event.migration} ${event.file} ${event.from.blob} ${event.to.blob}`;
+    const seen = new Set(doc.events.map(key));
+    const added: MigratedEvent[] = [];
+    for (const file of files) {
+      const event: MigratedEvent = { type: "migrated", migration, file: file.file, from: file.from, to: file.to, by: input.by, at: input.at };
+      if (seen.has(key(event))) continue;
+      seen.add(key(event));
+      added.push(event);
+    }
+    if (!added.length) return added;
+    const next: MigrationsDoc = { schema: MIGRATIONS_SCHEMA, events: [...doc.events, ...added] };
+    const issues = validateMigrations(next);
+    if (issues.length) throw new Error(`migration events refused: ${issues.slice(0, 3).join("; ")}`);
+    replaceFile(path, jsonBytes(next));
+    return added;
   });
 }
 

@@ -1,5 +1,5 @@
 /**
- * Git history of the agent trees for R08 (immutability): one `git log --name-status` over
+ * Git history of the agent trees for R08 (immutability): one `git log --raw` over
  * `<consumer>/agents` and one `git status`, both read-only. Every path's changes come back oldest
  * first; rows are judged from them in checks/R08-immutability.ts. Contents are never read from git.
  */
@@ -12,7 +12,9 @@ const git = (cwd: string, args: readonly string[]) => execFileSync("git", args, 
 
 /**
  * Parses `git log --format=%x00%H --name-status --no-renames` output (newest commit first) into
- * each path's changes, oldest first. Paths are as git prints them (repository-relative).
+ * each path's changes, oldest first. Paths are as git prints them (repository-relative). It also
+ * reads `--raw --no-abbrev` lines (`:<mode> <mode> <blob> <blob> <status>\t<path>`), which add the
+ * blob ids before and after each change (what a recorded migration is matched on, R08.2).
  */
 export function parseNameStatusLog(output: string): Map<string, PathChange[]> {
   const changes = new Map<string, PathChange[]>();
@@ -21,11 +23,14 @@ export function parseNameStatusLog(output: string): Map<string, PathChange[]> {
     const commit = lines[0]?.trim();
     if (!commit) continue;
     for (const line of lines.slice(1)) {
-      const match = /^([AMDT])\t(.+)$/.exec(line);
-      if (!match) continue;
-      const list = changes.get(match[2]!) ?? [];
-      list.push({ commit, status: match[1] as PathChange["status"] });
-      changes.set(match[2]!, list);
+      const raw = /^:\d{6} \d{6} ([0-9a-f]{40,64}) ([0-9a-f]{40,64}) ([AMDT])\t(.+)$/.exec(line);
+      const match = raw ? null : /^([AMDT])\t(.+)$/.exec(line);
+      if (!raw && !match) continue;
+      const path = raw ? raw[4]! : match![2]!;
+      const status = (raw ? raw[3] : match![1]) as PathChange["status"];
+      const list = changes.get(path) ?? [];
+      list.push(raw ? { commit, status, from: raw[1]!, to: raw[2]! } : { commit, status });
+      changes.set(path, list);
     }
   }
   for (const list of changes.values()) list.reverse();
@@ -55,7 +60,7 @@ export function readCandidateHistory(root: string, consumer: string): CandidateH
   const agents = scope === "." ? "agents" : `${scope}/agents`;
   const toRoot = (path: string) => posix(relative(root, `${top}/${path}`));
   try {
-    const log = parseNameStatusLog(git(top, ["log", "--format=%x00%H", "--name-status", "--no-renames", "--", agents]));
+    const log = parseNameStatusLog(git(top, ["log", "--format=%x00%H", "--raw", "--no-abbrev", "--no-renames", "--", agents]));
     const status = parseStatus(git(top, ["status", "--porcelain=v1", "-z", "--untracked-files=no", "--", agents]));
     return {
       available: true,

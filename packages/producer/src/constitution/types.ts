@@ -5,6 +5,7 @@
  * a file itself; the same records in give the same rows out.
  */
 import type { ModelAgent } from "../records/slot-model/index.js";
+import type { MigratedEvent } from "../records/migrations.js";
 
 /** Rule ids R01..R14. */
 export type RuleId = `R${"01" | "02" | "03" | "04" | "05" | "06" | "07" | "08" | "09" | "10" | "11" | "12" | "13" | "14"}`;
@@ -90,8 +91,21 @@ export interface AgentRecord {
   readonly retired: readonly RetiredRecord[];
 }
 
-/** One commit's change to one path (git `--name-status --no-renames`), oldest first per path. */
-export interface PathChange { readonly commit: string; readonly status: "A" | "M" | "D" | "T" }
+/**
+ * One commit's change to one path (git `--raw --no-renames`), oldest first per path. `from` and
+ * `to` are the path's git blob ids before and after the change, when the log carried them.
+ */
+export interface PathChange { readonly commit: string; readonly status: "A" | "M" | "D" | "T"; readonly from?: string; readonly to?: string }
+
+/** The migration manifest (`<consumer>/evidence/migrations.json`, records/migrations.ts), as read for R08.2. */
+export interface MigrationsRecord {
+  /** Workspace-relative path of the manifest. */
+  readonly path: string;
+  /** Its events, each `file` made workspace-relative; empty when it is absent or invalid. */
+  readonly events: readonly MigratedEvent[];
+  /** Why the manifest is unreadable or invalid. */
+  readonly error?: string;
+}
 
 /** Git history of the agent trees: every path's changes, oldest first, and the working tree state. */
 export interface CandidateHistory {
@@ -116,6 +130,8 @@ export interface ConstitutionContext {
   readonly lockVersions?: ReadonlyMap<string, ReadonlySet<string>>;
   /** Git history; read lazily, once, by the rules that need it. */
   readonly history: () => CandidateHistory;
+  /** Recorded format-only migrations; absent when the workspace has no manifest. */
+  readonly migrations?: MigrationsRecord;
 }
 
 /** A check: one pure function from the context to rows. */

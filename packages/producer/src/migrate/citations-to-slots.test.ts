@@ -2,12 +2,13 @@
  * `clossys migrate citations-to-slots`: the one-time codemod from versioned citations and `pin.recited`
  * to slot-id citations. Deterministic, idempotent, and every rewritten pin still validates and clears.
  */
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { citationConsumer, HERO, HOME, NEED, writerBytes, type CitationConsumer } from "../records/__fixtures__/citation-consumer.js";
 import { sha256Hex } from "../records/hash.js";
 import { validatePin } from "../records/slot-model/validate.js";
+import { gitBlobId, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations } from "../records/migrations.js";
 import { applyCitationsToSlots, planCitationsToSlots } from "./citations-to-slots.js";
 
 let fixture: CitationConsumer | undefined;
@@ -43,6 +44,32 @@ describe("migrate citations-to-slots", () => {
     expect(validatePin(pin)).toEqual([]);
     const again = planCitationsToSlots(fixture.consumer);
     expect([again.changes, again.findings]).toEqual([[], []]);
+  });
+
+  it("records one migrated event per rewritten file, with the bytes' ids before and after, and a re-run adds none", () => {
+    fixture = citationConsumer("versioned");
+    const files = {
+      heroPin: join(fixture.dir("writer", HERO), "pin.json"),
+      hero: join(fixture.dir("writer", HERO), "candidates", "hero-v1.md"),
+      home: join(fixture.dir("publisher", HOME), "candidates", "home-v1.json"),
+      homePin: join(fixture.dir("publisher", HOME), "pin.json"),
+    };
+    const before = Object.fromEntries(Object.entries(files).map(([key, path]) => [key, readFileSync(path)]));
+    const manifest = join(fixture.consumer, MIGRATIONS_FILE);
+    expect(existsSync(manifest)).toBe(false);
+    const at = "2026-11-13T18:00:00.000Z";
+    expect(applyCitationsToSlots(fixture.consumer, planCitationsToSlots(fixture.consumer), { by: "planner", at })).toEqual([]);
+    const doc = JSON.parse(read(manifest));
+    expect(validateMigrations(doc)).toEqual([]);
+    expect(doc.schema).toBe(MIGRATIONS_SCHEMA);
+    const rel = (path: string) => path.slice(fixture!.consumer.length + 1).split("\\").join("/");
+    const state = (bytes: Buffer | string) => ({ sha256: sha256Hex(bytes), blob: gitBlobId(bytes) });
+    const expected = Object.entries(files).map(([key, path]) => ({ type: "migrated", migration: "citations-to-slots", file: rel(path), from: state(before[key]!), to: state(readFileSync(path)), by: "planner", at }));
+    expect([...doc.events].sort((a, b) => a.file.localeCompare(b.file))).toEqual(expected.sort((a, b) => a.file.localeCompare(b.file)));
+    // Idempotent: the second run plans nothing, rewrites nothing and records nothing.
+    const bytes = read(manifest);
+    expect(applyCitationsToSlots(fixture.consumer, planCitationsToSlots(fixture.consumer), { by: "planner", at: "2026-11-14T00:00:00.000Z" })).toEqual([]);
+    expect(read(manifest)).toBe(bytes);
   });
 
   it("refuses a slot whose records moved since the plan and leaves it as it is", () => {

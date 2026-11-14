@@ -16,12 +16,13 @@
  *
  * Reads go through the one reader (records/slots.ts), writes through the one writer
  * (`rewriteCitationsInPlace`). Deterministic and idempotent: a second run plans nothing. The verb is
- * a dry run unless `--apply` is given.
+ * a dry run unless `--apply` is given. An apply records one `migrated` event per rewritten file in
+ * `<consumer>/evidence/migrations.json`, which is what lets R08.2 accept the in-place change.
  */
 import { slotCitationsInText, type CitationAgent } from "@clossys/director";
 import { sha256Hex } from "../records/hash.js";
 import { listSlots, readCandidate, readSlotRecordText } from "../records/slots.js";
-import { rewriteCitationsInPlace, type InPlaceRewrite } from "../records/slot-write.js";
+import { appendMigrationEvents, rewriteCitationsInPlace, type InPlaceRewrite, type RewrittenFile } from "../records/slot-write.js";
 import { jsonBytes, SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
 
 export interface CitationSlotChange {
@@ -107,12 +108,21 @@ export function planCitationsToSlots(consumer: string): CitationsPlan {
   return { changes, counts, totals, findings };
 }
 
-/** Apply a plan through the one writer; each slot is refused alone when its records moved since the plan. */
-export function applyCitationsToSlots(consumer: string, plan: CitationsPlan): CitationFinding[] {
+/** Who applied the codemod and when, for its `migrated` events. */
+export interface CitationsApply { readonly by: string; readonly at: string }
+
+/**
+ * Apply a plan through the one writer; each slot is refused alone when its records moved since the
+ * plan. Every file a slot's rewrite changed is recorded as one `migrated` event in the migration
+ * manifest (records/migrations.ts), the provenance R08.2 accepts for this format-only rewrite.
+ */
+export function applyCitationsToSlots(consumer: string, plan: CitationsPlan, record: CitationsApply = { by: "planner", at: new Date().toISOString() }): CitationFinding[] {
   const refused: CitationFinding[] = [];
   for (const change of plan.changes) {
-    try { rewriteCitationsInPlace(consumer, change.agent, change.slot, { candidates: change.candidates, ...(change.pin ? { pin: { before: change.pin.before, after: change.pin.after } } : {}) }); }
-    catch (error) { refused.push({ agent: change.agent, slot: change.slot, message: (error as Error).message }); }
+    let touched: RewrittenFile[];
+    try { touched = rewriteCitationsInPlace(consumer, change.agent, change.slot, { candidates: change.candidates, ...(change.pin ? { pin: { before: change.pin.before, after: change.pin.after } } : {}) }); }
+    catch (error) { refused.push({ agent: change.agent, slot: change.slot, message: (error as Error).message }); continue; }
+    if (touched.length) appendMigrationEvents(consumer, "citations-to-slots", touched, record);
   }
   return refused;
 }

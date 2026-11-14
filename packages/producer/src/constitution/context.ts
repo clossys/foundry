@@ -4,13 +4,14 @@
  * unparseable pin or an alien folder is kept as it is found, so the rules can report it; a reader
  * that refused bad records would hide exactly what the constitution exists to find.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { sha256Hex } from "../records/hash.js";
+import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../records/migrations.js";
 import { agentDir, candidatesDir, MODEL_AGENTS, type ModelAgent } from "../records/slot-model/index.js";
 import { isModelDir, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
 import { readCandidateHistory } from "./git.js";
-import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, JsonRecord, RetiredRecord, SlotRecord } from "./types.js";
+import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
 
 const posix = (path: string) => path.split(sep).join("/");
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -70,6 +71,18 @@ function readLockVersions(root: string): Map<string, Set<string>> | undefined {
   catch { return undefined; }
 }
 
+/** The migration manifest, its event files made workspace-relative; undefined when there is none. */
+function readMigrations(abs: string, rel: (abs: string) => string, fileOf: (file: string) => string): MigrationsRecord | undefined {
+  if (!existsSync(abs)) return undefined;
+  const path = rel(abs);
+  let value: unknown;
+  try { value = JSON.parse(readFileSync(abs, "utf8")); }
+  catch (error) { return { path, events: [], error: `not JSON: ${errorText(error)}` }; }
+  const issues = validateMigrations(value);
+  if (issues.length) return { path, events: [], error: issues.slice(0, 3).join("; ") };
+  return { path, events: (value as MigrationsDoc).events.map(event => ({ ...event, file: fileOf(event.file) })) };
+}
+
 export interface ContextOptions {
   /** Git history reader; tests substitute one. Defaults to `git log` over the agent trees. */
   readonly history?: (root: string, consumer: string) => CandidateHistory;
@@ -127,5 +140,6 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
   let history: CandidateHistory | undefined;
   const read = options.history ?? readCandidateHistory;
   const lockVersions = readLockVersions(root);
-  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), history: () => (history ??= read(root, consumer)) };
+  const migrations = readMigrations(join(consumer, MIGRATIONS_FILE), rel, abs => rel(join(consumer, abs)));
+  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), ...(migrations ? { migrations } : {}), history: () => (history ??= read(root, consumer)) };
 }
