@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseArgs } from "../cli/args.js";
 import { runCheck } from "../cli/check.js";
-import { buildGreen, evaluateDelta, formatDelta, greenDigest, POSITION_FIELDS, readGreen, rowKey, seedGrowth, slotRecordView, verifyGreen, type GreenReport } from "./green.js";
+import { buildGreen, evaluateDelta, formatDelta, greenDigest, IA_POSITION_KIND, isIaPositionEvent, ledgerRecordView, POSITION_FIELDS, readGreen, rowKey, seedGrowth, slotRecordView, slotWriteKind, verifyGreen, type GreenReport } from "./green.js";
 import { singleReaderRows } from "./rules/r11.js";
 import { runConstitution } from "./run.js";
 import { cleanSpec, NO_HISTORY, slotDoc, writeWorkspace, type WorkspaceSpec } from "./__fixtures__/workspace.js";
@@ -151,6 +151,29 @@ describe("constitution delta gate (until E2)", () => {
     // A slot.json the view cannot normalise is digested as its bytes: a renumber there still counts.
     const loose = { path: "slot.json", text: JSON.stringify(doc), value: doc };
     expect(slotRecordView({ ...loose, text: JSON.stringify({ ...doc, ia: { ...(doc.ia as object), order: 9 } }) })).not.toBe(slotRecordView(loose));
+  });
+
+  it("D1: only ia-position events leave the ledger view, and only a position-only slot.json write is one", () => {
+    const doc = slotDoc("designer", "ui.button");
+    const bytes = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
+    const before = bytes(doc);
+    expect(slotWriteKind(before, bytes({ ...doc, ia: { ...(doc.ia as object), order: 3 } }))).toBe(IA_POSITION_KIND);
+    expect(slotWriteKind(before, bytes({ ...doc, ia: { ...(doc.ia as object), l1: "moved", order: 3 } }))).toBe(IA_POSITION_KIND);
+    // Any other change, a new file, the same bytes or unnormalised bytes: an `ia` event.
+    expect(slotWriteKind(before, bytes({ ...doc, contract: { other: 1 } }))).toBe("ia");
+    expect(slotWriteKind(before, bytes({ ...doc, ia: { ...(doc.ia as object), order: 3 }, uses: ["x"] }))).toBe("ia");
+    expect(slotWriteKind(null, before)).toBe("ia");
+    expect(slotWriteKind(before, before)).toBe("ia");
+    expect(slotWriteKind(JSON.stringify(doc), JSON.stringify({ ...doc, ia: { ...(doc.ia as object), order: 3 } }))).toBe("ia");
+    const event = (fields: Record<string, unknown>) => ({ op: "slot", verb: "ia", kind: IA_POSITION_KIND, records: [{ file: "slot.json", sha256: "a".repeat(64) }], ...fields });
+    expect(isIaPositionEvent(event({}))).toBe(true);
+    for (const other of [{ kind: "ia" }, { verb: "retire" }, { op: "pin" }, { records: [{ file: "pin.json", sha256: null }] }, { records: [{ file: "slot.json", sha256: null }, { file: "pin.json", sha256: null }] }]) expect(isIaPositionEvent(event(other)), JSON.stringify(other)).toBe(false);
+    const ledger = (events: unknown[]) => { const value = { schema: "clossys.ledger/1", events }; return { path: "ledger.json", text: bytes(value), value }; };
+    const submit = { op: "submit", verb: "submit", name: "button-v1.json" };
+    expect(ledgerRecordView(ledger([submit, event({})]))).toBe(ledgerRecordView(ledger([submit])));
+    expect(ledgerRecordView(ledger([submit, event({ kind: "ia" })]))).not.toBe(ledgerRecordView(ledger([submit])));
+    const loose = ledger([submit, event({})]);
+    expect(ledgerRecordView({ ...loose, text: JSON.stringify(loose.value) })).toBe(JSON.stringify(loose.value));
   });
 
   it("D2: a finding key never embeds a line number; a line shift keeps the key, a changed snippet does not", () => {

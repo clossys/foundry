@@ -33,9 +33,11 @@
  * makes it a new key. Two rows of one file with the same snippet share a key (counted).
  *
  * A record's digest leaves out exactly the slot.json fields the `ia` verb's position bookkeeping
- * rewrites (W2-G2 D1; POSITION_FIELDS): an order-only renumber of later slots by
- * `clossys ia --contract --under`, `--remove` or a regroup does not change those slots' records.
- * Every other byte of the record counts.
+ * rewrites (W2-G2 D1; POSITION_FIELDS), and the `ia-position` ledger events that record those
+ * rewrites (R14.1: the `ia` verb appends one event per file it writes, IA_POSITION_KIND when only
+ * POSITION_FIELDS changed): an order-only renumber of later slots by `clossys ia --contract
+ * --under`, `--remove` or a regroup does not change those slots' records. Every other byte of the
+ * record counts, every other ledger event included.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -137,8 +139,8 @@ export function rowKey(row: Row): string {
 /**
  * The slot.json fields the `ia` verb's position bookkeeping rewrites: followPositions in
  * cli/ia-regroup.ts writes a slot's `ia` as its slotPositions entry `{ l0?, l1, l2, order }`, and an
- * order-only renumber of later slots changes `ia.order` alone. Named one by one; nothing else is
- * left out of a record's digest.
+ * order-only renumber of later slots changes `ia.order` alone. Named one by one; nothing else of
+ * slot.json is left out of a record's digest (ledgerRecordView leaves out the events recording them).
  */
 export const POSITION_FIELDS = ["ia.l0", "ia.l1", "ia.l2", "ia.order"] as const;
 
@@ -163,6 +165,45 @@ export function slotRecordView(record: JsonRecord | undefined): string | null {
   return `${JSON.stringify(view, null, 2)}\n`;
 }
 
+/** The ledger event kind of an `ia` verb write that changed only POSITION_FIELDS (an order-only renumber). */
+export const IA_POSITION_KIND = "ia-position";
+/** The ledger event kind of every other `ia` verb write. */
+export const IA_KIND = "ia";
+
+/**
+ * The kind of the ledger event an `ia` verb write of a slot.json carries: IA_POSITION_KIND when the
+ * file existed and its record view (slotRecordView, the digest's own view) is unchanged, so only
+ * POSITION_FIELDS moved; IA_KIND otherwise (a new file, any other field, unnormalised bytes).
+ */
+export function slotWriteKind(before: string | null, after: string): typeof IA_POSITION_KIND | typeof IA_KIND {
+  if (before === null || before === after) return IA_KIND;
+  const view = (text: string) => { try { return slotRecordView({ path: "slot.json", text, value: JSON.parse(text) as unknown }); } catch { return text; } };
+  const was = view(before), now = view(after);
+  // Both files normalised (the view differs from the bytes) and equal without POSITION_FIELDS.
+  return was === now && was !== before && now !== after ? IA_POSITION_KIND : IA_KIND;
+}
+
+/** An `ia-position` event: a slot `slot` event of the `ia` verb, kind IA_POSITION_KIND, recording slot.json alone. */
+export function isIaPositionEvent(event: unknown): boolean {
+  if (!isObject(event) || event.op !== "slot" || event.verb !== "ia" || event.kind !== IA_POSITION_KIND) return false;
+  const records = event.records;
+  return Array.isArray(records) && records.length === 1 && isObject(records[0]) && records[0].file === "slot.json";
+}
+
+/**
+ * The ledger.json bytes a record digest covers: the file without its `ia-position` events (D1). Only
+ * a ledger in the bytes the ledger writer produces (2-space JSON and a newline) is normalised; any
+ * other file is digested as it is, and a ledger with no such event is its bytes unchanged.
+ */
+export function ledgerRecordView(record: JsonRecord | undefined): string | null {
+  if (!record) return null;
+  const value = record.value;
+  if (!isObject(value) || !Array.isArray(value.events) || `${JSON.stringify(value, null, 2)}\n` !== record.text) return record.text;
+  const events = value.events.filter(event => !isIaPositionEvent(event));
+  if (events.length === value.events.length) return record.text;
+  return `${JSON.stringify({ ...value, events }, null, 2)}\n`;
+}
+
 /** The record a row is about: its slot folder, else its agent folder, else none (`*` rows). */
 export function rowRecord(row: Row, digests: Readonly<Record<string, string>>): string | undefined {
   if (row.agent === "*") return undefined;
@@ -179,7 +220,7 @@ export function recordIndex(ctx: ConstitutionContext): RecordIndex {
     for (const slot of agent.slots.values()) {
       const id = `${agent.agent}/${slot.id}`;
       digests[id] = sha256(canonical({
-        live: slot.live, entries: slot.entries, slot: slotRecordView(slot.slot), pin: slot.pin?.text ?? null, ledger: slot.ledger?.text ?? null,
+        live: slot.live, entries: slot.entries, slot: slotRecordView(slot.slot), pin: slot.pin?.text ?? null, ledger: ledgerRecordView(slot.ledger),
         candidates: slot.candidates.map(item => [item.name, item.sha256]), retired: slot.retired.map(item => [item.name, item.sha256]),
       })).slice(0, 16);
       const deps = dependencySet(slot);
