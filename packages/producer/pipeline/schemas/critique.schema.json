@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/critique.schema.json",
+  "title": "Critique record (clossys/agents/<agent>/<slot>/critiques/<leaf>-v<n>.json)",
+  "description": "The blind critic's scores for one candidate against its standard's taste criteria (R15.7, R16.2). packet.manifest lists only what the critic saw: the standard's taste.md and exemplars, the slot contract and the rendered output; never a recipe file, direction notes or the maker (the closed key sets refuse maker fields; paths are checked in code).",
+  "type": "object",
+  "required": [
+    "schema",
+    "slot",
+    "candidate",
+    "standard",
+    "scores",
+    "packet"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.critique/1"
+    },
+    "slot": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+    },
+    "candidate": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*-v[1-9][0-9]*\\.(md|json)$"
+    },
+    "standard": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+    },
+    "scores": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+      },
+      "additionalProperties": {
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "exemplars": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "exemplar",
+          "comparison"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "exemplar": {
+            "type": "string",
+            "minLength": 1
+          },
+          "comparison": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "packet": {
+      "type": "object",
+      "required": [
+        "manifest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "manifest": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "role",
+              "ref"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "role": {
+                "enum": [
+                  "taste",
+                  "exemplar",
+                  "contract",
+                  "render"
+                ]
+              },
+              "ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

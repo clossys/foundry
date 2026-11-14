@@ -1,0 +1,24 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"><path d=\"M2 2\" style=\"stroke: var(--ink)\"/></svg>"
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><path fill=\"#000\" d=\"M2 2\"/></svg>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><path style=\"stroke: red\" d=\"M2 2\"/></svg>"
+      }
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/taste-log.schema.json",
+  "title": "Taste log (clossys/agents/<agent>/taste/<standard-id>/taste-log.json)",
+  "description": "The owner's calibration for one craftTier high standard (R15.8, section 5b): one entry per owner pick or reject on a slot of that standard, read as preferences in the brief stage.",
+  "type": "object",
+  "required": [
+    "schema",
+    "standard",
+    "entries"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.taste-log/1"
+    },
+    "standard": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "at",
+          "slot",
+          "chosen",
+          "rejected"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T"
+          },
+          "slot": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+          },
+          "chosen": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rejected": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\" stroke-width=\"2\"><path d=\"M2 2h20\"/></svg>"
+      },
+      "params": {
+        "size": 16,
+        "minStrokePx": 1
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><path stroke-width=\"1\" d=\"M2 2h20\"/></svg>"
+      },
+      "params": {
+        "size": 16
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/><circle cx=\"1\" cy=\"1\" r=\"1\"/></svg>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg><path d=\"M0 0\"/></svg>"
+      }
+    }
+  ]
+}

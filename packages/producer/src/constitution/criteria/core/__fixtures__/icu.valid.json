@@ -1,0 +1,40 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "{}",
+        "json": {
+          "title": "{count, plural, one {# page} other {# pages}}",
+          "greet": "Hello {name}"
+        }
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "{}",
+        "json": {
+          "title": "{count, plural, one {# page}}"
+        }
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Hello {name"
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "{}",
+        "json": {
+          "t": "{n, plural, single {#} other {#}}"
+        }
+      }
+    }
+  ]
+}

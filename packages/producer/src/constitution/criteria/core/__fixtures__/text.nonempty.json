@@ -1,0 +1,28 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Ship pages."
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "   "
+      },
+      "note": "blank"
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "One two."
+      },
+      "params": {
+        "min": 3
+      }
+    }
+  ]
+}

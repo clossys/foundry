@@ -1,0 +1,45 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "h1 { font-size: 1.5rem; } p { font-size: 16px; }"
+      },
+      "params": {
+        "scale": [
+          12,
+          14,
+          16,
+          20,
+          24
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "p { font-size: 15px; }"
+      },
+      "params": {
+        "scale": [
+          12,
+          14,
+          16
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<p className=\"text-[17px]\"/>"
+      },
+      "params": {
+        "scale": [
+          16
+        ]
+      }
+    }
+  ]
+}

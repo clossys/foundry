@@ -1,0 +1,48 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "interface ButtonProps {\n  variant?: string;\n  size: string;\n}"
+      },
+      "params": {
+        "required": [
+          "variant",
+          "size"
+        ],
+        "forbidden": [
+          "className"
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "interface ButtonProps {\n  size: string;\n}"
+      },
+      "params": {
+        "required": [
+          "variant"
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "{}",
+        "json": {
+          "props": {
+            "className": {}
+          }
+        }
+      },
+      "params": {
+        "forbidden": [
+          "className"
+        ]
+      }
+    }
+  ]
+}

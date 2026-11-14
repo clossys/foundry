@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/exemplars.schema.json",
+  "title": "Exemplars (packages/<agent>/standards/<id>/exemplars/exemplars.json)",
+  "description": "5-12 reference works for the critic (R15.6), each keyed to the standard's taste criteria by why. ref is a file in exemplars/ (stored only under a policy.json allowlisted license) or an http(s) link with a description. Counts, license allowlist and why keys are checked in code.",
+  "type": "object",
+  "required": [
+    "schema",
+    "exemplars"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.exemplars/1"
+    },
+    "exemplars": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/exemplar"
+      }
+    }
+  },
+  "$defs": {
+    "exemplar": {
+      "type": "object",
+      "required": [
+        "id",
+        "ref",
+        "source",
+        "license",
+        "why"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "why": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

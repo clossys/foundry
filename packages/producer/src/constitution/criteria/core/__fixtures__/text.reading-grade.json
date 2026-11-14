@@ -1,0 +1,24 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We build sites. You ship them fast."
+      },
+      "params": {
+        "max": 8
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Organizational transformation necessitates comprehensive institutional reconfiguration accommodating multidimensional interdependencies simultaneously."
+      },
+      "params": {
+        "max": 8
+      }
+    }
+  ]
+}

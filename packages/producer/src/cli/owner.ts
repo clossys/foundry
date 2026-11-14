@@ -1,7 +1,8 @@
 /**
  * The owner verbs: each records one owner decision step (W6a; they replace the six gaps).
  *
- *   clossys ia <agent>/<slot> --contract <file> [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--root <dir>]
+ *   clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--root <dir>]
+ *   clossys ia <agent>/<slot> --standard <id> [--root <dir>]
  *   clossys ia <agent>/<slot> --remove [--root <dir>]
  *   clossys evidence <id> --source <source> --observed <YYYY-MM-DD> --by <who> --body <file> [--finding] [--root <dir>]
  *   clossys config --init [--from <file>] [--root <dir>]
@@ -20,7 +21,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { checkSlotModel } from "../records/slot-check.js";
-import { AGENT_KIND, CANDIDATE_NAME, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, seatSlotId } from "../records/slot-model/types.js";
+import { AGENT_KIND, CANDIDATE_NAME, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
@@ -28,6 +29,8 @@ import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy } from "../records/slots.js";
 import { writePin } from "../records/slot-write.js";
+import { readStandard, slotKinds, standardFits } from "../records/standards.js";
+import type { ModelAgent } from "../records/slot-model/index.js";
 import { isDecide, roundOf, ROUNDS, STAGES } from "../pipeline/define.js";
 import type { Step } from "../pipeline/define.js";
 import { loadSchema, validateFile, validateValue } from "../pipeline/schema.js";
@@ -41,10 +44,12 @@ import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
-export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--root <dir>]\n"
+export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--root <dir>]\n"
+  + "       clossys ia <agent>/<slot> --standard <id> [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --remove [--root <dir>]\n"
   + "       clossys ia <agent> --adopt | --start [--root <dir>]\n"
   + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
+  + "  --standard names the standard the slot is judged by (packages/<agent>/standards/<id>/, R15.1): it must exist, be valid and serve the slot's kind; alone it keeps the written contract.\n"
   + "  --adopt writes the agent's Foundry IA (ia.json and every slot.json, inputs and uses derived) where it has no ia.json (Director, Designer, Writer; the Director's first).\n"
   + "  --start writes an empty workspace IA instead; --under then adds its L1/L2 groups as it places each slot.";
 export const EVIDENCE_USAGE = "Usage: clossys evidence <id> --source <source> --observed <YYYY-MM-DD> --by <who> --body <file> [--finding] [--root <dir>]\n"
@@ -129,7 +134,7 @@ const readJsonFile = (path: string): unknown => JSON.parse(readFileSync(path, "u
 const readModelJson = (path: string): unknown => JSON.parse(readModelText(path));
 
 // ---------------------------------------------------------------- clossys ia
-const parseIa = parser(IA_USAGE, ["--contract", "--under", "--kind", "--inputs", "--uses", "--root"], ["--remove", "--adopt", "--start"]);
+const parseIa = parser(IA_USAGE, ["--contract", "--standard", "--under", "--kind", "--inputs", "--uses", "--root"], ["--remove", "--adopt", "--start"]);
 const FOUNDRY_IA: Readonly<Record<keyof typeof FOUNDRY_IA_AFTER, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
 /** The source of a workspace-owned IA (`--start`): `--under` may add L1/L2 groups to it, never to a Foundry IA. */
 export const WORKSPACE_IA_SOURCE = "workspace#owner";
@@ -213,9 +218,12 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
     if (added.length) return refuse("ia", `the slot model check fails after the removal: ${added.slice(0, 5).join("; ")}`);
     return { exitCode: 0, root, message: `ia: removed ${target} from ${agent} ia.json` };
   }
-  const contractFile = need(flags, "--contract", IA_USAGE);
+  const standardId = one(flags, "--standard");
+  if (standardId !== undefined && !STANDARD_ID.test(standardId)) throw new CliUsageError(`--standard must be a standard id such as element.button, got ${standardId}\n${IA_USAGE}`);
+  // --standard alone keeps the slot's written contract; otherwise the contract file is required.
+  const contractFile = standardId !== undefined && !flags.values.has("--contract") ? undefined : need(flags, "--contract", IA_USAGE);
   let contract: unknown;
-  try { contract = readJsonFile(resolve(cwd, contractFile)); } catch { return refuse("ia", `--contract ${contractFile} is not a readable JSON file`); }
+  if (contractFile !== undefined) { try { contract = readJsonFile(resolve(cwd, contractFile)); } catch { return refuse("ia", `--contract ${contractFile} is not a readable JSON file`); } }
   let next = ia;
   if (!placed) {
     const under = one(flags, "--under");
@@ -238,8 +246,19 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   const existing = modelExists(slotFile(dir)) ? readModelJson(slotFile(dir)) as Record<string, unknown> : undefined;
   const kind = (one(flags, "--kind") ?? (existing?.kind as string | undefined) ?? AGENT_KIND[agent][0]) as SlotKind;
   if (!(SLOT_KINDS as readonly string[]).includes(kind)) throw new CliUsageError(`--kind must be one of ${SLOT_KINDS.join(", ")}\n${IA_USAGE}`);
+  if (contractFile === undefined) {
+    if (existing?.contract === undefined) return refuse("ia", `${target} has no written contract: --standard alone names the standard of a written slot (add --contract <file>)`);
+    contract = existing.contract;
+  }
+  if (standardId !== undefined) {
+    // The standard lives in the slot's own agent package (R15.1): it must exist, read clean and serve this kind.
+    if (!existsSync(join(root, "packages", agent, "standards", standardId, "requirements.json"))) return refuse("ia", `standard ${standardId} does not exist under packages/${agent}/standards/`);
+    const standard = readStandard(root, agent as ModelAgent, standardId);
+    if (!standard.doc || standard.issues.length) return refuse("ia", `standard ${standardId} is not valid: ${standard.issues.slice(0, 5).join("; ")}`);
+    if (!standardFits(standard.doc, kind, contract)) return refuse("ia", `standard ${standardId} serves ${standard.doc.kinds.join(", ")}, not ${slotKinds(kind, contract).join(" or ")}`);
+  }
   const doc = {
-    ...(existing ?? {}), schema: SLOT_SCHEMA, id: slot, agent, ia: { ...position }, kind, contract,
+    ...(existing ?? {}), schema: SLOT_SCHEMA, id: slot, agent, ia: { ...position }, kind, ...(standardId !== undefined ? { standard: standardId } : {}), contract,
     inputs: flags.values.has("--inputs") ? ids(one(flags, "--inputs")) : (existing?.inputs as string[] | undefined) ?? [],
     uses: flags.values.has("--uses") ? ids(one(flags, "--uses")) : (existing?.uses as string[] | undefined) ?? [],
   };
@@ -250,7 +269,8 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
     replaceFile(slotFile(dir), jsonBytes(doc));
   });
   if (added.length) return refuse("ia", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
-  return { exitCode: 0, root, message: `ia: ${target} ${placed ? "contract written" : `placed under ${one(flags, "--under")} and its contract written`} (clossys/agents/${agent}/${slot}/slot.json)` };
+  const what = contractFile === undefined ? `standard ${standardId} named` : `${placed ? "contract written" : `placed under ${one(flags, "--under")} and its contract written`}${standardId !== undefined ? `, standard ${standardId} named` : ""}`;
+  return { exitCode: 0, root, message: `ia: ${target} ${what} (clossys/agents/${agent}/${slot}/slot.json)` };
 }
 
 // ---------------------------------------------------------------- clossys evidence

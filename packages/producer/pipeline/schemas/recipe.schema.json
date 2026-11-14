@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/recipe.schema.json",
+  "title": "Recipe (packages/<agent>/recipes/<id>/recipe.json)",
+  "description": "The maker of candidates for the standards it produces for (R15.5). A recipe has no rubric: the closed key set refuses one. generator names an optional deterministic tool file in the recipe folder (generate.mjs). axes are the direction axes the diverge stage keeps pairwise distinct (R15.7). Read by src/records/recipes.ts.",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "produces",
+    "rung",
+    "axes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.recipe/1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+    },
+    "produces": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
+      }
+    },
+    "rung": {
+      "enum": [
+        "adopt",
+        "adapt",
+        "create"
+      ]
+    },
+    "axes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "generator": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*\\.mjs$"
+    }
+  }
+}

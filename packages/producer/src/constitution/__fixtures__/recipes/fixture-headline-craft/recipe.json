@@ -1,0 +1,7 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "fixture-headline-craft",
+  "produces": ["fixture-headline"],
+  "rung": "create",
+  "axes": ["tone", "length", "structure"]
+}

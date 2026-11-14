@@ -1,0 +1,32 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Build sites that ship."
+      },
+      "params": {
+        "max": 8
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Build sites that ship on time and on budget every week."
+      },
+      "params": {
+        "max": 5
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Build sites."
+      },
+      "params": {},
+      "note": "max missing"
+    }
+  ]
+}

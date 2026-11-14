@@ -1,0 +1,36 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".prose { max-width: 65ch; }"
+      },
+      "params": {
+        "required": true
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".prose { max-width: 100ch; }"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<p className=\"max-w-[30ch]\"/>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".prose { color: inherit; }"
+      },
+      "params": {
+        "required": true
+      }
+    }
+  ]
+}

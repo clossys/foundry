@@ -352,5 +352,92 @@
         "owner": "W2-B"
       }
     ]
+  },
+  {
+    "id": "R15",
+    "statement": "Standards and recipes. Every live slot names an existing standard of its kind; every standard has valid requirements (registered criteria), taste.md, 5-12 licensed exemplars, a recipe that produces for it and Designer-only seeds; every P2 candidate shows the craft stages and a critique; every owner pick or reject on a high-tier standard has a taste-log entry.",
+    "scope": "all-records",
+    "status": "building",
+    "owner": "W2-I",
+    "check": "src/constitution/checks/R15-standards.ts",
+    "test": "src/constitution/rules/r15.test.ts",
+    "checks": [
+      {
+        "id": "R15.1",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R15.2",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R15.3",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R15.4",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R15.5",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R15.6",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R15.7",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R15.8",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R15.9",
+        "status": "building",
+        "owner": "W2-I"
+      }
+    ]
+  },
+  {
+    "id": "R16",
+    "statement": "Judge independence. Judges import no recipe; critique packets list only the standard, contract and render; standards and recipes change through different actions; a verdict is a pure function of candidate, standard, contract and pin set.",
+    "scope": "all-records",
+    "status": "building",
+    "owner": "W2-I",
+    "check": "src/constitution/checks/R16-independence.ts",
+    "test": "src/constitution/rules/r16.test.ts",
+    "checks": [
+      {
+        "id": "R16.1",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R16.2",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R16.3",
+        "status": "building",
+        "owner": "W2-I"
+      },
+      {
+        "id": "R16.4",
+        "status": "building",
+        "owner": "W2-I"
+      }
+    ]
   }
 ]

@@ -1,0 +1,30 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Clossys ships pages."
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Lorem ipsum dolor sit amet."
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Welcome to {{name}}."
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Copy TBD."
+      }
+    }
+  ]
+}

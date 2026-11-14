@@ -1,0 +1,30 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<button role=\"switch\" aria-checked=\"false\">On</button><div role=\"tab\" aria-selected=\"true\">A</div>"
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<div role=\"toggle\">x</div>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<div role=\"tab\">A</div>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<div role=\"dialog\">Hi</div>"
+      }
+    }
+  ]
+}

@@ -47,9 +47,9 @@ export interface CliArgs {
   slots: boolean;
   /** check --slots: also report blocked-by per agent. */
   readiness: boolean;
-  /** check: run the slot constitution suite (R01-R14) over every record instead of the default checks. */
+  /** check: run the slot constitution suite (R01-R16) over every record instead of the default checks. */
   constitution: boolean;
-  /** check --constitution: only this rule (R01..R14). */
+  /** check --constitution: only this rule (R01..R16). */
   rule?: string;
   /** check --constitution: only the rows about this agent's records (director, designer, writer, publisher or producer). */
   agent?: string;
@@ -72,7 +72,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Owner: clossys ia <agent>/<slot> --contract <file> | --remove; clossys ia <agent> --adopt | --start; clossys evidence <id> --source <s> --observed <date> --by <who> --body <file>; clossys config --init; clossys seat <step> --by <who> ...; clossys rule <R-ID> --quote <text> --date <date> --status <status>; clossys approve writer/<slot> <candidate-id>\n"
   + "Decisions: clossys pin <agent>/<slot> <candidate-id> [--by <who>] | clossys pin <agent>/<slot> --not-needed --reason <text>; clossys decisions [--json]\n"
   + "Candidate options: clossys options [<agent>/<slot> [--more]] | clossys options --classes [--check]; clossys pick <agent>/<slot> <candidate-id> --by agent:<seat>\n"
-  + "Constitution: clossys check --constitution [--rule <R01..R14>] [--agent <agent>] [--json] [--root <dir>] (every rule over every record; exits 1 on any row, pending rules included; --agent keeps the rows about one agent's records)\n"
+  + "Constitution: clossys check --constitution [--rule <R01..R16>] [--agent <agent>] [--strict] [--json] [--root <dir>] (every rule over every record; exits 1 on any row, pending rules included, building checks only with --strict; --agent keeps the rows about one agent's records)\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"
@@ -139,7 +139,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.slots || args.readiness) && args.verb !== "check") throw new CliUsageError("--slots and --readiness require check");
   if (args.constitution && args.verb !== "check") throw new CliUsageError("--constitution requires check");
   if (args.rule !== undefined && !args.constitution) throw new CliUsageError("--rule requires check --constitution");
-  if (args.rule !== undefined && !/^R(?:0[1-9]|1[0-4])$/.test(args.rule)) throw new CliUsageError("--rule must be a rule id R01..R14");
+  if (args.rule !== undefined && !/^R(?:0[1-9]|1[0-6])$/.test(args.rule)) throw new CliUsageError("--rule must be a rule id R01..R16");
   if (args.agent !== undefined && !args.constitution) throw new CliUsageError("--agent requires check --constitution");
   if (args.agent !== undefined && !["director", "designer", "writer", "publisher", "producer"].includes(args.agent)) throw new CliUsageError("--agent must be director, designer, writer, publisher or producer");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");

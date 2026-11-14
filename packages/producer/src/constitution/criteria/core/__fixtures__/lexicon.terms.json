@@ -1,0 +1,29 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Open Clossys Studio."
+      },
+      "params": {
+        "terms": [
+          "Clossys",
+          "Studio"
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Open clossys studio."
+      },
+      "params": {
+        "terms": [
+          "Clossys"
+        ]
+      }
+    }
+  ]
+}

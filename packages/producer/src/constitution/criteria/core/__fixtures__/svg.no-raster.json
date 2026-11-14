@@ -1,0 +1,24 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><path d=\"M2 2h20\"/></svg>"
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><image href=\"a.png\"/></svg>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><foreignObject/></svg>"
+      }
+    }
+  ]
+}

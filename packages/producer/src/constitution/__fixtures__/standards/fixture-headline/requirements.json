@@ -1,0 +1,15 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "fixture-headline",
+  "kinds": ["strings"],
+  "mode": "craft",
+  "craftTier": "high",
+  "seeds": [],
+  "requirements": [
+    { "check": "text.nonempty", "params": {} },
+    { "check": "text.word-limit", "params": { "max": 12 } },
+    { "check": "text.reading-grade", "params": { "max": 8 } },
+    { "check": "lexicon.clean", "params": {} },
+    { "check": "text.no-placeholder", "params": {} }
+  ]
+}

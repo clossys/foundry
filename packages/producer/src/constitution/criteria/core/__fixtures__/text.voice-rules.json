@@ -1,0 +1,54 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We build sites for you. They ship fast."
+      },
+      "params": {
+        "person": "first-plural",
+        "maxSentenceWords": 8,
+        "contractions": false,
+        "mood": "declarative"
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "I build sites."
+      },
+      "params": {
+        "person": "first-plural"
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We do not wait for the slow review cycle to finish its long work."
+      },
+      "params": {
+        "maxSentenceWords": 8
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We don't wait."
+      },
+      "params": {
+        "contractions": false
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "Ready to ship?"
+      },
+      "params": {
+        "mood": "declarative"
+      }
+    }
+  ]
+}

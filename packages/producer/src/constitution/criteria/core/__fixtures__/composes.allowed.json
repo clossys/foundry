@@ -1,0 +1,44 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "import { Button } from \"@/components/ui/button\";"
+      },
+      "params": {
+        "allowed": [
+          "@/components/ui"
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "import { hack } from \"@/lib/hack\";"
+      },
+      "params": {
+        "allowed": [
+          "@/components/ui"
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "{}",
+        "json": {
+          "uses": [
+            "@/registry/other"
+          ]
+        }
+      },
+      "params": {
+        "allowed": [
+          "@/components/ui"
+        ]
+      }
+    }
+  ]
+}

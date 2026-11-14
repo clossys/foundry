@@ -1,0 +1,53 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "publication",
+        "text": "{}",
+        "json": {
+          "uses": [
+            {
+              "ref": "designer:themes.color"
+            },
+            {
+              "ref": "home.hero#title"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "ref: writer:home.hero#title"
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "publication",
+        "text": "{}",
+        "json": {
+          "uses": [
+            {
+              "ref": "themes.color@v3"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "Cites designer:themes.color@v2 inline."
+      }
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "ref: Designer Themes"
+      }
+    }
+  ]
+}

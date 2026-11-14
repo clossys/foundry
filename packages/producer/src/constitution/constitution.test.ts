@@ -9,11 +9,12 @@ import { constitutionSchema, SCHEMA_NAMES, validateSchema } from "./schema.js";
 import { cleanSpec, contextOf, expectCatches, writeWorkspace, NO_HISTORY } from "./__fixtures__/workspace.js";
 
 const packageRoot = fileURLToPath(new URL("../../", import.meta.url));
-const IDS = Array.from({ length: 14 }, (_, index) => `R${String(index + 1).padStart(2, "0")}`);
+const IDS = Array.from({ length: 16 }, (_, index) => `R${String(index + 1).padStart(2, "0")}`);
 const ENFORCED = ["R01", "R04", "R06", "R07", "R08", "R09", "R10"];
+const BUILDING = ["R15", "R16"];
 
 describe("constitution registry", () => {
-  it("rules.json lists R01-R14 once each, scope all-records, with existing module and test paths", () => {
+  it("rules.json lists R01-R16 once each, scope all-records, with existing module and test paths", () => {
     const rules = readRules();
     expect(rules.map(rule => rule.id)).toEqual(IDS);
     for (const rule of rules) {
@@ -23,6 +24,8 @@ describe("constitution registry", () => {
       expect(existsSync(`${packageRoot}${rule.test}`), rule.test).toBe(true);
     }
     expect(rules.filter(rule => rule.status === "enforced").map(rule => rule.id)).toEqual(ENFORCED);
+    expect(rules.filter(rule => rule.status === "building").map(rule => rule.id)).toEqual(BUILDING);
+    for (const rule of rules.filter(item => item.status === "building")) expect(rule.checks.every(check => check.status === "building"), rule.id).toBe(true);
   });
 
   it("joins rules.json to the modules strictly both ways", () => {
@@ -59,14 +62,14 @@ describe("constitution runner", () => {
     const { root, consumer } = writeWorkspace(cleanSpec());
     const report = runConstitution({ root, consumer, history: () => NO_HISTORY, now: () => 0 });
     expect(report.ok).toBe(false);
-    expect(report.total).toBe(report.pending);
+    expect(report.total).toBe(report.pending + report.building);
     expect(report.pending).toBeGreaterThan(0);
     expect(report.records).toEqual({ slots: 6, liveSlots: 6, pins: 6, candidates: 6 });
     const text = formatReport(report);
     expect(text).toMatch(/^R01 ok {2}rows 0$/m);
     expect(text).toMatch(/^R02 PENDING {2}rows \d+/m);
     expect(text).toMatch(/^R04 ok {2}rows 0$/m);
-    expect(text).toMatch(/constitution: FAIL {2}rows \d+ \(pending \d+, findings 0\)/);
+    expect(text).toMatch(/constitution: FAIL {2}rows \d+ \(pending \d+, building \d+ report-only, findings 0\)/);
   });
 
   it("passes an enforced rule alone on a clean workspace and fails it on a broken one, with counts by agent and check", () => {
@@ -84,7 +87,21 @@ describe("constitution runner", () => {
 
   it("refuses an unknown rule", () => {
     const { root, consumer } = writeWorkspace(cleanSpec());
-    expect(() => runConstitution({ root, consumer, rule: "R15" })).toThrow(/Unknown constitution rule R15/);
+    expect(() => runConstitution({ root, consumer, rule: "R17" })).toThrow(/Unknown constitution rule R17 \(R01..R16\)/);
+  });
+
+  it("reports building rows without failing, and fails on them under strict (section 4)", () => {
+    const { root, consumer } = writeWorkspace(cleanSpec());
+    const loose = runConstitution({ root, consumer, rule: "R15", history: () => NO_HISTORY, now: () => 0 });
+    expect(loose).toMatchObject({ ok: true, strict: false, pending: 0 });
+    expect(loose.building).toBe(loose.total);
+    expect(loose.building).toBeGreaterThan(0);
+    expect(loose.rules).toEqual([expect.objectContaining({ id: "R15", status: "building", building: loose.total })]);
+    expect(formatReport(loose)).toMatch(/^R15 BUILDING {2}rows \d+ \(building \d+\)/m);
+    expect(formatReport(loose)).toMatch(/constitution: PASS .*building \d+ report-only, findings 0/);
+    const strict = runConstitution({ root, consumer, rule: "R15", strict: true, history: () => NO_HISTORY, now: () => 0 });
+    expect(strict).toMatchObject({ ok: false, strict: true, building: loose.building, total: loose.total });
+    expect(formatReport(strict)).toMatch(/^R15 FAIL {2}rows \d+/m);
   });
 
   it("is deterministic: the same records give the same rows", () => {
@@ -121,6 +138,7 @@ describe("clossys check --constitution arguments", () => {
   it("refuses --constitution off check, --rule without --constitution and an unknown rule id", () => {
     expect(() => parseArgs(["publish", "--constitution"])).toThrow(/--constitution requires check/);
     expect(() => parseArgs(["check", "--rule", "R04"])).toThrow(/--rule requires check --constitution/);
-    expect(() => parseArgs(["check", "--constitution", "--rule", "R15"])).toThrow(/R01..R14/);
+    expect(() => parseArgs(["check", "--constitution", "--rule", "R17"])).toThrow(/R01..R16/);
+    expect(parseArgs(["check", "--constitution", "--rule", "R16", "--strict"])).toMatchObject({ rule: "R16", strict: true });
   });
 });

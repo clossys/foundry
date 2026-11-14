@@ -1,0 +1,41 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".a { color: #111; background: #fff; font-weight: 400; }"
+      },
+      "params": {
+        "colors": 3,
+        "weights": 2
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".a { color: #111; background: #fff; border-color: #eee; outline-color: #f00; }"
+      },
+      "params": {
+        "colors": 3
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<b className=\"font-bold\"/><i className=\"font-light\"/><u className=\"font-medium\"/>"
+      },
+      "params": {
+        "weights": 2
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".a {}"
+      },
+      "params": {}
+    }
+  ]
+}

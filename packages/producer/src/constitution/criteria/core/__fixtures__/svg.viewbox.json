@@ -1,0 +1,36 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><path d=\"M2 2h20\"/></svg>"
+      },
+      "params": {
+        "size": 24
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg width=\"24\" height=\"24\"><path d=\"M2 2h20\"/></svg>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 32 32\"></svg>"
+      },
+      "params": {
+        "size": 24
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "no markup"
+      }
+    }
+  ]
+}

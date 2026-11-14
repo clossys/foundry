@@ -1,0 +1,34 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "One line. Two lines."
+      },
+      "params": {
+        "min": 1,
+        "max": 2
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "One. Two. Three."
+      },
+      "params": {
+        "max": 2
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": ""
+      },
+      "params": {
+        "min": 1
+      }
+    }
+  ]
+}

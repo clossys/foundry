@@ -1,0 +1,10 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    { "id": "plain-claim", "ref": "plain-claim.md", "source": "W2-I test fixture, written for this suite", "license": "CC0-1.0", "why": { "clarity": "One idea, stated as the reader's gain.", "rhythm": "The stress falls on the last word." } },
+    { "id": "house-voice", "ref": "house-voice.md", "source": "W2-I test fixture, written for this suite", "license": "CC0-1.0", "why": { "voice": "Plain words in the brief's register." } },
+    { "id": "linked-a", "ref": "https://example.com/headlines/a", "source": "example.com", "license": "all-rights-reserved", "description": "A two-word headline that names the outcome, not the feature.", "why": { "clarity": "Outcome before mechanism." } },
+    { "id": "linked-b", "ref": "https://example.com/headlines/b", "source": "example.com", "license": "all-rights-reserved", "description": "A question headline answered by the subhead.", "why": { "rhythm": "Question and answer split across two lines." } },
+    { "id": "linked-c", "ref": "https://example.com/headlines/c", "source": "example.com", "license": "all-rights-reserved", "description": "A headline in the second person with one verb.", "why": { "voice": "Direct address without hype.", "clarity": "One verb carries the claim." } }
+  ]
+}

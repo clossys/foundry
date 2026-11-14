@@ -1,0 +1,187 @@
+{
+  "schema": "clossys.criteria/1",
+  "criteria": [
+    {
+      "id": "text.nonempty",
+      "module": "text",
+      "export": "nonempty",
+      "fixtures": "__fixtures__/text.nonempty.json",
+      "summary": "The text holds at least params.min (default 1) words."
+    },
+    {
+      "id": "text.word-limit",
+      "module": "text",
+      "export": "wordLimit",
+      "fixtures": "__fixtures__/text.word-limit.json",
+      "summary": "The word count is within [params.min, params.max]."
+    },
+    {
+      "id": "text.sentence-count",
+      "module": "text",
+      "export": "sentenceCount",
+      "fixtures": "__fixtures__/text.sentence-count.json",
+      "summary": "The sentence count is within [params.min, params.max]."
+    },
+    {
+      "id": "text.reading-grade",
+      "module": "text",
+      "export": "readingGrade",
+      "fixtures": "__fixtures__/text.reading-grade.json",
+      "summary": "The Flesch-Kincaid grade is at most params.max (default 8)."
+    },
+    {
+      "id": "text.voice-rules",
+      "module": "text",
+      "export": "voiceRules",
+      "fixtures": "__fixtures__/text.voice-rules.json",
+      "summary": "The pinned person, sentence length, formality and mood."
+    },
+    {
+      "id": "text.plain-verbs",
+      "module": "text",
+      "export": "plainVerbs",
+      "fixtures": "__fixtures__/text.plain-verbs.json",
+      "summary": "No weak verb carrying a nominalisation, nor any params.avoid phrase."
+    },
+    {
+      "id": "text.no-placeholder",
+      "module": "text",
+      "export": "noPlaceholder",
+      "fixtures": "__fixtures__/text.no-placeholder.json",
+      "summary": "No lorem ipsum, TODO, TBD, demo company or template holes."
+    },
+    {
+      "id": "lexicon.clean",
+      "module": "lexicon",
+      "export": "clean",
+      "fixtures": "__fixtures__/lexicon.clean.json",
+      "summary": "None of params.avoid and none of the filler list."
+    },
+    {
+      "id": "lexicon.terms",
+      "module": "lexicon",
+      "export": "terms",
+      "fixtures": "__fixtures__/lexicon.terms.json",
+      "summary": "Every params.terms entry appears only in its house spelling."
+    },
+    {
+      "id": "citation.grammar",
+      "module": "markup",
+      "export": "citationGrammar",
+      "fixtures": "__fixtures__/citation.grammar.json",
+      "summary": "Every citation is [<agent>:]<slot-id>[#<key>] without a version suffix."
+    },
+    {
+      "id": "icu.valid",
+      "module": "markup",
+      "export": "icuValid",
+      "fixtures": "__fixtures__/icu.valid.json",
+      "summary": "Every string is a valid ICU message: balanced braces, plural and select with an other case."
+    },
+    {
+      "id": "props.declared",
+      "module": "markup",
+      "export": "propsDeclared",
+      "fixtures": "__fixtures__/props.declared.json",
+      "summary": "Every params.required prop is declared and no params.forbidden prop is."
+    },
+    {
+      "id": "composes.allowed",
+      "module": "markup",
+      "export": "composesAllowed",
+      "fixtures": "__fixtures__/composes.allowed.json",
+      "summary": "Every @/ import and uses entry starts with an allowed prefix."
+    },
+    {
+      "id": "apg.roles",
+      "module": "markup",
+      "export": "apgRoles",
+      "fixtures": "__fixtures__/apg.roles.json",
+      "summary": "Every role is a WAI-ARIA role carrying the states its APG pattern requires."
+    },
+    {
+      "id": "svg.viewbox",
+      "module": "svg",
+      "export": "svgViewbox",
+      "fixtures": "__fixtures__/svg.viewbox.json",
+      "summary": "The root svg has a positive four-number viewBox, params.size square when set."
+    },
+    {
+      "id": "svg.modes",
+      "module": "svg",
+      "export": "svgModes",
+      "fixtures": "__fixtures__/svg.modes.json",
+      "summary": "Every paint is currentColor, none, a CSS variable or a gradient reference."
+    },
+    {
+      "id": "render.small-size",
+      "module": "svg",
+      "export": "smallSize",
+      "fixtures": "__fixtures__/render.small-size.json",
+      "summary": "At params.size px every stroke is at least params.minStrokePx and the shape count is bounded."
+    },
+    {
+      "id": "svg.no-raster",
+      "module": "svg",
+      "export": "noRaster",
+      "fixtures": "__fixtures__/svg.no-raster.json",
+      "summary": "No embedded raster image, data URI or foreign object."
+    },
+    {
+      "id": "space.on-scale",
+      "module": "design",
+      "export": "spaceOnScale",
+      "fixtures": "__fixtures__/space.on-scale.json",
+      "summary": "Every spacing length is on params.scale (px)."
+    },
+    {
+      "id": "type.on-scale",
+      "module": "design",
+      "export": "typeOnScale",
+      "fixtures": "__fixtures__/type.on-scale.json",
+      "summary": "Every font size is on params.scale (px)."
+    },
+    {
+      "id": "type.levels",
+      "module": "design",
+      "export": "typeLevels",
+      "fixtures": "__fixtures__/type.levels.json",
+      "summary": "At most params.max (default 6) distinct type sizes."
+    },
+    {
+      "id": "type.measure",
+      "module": "design",
+      "export": "typeMeasure",
+      "fixtures": "__fixtures__/type.measure.json",
+      "summary": "Every ch measure is within [params.min, params.max] (45-75); params.required demands one."
+    },
+    {
+      "id": "color.contrast",
+      "module": "design",
+      "export": "colorContrast",
+      "fixtures": "__fixtures__/color.contrast.json",
+      "summary": "Every params.pairs pair meets WCAG AA: 4.5:1 text, 3:1 large and UI."
+    },
+    {
+      "id": "grid.aligned",
+      "module": "design",
+      "export": "gridAligned",
+      "fixtures": "__fixtures__/grid.aligned.json",
+      "summary": "Every coordinate and size sits on the params.unit grid (default 4)."
+    },
+    {
+      "id": "tokens.only",
+      "module": "design",
+      "export": "tokensOnly",
+      "fixtures": "__fixtures__/tokens.only.json",
+      "summary": "No raw colour literal and no raw px length outside token definitions."
+    },
+    {
+      "id": "restraint.counts",
+      "module": "design",
+      "export": "restraintCounts",
+      "fixtures": "__fixtures__/restraint.counts.json",
+      "summary": "Distinct colours, type sizes and weights stay under the params limits."
+    }
+  ]
+}

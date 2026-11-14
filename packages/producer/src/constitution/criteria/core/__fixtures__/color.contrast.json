@@ -1,0 +1,92 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/token",
+        "text": "{}",
+        "json": {
+          "fg": "#111111",
+          "bg": "#ffffff",
+          "muted": "#767676"
+        }
+      },
+      "params": {
+        "pairs": [
+          {
+            "fg": "fg",
+            "bg": "bg",
+            "size": "text"
+          },
+          {
+            "fg": "muted",
+            "bg": "bg",
+            "size": "text"
+          }
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/token",
+        "text": "{}",
+        "json": {
+          "fg": "#999999",
+          "bg": "#ffffff"
+        }
+      },
+      "params": {
+        "pairs": [
+          {
+            "fg": "fg",
+            "bg": "bg",
+            "size": "text"
+          }
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/token",
+        "text": "{}",
+        "json": {
+          "ring": "#dddddd",
+          "bg": "#ffffff"
+        }
+      },
+      "params": {
+        "pairs": [
+          {
+            "fg": "ring",
+            "bg": "bg",
+            "size": "ui"
+          }
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/token",
+        "text": "{}",
+        "json": {}
+      },
+      "params": {
+        "pairs": [
+          {
+            "fg": "missing",
+            "bg": "#ffffff"
+          }
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/token",
+        "text": "{}",
+        "json": {}
+      },
+      "params": {}
+    }
+  ]
+}

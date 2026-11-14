@@ -1,0 +1,48 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><rect x=\"4\" y=\"8\" width=\"16\" height=\"8\"/></svg>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{}",
+        "json": {
+          "box": {
+            "x": 0,
+            "y": 8,
+            "width": 320,
+            "height": 64
+          }
+        }
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/glyph",
+        "text": "<svg viewBox=\"0 0 24 24\"><rect x=\"5\" y=\"8\" width=\"16\" height=\"8\"/></svg>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "page",
+        "text": "{}",
+        "json": {
+          "box": {
+            "x": 0,
+            "y": 8,
+            "width": 321
+          }
+        }
+      },
+      "params": {
+        "unit": 8
+      }
+    }
+  ]
+}

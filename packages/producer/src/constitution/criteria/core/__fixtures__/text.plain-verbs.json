@@ -1,0 +1,29 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We decide fast and ship."
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We make a decision fast."
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "In terms of speed, we win."
+      },
+      "params": {
+        "avoid": [
+          "in terms of"
+        ]
+      }
+    }
+  ]
+}

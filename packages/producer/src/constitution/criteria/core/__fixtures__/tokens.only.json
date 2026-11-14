@@ -1,0 +1,44 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ":root { --brand: #112233; --space-2: 8px; } .card { color: var(--brand); padding: var(--space-2); border: 0px; }"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".hairline { border-width: 1px; }"
+      },
+      "params": {
+        "allow": [
+          "1px"
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".card { color: #112233; }"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".card { padding: 13px; }"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ":root { --brand: #112233; }"
+      },
+      "params": {
+        "definitions": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".card { padding: 8px 16px; gap: 0.25rem; margin: 0; }"
+      },
+      "params": {
+        "scale": [
+          4,
+          8,
+          12,
+          16,
+          24,
+          32
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".card { margin: 13px; }"
+      },
+      "params": {
+        "scale": [
+          4,
+          8,
+          12,
+          16
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<div className=\"p-[13px]\"/>"
+      },
+      "params": {
+        "scale": [
+          4,
+          8
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": ".a { gap: 4px; }"
+      },
+      "params": {}
+    }
+  ]
+}

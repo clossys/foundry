@@ -1,0 +1,27 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<h1 className=\"text-xl\"/><p className=\"text-base\"/><small className=\"text-sm\"/>"
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "<a className=\"text-xs\"/><a className=\"text-sm\"/><a className=\"text-base\"/><a className=\"text-lg\"/><a className=\"text-xl\"/><a className=\"text-2xl\"/><a className=\"text-3xl\"/>"
+      }
+    },
+    {
+      "subject": {
+        "kind": "element/component",
+        "text": "h1 { font-size: 32px; } p { font-size: 16px; }"
+      },
+      "params": {
+        "max": 1
+      }
+    }
+  ]
+}

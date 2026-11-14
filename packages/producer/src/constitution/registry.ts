@@ -19,16 +19,24 @@ import { R11 } from "./checks/R11-resolver.js";
 import { R12 } from "./checks/R12-deterministic-build.js";
 import { R13 } from "./checks/R13-strings-pages.js";
 import { R14 } from "./checks/R14-provenance.js";
+import { R15 } from "./checks/R15-standards.js";
+import { R16 } from "./checks/R16-independence.js";
 import type { Check, RuleId, RuleModule } from "./types.js";
 
-export const RULE_MODULES: readonly RuleModule[] = [R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14];
+export const RULE_MODULES: readonly RuleModule[] = [R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14, R15, R16];
 
-export interface RuleCheckEntry { readonly id: string; readonly status: "enforced" | "pending"; readonly owner?: string }
+/**
+ * `enforced` rows fail the run; `pending` rows are rules nobody has implemented (always a failure);
+ * `building` rows are implemented checks still being driven to zero (slot-constitution.md section 4):
+ * reported, but they fail the run only under `--strict`.
+ */
+export type RuleStatus = "enforced" | "pending" | "building";
+export interface RuleCheckEntry { readonly id: string; readonly status: RuleStatus; readonly owner?: string }
 export interface RuleEntry {
   readonly id: RuleId;
   readonly statement: string;
   readonly scope: "all-records";
-  readonly status: "enforced" | "pending";
+  readonly status: RuleStatus;
   readonly owner?: string;
   /** Module path, package-relative. */
   readonly check: string;

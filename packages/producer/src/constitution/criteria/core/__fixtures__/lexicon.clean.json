@@ -1,0 +1,40 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We ship pages fast."
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We just ship."
+      },
+      "params": {
+        "allow": [
+          "just"
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We really ship."
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings",
+        "text": "We synergize teams."
+      },
+      "params": {
+        "avoid": [
+          "synergize"
+        ]
+      }
+    }
+  ]
+}
