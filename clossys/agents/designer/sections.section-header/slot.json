@@ -60,9 +60,7 @@
       "components.badge",
       "components.status-mark",
       "components.menu",
-      "components.semantic-content",
-      "components.card",
-      "components.empty"
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band"

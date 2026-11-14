@@ -24,7 +24,14 @@
         "key": "Next-hire",
         "hint": "the next role to fill, and when"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

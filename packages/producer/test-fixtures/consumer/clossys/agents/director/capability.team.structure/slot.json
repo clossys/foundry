@@ -3,6 +3,7 @@
   "id": "capability.team.structure",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.team",
     "order": 46
@@ -23,7 +24,14 @@
         "key": "Rhythm",
         "hint": "the operating cadence"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

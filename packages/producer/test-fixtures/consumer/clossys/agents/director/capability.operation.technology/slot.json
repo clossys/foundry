@@ -3,6 +3,7 @@
   "id": "capability.operation.technology",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.operation",
     "order": 44
@@ -23,7 +24,14 @@
         "key": "Rule",
         "hint": "how we decide between them"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

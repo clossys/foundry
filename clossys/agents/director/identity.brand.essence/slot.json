@@ -24,7 +24,14 @@
         "key": "Not",
         "hint": "what it does not mean"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

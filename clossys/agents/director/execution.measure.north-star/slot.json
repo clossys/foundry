@@ -24,7 +24,14 @@
         "key": "Why",
         "hint": "why it tracks customer value"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "aspiration.goal.long-term"

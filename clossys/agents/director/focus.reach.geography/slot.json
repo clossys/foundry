@@ -24,7 +24,14 @@
         "key": "Why",
         "hint": "why this order"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

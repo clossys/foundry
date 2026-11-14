@@ -3,6 +3,7 @@
   "id": "context.company.constraint",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "context",
     "l2": "context.company",
     "order": 7
@@ -23,7 +24,14 @@
         "key": "Effect",
         "hint": "which choices it rules out"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

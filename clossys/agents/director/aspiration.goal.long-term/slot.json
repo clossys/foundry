@@ -24,7 +24,14 @@
         "key": "Scope",
         "hint": "what the target covers and excludes"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

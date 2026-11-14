@@ -24,7 +24,14 @@
         "key": "Budget",
         "hint": "the budget line the money comes from"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

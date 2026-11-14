@@ -3,6 +3,7 @@
   "id": "aspiration.culture.behavior",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "aspiration",
     "l2": "aspiration.culture",
     "order": 11
@@ -23,7 +24,14 @@
         "key": "Signal",
         "hint": "how you can tell it is happening"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

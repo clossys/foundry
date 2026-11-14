@@ -24,7 +24,14 @@
         "key": "Anchor",
         "hint": "what the buyer compares the price to"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "advantage.defensibility.differentiator"

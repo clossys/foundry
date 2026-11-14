@@ -3,6 +3,7 @@
   "id": "focus.offer.excluded",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "focus",
     "l2": "focus.offer",
     "order": 19
@@ -23,7 +24,14 @@
         "key": "Redirect",
         "hint": "where we send people who want it"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

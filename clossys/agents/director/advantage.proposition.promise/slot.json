@@ -24,7 +24,14 @@
         "key": "Versus",
         "hint": "the alternative it beats"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "context.customer.need"

@@ -7,9 +7,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadBuildCatalog, type PlacementNode } from "@clossys/designer/catalog";
 import { resolveAgent } from "../../agents.js";
+import { PRODUCER_ROOT } from "../../package-path.js";
 import { isAbsent } from "../../errors.js";
 import { DESIGN_BRIEF_INPUTS } from "./design-brief-inputs.js";
-import { IA_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type ModelAgent, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
+import { IA_SCHEMA, type IaAxes, type IaDoc, type IaLayer, type IaLeafGroup, type IaNode, type ModelAgent, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
 
 export interface FoundrySlot {
   readonly id: string;
@@ -49,11 +50,11 @@ export const WRITER_LAYERS = ["lexicon", "strings", "patterns", "passages", "nar
 /** Director: the director catalog (57 slots, 7 L1 / 28 L2). */
 export function directorIa(): FoundryIa {
   const root = resolveAgent("director").packageRoot;
-  const ia = readJson(root, "src/catalog/ia/strategy.json") as { nodes: { id: string; name: string; children: { id: string; name: string; leaves: string[] }[] }[] };
+  const ia = readJson(root, "src/catalog/ia/strategy.json") as { nodes: { id: string; name: string; children: { id: string; name: string; leaves: string[] }[] }[]; layers?: IaLayer[]; axes?: IaAxes };
   const cells = new Map((readJson(root, join("src", "catalog", "cells", "strategy.json")) as { id: string; question: string; mustContain: unknown }[]).map(cell => [cell.id, cell]));
   const freeze = readJson(root, "src/catalog/ia/strategy.leaf-freeze.json") as { frozenAt: string };
   // Older director builds carry no slot contracts: inputs stay undeclared.
-  const raw = readOptionalJson(root, "src/slot-contracts/contracts.json") as { slots: { id: string; inputs: string[]; feeds: string[] }[] } | undefined;
+  const raw = readOptionalJson(root, "src/slot-contracts/contracts.json") as { fixture?: Record<string, unknown>; slots: { id: string; inputs: string[]; feeds: string[] }[] } | undefined;
   const contracts = new Map<string, { inputs: string[]; feeds: string[] }>((raw?.slots ?? []).map(slot => [slot.id, { inputs: strings(slot.inputs), feeds: strings(slot.feeds) }]));
   const slots = new Map<string, FoundrySlot>();
   const nodes: IaNode[] = ia.nodes.map(node => ({
@@ -63,11 +64,14 @@ export function directorIa(): FoundryIa {
   for (const node of nodes) for (const child of node.children) for (const id of child.slots) {
     const cell = cells.get(id), contract = contracts.get(id);
     slots.set(id, {
-      id, kind: "brief", contract: { question: cell?.question ?? "", mustContain: cell?.mustContain ?? [] },
+      // The brief fixture (DIR-CERT: Direction, Because, Watch) is the package default for every Director contract.
+      id, kind: "brief", contract: { question: cell?.question ?? "", mustContain: cell?.mustContain ?? [], ...(raw?.fixture ? { fixture: raw.fixture } : {}) },
       declaredInputs: (contract?.inputs ?? []).map(stripAgent), declaredUses: [], feeds: (contract?.feeds ?? []).map(stripAgent),
     });
   }
-  return { agent: "director", ia: { schema: IA_SCHEMA, source: `@clossys/director#leaf-freeze:${freeze.frozenAt}`, extensions: [], nodes }, slots };
+  // The owner-decided L0 layers and axes (2026-11-13 IA review) are package data: every consumer IA levels by them.
+  const levels = { ...(ia.layers ? { layers: ia.layers } : {}), ...(ia.axes ? { axes: ia.axes } : {}) };
+  return { agent: "director", ia: { schema: IA_SCHEMA, source: `@clossys/director#leaf-freeze:${freeze.frozenAt}`, extensions: [], nodes, ...levels }, slots };
 }
 
 /** Flatten a placement subtree: groups below L2 fold into their L2 ancestor. */
@@ -109,7 +113,32 @@ export function designerIa(): FoundryIa {
     const declaredInputs = [...new Set([...brief, ...(reads.get(id) ?? []).filter(input => input !== id)])].sort();
     slots.set(id, { id, kind: "element", contract, declaredInputs, declaredUses: [...strings(slot?.requires), ...composes], feeds: [] });
   }
+  for (const extra of studioDesignerSlots()) {
+    let node = nodes.find(candidate => candidate.id === extra.l1.id);
+    if (!node) { node = { id: extra.l1.id, label: extra.l1.label, children: [] }; nodes.push(node); }
+    let group = node.children.find(candidate => candidate.id === extra.l2.id) as { id: string; label: string; slots: string[] } | undefined;
+    if (!group) { group = { id: extra.l2.id, label: extra.l2.label, slots: [] }; (node.children as IaLeafGroup[]).push(group); }
+    const at = extra.after === null ? -1 : group.slots.indexOf(extra.after);
+    group.slots.splice(at === -1 ? (extra.after === null ? 0 : group.slots.length) : at + 1, 0, extra.id);
+    slots.set(extra.id, { id: extra.id, kind: extra.kind, contract: extra.contract, declaredInputs: [...brief].sort(), declaredUses: [...extra.uses], feeds: [] });
+  }
   return { agent: "designer", ia: { schema: IA_SCHEMA, source: `@clossys/designer#${ref}`, extensions: [], nodes }, slots };
+}
+
+/** One Designer slot the Studio publication defines (src/studio-defaults/designer-slots.json). */
+interface StudioDesignerSlot {
+  readonly id: string; readonly l1: { id: string; label: string }; readonly l2: { id: string; label: string };
+  readonly after: string | null; readonly kind: SlotKind; readonly uses: readonly string[]; readonly contract: Record<string, unknown>;
+}
+/**
+ * The Designer slots the Studio publication (this package) defines on top of the Designer catalog:
+ * package leaves like the catalog's own, placed in their L1/L2 group after the slot they name (or at
+ * the group end when it is not placed). The Designer leaf freezes do not list them.
+ */
+export function studioDesignerSlots(): readonly StudioDesignerSlot[] {
+  const doc = JSON.parse(readFileSync(join(PRODUCER_ROOT, "src", "studio-defaults", "designer-slots.json"), "utf8")) as { schema: string; agent: string; slots: StudioDesignerSlot[] };
+  if (doc.schema !== "clossys.package-slots/1" || doc.agent !== "designer" || !Array.isArray(doc.slots)) throw new Error("studio-defaults/designer-slots.json: unexpected shape");
+  return doc.slots;
 }
 
 /** Writer: the five Writer IA layers (136 leaves); a slot is one Writer leaf (D5). */

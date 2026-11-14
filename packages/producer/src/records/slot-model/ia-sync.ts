@@ -31,13 +31,25 @@ const readDoc = (path: string): Doc => JSON.parse(readModelText(path)) as Doc;
 const placedIds = (ia: Pick<IaDoc, "nodes">): string[] => ia.nodes.flatMap(node => node.children.flatMap(child => [...child.slots]));
 
 /** Where each slot sits in a consumer IA: its L1 and L2 ids and labels, and the slot before it in that group. */
-interface Seat { readonly l1: string; readonly l1Label: string; readonly l2: string; readonly l2Label: string; readonly after: readonly string[] }
+interface Seat {
+  readonly l1: string; readonly l1Label: string; readonly l2: string; readonly l2Label: string;
+  /** The slots, groups and L1 nodes before this one in the consumer IA, nearest first. */
+  readonly after: readonly string[]; readonly groupsBefore: readonly string[]; readonly nodesBefore: readonly string[];
+}
 function seats(ia: Pick<IaDoc, "nodes">): Map<string, Seat> {
   const out = new Map<string, Seat>();
-  for (const node of ia.nodes) for (const child of node.children) child.slots.forEach((slot, index) => {
-    out.set(slot, { l1: node.id, l1Label: node.label, l2: child.id, l2Label: child.label, after: child.slots.slice(0, index).reverse() });
-  });
+  ia.nodes.forEach((node, n) => node.children.forEach((child, g) => child.slots.forEach((slot, index) => {
+    out.set(slot, {
+      l1: node.id, l1Label: node.label, l2: child.id, l2Label: child.label, after: child.slots.slice(0, index).reverse(),
+      groupsBefore: node.children.slice(0, g).map(group => group.id).reverse(), nodesBefore: ia.nodes.slice(0, n).map(prior => prior.id).reverse(),
+    });
+  })));
   return out;
+}
+/** Insert `item` right after the nearest of `before` that `list` holds, else first. */
+function insertAfter<T extends { id: string }>(list: T[], item: T, before: readonly string[]): void {
+  const prior = before.find(id => list.some(entry => entry.id === id));
+  list.splice(prior === undefined ? 0 : list.findIndex(entry => entry.id === prior) + 1, 0, item);
 }
 
 /**
@@ -55,9 +67,9 @@ export function targetIa(agent: SyncAgent, pkg: IaDoc, consumer: IaDoc | undefin
     const seat = where.get(id);
     if (!seat) continue;
     let node = nodes.find(candidate => candidate.id === seat.l1);
-    if (!node) { node = { id: seat.l1, label: seat.l1Label, children: [] }; nodes.push(node); }
+    if (!node) { node = { id: seat.l1, label: seat.l1Label, children: [] }; insertAfter(nodes, node, seat.nodesBefore); }
     let group = node.children.find(candidate => candidate.id === seat.l2);
-    if (!group) { group = { id: seat.l2, label: seat.l2Label, slots: [] }; node.children.push(group); }
+    if (!group) { group = { id: seat.l2, label: seat.l2Label, slots: [] }; insertAfter(node.children, group, seat.groupsBefore); }
     const before = seat.after.find(prior => group!.slots.includes(prior));
     group.slots.splice(before === undefined ? 0 : group.slots.indexOf(before) + 1, 0, id);
   }

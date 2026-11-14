@@ -27,9 +27,6 @@
       "themes": [
         "themes.spacing",
         "themes.destructive",
-        "themes.success",
-        "themes.warning",
-        "themes.info",
         "themes.foreground",
         "themes.card-foreground",
         "themes.popover-foreground",

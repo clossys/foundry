@@ -24,7 +24,14 @@
         "key": "Rhythm",
         "hint": "the operating cadence"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

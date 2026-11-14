@@ -3,6 +3,7 @@
   "id": "focus.reach.channel",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "focus",
     "l2": "focus.reach",
     "order": 21
@@ -23,7 +24,14 @@
         "key": "Not",
         "hint": "channels we do not use"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "focus.segment.core"

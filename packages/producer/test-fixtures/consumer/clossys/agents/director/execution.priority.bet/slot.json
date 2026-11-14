@@ -3,6 +3,7 @@
   "id": "execution.priority.bet",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "execution",
     "l2": "execution.priority",
     "order": 49
@@ -23,7 +24,14 @@
         "key": "Kill",
         "hint": "the condition that ends it"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

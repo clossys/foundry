@@ -24,7 +24,14 @@
         "key": "Reserve",
         "hint": "what is held back"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "execution.priority.bet"

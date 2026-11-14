@@ -24,7 +24,14 @@
         "key": "Channel",
         "hint": "where it is released"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "focus.lifecycle.acquisition"

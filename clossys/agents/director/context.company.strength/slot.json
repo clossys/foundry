@@ -24,7 +24,14 @@
         "key": "Rarity",
         "hint": "who else has it, and why few do"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

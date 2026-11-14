@@ -24,7 +24,14 @@
         "key": "Close-by",
         "hint": "the date and route to close it"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

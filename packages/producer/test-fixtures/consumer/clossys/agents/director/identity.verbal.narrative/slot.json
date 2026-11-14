@@ -3,6 +3,7 @@
   "id": "identity.verbal.narrative",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "identity",
     "l2": "identity.verbal",
     "order": 34
@@ -23,7 +24,14 @@
         "key": "Way",
         "hint": "our way through"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

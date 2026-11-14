@@ -24,7 +24,14 @@
         "key": "Path",
         "hint": "how it steps toward the long-term target"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

@@ -24,7 +24,14 @@
         "key": "Expansion",
         "hint": "how the account grows"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

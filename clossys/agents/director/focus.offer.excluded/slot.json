@@ -24,7 +24,14 @@
         "key": "Redirect",
         "hint": "where we send people who want it"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

@@ -275,5 +275,69 @@
         }
       ]
     }
-  ]
+  ],
+  "layers": [
+    {
+      "id": "situation",
+      "label": "Situation",
+      "nodes": [
+        "context",
+        "aspiration"
+      ]
+    },
+    {
+      "id": "strategy",
+      "label": "Strategy",
+      "nodes": [
+        "focus",
+        "advantage",
+        "identity"
+      ]
+    },
+    {
+      "id": "plan",
+      "label": "Plan",
+      "nodes": [
+        "capability",
+        "execution"
+      ]
+    }
+  ],
+  "axes": {
+    "L0": {
+      "name": "Strategy cascade stage",
+      "values": [
+        "Situation",
+        "Strategy",
+        "Plan"
+      ]
+    },
+    "L1": {
+      "situation": {
+        "name": "Question area",
+        "values": [
+          "Context",
+          "Aspiration"
+        ]
+      },
+      "strategy": {
+        "name": "Question area",
+        "values": [
+          "Focus",
+          "Advantage",
+          "Identity"
+        ]
+      },
+      "plan": {
+        "name": "Question area",
+        "values": [
+          "Capability",
+          "Execution"
+        ]
+      }
+    },
+    "shared": [
+      "Identity"
+    ]
+  }
 }

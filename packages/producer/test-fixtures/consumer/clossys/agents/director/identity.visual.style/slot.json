@@ -3,6 +3,7 @@
   "id": "identity.visual.style",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "identity",
     "l2": "identity.visual",
     "order": 36
@@ -23,7 +24,14 @@
         "key": "Avoid",
         "hint": "looks we avoid"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "identity.brand.essence",

@@ -3,6 +3,7 @@
   "id": "focus.segment.core",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "focus",
     "l2": "focus.segment",
     "order": 16
@@ -23,7 +24,14 @@
         "key": "Not",
         "hint": "who we turn away"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

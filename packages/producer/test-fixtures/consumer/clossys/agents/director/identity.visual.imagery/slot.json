@@ -3,6 +3,7 @@
   "id": "identity.visual.imagery",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "identity",
     "l2": "identity.visual",
     "order": 37
@@ -23,7 +24,14 @@
         "key": "Source",
         "hint": "where images come from"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

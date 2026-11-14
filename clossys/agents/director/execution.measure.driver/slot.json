@@ -24,7 +24,14 @@
         "key": "Owner",
         "hint": "who owns each"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

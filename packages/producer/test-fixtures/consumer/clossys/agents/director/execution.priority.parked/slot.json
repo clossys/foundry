@@ -3,6 +3,7 @@
   "id": "execution.priority.parked",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "execution",
     "l2": "execution.priority",
     "order": 50
@@ -23,7 +24,14 @@
         "key": "Revisit",
         "hint": "when or on what signal we look again"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

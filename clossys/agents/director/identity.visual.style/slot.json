@@ -24,7 +24,14 @@
         "key": "Avoid",
         "hint": "looks we avoid"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "identity.brand.essence",

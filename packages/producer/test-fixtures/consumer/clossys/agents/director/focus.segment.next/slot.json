@@ -3,6 +3,7 @@
   "id": "focus.segment.next",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "focus",
     "l2": "focus.segment",
     "order": 17
@@ -23,7 +24,14 @@
         "key": "Change",
         "hint": "what we must change to serve them"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

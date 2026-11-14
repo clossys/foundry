@@ -3,6 +3,7 @@
   "id": "capability.team.role",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.team",
     "order": 45
@@ -23,7 +24,14 @@
         "key": "Next-hire",
         "hint": "the next role to fill, and when"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

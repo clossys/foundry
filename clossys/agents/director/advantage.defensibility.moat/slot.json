@@ -24,7 +24,14 @@
         "key": "Milestone",
         "hint": "the point where it starts to hold"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

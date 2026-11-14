@@ -24,7 +24,14 @@
         "key": "Form",
         "hint": "product, service or both, and how it is delivered"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

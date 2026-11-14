@@ -3,6 +3,7 @@
   "id": "aspiration.culture.belief",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "aspiration",
     "l2": "aspiration.culture",
     "order": 10
@@ -23,7 +24,14 @@
         "key": "Cost",
         "hint": "what holding it costs us"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

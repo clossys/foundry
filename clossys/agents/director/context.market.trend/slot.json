@@ -24,7 +24,14 @@
         "key": "Timing",
         "hint": "when it bites, dated"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

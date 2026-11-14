@@ -3,6 +3,7 @@
   "id": "execution.roadmap.release",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "execution",
     "l2": "execution.roadmap",
     "order": 52
@@ -23,7 +24,14 @@
         "key": "Channel",
         "hint": "where it is released"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "focus.lifecycle.acquisition"

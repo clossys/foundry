@@ -3,6 +3,7 @@
   "id": "capability.resource.allocation",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.resource",
     "order": 48
@@ -23,7 +24,14 @@
         "key": "Reserve",
         "hint": "what is held back"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "execution.priority.bet"

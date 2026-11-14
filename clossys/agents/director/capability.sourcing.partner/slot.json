@@ -24,7 +24,14 @@
         "key": "Risk",
         "hint": "what happens if they change terms"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

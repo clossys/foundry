@@ -24,7 +24,14 @@
         "key": "Never-claim",
         "hint": "claims we must never make, quoted"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

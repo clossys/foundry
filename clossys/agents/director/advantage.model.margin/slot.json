@@ -24,7 +24,14 @@
         "key": "Lever",
         "hint": "the lever that moves it most"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

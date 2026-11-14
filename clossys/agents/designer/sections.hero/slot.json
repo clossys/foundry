@@ -37,6 +37,16 @@
         "name": "backdrop",
         "type": "media",
         "required": false
+      },
+      {
+        "name": "header.eyebrow",
+        "type": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "type": "copy",
+        "required": false
       }
     ],
     "members": {
@@ -100,7 +110,8 @@
       ],
       "assets": [
         "assets.image-ratio",
-        "assets.image"
+        "assets.image",
+        "assets.pattern"
       ]
     },
     "data": "host-injected",

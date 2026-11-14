@@ -3,6 +3,7 @@
   "id": "advantage.model.pricing",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "advantage",
     "l2": "advantage.model",
     "order": 28
@@ -23,7 +24,14 @@
         "key": "Anchor",
         "hint": "what the buyer compares the price to"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "advantage.defensibility.differentiator"

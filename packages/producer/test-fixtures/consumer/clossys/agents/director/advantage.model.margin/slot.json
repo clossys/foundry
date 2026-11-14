@@ -3,6 +3,7 @@
   "id": "advantage.model.margin",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "advantage",
     "l2": "advantage.model",
     "order": 29
@@ -23,7 +24,14 @@
         "key": "Lever",
         "hint": "the lever that moves it most"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

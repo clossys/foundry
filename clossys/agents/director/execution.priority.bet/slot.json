@@ -24,7 +24,14 @@
         "key": "Kill",
         "hint": "the condition that ends it"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

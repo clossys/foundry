@@ -3,6 +3,7 @@
   "id": "context.market.trend",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "context",
     "l2": "context.market",
     "order": 1
@@ -23,7 +24,14 @@
         "key": "Timing",
         "hint": "when it bites, dated"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

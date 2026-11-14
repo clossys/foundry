@@ -24,7 +24,14 @@
         "key": "Trigger",
         "hint": "the event that makes them look for help now"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

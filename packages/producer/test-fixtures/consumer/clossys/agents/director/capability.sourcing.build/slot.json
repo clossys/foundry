@@ -3,6 +3,7 @@
   "id": "capability.sourcing.build",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.sourcing",
     "order": 40
@@ -23,7 +24,14 @@
         "key": "Cost",
         "hint": "what building costs"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

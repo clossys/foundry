@@ -254,7 +254,10 @@
           "submit",
           "reissue"
         ],
-        "fix": "meet the failing requirement named in brackets (the slot standard's requirements.json, or the contract fixture), then resubmit"
+        "fix": "meet the failing requirement named in brackets (the slot standard's requirements.json, or the contract fixture), then resubmit",
+        "enforcedFor": [
+          "director"
+        ]
       },
       {
         "id": "R05.2",
@@ -266,7 +269,10 @@
           "submit",
           "reissue"
         ],
-        "fix": "pin only a certified candidate: fix and resubmit it, or pin a certified option"
+        "fix": "pin only a certified candidate: fix and resubmit it, or pin a certified option",
+        "enforcedFor": [
+          "director"
+        ]
       },
       {
         "id": "R05.3",
@@ -740,6 +746,9 @@
           "submit",
           "pick",
           "reject"
+        ],
+        "enforcedFor": [
+          "director"
         ]
       },
       {

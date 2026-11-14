@@ -3,6 +3,7 @@
   "id": "capability.sourcing.acquire",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.sourcing",
     "order": 42
@@ -23,7 +24,14 @@
         "key": "Limit",
         "hint": "the price or scope limit"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

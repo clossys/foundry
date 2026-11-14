@@ -96,7 +96,8 @@ export function runConstitution(options: RunOptions): ConstitutionReport {
     for (const check of rule.run) {
       const found = check.fn(ctx).filter(item => (!options.agent || item.agent === options.agent || item.agent === "*") && kept(item));
       if (check.status === "warn") ruleWarnings.push(...found.map(item => ({ ...item, level: "warn" as const })));
-      else ruleRows.push(...(check.status === "building" ? found.map(item => ({ ...item, level: "building" as const })) : found));
+      // A building check's rows are building, except those about an agent it already enforces (enforcedFor).
+      else ruleRows.push(...(check.status === "building" ? found.map(item => (check.enforcedFor?.includes(item.agent) ? item : { ...item, level: "building" as const })) : found));
     }
     rows.push(...ruleRows);
     warnings.push(...ruleWarnings);

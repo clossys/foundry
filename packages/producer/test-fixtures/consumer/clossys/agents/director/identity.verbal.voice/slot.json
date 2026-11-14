@@ -3,6 +3,7 @@
   "id": "identity.verbal.voice",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "identity",
     "l2": "identity.verbal",
     "order": 35
@@ -23,7 +24,14 @@
         "key": "Never",
         "hint": "words and moves we never use, quoted"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "identity.brand.essence"

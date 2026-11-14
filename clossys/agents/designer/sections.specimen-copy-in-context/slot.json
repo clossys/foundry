@@ -48,6 +48,7 @@
       "names": []
     },
     "allowedComposes": [
+      "components.specimen-copy-in-context",
       "components.semantic-content",
       "components.grid-list",
       "components.table",

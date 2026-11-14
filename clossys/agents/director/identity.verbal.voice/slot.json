@@ -24,7 +24,14 @@
         "key": "Never",
         "hint": "words and moves we never use, quoted"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "identity.brand.essence"

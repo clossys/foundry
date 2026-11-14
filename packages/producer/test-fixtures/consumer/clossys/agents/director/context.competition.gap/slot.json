@@ -3,6 +3,7 @@
   "id": "context.competition.gap",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "context",
     "l2": "context.competition",
     "order": 5
@@ -23,7 +24,14 @@
         "key": "Why-open",
         "hint": "why nobody has closed it"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

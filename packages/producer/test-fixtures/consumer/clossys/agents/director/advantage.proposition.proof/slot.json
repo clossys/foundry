@@ -3,6 +3,7 @@
   "id": "advantage.proposition.proof",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "advantage",
     "l2": "advantage.proposition",
     "order": 25
@@ -23,7 +24,14 @@
         "key": "Never-claim",
         "hint": "claims we must never make, quoted"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

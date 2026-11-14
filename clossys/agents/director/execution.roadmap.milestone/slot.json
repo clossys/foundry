@@ -24,7 +24,14 @@
         "key": "Evidence",
         "hint": "what proves it is reached"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

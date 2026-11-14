@@ -24,7 +24,14 @@
         "key": "Risk",
         "hint": "what the stance could cost"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

@@ -24,7 +24,14 @@
         "key": "Bar",
         "hint": "the bar it must clear, testable"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

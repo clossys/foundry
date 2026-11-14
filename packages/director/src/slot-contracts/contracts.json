@@ -26,6 +26,13 @@
       "Evidence that only restates the direction."
     ]
   },
+  "fixture": {
+    "headings": [
+      "Direction",
+      "Because",
+      "Watch"
+    ]
+  },
   "slots": [
     {
       "id": "context.market.size",

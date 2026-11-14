@@ -24,7 +24,14 @@
         "key": "Method",
         "hint": "how the number was derived, with its source"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

@@ -62,7 +62,8 @@ describe("constitution runner", () => {
     const { root, consumer } = writeWorkspace(cleanSpec());
     const report = runConstitution({ root, consumer, history: () => NO_HISTORY, skillShas: FIXTURE_SKILL_SHAS, now: () => 0 });
     expect(report.ok).toBe(false);
-    expect(report.total).toBe(report.pending + report.building);
+    // Director R05 rows fail outright (enforcedFor); every other row is pending or building.
+    expect(report.total).toBe(report.pending + report.building + report.rows.filter(row => row.agent === "director" && row.rule === "R05").length);
     expect(report.pending).toBeGreaterThan(0);
     expect(report.records).toEqual({ slots: 6, liveSlots: 6, pins: 6, candidates: 6 });
     const text = formatReport(report);
@@ -71,7 +72,7 @@ describe("constitution runner", () => {
     expect(text).toMatch(/^R03 BUILDING {2}rows \d+/m);
     expect(text).toMatch(/^R14 ok {2}rows 0$/m);
     expect(text).toMatch(/^R04 ok {2}rows 0$/m);
-    expect(text).toMatch(/constitution: FAIL {2}rows \d+ \(pending \d+, findings 0\)(?: {2}building \d+ \(report only; --strict fails them\))?/);
+    expect(text).toMatch(/constitution: FAIL {2}rows \d+ \(pending \d+, findings [1-9]\d*\)(?: {2}building \d+ \(report only; --strict fails them\))?/);
   });
 
   it("passes an enforced rule alone on a clean workspace and fails it on a broken one, with counts by agent and check", () => {
@@ -104,6 +105,26 @@ describe("constitution runner", () => {
     const strict = runConstitution({ root, consumer, rule: "R15", strict: true, history: () => NO_HISTORY, now: () => 0 });
     expect(strict).toMatchObject({ ok: false, strict: true, building: loose.building, total: loose.total });
     expect(formatReport(strict)).toMatch(/^R15 FAIL {2}rows \d+/m);
+  });
+
+  it("a building check fails the run for the agents it lists in enforcedFor and stays building for the rest (R05, R15.5: director)", () => {
+    const enforcedFor = Object.fromEntries(readRules().flatMap(rule => rule.checks).filter(check => check.enforcedFor).map(check => [check.id, check.enforcedFor]));
+    expect(enforcedFor).toEqual({ "R05.1": ["director"], "R05.2": ["director"], "R15.5": ["director"] });
+    const { root, consumer } = writeWorkspace(cleanSpec());
+    const report = runConstitution({ root, consumer, rule: "R05", history: () => NO_HISTORY, now: () => 0 });
+    const director = report.rows.filter(row => row.agent === "director");
+    const others = report.rows.filter(row => row.agent !== "director");
+    expect(director.length).toBeGreaterThan(0);
+    expect(others.length).toBeGreaterThan(0);
+    expect(director.every(row => row.level !== "building")).toBe(true);
+    expect(others.every(row => row.level === "building")).toBe(true);
+    expect(report.ok).toBe(false);
+    expect(report.rules[0]).toMatchObject({ failing: director.length, building: others.length });
+    const writerOnly = runConstitution({ root, consumer, rule: "R05", agent: "writer", history: () => NO_HISTORY, now: () => 0 });
+    expect(writerOnly).toMatchObject({ ok: true, building: writerOnly.total });
+    const rules = readRules();
+    const bad = rules.map(rule => rule.id !== "R04" ? rule : { ...rule, checks: rule.checks.map(check => ({ ...check, enforcedFor: ["director"] })) });
+    expect(() => registeredRules(bad)).toThrow(/enforcedFor/);
   });
 
   it("is deterministic: the same records give the same rows", () => {

@@ -24,7 +24,14 @@
         "key": "Why-open",
         "hint": "why nobody has closed it"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

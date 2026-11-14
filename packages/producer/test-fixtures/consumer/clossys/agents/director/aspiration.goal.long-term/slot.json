@@ -3,6 +3,7 @@
   "id": "aspiration.goal.long-term",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "aspiration",
     "l2": "aspiration.goal",
     "order": 12
@@ -23,7 +24,14 @@
         "key": "Scope",
         "hint": "what the target covers and excludes"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

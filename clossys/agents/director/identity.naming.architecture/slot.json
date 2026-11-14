@@ -24,7 +24,14 @@
         "key": "Example",
         "hint": "one worked name"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

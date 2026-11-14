@@ -24,7 +24,14 @@
         "key": "Next",
         "hint": "the next funding step and its trigger"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

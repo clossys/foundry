@@ -24,7 +24,14 @@
         "key": "Not",
         "hint": "who we turn away"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

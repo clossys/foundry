@@ -3,6 +3,7 @@
   "id": "identity.naming.architecture",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "identity",
     "l2": "identity.naming",
     "order": 33
@@ -23,7 +24,14 @@
         "key": "Example",
         "hint": "one worked name"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

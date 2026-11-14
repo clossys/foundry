@@ -3,6 +3,7 @@
   "id": "context.company.strength",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "context",
     "l2": "context.company",
     "order": 6
@@ -23,7 +24,14 @@
         "key": "Rarity",
         "hint": "who else has it, and why few do"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

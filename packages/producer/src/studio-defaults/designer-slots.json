@@ -1,0 +1,277 @@
+{
+  "schema": "clossys.package-slots/1",
+  "package": "@clossys/producer",
+  "agent": "designer",
+  "about": "Designer slots the Studio publication defines on top of the Designer catalog. They are package leaves: clossys ia sync places them with their contracts in every consumer, at the group and after the slot named here. The Designer leaf freezes are not changed by them.",
+  "slots": [
+    {
+      "id": "themes.success",
+      "l1": {
+        "id": "themes.colors",
+        "label": "Colors"
+      },
+      "l2": {
+        "id": "colors-actions",
+        "label": "Actions"
+      },
+      "after": "themes.destructive",
+      "kind": "element",
+      "uses": [],
+      "contract": {
+        "$type": "color",
+        "emit": {
+          "default": "--success"
+        },
+        "kind": "token",
+        "members": {
+          "mode": "closed",
+          "names": [
+            "default"
+          ]
+        },
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "tier": "role"
+      }
+    },
+    {
+      "id": "themes.warning",
+      "l1": {
+        "id": "themes.colors",
+        "label": "Colors"
+      },
+      "l2": {
+        "id": "colors-actions",
+        "label": "Actions"
+      },
+      "after": "themes.success",
+      "kind": "element",
+      "uses": [],
+      "contract": {
+        "$type": "color",
+        "emit": {
+          "default": "--warning"
+        },
+        "kind": "token",
+        "members": {
+          "mode": "closed",
+          "names": [
+            "default"
+          ]
+        },
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "tier": "role"
+      }
+    },
+    {
+      "id": "themes.info",
+      "l1": {
+        "id": "themes.colors",
+        "label": "Colors"
+      },
+      "l2": {
+        "id": "colors-actions",
+        "label": "Actions"
+      },
+      "after": "themes.warning",
+      "kind": "element",
+      "uses": [],
+      "contract": {
+        "$type": "color",
+        "emit": {
+          "default": "--info"
+        },
+        "kind": "token",
+        "members": {
+          "mode": "closed",
+          "names": [
+            "default"
+          ]
+        },
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "tier": "role"
+      }
+    },
+    {
+      "id": "sections.producer.team-strip",
+      "l1": {
+        "id": "sections.producer",
+        "label": "Producer"
+      },
+      "l2": {
+        "id": "producer-pipeline",
+        "label": "Pipeline"
+      },
+      "after": "sections.producer.pipeline-legend",
+      "kind": "element",
+      "uses": [
+        "components.avatar",
+        "components.badge",
+        "components.button",
+        "components.card",
+        "components.tooltip"
+      ],
+      "contract": {
+        "kind": "section",
+        "schema": "clossys.slot-contract/1",
+        "slot": "sections.producer.team-strip",
+        "package": "producer",
+        "layer": "sections",
+        "purpose": "The system's team in one compact stock Card: one small stock outline LinkButton per seat holder in one wrapping line, with a small stock Avatar initial, its name and stock Badges for its seat kinds (You, AI, Code), AI tier and step count; its one line on what it does is the link's stock Tooltip. Each links to its lane on the workflow map (?seat=<id>); the highlighted holder shows the stock secondary LinkButton.",
+        "inputs": [
+          {
+            "name": "team",
+            "kind": "data",
+            "required": true,
+            "description": "The resolved team label and one card per roster entry (plus Unassigned while a step has no holder): id, name, initial, seat-kind labels, tier label, one-line description, step-count label, lane link, link label and whether its lane is highlighted."
+          }
+        ],
+        "limits": {},
+        "references": [
+          {
+            "registry": "shadcn",
+            "item": "avatar",
+            "version": "4.23.0",
+            "hash": "sha256:32dcb71ec3c8218efde9067e5332f63cb3bc6d5ad4abc6a490db26e04ecd2f4a",
+            "url": "https://ui.shadcn.com/r/styles/radix-nova/avatar.json"
+          },
+          {
+            "registry": "shadcn",
+            "item": "badge",
+            "version": "4.23.0",
+            "hash": "sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95",
+            "url": "https://ui.shadcn.com/r/styles/radix-nova/badge.json"
+          },
+          {
+            "registry": "shadcn",
+            "item": "button",
+            "version": "4.23.0",
+            "hash": "sha256:9e41c76cf882fc46d3518f621c87ac7e58ec381ea546fda891de2cabe95fc350",
+            "url": "https://ui.shadcn.com/r/styles/radix-nova/button.json"
+          },
+          {
+            "registry": "shadcn",
+            "item": "card",
+            "version": "4.23.0",
+            "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+            "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+          }
+        ],
+        "checkSuite": "studio",
+        "specimenKind": "data"
+      }
+    },
+    {
+      "id": "sections.producer.system-empty",
+      "l1": {
+        "id": "sections.producer",
+        "label": "Producer"
+      },
+      "l2": {
+        "id": "producer-pipeline",
+        "label": "Pipeline"
+      },
+      "after": "sections.producer.team-strip",
+      "kind": "element",
+      "uses": [
+        "components.empty"
+      ],
+      "contract": {
+        "kind": "section",
+        "schema": "clossys.slot-contract/1",
+        "slot": "sections.producer.system-empty",
+        "package": "producer",
+        "layer": "sections",
+        "purpose": "A system that is not set up yet: the stock shadcn Empty with its header, title and description.",
+        "inputs": [
+          {
+            "name": "empty",
+            "kind": "data",
+            "required": true,
+            "description": "The resolved Writer title and description for the system's empty state."
+          }
+        ],
+        "limits": {},
+        "references": [
+          {
+            "registry": "shadcn",
+            "item": "empty",
+            "version": "4.23.0",
+            "hash": "sha256:fc6a8c64f6c422c0ab8ed46e6e832f7b5536d06c787206dc54c56bfa1c841d23",
+            "url": "https://ui.shadcn.com/r/styles/radix-nova/empty.json"
+          }
+        ],
+        "checkSuite": "studio",
+        "specimenKind": "data"
+      }
+    },
+    {
+      "id": "components.studio.specimen-document",
+      "l1": {
+        "id": "components.studio",
+        "label": "Studio"
+      },
+      "l2": {
+        "id": "studio-specimens",
+        "label": "Specimens"
+      },
+      "after": "components.studio.block-viewer-iframe",
+      "kind": "element",
+      "uses": [
+        "components.badge",
+        "components.button",
+        "components.card",
+        "components.empty",
+        "components.item"
+      ],
+      "contract": {
+        "kind": "component",
+        "root": "presentational",
+        "members": {
+          "mode": "closed",
+          "names": []
+        },
+        "props": [],
+        "install": {
+          "layer": "@clossys/designer-ui",
+          "alias": "components",
+          "file": "specimen-document.tsx"
+        },
+        "allowedReads": {
+          "themes": [
+            "themes.background",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.card",
+            "themes.card-foreground",
+            "themes.border",
+            "themes.radius"
+          ],
+          "assets": [],
+          "components": [
+            "components.badge",
+            "components.button",
+            "components.card",
+            "components.empty",
+            "components.item"
+          ]
+        },
+        "composes": [
+          "components.badge",
+          "components.button",
+          "components.card",
+          "components.empty",
+          "components.item"
+        ]
+      }
+    }
+  ]
+}

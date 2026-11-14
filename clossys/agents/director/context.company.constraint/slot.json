@@ -24,7 +24,14 @@
         "key": "Effect",
         "hint": "which choices it rules out"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

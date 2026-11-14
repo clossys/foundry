@@ -36,6 +36,11 @@
         "name": "footnote",
         "type": "copy",
         "required": false
+      },
+      {
+        "name": "aside",
+        "type": "region",
+        "required": false
       }
     ],
     "members": {
@@ -171,6 +176,24 @@
         },
         {
           "key": "footnote",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "aside[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "aside[].value",
           "kind": "plain",
           "required": false,
           "maxLength": {

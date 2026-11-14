@@ -24,7 +24,14 @@
         "key": "Not",
         "hint": "channels we do not use"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "focus.segment.core"

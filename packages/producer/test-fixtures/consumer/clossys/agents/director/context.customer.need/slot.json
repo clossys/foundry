@@ -3,6 +3,7 @@
   "id": "context.customer.need",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "context",
     "l2": "context.customer",
     "order": 2
@@ -23,7 +24,14 @@
         "key": "Trigger",
         "hint": "the event that makes them look for help now"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

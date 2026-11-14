@@ -3,6 +3,7 @@
   "id": "focus.lifecycle.acquisition",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "focus",
     "l2": "focus.lifecycle",
     "order": 22
@@ -23,7 +24,14 @@
         "key": "Cost",
         "hint": "the acquisition cost or effort, estimated"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "focus.reach.channel"

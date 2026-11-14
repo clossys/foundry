@@ -3,6 +3,7 @@
   "id": "aspiration.purpose.mission",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "aspiration",
     "l2": "aspiration.purpose",
     "order": 8
@@ -23,7 +24,14 @@
         "key": "Why",
         "hint": "why it matters to them"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

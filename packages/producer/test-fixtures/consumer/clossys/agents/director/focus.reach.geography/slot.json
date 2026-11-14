@@ -3,6 +3,7 @@
   "id": "focus.reach.geography",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "focus",
     "l2": "focus.reach",
     "order": 20
@@ -23,7 +24,14 @@
         "key": "Why",
         "hint": "why this order"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

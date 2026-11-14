@@ -3,6 +3,7 @@
   "id": "focus.category.definition",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "focus",
     "l2": "focus.category",
     "order": 14
@@ -23,7 +24,14 @@
         "key": "Adjacent",
         "hint": "the categories we get confused with"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

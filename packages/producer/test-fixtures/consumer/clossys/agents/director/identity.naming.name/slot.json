@@ -3,6 +3,7 @@
   "id": "identity.naming.name",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "identity",
     "l2": "identity.naming",
     "order": 32
@@ -23,7 +24,14 @@
         "key": "Meaning",
         "hint": "what the name means or stands for"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": []

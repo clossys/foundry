@@ -24,7 +24,14 @@
         "key": "Example",
         "hint": "one behavior that shows the traits"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

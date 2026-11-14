@@ -24,7 +24,14 @@
         "key": "Cost",
         "hint": "what building costs"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

@@ -24,7 +24,14 @@
         "key": "Change",
         "hint": "what we must change to serve them"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

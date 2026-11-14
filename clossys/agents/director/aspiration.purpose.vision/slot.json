@@ -24,7 +24,14 @@
         "key": "Role",
         "hint": "our part in that picture"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

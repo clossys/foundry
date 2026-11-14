@@ -24,7 +24,14 @@
         "key": "Switching",
         "hint": "what leaving it costs them"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

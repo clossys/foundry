@@ -24,7 +24,14 @@
         "key": "Source",
         "hint": "where images come from"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

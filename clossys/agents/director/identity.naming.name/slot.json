@@ -24,7 +24,14 @@
         "key": "Meaning",
         "hint": "what the name means or stands for"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [],
   "uses": [],

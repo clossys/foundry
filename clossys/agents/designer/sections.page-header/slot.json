@@ -56,9 +56,7 @@
       "components.breadcrumbs",
       "components.button",
       "components.badge",
-      "components.tabs",
-      "components.card",
-      "components.empty"
+      "components.tabs"
     ],
     "parts": [
       "sections.band",

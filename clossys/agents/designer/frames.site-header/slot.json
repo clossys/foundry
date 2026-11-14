@@ -113,8 +113,7 @@
       "components.icon",
       "components.badge",
       "components.disclosure",
-      "components.dialog",
-      "components.item"
+      "components.dialog"
     ]
   },
   "inputs": [

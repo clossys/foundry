@@ -24,7 +24,14 @@
         "key": "Why-hard",
         "hint": "why it is hard to copy"
       }
-    ]
+    ],
+    "fixture": {
+      "headings": [
+        "Direction",
+        "Because",
+        "Watch"
+      ]
+    }
   },
   "inputs": [
     "advantage.proposition.promise"
