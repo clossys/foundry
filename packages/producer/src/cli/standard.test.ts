@@ -203,7 +203,8 @@ describe("clossys ia producer/<seat> --standard", () => {
     const result = await runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--contract", join(root, "ok.json")], root);
     expect(result.exitCode, result.message).toBe(0);
     expect(seatJson(root)).toMatchObject({ standard: "fixture-seat", contract: revised });
-    await expect(runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--under", "a/b"], root)).rejects.toThrow(/takes only --standard/);
+    await expect(runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--under", "a/b"], root)).rejects.toThrow(/a new seat is placed by clossys seat owner\.decisions/);
+    await expect(runIaCli(["producer/seat.owner.decisions", "--standard", "fixture-seat", "--kind", "seat"], root)).rejects.toThrow(/takes only --standard/);
     await expect(runIaCli(["producer/seat.owner.decisions", "--contract", join(root, "ok.json")], root)).rejects.toThrow(/--standard/);
     expect((await runIaCli(["producer/seat.nowhere", "--standard", "fixture-seat"], root)).message).toMatch(/has no slot\.json/);
   });
