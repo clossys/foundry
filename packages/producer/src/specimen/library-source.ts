@@ -44,6 +44,13 @@ export interface LibrarySourceOptions {
    * component page applies the state. Exactly one layer wraps or mounts each.
    */
   readonly slotStates?: boolean;
+  /**
+   * Certification mode (planner decision D1; the specimen preflight): every candidate of a slot
+   * that declares a valid contract fixture mounts that fixture, in place of its own preview, when
+   * it ships the file and export the fixture names. Off (the default), a candidate's own preview
+   * overrides the contract fixture, as Studio shows it.
+   */
+  readonly certify?: boolean;
 }
 
 /** A Writer copy snapshot, or a getter of the current one. */
@@ -162,7 +169,7 @@ function pinFingerprint(roots: readonly string[]): string {
 }
 
 /** Every byte and the pin come from the common model reader. No store fallback. */
-export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string; readonly writerCopy?: WriterCopy; readonly slotStates?: boolean } = {}): SpecimenRecordStore {
+export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string; readonly writerCopy?: WriterCopy; readonly slotStates?: boolean; readonly certify?: boolean } = {}): SpecimenRecordStore {
   const roots = rootsIn.map(root => resolve(root));
   if (options.writerCopy && roots.length !== 1) throw new Error("a Writer copy snapshot belongs to exactly one consumer root");
   let cached: { at: number; fingerprint: string; index: InstallIndex } | undefined;
@@ -202,7 +209,7 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
       if (issues.length) throw new RecordError(`candidate ${slot}/${candidate.name}`, issues);
       const item = JSON.parse(read.bytes);
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element) || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== slot)) throw new Error(`candidate ${slot}/${candidate.name}: element identity differs from the candidate name or slot`);
-      const fixture = withContractFixture(doc.contract, item);
+      const fixture = withContractFixture(doc.contract, item, options.certify === true);
       const specimen = specimenInputs(root, `${slot}/${candidate.name}`, fixture.item, true, writer(root));
       const row: SpecimenElementVersion = {
         id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
@@ -244,10 +251,11 @@ export const CONTRACT_FIXTURE_SOURCE = "slot.json#contract.fixture";
  * has one (an override), else the slot's contract fixture (`contract.fixture`) when the candidate
  * ships the file it names and exports the component it mounts, else none. The fixture is part of
  * the slot contract; a candidate never borrows the preview of another candidate of its slot, pinned
- * or not. The candidate's own bytes are never changed.
+ * or not. With `certify`, the contract fixture wins over the candidate's own preview whenever it
+ * fits, as certification mounts it. The candidate's own bytes are never changed.
  */
-function withContractFixture(contract: Readonly<Record<string, unknown>> | undefined, item: CandidateItem): { readonly item: CandidateItem; readonly fromContract: boolean } {
-  if (item.meta?.preview !== undefined) return { item, fromContract: false };
+function withContractFixture(contract: Readonly<Record<string, unknown>> | undefined, item: CandidateItem, certify = false): { readonly item: CandidateItem; readonly fromContract: boolean } {
+  if (item.meta?.preview !== undefined && !certify) return { item, fromContract: false };
   const fixture = contractFixtureOf(contract);
   if (!fixture || !fixtureFits(item, fixture as unknown as Record<string, unknown>)) return { item, fromContract: false };
   return { item: { ...item, meta: { ...item.meta, preview: fixture } }, fromContract: true };
@@ -658,7 +666,7 @@ export function pinnedLibraryTheme(rootsIn: readonly string[]): SpecimenTheme | 
  * `themes`) gets every pinned theme variable, light and dark, not one `themes.*` leaf.
  */
 export function libraryRecordSource(options: LibrarySourceOptions): SpecimenRecordSource {
-  const base = recordStoreSource(libraryRecordStore(options.roots, { ...(options.registryBase ? { registryBase: options.registryBase } : {}), ...(options.writerCopy ? { writerCopy: options.writerCopy } : {}), ...(options.slotStates === false ? { slotStates: false } : {}) }), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
+  const base = recordStoreSource(libraryRecordStore(options.roots, { ...(options.registryBase ? { registryBase: options.registryBase } : {}), ...(options.writerCopy ? { writerCopy: options.writerCopy } : {}), ...(options.slotStates === false ? { slotStates: false } : {}), ...(options.certify ? { certify: true } : {}) }), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
   return {
     ...base,
     async theme(id) {
