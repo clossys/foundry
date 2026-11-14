@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v24.md",
-  "sha256": "30c1011ed9be8341c5241104b4844474970374a0bd236ab64a2546581fd38a51",
-  "decidedBy": "planner:W2-G dependency; AUTO-DECIDED planner, sibling icon library",
+  "candidate": "common-v25.md",
+  "sha256": "4c59d902c8786a7985d5a36bab3a73f038fcf8618901d1ec350477e230209d71",
+  "decidedBy": "planner:W2-G naming; AUTO-DECIDED planner, same approved copy without directorSources (R07.2)",
   "basis": "planner",
-  "at": "2026-11-14T08:23:00.278Z"
+  "at": "2026-11-14T09:53:22.904Z"
 }
