@@ -7,7 +7,9 @@ import { checkSlotModel } from "../records/slot-check.js";
 import { resolveOwnerRef, validateOwnerDecisions } from "../records/owner-decisions.js";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
 import "./main.js";
-import { IA_USAGE, runIaCli } from "./owner.js";
+import { IA_USAGE, runIaCli, runOwnerDecisionCli } from "./owner.js";
+import { validateFile } from "../pipeline/schema.js";
+import { runPipeline } from "../pipeline/runner.js";
 
 const AT = "2026-11-13T12:00:00.000Z";
 const REF = "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)";
@@ -118,6 +120,64 @@ describe("--owner-ref: resolved offline against clossys/owner-decisions.json", (
     expect(await owned("designer/frames.workspace", "--contract", contract)).toMatchObject({ exitCode: 0 });
     expect(lastChange("designer")).toMatchObject({ op: "contract", ownerRef: REF, slotFiles: 1 });
     clean();
+  });
+});
+
+describe("clossys owner-decision add: the owner step that produces clossys/owner-decisions.json", () => {
+  const file = () => join(consumer, "owner-decisions.json");
+  const words = (text: string, name = "words.txt") => { const path = join(workspace, name); writeFileSync(path, text); return path; };
+  const add = (...args: string[]) => runOwnerDecisionCli(["add", ...args, "--root", workspace], workspace);
+  const NEW_REF = "clossys/workspace#46 issuecomment-7000000001 (OWNER WORDS 2026-11-14 regroup the shells)";
+
+  it("appends a decision the registry validator and the port schema accept, and an --owner-ref then resolves to it", async () => {
+    const result = await add("--ref", NEW_REF, "--scope", "ia", "--quote-file", words("Regroup the page shells under Workspaces.\n"), "--date", "2026-11-14");
+    expect(result).toMatchObject({ exitCode: 0, message: expect.stringMatching(/registered 7000000001/) });
+    const doc = load(file());
+    expect(doc.decisions).toEqual([...DECISIONS.decisions, { id: "7000000001", ref: NEW_REF, date: "2026-11-14", scope: ["ia"], summary: "Regroup the page shells under Workspaces." }]);
+    expect(validateOwnerDecisions(doc)).toEqual([]);
+    expect(validateFile("owner-decisions", "clossys/owner-decisions.json", readFileSync(file(), "utf8"))).toEqual([]);
+    expect(readFileSync(file(), "utf8")).toBe(jsonBytes(doc));
+    expect(resolveOwnerRef(consumer, "7000000001", "ia")).toEqual({ decision: doc.decisions[1] });
+    expect((await ia("designer", "--drop", "frames.page-shells/page-shells-empty", "--owner-ref", "7000000001")).exitCode).toBe(0);
+    expect(lastChange("designer")).toMatchObject({ op: "drop", ownerRef: NEW_REF });
+  });
+
+  it("starts the file when the workspace has none, through the pipeline runner", async () => {
+    rmSync(file());
+    const result = await runPipeline(["owner-decision", "add", "--ref", REF, "--scope", "ia", "--quote-file", words("IA review Q1-Q7: recommended option."), "--date", "2026-11-13", "--root", workspace], workspace);
+    expect(result.exitCode).toBe(0);
+    expect(load(file())).toEqual(DECISIONS);
+  });
+
+  it("init starts an empty registry the validators accept, and refuses an existing one or an add flag", async () => {
+    const before = tree();
+    expect(await runOwnerDecisionCli(["init", "--root", workspace], workspace)).toMatchObject({ exitCode: 1, message: expect.stringMatching(/exists; add a decision/) });
+    await expect(runOwnerDecisionCli(["init", "--ref", REF, "--root", workspace], workspace)).rejects.toThrow(/init takes no --ref/);
+    expect(tree()).toEqual(before);
+    rmSync(file());
+    expect(await runOwnerDecisionCli(["init", "--root", workspace], workspace)).toMatchObject({ exitCode: 0, message: expect.stringMatching(/started an empty registry/) });
+    const doc = load(file());
+    expect(doc).toEqual({ schema: DECISIONS.schema, decisions: [] });
+    expect(validateOwnerDecisions(doc)).toEqual([]);
+    expect(validateFile("owner-decisions", "clossys/owner-decisions.json", readFileSync(file(), "utf8"))).toEqual([]);
+    expect((await add("--ref", REF, "--scope", "ia", "--quote-file", words("IA review Q1-Q7: recommended option."), "--date", "2026-11-13")).exitCode).toBe(0);
+    expect(load(file())).toEqual(DECISIONS);
+  });
+
+  it("refuses a registered id, a bare comment id, an unknown scope, a multi-line quote and a bad date, and writes nothing", async () => {
+    const before = tree();
+    const quote = words("one line");
+    for (const [args, message] of [
+      [["--ref", REF, "--scope", "ia", "--quote-file", quote], /registered; a decision is never rewritten/],
+      [["--ref", "7000000001", "--scope", "ia", "--quote-file", quote], /not a ledger ref/],
+      [["--ref", NEW_REF, "--scope", "ia,pins", "--quote-file", quote], /--scope must list .*not pins/],
+      [["--ref", NEW_REF, "--scope", "ia", "--quote-file", words("two\nlines", "two.txt")], /one non-empty line/],
+      [["--ref", NEW_REF, "--scope", "ia", "--quote-file", quote, "--date", "14 Nov"], /date is not YYYY-MM-DD/],
+    ] as const) {
+      expect(await add(...args)).toMatchObject({ exitCode: 1, message: expect.stringMatching(message) });
+    }
+    for (const name of ["words.txt", "two.txt"]) rmSync(join(workspace, name));
+    expect(tree()).toEqual(before);
   });
 });
 

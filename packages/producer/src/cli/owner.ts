@@ -12,6 +12,8 @@
  *   clossys rule --init [--root <dir>]
  *   clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]
  *   clossys approve writer/<slot> <candidate-id> [--by owner[:<ref>]] [--at <iso>] [--root <dir>]
+ *   clossys owner-decision add --ref <ledger ref> --scope <op,...> --quote-file <file> [--date <YYYY-MM-DD>] [--root <dir>]
+ *   clossys owner-decision init [--root <dir>]
  *   clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]
  *   clossys retire <agent>/<slot> --slot --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]
  *
@@ -23,8 +25,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { checkSlotModel } from "../records/slot-check.js";
-import { resolveOwnerRef } from "../records/owner-decisions.js";
-import { AGENT_KIND, CANDIDATE_NAME, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, seatSlotId } from "../records/slot-model/types.js";
+import { ledgerComment, OWNER_DECISION_SCOPES, OWNER_DECISIONS_FILE, OWNER_DECISIONS_SCHEMA, resolveOwnerRef, validateOwnerDecisions, type OwnerDecision } from "../records/owner-decisions.js";
+import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, seatSlotId } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
@@ -86,6 +88,13 @@ export const SEAT_USAGE = "Usage: clossys seat <step> --by <who> (--model <id> -
 export const RULE_USAGE = "Usage: clossys rule --init [--root <dir>]\n"
   + "       clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]\n"
   + "  adds (or with --replace, replaces) one owner rule row in scripts/rules/registry.json, starting the registry when it has none.";
+export const OWNER_DECISION_USAGE = "Usage: clossys owner-decision add --ref <ledger ref> --scope <op,...> --quote-file <file> [--date <YYYY-MM-DD>] [--root <dir>]\n"
+  + "       clossys owner-decision init [--root <dir>]\n"
+  + "  registers one owner decision in clossys/owner-decisions.json (the registry --owner-ref resolves against), starting the file when it has none.\n"
+  + `  --ref: the ledger comment that holds the owner's words (${OWNER_WORDS_REF_FORM}, an optional (note) after it); its comment id is the decision id;\n`
+  + `  --scope: what the decision authorizes, one or more of ${OWNER_DECISION_SCOPES.join(", ")};\n`
+  + "  --quote-file: a file holding the owner's words (or their summary) on one line, the decision's summary;\n"
+  + "  --date: the date of the owner's words (default today, UTC). A registered id is never rewritten.";
 export const APPROVE_USAGE = "Usage: clossys approve writer/<slot> <candidate-id> [--by owner[:<ref>]] [--at <iso>] [--root <dir>]\n"
   + "  the owner approves a Writer candidate's copy: it is pinned (basis picked) and its keys are approved.";
 
@@ -659,6 +668,59 @@ export async function runApproveCli(argv: readonly string[], cwd: string): Promi
   const after = new Set(writerKeysUnapproved(root).get(slot) ?? []);
   const approved = before.filter(key => !after.has(key));
   return { exitCode: 0, root, decision: { slot: target, state: "pinned", ...pinned, decidedBy: by, basis: "picked", at, approved }, message: `approve: ${target} ${candidate} pinned by ${by} (picked); ${approved.length} key${approved.length === 1 ? "" : "s"} approved${after.size ? `, ${after.size} still open` : ""}` };
+}
+
+// ---------------------------------------------------------------- clossys owner-decision
+const parseOwnerDecision = parser(OWNER_DECISION_USAGE, ["--ref", "--scope", "--quote-file", "--date", "--root"], []);
+
+/**
+ * `clossys owner-decision add`: the owner step that produces clossys/owner-decisions.json. One
+ * decision per run, appended (`init` starts an empty registry); the whole document is validated (records/owner-decisions.ts) before the
+ * write, and a comment id already registered is refused (a decision is never rewritten).
+ */
+export async function runOwnerDecisionCli(argv: readonly string[], cwd: string): Promise<CliResult> {
+  const flags = parseOwnerDecision(argv);
+  if (flags.help) return { exitCode: 0, message: OWNER_DECISION_USAGE };
+  const [mode, ...extra] = flags.positional;
+  if ((mode !== "add" && mode !== "init") || extra.length) throw new CliUsageError(`owner-decision takes add or init\n${OWNER_DECISION_USAGE}`);
+  const rel = `clossys/${OWNER_DECISIONS_FILE}`;
+  if (mode === "init") {
+    const given = ["--ref", "--scope", "--quote-file", "--date"].filter(name => flags.values.has(name));
+    if (given.length) throw new CliUsageError(`owner-decision init takes no ${given.join(", ")}\n${OWNER_DECISION_USAGE}`);
+    const root = rootOf(cwd, flags);
+    const file = join(root, "clossys", OWNER_DECISIONS_FILE);
+    if (existsSync(file)) return refuse("owner-decision", `${rel} exists; add a decision with clossys owner-decision add`);
+    replaceFile(file, jsonBytes({ schema: OWNER_DECISIONS_SCHEMA, decisions: [] }));
+    return { exitCode: 0, root, message: `owner-decision: started an empty registry at ${rel}` };
+  }
+  const ref = need(flags, "--ref", OWNER_DECISION_USAGE).trim();
+  const cited = ledgerComment(ref);
+  if (!cited) return refuse("owner-decision", `--ref ${ref} is not a ledger ref (${OWNER_WORDS_REF_FORM}); a bare comment id does not name its issue`);
+  const scope = need(flags, "--scope", OWNER_DECISION_USAGE).split(",").map(item => item.trim()).filter(Boolean);
+  const unknown = scope.filter(item => !(OWNER_DECISION_SCOPES as readonly string[]).includes(item));
+  if (!scope.length || unknown.length) return refuse("owner-decision", `--scope must list one or more of ${OWNER_DECISION_SCOPES.join(", ")}${unknown.length ? ` (not ${unknown.join(", ")})` : ""}`);
+  const quoteFile = need(flags, "--quote-file", OWNER_DECISION_USAGE);
+  let quote: string;
+  try { quote = readFileSync(resolve(cwd, quoteFile), "utf8").replace(/\r?\n$/, ""); } catch { return refuse("owner-decision", `cannot read --quote-file ${quoteFile}`); }
+  if (!quote.trim() || /[\r\n]/.test(quote)) return refuse("owner-decision", "--quote-file holds the owner's words on one non-empty line");
+  const date = one(flags, "--date") ?? new Date().toISOString().slice(0, 10);
+  const root = rootOf(cwd, flags);
+  const file = join(root, "clossys", OWNER_DECISIONS_FILE);
+  let doc: { schema: string; decisions: OwnerDecision[] } = { schema: OWNER_DECISIONS_SCHEMA, decisions: [] };
+  if (existsSync(file)) {
+    let value: unknown;
+    try { value = readJsonFile(file); } catch { return refuse("owner-decision", `${rel} is not JSON`); }
+    const issues = validateOwnerDecisions(value);
+    if (issues.length) return refuse("owner-decision", `${rel} is invalid before the write: ${issues.slice(0, 3).join("; ")}`);
+    doc = value as typeof doc;
+  }
+  if (doc.decisions.some(decision => decision.id === cited.comment)) return refuse("owner-decision", `decision ${cited.comment} is registered; a decision is never rewritten (register a new ledger comment)`);
+  const decision: OwnerDecision = { id: cited.comment, ref, date, scope: scope as OwnerDecision["scope"], summary: quote.trim() };
+  const next = { schema: doc.schema, decisions: [...doc.decisions, decision] };
+  const issues = [...validateOwnerDecisions(next), ...validateValue(next, loadSchema("owner-decisions")).map(issue => `${issue.path} ${issue.message}`)];
+  if (issues.length) return refuse("owner-decision", issues.slice(0, 5).join("; "));
+  replaceFile(file, jsonBytes(next));
+  return { exitCode: 0, root, decision, message: `owner-decision: registered ${cited.comment} (${scope.join(", ")}, ${date}) in ${rel}` };
 }
 
 // ---------------------------------------------------------------- clossys retire

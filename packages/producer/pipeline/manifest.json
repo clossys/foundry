@@ -188,6 +188,7 @@
         "workspace.config",
         "seats",
         "rules",
+        "owner.decisions",
         "pin.director",
         "writer.approve",
         "pin.designer",
@@ -199,6 +200,7 @@
         "config",
         "evidence",
         "ia",
+        "owner-decision",
         "pin",
         "rule",
         "seat"
@@ -207,6 +209,7 @@
       "skills": [
         "packages/producer/actions/evidence/skill.md",
         "packages/producer/actions/ia/skill.md",
+        "packages/producer/actions/owner.decisions/skill.md",
         "packages/producer/actions/pin.designer/skill.md",
         "packages/producer/actions/pin.director/skill.md",
         "packages/producer/actions/pin.publisher/skill.md",
@@ -223,6 +226,7 @@
         "packages/producer/src/cli/owner.ts#runConfigCli",
         "packages/producer/src/cli/owner.ts#runEvidenceCli",
         "packages/producer/src/cli/owner.ts#runIaCli",
+        "packages/producer/src/cli/owner.ts#runOwnerDecisionCli",
         "packages/producer/src/cli/owner.ts#runRuleCli",
         "packages/producer/src/cli/owner.ts#runSeatCli",
         "packages/producer/src/cli/pin.ts",

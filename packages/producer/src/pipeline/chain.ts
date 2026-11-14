@@ -267,6 +267,7 @@ export const PLACEHOLDER_MEANING: Readonly<Record<string, string>> = {
   "<contract.json>": "a file with the slot's contract (the slot.json contract object)",
   "<clossys.config.ts>": "the path of the config file to start from",
   "<ref>": "the ledger comment that holds the owner's words (<org>/<repo>#<issue> issuecomment-<id>)",
+  "<words.md>": "a file with the owner's words (or their summary) on one line, verbatim",
 };
 /** Fill `<model:tier>` placeholders from `--model <tier>=<id>` answers; name every other placeholder in `fill`. */
 function filled(argv: string[], models: Readonly<Record<string, string>>): { argv: string[]; fill: Record<string, string> } {
@@ -331,6 +332,9 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
   } else if (step.id === "rules") {
     add("Start an empty rule registry; add each owner rule with clossys rule as you state it.", ["clossys", "rule", "--init"]);
     add("Record one owner rule now, unenforced until a check enforces it.", ["clossys", "rule", "<R-ID>", "--quote", "<quote>", "--date", new Date().toISOString().slice(0, 10), "--status", "unenforced"]);
+  } else if (step.id === "owner.decisions") {
+    add("Register the ledger comment that holds your words, so an owner-gated verb can cite it with --owner-ref.", ["clossys", "owner-decision", "add", "--ref", "<ref>", "--scope", "ia", "--quote-file", "<words.md>", "--date", new Date().toISOString().slice(0, 10)]);
+    add("Start an empty registry now; register each ledger comment with clossys owner-decision add when an owner-gated verb needs it.", ["clossys", "owner-decision", "init"]);
   } else if (step.id === "writer.approve") {
     const names = candidatesOf(root, item).filter(name => name.endsWith(".md"));
     const keys = writerKeysUnapproved(root).get(item.slice("writer/".length)) ?? [];

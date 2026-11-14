@@ -11,7 +11,8 @@
             "evidence",
             "workspace.config",
             "seats",
-            "rules"
+            "rules",
+            "owner.decisions"
           ]
         },
         {

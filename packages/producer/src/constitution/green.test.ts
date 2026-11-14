@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseArgs } from "../cli/args.js";
 import { runCheck } from "../cli/check.js";
-import { buildGreen, evaluateDelta, greenDigest, POSITION_FIELDS, readGreen, rowKey, slotRecordView, verifyGreen, type GreenReport } from "./green.js";
+import { buildGreen, evaluateDelta, formatDelta, greenDigest, POSITION_FIELDS, readGreen, rowKey, seedGrowth, slotRecordView, verifyGreen, type GreenReport } from "./green.js";
 import { singleReaderRows } from "./rules/r11.js";
 import { runConstitution } from "./run.js";
 import { cleanSpec, NO_HISTORY, slotDoc, writeWorkspace, type WorkspaceSpec } from "./__fixtures__/workspace.js";
@@ -63,7 +63,7 @@ describe("constitution delta gate (until E2)", () => {
     expect(onlyNew.blocking.map(rowKey)).toEqual(["R04 designer/ui.button ."]);
   });
 
-  it("blocks a pre-existing finding on a changed record and on its R07 dependants", () => {
+  it("G1: counts a pre-existing finding on a changed record and on its R07 dependants, never blocking on it", () => {
     const spec = baselineSpec();
     spec.designer!["ui.card"]!.pin = false; // a pre-existing finding on a dependant (ui.card uses ui.button)
     const base = run(spec);
@@ -76,13 +76,23 @@ describe("constitution delta gate (until E2)", () => {
     const next = run(changed);
     expect(next.report.rows.map(rowKey)).toEqual(base.report.rows.map(rowKey));
     const delta = evaluateDelta(next.report.rows, next.index, stored(green).read, scope(next.report));
-    expect(delta).toMatchObject({ ok: false, newRows: 0, changedRecords: ["designer/ui.button"] });
+    expect(delta).toMatchObject({ ok: true, newRows: 0, changedRecords: ["designer/ui.button"] });
     expect(delta.dependantRecords).toEqual(["designer/ui.card", "publisher/site.home"]);
-    expect(r04(delta.blocking)).toEqual(["designer/ui.button", "designer/ui.card"]);
-    expect(delta.changedRows).toBe(delta.blocking.length);
+    expect(delta.blocking).toEqual([]);
+    // Both pre-existing R04 rows sit on the changed record or its dependant: counted, printed, not blocking.
+    expect(delta.changedRows).toBeGreaterThanOrEqual(2);
+    expect(formatDelta(delta, "enforced")).toMatch(new RegExp(`PASS {2}new 0, changed-record ${delta.changedRows} \\(not blocking until E2\\), stale 0`));
+    // A new finding on the same changed record still blocks, alone.
+    const worse = structuredClone(changed);
+    worse.producer!["seat.director"]!.pin = false;
+    const after = run(worse);
+    const blocked = evaluateDelta(after.report.rows, after.index, stored(green).read, scope(after.report));
+    expect(blocked.ok).toBe(false);
+    expect(r04(blocked.blocking)).toEqual(["producer/seat.director"]);
+    expect(blocked.newRows).toBe(blocked.blocking.length);
   });
 
-  it("fails a hand-edited green report: a digest mismatch, and a key no longer produced", () => {
+  it("fails a hand-edited green report (digest mismatch); a key no longer produced is listed stale, not blocking", () => {
     const base = run(baselineSpec());
     const green = buildGreen(base.report.rows, base.index, { workspace: WS, commit: "unknown" });
     // Whitelisting a new finding by hand (the producer seat) without the generator: the digest fails.
@@ -101,8 +111,9 @@ describe("constitution delta gate (until E2)", () => {
     const forged = stored({ ...invented, digest: greenDigest(invented) });
     expect(forged.read.tampered).toEqual([]);
     const delta = evaluateDelta(base.report.rows, base.index, forged.read, scope(base.report));
-    expect(delta).toMatchObject({ ok: false, blocking: [] });
+    expect(delta).toMatchObject({ ok: true, blocking: [] });
     expect(delta.stale).toEqual([{ key: "R04 designer/ui.ghost .", recorded: 1, produced: 0 }]);
+    expect(formatDelta(delta, "enforced")).toMatch(/stale 1 \(not blocking\)/);
   });
 
   it("D1: an order-only renumber by the ia verb does not change a record; its pre-existing finding stays passing", () => {
@@ -173,12 +184,12 @@ describe("constitution delta gate (until E2)", () => {
     expect(verifyGreen(JSON.parse(readFileSync(path, "utf8")))).toEqual([]);
     const enforced = await cli("--enforced");
     expect(enforced.exitCode).toBe(0);
-    expect(enforced.message).toMatch(/--enforced \(delta gate until E2\): PASS {2}delta 0 \(new keys 0, on changed records 0\) of enforced [1-9]\d*; total rows \d+/);
+    expect(enforced.message).toMatch(/--enforced \(delta gate until E2\): PASS {2}new 0, changed-record 0 \(not blocking until E2\), stale 0 \(not blocking\) of enforced [1-9]\d*; total rows \d+/);
     const strict = await cli("--strict");
     expect(strict.exitCode).toBe(1);
-    expect(strict.message).toMatch(/--strict \(full gate\): FAIL {2}enforced findings [1-9]\d* block; delta 0/);
+    expect(strict.message).toMatch(/--strict \(full gate\): FAIL {2}enforced findings [1-9]\d* block; new 0/);
     const plain = await cli();
-    expect(plain.message).toMatch(/constitution delta: delta 0 .* of enforced/);
+    expect(plain.message).toMatch(/constitution delta: new 0, .* of enforced/);
     expect(() => parseArgs(["check", "--constitution", "--record-green", "--rule", "R04"])).toThrow(/full run/);
     // A hand edit fails the step and refuses a re-record.
     const doc = JSON.parse(readFileSync(path, "utf8")) as GreenReport;
@@ -187,5 +198,59 @@ describe("constitution delta gate (until E2)", () => {
     const refused = await cli("--record-green");
     expect(refused.exitCode).toBe(1);
     expect(refused.message).toMatch(/REFUSED: .*integrity/);
+  });
+  it("G2: --record-green refuses to add a key; with removals only it rewrites and re-seals the report", async () => {
+    const spec = baselineSpec();
+    spec.designer!["ui.card"]!.pin = false; // two pre-existing findings: ui.button and ui.card unpinned
+    const path = join(mkdtempSync(join(tmpdir(), "constitution-green-")), "green.json");
+    let consumer = writeWorkspace(spec).consumer;
+    const cli = (...flags: string[]) => runCheck(parseArgs(["check", "--constitution", "--green", path, "--root", consumer, ...flags]), consumer);
+    expect((await cli("--record-green")).exitCode).toBe(0);
+    const seeded = JSON.parse(readFileSync(path, "utf8")) as GreenReport;
+    expect(Object.keys(seeded.keys)).toEqual(expect.arrayContaining(["R04 designer/ui.button .", "R04 designer/ui.card ."]));
+    // A new finding (the producer seat unpinned): --enforced blocks it and --record-green refuses, writing nothing.
+    const worse = structuredClone(spec);
+    worse.producer!["seat.director"]!.pin = false;
+    consumer = writeWorkspace(worse).consumer;
+    expect((await cli("--enforced")).exitCode).toBe(1);
+    const refused = await cli("--record-green");
+    expect(refused.exitCode).toBe(1);
+    expect(refused.message).toMatch(/REFUSED: the new report would add 1 key\(s\) .*R04 producer\/seat\.director \. \(recorded 0, produced 1\)/);
+    expect(readFileSync(path, "utf8")).toBe(`${JSON.stringify(seeded, null, 2)}\n`);
+    // ui.card fixed and its record changed: the key is stale (not blocking), and a re-record drops it.
+    const fixed = structuredClone(spec);
+    delete fixed.designer!["ui.card"]!.pin;
+    consumer = writeWorkspace(fixed).consumer;
+    const stale = await cli("--enforced");
+    expect(stale.exitCode).toBe(0);
+    expect(stale.message).toMatch(/stale 1 \(not blocking\)/);
+    const rerecorded = await cli("--record-green");
+    expect(rerecorded.exitCode).toBe(0);
+    expect(rerecorded.message).toMatch(/--record-green: recorded \(1 fixed key\(s\) removed, 0 count\(s\) lowered, nothing added\)/);
+    const next = JSON.parse(readFileSync(path, "utf8")) as GreenReport;
+    expect(verifyGreen(next)).toEqual([]);
+    expect(Object.keys(next.keys).every(key => key in seeded.keys)).toBe(true);
+    expect(Object.keys(next.keys)).toEqual(Object.keys(seeded.keys).filter(key => key !== "R04 designer/ui.card ."));
+    expect(next.enforced).toBe(seeded.enforced - 1);
+    const clean = await cli("--enforced");
+    expect(clean.exitCode).toBe(0);
+    expect(clean.message).toMatch(/new 0, changed-record 0 .*stale 0/);
+  });
+
+  it("G1(b): a hand-edited report blocks even when the run has no enforced finding", () => {
+    const index = { digests: {}, dependsOn: {} };
+    const green = buildGreen([], index, { workspace: WS, commit: "unknown" });
+    expect(evaluateDelta([], index, stored(green).read, { rules: ["R04"] })).toMatchObject({ ok: true, enforced: 0 });
+    const tampered = stored({ ...green, keys: { "R04 designer/ui.ghost .": 1 } });
+    const delta = evaluateDelta([], index, tampered.read, { rules: ["R04"] });
+    expect(delta).toMatchObject({ ok: false, enforced: 0, blocking: [] });
+    expect(delta.tampered.join("\n")).toMatch(/digest does not match/);
+  });
+
+  it("G2: seedGrowth names every added key and raised count, and nothing for removals", () => {
+    const old = { keys: { a: 2, b: 1 } };
+    expect(seedGrowth(old, { keys: { a: 2, b: 1 } })).toEqual([]);
+    expect(seedGrowth(old, { keys: { a: 1 } })).toEqual([]);
+    expect(seedGrowth(old, { keys: { a: 3, b: 1, c: 1 } })).toEqual([{ key: "a", recorded: 2, produced: 3 }, { key: "c", recorded: 0, produced: 1 }]);
   });
 });

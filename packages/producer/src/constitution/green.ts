@@ -1,23 +1,26 @@
 /**
- * The constitution delta gate (W2-G run 2; slot-constitution.md W2-G, "--strict after E2").
+ * The constitution delta gate (W2-G run 2, W2-G3; slot-constitution.md W2-G, "--strict after E2").
  *
- * Until E2 the chain's `constitution` step (`clossys check --constitution --enforced`) blocks on a
- * delta, not on the whole set. An enforced finding blocks when
- *   (a) it is about a record that changed since the last green report, or about one of that
- *       record's R07 dependants (slots whose slot.json `inputs` ∪ `uses` reach it, transitively); or
- *   (b) its key is not in the last green report (more rows under a key than the report counted).
- * The whole set is still reported; nothing is suppressed and no rule's level changes. `--strict`
- * is the full gate: every enforced finding blocks.
+ * Until E2 the chain's `constitution` step (`clossys check --constitution --enforced`) blocks on new
+ * findings, not on the whole set (W2-G3 G1). An enforced finding blocks when its key is not in the
+ * last green report (more rows under a key than the report counted): a new finding. The gate also
+ * blocks on a green report that fails its integrity check (hand-edited, digest mismatch, malformed).
+ * Findings about a record that changed since the last green report, or about one of that record's
+ * R07 dependants (slots whose slot.json `inputs` ∪ `uses` reach it, transitively), are counted and
+ * printed as the changed-record count, never blocking: a mechanical edit to a record does not have
+ * to fix every pre-existing finding on it. A green key the run no longer produces is stale: listed,
+ * never blocking (W2-G3 G2). The whole set is still reported; nothing is suppressed and no rule's
+ * level changes. `--strict` is the full gate: every enforced finding blocks.
  * TODO(E2): make the full gate the default for `--enforced` and retire this delta (E2 "enforce":
- * every rules.json row enforced, the chain step runs `--strict`).
+ * every rule row enforced, the chain step runs `--strict`).
  *
  * The last green report lives at `<P>/pipeline/constitution-green.json` (P = packages/producer),
- * reviewed with the code. Only a green full run writes it: `clossys check --constitution
- * --record-green` with no `--rule` or `--agent`, and only when the delta gate passes (or when no
- * report exists yet: the bootstrap). It is generated, never hand-edited: it carries a digest over
- * its own content, and every run fails while the digest does not match or while the report holds
- * a key the run no longer produces (a fixed finding must be re-recorded, so the baseline only
- * shrinks).
+ * reviewed with the code. Only `clossys check --constitution --record-green` with no `--rule` or
+ * `--agent` writes it, and only to shrink it: with a report in place, the new report may drop keys
+ * or lower counts (fixed findings) but never add a key or raise a count (seedGrowth); a run with a
+ * new finding is refused. With no report yet it seeds one (the bootstrap). The report is generated,
+ * never hand-edited: it carries a digest over its own content, and every run fails while the digest
+ * does not match.
  *
  * A key is (check, subject): `<check> <agent>/<slot> <path>`, the path shortened to the part inside
  * the slot folder (`.` for the folder itself), plus `#<candidate>` when the path does not name it. The reason text is not part
@@ -87,16 +90,16 @@ export interface Delta {
   readonly total: number;
   readonly pending: number;
   readonly enforced: number;
-  /** Enforced rows that block: (a) ∪ (b). */
+  /** Enforced rows that block: new findings, whose key is not (or not that often) in the green report. */
   readonly blocking: readonly Row[];
-  /** Rows blocking under (b): their key is not (or not that often) in the green report. */
+  /** The blocking rows' count (blocking.length). */
   readonly newRows: number;
-  /** Rows blocking under (a): about a changed record or its R07 dependant. */
+  /** Enforced rows about a changed record or its R07 dependant, new or not: counted, never blocking on their own. */
   readonly changedRows: number;
   /** Records changed since the green report (digest differs or new), and their dependants. */
   readonly changedRecords: readonly string[];
   readonly dependantRecords: readonly string[];
-  /** The gate verdict: no blocking row, no stale key, an intact report. */
+  /** The gate verdict: no new finding and an intact report (stale keys and changed records do not block). */
   readonly ok: boolean;
 }
 
@@ -293,9 +296,8 @@ export function evaluateDelta(rows: readonly Row[], index: RecordIndex, read: Gr
     const isNew = seen[key]! > (green.keys[key] ?? 0);
     const record = rowRecord(row, index.digests);
     const onChanged = record !== undefined && (changed.has(record) || dependants.has(record));
-    if (isNew) newRows++;
     if (onChanged) changedRows++;
-    if (isNew || onChanged) blocking.push(row);
+    if (isNew) { newRows++; blocking.push(row); }
   }
   const rules = new Set(scope.rules);
   const inScope = (key: string) => {
@@ -309,14 +311,25 @@ export function evaluateDelta(rows: readonly Row[], index: RecordIndex, read: Gr
   return {
     ...base, stale, blocking, newRows, changedRows,
     changedRecords: [...changed].sort(), dependantRecords: [...dependants].sort(),
-    ok: blocking.length === 0 && stale.length === 0 && read.tampered.length === 0,
+    ok: blocking.length === 0 && read.tampered.length === 0,
   };
+}
+
+/**
+ * What a re-record would add to the green report: every key of `next` that `old` lacks, or counts
+ * more often. `--record-green` over an existing report writes only when this is empty, so a
+ * re-record only drops fixed findings (removals and lowered counts) and never admits a new one.
+ */
+export function seedGrowth(old: Pick<GreenReport, "keys">, next: Pick<GreenReport, "keys">): { key: string; recorded: number; produced: number }[] {
+  return Object.entries(next.keys)
+    .filter(([key, count]) => count > (old.keys[key] ?? 0))
+    .map(([key, produced]) => ({ key, recorded: old.keys[key] ?? 0, produced }));
 }
 
 /** The two counts every run prints (delta and total), and why the gate passes or fails. */
 export function formatDelta(delta: Delta, mode: "enforced" | "strict" | "report"): string {
   const lines: string[] = [];
-  const counts = `delta ${delta.blocking.length} (new keys ${delta.newRows}, on changed records ${delta.changedRows}) of enforced ${delta.enforced}; total rows ${delta.total} (pending ${delta.pending}, listed, not blocking)`;
+  const counts = `new ${delta.newRows}, changed-record ${delta.changedRows} (not blocking until E2), stale ${delta.stale.length} (not blocking) of enforced ${delta.enforced}; total rows ${delta.total} (pending ${delta.pending}, listed, not blocking)`;
   const records = delta.changedRecords.length || delta.dependantRecords.length ? `; changed records ${delta.changedRecords.length} (+${delta.dependantRecords.length} R07 dependants)` : "";
   if (mode === "strict") {
     lines.push(`constitution --strict (full gate): ${delta.enforced || delta.tampered.length ? "FAIL" : "PASS"}  enforced findings ${delta.enforced} block; ${counts}`);
@@ -328,7 +341,7 @@ export function formatDelta(delta: Delta, mode: "enforced" | "strict" | "report"
   if (delta.baseline) lines.push(`  baseline: ${delta.baseline}; every enforced finding counts as new (seed it with --record-green)`);
   for (const problem of delta.tampered) lines.push(`  green report: ${problem}`);
   if (delta.stale.length) {
-    lines.push(`  green report: ${delta.stale.length} key(s) no longer produced as recorded; re-record with --record-green after a green run:`);
+    lines.push(`  green report: ${delta.stale.length} key(s) no longer produced as recorded (not blocking); --record-green drops them when no finding is new:`);
     for (const item of delta.stale.slice(0, 20)) lines.push(`    ${item.key}  (recorded ${item.recorded}, produced ${item.produced})`);
     if (delta.stale.length > 20) lines.push(`    ... ${delta.stale.length - 20} more`);
   }

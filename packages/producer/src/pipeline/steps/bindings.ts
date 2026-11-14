@@ -26,6 +26,7 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "seats": { entry: "src/cli/owner.ts#runSeatCli", parser: "src/cli/owner.ts" },
   "rules": { entry: "src/cli/owner.ts#runRuleCli", parser: "src/cli/owner.ts" },
   "writer.approve": { entry: "src/cli/owner.ts#runApproveCli", parser: "src/cli/owner.ts" },
+  "owner.decisions": { entry: "src/cli/owner.ts#runOwnerDecisionCli", parser: "src/cli/owner.ts" },
   // clossys verbs.
   "director.check": { entry: "src/cli/direct.ts#runDirect" },
   "director.store": { entry: "src/cli/director.ts#runDirectorVerb", parser: "src/cli/director.ts" },

@@ -81,7 +81,7 @@
         "stage": "direct.brief",
         "rank": 0,
         "x": 0,
-        "y": 0
+        "y": 344
       }
     },
     {
@@ -162,8 +162,8 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 280,
-        "y": 172
+        "x": 0,
+        "y": 0
       }
     },
     {
@@ -238,8 +238,8 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
-        "x": 0,
-        "y": 172
+        "x": 280,
+        "y": 344
       }
     },
     {
@@ -321,7 +321,7 @@
         "stage": "direct.brief",
         "rank": 0,
         "x": 280,
-        "y": 0
+        "y": 172
       }
     },
     {
@@ -393,8 +393,81 @@
         "lane": "you",
         "stage": "direct.brief",
         "rank": 0,
+        "x": 280,
+        "y": 0
+      }
+    },
+    {
+      "id": "owner.decisions",
+      "kind": "decide:judgment",
+      "actor": "owner",
+      "stage": "direct.brief",
+      "summary": "Owner decisions an --owner-ref may cite: the ledger comment, its date, scope and summary (clossys owner-decision).",
+      "inputs": [],
+      "outputs": [
+        {
+          "glob": "clossys/owner-decisions.json",
+          "schema": "owner-decisions"
+        }
+      ],
+      "command": {
+        "cli": {
+          "verb": "owner-decision",
+          "parser": "src/cli/owner.ts"
+        },
+        "entry": "src/cli/owner.ts#runOwnerDecisionCli",
+        "skill": "packages/producer/actions/owner.decisions/skill.md"
+      },
+      "checks": [
+        "pipeline"
+      ],
+      "agent": "owner",
+      "package": "producer",
+      "run": "clossys owner-decision add --ref <ledger-ref> --scope <scope> --quote-file <file>",
+      "pass": {
+        "command": "clossys pipeline trace check:pipeline -- npm run check:pipeline",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "fail": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
+      },
+      "record": "clossys.pipeline-run/1",
+      "decider": "owner",
+      "packet": {
+        "inputs": [],
+        "write": [
+          {
+            "glob": "clossys/owner-decisions.json",
+            "schema": "owner-decisions"
+          }
+        ],
+        "checks": [
+          "pipeline"
+        ]
+      },
+      "uses": [
+        "skill/SKILL.md"
+      ],
+      "seat": "clossys/agents/producer/seat.owner.decisions/pin.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "you",
+        "stage": "direct.brief",
+        "rank": 0,
         "x": 0,
-        "y": 344
+        "y": 172
       }
     },
     {
@@ -1828,7 +1901,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "publish.pin",
-      "summary": "Slot constitution over every record before compile; until E2 blocks on the delta against the last green report (pipeline/constitution-green.json): enforced findings on changed records or their R07 dependants, or with a key that report lacks.",
+      "summary": "Slot constitution over every record before compile; until E2 blocks only on new enforced findings (a key the last green report, pipeline/constitution-green.json, lacks) and on a hand-edited report; findings on changed records and their R07 dependants, and stale keys, are counted and printed, not blocking.",
       "inputs": [
         {
           "glob": "clossys/agents/*/ia.json",
@@ -7489,8 +7562,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 11785,
-      "after": 11568
+      "before": 11732,
+      "after": 11642
     },
     "lanes": [
       {
@@ -7894,6 +7967,14 @@
       },
       "issues": []
     },
+    "owner.decisions": {
+      "path": "clossys/agents/producer/seat.owner.decisions/pin.json",
+      "state": "unassigned",
+      "by": null,
+      "llm": "open",
+      "human": "open",
+      "issues": []
+    },
     "director.candidates": {
       "path": "clossys/agents/producer/seat.director.candidates/pin.json",
       "state": "assigned",
@@ -8096,9 +8177,10 @@
       "kinds": [
         "you"
       ],
-      "steps": 10,
+      "steps": 11,
       "sources": [
-        "file"
+        "file",
+        "derived"
       ],
       "tiers": [
         "mid"
@@ -8341,6 +8423,48 @@
         }
       ],
       "rules": [
+        {
+          "flag": "--add",
+          "value": null
+        },
+        {
+          "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
+          "value": null
+        }
+      ],
+      "owner.decisions": [
         {
           "flag": "--add",
           "value": null

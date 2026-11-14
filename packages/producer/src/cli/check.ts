@@ -149,10 +149,12 @@ const headCommit = (root: string): string => {
  * `check --constitution`: every rule over every record, then the delta against the last green
  * report (constitution/green.ts), printed on every run.
  * - plain: exits 1 on any row, pending included (and on a tampered green report);
- * - --enforced (the chain's constitution step): until E2, exits 1 only on the delta, a stale green
- *   key or a tampered report. TODO(E2): make the full gate (--strict) the default here;
+ * - --enforced (the chain's constitution step): until E2, exits 1 only on a new finding (a key the
+ *   green report lacks) or a tampered report; changed-record and stale counts are printed, never
+ *   blocking. TODO(E2): make the full gate (--strict) the default here;
  * - --strict: the full gate, exits 1 on every enforced row (and on a tampered report);
- * - --record-green: after a full run whose delta gate passes (or with no report yet), writes the report.
+ * - --record-green: with no report, seeds one; over a report, writes the new one only when it adds no
+ *   key (removals and lowered counts only), else refuses.
  */
 async function runConstitutionCheck(args: CliArgs, root: string, consumer: string): Promise<CliResult> {
   const { formatReport, runConstitution } = await import("../constitution/run.js");
@@ -174,17 +176,21 @@ async function runConstitutionCheck(args: CliArgs, root: string, consumer: strin
   if (args.recordGreen) {
     const missing = !existsSync(path);
     const otherWorkspace = !missing && !read.tampered.length && !read.report;
+    const next = green.buildGreen(gated, index!, { workspace, commit: headCommit(root) });
+    // Over an existing report a re-record only shrinks it (W2-G3 G2): removals and lowered counts, never a key it lacks.
+    const growth = read.report ? green.seedGrowth(read.report, next) : [];
     const refusal = read.tampered.length ? `the report at ${path} failed its integrity check; restore it from git (a deleted report re-seeds only through review)`
       : otherWorkspace ? `${read.baseline}; pass --green <file> for this workspace`
-      : !missing && delta.blocking.length ? `the delta gate blocks on ${delta.blocking.length} row(s); only a green run is recorded`
+      : growth.length ? `the new report would add ${growth.length} key(s) the green report lacks (new findings; a re-record only removes keys): ${growth.slice(0, 5).map(item => `${item.key} (recorded ${item.recorded}, produced ${item.produced})`).join("; ")}${growth.length > 5 ? "; ..." : ""}`
       : undefined;
     if (refusal) {
       recorded = { path, written: false, reason: refusal };
       exitCode = 1;
     } else {
-      const next = green.buildGreen(gated, index!, { workspace, commit: headCommit(root) });
       await green.writeGreen(path, next);
-      recorded = { path, written: true, reason: missing ? "seeded (no report existed)" : `recorded (${delta.stale.length} fixed key(s) dropped)` };
+      const removed = read.report ? Object.keys(read.report.keys).filter(key => !(key in next.keys)).length : 0;
+      const lowered = read.report ? Object.entries(next.keys).filter(([key, count]) => count < (read.report!.keys[key] ?? 0)).length : 0;
+      recorded = { path, written: true, reason: missing ? "seeded (no report existed)" : `recorded (${removed} fixed key(s) removed, ${lowered} count(s) lowered, nothing added)` };
       exitCode = 0;
     }
     lines.push(`constitution --record-green: ${recorded.written ? `${recorded.reason}: ${path}` : `REFUSED: ${recorded.reason}`}`);
@@ -192,7 +198,7 @@ async function runConstitutionCheck(args: CliArgs, root: string, consumer: strin
   const deltaOut = {
     mode, ok: delta.ok, green: path, ...(delta.baseline ? { baseline: delta.baseline } : {}),
     total: delta.total, pending: delta.pending, enforced: delta.enforced, delta: delta.blocking.length,
-    newRows: delta.newRows, changedRows: delta.changedRows, changedRecords: delta.changedRecords, dependantRecords: delta.dependantRecords,
+    newRows: delta.newRows, staleKeys: delta.stale.length, changedRows: delta.changedRows, changedRecords: delta.changedRecords, dependantRecords: delta.dependantRecords,
     stale: delta.stale, tampered: delta.tampered, blocking: delta.blocking.map(row => ({ key: green.rowKey(row), ...row })),
   };
   return {
