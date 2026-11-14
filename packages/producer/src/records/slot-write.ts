@@ -18,7 +18,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStore, DirectorStoreChange, DirectorStoreWriter } from "@clossys/director";
 import {
   CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
-  type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
+  type ModelAgent, type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
 import {
@@ -179,7 +179,7 @@ const GUARDED_CANDIDATE_VERBS: readonly GuardVerb[] = ["submit", "reissue", "mig
 export const SLOT_LOCK = ".slot-write.lock";
 const slotLocked = <T>(dir: string, action: () => T): T => withDirLock(join(dir, SLOT_LOCK), "Slot is unavailable or another decision write is in progress", action);
 
-function located(consumer: string, agent: SlotAgent, id: string) {
+function located(consumer: string, agent: ModelAgent, id: string) {
   const doc = readSlot(consumer, agent, id);
   const entry = listSlots(consumer, agent).find(row => row.id === id);
   if (!entry) throw new Error(`${agent} slot ${id} is not in ia.json`);
@@ -401,6 +401,15 @@ export function craftOrderIssue(open: readonly CraftStage[], stage: CraftStage, 
     for (const [index, direction] of directions.entries()) {
       if (!isRecord(direction) || !isRecord(direction.axes) || !Object.keys(direction.axes).length) return `craft:diverge refused: direction ${index + 1} carries no axes`;
     }
+    // R15.7 at write time: every direction names a value on every axis the run uses, and no two
+    // directions share a value on one axis (identical axis values are cosmetic variants).
+    const axisValues = directions.map(direction => (direction as { axes: Record<string, unknown> }).axes);
+    for (const axis of [...new Set(axisValues.flatMap(values => Object.keys(values)))].sort()) {
+      const values = axisValues.map(values => values[axis]);
+      if (values.some(value => value === undefined || value === "")) return `craft:diverge refused: a direction has no value on axis ${axis} (R15.7)`;
+      const keys = values.map(value => JSON.stringify(value));
+      if (new Set(keys).size !== keys.length) return `craft:diverge refused: directions repeat a value on axis ${axis}: cosmetic variants (R15.7)`;
+    }
   }
   return undefined;
 }
@@ -602,7 +611,7 @@ function recordedSha(events: readonly Record<string, unknown>[], name: string): 
  * candidate, pin.json and slot.json once everything is in place; any finding, like any error,
  * restores every file the write touched.
  */
-export function writeReissue(consumer: string, agent: SlotAgent, id: string, input: ReissueInput, options: { readonly guard?: WriteGuard; readonly provenance?: WriteProvenance } = {}): ReissueResult {
+export function writeReissue(consumer: string, agent: ModelAgent, id: string, input: ReissueInput, options: { readonly guard?: WriteGuard; readonly provenance?: WriteProvenance } = {}): ReissueResult {
   const { entry } = located(consumer, agent, id);
   canonicalDirectory(entry.dir);
   return slotLocked(entry.dir, () => {
