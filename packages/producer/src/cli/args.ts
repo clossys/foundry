@@ -47,6 +47,10 @@ export interface CliArgs {
   slots: boolean;
   /** check --slots: also report blocked-by per agent. */
   readiness: boolean;
+  /** check: run the slot constitution suite (R01-R14) over every record instead of the default checks. */
+  constitution: boolean;
+  /** check --constitution: only this rule (R01..R14). */
+  rule?: string;
 }
 
 export class CliUsageError extends Error {
@@ -67,6 +71,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Owner: clossys ia <agent>/<slot> --contract <file> | --remove; clossys ia <agent> --adopt | --start; clossys evidence <id> --source <s> --observed <date> --by <who> --body <file>; clossys config --init; clossys seat <step> --by <who> ...; clossys rule <R-ID> --quote <text> --date <date> --status <status>; clossys approve writer/<slot> <candidate-id>\n"
   + "Decisions: clossys pin <agent>/<slot> <candidate-id> [--by <who>] | clossys pin <agent>/<slot> --not-needed --reason <text>; clossys decisions [--json]\n"
   + "Candidate options: clossys options [<agent>/<slot> [--more]] | clossys options --classes [--check]; clossys pick <agent>/<slot> <candidate-id> --by agent:<seat>\n"
+  + "Constitution: clossys check --constitution [--rule <R01..R14>] [--json] [--root <dir>] (every rule over every record; exits 1 on any row, pending rules included)\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"
@@ -74,7 +79,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Bound Next app: clossys publish --install --site <publication> --next <app dir> --bind --selection <component selection module>[#export] [--check] (Publisher also generates the assembly, states and page modules from the pinned page records and installs their items into the app's project)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { help: false, check: false, brief: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, live: false, slots: false, readiness: false };
+  const args: CliArgs = { help: false, check: false, brief: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, live: false, slots: false, readiness: false, constitution: false };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     const value = (): string => {
@@ -109,6 +114,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--bind": args.bind = true; break;
       case "--slots": args.slots = true; break;
       case "--readiness": args.readiness = true; break;
+      case "--constitution": args.constitution = true; break;
+      case "--rule": args.rule = value(); break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -128,6 +135,9 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   }
   if ((args.suites || args.strict) && args.verb !== "check") throw new CliUsageError("--suites and --strict require check");
   if ((args.slots || args.readiness) && args.verb !== "check") throw new CliUsageError("--slots and --readiness require check");
+  if (args.constitution && args.verb !== "check") throw new CliUsageError("--constitution requires check");
+  if (args.rule !== undefined && !args.constitution) throw new CliUsageError("--rule requires check --constitution");
+  if (args.rule !== undefined && !/^R(?:0[1-9]|1[0-4])$/.test(args.rule)) throw new CliUsageError("--rule must be a rule id R01..R14");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
   if ((args.install || args.page !== undefined || args.site !== undefined || args.build || args.origin !== undefined) && args.verb !== "publish") throw new CliUsageError("--install, --page, --site, --origin and --build require publish");
   if (args.page !== undefined && args.site !== undefined) throw new CliUsageError("publish --install takes --page or --site, not both");
