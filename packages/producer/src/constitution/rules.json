@@ -275,7 +275,7 @@
   },
   {
     "id": "R06",
-    "statement": "Package and code dependencies. Dependencies are exact and locked, nothing is vendored, registryDependencies is empty, no source.ref names a candidate, install paths are unique across slots, and no two slots hold identical bytes.",
+    "statement": "Package and code dependencies. Dependencies are exact and locked, nothing is vendored, registryDependencies is empty, no source.ref names a candidate, install paths are unique across slots, no two slots hold identical bytes, and no candidate or slot.json names another slot's candidate file (a cross-slot reference names the slot id; lineage inside one slot stays allowed).",
     "scope": "all-records",
     "status": "enforced",
     "check": "src/constitution/checks/R06-dependencies.ts",
@@ -333,6 +333,15 @@
       {
         "id": "R06.6",
         "status": "enforced",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
+      },
+      {
+        "id": "R06.7",
+        "status": "building",
+        "owner": "FIX-ENF",
         "guard": [
           "submit",
           "reissue"

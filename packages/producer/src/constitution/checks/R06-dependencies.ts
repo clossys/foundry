@@ -7,7 +7,12 @@
  * - R06.4 no `source.ref` names another candidate (`<slot>/<candidate>` or `<slot>@<n>`);
  * - R06.5 install paths are unique across slots: the union over all candidates of one slot meets no
  *   other slot's union;
- * - R06.6 no two slots hold a file with identical bytes (embedded registry files and whole candidate files).
+ * - R06.6 no two slots hold a file with identical bytes (embedded registry files and whole candidate files);
+ * - R06.7 no candidate (meta.source.ref, source.parts, embedded files and imports: anywhere in its
+ *   bytes) and no slot.json `inputs`/`uses` names another slot's candidate file, by path
+ *   (`[clossys/]agents/<agent>/<slot>/candidates/<file>`, `../<slot>/candidates/<file>`) or by
+ *   shorthand (`<slot>/<name>-v<n>`); a cross-slot reference names the slot id, so it resolves through
+ *   that slot's pin. Lineage inside one slot stays allowed (owner rule, foundry-feedback-0017).
  * The byte comparison against installed dependency packages (the second half of R06.2) is pending.
  */
 import { sha256Hex } from "../../records/hash.js";
@@ -116,6 +121,36 @@ export function identicalBytes(ctx: ConstitutionContext): Row[] {
   return rows;
 }
 
+/** A candidate file by path: `[clossys/]agents/<agent>/<slot>/candidates/<file>` or `../<slot>/candidates/<file>`. */
+const CANDIDATE_PATH = /(?<![A-Za-z0-9._/-])(?:(?:clossys\/)?agents\/(?:director|designer|writer|publisher|producer)\/|(?:\.\.\/)+)([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})\/candidates\/[A-Za-z0-9._-]+/g;
+/** A candidate file by shorthand: `<slot>/<name>-v<n>[.md|.json]`. */
+const CANDIDATE_SHORTHAND = /(?<![A-Za-z0-9._/@:-])([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3})\/[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*(?:\.(?:md|json))?(?![A-Za-z0-9_-])/g;
+
+/** The references in `text` to a candidate file of a slot other than `own` (only slots that exist count for shorthand). */
+export function foreignCandidateFiles(text: string, own: string, known: ReadonlySet<string>): string[] {
+  const found = new Set<string>();
+  for (const match of text.matchAll(CANDIDATE_PATH)) if (match[1] !== own) found.add(match[0]);
+  for (const match of text.matchAll(CANDIDATE_SHORTHAND)) if (match[1] !== own && known.has(match[1]!)) found.add(match[0]);
+  return [...found].sort();
+}
+
+export function crossSlotCandidateFiles(ctx: ConstitutionContext): Row[] {
+  const known = new Set([...allSlots(ctx)].map(slot => slot.id));
+  const rows: Row[] = [];
+  const fix = "name the slot id instead, so the reference resolves through that slot's pin";
+  for (const slot of allSlots(ctx)) {
+    for (const candidate of slot.candidates) {
+      const refs = foreignCandidateFiles(candidate.text, slot.id, known);
+      if (refs.length) rows.push(row("R06", "R06.7", slot, `references another slot's candidate file: ${listed(refs, 3)}; ${fix}`, candidate.path, candidate.name));
+    }
+    const doc = slot.slot?.value;
+    if (!isObject(doc)) continue;
+    const deps = [...stringList(doc.inputs), ...stringList(doc.uses)].flatMap(dep => foreignCandidateFiles(dep, slot.id, known));
+    if (deps.length) rows.push(row("R06", "R06.7", slot, `slot.json inputs/uses name a candidate file: ${listed([...new Set(deps)].sort(), 3)}; ${fix}`, slot.slot!.path));
+  }
+  return rows;
+}
+
 export const R06: RuleModule = {
   rule: "R06",
   checks: {
@@ -126,5 +161,6 @@ export const R06: RuleModule = {
     "R06.4": candidateRefs,
     "R06.5": installPaths,
     "R06.6": identicalBytes,
+    "R06.7": crossSlotCandidateFiles,
   },
 };
