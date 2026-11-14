@@ -249,6 +249,7 @@
         "specimen",
         "render",
         "migrate",
+        "reissue",
         "derive.uses",
         "studio.map",
         "specimen.evidence",
@@ -269,6 +270,7 @@
         "options",
         "pipeline",
         "produce",
+        "reissue",
         "render",
         "specimen"
       ],
@@ -281,7 +283,10 @@
         "npm run studio:check",
         "npm run studio:compose"
       ],
-      "skills": [],
+      "skills": [
+        "packages/producer/actions/reissue/skill.md",
+        "packages/producer/skill/SKILL.md"
+      ],
       "code": [
         "packages/designer/scripts/generate-specimen-surface-evidence.mjs",
         "packages/producer/scripts/capture-studio.mjs",
@@ -301,6 +306,8 @@
         "packages/producer/src/cli/pipeline.ts",
         "packages/producer/src/cli/pipeline.ts#runPipelineCli",
         "packages/producer/src/cli/produce.ts#runProduce",
+        "packages/producer/src/cli/reissue.ts",
+        "packages/producer/src/cli/reissue.ts#runReissueCli",
         "packages/producer/src/cli/render.ts",
         "packages/producer/src/cli/render.ts#runRenderCli",
         "packages/producer/src/cli/specimen.ts",

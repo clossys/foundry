@@ -9,8 +9,9 @@
  * fails while a change is still pending. A folder the IA does not place, or a move whose target
  * already exists, is a finding and is never touched.
  */
-import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
+import { isModelDir, listModelDir, modelExists, readModelText } from "../records/slots.js";
+import { createModelFile, moveModelEntry, replaceModelFile } from "../records/slot-write.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, slotFile } from "../records/slot-model/layout.js";
 import { slotPositions } from "../records/slot-model/foundry-ia.js";
 import { SEAT_AGENT, SEAT_PREFIX, SLOT_SCHEMA, seatSlotId, seatStepOf, type IaDoc } from "../records/slot-model/types.js";
@@ -31,14 +32,15 @@ export interface SeatsToSlotsPlan {
 }
 
 const posix = (path: string) => path.split(sep).join("/");
-const isDir = (path: string) => { try { return statSync(path).isDirectory(); } catch { return false; } };
+// Reads go through the slot-model reader and writes through records/slot-write.ts (R11.1).
+const isDir = isModelDir;
 
 /** The pinned seat of a folder when it is valid against seat.schema.json; otherwise the sample seat. */
 function sampleSeat(dir: string): unknown {
   try {
-    const pin = JSON.parse(readFileSync(pinFile(dir), "utf8")) as { candidate?: unknown };
+    const pin = JSON.parse(readModelText(pinFile(dir))) as { candidate?: unknown };
     if (typeof pin.candidate !== "string") return SAMPLE_SEAT;
-    const seat = JSON.parse(readFileSync(join(candidatesDir(dir), pin.candidate), "utf8")) as unknown;
+    const seat = JSON.parse(readModelText(join(candidatesDir(dir), pin.candidate))) as unknown;
     return validateValue(seat, loadSchema("seat")).length ? SAMPLE_SEAT : seat;
   } catch { return SAMPLE_SEAT; }
 }
@@ -48,8 +50,8 @@ export function planSeatsToSlots(consumer: string): SeatsToSlotsPlan {
   const rel = (path: string) => posix(relative(consumer, path));
   const findings: string[] = [];
   const iaFile = iaPath(consumer, SEAT_AGENT);
-  if (!existsSync(iaFile)) return { moves: [], slots: [], findings: [`${rel(iaFile)} is missing`] };
-  const ia = JSON.parse(readFileSync(iaFile, "utf8")) as IaDoc;
+  if (!modelExists(iaFile)) return { moves: [], slots: [], findings: [`${rel(iaFile)} is missing`] };
+  const ia = JSON.parse(readModelText(iaFile)) as IaDoc;
   const renamed: IaDoc = {
     ...ia,
     nodes: ia.nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child, slots: child.slots.map(id => (id.startsWith(SEAT_PREFIX) ? id : seatSlotId(id))) })) })),
@@ -60,7 +62,7 @@ export function planSeatsToSlots(consumer: string): SeatsToSlotsPlan {
   const placed = new Set(positions.keys());
   const moves: { from: string; to: string }[] = [];
   const slots: { path: string; bytes: string }[] = [];
-  for (const name of readdirSync(root).sort()) {
+  for (const name of [...listModelDir(root)].sort()) {
     if (!isDir(join(root, name)) || name.startsWith(SEAT_PREFIX)) continue;
     if (!placed.has(seatSlotId(name))) findings.push(`${rel(join(root, name))} is not a seat producer ia.json places; left as it is`);
   }
@@ -69,26 +71,26 @@ export function planSeatsToSlots(consumer: string): SeatsToSlotsPlan {
     const from = join(root, step), to = join(root, id);
     let dir = to;
     if (isDir(from)) {
-      if (existsSync(to)) { findings.push(`${rel(from)} and ${rel(to)} both exist; resolve by hand`); continue; }
+      if (modelExists(to)) { findings.push(`${rel(from)} and ${rel(to)} both exist; resolve by hand`); continue; }
       moves.push({ from: rel(from), to: rel(to) });
       dir = from;
     } else if (!isDir(to)) continue; // an open seat: placed, never written; its first `clossys seat` writes the folder.
-    if (existsSync(slotFile(dir))) continue;
+    if (modelExists(slotFile(dir))) continue;
     const doc = { schema: SLOT_SCHEMA, id, agent: SEAT_AGENT, ia: position, kind: "seat", contract: { step, fixture: { step, seat: sampleSeat(dir) } }, inputs: [], uses: [] };
     const issues = validateSlotDoc(doc, rel(slotFile(to)));
     if (issues.length) { findings.push(...issues.map(issue => `${issue.path}: ${issue.message}`)); continue; }
     slots.push({ path: rel(slotFile(to)), bytes: jsonBytes(doc) });
   }
   const bytes = jsonBytes(renamed);
-  const changed = bytes !== readFileSync(iaFile, "utf8");
+  const changed = bytes !== readModelText(iaFile);
   return { moves, slots, ...(changed ? { ia: { path: rel(iaFile), bytes } } : {}), findings };
 }
 
 export function applySeatsToSlots(consumer: string, plan: SeatsToSlotsPlan): void {
   if (plan.findings.length) throw new Error(`seats-to-slots: resolve the findings first: ${plan.findings.join("; ")}`);
-  for (const move of plan.moves) renameSync(join(consumer, move.from), join(consumer, move.to));
-  for (const slot of plan.slots) writeFileSync(join(consumer, slot.path), slot.bytes, { flag: "wx" });
-  if (plan.ia) writeFileSync(join(consumer, plan.ia.path), plan.ia.bytes);
+  for (const move of plan.moves) moveModelEntry(join(consumer, move.from), join(consumer, move.to));
+  for (const slot of plan.slots) createModelFile(join(consumer, slot.path), slot.bytes);
+  if (plan.ia) replaceModelFile(join(consumer, plan.ia.path), plan.ia.bytes);
 }
 
 /** `check`: plan only, exit 1 while anything is pending or a finding stands. Otherwise apply, exit 1 on a finding. */

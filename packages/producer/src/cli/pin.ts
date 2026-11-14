@@ -10,7 +10,8 @@
 import { join, resolve } from "node:path";
 import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AGENTS, type PinBasis, type PinConfirmation, type SlotAgent } from "../records/slot-model/index.js";
 import { listSlots, readSlotEntry } from "../records/slots.js";
-import { writeConfirm, writeNotNeeded, writePin } from "../records/slot-write.js";
+import { GuardRefusal, writeConfirm, writeNotNeeded, writePin, type WriteGuard } from "../records/slot-write.js";
+import "../constitution/guard.js"; // registers the write guard's runner
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -23,7 +24,10 @@ export const PIN_USAGE = "Usage: clossys pin <agent>/<slot> <candidate-id> [--by
   + "  --basis: how the pin was decided. --by planner[:<ref>] is always planner; any other --by needs an explicit\n"
   + "           --basis: picked (the owner chose this candidate) or bulk (a blanket owner approval), or planner.\n"
   + "  --confirm: the owner confirms the slot's agent pick of <candidate-id>; the pin keeps basis agent and its\n"
-  + "             agent:<seat> decider and records confirmed {by, ref, at}. --ref names where the owner's words are.";
+  + "             agent:<seat> decider and records confirmed {by, ref, at}. --ref names where the owner's words are.\n"
+  + "  A pin refuses on any finding of a constitution check whose rules.json guard lists pin (pick for an agent:<seat>\n"
+  + "  pick) about the pinned candidate, pin.json or slot.json: an uncertified candidate (R05), an unresolved citation\n"
+  + "  (R07.1) or a region no frame composes (R07.6) is never pinned.";
 export const DECISIONS_USAGE = "Usage: clossys decisions [--root <dir>] [--json]\n"
   + "  every slot as pinned | not-needed | open, with counts";
 
@@ -97,7 +101,7 @@ export function resolveCandidate(candidates: readonly string[], id: string): str
   return matches.length === 1 ? matches[0] : undefined;
 }
 
-export async function runPinCli(argv: readonly string[], cwd: string): Promise<CliResult> {
+export async function runPinCli(argv: readonly string[], cwd: string, guard: WriteGuard = true): Promise<CliResult> {
   const flags = parse(argv, PIN_USAGE);
   if (flags.help) return { exitCode: 0, message: PIN_USAGE };
   const [target, candidateId, ...extra] = flags.positional;
@@ -139,10 +143,11 @@ export async function runPinCli(argv: readonly string[], cwd: string): Promise<C
       const pin = writeConfirm(consumer, agent as SlotAgent, id, candidate, { by: flags.by, ref: flags.ref!.trim(), at });
       return { exitCode: 0, message: `${agent}/${id}: ${pin.candidate} picked by ${pin.decidedBy} (${pin.basis}), confirmed by ${pin.confirmed!.by} (${pin.confirmed!.ref})`, decision: { slot: `${agent}/${id}`, state: "pinned", ...pin } };
     }
-    const pin = writePin(consumer, agent as SlotAgent, id, candidate, { decidedBy: flags.by, basis: basis!, at });
+    const pin = writePin(consumer, agent as SlotAgent, id, candidate, { decidedBy: flags.by, basis: basis!, at }, undefined, { guard });
     return { exitCode: 0, message: `${agent}/${id}: pinned ${pin.candidate} (${pin.sha256.slice(0, 12)}), decided by ${pin.decidedBy} (${pin.basis})`, decision: { slot: `${agent}/${id}`, state: "pinned", ...pin } };
   } catch (error) {
     if (error instanceof CliUsageError) throw error;
+    if (error instanceof GuardRefusal) return { exitCode: 1, message: `pin refused: ${error.message}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${id}`, verb: error.verb, checks: error.checks, findings: error.findings } };
     const message = error instanceof Error ? error.message : String(error);
     return { exitCode: 1, message: /^(?:pin|not-needed|confirm) refused/.test(message) ? message : `pin refused: ${message}` };
   }

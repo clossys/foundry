@@ -22,8 +22,8 @@
  * model issue is rolled back and refused (exit 1). A refusal is recorded like any run (exit 1).
  * Slot-model reads go through the one reader (records/slots.ts); see check:single-reader.
  */
-import { createHash, randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { checkSlotModel, RETIRED_DIR } from "../records/slot-check.js";
 import { ledgerComment, OWNER_DECISION_SCOPES, OWNER_DECISIONS_FILE, OWNER_DECISIONS_SCHEMA, resolveOwnerRef, validateOwnerDecisions, type OwnerDecision } from "../records/owner-decisions.js";
@@ -34,7 +34,7 @@ import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from 
 import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
-import { appendIaEvent, appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, writePin } from "../records/slot-write.js";
+import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
 import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
 import type { ModelAgent } from "../records/slot-model/index.js";
@@ -46,6 +46,7 @@ import { SEAT_POLICY_FILE, SEAT_POLICY_SCHEMA, validateSeatPolicy } from "../pip
 import { writerKeysUnapproved } from "../pipeline/status.js";
 import { STEPS } from "../pipeline/steps/index.js";
 import { RETIRE_CODES, RETIRE_REASON } from "../constitution/checks/R10-retire.js";
+import { validateAgainst } from "../constitution/schema.js";
 import { IA_KIND, slotWriteKind } from "../constitution/green.js";
 import { resolveCandidate } from "./pin.js";
 import { CliUsageError } from "./args.js";
@@ -138,17 +139,12 @@ const rootOf = (cwd: string, flags: Flags) => discoverRoot(resolve(cwd, one(flag
 const sha = (bytes: string | Buffer) => createHash("sha256").update(bytes).digest("hex");
 const refuse = (verb: string, message: string): CliResult => ({ exitCode: 1, message: `${verb} refused: ${message}` });
 
-/** Write by renaming a fully written sibling over the target: a reader sees the old bytes or the new. */
-function replaceFile(path: string, bytes: string): void {
-  mkdirSync(dirname(path), { recursive: true });
-  const staged = join(dirname(path), `.${randomUUID()}.tmp`);
-  writeFileSync(staged, bytes, { flag: "wx" });
-  try { renameSync(staged, path); } catch (error) { rmSync(staged, { force: true }); throw error; }
-}
+/** Write by renaming a fully written sibling over the target (records/slot-write.ts, the one writer). */
+const replaceFile = replaceModelFile;
 /** The files a write touches, as they were, so a refused write is undone byte for byte. */
 function snapshot(paths: readonly string[]): () => void {
-  const before = paths.map(path => ({ path, bytes: modelExists(path) ? readModelText(path) : null }));
-  return () => { for (const entry of before) { if (entry.bytes === null) rmSync(entry.path, { force: true }); else replaceFile(entry.path, entry.bytes); } };
+  const before = paths.map(path => ({ path, bytes: modelExists(path) ? readModelBytes(path) : null }));
+  return () => { for (const entry of before) { if (entry.bytes === null) removeModelFile(entry.path); else replaceModelFile(entry.path, entry.bytes); } };
 }
 interface ModelIssue { code: string; path: string; message: string }
 const issueKey = (issue: ModelIssue) => `${issue.code} ${issue.path} ${issue.message}`;
@@ -574,6 +570,9 @@ export function placeSeat(ia: { schema: string; source: string; extensions: stri
   return { ...ia, nodes };
 }
 
+/** A seat slot's candidate stem: the last dot segment of its slot id (seat.pick.designer -> designer). */
+export const seatLeaf = (step: string): string => seatSlotId(step).split(".").at(-1)!;
+
 export async function runSeatCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS): Promise<CliResult> {
   const flags = parseSeat(argv);
   if (flags.help) return { exitCode: 0, message: SEAT_USAGE };
@@ -615,8 +614,12 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
   if (!/^(owner|planner)(:\S.*)?$/.test(decidedBy)) throw new CliUsageError(`--decided-by must be owner[:<ref>] or planner[:<ref>]\n${SEAT_USAGE}`);
   const at = one(flags, "--at") ?? new Date().toISOString();
   const dir = seatDir(consumer, id);
-  const existing = listModelDir(candidatesDir(dir)).map(name => CANDIDATE_NAME.exec(name)).filter(match => match?.[1] === id).map(match => Number(match![2]));
-  const name = `${id}-v${Math.max(0, ...existing) + 1}.json`;
+  // A seat candidate is named for its slot's leaf (the last dot segment of seat.<step>), like every
+  // other candidate: seat.pick.designer's are designer-v<n>.json. The version counts every candidate
+  // of the slot, retired ones too, so a number is never reused.
+  const leaf = seatLeaf(id);
+  const existing = [...listModelDir(candidatesDir(dir)), ...listModelDir(join(dir, RETIRED_DIR))].map(name => CANDIDATE_NAME.exec(name)).filter(match => match?.[1] === leaf).map(match => Number(match![2]));
+  const name = `${leaf}-v${Math.max(0, ...existing) + 1}.json`;
   const bytes = jsonBytes(seat);
   const pin = { candidate: name, sha256: sha(bytes), decidedBy, basis: decidedBy.startsWith("planner") ? "planner" : "picked", at };
   const pinIssues = validatePin(pin);
@@ -635,9 +638,8 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
   if (doc) { const docIssues = validateSlotDoc(doc, docFile); if (docIssues.length) return refuse("seat", docIssues.map(issue => issue.message).join("; ")); }
   const added = guarded(consumer, [iaFile, candidate, pinFile(dir), ...(doc ? [docFile] : [])], () => {
     if (placed !== ia) replaceFile(iaFile, jsonBytes(placed));
-    mkdirSync(candidatesDir(dir), { recursive: true });
-    if (doc) writeFileSync(docFile, jsonBytes(doc), { flag: "wx" });
-    writeFileSync(candidate, bytes, { flag: "wx" });
+    if (doc) createModelFile(docFile, jsonBytes(doc));
+    createModelFile(candidate, bytes);
     replaceFile(pinFile(dir), jsonBytes(pin));
   });
   if (added.length) return refuse("seat", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
@@ -784,7 +786,8 @@ export const RETIRE_USAGE = "Usage: clossys retire <agent>/<slot> <candidate> --
   + "  --slot retires a whole slot: it leaves its agent's ia.json, the removal is recorded in that ia.json's `retired` list, and its folder\n"
   + "  moves to agents/<agent>/_retired/<slot>. Refused while another slot.json `uses` it or a pinned slot takes it as an input.";
 /** The schema of a retirement record: a retired candidate's file, or a row of an agent ia.json's `retired` list. */
-export const RETIRE_SCHEMA = "clossys.retire/1";
+/** A retire record's schema; the one writer owns the constant (records/slot-write.ts). */
+export { RETIRE_SCHEMA };
 /** A slot's retired candidates and their records: `<slot>/retired/<candidate>` and `<slot>/retired/<candidate>.json`. */
 export { RETIRED_DIR };
 /** Retired slot folders, a non-slot (`_`) folder of the agent: `agents/<agent>/_retired/<slot>`. */
@@ -792,15 +795,8 @@ export const RETIRED_SLOTS_DIR = "_retired";
 const parseRetire = parser(RETIRE_USAGE, ["--by", "--reason", "--at", "--root"], ["--slot"]);
 interface RetireFields { by: string; reason: string; at: string }
 
-/** Move a model file or folder, creating the destination's parent. */
-function moveModelEntry(from: string, to: string): void {
-  mkdirSync(dirname(to), { recursive: true });
-  renameSync(from, to);
-}
-/** Remove a folder this verb created when an undo left it empty. */
-function dropEmptyDir(dir: string): void {
-  if (isModelDir(dir) && !listModelDir(dir).length) rmdirSync(dir);
-}
+/** Remove a folder this verb created when an undo left it empty (records/slot-write.ts). */
+const dropEmptyDir = dropEmptyModelDir;
 
 function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot: string, candidateId: string, fields: RetireFields): CliResult {
   const target = `${agent}/${slot}`;
@@ -818,6 +814,9 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
   if (modelExists(to) || modelExists(file)) return refuse("retire", `${target} already has ${RETIRED_DIR}/${candidate}`);
   // `slot` is the slot id (the folder names the agent), as constitution R10.1 and retire.schema.json read it.
   const record = { schema: RETIRE_SCHEMA, slot, candidate, sha256: sha(readModelBytes(from)), by: fields.by, reason: fields.reason, at: fields.at };
+  // The record validates against the constitution's retire.schema.json before anything moves (R10.1).
+  const recordIssues = validateAgainst("retire", record);
+  if (recordIssues.length) return refuse("retire", `the retire record does not validate against retire.schema.json: ${recordIssues.map(issue => `${issue.at || "/"} ${issue.message}`).join("; ")}`);
   // The slot model check reads retired/ too: the record must validate and match the moved bytes.
   // The retire verb's ledger event lands with the move (records/slot-write.ts); a refused write restores the ledger too.
   const added = guarded(consumer, [file, from, to, join(entry.dir, LEDGER_FILE)], () => {

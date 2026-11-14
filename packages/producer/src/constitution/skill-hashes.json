@@ -40,6 +40,9 @@
     "packages/producer/actions/pin.writer/skill.md": [
       "f3954a64fffb29d6ed60e26fb83377e60dcd4a5f7565bb2dc23ece691524d2e4"
     ],
+    "packages/producer/actions/reissue/skill.md": [
+      "91639f1608e4cf8df90e09eef0393fbfc87157246e72b74ebdcb6f5bd4fd2a27"
+    ],
     "packages/producer/actions/retire/skill.md": [
       "a15d2cbab558aa10df430529940672bc6dbca511a75b215e18f4281e474775b4"
     ],

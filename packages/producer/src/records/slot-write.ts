@@ -12,7 +12,7 @@
  * byte state it leaves is the one the ledger already records.
  */
 import { createHash, randomUUID } from "node:crypto";
-import { closeSync, constants, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { closeSync, constants, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStore, DirectorStoreChange, DirectorStoreWriter } from "@clossys/director";
@@ -20,11 +20,14 @@ import {
   CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
-import { directorStoreReader, forgetSlotReads, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
+import { directorStoreReader, forgetSlotReads, isModelDir, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
 import {
   LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, actionContractPath, eventIssues, skillFile, skillPath,
   type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
 } from "./ledger.js";
+import type { GuardOptions, GuardTarget, GuardVerb } from "../constitution/guard.js";
+import type { Row } from "../constitution/types.js";
+import { validateAgainst } from "../constitution/schema.js";
 import { fileState, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations, type FileState, type FormatMigration, type MigratedEvent, type MigrationsDoc } from "./migrations.js";
 
 // ---------------------------------------------------------------------------
@@ -82,6 +85,96 @@ function replaceFile(path: string, bytes: string): void {
   try { renameSync(staged, path); } catch (error) { rmSync(staged, { force: true }); throw error; }
   finally { forgetSlotReads(); }
 }
+// ---------------------------------------------------------------------------
+// Slot-model file primitives for the verbs whose records span several files (clossys ia, seat,
+// retire, the seats-to-slots migration, the Writer declarations): the one place those bytes are
+// written (R11.1). The verb appends the write's ledger event through this module as well
+// (appendIaEvent, appendSlotDocEvent, appendRetireCandidate, appendRetireSlot, appendSeatEvents).
+// ---------------------------------------------------------------------------
+
+/** Replace a slot-model file atomically, creating its parent folder. */
+export function replaceModelFile(path: string, bytes: string | Buffer): void {
+  mkdirSync(dirname(path), { recursive: true });
+  const staged = join(dirname(path), `.${randomUUID()}.tmp`);
+  writeFileSync(staged, bytes, { flag: "wx" });
+  try { renameSync(staged, path); } catch (error) { rmSync(staged, { force: true }); throw error; }
+  finally { forgetSlotReads(); }
+}
+/** Create a slot-model file that must not exist yet (`wx`), creating its parent folder. */
+export function createModelFile(path: string, bytes: string | Buffer): void {
+  mkdirSync(dirname(path), { recursive: true });
+  try { writeFileSync(path, bytes, { flag: "wx" }); } finally { forgetSlotReads(); }
+}
+/** Remove a slot-model file (absent is fine): a refused write's undo. */
+export function removeModelFile(path: string): void {
+  try { rmSync(path, { force: true }); } finally { forgetSlotReads(); }
+}
+/** Move a slot-model file or folder, creating the destination's parent. */
+export function moveModelEntry(from: string, to: string): void {
+  mkdirSync(dirname(to), { recursive: true });
+  try { renameSync(from, to); } finally { forgetSlotReads(); }
+}
+/** Remove a slot-model folder a write created when an undo left it empty. */
+export function dropEmptyModelDir(dir: string): void {
+  if (isModelDir(dir) && !listModelDir(dir).length) { rmdirSync(dir); forgetSlotReads(); }
+}
+
+/** A record file's bytes before a guarded write, or null when it is absent (`restoreFiles` puts them back). */
+type Snapshot = ReadonlyMap<string, Buffer | null>;
+function snapshotFiles(paths: readonly string[]): Snapshot {
+  return new Map(paths.map(path => [path, existsSync(path) ? readFileSync(path) : null]));
+}
+function restoreFiles(snapshot: Snapshot): void {
+  for (const [path, bytes] of snapshot) {
+    if (bytes === null) rmSync(path, { force: true });
+    else { const staged = join(dirname(path), `.${randomUUID()}.tmp`); writeFileSync(staged, bytes, { flag: "wx" }); renameSync(staged, path); }
+  }
+  forgetSlotReads();
+}
+
+/**
+ * A write verb's guard (slot-constitution.md section 4): `true` runs the constitution checks whose
+ * rules.json `guard` lists the write's verb with the installed defaults; an object passes the
+ * context options (tests substitute history, skill hashes and the registry).
+ */
+export type WriteGuard = true | GuardOptions;
+/** Why a guarded write was refused: the guard rows' `<check> <reason> (<path>)` lines. */
+export class GuardRefusal extends Error {
+  // Plain fields, not parameter properties: this module also loads under Node's strip-only TypeScript.
+  readonly verb: GuardVerb;
+  readonly findings: readonly string[];
+  readonly checks: readonly string[];
+  constructor(verb: GuardVerb, findings: readonly string[], checks: readonly string[]) {
+    super(`${verb} refused by the constitution guard: ${findings.slice(0, 8).join("; ")}${findings.length > 8 ? ` (+${findings.length - 8} more)` : ""}`);
+    this.name = "GuardRefusal";
+    this.verb = verb;
+    this.findings = findings;
+    this.checks = checks;
+  }
+}
+const workspaceOf = (consumer: string) => dirname(resolve(consumer));
+const recordPath = (consumer: string, dir: string, file: string) => relative(workspaceOf(consumer), join(dir, file)).split(sep).join("/");
+/** Run `verb`'s guard over the tree as the write left it; throw GuardRefusal on any row about `targets`. */
+/**
+ * The guard's runner, registered by constitution/guard.ts when it loads. The writer holds no value
+ * import of the rule registry, so it loads alone (Node's strip-only TypeScript, child writers); a
+ * guarded write with no runner loaded is refused, never let through.
+ */
+export interface GuardRunner {
+  readonly run: (consumer: string, verb: GuardVerb, targets: readonly GuardTarget[], options: GuardOptions) => Row[];
+  readonly messages: (rows: readonly Row[]) => string[];
+}
+let guardRunner: GuardRunner | undefined;
+export function registerGuardRunner(runner: GuardRunner): void { guardRunner = runner; }
+function enforceGuard(consumer: string, verb: GuardVerb, guard: WriteGuard, targets: readonly GuardTarget[]): void {
+  if (!guardRunner) throw new GuardRefusal(verb, ["the constitution guard is not loaded (import constitution/guard.js before a guarded write)"], ["guard.unloaded"]);
+  const options: GuardOptions = guard === true ? {} : guard;
+  forgetSlotReads();
+  const rows = guardRunner.run(resolve(consumer), verb, targets, { root: workspaceOf(consumer), ...options });
+  if (rows.length) throw new GuardRefusal(verb, guardRunner.messages(rows), [...new Set(rows.map(row => row.check))]);
+}
+const GUARDED_CANDIDATE_VERBS: readonly GuardVerb[] = ["submit", "reissue", "migrate", "critique"];
+
 /** One decision write per slot at a time. */
 export const SLOT_LOCK = ".slot-write.lock";
 const slotLocked = <T>(dir: string, action: () => T): T => withDirLock(join(dir, SLOT_LOCK), "Slot is unavailable or another decision write is in progress", action);
@@ -274,6 +367,94 @@ export function appendSlotDocEvent(consumer: string, agent: SlotAgent, id: strin
   });
 }
 
+// ---------------------------------------------------------------------------
+// P2 craft (section 5b): stage events and critique records.
+// ---------------------------------------------------------------------------
+
+/** The P2 craft stages, in order (section 5b). */
+export const CRAFT_STAGES = ["brief", "diverge", "render", "critique", "refine"] as const;
+export type CraftStage = (typeof CRAFT_STAGES)[number];
+/** Every prefix of section 5b's order: brief, diverge, render, critique, then at most 2 refine rounds (each re-rendered and re-checked). */
+const CRAFT_PREFIX = /^(?:brief(?: diverge(?: render(?: critique(?: refine(?: render)?(?: critique)?){0,2})?)?)?)?$/;
+/** The most directions a diverge may carry (section 5b: 3, cap 4). */
+export const CRAFT_DIRECTIONS = { min: 3, max: 4 } as const;
+/** The craft stages of the slot's open P2 run: the `craft:*` events since its last submit. */
+export function openCraftStages(events: readonly Record<string, unknown>[]): CraftStage[] {
+  const stages: CraftStage[] = [];
+  for (const event of events) {
+    if (event.op === "submit") stages.length = 0;
+    else if (typeof event.op === "string" && event.op.startsWith("craft:")) stages.push(event.op.slice("craft:".length) as CraftStage);
+  }
+  return stages;
+}
+/** Why `stage` may not come next after `open`, or undefined. */
+export function craftOrderIssue(open: readonly CraftStage[], stage: CraftStage, fields: Readonly<Record<string, unknown>> = {}): string | undefined {
+  const sequence = [...open, stage].join(" ");
+  if (!CRAFT_PREFIX.test(sequence)) {
+    const refines = open.filter(each => each === "refine").length;
+    if (stage === "refine" && refines >= 2) return `craft:refine refused: at most 2 refine rounds (section 5b); this run has ${refines}`;
+    return `craft:${stage} refused: after ${open.length ? open.join(", ") : "nothing"} the next stage is not ${stage} (order brief, diverge, render, critique, then at most 2 refine rounds)`;
+  }
+  if (stage === "diverge") {
+    const directions = Array.isArray(fields.directions) ? fields.directions : [];
+    if (directions.length < CRAFT_DIRECTIONS.min || directions.length > CRAFT_DIRECTIONS.max) return `craft:diverge refused: ${directions.length} directions; ${CRAFT_DIRECTIONS.min} to ${CRAFT_DIRECTIONS.max} required (cap ${CRAFT_DIRECTIONS.max})`;
+    for (const [index, direction] of directions.entries()) {
+      if (!isRecord(direction) || !isRecord(direction.axes) || !Object.keys(direction.axes).length) return `craft:diverge refused: direction ${index + 1} carries no axes`;
+    }
+  }
+  return undefined;
+}
+/**
+ * Append one `craft:<stage>` event to the slot ledger under the slot lock, refusing a stage out of
+ * order or a diverge outside 3-4 directions. `fields` are the stage's own record (directions,
+ * recipe, renders); verb submit, by the seat, with the step's skill, model and tier.
+ */
+export function appendCraftEvent(consumer: string, agent: SlotAgent, id: string, stage: CraftStage, fields: Readonly<Record<string, unknown>>, given: WriteProvenance & { readonly at?: string }): LedgerEvent {
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+    const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
+    const issue = craftOrderIssue(openCraftStages(events), stage, fields);
+    if (issue) throw new Error(issue);
+    const { op: _op, at: _at, by: _by, verb: _verb, skill: _skill, model: _model, tier: _tier, records: _records, ...own } = fields as Record<string, unknown>;
+    const event = ledgerEvent(`craft:${stage}`, given.at ?? nowIso(), provenance({ verb: "submit", by: "planner", skill: skillPath(agent, `${agent}.candidates`) }, given), own);
+    appendEvent(entry.dir, "slot", event);
+    return event;
+  });
+}
+/** A slot's critique records (`critiques/<leaf>-v<n>.json`, section 5b stage 4). */
+export const CRITIQUES_DIR = "critiques";
+/**
+ * Write a critique record for the candidate the open P2 run will submit (`<leaf>-v<next>.json`
+ * unless `candidate` names one) and append its `craft:critique` event (verb critique), refused
+ * when the critique stage may not come next or the record exists. `validate` is the record's schema check.
+ */
+export function writeCritique(consumer: string, agent: SlotAgent, id: string, record: unknown, input: { readonly candidate?: string; readonly at?: string; readonly validate: (value: unknown) => readonly string[] }, given: WriteProvenance): { file: string; event: LedgerEvent } {
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+    const { entry: current } = located(consumer, agent, id);
+    const issues = input.validate(record);
+    if (issues.length) throw new Error(`critique refused: ${issues.slice(0, 5).join("; ")}`);
+    const events = (readLedger(entry.dir, "slot")?.events ?? []) as unknown as Record<string, unknown>[];
+    const order = craftOrderIssue(openCraftStages(events), "critique");
+    if (order) throw new Error(order);
+    const leaf = id.split(".").at(-1)!;
+    const name = input.candidate ? input.candidate.replace(/\.[^.]+$/, "") : `${leaf}-v${nextVersion(current.dir, current.candidates)}`;
+    if (!CANDIDATE_NAME.test(`${name}.json`)) throw new Error(`critique refused: ${name} is not a <leaf>-v<n> candidate name`);
+    const directory = join(entry.dir, CRITIQUES_DIR);
+    canonicalDirectory(directory);
+    mkdirSync(directory, { recursive: true });
+    const file = `${name}.json`;
+    const path = join(directory, file);
+    writeFileSync(path, jsonBytes(record), { flag: "wx" });
+    forgetSlotReads();
+    try {
+      const event = ledgerEvent("craft:critique", input.at ?? nowIso(), provenance({ verb: "critique", by: "planner", skill: skillPath("producer", "critique") }, given), { critique: `${CRITIQUES_DIR}/${file}`, sha256: sha256Of(readFileSync(path)) });
+      appendEvent(entry.dir, "slot", event);
+      return { file: `${CRITIQUES_DIR}/${file}`, event };
+    } catch (error) { unlinkSync(path); forgetSlotReads(); throw error; }
+  });
+}
+
 /**
  * Write `<name>-v<next>` (`<next>` the slot's `nextVersion`) into the slot's candidates and append its `submit {name, sha256}` event.
  * JSON kinds take the item object (serialized as two-space JSON); Markdown kinds take the file text.
@@ -286,6 +467,8 @@ export function appendSlotDocEvent(consumer: string, agent: SlotAgent, id: strin
 export function writeCandidate(consumer: string, agent: SlotAgent, id: string, name: string, content: unknown, options: {
   readonly canonical?: boolean; readonly provenance?: WriteProvenance; readonly at?: string;
   readonly fields?: Readonly<Record<string, unknown>>; readonly verify?: (file: string) => readonly string[];
+  /** Run the write verb's constitution guard on the new file after its event lands; a finding undoes both. */
+  readonly guard?: WriteGuard;
 } = {}): { name: string; sha256: string } {
   const { entry } = located(consumer, agent, id);
   if (options.canonical) canonicalDirectory(entry.dir);
@@ -302,14 +485,21 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
     mkdirSync(directory, { recursive: true });
     if (options.canonical && realpathSync(directory) !== resolve(directory)) throw new Error("candidate refused: candidate directory leaves its canonical path");
     const path = join(directory, file);
+    const who = provenance({ verb: "submit", by: "planner", skill: skillPath(agent, `${agent}.candidates`) }, options.provenance);
+    const guardVerb = who.verb as GuardVerb;
+    if (options.guard && !GUARDED_CANDIDATE_VERBS.includes(guardVerb)) throw new Error(`candidate refused: verb ${who.verb} has no candidate guard (${GUARDED_CANDIDATE_VERBS.join(", ")})`);
+    const ledger = snapshotFiles([join(entry.dir, LEDGER_FILE)]);
     writeFileSync(path, bytes, { flag: "wx" });
     forgetSlotReads();
     try {
       const sha256 = readCandidate(consumer, agent, id, file).sha256;
       const refused = options.verify?.(file) ?? [];
       if (refused.length) throw new Error(`candidate refused: ${file} fails the slot model check: ${refused.slice(0, 5).join("; ")}`);
-      const who = provenance({ verb: "submit", by: "planner", skill: skillPath(agent, `${agent}.candidates`) }, options.provenance);
       appendEvent(entry.dir, "slot", ledgerEvent("submit", options.at ?? nowIso(), who, { ...options.fields, name: file, sha256 }));
+      if (options.guard) {
+        try { enforceGuard(consumer, guardVerb, options.guard, [{ agent, slot: id, candidate: file }]); }
+        catch (error) { restoreFiles(ledger); throw error; }
+      }
       return { name: file, sha256 };
     } catch (error) { unlinkSync(path); forgetSlotReads(); throw error; }
   });
@@ -320,7 +510,12 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
  * `:<message ref>`, `agent:<seat>`, or `migrated`); `basis` how (PIN_BASES). A `notNeeded` marker on
  * the slot is cleared: the pin replaces it.
  */
-export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }, given?: WriteProvenance): PinDoc {
+export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }, given?: WriteProvenance, options: {
+  /** Run the pin's constitution guard (verb pick for basis agent, else pin) after the event lands; a finding restores pin.json, slot.json and the ledger. */
+  readonly guard?: WriteGuard;
+  /** Extra fields for the pin event (`reissue: true` on a reissue's repin); pin.json itself never carries them. */
+  readonly fields?: Readonly<Record<string, unknown>>;
+} = {}): PinDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
   const { doc } = located(consumer, agent, id);
@@ -339,15 +534,137 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
     ? { verb: "pick", by: input.decidedBy, skill: skillPath(agent, `pick.${agent}`) }
     : { verb: "pin", by: input.decidedBy, skill: skillPath("producer", `pin.${agent}`) }, given);
   readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
-  replaceFile(pinFile(entry.dir), jsonBytes(pin));
-  const records = [recordState(entry.dir, "pin.json")];
-  if (doc.notNeeded) {
-    const { notNeeded: _cleared, ...rest } = doc;
-    replaceFile(slotFile(entry.dir), jsonBytes(rest));
-    records.push(recordState(entry.dir, "slot.json"));
-  }
-  appendEvent(entry.dir, "slot", ledgerEvent(pick ? "pick" : "pin", input.at, who, { candidate, sha256: pin.sha256, decidedBy: pin.decidedBy, basis: pin.basis }, records));
+  const before = snapshotFiles([pinFile(entry.dir), slotFile(entry.dir), join(entry.dir, LEDGER_FILE)]);
+  try {
+    replaceFile(pinFile(entry.dir), jsonBytes(pin));
+    const records = [recordState(entry.dir, "pin.json")];
+    if (doc.notNeeded) {
+      const { notNeeded: _cleared, ...rest } = doc;
+      replaceFile(slotFile(entry.dir), jsonBytes(rest));
+      records.push(recordState(entry.dir, "slot.json"));
+    }
+    appendEvent(entry.dir, "slot", ledgerEvent(pick ? "pick" : "pin", input.at, who, { candidate, sha256: pin.sha256, decidedBy: pin.decidedBy, basis: pin.basis, ...options.fields }, records));
+    if (options.guard) enforceGuard(consumer, pick ? "pick" : "pin", options.guard, [{ agent, slot: id, candidate, records: [recordPath(consumer, entry.dir, "pin.json"), recordPath(consumer, entry.dir, "slot.json")] }]);
+  } catch (error) { if (options.guard) restoreFiles(before); throw error; }
   return pin;
+  });
+}
+
+/** A retire record's schema (`retired/<candidate>.json`, constitution/schemas/retire.schema.json). */
+export const RETIRE_SCHEMA = "clossys.retire/1";
+
+/** What `clossys reissue` hands the writer: the old candidate, its reissued content and the ladder record. */
+export interface ReissueInput {
+  /** The old candidate's file name, and the sha256 the caller transformed (a changed file refuses). */
+  readonly old: string;
+  readonly oldSha256: string;
+  /** The next version's content: a JSON value for a JSON kind, text for an md kind. */
+  readonly content: unknown;
+  /** slot.json `uses` after the reissue (its registryDependencies moved here); undefined keeps it. */
+  readonly uses?: readonly string[];
+  /** The ladder rung the submit records (adopt; the Designer's L1 or L2). */
+  readonly rung: string;
+  readonly by: string;
+  readonly at: string;
+}
+export interface ReissueResult {
+  readonly name: string;
+  readonly sha256: string;
+  readonly seed: string;
+  readonly code: "superseded" | "edited-in-place";
+  readonly repinned: boolean;
+  readonly usesChanged: boolean;
+}
+
+/**
+ * The sha256 the slot's ledger last recorded for `name`: its submit (`sha256`), or a migrate event's
+ * `to` for it. Undefined when no event records its bytes.
+ */
+function recordedSha(events: readonly Record<string, unknown>[], name: string): string | undefined {
+  let sha: string | undefined;
+  for (const event of events) {
+    if (event.op === "submit" && (event.name === name || event.candidate === name) && typeof event.sha256 === "string") sha = event.sha256;
+    else if (event.op === "migrate" && Array.isArray(event.files)) {
+      for (const file of event.files as Record<string, unknown>[]) if (file?.name === name && typeof file.to === "string") sha = file.to;
+    }
+  }
+  return sha;
+}
+
+/**
+ * `clossys reissue` (slot-constitution.md section 5, Reissue): under one slot lock, write the next
+ * version `<leaf>-v<n>` of a slot's candidate, record its submit (rung adopt, seed
+ * `<slot>/<old>@<sha>`), move the slot's `uses` when the caller moved registryDependencies there,
+ * repin a pinned old file with the same basis and decidedBy (pin event `reissue: true`), and retire
+ * the old file (`superseded`, or `edited-in-place` when its bytes are not the ones the ledger last
+ * recorded) with a retire record that validates against retire.schema.json. Every event is verb
+ * reissue with the Producer's reissue skill. With `guard`, the reissue guard runs over the new
+ * candidate, pin.json and slot.json once everything is in place; any finding, like any error,
+ * restores every file the write touched.
+ */
+export function writeReissue(consumer: string, agent: SlotAgent, id: string, input: ReissueInput, options: { readonly guard?: WriteGuard; readonly provenance?: WriteProvenance } = {}): ReissueResult {
+  const { entry } = located(consumer, agent, id);
+  canonicalDirectory(entry.dir);
+  return slotLocked(entry.dir, () => {
+    const { doc, entry: current } = located(consumer, agent, id);
+    if (!current.candidates.includes(input.old)) throw new Error(`reissue refused: ${agent} slot ${id} has no candidate ${input.old}`);
+    const old = readCandidate(consumer, agent, id, input.old);
+    if (old.sha256 !== input.oldSha256) throw new Error(`reissue refused: ${input.old} changed while it was reissued (sha256 ${old.sha256.slice(0, 12)} != ${input.oldSha256.slice(0, 12)})`);
+    const ext = KIND_EXT[doc.kind];
+    const leaf = id.split(".").at(-1)!;
+    const file = `${leaf}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
+    const bytes = ext === "md" ? String(input.content) : jsonBytes(input.content);
+    const issues = validateCandidate(doc.kind, id, file, bytes);
+    if (issues.length) throw new Error(`reissue refused: ${issues.map(issue => issue.message).join("; ")}`);
+    const ledger = readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
+    const events = (ledger?.events ?? []) as unknown as Record<string, unknown>[];
+    const recorded = recordedSha(events, input.old);
+    const code = recorded !== undefined && recorded !== old.sha256 ? "edited-in-place" : "superseded";
+    const seed = `${id}/${input.old}@${old.sha256}`;
+    const retiredDir = join(entry.dir, RETIRED_CANDIDATES);
+    const from = join(candidatesDir(entry.dir), input.old), to = join(retiredDir, input.old), recordFile = join(retiredDir, `${input.old}.json`);
+    if (existsSync(to) || existsSync(recordFile)) throw new Error(`reissue refused: ${id} already has ${RETIRED_CANDIDATES}/${input.old}`);
+    const record = { schema: RETIRE_SCHEMA, slot: id, candidate: input.old, sha256: old.sha256, by: input.by, reason: `${code}: reissued as ${file}`, at: input.at };
+    const recordIssues = validateAgainst("retire", record);
+    if (recordIssues.length) throw new Error(`reissue refused: the retire record does not validate against retire.schema.json: ${recordIssues.map(issue => `${issue.at || "/"} ${issue.message}`).join("; ")}`);
+    const pinned = current.pin?.candidate === input.old ? current.pin : null;
+    if (current.pin === null && existsSync(pinFile(entry.dir))) throw new Error(`reissue refused: ${id} pin.json does not read as a valid pin; repin first`);
+    const uses = input.uses ? [...input.uses] : undefined;
+    const usesChanged = uses !== undefined && jsonBytes(uses) !== jsonBytes(doc.uses);
+    const who = provenance({ verb: "reissue", by: input.by, skill: skillPath("producer", "reissue") }, options.provenance);
+    const path = join(candidatesDir(entry.dir), file);
+    const before = snapshotFiles([path, from, to, recordFile, pinFile(entry.dir), slotFile(entry.dir), join(entry.dir, LEDGER_FILE)]);
+    try {
+      writeFileSync(path, bytes, { flag: "wx" });
+      forgetSlotReads();
+      const sha256 = readCandidate(consumer, agent, id, file).sha256;
+      if (usesChanged) {
+        const next: SlotDoc = { ...doc, uses: uses! };
+        const slotIssues = validateSlotDoc(next, slotFile(entry.dir));
+        if (slotIssues.length) throw new Error(`reissue refused: slot.json uses: ${slotIssues.map(issue => issue.message).join("; ")}`);
+        replaceFile(slotFile(entry.dir), jsonBytes(next));
+        appendEvent(entry.dir, "slot", ledgerEvent("slot", input.at, who, { uses: uses!, reason: `registryDependencies of ${input.old} moved to uses` }, [recordState(entry.dir, "slot.json")]));
+      }
+      appendEvent(entry.dir, "slot", ledgerEvent("submit", input.at, who, { rung: input.rung, seed, ladder: { rung: input.rung, seed }, name: file, sha256 }));
+      if (pinned) {
+        const pin: PinDoc = { ...pinned, candidate: file, sha256, at: input.at };
+        const pinIssues = validatePin(pin);
+        if (pinIssues.length) throw new Error(`reissue refused: pin: ${pinIssues.map(issue => issue.message).join("; ")}`);
+        replaceFile(pinFile(entry.dir), jsonBytes(pin));
+        appendEvent(entry.dir, "slot", ledgerEvent(pin.basis === "agent" ? "pick" : "pin", input.at, who, { candidate: file, sha256, decidedBy: pin.decidedBy, basis: pin.basis, reissue: true }, [recordState(entry.dir, "pin.json")]));
+      }
+      mkdirSync(retiredDir, { recursive: true });
+      writeFileSync(recordFile, jsonBytes(record), { flag: "wx" });
+      renameSync(from, to);
+      forgetSlotReads();
+      appendEvent(entry.dir, "slot", ledgerEvent("retire-candidate", input.at, who, { name: input.old, sha256: old.sha256, code }));
+      if (options.guard) enforceGuard(consumer, "reissue", options.guard, [{ agent, slot: id, candidate: file, records: [recordPath(consumer, entry.dir, "pin.json"), recordPath(consumer, entry.dir, "slot.json")] }]);
+      return { name: file, sha256, seed, code, repinned: pinned !== null, usesChanged };
+    } catch (error) {
+      restoreFiles(before);
+      dropEmptyModelDir(retiredDir);
+      throw error;
+    }
   });
 }
 

@@ -9,7 +9,7 @@
  * The retired versioned form `<slot>@<n>` is recognised here only to be reported (it resolves to
  * nothing) and rewritten once by `clossys migrate citations-to-slots`.
  */
-import { parseSlotCitation, versionedCitation, type SlotCitation } from "@clossys/director";
+import { CITATION_AGENTS, CITATION_SLOT_ID, parseSlotCitation, versionedCitation, type CitationAgent, type SlotCitation } from "@clossys/director";
 import { CANDIDATE_NAME, type PinDoc, type SlotAgent } from "./slot-model/index.js";
 import { slotIndex, type SlotEntry } from "./slots.js";
 
@@ -76,4 +76,41 @@ export function sourceCitations(fields: Readonly<Record<string, unknown>>, agent
     const versioned = versionedCitation(ref);
     return versioned?.agent === agent ? [{ slot: versioned.slot, ref, versioned: true }] : [];
   });
+}
+
+/**
+ * A versioned ref token in free text, the shape of @clossys/director's VERSIONED_CITATION_IN_TEXT
+ * (built from its exported slot id and agent list): `[<agent>:]<slot>@<n>` at a boundary that is not
+ * part of a path, package scope or another id.
+ */
+const VERSIONED_TOKEN = new RegExp(`(?<![A-Za-z0-9._:/@-])(?:(${CITATION_AGENTS.join("|")}):)?(${CITATION_SLOT_ID.source.slice(1, -1)})@([1-9][0-9]*)(?![0-9]|\\.[0-9])`, "g");
+/** A line anchor (director `isLineAnchor`): the ref is followed by `#L<n>` / `#direction-L<n>`, or is the `ref` of a `{"ref", "line"}` pair. */
+function lineAnchorAt(text: string, index: number, token: string): boolean {
+  const after = text.slice(index + token.length, index + token.length + 32);
+  return /^#(?:direction-)?L[1-9]/.test(after) || (/"ref"\s*:\s*"$/.test(text.slice(Math.max(0, index - 16), index)) && /^"\s*,\s*"line"\s*:/.test(after));
+}
+
+/**
+ * `text` with every line anchor of a known slot re-addressed to its slot id (D3b, `clossys reissue`):
+ * `writer:copy.hero@3#L12` -> `writer:copy.hero#L12`, `{"ref": "need.x@2", "line": 4}` ->
+ * `{"ref": "need.x", "line": 4}`. The anchor now reads the cited slot's pinned bytes. `owner` names the
+ * agent that owns a slot id, or undefined for a token that is no slot: that token, one whose agent
+ * prefix names another agent, and a versioned ref that is not a line anchor stay as written (the
+ * citations codemod owns those). Idempotent.
+ */
+export function lineAnchorsToSlots(text: string, owner: (slot: string) => CitationAgent | undefined): { text: string; count: number } {
+  let count = 0;
+  const rewritten = text.replace(VERSIONED_TOKEN, (token: string, agent: string | undefined, slot: string, _version: string, index: number, whole: string) => {
+    if (!lineAnchorAt(whole, index, token)) return token;
+    const owned = owner(slot);
+    if (!owned || (agent !== undefined && agent !== owned)) return token;
+    count++;
+    return agent ? `${agent}:${slot}` : slot;
+  });
+  return { text: rewritten, count };
+}
+
+/** The agent owning each slot id of a slot index (`slotIndex`), the owner function `lineAnchorsToSlots` takes. */
+export function slotOwner(index: ReadonlyMap<string, SlotEntry>): (slot: string) => CitationAgent | undefined {
+  return slot => index.get(slot)?.agent as CitationAgent | undefined;
 }

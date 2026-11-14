@@ -2081,6 +2081,74 @@
     },
     {
       "package": "producer",
+      "path": "packages/producer/actions/reissue/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "reissue",
+        "agent": "producer",
+        "kind": "decide:judgment",
+        "stage": "publish.assemble",
+        "open": "on-demand",
+        "summary": "Reissue a slot's candidate as its next version under the slot rules (leaf name, exact deps, uses, no preview props, line anchors as slot ids), retiring the old file and repinning a pinned one (clossys reissue). It claims only its slot-ledger events: the candidate, pin and retire files it writes are owned by the make, pin and retire steps, and every write goes through records/slot-write.ts.",
+        "run": "clossys reissue <agent>/<slot> <candidate> --by agent:<seat>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/*/*/ledger.json#events",
+            "schema": "ledger"
+          }
+        ],
+        "pass": {
+          "command": "clossys check --slots",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [
+          "skill/SKILL.md"
+        ],
+        "decider": "agent",
+        "packet": {
+          "inputs": [
+            "clossys/agents/*/*/slot.json",
+            "clossys/agents/*/*/pin.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/*/*/ledger.json#events",
+              "schema": "ledger"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md"
+      }
+    },
+    {
+      "package": "producer",
       "path": "packages/producer/actions/derive.uses/action.json",
       "contract": {
         "schema": "clossys.action/1",

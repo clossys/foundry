@@ -19,18 +19,18 @@
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
-import { CANDIDATE_NAME, KIND_EXT, SLOT_AGENTS } from "../records/slot-model/types.js";
+import { join, resolve } from "node:path";
+import { KIND_EXT, SLOT_AGENTS } from "../records/slot-model/types.js";
 import type { SlotAgent } from "../records/slot-model/types.js";
 import { candidatesDir, slotDir } from "../records/slot-model/layout.js";
-import { checkSlotModel } from "../records/slot-check.js";
 import { jsonBytes } from "../records/slot-model/layout.js";
-import { readCandidate, readSlot, readSlotEntry } from "../records/slots.js";
-import { SLOT_LOCK, writeCandidate } from "../records/slot-write.js";
+import { readCandidate, readLedger, readSlot, readSlotEntry } from "../records/slots.js";
+import { appendCraftEvent, CRAFT_STAGES, GuardRefusal, writeCandidate, type CraftStage, type WriteGuard } from "../records/slot-write.js";
+import "../constitution/guard.js"; // registers the write guard's runner
 import { nextPacket, openItems, openPackets, skillFile } from "../pipeline/chain.js";
 import type { Packet } from "../pipeline/chain.js";
 import type { Step } from "../pipeline/define.js";
-import { ladderIssues } from "../pipeline/candidate-ladder.js";
+import { ladderIssues, rungKind, rungsOf } from "../pipeline/candidate-ladder.js";
 import type { CandidateLadder } from "../pipeline/candidate-ladder.js";
 import { INTERVIEW_AGENTS, interviewOf } from "../pipeline/interview.js";
 import type { InterviewAgent, Question } from "../pipeline/interview.js";
@@ -46,14 +46,20 @@ import { discoverRoot } from "./root.js";
 
 export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
   + "       clossys next --owner [--agent <id>] [--model <tier>=<id>]... [--json] [--root <dir>]\n"
-  + "       clossys next <agent>/<slot> --submit <file> --model <id> --tier low|mid|high --basis agent|owner|planner --skill <path> --rung <rung> [--seed <id>] [--reason <text>] [--name <stem>] [--root <dir>] [--json]\n"
+  + "       clossys next <agent>/<slot> --submit <file> --model <id> --tier low|mid|high --basis agent|owner|planner --skill <path> --rung <rung> [--seed <id>] [--reason <text>] [--root <dir>] [--json]\n"
+  + "       clossys next <agent>/<slot> --stage brief|diverge|render|critique|refine --model <id> --tier low|mid|high --skill <path> [--file <json>] [--recipe <id>] [--root <dir>] [--json]\n"
   + "  no target: print the one open decide step as a packet (inputs, output path and schema, checks, decider, skill).\n"
   + "  --owner: the interview: the owner questions the gaps hold (clossys gaps), in rounds of at most 4, each with 2-4 answers\n"
   + "  (recommended first, each the exact argv of every call it runs) and a free-text answer; --agent <id> keeps one agent's.\n"
   + "  --model <tier>=<id>: the seat-policy question's recommended answer while clossys/seat-policy.json is missing (never guessed).\n"
   + "  --submit: record one candidate for <agent>/<slot> (the <agent>.candidates step); --skill must be that step's skill.\n"
   + "  --rung: the ladder rung it came from (adopt, adapt, create; the Designer's L1 stock, L2 partner, L3 question, L4 Foundry);\n"
-  + "  --seed names the seed adopted or adapted; --reason says why no seed fit (required to create).";
+  + "  --seed names the seed adopted or adapted; --reason says why no seed fit (required to create).\n"
+  + "  The candidate is named after the slot leaf (<leaf>-v<n>, R08.1). adapt and create (P2) need the slot's latest verdict to be\n"
+  + "  create (for the latest options packet's inputsHash). The submit refuses on any finding of a constitution check whose\n"
+  + "  rules.json guard lists submit, on the new file (absolute: findings the slot already had count too).\n"
+  + "  --stage: one P2 craft stage (section 5b) as a craft:<stage> slot-ledger event, in order brief, diverge, render, critique,\n"
+  + "  then at most 2 refine rounds; diverge takes --file with 3 to 4 {id, idea, axes} directions (cap 4).";
 
 const TIERS = ["low", "mid", "high"] as const;
 const BASES = ["agent", "owner", "planner"] as const;
@@ -61,6 +67,7 @@ const BASES = ["agent", "owner", "planner"] as const;
 interface Flags {
   positional: string[]; json: boolean; owner: boolean; help: boolean; root?: string; agent?: string;
   submit?: string; model?: string; models: Record<string, string>; tier?: string; basis?: string; skill?: string; name?: string; rung?: string; seed?: string; reason?: string;
+  stage?: string; file?: string; recipe?: string;
 }
 function parse(argv: readonly string[]): Flags {
   const flags: Flags = { positional: [], json: false, owner: false, help: false, models: {} };
@@ -89,6 +96,9 @@ function parse(argv: readonly string[]): Flags {
     else if (arg === "--rung") flags.rung = value(++index, "--rung");
     else if (arg === "--seed") flags.seed = value(++index, "--seed");
     else if (arg === "--reason") flags.reason = value(++index, "--reason");
+    else if (arg === "--stage") flags.stage = value(++index, "--stage");
+    else if (arg === "--file") flags.file = value(++index, "--file");
+    else if (arg === "--recipe") flags.recipe = value(++index, "--recipe");
     else if (arg.startsWith("--")) throw new CliUsageError(`Unknown argument: ${arg}\n${NEXT_USAGE}`);
     else flags.positional.push(arg);
   }
@@ -130,7 +140,8 @@ function describeQuestion(question: Question, round: number): string {
 export async function runNextCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): Promise<CliResult> {
   const flags = parse(argv);
   if (flags.help) return { exitCode: 0, message: NEXT_USAGE };
-  if (flags.positional.length) throw new CliUsageError(`next takes a target only with --submit\n${NEXT_USAGE}`);
+  if (flags.stage !== undefined) return runNextStageCli(flags, cwd, steps, packageRoot);
+  if (flags.positional.length) throw new CliUsageError(`next takes a target only with --submit or --stage\n${NEXT_USAGE}`);
   const root = rootOf(cwd, flags.root);
   if (flags.agent !== undefined && !flags.owner) throw new CliUsageError(`--agent is for next --owner\n${NEXT_USAGE}`);
   if (flags.agent !== undefined && !(INTERVIEW_AGENTS as readonly string[]).includes(flags.agent)) throw new CliUsageError(`--agent must be ${INTERVIEW_AGENTS.join(", ")}, got ${flags.agent}\n${NEXT_USAGE}`);
@@ -172,8 +183,9 @@ export function submitTarget(argv: readonly string[], cwd: string, steps: readon
 const reject = (message: string): CliResult => ({ exitCode: 1, unrecorded: true, message: `next --submit refused: ${message}` });
 
 /** `clossys next <agent>/<slot> --submit <file> ...`: the `<agent>.candidates` step. */
-export async function runNextSubmitCli(argv: readonly string[], cwd: string, step?: Step, packageRoot = PACKAGE_ROOT): Promise<CliResult> {
+export async function runNextSubmitCli(argv: readonly string[], cwd: string, step?: Step, packageRoot = PACKAGE_ROOT, guard: WriteGuard = true): Promise<CliResult> {
   const flags = parse(argv);
+  if (flags.stage !== undefined) return runNextStageCli(flags, cwd, step ? [step] : STEPS, packageRoot);
   if (flags.help) return { exitCode: 0, message: NEXT_USAGE };
   if (flags.submit === undefined) return runNextCli(argv, cwd, STEPS, packageRoot);
   const [target, ...extra] = flags.positional;
@@ -209,7 +221,9 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   try { bytes = readFileSync(file, "utf8"); } catch { return reject(`cannot read ${flags.submit}`); }
   const schema = owning.packet?.write[0]?.schema ?? owning.outputs[0]?.schema;
   if (!schema) return reject(`${owning.id} names no output schema`);
-  const stem = flags.name ?? (CANDIDATE_NAME.exec(basename(file))?.[1] ?? slot.split(".").at(-1)!);
+  // R08.1: a candidate's stem is its slot's leaf, whatever the submitted file is called.
+  const stem = slot.split(".").at(-1)!;
+  if (flags.name !== undefined && flags.name !== stem) return reject(`--name ${flags.name} is not ${target}'s leaf ${stem}; a candidate is named <leaf>-v<n> (R08.1)`);
   const ext = file.endsWith(".json") ? "json" : "md";
   const schemaIssues = validateFile(schema, `clossys/agents/${agent}/${slot}/candidates/${stem}-v1.${ext}`, bytes, packageRoot);
   if (schemaIssues.length) return reject(`${flags.submit} fails schema ${schema}: ${schemaIssues.slice(0, 5).map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
@@ -224,11 +238,13 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
     try { held = readCandidate(consumer, agent as SlotAgent, slot, name).sha256; } catch { held = null; }
     if (held === digest) return reject(`${flags.submit} is byte-identical to ${target} candidate ${name}; submit a candidate that differs`);
   }
-  // The slot model check is the output's check: a submission may not add an issue the model did not have.
-  // It runs inside the writer's slot lock, so the lock folder itself is not this submission's issue.
-  const issueKeys = () => checkSlotModel(consumer).map(issue => `${issue.code} ${issue.path} ${issue.message}`);
-  const lockPath = `agents/${agent}/${slot}/${SLOT_LOCK}`;
-  const before = new Set(issueKeys());
+  // P2 (adapt, create) only after the slot's latest verdict is create, for the latest options packet's inputs:
+  // a slot-state precondition, refused after the submission's own content checks.
+  const p2 = p2Refusal(entry.dir, agent, ladder!);
+  if (p2) return reject(p2);
+  // The guard is absolute (section 4): the writer runs every constitution check whose rules.json
+  // guard lists submit on the tree with the new file and its event in place, and refuses on any
+  // finding about the new file, whatever the check's status and whether the slot had it before.
   const skill = { path: contractSkill, sha256: sha(skillBytes) };
   // The run decision is the submit event's provenance in the slot ledger (records/ledger.ts), not only the run record.
   let written: { name: string; sha256: string };
@@ -236,10 +252,13 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
     written = writeCandidate(consumer, agent as SlotAgent, slot, stem, content, {
       canonical: true,
       provenance: { verb: "submit", by: flags.basis === "agent" ? `agent:${owning.id}` : flags.basis!, skill, model: flags.model!, tier: flags.tier! },
-      fields: { basis: flags.basis!, ladder: ladder! },
-      verify: () => issueKeys().filter(issue => !before.has(issue) && !issue.startsWith(`orphan ${lockPath} `)),
+      fields: { basis: flags.basis!, rung: ladder!.rung, ...(ladder!.seed !== undefined ? { seed: ladder!.seed } : {}), ...(ladder!.reason !== undefined ? { reason: ladder!.reason } : {}), ladder: ladder! },
+      guard,
     });
-  } catch (error) { return reject(error instanceof Error ? error.message : String(error)); }
+  } catch (error) {
+    if (error instanceof GuardRefusal) return { ...reject(error.message), output: { schema: "clossys.next-submit-refused/1", slot: target, verb: error.verb, checks: error.checks, findings: error.findings } };
+    return reject(error instanceof Error ? error.message : String(error));
+  }
   const writtenFile = join(candidatesDir(slotDir(consumer, agent as SlotAgent, slot)), written.name);
   const outputPath = workspacePath(root, writtenFile) ?? `clossys/agents/${agent}/${slot}/candidates/${written.name}`;
   const runDecision = {
@@ -251,4 +270,74 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
     exitCode: 0, root, runDecision, output: { schema: "clossys.next-submit/1", step: owning.id, slot: target, candidate: written.name, ...runDecision },
     message: `next --submit: ${target} candidate ${written.name} (${written.sha256.slice(0, 12)}) by ${flags.model} (${flags.tier}, ${flags.basis}, rung ${ladder!.rung}) with ${contractSkill} (${runDecision.skill.sha256.slice(0, 12)})`,
   };
+}
+
+type LedgerRow = Record<string, unknown>;
+const isCreate = (event: LedgerRow | undefined) => !!event && (event.create === true || event.verdict === "create" || event.kind === "create");
+
+/**
+ * The P2 precondition (section 5, P2): an adapt or create rung needs the slot's latest `verdict`
+ * event to be `create`, and when the latest `options` packet names an inputsHash the verdict must
+ * carry the same one. Adopt needs no verdict. Returns the refusal, or undefined.
+ */
+export function p2Refusal(slotDir: string, agent: string, ladder: CandidateLadder): string | undefined {
+  const kind = rungKind(agent, ladder.rung);
+  if (kind !== "adapt" && kind !== "create") return undefined;
+  const events = (readLedger(slotDir, "slot")?.events ?? []) as unknown as LedgerRow[];
+  const verdict = [...events].reverse().find(event => event.op === "verdict");
+  const options = [...events].reverse().find(event => event.op === "options");
+  if (!isCreate(verdict)) return `rung ${ladder.rung} (${kind}) is P2, which needs the slot's latest verdict to be create; ${verdict ? `it is ${String(verdict.verdict ?? verdict.kind ?? "not create")}` : "the slot has no verdict"} (clossys options, then clossys verdict --record)`;
+  const now = options?.inputsHash;
+  if (typeof now === "string" && verdict!.inputsHash !== now) return `the slot's create verdict is for inputsHash ${String(verdict!.inputsHash ?? "none")}, not the latest options packet's ${now}; re-run P1`;
+  return undefined;
+}
+
+/**
+ * `clossys next <agent>/<slot> --stage <stage> ...`: one P2 craft stage (section 5b) as a
+ * `craft:<stage>` slot-ledger event through the writer, which refuses a stage out of order
+ * (brief, diverge, render, critique, then at most 2 refine rounds) and a diverge outside 3 to 4
+ * directions. Craft runs only on a P2 slot: its latest verdict is create.
+ */
+export async function runNextStageCli(flags: Flags, cwd: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): Promise<CliResult> {
+  const refuse = (message: string): CliResult => ({ exitCode: 1, unrecorded: true, message: `next --stage refused: ${message}` });
+  const [target, ...extra] = flags.positional;
+  if (!target) throw new CliUsageError(`next --stage needs <agent>/<slot>\n${NEXT_USAGE}`);
+  if (extra.length) throw new CliUsageError(`Unexpected argument: ${extra[0]}\n${NEXT_USAGE}`);
+  if (flags.submit !== undefined) throw new CliUsageError(`--stage and --submit are separate calls\n${NEXT_USAGE}`);
+  const stage = flags.stage!;
+  if (!(CRAFT_STAGES as readonly string[]).includes(stage)) throw new CliUsageError(`--stage must be ${CRAFT_STAGES.join(", ")}, got ${stage}\n${NEXT_USAGE}`);
+  const slash = target.indexOf("/");
+  const agent = target.slice(0, slash), slot = target.slice(slash + 1);
+  if (slash < 1 || !slot || !(SLOT_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`next target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")}, got ${target}\n${NEXT_USAGE}`);
+  for (const [flag, given] of [["--model", flags.model], ["--tier", flags.tier], ["--skill", flags.skill]] as const) if (!given) throw new CliUsageError(`next --stage requires ${flag}\n${NEXT_USAGE}`);
+  if (!(TIERS as readonly string[]).includes(flags.tier!)) throw new CliUsageError(`--tier must be ${TIERS.join(", ")}, got ${flags.tier}\n${NEXT_USAGE}`);
+  const owning = steps.find(each => each.id === `${agent}.candidates`);
+  if (!owning) return refuse(`${target} is not a candidates slot of a defined step`);
+  const contractSkill = owning.command.skill;
+  if (!contractSkill || flags.skill !== contractSkill) return refuse(`--skill ${flags.skill} is not ${owning.id}'s skill (${contractSkill ?? "none"})`);
+  let skillBytes: Buffer;
+  try { skillBytes = readFileSync(skillFile(owning, packageRoot)!); } catch { return refuse(`${owning.id}'s skill ${contractSkill} is missing`); }
+  const root = rootOf(cwd, flags.root);
+  const consumer = join(root, "clossys");
+  const entry = readSlotEntry(consumer, agent as SlotAgent, slot);
+  if (!entry) return refuse(`unknown slot ${target} (not in ${agent} ia.json)`);
+  // Craft is P2: checked as the agent's create rung (L4 for the Designer, create otherwise).
+  const createRung = rungsOf(agent).find(rung => rungKind(agent, rung) === "create")!;
+  const p2 = p2Refusal(entry.dir, agent, { rung: createRung });
+  if (p2) return refuse(p2.replace(/^rung \S+ \(create\) is P2/, "craft is P2"));
+  let fields: Record<string, unknown> = {};
+  if (flags.file !== undefined) {
+    try { fields = JSON.parse(readFileSync(resolve(cwd, flags.file), "utf8")) as Record<string, unknown>; }
+    catch { return refuse(`cannot read ${flags.file} as JSON`); }
+    if (Array.isArray(fields)) fields = { directions: fields };
+    if (!fields || typeof fields !== "object") return refuse(`${flags.file} is not a JSON object`);
+  }
+  if (flags.recipe !== undefined) fields = { ...fields, recipe: flags.recipe };
+  let event;
+  try {
+    event = appendCraftEvent(consumer, agent as SlotAgent, slot, stage as CraftStage, fields, {
+      by: `agent:${owning.id}`, skill: { path: contractSkill, sha256: sha(skillBytes) }, model: flags.model!, tier: flags.tier!,
+    });
+  } catch (error) { return refuse(error instanceof Error ? error.message : String(error)); }
+  return { exitCode: 0, root, output: { schema: "clossys.next-stage/1", slot: target, event }, message: `next --stage: ${target} ${event.op} by ${flags.model} (${flags.tier})` };
 }

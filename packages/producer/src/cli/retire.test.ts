@@ -7,9 +7,11 @@ import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/inde
 import { checkSlotModel } from "../records/slot-check.js";
 // Load the CLI first, as every caller does: owner.ts sits in an import cycle with the pipeline handlers.
 import "./main.js";
-import { RETIRE_SCHEMA, runRetireCli } from "./owner.js";
+import { RETIRE_SCHEMA, runRetireCli, seatLeaf } from "./owner.js";
 import { candidateRetires, RETIRE_REASON } from "../constitution/checks/R10-retire.js";
 import { buildContext } from "../constitution/context.js";
+import { validateAgainst } from "../constitution/schema.js";
+import { slotIndex } from "../records/slots.js";
 
 let workspace: string;
 let agents: string;
@@ -64,6 +66,17 @@ describe("clossys retire <agent>/<slot> <candidate>", () => {
     // The pin is untouched and still resolves.
     expect(load(join(dir, "pin.json")).candidate).toBe("example-v2.json");
     expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
+  });
+
+  it("writes a record that validates against retire.schema.json, and refuses a --by the schema does not accept", async () => {
+    expect((await retire(`designer/${ID}`, "example-v1")).exitCode).toBe(0);
+    expect(validateAgainst("retire", load(join(agents, ID, "retired", "example-v1.json.json")))).toEqual([]);
+    // `bob` is not owner, planner, migration or agent:<seat>: the record would not validate, so nothing moves.
+    writeFileSync(join(agents, ID, "candidates", "example-v3.json"), v1.replace("example", "third"));
+    const result = await runRetireCli([`designer/${ID}`, "example-v3", "--by", "bob", "--reason", "superseded: by v2", "--at", AT], workspace);
+    expect(result).toMatchObject({ exitCode: 1, message: expect.stringMatching(/does not validate against retire.schema.json: \/by/) });
+    expect(existsSync(join(agents, ID, "candidates", "example-v3.json"))).toBe(true);
+    expect(existsSync(join(agents, ID, "retired", "example-v3.json.json"))).toBe(false);
   });
 
   it("refuses the pinned candidate and changes nothing", async () => {
@@ -129,6 +142,15 @@ describe("clossys retire <agent>/<slot> --slot", () => {
     expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
   });
 
+  it("leaves no slot read from _retired/<slot>: the constitution context and the slot index skip it", async () => {
+    expect((await retire(`designer/${ID}`, "--slot")).exitCode).toBe(0);
+    expect(existsSync(join(agents, "_retired", ID, "slot.json"))).toBe(true);
+    const ctx = buildContext(workspace, join(workspace, "clossys"), { history: () => ({ available: true, changes: new Map(), dirty: new Set() }) });
+    const designer = ctx.agents.find(agent => agent.agent === "designer")!;
+    expect([...designer.slots.keys()].sort()).toEqual([OTHER, USER]);
+    expect([...slotIndex(join(workspace, "clossys")).keys()].filter(id => id.startsWith("components.")).sort()).toEqual([OTHER, USER]);
+  });
+
   it("refuses a slot another slot.json uses, and changes nothing", async () => {
     const ia = readFileSync(join(agents, "ia.json"), "utf8");
     const result = await retire(`designer/${OTHER}`, "--slot");
@@ -150,5 +172,13 @@ describe("clossys retire <agent>/<slot> --slot", () => {
   it("refuses a slot not in ia.json and takes no candidate with --slot", async () => {
     expect(await retire("designer/components.nowhere", "--slot")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/not in designer ia.json/) });
     await expect(runRetireCli([`designer/${ID}`, "example-v1", "--slot", "--by", "owner", "--reason", "x"], workspace)).rejects.toThrow(/retire takes/);
+  });
+});
+
+describe("seat candidate names", () => {
+  it("use the last dot segment of the seat slot id, as every slot's candidates do", () => {
+    expect(seatLeaf("pick.designer")).toBe("designer");
+    expect(seatLeaf("writer.candidates")).toBe("candidates");
+    expect(seatLeaf("ia")).toBe("ia");
   });
 });

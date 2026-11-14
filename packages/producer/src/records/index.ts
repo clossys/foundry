@@ -41,4 +41,4 @@ export type { DesignerFlow, DesignerPath, OwnerApproval } from "./owner-approval
 
 // The Designer, Writer, Director and Publisher slot model: readers and the one writer.
 export { listSlots, readCandidate, readPin, readSlotState, rejectedSlots, type RejectedSlot } from "./slots.js";
-export { writeCandidate, writeNotNeeded, writePin } from "./slot-write.js";
+export { replaceModelFile, writeCandidate, writeNotNeeded, writePin } from "./slot-write.js";

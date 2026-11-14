@@ -28,6 +28,15 @@ export interface WriterDeclarationsProjectOptions {
   /** The caller asserts these are ALL selected native records, including external targets. */
   completeRecords?: readonly WriterSlotBodyRecord[];
 }
+/**
+ * Puts the validated bytes at `path`. The slot model has one writer (constitution R11.1,
+ * @clossys/producer records/slot-write.ts), so this package never writes the file itself:
+ * pass `replaceModelFile` from `@clossys/producer`.
+ */
+export type WriterDeclarationsWrite = (path: string, bytes: string) => void | Promise<void>;
+export interface WriterDeclarationsWriteOptions extends WriterDeclarationsProjectOptions {
+  write: WriterDeclarationsWrite;
+}
 
 export class WriterDeclarationsParseError extends Error {
   /** JSON Pointer into declarations.json (empty string names the document). */
@@ -174,14 +183,16 @@ export function serializeWriterDeclarations(declarations: WriterDeclarations): s
 /**
  * Write a consumer's `agents/writer/declarations.json` through the reader's own validation.
  * With completeRecords, every alias and section field must name a pinned record in each
- * declared locale before anything is written. Symbolic links are refused.
+ * declared locale before anything is written. Symbolic links are refused. The bytes are put
+ * in place by `options.write`, the slot model's one writer (R11.1).
  */
 export async function writeWriterDeclarations(
   consumerDir: string,
   declarations: WriterDeclarations,
-  options: WriterDeclarationsProjectOptions = {},
+  options: WriterDeclarationsWriteOptions,
 ): Promise<{ path: string; bytes: string }> {
-  const { lstat, rename, writeFile } = await import("node:fs/promises");
+  if (typeof options?.write !== "function") throw new TypeError("writeWriterDeclarations needs options.write, the slot model's writer (replaceModelFile from @clossys/producer)");
+  const { lstat } = await import("node:fs/promises");
   const { join } = await import("node:path");
   const bytes = serializeWriterDeclarations(declarations);
   const parsed = parseWriterDeclarations(bytes);
@@ -193,8 +204,6 @@ export async function writeWriterDeclarations(
     if (stat?.isSymbolicLink()) throw new WriterDeclarationsParseError(`Refusing symbolic link at ${target}`, "");
     if (target === dir && !stat?.isDirectory()) throw new WriterDeclarationsParseError(`No Writer agent folder at ${dir}`, "");
   }
-  const temp = `${path}.${process.pid}.tmp`;
-  await writeFile(temp, bytes, { encoding: "utf8", flag: "wx" });
-  await rename(temp, path);
+  await options.write(path, bytes);
   return { path, bytes };
 }

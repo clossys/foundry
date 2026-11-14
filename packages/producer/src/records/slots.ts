@@ -14,7 +14,7 @@ import type { DirectorStoreEntry, DirectorStoreError, DirectorStoreFault, Direct
 import { sha256Hex } from "./hash.js";
 import { LEDGER_FILE, ledgerIssues, type LedgerDoc } from "./ledger.js";
 import {
-  CANDIDATE_NAME, MODEL_AGENTS, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, retiredSeatFile, seatDir, seatSlotId, seatStepOf, slotDir, slotFile, slotPositions,
+  CANDIDATE_NAME, MODEL_AGENTS, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, isNonSlotEntry, pinFile, retiredSeatFile, seatDir, seatSlotId, seatStepOf, slotDir, slotFile, slotPositions,
   validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
@@ -813,6 +813,12 @@ export function isModelDir(path: string): boolean {
   try { target = modelScoped(path); } catch (error) { if ((error as Error).message.startsWith("Not a slot-model path")) return false; throw error; }
   return isDir(target);
 }
+/**
+ * Whether an agent-folder entry can be a slot folder. The agent-level `retired/` records folder and
+ * the non-slot `_` folders are not: `_retired/<slot>` (a retired slot, clossys retire --slot),
+ * `_evidence`. The slot loaders (constitution context, the model check) skip them.
+ */
+export const isSlotFolderName = (name: string): boolean => name !== "retired" && !isNonSlotEntry(name);
 /** The names in a real model directory (unsorted, as the OS returns them); [] when absent or not a directory. */
 export function listModelDir(path: string): string[] { return isModelDir(path) ? fsList(path) : []; }
 /**

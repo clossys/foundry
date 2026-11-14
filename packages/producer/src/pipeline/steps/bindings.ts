@@ -22,6 +22,8 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   // Owner decisions, each recorded by its own clossys verb (W6a).
   "ia": { entry: "src/cli/owner.ts#runIaCli", parser: "src/cli/owner.ts" },
   "retire": { entry: "src/cli/owner.ts#runRetireCli", parser: "src/cli/owner.ts" },
+  // A deterministic agent-seat verb: the next version of one candidate under the slot rules (section 5, Reissue).
+  "reissue": { entry: "src/cli/reissue.ts#runReissueCli", parser: "src/cli/reissue.ts" },
   "evidence": { entry: "src/cli/owner.ts#runEvidenceCli", parser: "src/cli/owner.ts" },
   "workspace.config": { entry: "src/cli/owner.ts#runConfigCli", parser: "src/cli/owner.ts" },
   "seats": { entry: "src/cli/owner.ts#runSeatCli", parser: "src/cli/owner.ts" },

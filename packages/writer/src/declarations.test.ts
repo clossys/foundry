@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { writerText, type WriterInput } from "../../producer/src/publish/site-plan.js";
 import { parseWriterSlotBody, type WriterSlotBodyRecord } from "./slot-body.js";
 import { parseWriterDeclarations, projectWriterDeclarations, serializeWriterDeclarations, writeWriterDeclarations, WriterDeclarationsParseError, WRITER_DECLARATIONS_SCHEMA } from "./declarations.js";
-import { mkdirSync, mkdtempSync, readFileSync as readText, rmSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync as readText, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -146,10 +146,22 @@ describe("writing native Writer declarations", () => {
   it("writes agents/writer/declarations.json only when every target is a pinned record", async () => {
     const dir = consumer();
     try {
-      await expect(writeWriterDeclarations(dir, declared(), { completeRecords: [row("other")] })).rejects.toThrow(/Missing record title-1/);
-      const written = await writeWriterDeclarations(dir, declared(), { completeRecords: [row("title-1")] });
+      const writes: string[] = [];
+      const write = (path: string, bytes: string) => { writes.push(path); writeFileSync(path, bytes); };
+      await expect(writeWriterDeclarations(dir, declared(), { completeRecords: [row("other")], write })).rejects.toThrow(/Missing record title-1/);
+      expect(writes).toEqual([]);
+      const written = await writeWriterDeclarations(dir, declared(), { completeRecords: [row("title-1")], write });
+      expect(writes).toEqual([written.path]);
       expect(written.path).toBe(join(dir, "agents", "writer", "declarations.json"));
       expect(readText(written.path, "utf8")).toBe(serializeWriterDeclarations(declared()));
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it("never writes the file itself: the slot model's one writer is injected (R11.1)", async () => {
+    const dir = consumer();
+    try {
+      await expect(writeWriterDeclarations(dir, declared(), undefined as never)).rejects.toThrow(/options\.write/);
+      expect(existsSync(join(dir, "agents", "writer", "declarations.json"))).toBe(false);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 
@@ -157,7 +169,7 @@ describe("writing native Writer declarations", () => {
     const dir = consumer();
     try {
       symlinkSync(join(dir, "elsewhere.json"), join(dir, "agents", "writer", "declarations.json"));
-      await expect(writeWriterDeclarations(dir, declared())).rejects.toThrow(/symbolic link/);
+      await expect(writeWriterDeclarations(dir, declared(), { write: () => { throw new Error("never written"); } })).rejects.toThrow(/symbolic link/);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });

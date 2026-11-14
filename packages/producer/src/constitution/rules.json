@@ -9,72 +9,117 @@
     "checks": [
       {
         "id": "R01.1",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.2",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.3",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.4",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.5",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.6",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.7",
         "status": "building",
-        "owner": "IA-C"
+        "owner": "IA-C",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.8",
         "status": "building",
-        "owner": "IA-C"
+        "owner": "IA-C",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.9",
         "status": "building",
-        "owner": "IA-C"
+        "owner": "IA-C",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.10",
         "status": "building",
-        "owner": "IA-C"
+        "owner": "IA-C",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.11",
         "status": "building",
-        "owner": "IA-C"
+        "owner": "IA-C",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.12",
         "status": "building",
-        "owner": "IA-C"
+        "owner": "IA-C",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.13",
         "status": "building",
-        "owner": "IA-C"
+        "owner": "IA-C",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.14",
         "status": "building",
-        "owner": "IA-C"
+        "owner": "IA-C",
+        "guard": [
+          "ia"
+        ]
       },
       {
         "id": "R01.15",
         "status": "warn",
-        "owner": "IA-C"
+        "owner": "IA-C",
+        "guard": [
+          "ia"
+        ]
       }
     ]
   },
@@ -88,15 +133,27 @@
     "checks": [
       {
         "id": "R02.1",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "pin",
+          "pick"
+        ]
       },
       {
         "id": "R02.2",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "pin",
+          "pick"
+        ]
       },
       {
         "id": "R02.3",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "pin",
+          "pick"
+        ]
       }
     ]
   },
@@ -112,27 +169,47 @@
       {
         "id": "R03.1",
         "status": "building",
-        "owner": "W2-C"
+        "owner": "W2-C",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R03.2",
         "status": "building",
-        "owner": "W2-C"
+        "owner": "W2-C",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R03.3",
         "status": "building",
-        "owner": "W2-C"
+        "owner": "W2-C",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R03.4",
         "status": "building",
-        "owner": "W2-C"
+        "owner": "W2-C",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R03.5",
         "status": "building",
-        "owner": "W2-C"
+        "owner": "W2-C",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       }
     ]
   },
@@ -146,7 +223,12 @@
     "checks": [
       {
         "id": "R04",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "retire",
+          "pin",
+          "pick"
+        ]
       }
     ]
   },
@@ -162,17 +244,32 @@
       {
         "id": "R05.1",
         "status": "building",
-        "owner": "W2-C"
+        "owner": "W2-C",
+        "guard": [
+          "pin",
+          "pick",
+          "submit"
+        ]
       },
       {
         "id": "R05.2",
         "status": "building",
-        "owner": "W2-C"
+        "owner": "W2-C",
+        "guard": [
+          "pin",
+          "pick",
+          "submit"
+        ]
       },
       {
         "id": "R05.3",
         "status": "building",
-        "owner": "W2-C"
+        "owner": "W2-C",
+        "guard": [
+          "pin",
+          "pick",
+          "submit"
+        ]
       }
     ]
   },
@@ -186,32 +283,60 @@
     "checks": [
       {
         "id": "R06.1",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R06.2",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R06.2-installed-bytes",
         "status": "pending",
-        "owner": "unassigned (sweep after W1-A)"
+        "owner": "unassigned (sweep after W1-A)",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R06.3",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R06.4",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R06.5",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R06.6",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       }
     ]
   },
@@ -225,28 +350,64 @@
     "checks": [
       {
         "id": "R07.1",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "pin",
+          "pick",
+          "ia"
+        ]
       },
       {
         "id": "R07.2",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "pin",
+          "pick",
+          "ia"
+        ]
       },
       {
         "id": "R07.3",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "pin",
+          "pick",
+          "ia"
+        ]
       },
       {
         "id": "R07.4",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "pin",
+          "pick",
+          "ia"
+        ]
       },
       {
         "id": "R07.5",
         "status": "pending",
-        "owner": "W2-C"
+        "owner": "W2-C",
+        "guard": [
+          "submit",
+          "pin",
+          "pick",
+          "ia"
+        ]
       },
       {
         "id": "R07.6",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "pin",
+          "pick",
+          "ia"
+        ]
       }
     ]
   },
@@ -260,16 +421,28 @@
     "checks": [
       {
         "id": "R08.1",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R08.2",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       },
       {
         "id": "R08.3",
         "status": "pending",
-        "owner": "W2-B"
+        "owner": "W2-B",
+        "guard": [
+          "submit",
+          "reissue"
+        ]
       }
     ]
   },
@@ -283,7 +456,11 @@
     "checks": [
       {
         "id": "R09",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "pin",
+          "pick"
+        ]
       }
     ]
   },
@@ -297,15 +474,24 @@
     "checks": [
       {
         "id": "R10.1",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "retire"
+        ]
       },
       {
         "id": "R10.2",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "retire"
+        ]
       },
       {
         "id": "R10.3",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "retire"
+        ]
       }
     ]
   },
@@ -321,12 +507,14 @@
       {
         "id": "R11.1",
         "status": "enforced",
-        "owner": "W2-D"
+        "owner": "W2-D",
+        "guard": []
       },
       {
         "id": "R11.2",
         "status": "enforced",
-        "owner": "W2-D"
+        "owner": "W2-D",
+        "guard": []
       }
     ]
   },
@@ -342,17 +530,20 @@
       {
         "id": "R12.1",
         "status": "enforced",
-        "owner": "W2-D"
+        "owner": "W2-D",
+        "guard": []
       },
       {
         "id": "R12.2",
         "status": "enforced",
-        "owner": "W2-D"
+        "owner": "W2-D",
+        "guard": []
       },
       {
         "id": "R12.3",
         "status": "pending",
-        "owner": "W2-D"
+        "owner": "W2-D",
+        "guard": []
       }
     ]
   },
@@ -368,17 +559,26 @@
       {
         "id": "R13.1",
         "status": "enforced",
-        "owner": "W2-D"
+        "owner": "W2-D",
+        "guard": [
+          "submit"
+        ]
       },
       {
         "id": "R13.2",
         "status": "enforced",
-        "owner": "W2-D"
+        "owner": "W2-D",
+        "guard": [
+          "submit"
+        ]
       },
       {
         "id": "R13.3",
         "status": "enforced",
-        "owner": "W2-D"
+        "owner": "W2-D",
+        "guard": [
+          "submit"
+        ]
       }
     ]
   },
@@ -392,15 +592,63 @@
     "checks": [
       {
         "id": "R14.1",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "options",
+          "verdict",
+          "pick",
+          "pin",
+          "retire",
+          "reissue",
+          "ia",
+          "migrate",
+          "standard",
+          "critique",
+          "request",
+          "task",
+          "triage"
+        ]
       },
       {
         "id": "R14.2",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "options",
+          "verdict",
+          "pick",
+          "pin",
+          "retire",
+          "reissue",
+          "ia",
+          "migrate",
+          "standard",
+          "critique",
+          "request",
+          "task",
+          "triage"
+        ]
       },
       {
         "id": "R14.3",
-        "status": "enforced"
+        "status": "enforced",
+        "guard": [
+          "submit",
+          "options",
+          "verdict",
+          "pick",
+          "pin",
+          "retire",
+          "reissue",
+          "ia",
+          "migrate",
+          "standard",
+          "critique",
+          "request",
+          "task",
+          "triage"
+        ]
       }
     ]
   },
@@ -416,47 +664,110 @@
       {
         "id": "R15.1",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "ia",
+          "standard",
+          "submit",
+          "pick",
+          "reject"
+        ]
       },
       {
         "id": "R15.2",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "ia",
+          "standard",
+          "submit",
+          "pick",
+          "reject"
+        ]
       },
       {
         "id": "R15.3",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "ia",
+          "standard",
+          "submit",
+          "pick",
+          "reject"
+        ]
       },
       {
         "id": "R15.4",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "ia",
+          "standard",
+          "submit",
+          "pick",
+          "reject"
+        ]
       },
       {
         "id": "R15.5",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "ia",
+          "standard",
+          "submit",
+          "pick",
+          "reject"
+        ]
       },
       {
         "id": "R15.6",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "ia",
+          "standard",
+          "submit",
+          "pick",
+          "reject"
+        ]
       },
       {
         "id": "R15.7",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "ia",
+          "standard",
+          "submit",
+          "pick",
+          "reject"
+        ]
       },
       {
         "id": "R15.8",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "ia",
+          "standard",
+          "submit",
+          "pick",
+          "reject"
+        ]
       },
       {
         "id": "R15.9",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "ia",
+          "standard",
+          "submit",
+          "pick",
+          "reject"
+        ]
       }
     ]
   },
@@ -472,22 +783,38 @@
       {
         "id": "R16.1",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "standard",
+          "critique"
+        ]
       },
       {
         "id": "R16.2",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "standard",
+          "critique"
+        ]
       },
       {
         "id": "R16.3",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "standard",
+          "critique"
+        ]
       },
       {
         "id": "R16.4",
         "status": "building",
-        "owner": "W2-I"
+        "owner": "W2-I",
+        "guard": [
+          "standard",
+          "critique"
+        ]
       }
     ]
   }

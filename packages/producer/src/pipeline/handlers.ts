@@ -9,6 +9,7 @@ import { runMigrateCli } from "../cli/migrate.js";
 import { runNextSubmitCli } from "../cli/next.js";
 import { runApproveCli, runConfigCli, runEvidenceCli, runIaCli, runOwnerDecisionCli, runRetireCli, runRuleCli, runSeatCli } from "../cli/owner.js";
 import { runDecisionsCli, runPinCli } from "../cli/pin.js";
+import { runReissueCli } from "../cli/reissue.js";
 import { runOptionsCli, runPickCli } from "../cli/options.js";
 import { runPipelineCli } from "../cli/pipeline.js";
 import { runProduce } from "../cli/produce.js";
@@ -62,6 +63,7 @@ export const HANDLERS: Readonly<Record<string, Handler>> = {
   "src/cli/next.ts#runNextSubmitCli": async context => runNextSubmitCli(context.argv, context.cwd, context.step),
   "src/cli/owner.ts#runIaCli": async context => runIaCli(context.argv, context.cwd),
   "src/cli/owner.ts#runRetireCli": async context => runRetireCli(context.argv, context.cwd),
+  "src/cli/reissue.ts#runReissueCli": async context => runReissueCli(context.argv, context.cwd),
   "src/cli/owner.ts#runEvidenceCli": async context => runEvidenceCli(context.argv, context.cwd),
   "src/cli/owner.ts#runConfigCli": async context => runConfigCli(context.argv, context.cwd),
   "src/cli/owner.ts#runSeatCli": async context => runSeatCli(context.argv, context.cwd),

@@ -9,7 +9,7 @@ import { join, relative, sep } from "node:path";
 import { sha256Hex } from "../records/hash.js";
 import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../records/migrations.js";
 import { agentDir, candidatesDir, designerIa, directorIa, MODEL_AGENTS, writerIa, type FoundryIa, type ModelAgent } from "../records/slot-model/index.js";
-import { isModelDir, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
+import { isModelDir, isSlotFolderName, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
 import { skillFile } from "../records/ledger.js";
 import { loadActions } from "../pipeline/actions.js";
 import { readCandidateHistory } from "./git.js";
@@ -162,7 +162,8 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
     const slots = new Map<string, SlotRecord>();
     for (const name of entries) {
       const slotAbs = join(dir, name);
-      if (name === "retired" || !isModelDir(slotAbs)) continue;
+      // retired/ and the non-slot `_` folders (`_retired/<slot>`, `_evidence`) are not slots (records/slots.ts).
+      if (!isSlotFolderName(name) || !isModelDir(slotAbs)) continue;
       const slotEntries = listModelDir(slotAbs).sort();
       const record = (file: string) => (slotEntries.includes(file) ? readJsonRecord(join(slotAbs, file), rel(join(slotAbs, file))) : undefined);
       const candDir = candidatesDir(slotAbs);

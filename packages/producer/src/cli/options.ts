@@ -18,6 +18,7 @@ import { OPTION_TABLE, SLOT_AGENTS, pinStatus, type SlotAgent } from "../records
 import { checkSlotOptions, classCounts, classify, slotOptions, type SlotOptions } from "../records/slot-options.js";
 import { inspectSlot, listSlots, readCandidate, readSlotEntry } from "../records/slots.js";
 import { writePin, writeSlotOptions } from "../records/slot-write.js";
+import "../constitution/guard.js"; // registers the write guard's runner
 import { CliUsageError } from "./args.js";
 import { errorMessage } from "../errors.js";
 import type { CliResult } from "./main.js";
@@ -174,7 +175,8 @@ export async function runPickCli(argv: readonly string[], cwd: string): Promise<
   if (!candidate) return { exitCode: 1, message: `pick refused: ${agent}/${id} has no candidate ${candidateId}` };
   if (entry.pin && pinStatus(entry.pin.basis) === "pinned") return { exitCode: 1, message: `pick refused: ${agent}/${id} already holds an owner pick (${entry.pin!.candidate} by ${entry.pin!.decidedBy}); only the owner changes it with clossys pin` };
   try {
-    const pin = writePin(consumer, agent, id, candidate, { decidedBy: flags.by, at, basis: "agent" });
+    // P1.4: a pick is a pin with basis agent; it re-runs the guards rules.json lists for pick.
+    const pin = writePin(consumer, agent, id, candidate, { decidedBy: flags.by, at, basis: "agent" }, undefined, { guard: true });
     return { exitCode: 0, message: `${agent}/${id}: picked ${pin.candidate} (${pin.sha256.slice(0, 12)}) by ${pin.decidedBy}; confirm until the owner pins`, decision: { slot: `${agent}/${id}`, state: "pinned", ...pin } };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

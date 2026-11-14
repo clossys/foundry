@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { runNextCli } from "../cli/next.js";
+import { runNextCli, runNextSubmitCli } from "../cli/next.js";
 import { runRunCli } from "../cli/run.js";
 import { explainChain, nextPacket, openPackets, runChain } from "./chain.js";
 import { gapsOf, interviewIssues, interviewOf, INTERVIEW_AGENTS } from "./interview.js";
@@ -38,11 +38,28 @@ function unseated(root: string): string {
   return root;
 }
 
+/**
+ * A create verdict on the copy's slot ledger: P2 (adapt, create) submits need the slot's latest
+ * verdict to be create (section 5, P2). A fixture of the scratch copy, standing in for P1's verdict.
+ */
+function createVerdict(root: string, agent: string, slot: string): void {
+  const file = join(root, "clossys", "agents", agent, slot, "ledger.json");
+  const doc = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) as { schema: string; events: Record<string, unknown>[] } : { schema: "clossys.ledger/1", events: [] };
+  const options = [...doc.events].reverse().find(event => event.op === "options");
+  doc.events.push({
+    op: "verdict", at: "2026-11-14T00:00:00.000Z", by: "planner:fixture", verb: "verdict", skill: { path: "packages/producer/actions/options/skill.md", sha256: null },
+    model: "fixture-model", tier: "mid", verdict: "create", ...(typeof options?.inputsHash === "string" ? { inputsHash: options.inputsHash } : {}),
+  });
+  writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
+}
+
 const real = (id: string): Step => { const step = STEPS.find(each => each.id === id); if (!step) throw new Error(`no step ${id}`); return step; };
 /** A plumb step `fx.<name>` that runs `clossys check --<name>` (the exec below serves it). */
 const plumb = (name: string): Step => ({ ...real("workspace.check"), id: `fx.${name}`, run: `clossys check --${name}`, chain: undefined } as Step);
 const INPUT = "clossys/fixture-input.txt";
 const DESIGNER_SKILL = "packages/designer/actions/designer.candidates/skill.md";
+/** A write-guard registry that guards nothing: for the submit verb's own mechanics on the real copy. */
+const UNGUARDED = { rules: [] };
 
 /** An exec that records each fixture step as reading INPUT, and fails the steps named in `broken` without a record. */
 function fixtureExec(root: string, broken: ReadonlySet<string> = new Set()): Exec & { calls: string[] } {
@@ -257,12 +274,20 @@ describe("clossys next", { timeout: 60_000 }, () => {
     const held = readFileSync(join(dir, "favicon-v2.json"), "utf8");
     expect(held).toContain('rx=\\"21.875\\"');
     writeFileSync(source, held.replace('rx=\\"21.875\\"', 'rx=\\"20\\"'));
-    const result = await runPipeline(["next", `designer/${slot}`, "--submit", source, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, "--rung", "L3", "--seed", `${slot}/favicon-v2`, "--root", root], root);
+    createVerdict(root, "designer", slot);
+    const argv = [`designer/${slot}`, "--submit", source, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, "--rung", "L3", "--seed", `${slot}/favicon-v2`, "--root", root];
+    // The guard is absolute (section 4): the copy's favicon slot names no standard, so R05.1 refuses and nothing is written.
+    const guarded = await runPipeline(["next", ...argv], root);
+    expect(guarded.exitCode).toBe(1);
+    expect(guarded.message).toContain("R05.1 [no-standard]");
+    expect(existsSync(join(dir, "favicon-v3.json"))).toBe(false);
+    expect(readStore(root, storeFile("designer.candidates"))).toEqual([]);
+    // The recording itself, under a registry that guards nothing (guard.e2e.test.ts proves the guard).
+    const result = await runNextSubmitCli(argv, root, undefined, undefined, UNGUARDED);
     expect(result.exitCode, result.message).toBe(0);
     expect(existsSync(join(dir, "favicon-v3.json"))).toBe(true);
-    const [stored] = readStore(root, storeFile("designer.candidates"));
     const skill = readFileSync(join(PACKAGE_ROOT, "..", "designer", "actions", "designer.candidates", "skill.md"));
-    expect(stored!.record.decision).toMatchObject({
+    expect(result.runDecision).toMatchObject({
       model: "fixture-model", tier: "mid", basis: "agent", ladder: { rung: "L3", seed: `${slot}/favicon-v2` },
       skill: { path: DESIGNER_SKILL, sha256: createHash("sha256").update(skill).digest("hex") },
       output: { path: `clossys/agents/designer/${slot}/candidates/favicon-v3.json` },
@@ -291,7 +316,12 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect(generic.message).toContain("rung must be one of L1, L2, L3, L4");
     expect(readdirSync(dir)).toEqual(before);
     expect(readStore(root, storeFile("designer.candidates"))).toEqual([]);
-    expect((await submit(varied, "--rung", "L4", "--reason", "fixture: no stock or partner mark fits")).exitCode).toBe(0);
+    // P2 (section 5): a create rung with no create verdict is refused; with one it is recorded.
+    expect((await submit(varied, "--rung", "L4", "--reason", "fixture: no stock or partner mark fits")).message).toContain("needs the slot's latest verdict to be create");
+    createVerdict(root, "designer", slot);
+    expect((await submit(varied, "--rung", "L4", "--reason", "fixture: no stock or partner mark fits")).message).toContain("R05.1 [no-standard]");
+    const createArgv = [`designer/${slot}`, "--submit", varied, "--model", "fixture-model", "--tier", "mid", "--basis", "agent", "--skill", DESIGNER_SKILL, "--rung", "L4", "--reason", "fixture: no stock or partner mark fits", "--root", root];
+    expect((await runNextSubmitCli(createArgv, root, undefined, undefined, UNGUARDED)).exitCode).toBe(0);
   });
 
   it("records owner answers through the owner verbs, refusing placeholders and unchecked rules", async () => {
@@ -301,6 +331,9 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect((await seat("--model", "<model:mid>", "--tier", "mid")).exitCode).toBe(1);
     expect((await seat("--model", "fixture-model", "--tier", "mid")).exitCode).toBe(0);
     expect(existsSync(join(root, "clossys", "agents", "producer", "seat.writer.candidates", "pin.json"))).toBe(true);
+    // A seat candidate is named for the slot's leaf, the last dot segment of seat.writer.candidates.
+    expect(JSON.parse(readFileSync(join(root, "clossys", "agents", "producer", "seat.writer.candidates", "pin.json"), "utf8")).candidate).toBe("candidates-v1.json");
+    expect(existsSync(join(root, "clossys", "agents", "producer", "seat.writer.candidates", "candidates", "candidates-v1.json"))).toBe(true);
     // The seat now binds submissions: another model is refused.
     const refused = await runPipeline(["next", "writer/strings.statuses", "--submit", join(root, "clossys", "clossys.config.ts"), "--model", "other-model", "--tier", "mid", "--basis", "agent", "--skill", "packages/writer/actions/writer.candidates/skill.md", "--rung", "adopt", "--seed", "writer/strings.statuses", ...at], root);
     expect(refused.message).toContain("seat assigns fixture-model");

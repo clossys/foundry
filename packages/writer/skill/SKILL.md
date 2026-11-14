@@ -95,13 +95,14 @@ in a candidate.
    `slots[].config` names, `fields`: `{ key, ref: { id } }` for every copy key
    that section renders). Every target id must be a pinned record. Write the
    file with the Writer API, which validates against the pinned rows and
-   refuses a missing record:
+   refuses a missing record (the Producer's slot-model writer puts the bytes):
    ```sh
    node --input-type=module -e '
    import { readFileSync } from "node:fs";
    import { writeWriterDeclarations } from "@clossys/writer/declarations";
+   import { replaceModelFile } from "@clossys/producer";
    const [file, rows] = process.argv.slice(1);
-   await writeWriterDeclarations("clossys", JSON.parse(readFileSync(file, "utf8")), { completeRecords: JSON.parse(readFileSync(rows, "utf8")) });' draft.json rows.json
+   await writeWriterDeclarations("clossys", JSON.parse(readFileSync(file, "utf8")), { completeRecords: JSON.parse(readFileSync(rows, "utf8")), write: replaceModelFile });' draft.json rows.json
    ```
    `npx clossys check --suites --strict` reports `copy-unbound` for a mounted
    section with no bound field and `meta-title-missing` /

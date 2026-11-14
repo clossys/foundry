@@ -7,7 +7,14 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../records/hash.js";
 import { jsonBytes, slotPositions, validatePin, type IaDoc } from "../records/slot-model/index.js";
 import { checkSlotModel } from "../records/slot-check.js";
+import { registerGuardRunner } from "../records/slot-write.js";
 import { runCli } from "./main.js";
+
+// These tests pin the decision mechanics (basis, decidedBy, not-needed, confirm) on a minimal
+// uncertified fixture. The constitution guard every pin runs (rules.json `guard`) refuses such a
+// fixture absolutely, so it is isolated here; guard.e2e.test.ts proves the refusals and a clean pin.
+// The guard registers its runner when constitution/guard.ts loads (through ./main.js); this file swaps in one that finds nothing.
+beforeEach(() => registerGuardRunner({ run: () => [], messages: () => [] }));
 
 let workspace: string;
 let slotDir: string;
