@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "module-outline",
+  "type": "registry:block",
+  "title": "Outline Module",
+  "description": "The open page's own sections in page order; click brings one into view.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "command"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/module-outline/index.tsx"
+    }
+  ]
+}

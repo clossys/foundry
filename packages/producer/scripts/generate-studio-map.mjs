@@ -17,7 +17,23 @@ import { brandJson, danglingIcons, flowThemeCss, iconsModule, pinnedIconSlots, p
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
-const defaultClossysRoot = fileURLToPath(new URL('../../../clossys/', import.meta.url));
+const studioGenerated = resolve(studioRoot, 'generated');
+/**
+ * Studio's copy is Writer package default copy (SOURCE-MIGRATE): an in-place generation writes it to
+ * the Writer package's templates/studio-copy.en.json (`@clossys/writer/studio-copy.en.json`, what
+ * Studio imports), never into generated/. A generation into another directory keeps it there.
+ */
+export const WRITER_STUDIO_COPY = fileURLToPath(new URL('../../writer/templates/studio-copy.en.json', import.meta.url));
+/**
+ * The consumer clossys/ folder a generation reads: the explicit one, else `$CLOSSYS_ROOT/clossys`.
+ * Studio has no default consumer: its frames, sections, copy and routes are package files, and the
+ * Studio build reads the tracked projection unless a consumer root is named.
+ */
+export function studioConsumer(clossysRoot) {
+  if (clossysRoot) return clossysRoot;
+  if (process.env.CLOSSYS_ROOT) return join(resolve(process.env.CLOSSYS_ROOT), 'clossys');
+  fail('needs a consumer: pass --root <dir> or set CLOSSYS_ROOT to a root holding clossys/ (the Studio build reads the tracked projection)');
+}
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
 const banner = '// Generated from pinned Foundry Publisher and Designer candidates. Run npm run generate:studio-map.\n';
 const LAYER_FOLDER = { frames: 'frames', sections: 'sections' };
@@ -317,7 +333,8 @@ export const STUDIO_DOCUMENT = Object.freeze({
  * the publication's shell (root layout, loading, not-found, error and global-error).
  * Returns the installed route per page id; check mode refuses drift instead of writing.
  */
-export async function installStudioRoutes({ clossysRoot = defaultClossysRoot, appDir = resolve(studioRoot, 'app'), check = false, installOut } = {}) {
+export async function installStudioRoutes({ clossysRoot, appDir = resolve(studioRoot, 'app'), check = false, installOut } = {}) {
+  clossysRoot = studioConsumer(clossysRoot);
   const result = await publishNext({ root: dirname(resolve(clossysRoot)), publication: 'studio', app: appDir, assembly: STUDIO_ASSEMBLY, states: STUDIO_STATES, live: true, check, ...(installOut ? { out: installOut } : {}) });
   const blocking = result.findings.filter(finding => finding.severity !== 'info');
   if (blocking.length) fail(`Publisher could not install the studio routes: ${blocking.map(finding => finding.detail).join('; ')}`);
@@ -326,8 +343,9 @@ export async function installStudioRoutes({ clossysRoot = defaultClossysRoot, ap
   return result.files.filter(file => file.state !== 'removed');
 }
 
-export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), appDir = join(outputDir, '..', 'app'), installOut, check = false, payloads = true, target, previewItems } = {}) {
+export async function generateStudioMap({ clossysRoot, outputDir = studioGenerated, appDir = join(outputDir, '..', 'app'), installOut, check = false, payloads = true, target, previewItems } = {}) {
   if ((target !== undefined && target !== 'preview') || (target !== 'preview' && previewItems !== undefined)) fail('Draft bindings require an explicit preview target');
+  clossysRoot = studioConsumer(clossysRoot);
   // Every title a person reads (page, tab, leaf, trail, document title) is Writer text, resolved here.
   const pinned = resolvePublicationTitles(resolve(clossysRoot), await readPinnedPublication(resolve(clossysRoot), 'studio'));
   const routePack = pinned.routePack;
@@ -469,15 +487,17 @@ ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: marked(Section${i},
     ? await studioCopyRegistry(clossysRoot, { target: 'preview', absentPin: 'newest-draft' })
     : await studioCopyRegistry(clossysRoot);
   // Derived products: the icon map from the pinned icon glyphs, each frame's and section's DOM provenance from its binding, the consumer brand from its pinned assets.
-  const files = { 'studio-copy.json': json(copy), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings,
+  const inPlace = resolve(outputDir) === studioGenerated;
+  const files = { ...(inPlace ? {} : { 'studio-copy.json': json(copy) }), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings,
     'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(items.filter(item => /^(?:frames|sections)\./.test(item.slot))), 'studio-brand.json': brandJson(clossysRoot), 'studio-flow-theme.css': flowThemeCss(clossysRoot) };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
   if (!check) {
     await mkdir(outputDir, { recursive: true });
     for (const name of await readdir(outputDir)) if (!Object.hasOwn(files, name)) await import('node:fs/promises').then(fs => fs.rm(join(outputDir, name)));
   }
-  for (const [name, content] of Object.entries(files)) {
-    const path = resolve(outputDir, name);
+  const targets = Object.entries(files).map(([name, content]) => [name, resolve(outputDir, name), content]);
+  if (inPlace) targets.push(['studio-copy.en.json', WRITER_STUDIO_COPY, json(copy)]);
+  for (const [name, path, content] of targets) {
     if (check) {
       let stored; try { stored = await readFile(path, 'utf8'); } catch { throw new Error(`Generated Studio projection missing: ${name}`); }
       if (stored !== content) throw new Error(`Generated Studio projection drift: ${name}`);
@@ -487,7 +507,10 @@ ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: marked(Section${i},
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const invocation = await previewArguments(process.argv.slice(2));
+  const argv = process.argv.slice(2), at = argv.indexOf('--root');
+  if (at !== -1 && (!argv[at + 1] || argv[at + 1].startsWith('--'))) fail('--root needs a consumer root holding clossys/');
+  const clossysRoot = at === -1 ? undefined : join(resolve(argv.splice(at, 2)[1]), 'clossys');
+  const invocation = await previewArguments(argv);
   const preview = invocation.options.target ? invocation.options : await previewOptionsFromEnvironment();
-  await generateStudioMap({ check: invocation.args.includes('--check'), ...preview });
+  await generateStudioMap({ clossysRoot, check: invocation.args.includes('--check'), ...preview });
 }

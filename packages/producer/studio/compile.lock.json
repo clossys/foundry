@@ -5920,6 +5920,10 @@
   ],
   "outputs": [
     {
+      "path": "../../writer/templates/studio-copy.en.json",
+      "sha256": "cce048b50ad021b6cec14418b92d23035846534f7f3f8b25599a32d8658f34f2"
+    },
+    {
       "path": "app/build-overview/page.tsx",
       "sha256": "2d00e2f59d5c99fd741eb8fa90efd524173d7a98a99509280b448cf7e6bf1074"
     },
@@ -6762,10 +6766,6 @@
     {
       "path": "generated/studio-brand.json",
       "sha256": "c484b9933c07a0b0b4e308696e2e09a7a20a82fb94765f6a5792543e801a090e"
-    },
-    {
-      "path": "generated/studio-copy.json",
-      "sha256": "cce048b50ad021b6cec14418b92d23035846534f7f3f8b25599a32d8658f34f2"
     },
     {
       "path": "generated/studio-flow-theme.css",

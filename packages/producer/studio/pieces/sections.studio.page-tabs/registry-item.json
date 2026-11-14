@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-page-tabs",
+  "type": "registry:block",
+  "title": "Page Tabs",
+  "description": "The tab row of a Studio page: stock shadcn Tabs in a ScrollArea, one link per tab route the content map projects.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "tabs",
+    "scroll-area"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-page-tabs/index.tsx"
+    }
+  ]
+}

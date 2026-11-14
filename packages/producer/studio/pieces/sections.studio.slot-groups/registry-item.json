@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-slot-groups",
+  "type": "registry:block",
+  "title": "Slot Groups",
+  "description": "The body of a Studio tab: its IA groups stacked, each rows of stock shadcn slot cards (two across when wide enough) linking to the slot's detail route.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "badge",
+    "button",
+    "card",
+    "field"
+  ]
+}

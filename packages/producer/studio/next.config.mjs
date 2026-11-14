@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 import { checkPayload } from '../scripts/studio-payload.mjs';
@@ -19,12 +20,22 @@ const config = {
   transpilePackages: ['@clossys/designer', '@clossys/designer-ui'],
 };
 
-/** Run the compile verb in place and read back the page projection it wrote. */
-async function compiledProjection() {
+/** The tracked page projection: Studio's frames, sections, copy and routes are package files. */
+const trackedProjection = async () => JSON.parse(await readFile(new URL('./generated/studio-map.json', import.meta.url), 'utf8'));
+
+/**
+ * The consumer a build regenerates Studio from: `CLOSSYS_ROOT` (a root holding clossys/), else none.
+ * Studio is package-owned (SOURCE-MIGRATE): without a named consumer it builds from the tracked
+ * projection and reads no consumer pins.
+ */
+const consumerRoot = () => (process.env.CLOSSYS_ROOT ? resolve(process.env.CLOSSYS_ROOT) : undefined);
+
+/** Run the compile verb in place against the named consumer and read back the page projection it wrote. */
+async function compiledProjection(root) {
   const { runCompileCli } = await import('../dist/cli/compile.js');
-  const result = await runCompileCli([], fileURLToPath(new URL('../../../', import.meta.url)));
+  const result = await runCompileCli(['--root', root], root);
   if (result.exitCode !== 0) throw new Error(result.message);
-  return JSON.parse(await readFile(new URL('./generated/studio-map.json', import.meta.url), 'utf8'));
+  return trackedProjection();
 }
 
 /** The redirects the publication's content map projects (agent groups to their first tab, legacy leaf paths to tab leaves). */
@@ -32,15 +43,20 @@ const withRedirects = projection => ({ ...config, redirects: async () => project
 
 export default async function nextConfig(phase) {
   const preview = await previewOptionsFromEnvironment();
+  const root = consumerRoot();
+  if (!root) {
+    if (preview.target) throw new Error('A Studio draft preview needs CLOSSYS_ROOT: the consumer whose draft bindings it renders');
+    return withRedirects(await trackedProjection());
+  }
+  const clossysRoot = join(root, 'clossys');
   // A release build renders through `clossys compile` (decision files only, deterministic);
   // an explicit draft preview keeps its own unapproved generation path.
-  if (phase !== PHASE_DEVELOPMENT_SERVER) return withRedirects(preview.target ? await generateStudioMap(preview) : await compiledProjection());
+  if (phase !== PHASE_DEVELOPMENT_SERVER) return withRedirects(preview.target ? await generateStudioMap({ clossysRoot, ...preview }) : await compiledProjection(root));
   // Keep record, pin, reference, manifest and compiler checks; preview reports
   // every actual file/byte mismatch without claiming release qualification.
-  const projection = await generateStudioMap({ payloads: false, ...preview });
+  const projection = await generateStudioMap({ clossysRoot, payloads: false, ...preview });
   // Each item names a Designer slot-model candidate, `<element>-v<version>.json`, that carries its files inline.
   const { readCandidate } = await import('../dist/records/slots.js');
-  const clossysRoot = fileURLToPath(new URL('../../../clossys/', import.meta.url));
   for (const item of projection.items) {
     const candidate = JSON.parse(readCandidate(clossysRoot, 'designer', item.slot, `${item.element}-v${item.version}.json`).bytes);
     const files = new Map(candidate.files.map(file => [file.path, Buffer.from(file.content, 'utf8')]));

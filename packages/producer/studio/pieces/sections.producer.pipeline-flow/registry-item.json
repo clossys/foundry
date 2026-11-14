@@ -1,0 +1,30 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "producer-pipeline-flow",
+  "type": "registry:block",
+  "title": "Pipeline Flow",
+  "description": "The active wiring (clossys.pipeline-wiring/1: steps that exist, states from their latest run records) rendered by @xyflow/react inside a stock Card as a swimlane: lanes are the seat holders (the pipeline roster, plus Unassigned while any step has no holder), columns are the stages, grouped by round: one stock secondary Badge round header above each round's stage columns, and the stages as stock outline Badges under it; one components.flow.base-node per step invocation wrapped in the React Flow UI NodeStatusIndicator, a stock Badge carrying its run state, its header the stock shadcn Item; a seat in the URL highlights that lane with stock Item and Badge variants; the pinned smoothstep edge, stock Controls and MiniMap; selecting a step opens a read-only shadcn Sheet whose facts (stage, holder with kind, tier and file or derived source) are stock Field label + value pairs, with the run record it cites and each check's state.",
+  "author": "Clossys",
+  "dependencies": [
+    "@xyflow/react"
+  ],
+  "registryDependencies": [
+    "components.badge",
+    "components.card",
+    "components.field",
+    "components.flow.base-node",
+    "components.flow.canvas",
+    "components.flow.edge",
+    "components.flow.labeled-handle",
+    "components.flow.node-status",
+    "components.item",
+    "components.sheet"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/producer-pipeline-flow/index.tsx"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "producer-pipeline-legend",
+  "type": "registry:block",
+  "title": "Pipeline Legend",
+  "description": "One compact stock Card row: the step and edge counts (and the untyped file count) as the description, and one stock Badge per node kind as the card action, each with its meaning in a stock Tooltip.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "components.badge",
+    "components.card",
+    "components.tooltip"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/producer-pipeline-legend/index.tsx"
+    }
+  ]
+}

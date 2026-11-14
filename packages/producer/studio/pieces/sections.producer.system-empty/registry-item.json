@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "producer-system-empty",
+  "type": "registry:block",
+  "title": "System Empty",
+  "description": "A system that is not set up yet, as the stock shadcn Empty: header, title and description.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "components.empty"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/producer-system-empty/index.tsx"
+    }
+  ]
+}

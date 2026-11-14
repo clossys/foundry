@@ -8,15 +8,15 @@
  * is in the root the generators read. No model, agent binary, network or child process is used.
  *
  * Output (in place, or under `out`): generated/ (studio-map.json, studio-map.ts,
- * assembly-bindings.ts, studio-copy.json), app/** installed route files, and compile.lock.json
+ * assembly-bindings.ts; studio-copy.json, which in place is the Writer package's templates/studio-copy.en.json), app/** installed route files, and compile.lock.json
  * with the sha256 of every input and every output.
  */
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generateStudioMap } from './generate-studio-map.mjs';
+import { generateStudioMap, WRITER_STUDIO_COPY } from './generate-studio-map.mjs';
 
 const producerDir = fileURLToPath(new URL('../', import.meta.url));
 export const DECISION_INPUTS = join(producerDir, 'decision-inputs.json');
@@ -121,7 +121,8 @@ export async function compileStudio({ root, out, decisionInputs = DECISION_INPUT
     const projection = await generateStudioMap({ clossysRoot: join(stage, 'clossys'), outputDir, appDir, installOut: join(stage, '.install') });
     const routeFiles = [...projection.routes.flatMap(route => [route.entry.file, ...(route.leaf ? [route.leaf.entry.file] : [])]), ...projection.shell.map(row => row.entry.file)]
       .map(file => file.replace(/^studio\//, ''));
-    const outputs = [...(await walk(outputDir)).map(rel => `generated/${rel}`), ...routeFiles].sort();
+    // In place, the Studio copy is the Writer package default (`@clossys/writer/studio-copy.en.json`), outside generated/.
+    const outputs = [...(await walk(outputDir)).map(rel => `generated/${rel}`), ...routeFiles, ...(out === undefined ? [portable(relative(target, WRITER_STUDIO_COPY))] : [])].sort();
     const lockOutputs = [];
     for (const rel of outputs) lockOutputs.push({ path: rel, sha256: sha256(await readFile(join(target, rel))) });
     const lock = { schema: 'clossys.compile-lock/1', decisionInputs: spec.inputs.map(row => row.id), inputs: lockInputs, outputs: lockOutputs };

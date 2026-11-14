@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-home",
+  "type": "registry:block",
+  "title": "Studio Home",
+  "description": "The workspace's agents with their slot counts, and the owner's open requests; the page head is sections.studio.page-header.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "badge",
+    "button",
+    "card",
+    "field"
+  ]
+}

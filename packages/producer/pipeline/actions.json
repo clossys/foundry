@@ -2521,7 +2521,7 @@
             "schema": "studio-map"
           },
           {
-            "glob": "pkg:studio/generated/studio-copy.json",
+            "glob": "pkg:../writer/templates/studio-copy.en.json",
             "schema": "studio-copy"
           },
           {

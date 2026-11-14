@@ -1,3 +1,5 @@
+import { posix } from "node:path";
+
 /** Workspace-relative globs: `*` within a segment, `**` across segments, an optional `#field` carve-out. */
 export const PACKAGE_REL = "packages/producer";
 
@@ -7,7 +9,8 @@ export function parseGlob(glob: string, packageRel = PACKAGE_REL): Glob {
   if (glob.startsWith("arg:")) return { path: glob, field: null, arg: true };
   const at = glob.indexOf("#");
   const raw = at < 0 ? glob : glob.slice(0, at);
-  return { path: raw.startsWith("pkg:") ? `${packageRel}/${raw.slice(4)}` : raw, field: at < 0 ? null : glob.slice(at + 1), arg: false };
+  // A `pkg:` glob may name a sibling package (`pkg:../writer/...`): it is normalized to its workspace path.
+  return { path: raw.startsWith("pkg:") ? posix.normalize(`${packageRel}/${raw.slice(4)}`) : raw, field: at < 0 ? null : glob.slice(at + 1), arg: false };
 }
 
 const escape = (text: string) => text.replace(/[.+^$()|[\]\\{}?]/g, "\\$&");

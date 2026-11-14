@@ -1,5 +1,5 @@
 import { createCopyResolver } from '@clossys/writer/resolve';
-import registry from '../generated/studio-copy.json';
+import registry from '@clossys/writer/studio-copy.en.json';
 
 // Studio previews the projected copy; editorial approval is the owner's pin (pin = approval, records/writer-copy.ts).
 const resolve = createCopyResolver(registry, { target: 'preview' });
@@ -7,7 +7,7 @@ const resolve = createCopyResolver(registry, { target: 'preview' });
 /** The Writer's source locale for Studio copy (the pinned candidates' first locale): the document's `lang`. */
 export const studioLocale: string = registry.locale;
 
-/** Audience copy comes only from the pinned Writer slots projected with the assembly. */
+/** Audience copy comes only from the Writer package's Studio copy default (`@clossys/writer/studio-copy.en.json`). */
 export function studioCopy(id: string, values?: Readonly<Record<string, string | number | boolean>>): string {
   const result = resolve({ id, locale: studioLocale, ...(values ? { values } : {}) });
   if (!result) throw new Error(`Studio copy is unresolved: ${id}`);

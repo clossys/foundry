@@ -100,7 +100,7 @@ const notes = [];
 /* group */
 {
   const studio = JSON.parse(read(`${STUDIO}/generated/studio-map.json`) ?? '{}');
-  const copy = JSON.parse(read(`${STUDIO}/generated/studio-copy.json`) ?? '{}');
+  const copy = JSON.parse(read('packages/writer/templates/studio-copy.en.json') ?? '{}');
   const keys = new Set(copyKeys(copy));
   const seen = new Map();
   // A tab's header is its record's, so the description is owned per record (an entry under a group).

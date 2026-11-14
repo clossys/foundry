@@ -38,6 +38,7 @@
     },
     "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc",
     "./front-door.en.json": "./templates/front-door.en.json",
+    "./studio-copy.en.json": "./templates/studio-copy.en.json",
     "./front-door": {
       "types": "./dist/front-door-browser.d.ts",
       "import": "./dist/front-door-browser.js"

@@ -63,9 +63,9 @@ test('Studio copy refuses relevant corrupt pins and never selects an unpinned ca
 
 test('Foundry migrated copy resolves counts and current visible wording without approval claims', async () => {
   const root = new URL('../../../clossys/', import.meta.url).pathname;
-  // The stored registry is what generate writes: the pinned copy, no draft preview.
+  // The stored registry is what generate writes in place: the pinned copy, no draft preview, as the Writer package default.
   const registry = await studioCopyRegistry(root);
-  const stored = JSON.parse(await readFile(new URL('../studio/generated/studio-copy.json', import.meta.url), 'utf8'));
+  const stored = JSON.parse(await readFile(new URL('../../writer/templates/studio-copy.en.json', import.meta.url), 'utf8'));
   assert.deepEqual(registry, stored);
   const resolve = createCopyResolver(registry, { target: 'preview' });
   assert.equal(resolve({ id: 'studio.page-attention-count', values: { count: 1 } })?.text, '1 item needs attention on this page.');

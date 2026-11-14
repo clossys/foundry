@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "producer-team-strip",
+  "type": "registry:block",
+  "title": "Team Strip",
+  "description": "The system's team in one compact stock Card: one small stock outline LinkButton per seat holder in one wrapping line, with a small stock Avatar, its name and stock Badges for its seat kinds, tier and step count; its one line on what it does is the link's stock Tooltip, and each links to its lane on the workflow map.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "components.avatar",
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.tooltip"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/producer-team-strip/index.tsx"
+    }
+  ]
+}

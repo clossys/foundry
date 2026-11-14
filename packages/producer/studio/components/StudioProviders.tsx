@@ -9,7 +9,7 @@ import { studioCellChange } from '../lib/cell-events';
 import type { StudioReport } from '../lib/studio-report';
 import { loadBrand, loadReports, type Resource, type StudioBrandInfo, type StudioSeed } from '../lib/studio-seed';
 import { StudioRouteMapProvider } from './StudioRouteMap';
-import copyRegistry from '../generated/studio-copy.json';
+import copyRegistry from '@clossys/writer/studio-copy.en.json';
 
 export type { Resource, StudioBrandInfo } from '../lib/studio-seed';
 /**

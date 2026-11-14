@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-page-header",
+  "type": "registry:block",
+  "title": "Page Header",
+  "description": "The head of every Studio page: its title and one-line purpose, the stock shadcn card header.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "card"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-page-header/index.tsx"
+    }
+  ]
+}

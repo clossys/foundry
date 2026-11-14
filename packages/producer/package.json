@@ -60,7 +60,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && node scripts/generate-studio-map.mjs && node dist/cli/index.js compile && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs",
+    "build": "tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs",
     "compile": "node dist/cli/index.js compile",
     "generate:studio-map": "node scripts/generate-studio-map.mjs",
     "check:studio-map": "node studio/checks/check-studio-map.cjs",
