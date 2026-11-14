@@ -38,7 +38,46 @@ export interface StandardDoc {
   readonly seeds: readonly string[];
   readonly createGaps?: readonly string[];
   readonly requirements: readonly Requirement[];
+  readonly preview?: { readonly card: CardContract };
 }
+
+/**
+ * The slot-card preview states every card renders through one shared state component
+ * (foundry-feedback-0014 review (e)): loading, not needed, no preview yet, preview failed, not pinned.
+ */
+export const CARD_STATES = Object.freeze(["loading", "not-needed", "no-preview", "failed", "not-pinned"] as const);
+export type CardState = (typeof CARD_STATES)[number];
+/** Card render methods: `inline` from candidate data in the card; `frame` a scaled `/__specimen` iframe. */
+export const CARD_METHODS = Object.freeze(["inline", "frame"] as const);
+
+/** A standard's `preview.card` (R18.13): how the kind's Studio slot card previews a candidate. */
+export interface CardContract {
+  readonly method: (typeof CARD_METHODS)[number];
+  /** The frame's intrinsic width in px; null for inline (an inline preview has no page to scale). */
+  readonly intrinsicWidth: number | null;
+  /** Selectors the preview box must contain (R18.15). */
+  readonly mustContain: readonly string[];
+  readonly states: readonly CardState[];
+}
+
+/**
+ * The standards whose kinds own Studio slot cards (slot-constitution.md section 5a: 26 slot
+ * standards, `seat` after W2-A and WS-2's `section.studio`), by agent. R18.13 requires a
+ * `preview.card` of each; a new standard joins this list with its planner line in section 5a.
+ */
+export const CARD_STANDARDS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  director: ["brief.list", "brief.measure", "brief.profile", "brief.statement"],
+  designer: [
+    "asset.glyph", "asset.logo-mark", "asset.media-rule", "component", "frame", "section.adaptive", "section.app", "section.site",
+    "token.color", "token.scale", "token.typeface",
+  ],
+  writer: [
+    "copy.headline", "lexicon.claim-list", "lexicon.format-rule", "lexicon.term-list", "lexicon.voice-rule", "narrative", "passage", "pattern",
+    "string",
+  ],
+  publisher: ["page", "publication"],
+  producer: ["section.studio", "seat"],
+});
 
 /** One taste criterion of `taste.md`: `## <id>` with anchors `- 1: ...` through `- 5: ...`. */
 export interface TasteCriterion { readonly id: string; readonly anchors: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5, string>>> }
@@ -138,7 +177,10 @@ export function readStandard(root: string, agent: ModelAgent, id: string): Stand
       const schemaIssues = validateValue(raw, loadSchema("standard"));
       for (const issue of schemaIssues) issues.push(`requirements.json${issue.path ? ` ${issue.path}` : ""}: ${issue.message}`);
       if (isRecord(raw) && raw.id !== id) issues.push(`requirements.json id ${JSON.stringify(raw.id)} is not the folder name ${id}`);
-      if (!schemaIssues.length) doc = raw as StandardDoc;
+      if (!schemaIssues.length) {
+        doc = raw as StandardDoc;
+        for (const issue of cardContractIssues(doc.preview?.card)) issues.push(`requirements.json /preview/card: ${issue}`);
+      }
     }
   }
 
@@ -290,4 +332,43 @@ export function seedIssues(standard: Standard, policy: StandardPolicy): string[]
   if (!policy.seedRegistries) return [`seeds ${seeds.join(", ")} cannot be checked: the designer policy.json lists no seedRegistries`];
   const registries = new Set(policy.seedRegistries);
   return seeds.filter(seed => !registries.has(seed.split(/[/:]/)[0]!)).map(seed => `seed ${seed} is not from a policy.json seed registry (${[...registries].join(", ") || "none"})`);
+}
+
+/**
+ * The `preview.card` rules the schema cannot express (part of R15.2's validity): a frame names an
+ * intrinsic width and an inline preview none; no selector or state is listed twice. [] when absent
+ * (absence is R18.13's coverage finding, see cardCoverage).
+ */
+export function cardContractIssues(card: CardContract | undefined): string[] {
+  if (!card) return [];
+  const issues: string[] = [];
+  if (card.method === "frame" && card.intrinsicWidth === null) issues.push("method frame needs an intrinsicWidth in px");
+  if (card.method === "inline" && card.intrinsicWidth !== null) issues.push(`method inline renders from data: intrinsicWidth must be null, not ${card.intrinsicWidth}`);
+  const twice = (values: readonly string[]) => values.filter((value, index) => values.indexOf(value) !== index);
+  for (const selector of new Set(twice(card.mustContain))) issues.push(`mustContain lists ${selector} twice`);
+  for (const state of new Set(twice(card.states))) issues.push(`states lists ${state} twice`);
+  return issues;
+}
+
+/** One R18.13 coverage finding: a card standard with no valid `preview.card`. */
+export interface CardCoverageGap { readonly agent: string; readonly id: string; readonly dir: string; readonly reason: string }
+
+/**
+ * R18.13 contract coverage (static): every card standard (CARD_STANDARDS) exists and its
+ * requirements.json carries a valid `preview.card`. Returns the gaps, by agent then id; [] is full
+ * coverage.
+ */
+export function cardCoverage(standards: readonly Standard[], expected: Readonly<Record<string, readonly string[]>> = CARD_STANDARDS): CardCoverageGap[] {
+  const gaps: CardCoverageGap[] = [];
+  for (const [agent, ids] of Object.entries(expected)) {
+    for (const id of ids) {
+      const dir = `packages/${agent}/standards/${id}`;
+      const standard = standards.find(item => item.agent === agent && item.id === id);
+      if (!standard) gaps.push({ agent, id, dir, reason: "no standard folder: no preview.card" });
+      else if (!standard.doc) gaps.push({ agent, id, dir, reason: "requirements.json is invalid (R15.2): no preview.card read" });
+      else if (!standard.doc.preview?.card) gaps.push({ agent, id, dir, reason: "requirements.json has no preview.card" });
+      else if (cardContractIssues(standard.doc.preview.card).length) gaps.push({ agent, id, dir, reason: `preview.card is invalid: ${cardContractIssues(standard.doc.preview.card).join("; ")}` });
+    }
+  }
+  return gaps;
 }

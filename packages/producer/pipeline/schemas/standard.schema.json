@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clossys.com/schemas/producer/standard.schema.json",
   "title": "Standard requirements (packages/<agent>/standards/<id>/requirements.json)",
-  "description": "The judge of one slot kind or answer shape (R15.2, slot-constitution.md section 3). Read by src/records/standards.ts. mode adopt-first carries createGaps (the gap classes a create may name, R03.5); a craft standard has none. Only Designer standards list seeds (R15.9, checked in code against the agent policy.json). Requirements name criteria registered under src/constitution/criteria/*/index.json (R15.3); counts the validator cannot express (seed registries, criterion ids) are checked in code.",
+  "description": "The judge of one slot kind or answer shape (R15.2, slot-constitution.md section 3). Read by src/records/standards.ts. mode adopt-first carries createGaps (the gap classes a create may name, R03.5); a craft standard has none. Only Designer standards list seeds (R15.9, checked in code against the agent policy.json). Requirements name criteria registered under src/constitution/criteria/*/index.json (R15.3); counts the validator cannot express (seed registries, criterion ids) are checked in code. preview.card (optional here, foundry-feedback-0014 SC-0) is the kind's slot-card preview contract that R18.13 requires of every standard: method inline (rendered from candidate data, intrinsicWidth null) or frame (an iframe of /__specimen at intrinsicWidth px, scaled and top-cropped to the 4:3 box); mustContain CSS selectors (R18.15); states from the shared five-state set. Method/width pairing and duplicate entries are checked in code.",
   "type": "object",
   "required": [
     "schema",
@@ -62,6 +62,9 @@
       "items": {
         "$ref": "#/$defs/requirement"
       }
+    },
+    "preview": {
+      "$ref": "#/$defs/preview"
     }
   },
   "oneOf": [
@@ -103,6 +106,65 @@
         },
         "params": {
           "type": "object"
+        }
+      }
+    },
+    "preview": {
+      "type": "object",
+      "required": [
+        "card"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "card": {
+          "$ref": "#/$defs/card"
+        }
+      }
+    },
+    "card": {
+      "type": "object",
+      "required": [
+        "method",
+        "intrinsicWidth",
+        "mustContain",
+        "states"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "enum": [
+            "inline",
+            "frame"
+          ]
+        },
+        "intrinsicWidth": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "mustContain": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "loading",
+              "not-needed",
+              "no-preview",
+              "failed",
+              "not-pinned"
+            ]
+          }
         }
       }
     }

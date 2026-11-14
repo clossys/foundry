@@ -1,11 +1,11 @@
-import { cpSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { criterionIds } from "../constitution/criteria/core/catalog.js";
 import {
-  DEFAULT_LICENSES, exemplarIssues, ledgerEvents, loadStandards, parseTaste, readStandard, readStandardPolicy, requirementIssues,
+  CARD_STANDARDS, cardContractIssues, cardCoverage, DEFAULT_LICENSES, exemplarIssues, ledgerEvents, loadStandards, parseTaste, readStandard, readStandardPolicy, requirementIssues,
   resolveRequirements, seedIssues, slotKinds, STANDARD_AGENTS, standardFits, standardFor, tasteIssues,
 } from "./standards.js";
 
@@ -97,5 +97,71 @@ describe("records/standards", () => {
     expect(resolveRequirements(standard, { requirements: [{ check: "text.word-limit", params: { max: 8 } }, { check: "text.nonempty", params: {} }] })).toEqual([
       { check: "text.word-limit", params: { max: 8 } }, { check: "lexicon.clean", params: {} }, { check: "text.nonempty", params: {} },
     ]);
+  });
+
+  describe("preview.card (SC-0, R18.13)", () => {
+    const INLINE = { method: "inline", intrinsicWidth: null, mustContain: ["[data-swatch]"], states: ["loading", "not-needed", "no-preview", "failed", "not-pinned"] };
+    const FRAME = { method: "frame", intrinsicWidth: 480, mustContain: ["[data-clossys-slot]"], states: ["loading", "failed", "not-pinned"] };
+    /** The fixture standard with `preview` set (undefined removes it), read back. */
+    function withPreview(preview: unknown, root = workspace()) {
+      const path = join(root, "packages", "writer", "standards", "fixture-headline", "requirements.json");
+      const { preview: _previous, ...doc } = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+      put(path, `${JSON.stringify(preview === undefined ? doc : { ...doc, preview }, null, 2)}\n`);
+      return readStandard(root, "writer", "fixture-headline");
+    }
+
+    it("reads a valid inline or frame card contract clean and types it on the doc", () => {
+      const inline = withPreview({ card: INLINE });
+      expect(inline.issues).toEqual([]);
+      expect(inline.doc?.preview?.card).toEqual(INLINE);
+      expect(withPreview({ card: FRAME }).issues).toEqual([]);
+      expect(withPreview(undefined).doc?.preview).toBeUndefined();
+    });
+
+    it("refuses a malformed card contract through the R15.2 schema", () => {
+      const issues = (preview: unknown) => withPreview(preview).issues.join("\n");
+      expect(issues({})).toMatch(/\/preview: requires card/);
+      expect(issues({ card: INLINE, extra: 1 })).toMatch(/\/preview: has unknown key extra/);
+      expect(issues({ card: { ...INLINE, method: "png" } })).toMatch(/\/preview\/card\/method: must be one of "inline", "frame"/);
+      expect(issues({ card: { method: "frame", mustContain: ["a"], states: ["loading"] } })).toMatch(/\/preview\/card: requires intrinsicWidth/);
+      expect(issues({ card: { ...FRAME, intrinsicWidth: 0 } })).toMatch(/intrinsicWidth: must be at least 1/);
+      expect(issues({ card: { ...FRAME, intrinsicWidth: 480.5 } })).toMatch(/intrinsicWidth: must be integer or null/);
+      expect(issues({ card: { ...INLINE, mustContain: [] } })).toMatch(/mustContain: must have at least 1 items/);
+      expect(issues({ card: { ...INLINE, mustContain: [" "] } })).toMatch(/mustContain\/0: must match/);
+      expect(issues({ card: { ...INLINE, states: ["empty"] } })).toMatch(/states\/0: must be one of "loading"/);
+      expect(issues({ card: { ...INLINE, size: "card" } })).toMatch(/\/preview\/card: has unknown key size/);
+    });
+
+    it("refuses what the schema cannot express: method and width pairing, repeats", () => {
+      expect(withPreview({ card: { ...FRAME, intrinsicWidth: null } }).issues).toEqual(["requirements.json /preview/card: method frame needs an intrinsicWidth in px"]);
+      expect(withPreview({ card: { ...INLINE, intrinsicWidth: 1280 } }).issues).toEqual(["requirements.json /preview/card: method inline renders from data: intrinsicWidth must be null, not 1280"]);
+      expect(cardContractIssues({ ...FRAME, method: "frame", mustContain: ["a", "a", "b", "a"], states: ["failed", "failed"] } as never)).toEqual(["mustContain lists a twice", "states lists failed twice"]);
+      expect(cardContractIssues(undefined)).toEqual([]);
+    });
+
+    it("lists the 28 card standards of section 5a", () => {
+      const ids = Object.entries(CARD_STANDARDS).flatMap(([agent, list]) => list.map(id => `${agent}/${id}`));
+      expect(ids).toHaveLength(28);
+      expect(new Set(ids).size).toBe(28);
+      for (const agent of Object.keys(CARD_STANDARDS)) expect(STANDARD_AGENTS).toContain(agent);
+      expect(ids).toEqual(expect.arrayContaining(["producer/section.studio", "producer/seat", "publisher/page", "designer/token.color", "writer/string"]));
+    });
+
+    it("R18.13 coverage reports every gap and clears a valid contract", () => {
+      const root = workspace();
+      cpSync(FIXTURE, join(root, "packages", "publisher", "standards", "page"), { recursive: true });
+      put(join(root, "packages", "publisher", "standards", "page", "requirements.json"), "{");
+      withPreview({ card: { ...FRAME, intrinsicWidth: null } }, root);
+      const expected = { writer: ["fixture-headline"], publisher: ["page", "publication"] };
+      expect(cardCoverage(loadStandards(root), expected).map(gap => `${gap.agent}/${gap.id}: ${gap.reason}`)).toEqual([
+        "writer/fixture-headline: preview.card is invalid: method frame needs an intrinsicWidth in px",
+        "publisher/page: requirements.json is invalid (R15.2): no preview.card read",
+        "publisher/publication: no standard folder: no preview.card",
+      ]);
+      withPreview(undefined, root);
+      expect(cardCoverage(loadStandards(root), { writer: ["fixture-headline"] })[0]?.reason).toBe("requirements.json has no preview.card");
+      withPreview({ card: INLINE }, root);
+      expect(cardCoverage(loadStandards(root), { writer: ["fixture-headline"] })).toEqual([]);
+    });
   });
 });
