@@ -212,7 +212,7 @@ function designerCandidate(root, slot, element, version) {
  * record what meta.source (ref, against the vendored manifest), meta.refVerbatim (files,
  * adaptations, parts, exactParts) and meta.element (deps, reads) state.
  */
-function candidateInput(candidate, manifest) {
+function candidateInput(candidate, manifest, { byteExact } = {}) {
   const refs = candidate.meta?.source?.ref ?? [];
   const source = candidate.meta?.source;
   const item = producerSource().seedItem(manifest, refs);
@@ -223,6 +223,7 @@ function candidateInput(candidate, manifest) {
     mode: source?.kind === "original" ? "original" : "customized",
     ...(item ? { source: { registry: item.registry, item: item.name, version: item.version, hash: item.hash, files: mapping.files } } : {}),
     adaptations: mapping.adaptations ?? [],
+    ...(byteExact ? { byteExact } : {}),
     ...(mapping.parts ? { parts: mapping.parts } : {}),
     ...(Object.hasOwn(mapping, "exactParts") ? { exactParts: mapping.exactParts } : {}),
   } };
@@ -725,6 +726,12 @@ function checkVersion(root, target, options = {}, versionInput) {
       fail("REF-ADAPTATION", "each adaptation requires a permitted kind, payload file, exact hunk hash and non-empty reason");
     }
   }
+  // Byte-exact adoption (owner 2026-11-13, "adopt components, craft rest"; foundry-audit-0008): an
+  // adopted candidate ships the vendored file exactly as the shadcn CLI writes it. A recorded in-file
+  // adaptation of any kind is an edit an adoption forbids; a reason never excuses it.
+  if (record?.lineage?.byteExact && Array.isArray(adaptations) && adaptations.length) {
+    fail("REF-ADAPTATION", `${slot} is a byte-exact adoption (${record.lineage.byteExact}) but records ${adaptations.length} in-file adaptation(s) (${[...new Set(adaptations.map(a => a?.kind ?? "?"))].join(", ")}); adopt the vendored file unmodified, or craft a derived candidate outside the components layer`);
+  }
 
   if (!Object.hasOwn(record?.lineage ?? {}, "exactParts") && (opts.rule.consumerAssets?.slots ?? []).some((pattern) => globMatch(pattern, slot))) return result("exempt", { hash, note: "consumer-asset slot" });
   for (const ref of versionInput?.unresolved ?? []) fail("REF-NOT-VENDORED", `${typeof ref === "string" ? ref : JSON.stringify(ref)} is not a reference-manifest row id (<registry>/<item>@<version> in references/manifest.json)`);
@@ -900,6 +907,18 @@ export function checkRegistryItem(root, slot, candidate, options = {}) {
   return withSelfCitation(checkLineageItem(root, slot, candidate, options), candidate.meta?.source?.ref);
 }
 
+/**
+ * Why a consumer candidate is a byte-exact adoption, or undefined: registry lineage (it adopts a
+ * vendored registry item) or any candidate of the components layer (components are adopted, never
+ * crafted). Sections, frames, themes and assets crafted with `derived` lineage may still record
+ * adaptations.
+ */
+export function byteExactAdoption(slot, candidate) {
+  if (candidate?.meta?.source?.kind === "registry") return "registry lineage";
+  if (slot.startsWith("components.")) return "components layer";
+  return undefined;
+}
+
 function checkLineageItem(root, slot, candidate, options = {}) {
   const opts = defaults(options);
   const refs = candidate.meta?.source?.ref ?? [];
@@ -907,7 +926,7 @@ function checkLineageItem(root, slot, candidate, options = {}) {
   // citation is unresolved and fails, except a self-citation, which withSelfCitation reports.
   const rows = new Set((opts.manifest.items ?? []).map(row => `${row.registry}/${row.name}@${row.version}`));
   const unresolved = (Array.isArray(refs) ? refs : [refs]).filter(ref => !(typeof ref === "string" && rows.has(ref)) && !selfCitation(ref));
-  return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { ...candidateInput(candidate, opts.manifest), unresolved });
+  return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { ...candidateInput(candidate, opts.manifest, { byteExact: byteExactAdoption(slot, candidate) }), unresolved });
 }
 
 // ---- npm package reference -------------------------------------------------
