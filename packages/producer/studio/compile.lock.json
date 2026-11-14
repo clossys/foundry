@@ -3067,7 +3067,7 @@
     },
     {
       "path": "clossys/agents/director/advantage.defensibility.differentiator/slot.json",
-      "sha256": "456a533b245f4eab2074592d6c6859aee321748d8a723af2d1c1b627c93501c7"
+      "sha256": "85b10dd0a4e4a910ab29ffaecc9026554730427f6264d420ac95ab6c055875b0"
     },
     {
       "path": "clossys/agents/director/advantage.defensibility.moat/candidates/studio-moat-v4.md",
@@ -3079,7 +3079,7 @@
     },
     {
       "path": "clossys/agents/director/advantage.defensibility.moat/slot.json",
-      "sha256": "a3c287e63026af8a4939e5266fdc4d8b7606489b9b4a249f7795c391dce02a9c"
+      "sha256": "900a2c148e2a4fdcd1ad5808ce36d3fca9f6eaa62677cab8802f7bd1d96a6d93"
     },
     {
       "path": "clossys/agents/director/advantage.model.margin/candidates/studio-margin-v9.md",
@@ -3091,7 +3091,7 @@
     },
     {
       "path": "clossys/agents/director/advantage.model.margin/slot.json",
-      "sha256": "900392b23d63c61940b4295e2103610fc054d9827fc60488cc8efb6a5a6023cc"
+      "sha256": "f4699bee715a3a414fef3b8a5e65109d38e9ac71756afce83249e4900ddd1657"
     },
     {
       "path": "clossys/agents/director/advantage.model.pricing/candidates/studio-pricing-v6.md",
@@ -3103,7 +3103,7 @@
     },
     {
       "path": "clossys/agents/director/advantage.model.pricing/slot.json",
-      "sha256": "3ae741b27516062dc5e763b4f8be25bcdbaff44542c2cdbed141bcc129aeb67e"
+      "sha256": "ba0b4ccd93463ae6d7c718d35f7f081af26564cfb8d7ecc3a0f22cc178d8531d"
     },
     {
       "path": "clossys/agents/director/advantage.proposition.promise/candidates/studio-promise-v4.md",
@@ -3115,7 +3115,7 @@
     },
     {
       "path": "clossys/agents/director/advantage.proposition.promise/slot.json",
-      "sha256": "5833466e6df61a6288c1bc983a9e61aa6df785170df80211260cb3f245b628fc"
+      "sha256": "ca02808681bd032eaf6db4a32812237e41a0fa71edd41bdb408326be92d1352d"
     },
     {
       "path": "clossys/agents/director/advantage.proposition.proof/candidates/studio-proof-v6.md",
@@ -3127,7 +3127,7 @@
     },
     {
       "path": "clossys/agents/director/advantage.proposition.proof/slot.json",
-      "sha256": "31a964ccc45d3cec5da378ea92cf8a720e0e6bdee2603edc631d4d3c4350b9c7"
+      "sha256": "b95b55a9e63ff76a749c52bbe8a3968049ef57f2e329c3bbcab3efdb2f7b4a74"
     },
     {
       "path": "clossys/agents/director/aspiration.culture.behavior/candidates/studio-behavior-v3.md",
@@ -3139,7 +3139,7 @@
     },
     {
       "path": "clossys/agents/director/aspiration.culture.behavior/slot.json",
-      "sha256": "22d82d4f848a0635ddbb11252c638fcf85f94dc362087a86438d642ead8d810e"
+      "sha256": "e4cde3c8db98a1cd473cf9b72a4f40fa657ac57a412c7c3aa2a908ea37a7d8b1"
     },
     {
       "path": "clossys/agents/director/aspiration.culture.belief/candidates/studio-belief-v5.md",
@@ -3151,7 +3151,7 @@
     },
     {
       "path": "clossys/agents/director/aspiration.culture.belief/slot.json",
-      "sha256": "0f7521fd9290f1af86e2ba8e6b54791fa431d9561bb1d30b8354afede94707c9"
+      "sha256": "58e196d595d3ca7973859373be8bbbd2052f7036f50fbe648e2061f84f4627be"
     },
     {
       "path": "clossys/agents/director/aspiration.goal.annual/candidates/studio-goal-annual-v7.md",
@@ -3163,7 +3163,7 @@
     },
     {
       "path": "clossys/agents/director/aspiration.goal.annual/slot.json",
-      "sha256": "98424060dd0b2c9c04efe4df31ad427a3ada444a8cf14efe256cd6663eb06d63"
+      "sha256": "8521cb691598f4e74e53b08040785a638d95e9798d38574e0209924e9534fb8a"
     },
     {
       "path": "clossys/agents/director/aspiration.goal.long-term/candidates/studio-goal-long-term-v3.md",
@@ -3175,7 +3175,7 @@
     },
     {
       "path": "clossys/agents/director/aspiration.goal.long-term/slot.json",
-      "sha256": "b75a99a1e657562be4df92f3174744c9920901f59daf39b8cf3901976667a9ec"
+      "sha256": "8605c6f9c93812ada19b6c9733b5c3151cd37dbf3dbff39afffd1a28c6970588"
     },
     {
       "path": "clossys/agents/director/aspiration.purpose.mission/candidates/studio-mission-v5.md",
@@ -3187,7 +3187,7 @@
     },
     {
       "path": "clossys/agents/director/aspiration.purpose.mission/slot.json",
-      "sha256": "f47084e85783889c009a85e54ba5706225b6186ef3e09641ddb7231c908df152"
+      "sha256": "837d21e2bb43cfee8414eaea6746ea8d812559d604a140e3b386c20ade148c8d"
     },
     {
       "path": "clossys/agents/director/aspiration.purpose.vision/candidates/studio-vision-v5.md",
@@ -3199,7 +3199,7 @@
     },
     {
       "path": "clossys/agents/director/aspiration.purpose.vision/slot.json",
-      "sha256": "1c1daf367af3430c0d5d2311afde4bdfb6f4cfadf50cf0fea7ac15eca90f5400"
+      "sha256": "daffbb3d7c743d59d98aad45aea946622f5ed3a1dfa30195b3a3faeaafba115f"
     },
     {
       "path": "clossys/agents/director/capability.competency.critical/candidates/studio-competency-critical-v7.md",
@@ -3211,7 +3211,7 @@
     },
     {
       "path": "clossys/agents/director/capability.competency.critical/slot.json",
-      "sha256": "f38e161d0dc270ba91e87e2fcae09251ddbf40f077297f2d0025fda1ec621cc8"
+      "sha256": "aee61104f1f7b9bec3da25d8b7ec495bb46dbec16563b7f9637387d7de4bb8cb"
     },
     {
       "path": "clossys/agents/director/capability.competency.gap/candidates/studio-competency-gap-v9.md",
@@ -3223,7 +3223,7 @@
     },
     {
       "path": "clossys/agents/director/capability.competency.gap/slot.json",
-      "sha256": "b387e1164496ac17e60a8b182d2dab5a91c878bb84fe1fd36d2c4e1a0c672ac5"
+      "sha256": "036551407b60f0b656dd70540eb7561efacd3b806ae8ed483f7ace37700a2023"
     },
     {
       "path": "clossys/agents/director/capability.operation.delivery/candidates/studio-delivery-v8.md",
@@ -3235,7 +3235,7 @@
     },
     {
       "path": "clossys/agents/director/capability.operation.delivery/slot.json",
-      "sha256": "aeb6bb09aaf2c5e44d390012972de9bc43c5c05651432fbacec2b63933f92dac"
+      "sha256": "182a345993a1fe47ed37dad07285fc0fe778d62eb97222d14979761dd350ea47"
     },
     {
       "path": "clossys/agents/director/capability.operation.technology/candidates/studio-technology-v3.md",
@@ -3247,7 +3247,7 @@
     },
     {
       "path": "clossys/agents/director/capability.operation.technology/slot.json",
-      "sha256": "bbca784e051f66b4aef2562a3ab2b9164e1874ec4c7912011f7b1fc22c8185a6"
+      "sha256": "04d1bb2e1832013d5e00c86df0e0f0f6b1968b209f72c591c50aaa2f82e6f378"
     },
     {
       "path": "clossys/agents/director/capability.resource.allocation/candidates/studio-allocation-v12.md",
@@ -3259,7 +3259,7 @@
     },
     {
       "path": "clossys/agents/director/capability.resource.allocation/slot.json",
-      "sha256": "e496fa427aa37faa78ead2544a0db3aed204fbaf2273e1d40079a0a07a4190e3"
+      "sha256": "07f140b6d2d1777fc023be858f0b840d76bc55ab7268bbb43383148df394fa6e"
     },
     {
       "path": "clossys/agents/director/capability.resource.funding/candidates/studio-funding-v6.md",
@@ -3271,7 +3271,7 @@
     },
     {
       "path": "clossys/agents/director/capability.resource.funding/slot.json",
-      "sha256": "087e63941df1e340eb03ea81009f7c82632b945f2d6155d9d1063d20ce386bec"
+      "sha256": "cecb01751756f81d4a8da1a9da4a9b945f67377c8bd3f2ce9a00e870d4357bbb"
     },
     {
       "path": "clossys/agents/director/capability.sourcing.acquire/candidates/studio-acquire-v5.md",
@@ -3283,7 +3283,7 @@
     },
     {
       "path": "clossys/agents/director/capability.sourcing.acquire/slot.json",
-      "sha256": "bdb2507b1226357bc1b0615521013781afea25728c6765b90e8e6277b121b03c"
+      "sha256": "f1ff62ba09f2a4ef06b560d2b16d94347ccf9e8881e1739242cd4f34f9834ae3"
     },
     {
       "path": "clossys/agents/director/capability.sourcing.build/candidates/studio-build-v7.md",
@@ -3295,7 +3295,7 @@
     },
     {
       "path": "clossys/agents/director/capability.sourcing.build/slot.json",
-      "sha256": "14dd0ffd686543b46e133aa587f7b14d7c7bc5f13788aae6eb90c27b7badfe09"
+      "sha256": "dacaec3d0bdfec05f52667dabaa0fab7725513f750f2317136acaa71dff163c3"
     },
     {
       "path": "clossys/agents/director/capability.sourcing.partner/candidates/studio-partner-v2.md",
@@ -3307,7 +3307,7 @@
     },
     {
       "path": "clossys/agents/director/capability.sourcing.partner/slot.json",
-      "sha256": "dab2e3b20e14f21bd83ff0d232526cd19db83f1dad2f8c0861f72fcb6cfe91be"
+      "sha256": "5f2feff90930a405624997e69aacc613dcbcdd58a3c5bffdf94d4933fcf539d9"
     },
     {
       "path": "clossys/agents/director/capability.team.role/candidates/studio-team-role-v5.md",
@@ -3319,7 +3319,7 @@
     },
     {
       "path": "clossys/agents/director/capability.team.role/slot.json",
-      "sha256": "a22411d94f74e943d0f2de5dbc618f5ca6bb55b545e9737ed4bf80fc135863da"
+      "sha256": "ee4e7be424e0e2279a3a4e66d49321f4a01a1e1e46a9d397dff603ed745c8f8a"
     },
     {
       "path": "clossys/agents/director/capability.team.structure/candidates/studio-team-structure-v4.md",
@@ -3331,7 +3331,7 @@
     },
     {
       "path": "clossys/agents/director/capability.team.structure/slot.json",
-      "sha256": "35da373e7f9ad8d3f4d61d351f359210292ba969c31d7549dbeaddd073101549"
+      "sha256": "ea00648fecd69516190576b89e0121c5f851ec9a834df098a0bd6d03d0ff9d54"
     },
     {
       "path": "clossys/agents/director/context.company.constraint/candidates/studio-readonly-bound-v4.md",
@@ -3343,7 +3343,7 @@
     },
     {
       "path": "clossys/agents/director/context.company.constraint/slot.json",
-      "sha256": "ed8f115825b162735f686a4b71c970680645ab71bd857515dd39650f26257cec"
+      "sha256": "861f481315e6470eefe84612e2194ab9a59fffb6f7553e6754c2ed859d7ccdf4"
     },
     {
       "path": "clossys/agents/director/context.company.strength/candidates/studio-strength-v6.md",
@@ -3355,7 +3355,7 @@
     },
     {
       "path": "clossys/agents/director/context.company.strength/slot.json",
-      "sha256": "fd66a15dd8f00181f2b372a5d3265e1993366113d3503a123ea7620e688d948c"
+      "sha256": "447c648cfcc6cf297295802526af0568fd90ca4220ea3080d85db381925fa081"
     },
     {
       "path": "clossys/agents/director/context.competition.alternative/candidates/studio-alternative-v5.md",
@@ -3367,7 +3367,7 @@
     },
     {
       "path": "clossys/agents/director/context.competition.alternative/slot.json",
-      "sha256": "bc83f2404b6fd23fc05c1f474163e8844ba4034cc11600eee5a19dad65046ab6"
+      "sha256": "c988b7f5b81a85234e139adc233a1b2ad4aea4500bf2012af616a09e55830c9f"
     },
     {
       "path": "clossys/agents/director/context.competition.gap/candidates/studio-gap-v6.md",
@@ -3379,7 +3379,7 @@
     },
     {
       "path": "clossys/agents/director/context.competition.gap/slot.json",
-      "sha256": "7533d3b21fb939e35d26bf8de4146c0e3d3db162ec84a85b708ed00c13f33b37"
+      "sha256": "b52122363675c0b775fae736ba8adce9ebe2b60d13f3e9c203f15c8679627fbd"
     },
     {
       "path": "clossys/agents/director/context.customer.buying/candidates/studio-customer-buying-v6.md",
@@ -3391,7 +3391,7 @@
     },
     {
       "path": "clossys/agents/director/context.customer.buying/slot.json",
-      "sha256": "7b53a90b3e931f6aa3de13cfc4999470758d3ac08ae9e4c65b32689ee0341b8f"
+      "sha256": "63db7455985870f7cca984cb851cc992cc5b09379eeb0c134d9bd500e3f5e530"
     },
     {
       "path": "clossys/agents/director/context.customer.need/candidates/studio-customer-need-v6.md",
@@ -3403,7 +3403,7 @@
     },
     {
       "path": "clossys/agents/director/context.customer.need/slot.json",
-      "sha256": "dd16fbfca43a65896cd4a461f4a83c3a169fdfc35d3b535896ebadd3a0cade7b"
+      "sha256": "e94109016f9a53f36f8643abd9767b12051185363113568a8c5fbc4def1ce705"
     },
     {
       "path": "clossys/agents/director/context.market.size/candidates/studio-market-size-v6.md",
@@ -3415,7 +3415,7 @@
     },
     {
       "path": "clossys/agents/director/context.market.size/slot.json",
-      "sha256": "cae9712505143495f8949461e752edcf7b9d11badf4b72c88b3ad4ec697ac0d1"
+      "sha256": "679a4db923ee56df7ed40dbc80662c69aa9ed6f3a10e6ee4df2d347e94555dec"
     },
     {
       "path": "clossys/agents/director/context.market.trend/candidates/studio-market-trend-v5.md",
@@ -3427,7 +3427,7 @@
     },
     {
       "path": "clossys/agents/director/context.market.trend/slot.json",
-      "sha256": "786bb3ea6959f66a20c332fe4bce244b8173bb783a0f814c16f9c6053a74bf99"
+      "sha256": "7e915b0f24b87dcf589b9b66c017147fad69e21ab7bb3d09a6c6d9866b54ff92"
     },
     {
       "path": "clossys/agents/director/execution.measure.driver/candidates/studio-drivers-v8.md",
@@ -3439,7 +3439,7 @@
     },
     {
       "path": "clossys/agents/director/execution.measure.driver/slot.json",
-      "sha256": "703e6b2646879a0ade3a157fab39ad436fee30b90e6f138ddece96ff77f516fe"
+      "sha256": "ca325a0bb9cb6f0e5b526afa95034c71b05e5ae42bfa48289f2084d4f8c6c010"
     },
     {
       "path": "clossys/agents/director/execution.measure.north-star/candidates/studio-north-star-v6.md",
@@ -3451,7 +3451,7 @@
     },
     {
       "path": "clossys/agents/director/execution.measure.north-star/slot.json",
-      "sha256": "5f23f7faeb848773e8ba538890d98157f4be33376ec7c6e83317d5578c695c65"
+      "sha256": "59878d3261ad991c18e184bed8ca5516cbb6b18ff0be9972da8d650459c81120"
     },
     {
       "path": "clossys/agents/director/execution.priority.bet/candidates/studio-bet-v10.md",
@@ -3463,7 +3463,7 @@
     },
     {
       "path": "clossys/agents/director/execution.priority.bet/slot.json",
-      "sha256": "c3fbf3cef78650f7d3e358c4dd03a28b50a0da68db754eca7b1d692e7ae42c65"
+      "sha256": "08b76281b039299feb721310e27e76ac6982a85eecda06376b4828861e246d74"
     },
     {
       "path": "clossys/agents/director/execution.priority.parked/candidates/studio-parked-v5.md",
@@ -3475,7 +3475,7 @@
     },
     {
       "path": "clossys/agents/director/execution.priority.parked/slot.json",
-      "sha256": "71db54de43f804be289c446874ef26a2b651bfcc20f274c29ec0764f7641a57a"
+      "sha256": "686707dac804438fc8425bb7c8e611fca68833e3402b1678f42dcb4288c73e84"
     },
     {
       "path": "clossys/agents/director/execution.risk.mitigation/candidates/studio-mitigation-v6.md",
@@ -3487,7 +3487,7 @@
     },
     {
       "path": "clossys/agents/director/execution.risk.mitigation/slot.json",
-      "sha256": "6e536e5df4a2a199e471f1da14e88f5e238d89d4f6885677c3bcd88a4b92c734"
+      "sha256": "d471c865ea194e0230758a820206da3b16ae7870ead2693b1da8dc1db9b81d75"
     },
     {
       "path": "clossys/agents/director/execution.risk.threat/candidates/studio-threat-v7.md",
@@ -3499,7 +3499,7 @@
     },
     {
       "path": "clossys/agents/director/execution.risk.threat/slot.json",
-      "sha256": "b0daba32170e0ca1079a3a71a282a100151e2e58c7eee31346c59535d9456b8c"
+      "sha256": "c0a7335138db1406a4a453b3b9dfbd1657cc52ecce267dec65a4ee5a774e6d95"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.milestone/candidates/studio-milestone-v7.md",
@@ -3511,7 +3511,7 @@
     },
     {
       "path": "clossys/agents/director/execution.roadmap.milestone/slot.json",
-      "sha256": "31c0393e1225124a720b229dd4d981c1657abbe2e313ea333ec0c8e35a50c73f"
+      "sha256": "d71364db15713366126390f84cacf6445b17826d14f0739c741da3f58ff63b98"
     },
     {
       "path": "clossys/agents/director/execution.roadmap.release/candidates/studio-release-v6.md",
@@ -3523,7 +3523,7 @@
     },
     {
       "path": "clossys/agents/director/execution.roadmap.release/slot.json",
-      "sha256": "484b943b54ebabbb60ae74b147c3515ba190ddaaed9a22c36dd13b39170c0652"
+      "sha256": "46e25ca10295be5c0fb115429e39e7ffb182e57b7c596d3c3cb3d9f396b5ad26"
     },
     {
       "path": "clossys/agents/director/focus.category.definition/candidates/studio-category-v7.md",
@@ -3535,7 +3535,7 @@
     },
     {
       "path": "clossys/agents/director/focus.category.definition/slot.json",
-      "sha256": "56f7ad4eab973af0ec257c2747e32efa4c2ba60e2b433cb183f70f83d3c75e8b"
+      "sha256": "e8ca5c70cba8999c997672fcce5bce663d2233f31cd2204aca45ccd66e208ce8"
     },
     {
       "path": "clossys/agents/director/focus.category.stance/candidates/studio-stance-v3.md",
@@ -3547,7 +3547,7 @@
     },
     {
       "path": "clossys/agents/director/focus.category.stance/slot.json",
-      "sha256": "4b197c11503294fb4e2c8ff1ef1b9371b51db6059b4150151048fd0960f3a809"
+      "sha256": "a10bfcf0d317f1e35bda19fd3a15954311a9702127fca59529b51ce907307d31"
     },
     {
       "path": "clossys/agents/director/focus.lifecycle.acquisition/candidates/studio-acquisition-v4.md",
@@ -3559,7 +3559,7 @@
     },
     {
       "path": "clossys/agents/director/focus.lifecycle.acquisition/slot.json",
-      "sha256": "48cb87203775272cd71b95b4f33e89d33f5fd84f949c6f9b9f3368f5cf80835c"
+      "sha256": "a17238073e03f14e53d0a5620e846219c0de34313c838c9cb589e1795c905489"
     },
     {
       "path": "clossys/agents/director/focus.lifecycle.retention/candidates/studio-retention-v5.md",
@@ -3571,7 +3571,7 @@
     },
     {
       "path": "clossys/agents/director/focus.lifecycle.retention/slot.json",
-      "sha256": "b30f97da0be12429728b0476110d77e81e17a94ca498932f3a4f81d6a6002958"
+      "sha256": "448df8b115c3320b6b9c6944db15fb40aba399c18ba74580b0f6616b667cc1df"
     },
     {
       "path": "clossys/agents/director/focus.offer.excluded/candidates/studio-exclusions-v5.md",
@@ -3583,7 +3583,7 @@
     },
     {
       "path": "clossys/agents/director/focus.offer.excluded/slot.json",
-      "sha256": "60713669ffb9798b99ecdb5f3bf30eb11e586f1cd6fa2baed3dd901b79591077"
+      "sha256": "d1594d313897748db75db1084e2bb097d2d2213a3de5a8dc6d6897345c439ba5"
     },
     {
       "path": "clossys/agents/director/focus.offer.included/candidates/studio-offer-v5.md",
@@ -3595,7 +3595,7 @@
     },
     {
       "path": "clossys/agents/director/focus.offer.included/slot.json",
-      "sha256": "e0659d0c7bf780e0a5f7307d99093cbc0fbd53be2e4ace600a38ee3f1f9af676"
+      "sha256": "a99c1424dcbee16c9c7637da48cae0c4bf32d2dfdb0463b6d5785f7c8646d049"
     },
     {
       "path": "clossys/agents/director/focus.reach.channel/candidates/studio-channel-v3.md",
@@ -3607,7 +3607,7 @@
     },
     {
       "path": "clossys/agents/director/focus.reach.channel/slot.json",
-      "sha256": "6b51ac0a7ef8113684e31812bcdf5ee6f2ba3d5c0239bda2c7a7973bde406ca3"
+      "sha256": "5db7840923e2eff7ea6b2a0c1f24951cc03c5bea10963191fa631f8f897a5f13"
     },
     {
       "path": "clossys/agents/director/focus.reach.geography/candidates/studio-geography-v2.md",
@@ -3619,7 +3619,7 @@
     },
     {
       "path": "clossys/agents/director/focus.reach.geography/slot.json",
-      "sha256": "1a7e75588321b7d92089e2721fb1334d57455873839edc5d79217ecd368fe44c"
+      "sha256": "85d0af01e79c95e977bb3876fb266f22f76c21de98c9bad52fcd508f2eb7e8a8"
     },
     {
       "path": "clossys/agents/director/focus.segment.core/candidates/studio-segment-core-v3.md",
@@ -3631,7 +3631,7 @@
     },
     {
       "path": "clossys/agents/director/focus.segment.core/slot.json",
-      "sha256": "0f66bc349a155197b802f11952dafe815eb37939b330d2d5b853bcc0c07c4b59"
+      "sha256": "0177fc66483ad5c3f79e6d653c11b976083c4d50c3335b09922069a21cca0443"
     },
     {
       "path": "clossys/agents/director/focus.segment.next/candidates/studio-segment-next-v5.md",
@@ -3643,7 +3643,7 @@
     },
     {
       "path": "clossys/agents/director/focus.segment.next/slot.json",
-      "sha256": "d405e6c58eae490b29baa888d3129220b5be8f6d27c4fa352e3a82d83b087280"
+      "sha256": "8219736d8883c0d0b5b46188814babeaee1abda3541dc5903472c136f6c4be89"
     },
     {
       "path": "clossys/agents/director/ia.json",
@@ -3659,7 +3659,7 @@
     },
     {
       "path": "clossys/agents/director/identity.brand.essence/slot.json",
-      "sha256": "7adbcffbcd104c806c3c1592bedaae783b9ca3f8f199b6ef3b0e5aec39dcb9f3"
+      "sha256": "3bf925b48c25a19544f77c0b8d9405ef848f04d420abe1a414ce57f221b3ad5a"
     },
     {
       "path": "clossys/agents/director/identity.brand.personality/candidates/studio-personality-v5.md",
@@ -3671,7 +3671,7 @@
     },
     {
       "path": "clossys/agents/director/identity.brand.personality/slot.json",
-      "sha256": "207d74b764e658a6b01f00dac8aefe1f07d4117b000d7a0676e13d941051ffa1"
+      "sha256": "6d0ea94c0b162b067a3cd81f8cceb9ebbc2645626cfa7c71faec0bbca4a4f4f9"
     },
     {
       "path": "clossys/agents/director/identity.naming.architecture/candidates/studio-agent-naming-v6.md",
@@ -3683,7 +3683,7 @@
     },
     {
       "path": "clossys/agents/director/identity.naming.architecture/slot.json",
-      "sha256": "e902dfcb19d322ea1c326ce1ffb2c267eb19256672acb62b61e9527008f6e8ba"
+      "sha256": "ac3b813e131d4012b8b928468cac1e18cc2752c8b7423221ae739e4e90bab34c"
     },
     {
       "path": "clossys/agents/director/identity.naming.name/candidates/studio-naming-v5.md",
@@ -3695,7 +3695,7 @@
     },
     {
       "path": "clossys/agents/director/identity.naming.name/slot.json",
-      "sha256": "89976c3748f4a45f1d6b00c603caf8575a4df6b24e1108fb28a413f91ffca876"
+      "sha256": "f36c376d0e20fd3b1281176b9da9ca3adc2566bcba1767b575f7133dbda7f53f"
     },
     {
       "path": "clossys/agents/director/identity.verbal.narrative/candidates/studio-narrative-v6.md",
@@ -3707,7 +3707,7 @@
     },
     {
       "path": "clossys/agents/director/identity.verbal.narrative/slot.json",
-      "sha256": "280cede8998327665b62d9181afed8795483b457f37205f3d3170d6a30f30322"
+      "sha256": "e878c25b4d4b42c77d7ae47ed6ad81562bc48fccdd63542850cbb2d6bb5fbf65"
     },
     {
       "path": "clossys/agents/director/identity.verbal.voice/candidates/studio-voice-v6.md",
@@ -3719,7 +3719,7 @@
     },
     {
       "path": "clossys/agents/director/identity.verbal.voice/slot.json",
-      "sha256": "1c29adfff222745b93fcedf01182e0066d9274548dbde3055584255a5b2a428a"
+      "sha256": "40fe78b6ad78d93eda62feb69ce815227fb846e90e69026af5c32442037c22bf"
     },
     {
       "path": "clossys/agents/director/identity.visual.imagery/candidates/studio-imagery-v4.md",
@@ -3731,7 +3731,7 @@
     },
     {
       "path": "clossys/agents/director/identity.visual.imagery/slot.json",
-      "sha256": "8116dbaf909405e6414bb5bbd61f00ac20e71945ddfbce2acacf0f3065764870"
+      "sha256": "54f705f70272bb334d6e0f05bf0877beff32dbee4d9d1264f5b5617cf7a558e2"
     },
     {
       "path": "clossys/agents/director/identity.visual.style/candidates/studio-visual-style-v9.md",
@@ -3743,7 +3743,7 @@
     },
     {
       "path": "clossys/agents/director/identity.visual.style/slot.json",
-      "sha256": "dc4348def810bb88a91ea40f09f3885e105c770d3395e4553cce027e69680ad0"
+      "sha256": "c5ff4971a06abf5ef1ba691b50d935d888d21fe4dcbb7fbe702f98235087ddaf"
     },
     {
       "path": "clossys/agents/producer/ia.json",
@@ -3759,7 +3759,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.designer.candidates/slot.json",
-      "sha256": "77f3db3b8865e8d5add89096dc9ec703108c561efe469473635235a351cb0bfc"
+      "sha256": "a2be2afe5266aca7ee14f851124a7a46bbddcdfc13a4ab52f4d782137706cda2"
     },
     {
       "path": "clossys/agents/producer/seat.director.candidates/candidates/director.candidates-v1.json",
@@ -3771,7 +3771,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.director.candidates/slot.json",
-      "sha256": "a253779a46ee6fe6b474d01ca479f6171d753f1a452527b4d1bd43d99a16c1d6"
+      "sha256": "d765768c8caba1bc6904e0b7136e58d5c09961153b8cd17449d4cd14fb67e19f"
     },
     {
       "path": "clossys/agents/producer/seat.evidence/candidates/evidence-v1.json",
@@ -3783,7 +3783,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.evidence/slot.json",
-      "sha256": "7b96ee91005b02fc7a1db7c6706932595b27dbd018e7b174b74f802f1f6a66e1"
+      "sha256": "65e2f5a111d746c76308c049210ce00556950862fe9a20cfc48a536a4857031e"
     },
     {
       "path": "clossys/agents/producer/seat.ia/candidates/ia-v1.json",
@@ -3795,7 +3795,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.ia/slot.json",
-      "sha256": "a7f5ef11ef57457a59b9be74571aea8037c7c2edcb215ca2314e950e9e116d0e"
+      "sha256": "7774f4461719e4c3ff3001b49d2053855d75b44b4f774f20a67b9ed504c089ef"
     },
     {
       "path": "clossys/agents/producer/seat.owner.decisions/candidates/owner.decisions-v1.json",
@@ -3807,7 +3807,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.owner.decisions/slot.json",
-      "sha256": "0b60cfc23c5f901ab3621202acd9e377637a97c2b5896772de5a7727ccf7083b"
+      "sha256": "e1a36a35be59d617a9590fd1afcfaeb1d426021950d5893b6340a7df533192d8"
     },
     {
       "path": "clossys/agents/producer/seat.pick.designer/candidates/pick.designer-v2.json",
@@ -3819,7 +3819,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.pick.designer/slot.json",
-      "sha256": "4957219cf5c894e0d2a43b70ac9e1828b8fd4fa6b1786ea825c6660ab4ca092e"
+      "sha256": "46e5bf7cb54b2b77270940e6d62bcd5bcc1d71a28e058eaa085b7799a3135ba3"
     },
     {
       "path": "clossys/agents/producer/seat.pick.director/candidates/pick.director-v2.json",
@@ -3831,7 +3831,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.pick.director/slot.json",
-      "sha256": "67c0db8c2e5c428a6a45f12af94a540be2bcc9a7eb398b8239b93e6b10a0c9f2"
+      "sha256": "5693530d81ceaa78ecdc4d66efccebb90a8a505077138f83d52e784a68a09931"
     },
     {
       "path": "clossys/agents/producer/seat.pick.publisher/candidates/pick.publisher-v2.json",
@@ -3843,7 +3843,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.pick.publisher/slot.json",
-      "sha256": "0d88d98f8497dd776fd97d800e14a59d57015a1c9b3176f6c90b26fe0f54a9cb"
+      "sha256": "a7a60eaa9b512a263f26eb3e5208aa6f3abb75205f74d46c7b055ec87f1750ce"
     },
     {
       "path": "clossys/agents/producer/seat.pick.writer/candidates/pick.writer-v2.json",
@@ -3855,7 +3855,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.pick.writer/slot.json",
-      "sha256": "bb719de3af99203ecaede76aa6803a6e63843583b3e160aedb7860cb631d906f"
+      "sha256": "384dbb9b0323489aa57e22f1e399fed0b05198b93d065b55129cdfe8b24047ac"
     },
     {
       "path": "clossys/agents/producer/seat.pin.designer/candidates/pin.designer-v2.json",
@@ -3867,7 +3867,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.pin.designer/slot.json",
-      "sha256": "bd16138754242e9fc6f1e8853bb804e5d3020f165654fecc6d8d1fdfeebf500f"
+      "sha256": "b66a4ef3237628a1d6e84ddfb76e5f12c7df6838ddaabc802c9076c15772a668"
     },
     {
       "path": "clossys/agents/producer/seat.pin.director/candidates/pin.director-v2.json",
@@ -3879,7 +3879,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.pin.director/slot.json",
-      "sha256": "62785d8056fa24a4db54dfcc65ccc140b3ee99e036117cf809a9234db17760d6"
+      "sha256": "d3f1115e60051b0e938bbafc43e48e7235f0d2d2ceeff87b1d32715e7afe9dbc"
     },
     {
       "path": "clossys/agents/producer/seat.pin.publisher/candidates/pin.publisher-v2.json",
@@ -3891,7 +3891,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.pin.publisher/slot.json",
-      "sha256": "b71532eb3ed0898125e23ba051dc0cc55b42753f03b170af727578aef8334b3f"
+      "sha256": "6b2ef68e2b514457e54db38315cef677deff5e006cb36b48cf0b72945334fbc5"
     },
     {
       "path": "clossys/agents/producer/seat.pin.writer/candidates/pin.writer-v2.json",
@@ -3903,7 +3903,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.pin.writer/slot.json",
-      "sha256": "5c6dedbd91593cc3c1bbbf34cc1dc452b49595e6841e03dedd950adab1d9bcf4"
+      "sha256": "65b05dd82e8dfd25b99af94c26033a37486840e0c3e5f17bb921d7a9ebdc352f"
     },
     {
       "path": "clossys/agents/producer/seat.publisher.candidates/candidates/publisher.candidates-v1.json",
@@ -3915,7 +3915,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.publisher.candidates/slot.json",
-      "sha256": "8eb9a9931389040a3017d8f4ed6300d25a76e5a3135b865801589f4a038b4ad7"
+      "sha256": "d482f048d9690e3bc45183eaf69e2eb483b831118fae52a5d998133f175a84b3"
     },
     {
       "path": "clossys/agents/producer/seat.retire/candidates/retire-v1.json",
@@ -3927,7 +3927,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.retire/slot.json",
-      "sha256": "5bce4ab9742e74bda89e2e2135a6e7d43646a88bc706894439eef57d479a9826"
+      "sha256": "027df3d6c46747f5eafdaa967a320b031b020f395ee6ceed3b589bd055bba22c"
     },
     {
       "path": "clossys/agents/producer/seat.rules/candidates/rules-v1.json",
@@ -3939,7 +3939,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.rules/slot.json",
-      "sha256": "d09f20a4bf403049cb48d1b4f53859573ec02fb14bd84ab9a093979c62270b61"
+      "sha256": "28cfaafa368b3e74ba9557f7aed999e7092918a3b9fcc23b01ccc2219a7c1865"
     },
     {
       "path": "clossys/agents/producer/seat.seats/candidates/seats-v1.json",
@@ -3951,7 +3951,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.seats/slot.json",
-      "sha256": "7937748fad1be4c5a690142e9be9484a72cc3d2c814b6b18f9cb5c6744835855"
+      "sha256": "e68b3a2b40759f91fd199bf1bcd82b7d076e6a52427ca2c2170c17a8e671452c"
     },
     {
       "path": "clossys/agents/producer/seat.workspace.config/candidates/workspace.config-v1.json",
@@ -3963,7 +3963,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.workspace.config/slot.json",
-      "sha256": "f882445d171234c381dc2c1dfe9d75fb79ceb8fda992f432cc6bff81399d524c"
+      "sha256": "db92508f0a8798c6c1805169c11ddf4a88fdf173539d170a3bded39511dbcd53"
     },
     {
       "path": "clossys/agents/producer/seat.writer.approve/candidates/writer.approve-v1.json",
@@ -3975,7 +3975,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.writer.approve/slot.json",
-      "sha256": "f0f3539c744ab443810ca7fe5a19eaf2e0382540ed7ca432062147e62e218d62"
+      "sha256": "02e98ed48119667cb3d482a559a89bf4b4d14ccdb2f7e87e205705b96cffa655"
     },
     {
       "path": "clossys/agents/producer/seat.writer.candidates/candidates/writer.candidates-v1.json",
@@ -3987,7 +3987,7 @@
     },
     {
       "path": "clossys/agents/producer/seat.writer.candidates/slot.json",
-      "sha256": "0b8622a962b0ae663436d99e6816d822152213bcd78f198aad380a5b7dc6c1f0"
+      "sha256": "5e8a5e45452482e173ea1d0288470c163d563d979d75e4297063ae3cf15022a1"
     },
     {
       "path": "clossys/agents/publisher/ia.json",
@@ -4003,7 +4003,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.build-overview/slot.json",
-      "sha256": "36f4ac6188b933d851ede4843565f2e3c14f32b4774d07f82a0c1f988fafbd1a"
+      "sha256": "34650628ad8580adac6b6366f0d64816624111b1c3a4593b0c63ecba419ee4ef"
     },
     {
       "path": "clossys/agents/publisher/page.designer-assets/candidates/page-v7.json",
@@ -4015,7 +4015,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.designer-assets/slot.json",
-      "sha256": "8346948cf9643f8617f1e4574a82640cacfca0ccf4c9b3220b3278d7932ec664"
+      "sha256": "306cc23d436126893661056b110932bd087337ef7e0ae134ac39d9e9a2fce29a"
     },
     {
       "path": "clossys/agents/publisher/page.designer-components/candidates/page-v7.json",
@@ -4027,7 +4027,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.designer-components/slot.json",
-      "sha256": "d6ea12e6491ee3221e820d07709d1691e21526fbceec8512ef9ea2e872a2a374"
+      "sha256": "8bfe2d1f851796593973fe1f250170ccc3686c7be4bd9aeee44e82ea5c49ae2e"
     },
     {
       "path": "clossys/agents/publisher/page.designer-frames/candidates/page-v7.json",
@@ -4039,7 +4039,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.designer-frames/slot.json",
-      "sha256": "681130b5b54d208ae104d3ef076a3f2dc27545365708deed6a1b7fa5ca6a47f3"
+      "sha256": "e7e9688903b635b1b02e8e6a86198f8a53cbdbce25518d7774284c70dc5a41f0"
     },
     {
       "path": "clossys/agents/publisher/page.designer-sections/candidates/page-v7.json",
@@ -4051,7 +4051,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.designer-sections/slot.json",
-      "sha256": "452ff0abbbfdb70aca90e7860d8e51be5d73b9ce622735ee1cc47b2ee16af6a9"
+      "sha256": "2dcf33b538f4743af22516e670a7beac52f33df3b2b290fac6a0f5753ecf7a4c"
     },
     {
       "path": "clossys/agents/publisher/page.designer-themes/candidates/page-v7.json",
@@ -4063,7 +4063,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.designer-themes/slot.json",
-      "sha256": "f7ec2c6d4e6e165c89119298e66e3fd3fd46a292e871e2cacc5ff8ffbd6e657e"
+      "sha256": "059be4b13e3350ad95405f4ce2a4efc5b5ab4d0e126c17fccfba32911071dc36"
     },
     {
       "path": "clossys/agents/publisher/page.director-advantage/candidates/page-v7.json",
@@ -4075,7 +4075,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.director-advantage/slot.json",
-      "sha256": "6289d7282ac065545b72c7f6b543bcd1b06a4672a25adaca7644f4aeed8e97e5"
+      "sha256": "7edb960857d246bf41812b95ceb4da4da83ac91b0f88d23b7082de93f1e04e88"
     },
     {
       "path": "clossys/agents/publisher/page.director-aspiration/candidates/page-v7.json",
@@ -4087,7 +4087,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.director-aspiration/slot.json",
-      "sha256": "1a00c046ceaa25d46bc94499a0336067bdc4dd3edc2329ee0bfb703e99dc89dc"
+      "sha256": "dfec9b402a5572b96cc5a811435217ca289c5075ff13e4256cb12c8ce44e30e8"
     },
     {
       "path": "clossys/agents/publisher/page.director-capability/candidates/page-v7.json",
@@ -4099,7 +4099,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.director-capability/slot.json",
-      "sha256": "6c0f80fb1886528893f7b812eb3ba35c1cfa96469ce711dbe6255ec78120f5d8"
+      "sha256": "0b313b3e947c4891dcb9a4838a169c33b372983ac5b98f1bcba404162b73666e"
     },
     {
       "path": "clossys/agents/publisher/page.director-context/candidates/page-v7.json",
@@ -4111,7 +4111,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.director-context/slot.json",
-      "sha256": "d7086e8a9b84aa4f17673b159c2eb246a45912983649d10a6326bf7d0d6327c1"
+      "sha256": "68578874205225a8828647ed9ffa0f196cd0c8011de1a88003a69512623a14f7"
     },
     {
       "path": "clossys/agents/publisher/page.director-execution/candidates/page-v7.json",
@@ -4123,7 +4123,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.director-execution/slot.json",
-      "sha256": "77b6280fa4bf3a54e1bc80460da8679523b0d9e4abf1013fb99ccdaa761e67e5"
+      "sha256": "dfc9817dfbdc7b547ce529ee4f531db2a6af7aab6dcb6406b9b4d36d8e78d30f"
     },
     {
       "path": "clossys/agents/publisher/page.director-focus/candidates/page-v7.json",
@@ -4135,7 +4135,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.director-focus/slot.json",
-      "sha256": "8819ead58b7e33e3a3cffda2f08b9929d78dc41ddae27d5fda32ed0eb2d96f83"
+      "sha256": "127f37d09beed19b6d53b58bf173a40c70417207e519f1be30f2e81570df0991"
     },
     {
       "path": "clossys/agents/publisher/page.director-identity/candidates/page-v7.json",
@@ -4147,7 +4147,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.director-identity/slot.json",
-      "sha256": "652fa2ae614e99d73fe3538ccac033d70710c360623f2227d3cde8d4086794f9"
+      "sha256": "3f9769bb84067457158ab043342806fc49ac06208b8748e5f85d7954a702e341"
     },
     {
       "path": "clossys/agents/publisher/page.home/candidates/page-v10.json",
@@ -4159,7 +4159,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.home/slot.json",
-      "sha256": "b45aef93c2df8004c0b2ab48bec476d4cc8ed6c9abf4c218dcf17c63cf2bcb03"
+      "sha256": "48af13275fa846e9aa7eaa341376443ea464f7cc1cb279c574c7e81e33ae78c8"
     },
     {
       "path": "clossys/agents/publisher/page.producer-pipeline/candidates/page-v8.json",
@@ -4171,7 +4171,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.producer-pipeline/slot.json",
-      "sha256": "8a64184a52af257bb0b03cfeb96b6c5be25e6d5f2104eea38ded4cf59de45ca5"
+      "sha256": "80173e4edf544543410855099174329337f7fb4302e2a59db2e637e347cb281d"
     },
     {
       "path": "clossys/agents/publisher/page.publisher-studio/candidates/page-v7.json",
@@ -4183,7 +4183,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.publisher-studio/slot.json",
-      "sha256": "25f594e3548812ca701142bb8e6cb5927303f3fc62d8efc5f38659969c286ff2"
+      "sha256": "8c7954a27efac5695ac704d448696299327c766675ed1e25a9edf966e5fe9bb3"
     },
     {
       "path": "clossys/agents/publisher/page.run-overview/candidates/page-v6.json",
@@ -4195,7 +4195,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.run-overview/slot.json",
-      "sha256": "820127aa3c6442289a6d59f7031455fffd08acd4872eac64342dd7470bae3d9e"
+      "sha256": "be7666996536bf6d7b3254613e82331ac9dd7219e7b3a8af54f198c20c744ef5"
     },
     {
       "path": "clossys/agents/publisher/page.writer-lexicon/candidates/page-v7.json",
@@ -4207,7 +4207,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.writer-lexicon/slot.json",
-      "sha256": "63d0ab1e6cacf3dbb4ce576c0ec556f272fb1e7015919b85f3b681aa81aeffd5"
+      "sha256": "b3897d9e19b659b48693d920abeb29c71ffde473e9ab19223157cff88d86bfe7"
     },
     {
       "path": "clossys/agents/publisher/page.writer-narratives/candidates/page-v7.json",
@@ -4219,7 +4219,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.writer-narratives/slot.json",
-      "sha256": "234113e168d955eec1600be1ce29748dbd6f281f89977caf8c698f6421dcfaff"
+      "sha256": "b1cc1694d6f98f24310ca597ed1a4b9a39253adc3be55d0c92826bebf85cd083"
     },
     {
       "path": "clossys/agents/publisher/page.writer-passages/candidates/page-v7.json",
@@ -4231,7 +4231,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.writer-passages/slot.json",
-      "sha256": "fc60817d6b51edc2cb5abd7f335973aa86dbacbfb17d7df2ad3b2e2cef45cd15"
+      "sha256": "0f3bd57d55ba44a15db50e17c610bb7ce4b76d543b187575eec9c9dc692a20db"
     },
     {
       "path": "clossys/agents/publisher/page.writer-patterns/candidates/page-v7.json",
@@ -4243,7 +4243,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.writer-patterns/slot.json",
-      "sha256": "b8269fdbaee3e186682d2a5dbe567c71e80ef53ffd500579fddb3e6251874dec"
+      "sha256": "767b8240c2166aa40c39c9f84e375ad96414b42d41b4e0056fcdc60a02fa49e6"
     },
     {
       "path": "clossys/agents/publisher/page.writer-strings/candidates/page-v7.json",
@@ -4255,7 +4255,7 @@
     },
     {
       "path": "clossys/agents/publisher/page.writer-strings/slot.json",
-      "sha256": "61454c4e173d401f8bb3f8b9cb5d4e5bccee5673e87b868d308d3de614d569a2"
+      "sha256": "680bd5b6d903432308d46dceeacb32a8c1a732f241a8e51d9f63d7041750d587"
     },
     {
       "path": "clossys/agents/publisher/publication.studio/candidates/publication-v8.json",
@@ -4267,7 +4267,7 @@
     },
     {
       "path": "clossys/agents/publisher/publication.studio/slot.json",
-      "sha256": "3761fedd7231dd05cf74ce672f3b776d589516b398186edc15a1fb14f5055563"
+      "sha256": "a3cc688d4ca1581f240fbb21bcf9f4036896e49f2899f20ad65cd0c8514905b4"
     },
     {
       "path": "clossys/agents/writer/ia.json",
@@ -4283,7 +4283,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.avoid-patterns/slot.json",
-      "sha256": "bf23ba97617cf50a2e46f897a7a2307ca1fc59b1604d24a97de90584a00c35e1"
+      "sha256": "7e80452343221202fed250e77e44c36659187c6e4f23721287d25bc4afc5ef94"
     },
     {
       "path": "clossys/agents/writer/lexicon.avoid-terms/candidates/studio-v1.md",
@@ -4295,7 +4295,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.avoid-terms/slot.json",
-      "sha256": "ad8fb8cca74916db932db19d6d812646de8050509e435a496537b9caaf9b9330"
+      "sha256": "7d35deb3bf89d422332e6cf62b6bbfc8c42b495faf548beb269e268ccda80c18"
     },
     {
       "path": "clossys/agents/writer/lexicon.brand-names/candidates/studio-v3.md",
@@ -4307,7 +4307,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.brand-names/slot.json",
-      "sha256": "55be0b641c371af5348135fb73bc167dc1dc0519eb175f1d05c1ea8bb4f6cf8b"
+      "sha256": "0095f3feb7474e3198c917db694c7ca56750a1cedc8cd6159f54ea81cde6b7b2"
     },
     {
       "path": "clossys/agents/writer/lexicon.capitalization/candidates/studio-v1.md",
@@ -4319,7 +4319,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.capitalization/slot.json",
-      "sha256": "b15cdd1e3f74d0db3a27914a04257d445cd61650389dd810c1af68995cfcbd95"
+      "sha256": "c55b170af41b01714dd9cf742f29bcb06a70122a3b86c838b45798d3fac11103"
     },
     {
       "path": "clossys/agents/writer/lexicon.comparison-claims/candidates/studio-v1.md",
@@ -4331,7 +4331,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.comparison-claims/slot.json",
-      "sha256": "2ef4b284e44785251d489b7bc3bef0c1bd723fde5e63872a0a10340d8bf7edcf"
+      "sha256": "0e294a0a7bcf02db643f0abd1c96e076773a582e87e1b0637cd937f58e7085bb"
     },
     {
       "path": "clossys/agents/writer/lexicon.compliance-statements/candidates/studio-v1.md",
@@ -4343,7 +4343,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.compliance-statements/slot.json",
-      "sha256": "7fded7f6473aedd8f162229ffe43f0cb455cdfdcd6708f50a427604382474c96"
+      "sha256": "576a91a0e1de76043f71f0edd61ac8f3d745c9181a8d7ad0ab743eed816c7a90"
     },
     {
       "path": "clossys/agents/writer/lexicon.currency-format/candidates/studio-v1.md",
@@ -4355,7 +4355,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.currency-format/slot.json",
-      "sha256": "74e158a049c575aa7a347551d8961c0a91529c3622284f8fd39f11a402353ac8"
+      "sha256": "4822577b5f3fead9583adb8246122354503fb3ca8c8ec72a27e2c64223a0ec1f"
     },
     {
       "path": "clossys/agents/writer/lexicon.date-format/candidates/studio-v1.md",
@@ -4367,7 +4367,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.date-format/slot.json",
-      "sha256": "e8e050a46bb0d76ef0a78120655ce99d6c44820db344b46d7f762b5208758e73"
+      "sha256": "f88544b4f3cd617299734736577b7d33ad36234e5cc601aab53f6df273e483cb"
     },
     {
       "path": "clossys/agents/writer/lexicon.direction/candidates/studio-v1.md",
@@ -4379,7 +4379,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.direction/slot.json",
-      "sha256": "2e29471d8711ad2c08fb63d1bfe152444bdae0dd656c0395f2f39cefa9a74035"
+      "sha256": "9ba5bfa77e48cb6d026b7088f4beccb24427566c734c673c3d096de2128a0eee"
     },
     {
       "path": "clossys/agents/writer/lexicon.energy/candidates/studio-v1.md",
@@ -4391,7 +4391,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.energy/slot.json",
-      "sha256": "4b21badb6ac2623a5339e05e9d7d0f751e74fe0c8843058e7e5cceddb052e709"
+      "sha256": "e83ddda9f8bed2a02a74fb15c010534ab7f2fd62fbdd4265830654919d090647"
     },
     {
       "path": "clossys/agents/writer/lexicon.expansion-budget/candidates/studio-v1.md",
@@ -4403,7 +4403,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.expansion-budget/slot.json",
-      "sha256": "af8cbd5def27ef9d735cbb085f2ef16ff925b629a6f49429aa11b137786e2c57"
+      "sha256": "b84aeb3980025a17df58f5318ba072485e584a47a8aa2de7fed47b2c4772f32c"
     },
     {
       "path": "clossys/agents/writer/lexicon.formality/candidates/studio-v1.md",
@@ -4415,7 +4415,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.formality/slot.json",
-      "sha256": "b0559bcce16dc77fd9045a4c6aaa80df6908e6af262cf0433d0f1490fd129cea"
+      "sha256": "4f67accc5116af73a8fff952642ad275905818c18e9eb47e56fa6eca4d57d22c"
     },
     {
       "path": "clossys/agents/writer/lexicon.metric-claims/candidates/studio-v3.md",
@@ -4427,7 +4427,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.metric-claims/slot.json",
-      "sha256": "8b144e1673b16156932fdfebfacbaac6a36265b8f93dcfb1884eddeba789322a"
+      "sha256": "a48c01f3eef474fae29493515acd7d775245e0fcc2e325c1cd188d8ab4b56941"
     },
     {
       "path": "clossys/agents/writer/lexicon.mood/candidates/studio-v1.md",
@@ -4439,7 +4439,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.mood/slot.json",
-      "sha256": "d593663c473d96c04c61bb59a2dcfb7c4943bce7a779a9edb045428dcd839100"
+      "sha256": "e5eee13cab3db19370a0b04bb3745f3cda287bfb7677b325a605c6e98b43bfa7"
     },
     {
       "path": "clossys/agents/writer/lexicon.number-format/candidates/studio-v1.md",
@@ -4451,7 +4451,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.number-format/slot.json",
-      "sha256": "20f2a1165f5d5d5bc62627931e44e1717489dbbabf804b7e7c6657ed1fdd3a96"
+      "sha256": "de2c29a8ea542140e0b57781e10e1e6a98b73784f1ebad9f886fd658a1db358a"
     },
     {
       "path": "clossys/agents/writer/lexicon.person/candidates/studio-v1.md",
@@ -4463,7 +4463,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.person/slot.json",
-      "sha256": "4f7a236ee1f4616244a7835bedd02d78fdfa4c329335a23705053930689ba251"
+      "sha256": "428617c84afbacc577cb6f36230043ccc441fc75a458de43d150e7f358bc0d70"
     },
     {
       "path": "clossys/agents/writer/lexicon.plural-rules/candidates/studio-v1.md",
@@ -4475,7 +4475,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.plural-rules/slot.json",
-      "sha256": "4a72a38f96fdda2b83b2cd1c66335533791de5840f4c6b989f2a4fa941210112"
+      "sha256": "ed42f27cedc424b3c78797577fc04c1d98eb367b0bed7d29e8a0ce1b546796ff"
     },
     {
       "path": "clossys/agents/writer/lexicon.preferred-terms/candidates/studio-v1.md",
@@ -4487,7 +4487,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.preferred-terms/slot.json",
-      "sha256": "920c7f2639cff913b845f6838de4e459038d331cd0fd3bc7e911506871debfa0"
+      "sha256": "d728153eef73517b3151e76616cd14c8f20ad242b78343fada5bd165d6754205"
     },
     {
       "path": "clossys/agents/writer/lexicon.product-claims/candidates/studio-v1.md",
@@ -4499,7 +4499,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.product-claims/slot.json",
-      "sha256": "6e0eb509eb1d905d192184910dd6a629d83f87b917740f9bbf4e6351edae7bfb"
+      "sha256": "a390a1ae04eb30abe1e48e387565dc5095c1e397b8270af76bd3b195e22bb587"
     },
     {
       "path": "clossys/agents/writer/lexicon.pronunciation/candidates/studio-v1.md",
@@ -4511,7 +4511,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.pronunciation/slot.json",
-      "sha256": "9be64723b51ba728817fbcc47e92349a1a2379b775803bc82899115b46b49ce7"
+      "sha256": "115add3702249fcc357765a2dd9b0e3d329e7850f4b2db6223c7e72112b3172d"
     },
     {
       "path": "clossys/agents/writer/lexicon.punctuation/candidates/studio-v1.md",
@@ -4523,7 +4523,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.punctuation/slot.json",
-      "sha256": "907c8bfd2bca236b91377cd93483392ef15222750b09b5c127a5caffe2605cb7"
+      "sha256": "75ca5dce50992147d3ff05f7e61434cca9a5bb4f92a65b847a5bd550d2c292c5"
     },
     {
       "path": "clossys/agents/writer/lexicon.reading-level/candidates/studio-v1.md",
@@ -4535,7 +4535,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.reading-level/slot.json",
-      "sha256": "5b332b0df2919aa0f1de738c3f3d6a1b7b76ed1ee9ebf1b6e088d1de0ed17a96"
+      "sha256": "b939ee4d7a09dca2030c5c93a1b5be93cd92a5779022ac37c03d88407d61903c"
     },
     {
       "path": "clossys/agents/writer/lexicon.sentence-length/candidates/studio-v1.md",
@@ -4547,7 +4547,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.sentence-length/slot.json",
-      "sha256": "15deb527807e3d0fa924d028389444f7cf24d04cd74c9e8d40c6857dd1c90f3c"
+      "sha256": "466b738bb787915bf2be8cc0a6da0e4c03b36f6b8b314b1d45feda714232c0c9"
     },
     {
       "path": "clossys/agents/writer/lexicon.spelling-variant/candidates/studio-v1.md",
@@ -4559,7 +4559,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.spelling-variant/slot.json",
-      "sha256": "8ea7e219531ed7925071d00b3554ee575469a67458ba325ba4935011483f2617"
+      "sha256": "d94b6b08c5ea82b38e6d57c2a1a6ce52e4e325d8c7265536f4201ab486c44758"
     },
     {
       "path": "clossys/agents/writer/lexicon.time-format/candidates/studio-v1.md",
@@ -4571,7 +4571,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.time-format/slot.json",
-      "sha256": "d44d6cc639802e8b52db1a1281531a8443a16cc31f50693e52ba3ebc1cf3d8c8"
+      "sha256": "94475becbde0127ae41eb842ba7f9b4b56308bb8e8420135022dfbca8e6165fb"
     },
     {
       "path": "clossys/agents/writer/lexicon.unit-format/candidates/studio-v1.md",
@@ -4583,7 +4583,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.unit-format/slot.json",
-      "sha256": "d811c93327d965268a89257d34df94af76c3d845d09489a70f6291bd564c2dba"
+      "sha256": "2b0ca2cd4e567b7d8989d91a76df9bfd0c84e859a159af934b57cd7d4101c542"
     },
     {
       "path": "clossys/agents/writer/lexicon.warmth/candidates/studio-v1.md",
@@ -4595,7 +4595,7 @@
     },
     {
       "path": "clossys/agents/writer/lexicon.warmth/slot.json",
-      "sha256": "b1e964215a056a2043162be3b8f453d4463ae2ca161465cbbef06d5c7635d51a"
+      "sha256": "27de209607ef3166f974c0c945b777d30560d1d8332eb0aad03c082f61354a1a"
     },
     {
       "path": "clossys/agents/writer/narratives.app-chrome/candidates/studio-v3.md",
@@ -4607,7 +4607,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.app-chrome/slot.json",
-      "sha256": "ce219f9762cda3ebdf46fa4d76d236ccd9a436c335abe6c14a84847b66b507e9"
+      "sha256": "5c95eee4eaf878aa35cb48cffbc1854fc9faf6654f59b379c413301ecdca5f51"
     },
     {
       "path": "clossys/agents/writer/narratives.article/candidates/studio-redraft-v1.md",
@@ -4619,7 +4619,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.article/slot.json",
-      "sha256": "766be92aa8e098e6be938a7d615371167f17f29965da9867e1139235bbb355bc"
+      "sha256": "f09068e825590efb584b0299a39776b3ca319022618a962ec82224f3d5be4505"
     },
     {
       "path": "clossys/agents/writer/narratives.deck-script/candidates/studio-v1.md",
@@ -4631,7 +4631,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.deck-script/slot.json",
-      "sha256": "6adb87c8cf0f69f13e540fdd02c6fb396b240f3eec328186382a7b948ebcca33"
+      "sha256": "5b81e7958fd2901cfc958fc39d6318f8e4926aa4a17a17799c4fc3c7c12f04c1"
     },
     {
       "path": "clossys/agents/writer/narratives.email/candidates/studio-v1.md",
@@ -4643,7 +4643,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.email/slot.json",
-      "sha256": "9379d48dcb0d4df81bd718964bdcff9f8f3c91016e686c70641538fc2a89bf07"
+      "sha256": "035dbada53763279b44bb951b00975933d74bb003fc882671f08ecdf2ccfbe2a"
     },
     {
       "path": "clossys/agents/writer/narratives.guide/candidates/studio-v1.md",
@@ -4655,7 +4655,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.guide/slot.json",
-      "sha256": "8bf3ed2de78b3fdcdd2fcdb20ff82dea350036167438292754c79e22131b3795"
+      "sha256": "11ee71a4be908a6cac63a55bd7da9b74e124c2b6e37ab79a961b0f49f388124a"
     },
     {
       "path": "clossys/agents/writer/narratives.legal-document/candidates/studio-redraft-v1.md",
@@ -4667,7 +4667,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.legal-document/slot.json",
-      "sha256": "4e9f6327e16c9d0378d96faacb9086efe64555b66585478273b88584d393e793"
+      "sha256": "45708a18d016e0816b7c2ab784a7de0b21b1eb3fa89c56d7b9542b4c95d7b551"
     },
     {
       "path": "clossys/agents/writer/narratives.notification/candidates/studio-v1.md",
@@ -4679,7 +4679,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.notification/slot.json",
-      "sha256": "c352ca502a9042c8187ff15b95aaa7012ec493dfe7bf3c8418b8be7a16caf922"
+      "sha256": "8ab4636635d282b05cdf0ed5ac832eac8ee8f1bd97ef03ce2c08e847bc46327d"
     },
     {
       "path": "clossys/agents/writer/narratives.page-story/candidates/studio-v1.md",
@@ -4691,7 +4691,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.page-story/slot.json",
-      "sha256": "03ef2e1ba564201c4c689c53102bfed56e88236a447d948dd3108dfd1e38f0c3"
+      "sha256": "1e9e760f5ccf8d19cb15ec6852d90830d457678d95131c5850833f846b0b6be0"
     },
     {
       "path": "clossys/agents/writer/narratives.release-notes/candidates/studio-v5.md",
@@ -4703,7 +4703,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.release-notes/slot.json",
-      "sha256": "1ea2cf2061361fe9eef4d872c024eaf47f0dbbf3bff136d507822a85a10c95a9"
+      "sha256": "29af67f4fdc3d2e15d920a0b4dec38f09dc3633fa58a4ab47c8b24a7655c9e68"
     },
     {
       "path": "clossys/agents/writer/narratives.screen/candidates/studio-v1.md",
@@ -4715,7 +4715,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.screen/slot.json",
-      "sha256": "0b1607520c95008586e143899e9c0e2985cd4882b93c71aa91aaf11ba6588934"
+      "sha256": "db8ce7131e0ff6c4ee8a612bf182d44e5cc7b8deb977f55408a8d5b9ac2c3959"
     },
     {
       "path": "clossys/agents/writer/narratives.site-chrome/candidates/studio-v3.md",
@@ -4727,7 +4727,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.site-chrome/slot.json",
-      "sha256": "a5974968c6f5f46ce98f0f5f6b22664b45904750834ad350f189347507814350"
+      "sha256": "46d84539da2ede166b807dff8226e8b5b3ec52d61079686775c02d8757918b42"
     },
     {
       "path": "clossys/agents/writer/narratives.video-script/candidates/studio-v1.md",
@@ -4739,7 +4739,7 @@
     },
     {
       "path": "clossys/agents/writer/narratives.video-script/slot.json",
-      "sha256": "59dc26d015ed45ebb3321252b192daf58c3bf486fe995276d6f2a53838468565"
+      "sha256": "95cc25ad239991a76821ca7ef0f37388a8e7bc4273b33620385c5acb8d0e1e89"
     },
     {
       "path": "clossys/agents/writer/passages.access-matrix/candidates/studio-redraft-v1.md",
@@ -4751,7 +4751,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.access-matrix/slot.json",
-      "sha256": "64c654cb3fb072c0594a714178aec7a522df92a498f13768286ebb7442df34d3"
+      "sha256": "58d6b3a37067a0115407796df2149105f34aaafbf1c7b55df407d356386b6214"
     },
     {
       "path": "clossys/agents/writer/passages.account-summary/candidates/account-summary-v3.md",
@@ -4763,7 +4763,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.account-summary/slot.json",
-      "sha256": "4dbf76027c7ecefeca83e9ebd05727bca830e0b58ca916ef8d5ff5fe28722013"
+      "sha256": "1010d04febc15d834ae1ea4ad47a2b51cc0297ce4b75a65de37dccd0884a87bf"
     },
     {
       "path": "clossys/agents/writer/passages.activity-feed/candidates/studio-recite-v1.md",
@@ -4775,7 +4775,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.activity-feed/slot.json",
-      "sha256": "bb09aea3a3de1150c4888941698c276613e9a9a1ca3953df046e61ee9060fb1a"
+      "sha256": "6ee220d202d5fb5ebda81131968f23d2152c8ae5038f408c8fb2a5a153511d19"
     },
     {
       "path": "clossys/agents/writer/passages.article/candidates/studio-redraft-v1.md",
@@ -4787,7 +4787,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.article/slot.json",
-      "sha256": "d41271dc6d11122177927fc11cc5ff911f2d0ab3d5db2f940a85309a6c2422cc"
+      "sha256": "e71566ce9e1f355971b795054ad70de9436fd0d9352e25e1eaba7c1389f7f840"
     },
     {
       "path": "clossys/agents/writer/passages.audit-log/candidates/studio-recite-v1.md",
@@ -4799,7 +4799,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.audit-log/slot.json",
-      "sha256": "62db0ceb74ae3cc349690b5f1f1d34f4a1cd9bfb78fc541e10212d2136afb402"
+      "sha256": "35f8c23abcd69f79bc4ef691885d9bd086f66c127484acaa7587a0030216cabd"
     },
     {
       "path": "clossys/agents/writer/passages.band/candidates/studio-v1.md",
@@ -4811,7 +4811,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.band/slot.json",
-      "sha256": "25c7eafb60f6b7a9482576dc692a41c246505d2d23657fecba8268472248c8f3"
+      "sha256": "06a83b5d5b5e566d5f0c8cd7ae7d4c88d830827a833914c12ebfcf9f82bbd7a1"
     },
     {
       "path": "clossys/agents/writer/passages.boundary-message/candidates/studio-v3.md",
@@ -4823,7 +4823,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.boundary-message/slot.json",
-      "sha256": "bb812ff2922f0edbd8070174f0a2b7531741a9988a2b2ebe2b4bb19dde9500d9"
+      "sha256": "3f837b10a8d839dcd0be40460ed487a2a8af4e3ff9e128fcfc1c63d156053e90"
     },
     {
       "path": "clossys/agents/writer/passages.call-to-action/candidates/studio-v1.md",
@@ -4835,7 +4835,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.call-to-action/slot.json",
-      "sha256": "e666451158f24990e08a49dc126bf70953df41d7150d52f242b21be686351f5a"
+      "sha256": "ddd8fd6573ffdc196a9000962347753751ee9c14946d7c8b10add87f7334967a"
     },
     {
       "path": "clossys/agents/writer/passages.cards/candidates/studio-recite-v1.md",
@@ -4847,7 +4847,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.cards/slot.json",
-      "sha256": "32577bca9cb4a29cd5b034f38c05ead7f354b92994a23631941ac90e1243dd2e"
+      "sha256": "676eba02472ce9ea85da85c8adff3bca780901f46834968902be6b3113fc4164"
     },
     {
       "path": "clossys/agents/writer/passages.chat/candidates/studio-v3.md",
@@ -4859,7 +4859,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.chat/slot.json",
-      "sha256": "1dece40356dd3a837cacaf2b4a4774c0d8ae630bbd23649a0527f6853a626ab6"
+      "sha256": "805927ccb0851a2f977aa4a2bcf289fb762ec208e38a9d009938f624e20f0562"
     },
     {
       "path": "clossys/agents/writer/passages.column-mapper/candidates/studio-v1.md",
@@ -4871,7 +4871,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.column-mapper/slot.json",
-      "sha256": "38e8cec3bba31ad39251e2d45ade3b811f5f7cd5be12b47ab1f8d60697605838"
+      "sha256": "58a19e6e9cee86ee7e17e3ebb34bfc872fbfd4281d8dd09a19ae1fc5ad9de736"
     },
     {
       "path": "clossys/agents/writer/passages.comparison/candidates/studio-v1.md",
@@ -4883,7 +4883,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.comparison/slot.json",
-      "sha256": "b8ed5c89df4ccc2c80d92b0dd68c526c4ede052c4e3d8f999335c33333171866"
+      "sha256": "88c89e3ed19ae062e95ceef03b82e25998d7ae895325bad7c1f6cdef2c1fcc35"
     },
     {
       "path": "clossys/agents/writer/passages.consent/candidates/studio-v1.md",
@@ -4895,7 +4895,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.consent/slot.json",
-      "sha256": "70ece5b004201eff54002a36f6663ac15c06f198b6a827695f75266965d6f41e"
+      "sha256": "145d24d820143e463247b537971a541c53f2781e2d7545ed9d98d6aa347eb9b5"
     },
     {
       "path": "clossys/agents/writer/passages.content/candidates/studio-v3.md",
@@ -4907,7 +4907,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.content/slot.json",
-      "sha256": "65c5ea0af1441ac490a5964f433c7bec6d4dbbc348c35d31ee8a3097af1eea51"
+      "sha256": "7cd4b35b0b3e8418f221d816035d484b0262b849e6fe9cd8e31b0e678beb533e"
     },
     {
       "path": "clossys/agents/writer/passages.data-grid/candidates/studio-recite-v1.md",
@@ -4919,7 +4919,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.data-grid/slot.json",
-      "sha256": "b2c96a238ba75806e84c13ceddcf528e7539fe5bad893ec597525807c5f4b6bc"
+      "sha256": "050c66ba2d6ac33ed949cbb5f699f8bb24b39426c5196c84f5b64595710acf92"
     },
     {
       "path": "clossys/agents/writer/passages.data-table/candidates/studio-recite-v1.md",
@@ -4931,7 +4931,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.data-table/slot.json",
-      "sha256": "57322b2a2e4ae7befb52894bb6e90f97cd4eb8a4a1a56ba4982a4d9c7d6003b6"
+      "sha256": "e5299d7fa78c7d14d4074981a7f111240366c86ac722309564340268ccdba200"
     },
     {
       "path": "clossys/agents/writer/passages.empty-state/candidates/studio-v1.md",
@@ -4943,7 +4943,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.empty-state/slot.json",
-      "sha256": "5d987e436a3522ac8114b23efaf907c5c1eca72020f260e0c803ef7f4d254cc5"
+      "sha256": "89a9cae2a489ca9e1db62842eaaf5bf9b6e32f316add5da217660e1345ded063"
     },
     {
       "path": "clossys/agents/writer/passages.error-state/candidates/studio-recite-v1.md",
@@ -4955,7 +4955,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.error-state/slot.json",
-      "sha256": "6e6d98c2bcec710a2dcad38c1821397b2fb0154c0da5905be1ad5e073dc9013f"
+      "sha256": "057b86fc19e530facea0dfc42a6b7a4c6395c0fd386ef35acf3b719543ddaff2"
     },
     {
       "path": "clossys/agents/writer/passages.explorer/candidates/studio-v1.md",
@@ -4967,7 +4967,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.explorer/slot.json",
-      "sha256": "83a0270f6b3613288bdd960b79ae6cfd3963a9b1edb9cff67965c51944fe8ba2"
+      "sha256": "b8b12f141b52df7e5dc73bc6580503ba148b003a424c0e33ed53f40889a97cb5"
     },
     {
       "path": "clossys/agents/writer/passages.faq/candidates/studio-v3.md",
@@ -4979,7 +4979,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.faq/slot.json",
-      "sha256": "298c0cd24b14ae17533ceaf5363264fcd0d89a72004118342db48e9a0d0c5ff1"
+      "sha256": "cc6ef4c2c3f7410d0de2e48eaff89cc7be252a26b9d53b8b77fda9474e6a5302"
     },
     {
       "path": "clossys/agents/writer/passages.features/candidates/studio-v1.md",
@@ -4991,7 +4991,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.features/slot.json",
-      "sha256": "dd9c7804fc7d7e1e229225cc6b9bea63232c9662c03060297e6f6ead82cdf265"
+      "sha256": "351d539834df30e2ca5a3f0b2e87300845e947f4dee47498884b1eb008e60c0d"
     },
     {
       "path": "clossys/agents/writer/passages.filter-builder/candidates/filter-builder-v3.md",
@@ -5003,7 +5003,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.filter-builder/slot.json",
-      "sha256": "a6751907e3f02b50268109418561df3e7d32f31f2bb5f5bab07547a206e1ee72"
+      "sha256": "b17c297f0193943f9dc3b412765d60eb2692f9ff10a513484bdfa596f58fa220"
     },
     {
       "path": "clossys/agents/writer/passages.form/candidates/studio-v3.md",
@@ -5015,7 +5015,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.form/slot.json",
-      "sha256": "524c14c77c4cf567ab053f416bb63919a11f7e5dd154c540a9f010eace5bb5b2"
+      "sha256": "86b06a5bdb032947f42a9055f5446a06f8f63c7a3fc61b6dd5c84856e873a7e4"
     },
     {
       "path": "clossys/agents/writer/passages.gallery/candidates/studio-v1.md",
@@ -5027,7 +5027,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.gallery/slot.json",
-      "sha256": "5673337184380c9d33cff76a0abc69b84746efba1ddcf4e077f4abc03e6d3ca1"
+      "sha256": "9cb0087c4319e717b995eeb9982a58112d32d93bdd1f8c774cc7c4bb2214d321"
     },
     {
       "path": "clossys/agents/writer/passages.hero/candidates/studio-v3.md",
@@ -5039,7 +5039,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.hero/slot.json",
-      "sha256": "60f988cd8087681d4b5d972a4375d5664c8f12f6b74f1262f278aa6bcb48f33c"
+      "sha256": "1398af1de30e1f5a369f6bef9f556cb49aea0e25a671157a76b08f72006bed2c"
     },
     {
       "path": "clossys/agents/writer/passages.legal-prose/candidates/studio-redraft-v1.md",
@@ -5051,7 +5051,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.legal-prose/slot.json",
-      "sha256": "b339bac3dd963289ba7988e26ade80bbdbfa7686726ac245a0ee21b5675c3db4"
+      "sha256": "f522a308ab564ddaae75d694b7fa342f6131db1a913c49a1d6fd556e818e2422"
     },
     {
       "path": "clossys/agents/writer/passages.link-index/candidates/studio-v1.md",
@@ -5063,7 +5063,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.link-index/slot.json",
-      "sha256": "f8e460cd20dc47208bb2283f4a280ad14d376684278532c3944b452f8e61d810"
+      "sha256": "6fe3520910f32364e20d2af7c77840219281159fe5c4351f7bfc04faf6e1e0b7"
     },
     {
       "path": "clossys/agents/writer/passages.logo-cloud/candidates/studio-v1.md",
@@ -5075,7 +5075,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.logo-cloud/slot.json",
-      "sha256": "6b3563591ccbb0614df187e19d3e69e6e0e4f6bf37bdcdfe9d43f3da9b362080"
+      "sha256": "676e88315b9b51b96f60400465c249800cf45abe3279a8fa13696bc11e5b3b0c"
     },
     {
       "path": "clossys/agents/writer/passages.logo-hero/candidates/studio-v1.md",
@@ -5087,7 +5087,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.logo-hero/slot.json",
-      "sha256": "501f2d28f403c96b8ee8ecaca1c74a06c375392b8c32ae6a66d03a0a0521a9be"
+      "sha256": "227dab58311f35467abb8b7c869088491cc809b5a26643fadb04e171f0c008bb"
     },
     {
       "path": "clossys/agents/writer/passages.logo-mark/candidates/studio-v1.md",
@@ -5099,7 +5099,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.logo-mark/slot.json",
-      "sha256": "0ec6e53571e4eb48fc505eb9ef8426a1dd348fd298a52fa434dc0a6a8f397a1c"
+      "sha256": "32b9289ec25d62e99b144f54bb3d93edc3043a5ac71fe65540425c286fc03dc1"
     },
     {
       "path": "clossys/agents/writer/passages.media/candidates/media-v3.md",
@@ -5111,7 +5111,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.media/slot.json",
-      "sha256": "6b410d13bf0cd96b826223b05517e26340cebb8301fd843b7791496fd7b643d6"
+      "sha256": "ba7b14512f341ce493f4b786b70ae25b595b6a0719dc115bec4257f990f834b3"
     },
     {
       "path": "clossys/agents/writer/passages.newsletter/candidates/newsletter-v3.md",
@@ -5123,7 +5123,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.newsletter/slot.json",
-      "sha256": "7c0bd566ec79bb6ff5e1eb1dc9326e308b1bc4f9427cde8b8ba6042fa0024e46"
+      "sha256": "fef4e26b3ca633559e170409fd2577e5b38390d7fad0c2ddff4d9a1e684ae0a8"
     },
     {
       "path": "clossys/agents/writer/passages.notices/candidates/studio-redraft-v1.md",
@@ -5135,7 +5135,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.notices/slot.json",
-      "sha256": "6f90c94be89fd5fd7f75764a69775a73a7fb3a0f09ac29542989ae495dd4ee45"
+      "sha256": "1c3e5be55490572afdb8a2ea5109715262278eb293630d2d7e85e647227c71cd"
     },
     {
       "path": "clossys/agents/writer/passages.page-header/candidates/studio-v1.md",
@@ -5147,7 +5147,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.page-header/slot.json",
-      "sha256": "ef020a1ef2b6a629b13815f2e746e71054bdc54bcfcced53ff61ca1b372f3fc7"
+      "sha256": "8c76ac6d32566cdff3c7078f4b5c9e310fec75627301d3149cb0919297da24fd"
     },
     {
       "path": "clossys/agents/writer/passages.pagination/candidates/pagination-v3.md",
@@ -5159,7 +5159,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.pagination/slot.json",
-      "sha256": "fa7cc12f788bc03b2f008cb0a40d75026d1fcf18af6b568770ca48f2f0f237e9"
+      "sha256": "ca85983da3dc7ec9d1d3d5562665064db916f3b177490073fa39df75aa73eaa2"
     },
     {
       "path": "clossys/agents/writer/passages.people/candidates/studio-v3.md",
@@ -5171,7 +5171,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.people/slot.json",
-      "sha256": "70ef14e5b55e456f8eb4c7be13eab7bb9e074cbde6d7fd67f8100bc3d4286f62"
+      "sha256": "5502ab78bdeaa1b16cda49be90573a7bb209d254b3bef0d3c2258af45f4d4cf4"
     },
     {
       "path": "clossys/agents/writer/passages.pricing/candidates/pricing-v3.md",
@@ -5183,7 +5183,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.pricing/slot.json",
-      "sha256": "fdedf24e13cc85aefd32b965508a5e527ed109ac9819d0704b1b18fd7824f219"
+      "sha256": "162f3be924c1d50ecaaded5717df6732e13a20ec96af26ce1aa1dfc9b10727e2"
     },
     {
       "path": "clossys/agents/writer/passages.record-detail/candidates/studio-recite-v1.md",
@@ -5195,7 +5195,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.record-detail/slot.json",
-      "sha256": "4a7037e4f25cd0fadc648a5b725642f25b7910ea566d1f606776d1beadf43bd9"
+      "sha256": "274c0b312b94c232a195fff30b4d233183078d5319b6bd3e25f488e9a96febb4"
     },
     {
       "path": "clossys/agents/writer/passages.resource-list/candidates/studio-recite-v1.md",
@@ -5207,7 +5207,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.resource-list/slot.json",
-      "sha256": "456f5e797aa8219a52e60eea8009dfed47d5e00732edf3382b94773e66052831"
+      "sha256": "4f9732e868d5d5f1f84f08c85e1e647c87cd9b3b7dcea83469b584b4a4eef8b3"
     },
     {
       "path": "clossys/agents/writer/passages.section-header/candidates/studio-redraft-v1.md",
@@ -5219,7 +5219,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.section-header/slot.json",
-      "sha256": "2959fc4a4c888b673bec3d1e570f6bb90e4ec1db288981b79dbcd63f4608402a"
+      "sha256": "713f6e5010843632e1a79eddfcfdfcfb4c93713cd126a3791952cc8920411e2e"
     },
     {
       "path": "clossys/agents/writer/passages.sectioned-document/candidates/studio-v1.md",
@@ -5231,7 +5231,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.sectioned-document/slot.json",
-      "sha256": "34a464e96273ca072b419446c257eae27949cb7cae41cf5847a0bc44a2fc96f4"
+      "sha256": "aef1a160a45524f8d63993a1412ea14d6432c5058a615852505a4eefe5a3e4f8"
     },
     {
       "path": "clossys/agents/writer/passages.settings/candidates/studio-v1.md",
@@ -5243,7 +5243,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.settings/slot.json",
-      "sha256": "2c0e107cae3e52ff098e43cf449905acee0caac26a14c42980b86865163499bc"
+      "sha256": "bf4466d2be8f557b30e086756bbd5743e18aa3e37f388a8626683ea06359f5c0"
     },
     {
       "path": "clossys/agents/writer/passages.sign-in-form/candidates/sign-in-form-v4.md",
@@ -5255,7 +5255,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.sign-in-form/slot.json",
-      "sha256": "e0336eb75f2107ccecfd84d6baf8e269c5512c742660d3a4cddfc8ff5c1de276"
+      "sha256": "f9b1eda5b225efc4fa346f45de0889ba3ed71ff0fb4c91315f2155e5b9e5f6d3"
     },
     {
       "path": "clossys/agents/writer/passages.stats/candidates/studio-recite-v1.md",
@@ -5267,7 +5267,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.stats/slot.json",
-      "sha256": "692f926ee9c6ddc69f5f263b34930eb9e9dfedc7d8c8341b48a3dc3e9dd422b1"
+      "sha256": "f031f548b25f37d4357a5fabdad47bd823c3051c97f42cb74f0997ac3181a26f"
     },
     {
       "path": "clossys/agents/writer/passages.status-list/candidates/studio-recite-v1.md",
@@ -5279,7 +5279,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.status-list/slot.json",
-      "sha256": "0a4b401b12397d96a53317528b89a409fb68b7cb42649b0ac5f2c2cc8d324ee7"
+      "sha256": "0870bfca83d47a0bb7285fea03f11b8546fa34cf467fd9c2c1a1136c27b23e46"
     },
     {
       "path": "clossys/agents/writer/passages.steps/candidates/studio-redraft-v1.md",
@@ -5291,7 +5291,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.steps/slot.json",
-      "sha256": "1712f899dd42c9a17c1356188786cc080ea114ffa95836527adf403313ad3312"
+      "sha256": "032dc7c58d892f6a2f2af4362d1e0706a3a64bc6327092831e716d7e551c70cf"
     },
     {
       "path": "clossys/agents/writer/passages.table-of-contents/candidates/studio-v1.md",
@@ -5303,7 +5303,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.table-of-contents/slot.json",
-      "sha256": "e35879472942c8d2b095ee4400df39eb225fb5ef7b9cef6e56da43ae91e1506e"
+      "sha256": "62822fa51b8fc2a16240213b1d1b05fa26a77b6107c06d27e35c09bee74ad65d"
     },
     {
       "path": "clossys/agents/writer/passages.task-list/candidates/studio-recite-v1.md",
@@ -5315,7 +5315,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.task-list/slot.json",
-      "sha256": "39e4be0154affeef7583ef1d8783ed483a359c94a1bcba46cb63d0adea35eba6"
+      "sha256": "32102ace957a605b511b9d3e6bc24443323413bf5af3d3bf0199136621775bf2"
     },
     {
       "path": "clossys/agents/writer/passages.testimonials/candidates/testimonials-v3.md",
@@ -5327,7 +5327,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.testimonials/slot.json",
-      "sha256": "32ff8cf91a53fbd6e72660430a456167940de8dc3d23fbae4cb016f681b8fdf0"
+      "sha256": "f810cd746ce6824dc0b8acc9879873f6369ed0e7c3bf9cdeeb9776bda5af4cc9"
     },
     {
       "path": "clossys/agents/writer/passages.timeline/candidates/studio-v3.md",
@@ -5339,7 +5339,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.timeline/slot.json",
-      "sha256": "be6dcc5eb03cfc0b290ccafd1f2a16209b87a4d9e19842ce12e168b48fb6edbd"
+      "sha256": "de160cc40dedb38c2b0f0145d38e09f04a4135616659e21035194365f36a20a7"
     },
     {
       "path": "clossys/agents/writer/passages.usage/candidates/studio-recite-v1.md",
@@ -5351,7 +5351,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.usage/slot.json",
-      "sha256": "699898506259142e2fff2184cfae5b6e27bd5388b0558a2b20ef183655cb4db0"
+      "sha256": "f66aa145abc09ed105a5edbbc1a9ca4eb151083d0ed6dcc8cd107b086f824f3e"
     },
     {
       "path": "clossys/agents/writer/passages.wizard/candidates/studio-v1.md",
@@ -5363,7 +5363,7 @@
     },
     {
       "path": "clossys/agents/writer/passages.wizard/slot.json",
-      "sha256": "95baaacb05bf9bfefe653aae959b765cd3ea3ff9de30ab81dff9c5d14c4c2e0e"
+      "sha256": "2fdea81c385abd299b2954e43163aaa0c48fd1456332785f9e065a40f780a184"
     },
     {
       "path": "clossys/agents/writer/patterns.confirmation/candidates/studio-v1.md",
@@ -5375,7 +5375,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.confirmation/slot.json",
-      "sha256": "bb25c10c0385ce674d0e99d33b718b6aee2dd9e4547000a946bdd1551fd78116"
+      "sha256": "11c38c097404b1eec347e02070641590ea4f294d3899b3690a6c1ea14fda7df4"
     },
     {
       "path": "clossys/agents/writer/patterns.consent-line/candidates/studio-v1.md",
@@ -5387,7 +5387,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.consent-line/slot.json",
-      "sha256": "c9a2c056ed4505d25fb8b4cc39047177b796eaadc318b222d519972208218a4b"
+      "sha256": "f27f59499395025128e3679a4698ad09de96ede7921a99b3293d3477ddb9a263"
     },
     {
       "path": "clossys/agents/writer/patterns.empty-state/candidates/studio-v1.md",
@@ -5399,7 +5399,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.empty-state/slot.json",
-      "sha256": "28e8beafa4cd93d244f59992d5d453d6b5f335763f7fd44611066b915043dc63"
+      "sha256": "760b1b16b598a43739bee24331209a2743e890af70881f561a014faa94e98c87"
     },
     {
       "path": "clossys/agents/writer/patterns.error-message/candidates/studio-recite-v1.md",
@@ -5411,7 +5411,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.error-message/slot.json",
-      "sha256": "d062535623c6bb42bec82a0fa52b2841895ac20371c3dc41782c64a23aff719c"
+      "sha256": "a0c4f52bd00f394c8f8c2401eb5071d9f71349d19def220b9309ca75811041cd"
     },
     {
       "path": "clossys/agents/writer/patterns.eyebrow-headline/candidates/studio-v1.md",
@@ -5423,7 +5423,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.eyebrow-headline/slot.json",
-      "sha256": "b6a8098032f02a12e867ca2299177903f994e2f6e5eb805b5ed9abdb523c9092"
+      "sha256": "a1f7b5b141206e9b5de6fa755a652d2df8879b1620b5fc4f84becaed15497081"
     },
     {
       "path": "clossys/agents/writer/patterns.feature-bullet/candidates/studio-v1.md",
@@ -5435,7 +5435,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.feature-bullet/slot.json",
-      "sha256": "1dab6b2f5dbf4234482f87e07a29a5dbe8de5bafe1d1540cf564494de1a8d6c2"
+      "sha256": "3d09f1b9ebfda123ac835533fca52e6b24c02195c8577d270d971a14467b54a8"
     },
     {
       "path": "clossys/agents/writer/patterns.figure-caption/candidates/studio-v1.md",
@@ -5447,7 +5447,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.figure-caption/slot.json",
-      "sha256": "9de510661c5aadf50341b471a1ec0b29229e3b98669d55e64d000421d675cc92"
+      "sha256": "b3a24093b2effc1ce1121b74912f0d6e09a41035e99b574d93dd5316ca2640c3"
     },
     {
       "path": "clossys/agents/writer/patterns.form-field/candidates/studio-v1.md",
@@ -5459,7 +5459,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.form-field/slot.json",
-      "sha256": "fe18cc88f2fddb70b9413eaf5b9aa4b5b322f1fd1fc85054720b7d5f3f5c31dd"
+      "sha256": "63886ef2380b2683532bb3aa8eea8647969145bf1d15732738e5c89b781441af"
     },
     {
       "path": "clossys/agents/writer/patterns.headline-subhead/candidates/studio-v1.md",
@@ -5471,7 +5471,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.headline-subhead/slot.json",
-      "sha256": "90122f161edc8135c85e4c5315c3b9674abf46744daa5829c41f10cd573ebb1b"
+      "sha256": "5ac72ed9fd2794d4106ae625447b99352ef13e824a4f7f2ad31cdf6e64d2b0ea"
     },
     {
       "path": "clossys/agents/writer/patterns.headline/candidates/studio-v1.md",
@@ -5483,7 +5483,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.headline/slot.json",
-      "sha256": "a8fa999a18cc738e50b85c5290840566f9e0cb2df7d2c041c82009225c7bf2b7"
+      "sha256": "2a3865402271aab94e5a1bb0b05c3d4dd5d90390222f65592d8729f434a79069"
     },
     {
       "path": "clossys/agents/writer/patterns.hint/candidates/studio-redraft-v1.md",
@@ -5495,7 +5495,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.hint/slot.json",
-      "sha256": "4897c406b1871a408c7527a5d4c98293d277b4e1d8f3b3f19a982dba25feafc3"
+      "sha256": "3aaaeb487176d6864fb8237e1583038976f7c743d35f2e1282123c0812a59eb1"
     },
     {
       "path": "clossys/agents/writer/patterns.inline-link/candidates/studio-v1.md",
@@ -5507,7 +5507,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.inline-link/slot.json",
-      "sha256": "1a0e82f1fddb561ffe07c6f468ce7c6c439b08831eab8b588ddcce7a81667a6b"
+      "sha256": "b9423646e9694628c29b14070cced3e7a0ace3aaffc84387262485b6895402a1"
     },
     {
       "path": "clossys/agents/writer/patterns.messaging-kit/candidates/studio-v3.md",
@@ -5519,7 +5519,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.messaging-kit/slot.json",
-      "sha256": "b49f2a72d0c6a9e1fe0e60167b936b4bcc12c5c3f8a5d73b2fbe3323b698ca8b"
+      "sha256": "ee002e8a1a379775ff81888f3cec28055322ba8884ece3bb5132ea86b367b40a"
     },
     {
       "path": "clossys/agents/writer/patterns.pricing-item/candidates/studio-v1.md",
@@ -5531,7 +5531,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.pricing-item/slot.json",
-      "sha256": "761d31d387a9fcafbcb857458e1b0c3fe4880d1855292053a5930c72ab09b373"
+      "sha256": "8d73b54a0d45b4cfe04c668f1e54b907e402bceaa5ef8e82a4718db0c454afc2"
     },
     {
       "path": "clossys/agents/writer/patterns.primary-action/candidates/studio-v1.md",
@@ -5543,7 +5543,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.primary-action/slot.json",
-      "sha256": "70fd3626276d0c9dcf807639fa3f4ca4adfa5540e0b275fdb5159194e77226a9"
+      "sha256": "0d7dff82a4cce1ac53bc5e2319701bbbfdb8d44a269395edd4c4511c2ac1855c"
     },
     {
       "path": "clossys/agents/writer/patterns.quote/candidates/studio-v1.md",
@@ -5555,7 +5555,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.quote/slot.json",
-      "sha256": "a2897298ad5136d6bb47c1e526cd8f0b4d25e162a27d9d68916ca10556602dc7"
+      "sha256": "ffcd0be015f784bb3ad9ba16a634e955959f832cecb641c339d2966d377e4dd5"
     },
     {
       "path": "clossys/agents/writer/patterns.secondary-action/candidates/studio-v1.md",
@@ -5567,7 +5567,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.secondary-action/slot.json",
-      "sha256": "509ce81e94a004a3bc95dbdf6c056144935e5740f6ab59b9a99eb4b5cd740e2d"
+      "sha256": "6350b73eb421cdf751cb095c7554218459e0cb46b8b9a60af20f8bb77b47aa8f"
     },
     {
       "path": "clossys/agents/writer/patterns.section-title/candidates/studio-v1.md",
@@ -5579,7 +5579,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.section-title/slot.json",
-      "sha256": "7cb0a3cc6556311f0b08cc3bb02b7c1e1edb6c19b6634c4a9f5a136b1ab99ec3"
+      "sha256": "9fa8c82bb7ca4fdd656d9e71790070ab415363d17a9e4c6e1f809d966ffcc145"
     },
     {
       "path": "clossys/agents/writer/patterns.stat/candidates/studio-v1.md",
@@ -5591,7 +5591,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.stat/slot.json",
-      "sha256": "b75d1b6a3029d060b7157fd49024d843480bddabe6be82366f3a600c600b742b"
+      "sha256": "ebe3448a005f128c372c87013a70620ef5a11f06af6e535ac4c1eec528227e63"
     },
     {
       "path": "clossys/agents/writer/patterns.table-caption/candidates/studio-v1.md",
@@ -5603,7 +5603,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.table-caption/slot.json",
-      "sha256": "a834fbd60b2269f3554acfeaf1c7d968c2167078cf2b36902f5cca223dafae70"
+      "sha256": "d37a2923a1f8f586e7a322df26bc33d06a2935dece9ec0d93f680b2a450da079"
     },
     {
       "path": "clossys/agents/writer/patterns.table-header/candidates/studio-v1.md",
@@ -5615,7 +5615,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.table-header/slot.json",
-      "sha256": "cbed6ff2a0ddc3380328bd87d7d784109cbe96796ee38aaf3efe7929c8306631"
+      "sha256": "a77959d03f1800cb8b3312c444701447061e447d41d54299445b353f4d229c45"
     },
     {
       "path": "clossys/agents/writer/patterns.testimonial/candidates/studio-v1.md",
@@ -5627,7 +5627,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.testimonial/slot.json",
-      "sha256": "15ac07df74fd5db2c99e1e5b478b1a2f69b72d37b8f1145da08d7108fa138b57"
+      "sha256": "bf3aab1b3fe2ebe5935fd45cb6a41a270ad422bc98400df50ac281482e2699ef"
     },
     {
       "path": "clossys/agents/writer/patterns.tooltip/candidates/studio-v1.md",
@@ -5639,7 +5639,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.tooltip/slot.json",
-      "sha256": "57bd465b56c2466dbff000b212a59de0e11f5f5de9a262c5057b6e65af9d2a90"
+      "sha256": "6e91cf2e8efa26745050c2e1fdf064c9fe253a9cc6313c274dad2fa6d086bf30"
     },
     {
       "path": "clossys/agents/writer/patterns.warning-message/candidates/studio-v1.md",
@@ -5651,7 +5651,7 @@
     },
     {
       "path": "clossys/agents/writer/patterns.warning-message/slot.json",
-      "sha256": "4d1b8f2fb44abfc7501f39b8adc351a4d946fac1d14602e62f754efe97a50a1f"
+      "sha256": "c09ee2ed13a50e6fedb70bc5867012308b4b25e2b30d4d8732f4ab575e2f2489"
     },
     {
       "path": "clossys/agents/writer/strings.actions/candidates/studio-v1.md",
@@ -5663,7 +5663,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.actions/slot.json",
-      "sha256": "69af63a4322d8312b833a3c9d878abc3c15da0317b2a839418bd6b4e0475b580"
+      "sha256": "4d35e29e7768291edba8a0054d60d6bcea0a014d3b2bb168bfa212b90d7332a9"
     },
     {
       "path": "clossys/agents/writer/strings.alt-text/candidates/studio-v1.md",
@@ -5675,7 +5675,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.alt-text/slot.json",
-      "sha256": "59cb2606214e0b28199eff964fd07c660775d1689570c5c7021e87fdcd78e7be"
+      "sha256": "474fcffa668295dbe001da21216bcc288d54709d5c9d5b574a66b9156748ad7c"
     },
     {
       "path": "clossys/agents/writer/strings.captions/candidates/studio-v1.md",
@@ -5687,7 +5687,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.captions/slot.json",
-      "sha256": "0d974eb32e0459440d7ceefd90c017af5d917dddaac98e8c44ab733f96bd993f"
+      "sha256": "57c8be69374b02751a23bd8526c43c2c770ba8f5843bdb52b9aab95d9a1a74f6"
     },
     {
       "path": "clossys/agents/writer/strings.common/candidates/common-v26.md",
@@ -5699,7 +5699,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.common/slot.json",
-      "sha256": "4bc3124ee89f4b6dac7ff3799ef47146cb8a39b79296516352ff81fe866ab545"
+      "sha256": "72dbb555aec06383ad87494b225e41c2cdf995fd35ff10551b5235be7eb87ba2"
     },
     {
       "path": "clossys/agents/writer/strings.confirmations/candidates/studio-v1.md",
@@ -5711,7 +5711,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.confirmations/slot.json",
-      "sha256": "3b0fa678436622b8cdcfd19076753975305bb30ea6997ac84276390d3f8797ef"
+      "sha256": "08b8d5b9403a28ceec916c5796b40f0773494da41b1400befbc8bbd7d12b773e"
     },
     {
       "path": "clossys/agents/writer/strings.counters/candidates/studio-redraft-v1.md",
@@ -5723,7 +5723,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.counters/slot.json",
-      "sha256": "891a197c9398c412ea20a2860ca118a2a4a1469e00dae3d73e53999bdba67c09"
+      "sha256": "358afc6c48c228e4279da714315004b6c81ba8966dd78e0a1fce9d1e717a52df"
     },
     {
       "path": "clossys/agents/writer/strings.descriptions/candidates/studio-v7.md",
@@ -5735,7 +5735,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.descriptions/slot.json",
-      "sha256": "ee2a80f07181505ae6af8bb5881f2821d7d90072a1e3fce0c1f6608dcff5ad4c"
+      "sha256": "2cf0cfdf57e4714685ffa259a4df3f7982e27d413dfc983c6c3eff615a0b326e"
     },
     {
       "path": "clossys/agents/writer/strings.email-preheaders/candidates/studio-v1.md",
@@ -5747,7 +5747,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.email-preheaders/slot.json",
-      "sha256": "973dd97288afd8318c7ca5021edff8efa18eb8943865fda8ceb081eebb4a1f5f"
+      "sha256": "0a3fb36a39e2ead7b7c4a2ca27e7af0dafceefce58b7b5691f6f03134d47dfd2"
     },
     {
       "path": "clossys/agents/writer/strings.email-subjects/candidates/studio-v1.md",
@@ -5759,7 +5759,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.email-subjects/slot.json",
-      "sha256": "f0b3dd41067605c200cdd4a2a8bd15cc9e7f0fab293be00064f9ef8af7ab555b"
+      "sha256": "d0fd191c60a89b876eeffff714f2620715178359702a96b98a4c2a17c1ac2241"
     },
     {
       "path": "clossys/agents/writer/strings.empty/candidates/studio-redraft-v1.md",
@@ -5771,7 +5771,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.empty/slot.json",
-      "sha256": "736d4294fa105aa0023590f1c809fbb9ed15376aea340f84522ddaa02ef217ba"
+      "sha256": "32cb2e13a2490fc084af51c9450d912d64c1aa21dc7fb5c18ac565fbca6dd561"
     },
     {
       "path": "clossys/agents/writer/strings.errors/candidates/studio-recite-v1.md",
@@ -5783,7 +5783,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.errors/slot.json",
-      "sha256": "d1c4d663abc8161311ead08f0ab34112b6f33c8529990cd34ed1e859797c713d"
+      "sha256": "5e262f860367301a8e972ac5fc601881d997b72ea93f1b0ead01d67449dd8c50"
     },
     {
       "path": "clossys/agents/writer/strings.field-labels/candidates/studio-contract-v5.md",
@@ -5795,7 +5795,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.field-labels/slot.json",
-      "sha256": "8f10c653e8f8498bb221bc8de23d9e6e5ecbba22f1a1ecb31c02e3abfcfa66e3"
+      "sha256": "145af1873523a225fa984838209473e3870ff3525dd063017195332fabd98f59"
     },
     {
       "path": "clossys/agents/writer/strings.legal-lines/candidates/studio-v1.md",
@@ -5807,7 +5807,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.legal-lines/slot.json",
-      "sha256": "e4b728a8b1631751a37ff680d1c75ad55e7bdb4f0170df971477202c0e479550"
+      "sha256": "4a398003911ec182c16ff6490b3ce1ea9266af1dae360f8d16c03c02d7fa984b"
     },
     {
       "path": "clossys/agents/writer/strings.loading/candidates/studio-v1.md",
@@ -5819,7 +5819,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.loading/slot.json",
-      "sha256": "fdcdc6e28178dbea7ebc5f423bb95fcaf17c59bcb2936cd9bd5a9ef56878f5b1"
+      "sha256": "51dbe56d0c03a9e3abc1f7ce0ad10dc460a3242a1cd9f9cce43f33de4297e7b9"
     },
     {
       "path": "clossys/agents/writer/strings.names/candidates/names-v5.md",
@@ -5831,7 +5831,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.names/slot.json",
-      "sha256": "4ac028d203cc47974638ece1c510e1fa2069c921108263b3e393e069482a4e2a"
+      "sha256": "44adf49145d6e3e40ba905aa87fe0bc78798c2847da831aca4c8e8533c48b3d6"
     },
     {
       "path": "clossys/agents/writer/strings.navigation/candidates/studio-v3.md",
@@ -5843,7 +5843,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.navigation/slot.json",
-      "sha256": "14efc23000f7ee04dde5a5639b542173a555b45ddf25ecede79d339bd98e3980"
+      "sha256": "bda29efa77d068ac2f4c12d44c4f53b289f8c290c4b6d5311b0441304969e7f8"
     },
     {
       "path": "clossys/agents/writer/strings.page-titles/candidates/studio-v4.md",
@@ -5855,7 +5855,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.page-titles/slot.json",
-      "sha256": "2b9102d017184fa8bc6afaafe5abbf3508b7643dd660dcd1ae28d412021a78b3"
+      "sha256": "5c367c6858047702a071b294629f734393b778168379071ccfa9a5cd0f0941bb"
     },
     {
       "path": "clossys/agents/writer/strings.share-text/candidates/studio-v1.md",
@@ -5867,7 +5867,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.share-text/slot.json",
-      "sha256": "ef918c225d714cde3868e34576ac32010840a7800613c47e3bc4b1bddc08ac6a"
+      "sha256": "068bba5727b9219a83b189dd9590d538f1812bda38e9f476bfa095c030348d89"
     },
     {
       "path": "clossys/agents/writer/strings.statuses/candidates/studio-v8.md",
@@ -5879,7 +5879,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.statuses/slot.json",
-      "sha256": "e44733e088c629f3559b85701f2b5b1effa1141938f4f50f0b7cb21930f33a29"
+      "sha256": "76a5b6a2106dd8409cd245badab2d97bb00e56f6bbd11a23e248525865a35b43"
     },
     {
       "path": "clossys/agents/writer/strings.taglines/candidates/studio-v1.md",
@@ -5891,7 +5891,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.taglines/slot.json",
-      "sha256": "ab251e32701e0b9e4dad0f75efd90c007334ccf735455b4fa0d19ff7e2ca0797"
+      "sha256": "beaa3298b2832c7a890d056f54f70dbbab45f63bc273d6e615401ab882144448"
     },
     {
       "path": "clossys/agents/writer/strings.transcripts/candidates/studio-v1.md",
@@ -5903,7 +5903,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.transcripts/slot.json",
-      "sha256": "8d821e833a85a938d2356527fc53a131cd06e89aef22b0e781b254cc8c6778a2"
+      "sha256": "9fa97f1f3c3d3b6d4c5284761deae3586cc6230d5691e29325b85280f179dd67"
     },
     {
       "path": "clossys/agents/writer/strings.warnings/candidates/studio-v1.md",
@@ -5915,7 +5915,7 @@
     },
     {
       "path": "clossys/agents/writer/strings.warnings/slot.json",
-      "sha256": "1cc9cd1d0f9b56cf2efeb83dcb96a283d7b14ec7a76d21638d6806ff594fbe1f"
+      "sha256": "071416be8b8e31ffd249dde80570c4fdb653ec735e175411e11792ed11812746"
     }
   ],
   "outputs": [
