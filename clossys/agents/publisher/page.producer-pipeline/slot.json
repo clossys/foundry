@@ -17,6 +17,8 @@
     "sections.studio.page-header"
   ],
   "uses": [
+    "assets.icon-checks",
+    "assets.icon-outline",
     "assets.icon-team",
     "frames.studio-shell",
     "sections.module.checks",

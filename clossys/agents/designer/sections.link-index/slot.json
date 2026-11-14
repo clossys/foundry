@@ -6,7 +6,7 @@
     "l0": "sections",
     "l1": "sections.navigate",
     "l2": "navigate-indexes",
-    "order": 219
+    "order": 224
   },
   "kind": "element",
   "contract": {
@@ -165,6 +165,7 @@
     "themes.muted-foreground"
   ],
   "uses": [
+    "assets.icon-needs",
     "components.button",
     "components.item"
   ]

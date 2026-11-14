@@ -6,7 +6,7 @@
     "l0": "sections",
     "l1": "sections.specimens",
     "l2": "specimens-content",
-    "order": 163
+    "order": 168
   },
   "kind": "element",
   "contract": {
@@ -91,6 +91,7 @@
     "identity.visual.style"
   ],
   "uses": [
+    "assets.icon-needs",
     "components.button",
     "components.item"
   ]

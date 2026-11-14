@@ -6,7 +6,7 @@
     "l0": "sections",
     "l1": "sections.organize",
     "l2": "organize-collections",
-    "order": 198
+    "order": 203
   },
   "kind": "element",
   "contract": {
@@ -279,6 +279,7 @@
     "themes.spacing"
   ],
   "uses": [
+    "assets.icon-needs",
     "components.button",
     "components.item"
   ]

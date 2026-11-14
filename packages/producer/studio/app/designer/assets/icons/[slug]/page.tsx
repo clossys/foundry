@@ -22,6 +22,7 @@ const leaves: { slug: string }[] = [
   { slug: "assets.icon-theme-light" },
   { slug: "assets.icon-theme-dark" },
   { slug: "assets.icon-theme-system" },
+  { slug: "assets.icon-request" },
   { slug: "assets.icon-success" },
   { slug: "assets.icon-warning" },
   { slug: "assets.icon-danger" },
@@ -46,6 +47,10 @@ const leaves: { slug: string }[] = [
   { slug: "assets.icon-package" },
   { slug: "assets.icon-layers" },
   { slug: "assets.icon-integration" },
+  { slug: "assets.icon-outline" },
+  { slug: "assets.icon-checks" },
+  { slug: "assets.icon-versions" },
+  { slug: "assets.icon-needs" },
 ];
 export const dynamicParams = true;
 export function generateStaticParams() {
