@@ -1,15 +1,20 @@
 /**
  * The owner verbs: each records one owner decision step (W6a; they replace the six gaps).
  *
- *   clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--root <dir>]
- *   clossys ia <agent>/<slot> --standard <id> [--root <dir>]
- *   clossys ia <agent>/<slot> --remove [--root <dir>]
+ *   clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref>] [--dry] [--root <dir>]
+ *   clossys ia <agent>/<slot> --standard <id> [--owner-ref <ref>] [--dry] [--root <dir>]
+ *   clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]
+ *   clossys ia <agent>/<slot> --move --under <l1>/<l2>|<l0>/<l1>/<l2> [--extension true|false] --owner-ref <ref> [--at <iso>] [--dry] [--root <dir>]
+ *   clossys ia <agent>/<slot> --extension true|false --owner-ref <ref> [--at <iso>] [--dry] [--root <dir>]
+ *   clossys ia <agent> --add|--rename|--merge|--drop|--reorder|--assign|--layers|--axes ... --owner-ref <ref> [--at <iso>] [--dry] [--root <dir>]  (IA_USAGE; cli/ia-regroup.ts)
  *   clossys evidence <id> --source <source> --observed <YYYY-MM-DD> --by <who> --body <file> [--finding] [--root <dir>]
  *   clossys config --init [--from <file>] [--root <dir>]
  *   clossys seat <step> --by <who> (--model <id> --tier low|mid|high --prompt-file <path> | --no-llm) [--procedure <text> --command <verb>] [--decided-by owner|planner] [--root <dir>]
  *   clossys rule --init [--root <dir>]
  *   clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]
  *   clossys approve writer/<slot> <candidate-id> [--by owner[:<ref>]] [--at <iso>] [--root <dir>]
+ *   clossys owner-decision add --ref <ledger ref> --scope <op,...> --quote-file <file> [--date <YYYY-MM-DD>] [--root <dir>]
+ *   clossys owner-decision init [--root <dir>]
  *   clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]
  *   clossys retire <agent>/<slot> --slot --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]
  *
@@ -19,15 +24,16 @@
  */
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { checkSlotModel } from "../records/slot-check.js";
-import { AGENT_KIND, CANDIDATE_NAME, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId } from "../records/slot-model/types.js";
+import { dirname, join, relative, resolve, sep } from "node:path";
+import { checkSlotModel, RETIRED_DIR } from "../records/slot-check.js";
+import { ledgerComment, OWNER_DECISION_SCOPES, OWNER_DECISIONS_FILE, OWNER_DECISIONS_SCHEMA, resolveOwnerRef, validateOwnerDecisions, type OwnerDecision } from "../records/owner-decisions.js";
+import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
-import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy } from "../records/slots.js";
+import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
 import { writePin } from "../records/slot-write.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
 import type { ModelAgent } from "../records/slot-model/index.js";
@@ -41,17 +47,40 @@ import { STEPS } from "../pipeline/steps/index.js";
 import { RETIRE_CODES, RETIRE_REASON } from "../constitution/checks/R10-retire.js";
 import { resolveCandidate } from "./pin.js";
 import { CliUsageError } from "./args.js";
+import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
+import { RULES_FILE } from "./rules-file.js";
 
-export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--root <dir>]\n"
-  + "       clossys ia <agent>/<slot> --standard <id> [--root <dir>]\n"
-  + "       clossys ia <agent>/<slot> --remove [--root <dir>]\n"
-  + "       clossys ia <agent> --adopt | --start [--root <dir>]\n"
+export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
+  + "       clossys ia <agent>/<slot> --standard <id> [--owner-ref <ref>] [--dry] [--root <dir>]\n"
+  + "       clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]\n"
+  + "       clossys ia <agent> --adopt | --start [--dry] [--root <dir>]\n"
   + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
   + "  --standard names the standard the slot is judged by (packages/<agent>/standards/<id>/, R15.1): it must exist, be valid and serve the slot's kind; alone it keeps the written contract.\n"
   + "  --adopt writes the agent's Foundry IA (ia.json and every slot.json, inputs and uses derived) where it has no ia.json (Director, Designer, Writer; the Director's first).\n"
-  + "  --start writes an empty workspace IA instead; --under then adds its L1/L2 groups as it places each slot.";
+  + "  --start writes an empty workspace IA instead; --under then adds its L1/L2 groups as it places each slot.\n"
+  + "Regroup (owner-authorized; leaf ids never change, only placement; every slot.json position follows in the same guarded write):\n"
+  + "       clossys ia <agent>/<slot> --move --under <l1>/<l2>|<l0>/<l1>/<l2> [--extension true|false] --owner-ref <ref>\n"
+  + "       clossys ia <agent>/<slot> --extension true|false --owner-ref <ref>\n"
+  + "       clossys ia <agent> --add <l1>|<l1>/<l2> --label <text> [--layer <l0>] --owner-ref <ref>\n"
+  + "       clossys ia <agent> --rename <l0>|<l1>|<l1>/<l2> [--label <text>] [--id <new id>] --owner-ref <ref>\n"
+  + "       clossys ia <agent> --merge <l0>|<l1>|<l1>/<l2> --into <same level> --owner-ref <ref>\n"
+  + "       clossys ia <agent> --drop <l0>|<l1>|<l1>/<l2> --owner-ref <ref>\n"
+  + "       clossys ia <agent> --reorder L0|<l0>|<l1>|<l1>/<l2> --order <id,...> --owner-ref <ref>\n"
+  + "       clossys ia <agent> --assign <l1> --layer <l0> [--label <text>] --owner-ref <ref>\n"
+  + "       clossys ia <agent> --layers <file> | --axes <file> --owner-ref <ref>\n"
+  + "  each also takes [--at <iso>] [--dry] [--root <dir>].\n"
+  + "  --move: an already placed slot to the end of another L2 group (<l0>/ checks the group's L0).\n"
+  + "  --extension: the slot is (true) or is no longer (false) a signed extension, in slot.json and the ia.json extensions list alike.\n"
+  + "  --add: a new, empty tab (L1) or group (L2); --rename: the label, and the id only with --id (layer refs and axes follow).\n"
+  + "  --merge: one tab, group or layer into another of its level; --drop: removes one only when it holds no leaf.\n"
+  + "  --reorder: the members of one parent (L0 = the layers), --order an exact permutation.\n"
+  + "  --assign: a whole L1 into an L0 layer (--label creates the layer); --layers: the L0 layers (a JSON list of { id, label, nodes });\n"
+  + "  --axes: the L0/L1 vocabularies (ia.schema.json axes). Once axes are declared the layers are the L0: slot.json ia.l0 follows.\n"
+  + "  --owner-ref: the ledger comment id (or ledger ref) of the owner's words, a decision registered in clossys/owner-decisions.json;\n"
+  + "  resolved offline (never GitHub), refused when unknown, and recorded in ia.json changes[] with every write it allows.\n"
+  + "  --dry prints the planned change and the files it would write, and writes nothing.";
 export const EVIDENCE_USAGE = "Usage: clossys evidence <id> --source <source> --observed <YYYY-MM-DD> --by <who> --body <file> [--finding] [--root <dir>]\n"
   + "  writes clossys/evidence/director/<id>.md (--finding: findings/<id>.md), the evidence the Director cites.";
 export const CONFIG_USAGE = "Usage: clossys config --init [--from <file>] [--root <dir>]\n"
@@ -65,6 +94,13 @@ export const SEAT_USAGE = "Usage: clossys seat <step> --by <who> (--model <id> -
 export const RULE_USAGE = "Usage: clossys rule --init [--root <dir>]\n"
   + "       clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]\n"
   + "  adds (or with --replace, replaces) one owner rule row in scripts/rules/registry.json, starting the registry when it has none.";
+export const OWNER_DECISION_USAGE = "Usage: clossys owner-decision add --ref <ledger ref> --scope <op,...> --quote-file <file> [--date <YYYY-MM-DD>] [--root <dir>]\n"
+  + "       clossys owner-decision init [--root <dir>]\n"
+  + "  registers one owner decision in clossys/owner-decisions.json (the registry --owner-ref resolves against), starting the file when it has none.\n"
+  + `  --ref: the ledger comment that holds the owner's words (${OWNER_WORDS_REF_FORM}, an optional (note) after it); its comment id is the decision id;\n`
+  + `  --scope: what the decision authorizes, one or more of ${OWNER_DECISION_SCOPES.join(", ")};\n`
+  + "  --quote-file: a file holding the owner's words (or their summary) on one line, the decision's summary;\n"
+  + "  --date: the date of the owner's words (default today, UTC). A registered id is never rewritten.";
 export const APPROVE_USAGE = "Usage: clossys approve writer/<slot> <candidate-id> [--by owner[:<ref>]] [--at <iso>] [--root <dir>]\n"
   + "  the owner approves a Writer candidate's copy: it is pinned (basis picked) and its keys are approved.";
 
@@ -114,12 +150,18 @@ function snapshot(paths: readonly string[]): () => void {
 }
 interface ModelIssue { code: string; path: string; message: string }
 const issueKey = (issue: ModelIssue) => `${issue.code} ${issue.path} ${issue.message}`;
+const modelIssues = (consumer: string) => checkSlotModel(consumer).map(issueKey);
+/** The slot model issues `writes` would add, judged in memory (the reader's overlay): what `guarded` would undo, with nothing written. */
+function plannedIssues(consumer: string, writes: readonly (readonly [string, string])[]): string[] {
+  const before = new Set(modelIssues(consumer));
+  return withModelOverlay(writes, () => modelIssues(consumer)).filter(issue => !before.has(issue));
+}
 /**
  * Runs `write`; when the slot model check then has an issue it did not have before, undoes it and returns the issues.
- * `allow` names an issue the write is expected to add (none but retire's own folder); `undo` reverses what the file snapshot cannot (a moved folder).
+ * `undo` reverses what the file snapshot cannot (a moved folder).
  */
-function guarded(consumer: string, paths: readonly string[], write: () => void, options: { allow?: (issue: ModelIssue) => boolean; undo?: () => void } = {}): string[] {
-  const issues = () => checkSlotModel(consumer).filter(issue => !options.allow?.(issue)).map(issueKey);
+function guarded(consumer: string, paths: readonly string[], write: () => void, options: { undo?: () => void } = {}): string[] {
+  const issues = () => modelIssues(consumer);
   const before = new Set(issues());
   const files = snapshot(paths);
   const undo = () => { options.undo?.(); files(); };
@@ -134,24 +176,80 @@ const readJsonFile = (path: string): unknown => JSON.parse(readFileSync(path, "u
 const readModelJson = (path: string): unknown => JSON.parse(readModelText(path));
 
 // ---------------------------------------------------------------- clossys ia
-const parseIa = parser(IA_USAGE, ["--contract", "--standard", "--under", "--kind", "--inputs", "--uses", "--root"], ["--remove", "--adopt", "--start"]);
+const parseIa = parser(IA_USAGE, [
+  "--contract", "--standard", "--under", "--kind", "--inputs", "--uses", "--root", "--owner-ref", "--at", "--extension",
+  "--add", "--rename", "--merge", "--into", "--drop", "--reorder", "--order", "--assign", "--layer", "--label", "--id", "--layers", "--axes",
+], ["--remove", "--adopt", "--start", "--move", "--dry"]);
 const FOUNDRY_IA: Readonly<Record<keyof typeof FOUNDRY_IA_AFTER, () => FoundryIa>> = { director: directorIa, designer: designerIa, writer: writerIa };
 /** The source of a workspace-owned IA (`--start`): `--under` may add L1/L2 groups to it, never to a Foundry IA. */
 export const WORKSPACE_IA_SOURCE = "workspace#owner";
+/** The agent-level regroup operations and the flags each takes besides --owner-ref, --at and --root. */
+const REGROUP_OPS: Readonly<Record<string, readonly string[]>> = {
+  "--add": ["--label", "--layer"], "--rename": ["--label", "--id"], "--merge": ["--into"], "--drop": [],
+  "--reorder": ["--order"], "--assign": ["--layer", "--label"], "--layers": [], "--axes": [],
+};
+const GATE_FLAGS = ["--owner-ref", "--at", "--root"];
+
+/**
+ * Apply one ia write list through the guarded writer, or under `--dry` print it and write nothing.
+ * A dry run validates what a write validates and runs the same slot model check on the planned files in
+ * memory: it refuses (exit 1) exactly where the write would be refused, and lists the files either way.
+ */
+function commitIa(consumer: string, root: string, writes: readonly (readonly [string, string])[], dry: boolean, summary: string, lines: readonly string[] = [], message = `ia: ${summary}`): CliResult {
+  const rel = (path: string) => relative(root, path).split(sep).join("/");
+  if (dry) {
+    const files = writes.map(([path]) => rel(path));
+    const shown = files.length > 25 ? [...files.slice(0, 25), `... and ${files.length - 25} more`] : files;
+    const listed = [...lines.map(line => `  ${line}`), ...shown.map(file => `  write ${file}`)];
+    const added = plannedIssues(consumer, writes);
+    if (added.length) return {
+      exitCode: 1, root, output: { dry: true, refused: true, summary, changes: lines, writes: files, issues: added },
+      message: [`ia --dry refused: the slot model check would fail after the write: ${added.slice(0, 5).join("; ")}${added.length > 5 ? ` (and ${added.length - 5} more)` : ""}`, `  ${summary}; would write ${files.length} file${files.length === 1 ? "" : "s"}, wrote nothing`, ...listed].join("\n"),
+    };
+    return {
+      exitCode: 0, root, output: { dry: true, summary, changes: lines, writes: files },
+      message: [`ia --dry: ${summary}; would write ${files.length} file${files.length === 1 ? "" : "s"}, wrote nothing`, ...listed].join("\n"),
+    };
+  }
+  const added = guarded(consumer, writes.map(([path]) => path), () => { for (const [path, bytes] of writes) replaceFile(path, bytes); });
+  if (added.length) return refuse("ia", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
+  return { exitCode: 0, root, message: [message, ...lines.map(line => `  ${line}`)].join("\n") };
+}
+/** `--owner-ref`, resolved against clossys/owner-decisions.json (offline): the ref to record, or the refusal. */
+function ownerRefOf(flags: Flags, consumer: string, required: boolean): { ref?: string } | CliResult {
+  const given = one(flags, "--owner-ref");
+  if (given === undefined && !required) return {};
+  const resolved = resolveOwnerRef(consumer, given, "ia");
+  return "error" in resolved ? refuse("ia", resolved.error) : { ref: resolved.decision.ref };
+}
+const isResult = (value: object): value is CliResult => "exitCode" in value;
+function atOf(flags: Flags): string {
+  const at = one(flags, "--at") ?? new Date().toISOString();
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${IA_USAGE}`);
+  return at;
+}
+/** An edit, planned (slot.json positions follow, the owner ref recorded) and committed, or printed under --dry. */
+function applyEdit(consumer: string, root: string, agent: SlotAgent, ia: IaFile, edit: Edit, op: string, ownerRef: string, at: string, dry: boolean): CliResult {
+  if ("error" in edit) return refuse("ia", edit.error);
+  if ("unchanged" in edit) return { exitCode: 0, root, message: `ia: ${edit.unchanged}; nothing written` };
+  const plan = planIaWrite(consumer, agent, ia, edit, { op, ownerRef, at });
+  if ("error" in plan) return refuse("ia", plan.error);
+  if ("unchanged" in plan) return { exitCode: 0, root, message: `ia: ${plan.unchanged}; nothing written` };
+  return commitIa(consumer, root, plan.writes, dry, `${agent} ${edit.detail}`, plan.lines);
+}
 
 /** `clossys ia <agent> --start`: an empty workspace-owned ia.json, where the agent has none. */
-function startIa(agent: string, root: string): CliResult {
+function startIa(agent: string, root: string, dry: boolean): CliResult {
   if (!(SLOT_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`ia --start takes one of ${SLOT_AGENTS.join(", ")}\n${IA_USAGE}`);
   const consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent as SlotAgent);
   if (modelExists(iaFile)) return refuse("ia", `${agent} ia.json exists; change it slot by slot (--under, --remove)`);
   const doc = { schema: IA_SCHEMA, source: WORKSPACE_IA_SOURCE, extensions: [], nodes: [] };
-  const added = guarded(consumer, [iaFile], () => replaceFile(iaFile, jsonBytes(doc)));
-  if (added.length) return refuse("ia", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
-  return { exitCode: 0, root, message: `ia: started an empty ${agent} IA (clossys/agents/${agent}/ia.json); place each slot with clossys ia ${agent}/<slot> --under <l1>/<l2> --contract <file>` };
+  return commitIa(consumer, root, [[iaFile, jsonBytes(doc)]], dry, `started an empty ${agent} IA`, [],
+    `ia: started an empty ${agent} IA (clossys/agents/${agent}/ia.json); place each slot with clossys ia ${agent}/<slot> --under <l1>/<l2> --contract <file>`);
 }
 
 /** `clossys ia <agent> --adopt`: the agent's Foundry IA and every slot.json, written only where the agent has no ia.json. */
-function adoptIa(agent: string, root: string): CliResult {
+function adoptIa(agent: string, root: string, dry: boolean): CliResult {
   if (!(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`ia --adopt takes ${FOUNDRY_IA_AGENTS.join(", ")}; the Publisher IA is the workspace's own (ia publisher --start)\n${IA_USAGE}`);
   const read = FOUNDRY_IA[agent as keyof typeof FOUNDRY_IA], after = FOUNDRY_IA_AFTER[agent as keyof typeof FOUNDRY_IA];
   const consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent as SlotAgent);
@@ -177,25 +275,86 @@ function adoptIa(agent: string, root: string): CliResult {
     if (issues.length) return refuse("ia", `${agent}/${id}: ${issues.map(issue => issue.message).join("; ")}`);
     writes.push([file, jsonBytes(doc)]);
   }
-  const added = guarded(consumer, writes.map(([path]) => path), () => { for (const [path, bytes] of writes) replaceFile(path, bytes); });
-  if (added.length) return refuse("ia", `the slot model check fails after the adoption: ${added.slice(0, 5).join("; ")}`);
   const slots = writes.length - 1;
-  return { exitCode: 0, root, message: `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts)${dropped ? `; ${dropped} declared refs name no placed slot and were left out` : ""}` };
+  return commitIa(consumer, root, writes, dry, `adopt the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots)`, [],
+    `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts)${dropped ? `; ${dropped} declared refs name no placed slot and were left out` : ""}`);
 }
 const ids = (value: string | undefined) => value ? value.split(",").map(id => id.trim()).filter(Boolean) : [];
 type AgentIaFile = { extensions?: string[]; nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] } & Record<string, unknown>;
 const isPlaced = (ia: AgentIaFile, slot: string) => ia.nodes.some(node => node.children.some(child => child.slots.includes(slot)));
 /** The agent IA with `slot` taken out of its group and its extensions (ia --remove, retire --slot). */
 const withoutSlot = (ia: AgentIaFile, slot: string): AgentIaFile => ({ ...ia, nodes: ia.nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child, slots: child.slots.filter(id => id !== slot) })) })), extensions: (ia.extensions ?? []).filter(id => id !== slot) });
+/** The renumbered slot.json files of a placement or removal, for its change record and its output lines. */
+const renumbered = (follow: PositionFollow) => follow.writes.length ? `; ${follow.writes.length} later slot.json renumbered (order only)` : "";
+const followLines = (follow: PositionFollow) => [...follow.moved, ...(follow.reordered ? [`${follow.reordered} other slot.json renumbered (order only)`] : [])];
+/** ia.json with one owner-authorized change appended (the record every gated write carries). */
+const withChange = (ia: AgentIaFile, change: { op: string; ownerRef: string; at: string; detail: string; slotFiles: number }): AgentIaFile =>
+  ({ ...ia, changes: [...(Array.isArray(ia.changes) ? ia.changes : []), change] });
+
+/** `clossys ia <agent> --add|--rename|--merge|--drop|--reorder|--assign|--layers|--axes`: one owner-authorized regroup of the agent IA. */
+function runIaRegroup(flags: Flags, cwd: string, target: string, op: string): CliResult {
+  if (target.includes("/") || !(SLOT_AGENTS as readonly string[]).includes(target)) throw new CliUsageError(`ia ${op} takes one <agent> (${SLOT_AGENTS.join(", ")}), got ${target}\n${IA_USAGE}`);
+  const allowed = [op, ...REGROUP_OPS[op]!, ...GATE_FLAGS];
+  const stray = [...[...flags.values.keys()].filter(flag => !allowed.includes(flag)), ...[...flags.bare].filter(flag => flag !== "--dry")];
+  if (stray.length) throw new CliUsageError(`ia ${op} takes no ${stray.join(", ")}\n${IA_USAGE}`);
+  const agent = target as SlotAgent;
+  const root = rootOf(cwd, flags), consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent);
+  if (!modelExists(iaFile)) return refuse("ia", `${agent} has no ia.json`);
+  const owner = ownerRefOf(flags, consumer, true);
+  if (isResult(owner)) return owner;
+  const at = atOf(flags);
+  const ia = readModelJson(iaFile) as IaFile;
+  const value = one(flags, op)!;
+  let edit: Edit;
+  if (op === "--add") edit = addGroup(agent, ia, value, need(flags, "--label", IA_USAGE), one(flags, "--layer"));
+  else if (op === "--rename") edit = renameGroup(ia, value, one(flags, "--label"), one(flags, "--id"));
+  else if (op === "--merge") edit = mergeGroups(ia, value, need(flags, "--into", IA_USAGE));
+  else if (op === "--drop") edit = dropGroup(ia, value);
+  else if (op === "--reorder") edit = reorderGroup(agent, ia, value, ids(need(flags, "--order", IA_USAGE)));
+  else if (op === "--assign") edit = assignGroup(ia, value, need(flags, "--layer", IA_USAGE), one(flags, "--label"));
+  else {
+    let parsed: unknown;
+    try { parsed = readJsonFile(resolve(cwd, value)); } catch { return refuse("ia", `${op} ${value} is not a readable JSON file`); }
+    edit = op === "--layers" ? setLayers(ia, parsed) : setAxes(ia, parsed);
+  }
+  return applyEdit(consumer, root, agent, ia, edit, op.slice(2), owner.ref!, at, flags.bare.has("--dry"));
+}
+
+/** `clossys ia <agent>/<slot> --move --under ... [--extension]` or `--extension true|false`: one placed slot, owner-authorized. */
+function runIaSlotRegroup(flags: Flags, consumer: string, root: string, agent: SlotAgent, slot: string, ia: IaFile): CliResult {
+  const move = flags.bare.has("--move"), given = one(flags, "--extension");
+  const allowed = [...(move ? ["--under"] : []), "--extension", ...GATE_FLAGS];
+  const stray = [...[...flags.values.keys()].filter(flag => !allowed.includes(flag)), ...[...flags.bare].filter(flag => flag !== "--dry" && flag !== "--move")];
+  if (stray.length) throw new CliUsageError(`ia ${move ? "--move" : "--extension"} takes no ${stray.join(", ")}\n${IA_USAGE}`);
+  if (given !== undefined && given !== "true" && given !== "false") throw new CliUsageError(`--extension takes true or false, got ${given}\n${IA_USAGE}`);
+  if (!isPlaced(ia, slot)) return refuse("ia", `${agent}/${slot} is not placed in ${agent} ia.json; place it with --contract <file> --under`);
+  const owner = ownerRefOf(flags, consumer, true);
+  if (isResult(owner)) return owner;
+  const at = atOf(flags);
+  const extension = given === undefined ? undefined : given === "true";
+  let edit: Edit = move ? moveSlot(agent, ia, slot, need(flags, "--under", IA_USAGE)) : setExtension(ia, slot, extension!);
+  if (move && extension !== undefined && !("error" in edit)) {
+    const flagged = setExtension("ia" in edit ? edit.ia : ia, slot, extension) as Extract<Edit, { ia: IaFile }>;
+    edit = { ia: flagged.ia, detail: "ia" in edit ? `${edit.detail}; ${flagged.detail}` : flagged.detail, slot: { id: slot, extension } };
+  }
+  return applyEdit(consumer, root, agent, ia, edit, move ? "move" : "extension", owner.ref!, at, flags.bare.has("--dry"));
+}
 
 export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parseIa(argv);
   if (flags.help) return { exitCode: 0, message: IA_USAGE };
   const [target, ...extra] = flags.positional;
+  const dry = flags.bare.has("--dry");
   const whole = (["--adopt", "--start"] as const).filter(flag => flags.bare.has(flag));
   if (whole.length) {
-    if (whole.length > 1 || !target || extra.length || target.includes("/") || flags.bare.has("--remove") || flags.values.size > (flags.values.has("--root") ? 1 : 0)) throw new CliUsageError(`ia ${whole.join(" ")} takes one agent and no other flag but --root\n${IA_USAGE}`);
-    return whole[0] === "--adopt" ? adoptIa(target, rootOf(cwd, flags)) : startIa(target, rootOf(cwd, flags));
+    if (whole.length > 1 || !target || extra.length || target.includes("/") || flags.bare.has("--remove") || flags.bare.has("--move") || flags.values.size > (flags.values.has("--root") ? 1 : 0)) throw new CliUsageError(`ia ${whole.join(" ")} takes one agent and no other flag but --dry and --root\n${IA_USAGE}`);
+    return whole[0] === "--adopt" ? adoptIa(target, rootOf(cwd, flags), dry) : startIa(target, rootOf(cwd, flags), dry);
+  }
+  const ops = Object.keys(REGROUP_OPS).filter(op => flags.values.has(op));
+  if (ops.length > 1) throw new CliUsageError(`ia takes one regroup operation at a time, got ${ops.join(", ")}\n${IA_USAGE}`);
+  if (ops.length) {
+    if (!target || extra.length) throw new CliUsageError(`ia ${ops[0]} takes one <agent>\n${IA_USAGE}`);
+    return runIaRegroup(flags, cwd, target, ops[0]!);
   }
   if (!target || extra.length) throw new CliUsageError(`ia takes one <agent>/<slot>\n${IA_USAGE}`);
   const slash = target.indexOf("/");
@@ -205,18 +364,29 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   const iaFile = iaPath(consumer, agent);
   if (!modelExists(iaFile)) return refuse("ia", `${agent} has no ia.json: ${(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent) ? `adopt the Foundry IA (clossys ia ${agent} --adopt) or start` : "start"} an empty one (clossys ia ${agent} --start)`);
   const ia = readModelJson(iaFile) as AgentIaFile;
+  if (flags.bare.has("--move") || (flags.values.has("--extension") && !flags.values.has("--contract"))) {
+    if (flags.bare.has("--remove")) throw new CliUsageError(`ia --remove takes no --move or --extension\n${IA_USAGE}`);
+    return runIaSlotRegroup(flags, consumer, root, agent, slot, ia as unknown as IaFile);
+  }
+  if (flags.values.has("--extension")) throw new CliUsageError(`--extension is its own write: ia ${target} --extension true|false --owner-ref <ref>\n${IA_USAGE}`);
+  // --owner-ref is optional here; when given it must resolve, and the write records it in ia.json changes[].
+  const owner = ownerRefOf(flags, consumer, false);
+  if (isResult(owner)) return owner;
+  const at = owner.ref ? atOf(flags) : "";
   const dir = slotDir(consumer, agent, slot);
   const placed = isPlaced(ia, slot);
   if (flags.bare.has("--remove")) {
     if (!placed) return refuse("ia", `${target} is not in ${agent} ia.json`);
     for (const file of [slotFile(dir), pinFile(dir)]) if (modelExists(file)) return refuse("ia", `${target} has ${file.slice(dir.length + 1)}; only a slot with no records leaves the IA`);
     if (listModelDir(candidatesDir(dir)).some(name => !name.startsWith("."))) return refuse("ia", `${target} has candidates; only a slot with no records leaves the IA`);
-    const next = withoutSlot(ia, slot);
+    let next = withoutSlot(ia, slot);
+    // Later slots move up one order: their slot.json positions follow, as retire --slot renumbers.
+    const follow = followPositions(consumer, agent, ia as unknown as IaFile, next as unknown as IaFile, undefined, slot);
+    if ("error" in follow) return refuse("ia", follow.error);
+    if (owner.ref) next = withChange(next, { op: "remove", ownerRef: owner.ref, at, detail: `removed ${slot}${renumbered(follow)}`, slotFiles: follow.writes.length });
     const issues = validateIa(next, iaFile);
     if (issues.length) return refuse("ia", issues.map(issue => issue.message).join("; "));
-    const added = guarded(consumer, [iaFile], () => replaceFile(iaFile, jsonBytes(next)));
-    if (added.length) return refuse("ia", `the slot model check fails after the removal: ${added.slice(0, 5).join("; ")}`);
-    return { exitCode: 0, root, message: `ia: removed ${target} from ${agent} ia.json` };
+    return commitIa(consumer, root, [[iaFile, jsonBytes(next)], ...follow.writes], dry, `remove ${target} from ${agent} ia.json`, followLines(follow), `ia: removed ${target} from ${agent} ia.json`);
   }
   const standardId = one(flags, "--standard");
   if (standardId !== undefined && !STANDARD_ID.test(standardId)) throw new CliUsageError(`--standard must be a standard id such as element.button, got ${standardId}\n${IA_USAGE}`);
@@ -239,6 +409,10 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
     if (!node || !child) return refuse("ia", `${agent} ia.json has no ${under} (L1/L2 ids as ia.json lists them)`);
     next = { ...ia, nodes: base.map(each => each !== node ? each : { ...each, children: each.children.map(group => group !== child ? group : { ...group, slots: [...group.slots, slot] }) }) };
   } else if (one(flags, "--under")) return refuse("ia", `${target} is already placed; --under only places a new slot`);
+  // A slot placed before the end shifts every later slot's agent-wide order: their slot.json positions follow (order only).
+  const follow = followPositions(consumer, agent, ia as unknown as IaFile, next as unknown as IaFile, undefined, slot);
+  if ("error" in follow) return refuse("ia", follow.error);
+  if (owner.ref) next = withChange(next, { op: placed ? "contract" : "place", ownerRef: owner.ref, at, detail: placed ? (contractFile === undefined ? `named the standard ${standardId} of ${slot}` : `wrote the contract of ${slot}`) : `placed ${slot} under ${one(flags, "--under")}${renumbered(follow)}`, slotFiles: 1 + follow.writes.length });
   const iaIssues = validateIa(next, iaFile);
   if (iaIssues.length) return refuse("ia", iaIssues.map(issue => issue.message).join("; "));
   const position = slotPositions(agent, next as unknown as IaDoc).get(slot);
@@ -264,13 +438,11 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   };
   const docIssues = validateSlotDoc(doc, slotFile(dir));
   if (docIssues.length) return refuse("ia", docIssues.map(issue => issue.message).join("; "));
-  const added = guarded(consumer, [iaFile, slotFile(dir)], () => {
-    if (next !== ia) replaceFile(iaFile, jsonBytes(next));
-    replaceFile(slotFile(dir), jsonBytes(doc));
-  });
-  if (added.length) return refuse("ia", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
-  const what = contractFile === undefined ? `standard ${standardId} named` : `${placed ? "contract written" : `placed under ${one(flags, "--under")} and its contract written`}${standardId !== undefined ? `, standard ${standardId} named` : ""}`;
-  return { exitCode: 0, root, message: `ia: ${target} ${what} (clossys/agents/${agent}/${slot}/slot.json)` };
+  const writes: [string, string][] = [...(next !== ia ? [[iaFile, jsonBytes(next)] as [string, string]] : []), [slotFile(dir), jsonBytes(doc)], ...follow.writes];
+  const named = standardId !== undefined ? `, standard ${standardId} named` : "";
+  const what = contractFile === undefined ? `standard ${standardId} named` : `${placed ? "contract written" : `placed under ${one(flags, "--under")} and its contract written`}${named}`;
+  const summary = contractFile === undefined ? `${target} standard ${standardId}` : `${target} ${placed ? "contract" : `placed under ${one(flags, "--under")} and contract`}${standardId !== undefined ? `, standard ${standardId}` : ""}`;
+  return commitIa(consumer, root, writes, dry, summary, followLines(follow), `ia: ${target} ${what} (clossys/agents/${agent}/${slot}/slot.json)`);
 }
 
 // ---------------------------------------------------------------- clossys evidence
@@ -447,7 +619,7 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
 const parseRule = parser(RULE_USAGE, ["--quote", "--date", "--status", "--check", "--fixture", "--fixture-run", "--note", "--root"], ["--init", "--replace"]);
 const RULE_ID = /^R-[A-Z0-9-]+$/;
 const RULE_STATUSES = ["enforced", "unenforced", "pending-wire"] as const;
-export const RULES_FILE = "scripts/rules/registry.json";
+export { RULES_FILE };
 
 export async function runRuleCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parseRule(argv);
@@ -520,6 +692,59 @@ export async function runApproveCli(argv: readonly string[], cwd: string): Promi
   return { exitCode: 0, root, decision: { slot: target, state: "pinned", ...pinned, decidedBy: by, basis: "picked", at, approved }, message: `approve: ${target} ${candidate} pinned by ${by} (picked); ${approved.length} key${approved.length === 1 ? "" : "s"} approved${after.size ? `, ${after.size} still open` : ""}` };
 }
 
+// ---------------------------------------------------------------- clossys owner-decision
+const parseOwnerDecision = parser(OWNER_DECISION_USAGE, ["--ref", "--scope", "--quote-file", "--date", "--root"], []);
+
+/**
+ * `clossys owner-decision add`: the owner step that produces clossys/owner-decisions.json. One
+ * decision per run, appended (`init` starts an empty registry); the whole document is validated (records/owner-decisions.ts) before the
+ * write, and a comment id already registered is refused (a decision is never rewritten).
+ */
+export async function runOwnerDecisionCli(argv: readonly string[], cwd: string): Promise<CliResult> {
+  const flags = parseOwnerDecision(argv);
+  if (flags.help) return { exitCode: 0, message: OWNER_DECISION_USAGE };
+  const [mode, ...extra] = flags.positional;
+  if ((mode !== "add" && mode !== "init") || extra.length) throw new CliUsageError(`owner-decision takes add or init\n${OWNER_DECISION_USAGE}`);
+  const rel = `clossys/${OWNER_DECISIONS_FILE}`;
+  if (mode === "init") {
+    const given = ["--ref", "--scope", "--quote-file", "--date"].filter(name => flags.values.has(name));
+    if (given.length) throw new CliUsageError(`owner-decision init takes no ${given.join(", ")}\n${OWNER_DECISION_USAGE}`);
+    const root = rootOf(cwd, flags);
+    const file = join(root, "clossys", OWNER_DECISIONS_FILE);
+    if (existsSync(file)) return refuse("owner-decision", `${rel} exists; add a decision with clossys owner-decision add`);
+    replaceFile(file, jsonBytes({ schema: OWNER_DECISIONS_SCHEMA, decisions: [] }));
+    return { exitCode: 0, root, message: `owner-decision: started an empty registry at ${rel}` };
+  }
+  const ref = need(flags, "--ref", OWNER_DECISION_USAGE).trim();
+  const cited = ledgerComment(ref);
+  if (!cited) return refuse("owner-decision", `--ref ${ref} is not a ledger ref (${OWNER_WORDS_REF_FORM}); a bare comment id does not name its issue`);
+  const scope = need(flags, "--scope", OWNER_DECISION_USAGE).split(",").map(item => item.trim()).filter(Boolean);
+  const unknown = scope.filter(item => !(OWNER_DECISION_SCOPES as readonly string[]).includes(item));
+  if (!scope.length || unknown.length) return refuse("owner-decision", `--scope must list one or more of ${OWNER_DECISION_SCOPES.join(", ")}${unknown.length ? ` (not ${unknown.join(", ")})` : ""}`);
+  const quoteFile = need(flags, "--quote-file", OWNER_DECISION_USAGE);
+  let quote: string;
+  try { quote = readFileSync(resolve(cwd, quoteFile), "utf8").replace(/\r?\n$/, ""); } catch { return refuse("owner-decision", `cannot read --quote-file ${quoteFile}`); }
+  if (!quote.trim() || /[\r\n]/.test(quote)) return refuse("owner-decision", "--quote-file holds the owner's words on one non-empty line");
+  const date = one(flags, "--date") ?? new Date().toISOString().slice(0, 10);
+  const root = rootOf(cwd, flags);
+  const file = join(root, "clossys", OWNER_DECISIONS_FILE);
+  let doc: { schema: string; decisions: OwnerDecision[] } = { schema: OWNER_DECISIONS_SCHEMA, decisions: [] };
+  if (existsSync(file)) {
+    let value: unknown;
+    try { value = readJsonFile(file); } catch { return refuse("owner-decision", `${rel} is not JSON`); }
+    const issues = validateOwnerDecisions(value);
+    if (issues.length) return refuse("owner-decision", `${rel} is invalid before the write: ${issues.slice(0, 3).join("; ")}`);
+    doc = value as typeof doc;
+  }
+  if (doc.decisions.some(decision => decision.id === cited.comment)) return refuse("owner-decision", `decision ${cited.comment} is registered; a decision is never rewritten (register a new ledger comment)`);
+  const decision: OwnerDecision = { id: cited.comment, ref, date, scope: scope as OwnerDecision["scope"], summary: quote.trim() };
+  const next = { schema: doc.schema, decisions: [...doc.decisions, decision] };
+  const issues = [...validateOwnerDecisions(next), ...validateValue(next, loadSchema("owner-decisions")).map(issue => `${issue.path} ${issue.message}`)];
+  if (issues.length) return refuse("owner-decision", issues.slice(0, 5).join("; "));
+  replaceFile(file, jsonBytes(next));
+  return { exitCode: 0, root, decision, message: `owner-decision: registered ${cited.comment} (${scope.join(", ")}, ${date}) in ${rel}` };
+}
+
 // ---------------------------------------------------------------- clossys retire
 export const RETIRE_USAGE = "Usage: clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]\n"
   + "       clossys retire <agent>/<slot> --slot --by <who> --reason <code>[: <note>] [--at <iso>] [--root <dir>]\n"
@@ -531,7 +756,7 @@ export const RETIRE_USAGE = "Usage: clossys retire <agent>/<slot> <candidate> --
 /** The schema of a retirement record: a retired candidate's file, or a row of an agent ia.json's `retired` list. */
 export const RETIRE_SCHEMA = "clossys.retire/1";
 /** A slot's retired candidates and their records: `<slot>/retired/<candidate>` and `<slot>/retired/<candidate>.json`. */
-export const RETIRED_DIR = "retired";
+export { RETIRED_DIR };
 /** Retired slot folders, a non-slot (`_`) folder of the agent: `agents/<agent>/_retired/<slot>`. */
 export const RETIRED_SLOTS_DIR = "_retired";
 const parseRetire = parser(RETIRE_USAGE, ["--by", "--reason", "--at", "--root"], ["--slot"]);
@@ -563,11 +788,8 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
   if (modelExists(to) || modelExists(file)) return refuse("retire", `${target} already has ${RETIRED_DIR}/${candidate}`);
   // `slot` is the slot id (the folder names the agent), as constitution R10.1 and retire.schema.json read it.
   const record = { schema: RETIRE_SCHEMA, slot, candidate, sha256: sha(readModelBytes(from)), by: fields.by, reason: fields.reason, at: fields.at };
-  // The slot model check does not list retired/ among a slot folder's entries yet: that one orphan is this write's own.
-  const own = `agents/${agent}/${slot}/${RETIRED_DIR}`;
-  const added = guarded(consumer, [file, from, to], () => { replaceFile(file, jsonBytes(record)); moveModelEntry(from, to); }, {
-    allow: issue => issue.code === "orphan" && issue.path === own,
-  });
+  // The slot model check reads retired/ too: the record must validate and match the moved bytes.
+  const added = guarded(consumer, [file, from, to], () => { replaceFile(file, jsonBytes(record)); moveModelEntry(from, to); });
   if (added.length) { dropEmptyDir(retired); return refuse("retire", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`); }
   return { exitCode: 0, root, decision: { slot: target, retired: candidate, sha256: record.sha256, by: fields.by, at: fields.at }, message: `retire: ${target} ${candidate} retired by ${fields.by} (clossys/agents/${agent}/${slot}/${RETIRED_DIR}/${candidate}.json)` };
 }

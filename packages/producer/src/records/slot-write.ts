@@ -13,7 +13,7 @@ import {
   CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
-import { directorStoreReader, forgetSlotReads, listSlots, readCandidate, readSlot } from "./slots.js";
+import { directorStoreReader, forgetSlotReads, listModelDir, listSlots, readCandidate, readSlot } from "./slots.js";
 import { fileState, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations, type FileState, type FormatMigration, type MigratedEvent, type MigrationsDoc } from "./migrations.js";
 
 // ---------------------------------------------------------------------------
@@ -91,16 +91,30 @@ function canonicalDirectory(directory: string): void {
   }
 }
 
+/** A slot's retired candidates: files under `<slot>/retired/` (constitution R08.1 counts them). */
+const RETIRED_CANDIDATES = "retired";
 /**
- * Write `<name>-v<next>` into the slot's candidates. JSON kinds take the item object
+ * The next candidate version of a slot: one above the highest version any of its candidates holds,
+ * across every stem and including retired candidates, so a version number is never used twice in a
+ * slot (constitution R08.1). A new stem continues the slot's numbering; it never restarts at v1.
+ */
+export function nextVersion(dir: string, candidates: readonly string[]): number {
+  const versions = [...candidates, ...listModelDir(join(dir, RETIRED_CANDIDATES))].flatMap(file => {
+    const match = CANDIDATE_NAME.exec(file);
+    return match ? [Number(match[2])] : [];
+  });
+  return Math.max(0, ...versions) + 1;
+}
+
+/**
+ * Write `<name>-v<next>` into the slot's candidates, where `<next>` is the slot's `nextVersion`. JSON kinds take the item object
  * (serialized as two-space JSON); Markdown kinds take the file text. Invalid candidates are refused.
  * `canonical` also refuses aliased candidate paths (no ancestor may be a symbolic link).
  */
 export function writeCandidate(consumer: string, agent: SlotAgent, id: string, name: string, content: unknown, options: { readonly canonical?: boolean } = {}): { name: string; sha256: string } {
   const { doc, entry } = located(consumer, agent, id);
   const ext = KIND_EXT[doc.kind];
-  const versions = entry.candidates.map(file => CANDIDATE_NAME.exec(file)).filter(match => match?.[1] === name).map(match => Number(match![2]));
-  const file = `${name}-v${Math.max(0, ...versions) + 1}.${ext}`;
+  const file = `${name}-v${nextVersion(entry.dir, entry.candidates)}.${ext}`;
   const bytes = ext === "md" ? String(content) : jsonBytes(content);
   const issues = validateCandidate(doc.kind, id, file, bytes);
   if (issues.length) throw new Error(`candidate refused: ${issues.map(issue => issue.message).join("; ")}`);

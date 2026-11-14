@@ -2,8 +2,11 @@
  * `clossys run`: the chain in pipeline order (src/pipeline/chain.ts). Not a step: it records nothing
  * itself; every plumb step it runs records its own run.
  *
- *   clossys run [--from <step>] [--until <step>] [--dry] [--json] [--root <dir>]
- *   clossys run --explain [--json] [--root <dir>]
+ *   clossys run [--from <step>] [--until <step>] [--dry] [--capture] [--json] [--root <dir>]
+ *   clossys run --explain [--dry] [--capture] [--json] [--root <dir>]
+ *
+ * Capture is on demand (W2-G): the chain skips it unless --capture asks for it (before an owner
+ * preview or a landing); --explain lists it as `on demand --capture`.
  *
  * Exit 0 when the chain ran to its end or stopped at an open decide step (printed with its packet),
  * 1 when a plumb step failed (its failed run record cited), 2 when it could not run.
@@ -18,15 +21,16 @@ import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
-export const RUN_USAGE = "Usage: clossys run [--from <step>] [--until <step>] [--dry] [--json] [--root <dir>]\n"
-  + "       clossys run --explain [--json] [--root <dir>]\n"
+export const RUN_USAGE = "Usage: clossys run [--from <step>] [--until <step>] [--dry] [--capture] [--json] [--root <dir>]\n"
+  + "       clossys run --explain [--dry] [--capture] [--json] [--root <dir>]\n"
   + "  Walks every step in pipeline order: a plumb step whose last run is fresh is skipped, any other runs its command;\n"
   + "  the walk stops red at a failed plumb step and stops at the first decide step with open work (clossys next prints it).\n"
-  + "  --dry: run nothing; list what would run.  --explain: the whole graph as a table (step, agent, kind, decider, last run).";
+  + "  --dry: run nothing; list what would run.  --explain: the whole graph as a table (step, agent, kind, decider, chain, last run); it runs nothing.\n"
+  + "  --capture: also run the on-demand capture step (before an owner preview or a landing); without it the chain skips capture.";
 
-interface Flags { from?: string; until?: string; dry: boolean; explain: boolean; json: boolean; help: boolean; root?: string }
+interface Flags { from?: string; until?: string; dry: boolean; explain: boolean; capture: boolean; json: boolean; help: boolean; root?: string }
 function parse(argv: readonly string[]): Flags {
-  const flags: Flags = { dry: false, explain: false, json: false, help: false };
+  const flags: Flags = { dry: false, explain: false, capture: false, json: false, help: false };
   const value = (index: number, name: string): string => {
     const next = argv[index];
     if (next === undefined || next.startsWith("--")) throw new CliUsageError(`${name} requires a value\n${RUN_USAGE}`);
@@ -38,6 +42,7 @@ function parse(argv: readonly string[]): Flags {
     else if (arg === "--help") flags.help = true;
     else if (arg === "--dry") flags.dry = true;
     else if (arg === "--explain") flags.explain = true;
+    else if (arg === "--capture") flags.capture = true;
     else if (arg === "--from") flags.from = value(++index, "--from");
     else if (arg === "--until") flags.until = value(++index, "--until");
     else if (arg === "--root") flags.root = value(++index, "--root");
@@ -53,7 +58,7 @@ function table(rows: readonly (readonly string[])[]): string {
 }
 
 export function formatExplain(explain: Explain): string {
-  const rows = [["step", "agent", "kind", "decider", "last run", "open"], ...explain.rows.map(row => [row.step, row.agent, row.kind, row.decider, row.last, row.kind === "plumb" ? "-" : String(row.open)])];
+  const rows = [["step", "agent", "kind", "decider", "chain", "last run", "open"], ...explain.rows.map(row => [row.step, row.agent, row.kind, row.decider, row.chain, row.last, row.kind === "plumb" ? "-" : String(row.open)])];
   const counts = Object.entries(explain.counts).map(([kind, count]) => `${kind} ${count}`).join(", ");
   return `${table(rows)}\n\n${explain.rows.length} steps: ${counts}`;
 }
@@ -77,12 +82,13 @@ export async function runRunCli(argv: readonly string[], cwd: string, steps: rea
   const root = discoverRoot(resolve(cwd, flags.root ?? "."));
   const packageRoot = options.packageRoot ?? PACKAGE_ROOT;
   if (flags.explain) {
-    if (flags.dry || flags.from || flags.until) throw new CliUsageError(`--explain takes no --dry, --from or --until\n${RUN_USAGE}`);
-    const explain = explainChain(root, { steps, packageRoot });
+    // --explain runs nothing, so --dry changes nothing; --capture shows capture as the run would treat it.
+    if (flags.from || flags.until) throw new CliUsageError(`--explain takes no --from or --until\n${RUN_USAGE}`);
+    const explain = explainChain(root, { steps, packageRoot, ...(flags.capture ? { demand: ["--capture"] } : {}) });
     return { exitCode: 0, root, output: explain, message: formatExplain(explain) };
   }
   let result: ChainResult;
-  try { result = runChain(root, { steps, packageRoot, dry: flags.dry, ...(flags.from ? { from: flags.from } : {}), ...(flags.until ? { until: flags.until } : {}), ...(options.exec ? { exec: options.exec } : {}) }); }
+  try { result = runChain(root, { steps, packageRoot, dry: flags.dry, ...(flags.capture ? { demand: ["--capture"] } : {}), ...(flags.from ? { from: flags.from } : {}), ...(flags.until ? { until: flags.until } : {}), ...(options.exec ? { exec: options.exec } : {}) }); }
   catch (error) { return { exitCode: 2, root, message: `run: ${error instanceof Error ? error.message : String(error)}` }; }
   return { exitCode: result.failed ? 1 : 0, root, output: result, message: formatChain(result) };
 }

@@ -23,14 +23,15 @@ const editIa = (consumer: string, agent: Agent, change: (ia: Record<string, unkn
 const reasons = (rows: readonly { agent: string; slot: string; reason: string }[]) => rows.map(row => `${row.agent}:${row.slot}: ${row.reason}`);
 
 describe("R01 module", () => {
-  it("declares R01.1-R01.6", () => {
-    expect(Object.keys(R01.checks)).toEqual(["R01.1", "R01.2", "R01.3", "R01.4", "R01.5", "R01.6"]);
+  it("declares R01.1-R01.15 (R01.7-R01.15 are the IA checks in rules/r01-ia.ts)", () => {
+    expect(Object.keys(R01.checks)).toEqual(Array.from({ length: 15 }, (_, index) => `R01.${index + 1}`));
   });
 
-  it("passes the clean workspace on every check, all five agents included", () => {
+  it("passes the clean workspace on every check, all five agents included; the warn-only fanout check only warns", () => {
     const ctx = clean();
     expect(ctx.agents.map(agent => agent.agent)).toEqual(["director", "designer", "writer", "publisher", "producer"]);
-    for (const [id, check] of Object.entries(R01.checks)) expect(check(ctx), id).toEqual([]);
+    for (const [id, check] of Object.entries(R01.checks)) if (id !== "R01.15") expect(check(ctx), id).toEqual([]);
+    expect(R01.checks["R01.15"]!(ctx).every(row => row.check === "R01.15" && /has one (L1|leaf)/.test(row.reason))).toBe(true);
   });
 });
 

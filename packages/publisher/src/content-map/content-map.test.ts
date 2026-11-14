@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { checkContentMap, projectRoutes, projectNavigation, projectCommands, projectBreadcrumbs, projectSitemap, projectOutline, projectToc } from "./index.js";
+import { checkContentMap, checkContentMapIcons, projectRoutes, projectNavigation, projectCommands, projectBreadcrumbs, projectSitemap, projectOutline, projectToc } from "./index.js";
 import type { ContentMap } from "./index.js";
 import { adminContentMap, adminRouteOptions } from "./__fixtures__/admin.js";
 
@@ -190,4 +190,16 @@ it("rejects malformed page action unions, defaults, identities and unsupported f
   proof("contract", map => { map.entries[1].actions = {}; });
   proof("contract", map => { map.entries[0].actions = [action]; });
   proof("action-id", map => { map.entries[1].actions = [action, action]; });
+});
+
+it("an entry or page-action icon with no registered slot is a blocking asset finding (foundry-audit-0001)", () => {
+  const map: ContentMap = { version: 1, publicationId: "example.icons", format: "web.page.responsive", entries: [
+    { id: "home", order: 0, title: "Home", path: "/", kind: "page", icon: "assets.icon-home", source: { planItemId: "home" },
+      actions: [{ id: "outline", label: "Outline", icon: "assets.icon-outline", defaultOpen: false, intent: "outline" }] },
+    { id: "docs", order: 1, title: "Docs", path: "/docs", kind: "page", source: { planItemId: "docs" } },
+  ] };
+  expect(checkContentMapIcons(map, new Set(["assets.icon-home", "assets.icon-outline"]))).toEqual([]);
+  const missing = checkContentMapIcons(map, new Set(["assets.icon-home"]));
+  expect(missing).toEqual([{ severity: "P0", code: "asset", path: "entries.0.actions.0.icon", entryId: "home", message: "Icon assets.icon-outline resolves to no registered slot" }]);
+  expect(checkContentMapIcons(map, new Set())).toHaveLength(2);
 });

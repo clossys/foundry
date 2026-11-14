@@ -25,6 +25,10 @@
     "sections.studio.specimen"
   ],
   "uses": [
+    "assets.icon-checks",
+    "assets.icon-outline",
+    "assets.icon-request",
+    "assets.icon-versions",
     "frames.studio-shell",
     "sections.module.checks",
     "sections.module.outline",

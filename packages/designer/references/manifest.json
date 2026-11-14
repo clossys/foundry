@@ -83,6 +83,7 @@
       "version": "1.65.0",
       "versionBasis": "lucide release tag 1.65.0 (lucide-react 1.65.0 renders the same icon nodes)",
       "upstream": "github.com/lucide-icons/lucide@1.65.0",
+      "fetchedAt": "2026-11-14T08:01:52Z",
       "license": "ISC",
       "licenseFiles": [
         "lucide/LICENSE"
@@ -1432,6 +1433,28 @@
     },
     {
       "registry": "lucide",
+      "name": "inbox",
+      "version": "1.65.0",
+      "dir": "lucide/inbox@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/inbox.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-needs"
+      ],
+      "hash": "sha256:0f5817e3d96c1756f02dedffa42bbab4d8324c66b57cbadd19fe4aeba2a5d5c4",
+      "files": [
+        {
+          "path": "icons/inbox.svg",
+          "sha256": "1838482c53d0846badef9be96fdcf7a167064241bd4891efa995c77ebec5f187",
+          "bytes": 388,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/inbox.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
       "name": "info",
       "version": "1.65.0",
       "dir": "lucide/info@1.65.0",
@@ -1520,6 +1543,50 @@
     },
     {
       "registry": "lucide",
+      "name": "list-checks",
+      "version": "1.65.0",
+      "dir": "lucide/list-checks@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/list-checks.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-checks"
+      ],
+      "hash": "sha256:5fd398f2791c342e0f33eec4e48a63391bfa70c0ebe0ca98983bef2e529faeca",
+      "files": [
+        {
+          "path": "icons/list-checks.svg",
+          "sha256": "08d26ab05aaf724222c4c0cd5a19d5eae753b2a5fff0eb2d81759dde11bac6b6",
+          "bytes": 336,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/list-checks.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "list-tree",
+      "version": "1.65.0",
+      "dir": "lucide/list-tree@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/list-tree.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-outline"
+      ],
+      "hash": "sha256:5a2420858bc1abb3acabb91a767ea0b67ec674471d85dbda1d40e9c1959f0cc9",
+      "files": [
+        {
+          "path": "icons/list-tree.svg",
+          "sha256": "e4c994b829b8b4d0ddc66c1ce14f9f56d0347e37b1b1fb124111831a61ec3890",
+          "bytes": 355,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/list-tree.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
       "name": "list",
       "version": "1.65.0",
       "dir": "lucide/list@1.65.0",
@@ -1559,6 +1626,28 @@
           "sha256": "d2cfe60cac8deaef36442b5c8218c1e61abe18222784b2a370ea090d13fca840",
           "bytes": 309,
           "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/lock.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "message-square-plus",
+      "version": "1.65.0",
+      "dir": "lucide/message-square-plus@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/message-square-plus.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-request"
+      ],
+      "hash": "sha256:ef391f4b693b6bc1f9a37236386dcc5361151b80ea2ee07ea8cca041c3964488",
+      "files": [
+        {
+          "path": "icons/message-square-plus.svg",
+          "sha256": "2ebbf8a69a6d2dfb27c4d273c9392de84971014981f618451a8c4aa54aab1945",
+          "bytes": 385,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/message-square-plus.svg"
         }
       ]
     },
@@ -1691,6 +1780,28 @@
           "sha256": "26b4af2c5ea5aef9578c765a01585d9c8726ce00928dc64175a0d7d9f7c5f0a0",
           "bytes": 741,
           "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/receipt.svg"
+        }
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "rotate-ccw-clock",
+      "version": "1.65.0",
+      "dir": "lucide/rotate-ccw-clock@1.65.0",
+      "type": "icon",
+      "sourceUrl": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/rotate-ccw-clock.svg",
+      "license": "ISC",
+      "direct": true,
+      "slots": [
+        "assets.icon-versions"
+      ],
+      "hash": "sha256:3c72754734dd919f5bb2dbc5d4b80851edb76a889461c6db3b11cb8a8ca95629",
+      "files": [
+        {
+          "path": "icons/rotate-ccw-clock.svg",
+          "sha256": "a98ff758157910b9fc9d42d5d5dc80c2f4e037afa5f8ea4dee5f5649f03d438d",
+          "bytes": 324,
+          "origin": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/icons/rotate-ccw-clock.svg"
         }
       ]
     },

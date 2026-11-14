@@ -25,6 +25,11 @@ export interface Row {
   readonly reason: string;
   readonly path: string;
   readonly pending?: true;
+  /**
+   * Set by the runner, never by a check: the row came from a `building` check (reported; fails the
+   * run only under --strict) or a `warn` check (reported as a warning; never fails the run).
+   */
+  readonly level?: "building" | "warn";
 }
 
 /** One file under a slot's `candidates/` folder, read once. */

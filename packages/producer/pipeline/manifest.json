@@ -184,10 +184,12 @@
       ],
       "steps": [
         "ia",
+        "retire",
         "evidence",
         "workspace.config",
         "seats",
         "rules",
+        "owner.decisions",
         "pin.director",
         "writer.approve",
         "pin.designer",
@@ -199,7 +201,9 @@
         "config",
         "evidence",
         "ia",
+        "owner-decision",
         "pin",
+        "retire",
         "rule",
         "seat"
       ],
@@ -207,10 +211,12 @@
       "skills": [
         "packages/producer/actions/evidence/skill.md",
         "packages/producer/actions/ia/skill.md",
+        "packages/producer/actions/owner.decisions/skill.md",
         "packages/producer/actions/pin.designer/skill.md",
         "packages/producer/actions/pin.director/skill.md",
         "packages/producer/actions/pin.publisher/skill.md",
         "packages/producer/actions/pin.writer/skill.md",
+        "packages/producer/actions/retire/skill.md",
         "packages/producer/actions/rules/skill.md",
         "packages/producer/actions/seats/skill.md",
         "packages/producer/actions/workspace.config/skill.md",
@@ -223,6 +229,8 @@
         "packages/producer/src/cli/owner.ts#runConfigCli",
         "packages/producer/src/cli/owner.ts#runEvidenceCli",
         "packages/producer/src/cli/owner.ts#runIaCli",
+        "packages/producer/src/cli/owner.ts#runOwnerDecisionCli",
+        "packages/producer/src/cli/owner.ts#runRetireCli",
         "packages/producer/src/cli/owner.ts#runRuleCli",
         "packages/producer/src/cli/owner.ts#runSeatCli",
         "packages/producer/src/cli/pin.ts",
@@ -235,9 +243,11 @@
         "producer"
       ],
       "steps": [
+        "constitution",
         "compile",
         "options",
         "specimen",
+        "render",
         "migrate",
         "derive.uses",
         "studio.map",
@@ -259,6 +269,7 @@
         "options",
         "pipeline",
         "produce",
+        "render",
         "specimen"
       ],
       "commands": [
@@ -290,6 +301,8 @@
         "packages/producer/src/cli/pipeline.ts",
         "packages/producer/src/cli/pipeline.ts#runPipelineCli",
         "packages/producer/src/cli/produce.ts#runProduce",
+        "packages/producer/src/cli/render.ts",
+        "packages/producer/src/cli/render.ts#runRenderCli",
         "packages/producer/src/cli/specimen.ts",
         "packages/producer/src/cli/specimen.ts#runSpecimenCli",
         "packages/producer/studio/checks/p0-studio-check.cjs"

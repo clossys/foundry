@@ -21,11 +21,13 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "designer.candidates": { ...NEXT, module: ["src/specimen/catalog-materialization.ts#materializeCatalogCandidate"] },
   // Owner decisions, each recorded by its own clossys verb (W6a).
   "ia": { entry: "src/cli/owner.ts#runIaCli", parser: "src/cli/owner.ts" },
+  "retire": { entry: "src/cli/owner.ts#runRetireCli", parser: "src/cli/owner.ts" },
   "evidence": { entry: "src/cli/owner.ts#runEvidenceCli", parser: "src/cli/owner.ts" },
   "workspace.config": { entry: "src/cli/owner.ts#runConfigCli", parser: "src/cli/owner.ts" },
   "seats": { entry: "src/cli/owner.ts#runSeatCli", parser: "src/cli/owner.ts" },
   "rules": { entry: "src/cli/owner.ts#runRuleCli", parser: "src/cli/owner.ts" },
   "writer.approve": { entry: "src/cli/owner.ts#runApproveCli", parser: "src/cli/owner.ts" },
+  "owner.decisions": { entry: "src/cli/owner.ts#runOwnerDecisionCli", parser: "src/cli/owner.ts" },
   // clossys verbs.
   "director.check": { entry: "src/cli/direct.ts#runDirect" },
   "director.store": { entry: "src/cli/director.ts#runDirectorVerb", parser: "src/cli/director.ts" },
@@ -36,6 +38,9 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "writer.check": { entry: "src/cli/write.ts#runWrite" },
   "writer.compile": { entry: "src/cli/write.ts#runWrite" },
   "workspace.check": { entry: "src/cli/check.ts#runCheck" },
+  // The constitution before compile (W2-G): `check --constitution --enforced`; until E2 it blocks on the delta against
+  // pipeline/constitution-green.json (constitution/green.ts), `--strict` on every enforced row. TODO(E2): --strict by default.
+  "constitution": { entry: "src/cli/check.ts#runCheck" },
   "compile": { entry: "src/cli/compile.ts#runCompileCli", parser: "src/cli/compile.ts" },
   "options": { entry: "src/cli/options.ts#runOptionsCli", parser: "src/cli/options.ts" },
   "decisions": { entry: "src/cli/pin.ts#runDecisionsCli", parser: "src/cli/pin.ts" },
@@ -43,6 +48,8 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "publish.install": { entry: "src/cli/publish.ts#runPublish" },
   "publish.page": { entry: "src/cli/publish.ts#runPublishCheck" },
   "specimen": { entry: "src/cli/specimen.ts#runSpecimenCli", parser: "src/cli/specimen.ts" },
+  // P2 renders one candidate in context, cached by (candidate sha256, dependency pin-set hash) (W2-G).
+  "render": { entry: "src/cli/render.ts#runRenderCli", parser: "src/cli/render.ts" },
   "migrate": { entry: "src/cli/migrate.ts#runMigrateCli", parser: "src/cli/migrate.ts" },
   "pipeline": { entry: "src/cli/pipeline.ts#runPipelineCli", parser: "src/cli/pipeline.ts" },
   // Traced script steps: `clossys pipeline trace <id> -- <command>` records their run.

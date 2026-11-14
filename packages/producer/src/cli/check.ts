@@ -1,5 +1,6 @@
 import { runSlotResolve, slotResolveSummary, type SlotResolveReport } from "../check/slot-resolve.js";
-import { statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { lintPages } from "../check/page-lint.js";
@@ -111,13 +112,7 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
     root = findWorkspace(start) ?? start;
     consumer = join(root, "clossys");
   }
-  if (args.constitution) {
-    // The constitution suite alone: every rule over every record; any row (pending included) fails,
-    // except rows of building checks, which fail only with --strict (section 4).
-    const { formatReport, runConstitution } = await import("../constitution/run.js");
-    const report = runConstitution({ root, consumer, strict: args.strict, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}) });
-    return { verb: "check", root, check: true, exitCode: report.ok ? 0 : 1, message: formatReport(report), output: report };
-  }
+  if (args.constitution) return runConstitutionCheck(args, root, consumer);
   const slots = await runSlotResolve(consumer);
   const page = args.pages !== undefined ? await runPageCheck(args, cwd) : undefined;
   const suites = args.suites || (page && consumerRoot(start))
@@ -137,5 +132,77 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
     slots,
     ...(readiness ? { checks: { readiness: { strict: true, blocked: readiness.length, findings: readiness } } } : {}),
     ...(suites || referenceReport ? { suites: suites ?? referenceReport } : {}),
+  };
+}
+
+const workspaceName = (root: string): string => {
+  try { const name = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { name?: unknown }).name; return typeof name === "string" ? name : "(unnamed)"; }
+  catch { return "(no package.json)"; }
+};
+
+const headCommit = (root: string): string => {
+  try { return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, stdio: ["ignore", "pipe", "ignore"] }).toString("utf8").trim(); }
+  catch { return "unknown"; }
+};
+
+/**
+ * `check --constitution`: every rule over every record, then the delta against the last green
+ * report (constitution/green.ts), printed on every run.
+ * - plain: exits 1 on any row, pending included (and on a tampered green report);
+ * - --enforced (the chain's constitution step): until E2, exits 1 only on a new finding (a key the
+ *   green report lacks) or a tampered report; changed-record and stale counts are printed, never
+ *   blocking. TODO(E2): make the full gate (--strict) the default here;
+ * - --strict: the full gate, exits 1 on every enforced row (and on a tampered report);
+ * - --record-green: with no report, seeds one; over a report, writes the new one only when it adds no
+ *   key (removals and lowered counts only), else refuses.
+ */
+async function runConstitutionCheck(args: CliArgs, root: string, consumer: string): Promise<CliResult> {
+  const { formatReport, runConstitution } = await import("../constitution/run.js");
+  const green = await import("../constitution/green.js");
+  const { index, ...report } = runConstitution({ root, consumer, index: true, strict: args.strict, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}) });
+  // Building rows (IA-C) stay report-only outside --strict: the delta gate and the green report
+  // count non-pending, non-building rows; --strict gates every row, building included.
+  const gated = args.strict ? report.rows : report.rows.filter(row => row.level !== "building");
+  const path = resolve(root, args.green ?? green.DEFAULT_GREEN_PATH);
+  const workspace = workspaceName(root);
+  const read = green.readGreen(path, workspace);
+  const delta = green.evaluateDelta(gated, index!, read, { rules: report.rules.map(rule => rule.id), ...(args.agent ? { agent: args.agent } : {}) });
+  const mode = args.strict ? "strict" : args.enforced ? "enforced" : "report";
+  let exitCode: 0 | 1 = mode === "strict" ? (delta.enforced || delta.tampered.length ? 1 : 0)
+    : mode === "enforced" ? (delta.ok ? 0 : 1)
+    : (report.ok && !delta.tampered.length ? 0 : 1);
+  const lines = [formatReport(report), green.formatDelta(delta, mode)];
+  let recorded: { path: string; written: boolean; reason: string } | undefined;
+  if (args.recordGreen) {
+    const missing = !existsSync(path);
+    const otherWorkspace = !missing && !read.tampered.length && !read.report;
+    const next = green.buildGreen(gated, index!, { workspace, commit: headCommit(root) });
+    // Over an existing report a re-record only shrinks it (W2-G3 G2): removals and lowered counts, never a key it lacks.
+    const growth = read.report ? green.seedGrowth(read.report, next) : [];
+    const refusal = read.tampered.length ? `the report at ${path} failed its integrity check; restore it from git (a deleted report re-seeds only through review)`
+      : otherWorkspace ? `${read.baseline}; pass --green <file> for this workspace`
+      : growth.length ? `the new report would add ${growth.length} key(s) the green report lacks (new findings; a re-record only removes keys): ${growth.slice(0, 5).map(item => `${item.key} (recorded ${item.recorded}, produced ${item.produced})`).join("; ")}${growth.length > 5 ? "; ..." : ""}`
+      : undefined;
+    if (refusal) {
+      recorded = { path, written: false, reason: refusal };
+      exitCode = 1;
+    } else {
+      await green.writeGreen(path, next);
+      const removed = read.report ? Object.keys(read.report.keys).filter(key => !(key in next.keys)).length : 0;
+      const lowered = read.report ? Object.entries(next.keys).filter(([key, count]) => count < (read.report!.keys[key] ?? 0)).length : 0;
+      recorded = { path, written: true, reason: missing ? "seeded (no report existed)" : `recorded (${removed} fixed key(s) removed, ${lowered} count(s) lowered, nothing added)` };
+      exitCode = 0;
+    }
+    lines.push(`constitution --record-green: ${recorded.written ? `${recorded.reason}: ${path}` : `REFUSED: ${recorded.reason}`}`);
+  }
+  const deltaOut = {
+    mode, ok: delta.ok, green: path, ...(delta.baseline ? { baseline: delta.baseline } : {}),
+    total: delta.total, pending: delta.pending, enforced: delta.enforced, delta: delta.blocking.length,
+    newRows: delta.newRows, staleKeys: delta.stale.length, changedRows: delta.changedRows, changedRecords: delta.changedRecords, dependantRecords: delta.dependantRecords,
+    stale: delta.stale, tampered: delta.tampered, blocking: delta.blocking.map(row => ({ key: green.rowKey(row), ...row })),
+  };
+  return {
+    verb: "check", root, check: true, exitCode, message: lines.join("\n"),
+    output: { ...report, delta: deltaOut, enforced: { ok: delta.enforced === 0, findings: delta.enforced }, ...(recorded ? { recorded } : {}) },
   };
 }

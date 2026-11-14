@@ -63,7 +63,7 @@ describe("clossys retire <agent>/<slot> <candidate>", () => {
     expect(candidateRetires(buildContext(workspace, join(workspace, "clossys"), { history: () => ({ available: true, changes: new Map(), dirty: new Set() }) }))).toEqual([]);
     // The pin is untouched and still resolves.
     expect(load(join(dir, "pin.json")).candidate).toBe("example-v2.json");
-    expect(checkSlotModel(join(workspace, "clossys")).filter(issue => issue.path !== `agents/designer/${ID}/retired`)).toEqual([]);
+    expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
   });
 
   it("refuses the pinned candidate and changes nothing", async () => {

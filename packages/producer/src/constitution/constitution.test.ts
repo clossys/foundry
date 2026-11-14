@@ -10,7 +10,7 @@ import { cleanSpec, contextOf, expectCatches, writeWorkspace, NO_HISTORY } from 
 
 const packageRoot = fileURLToPath(new URL("../../", import.meta.url));
 const IDS = Array.from({ length: 16 }, (_, index) => `R${String(index + 1).padStart(2, "0")}`);
-const ENFORCED = ["R01", "R04", "R06", "R07", "R08", "R09", "R10"];
+const ENFORCED = ["R01", "R04", "R06", "R07", "R08", "R09", "R10", "R11", "R13"];
 const BUILDING = ["R03", "R05", "R15", "R16"];
 
 describe("constitution registry", () => {
@@ -69,7 +69,7 @@ describe("constitution runner", () => {
     expect(text).toMatch(/^R01 ok {2}rows 0$/m);
     expect(text).toMatch(/^R02 PENDING {2}rows \d+/m);
     expect(text).toMatch(/^R04 ok {2}rows 0$/m);
-    expect(text).toMatch(/constitution: FAIL {2}rows \d+ \(pending \d+, building \d+ report-only, findings 0\)/);
+    expect(text).toMatch(/constitution: FAIL {2}rows \d+ \(pending \d+, findings 0\)(?: {2}building \d+ \(report only; --strict fails them\))?/);
   });
 
   it("passes an enforced rule alone on a clean workspace and fails it on a broken one, with counts by agent and check", () => {
@@ -97,8 +97,8 @@ describe("constitution runner", () => {
     expect(loose.building).toBe(loose.total);
     expect(loose.building).toBeGreaterThan(0);
     expect(loose.rules).toEqual([expect.objectContaining({ id: "R15", status: "building", building: loose.total })]);
-    expect(formatReport(loose)).toMatch(/^R15 BUILDING {2}rows \d+ \(building \d+\)/m);
-    expect(formatReport(loose)).toMatch(/constitution: PASS .*building \d+ report-only, findings 0/);
+    expect(formatReport(loose)).toMatch(/^R15 BUILDING {2}rows \d+/m);
+    expect(formatReport(loose)).toMatch(/constitution: PASS .*findings 0\) {2}building \d+ \(report only; --strict fails them\)/);
     const strict = runConstitution({ root, consumer, rule: "R15", strict: true, history: () => NO_HISTORY, now: () => 0 });
     expect(strict).toMatchObject({ ok: false, strict: true, building: loose.building, total: loose.total });
     expect(formatReport(strict)).toMatch(/^R15 FAIL {2}rows \d+/m);
@@ -131,7 +131,15 @@ describe("constitution schemas", () => {
 
 describe("clossys check --constitution arguments", () => {
   it("parses --constitution and --rule on check", () => {
-    expect(parseArgs(["check", "--constitution", "--rule", "R04", "--json"])).toMatchObject({ verb: "check", constitution: true, rule: "R04", json: true });
+    expect(parseArgs(["check", "--constitution", "--rule", "R04", "--json"])).toMatchObject({ verb: "check", constitution: true, rule: ["R04"], json: true });
+  });
+
+  it("accumulates repeated --rule flags, and the runner runs every named rule", () => {
+    expect(parseArgs(["check", "--constitution", "--rule", "R11", "--rule", "R13", "--strict"])).toMatchObject({ constitution: true, rule: ["R11", "R13"] });
+    expect(() => parseArgs(["check", "--constitution", "--rule", "R11", "--rule", "R17"])).toThrow(/R01..R16/);
+    const { root, consumer } = writeWorkspace(cleanSpec());
+    const report = runConstitution({ root, consumer, rule: ["R04", "R09"], history: () => NO_HISTORY });
+    expect(report.rules.map(rule => rule.id)).toEqual(["R04", "R09"]);
     expect(parseArgs(["check"])).toMatchObject({ constitution: false });
   });
 
@@ -139,6 +147,6 @@ describe("clossys check --constitution arguments", () => {
     expect(() => parseArgs(["publish", "--constitution"])).toThrow(/--constitution requires check/);
     expect(() => parseArgs(["check", "--rule", "R04"])).toThrow(/--rule requires check --constitution/);
     expect(() => parseArgs(["check", "--constitution", "--rule", "R17"])).toThrow(/R01..R16/);
-    expect(parseArgs(["check", "--constitution", "--rule", "R16", "--strict"])).toMatchObject({ rule: "R16", strict: true });
+    expect(parseArgs(["check", "--constitution", "--rule", "R16", "--strict"])).toMatchObject({ rule: ["R16"], strict: true });
   });
 });

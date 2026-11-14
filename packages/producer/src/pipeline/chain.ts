@@ -53,16 +53,23 @@ const words = (command: string) => command.trim().split(/\s+/);
 // ---------------------------------------------------------------- plumb commands
 export type ChainCommand =
   | { readonly argv: readonly string[]; readonly cwd: string; readonly invocation: string }
-  | { readonly skip: string };
+  | { readonly skip: string; readonly onDemand?: string };
 
 /** A step's package folder: this package for producer steps, its sibling for the others. */
 export const packageDir = (step: Step, packageRoot = PACKAGE_ROOT): string => step.package === undefined || step.package === "producer" ? packageRoot : join(packageRoot, "..", step.package);
 
-/** What `clossys run` executes for a plumb step, and the invocation its run record carries. */
-export function chainCommand(step: Step, root: string, packageRoot = PACKAGE_ROOT): ChainCommand {
-  const chain = step.chain ?? step.run;
+/**
+ * What `clossys run` executes for a plumb step, and the invocation its run record carries. A chain
+ * skip with `onDemand` (capture: `--capture`) runs the step's own `run` only when the run asked for
+ * that flag (`demand`); otherwise it is skipped like any chain skip.
+ */
+export function chainCommand(step: Step, root: string, packageRoot = PACKAGE_ROOT, demand: readonly string[] = []): ChainCommand {
+  let chain = step.chain ?? step.run;
   if (chain === undefined) return { skip: "no run" };
-  if (typeof chain !== "string") return { skip: chain.skip };
+  if (typeof chain !== "string") {
+    if (!chain.onDemand || !demand.includes(chain.onDemand) || step.run === undefined) return { skip: chain.skip, ...(chain.onDemand ? { onDemand: chain.onDemand } : {}) };
+    chain = step.run;
+  }
   const argv = words(chain).slice(1);
   if (argv.some(word => /<[^>]+>/.test(word))) return { skip: `its run names placeholders and its contract names no chain command` };
   if (argv[0] === "pipeline" && argv[1] === "trace") {
@@ -132,6 +139,8 @@ export function openItems(step: Step, context: Context): string[] {
   if (!isDecide(step)) return [];
   const counter = step.open;
   const root = context.root;
+  // An on-demand verb is never owed: no open item, whether or not its outputs exist yet.
+  if (counter === "on-demand") return [];
   if (counter === "slots-without-slot-json") {
     const dir = join(root, "clossys", "agents");
     // An agent with a Foundry IA and no ia.json is one open item (its bare id), once the agents it reads have theirs.
@@ -256,9 +265,11 @@ export const PLACEHOLDER_MEANING: Readonly<Record<string, string>> = {
   "<R-ID>": "the rule id (R-<number>)",
   "<quote>": "the owner's rule, in their words",
   "<why>": "the owner's reason, in their words",
+  "<reason>": "why the slot is not needed, in the owner's words",
   "<contract.json>": "a file with the slot's contract (the slot.json contract object)",
   "<clossys.config.ts>": "the path of the config file to start from",
   "<ref>": "the ledger comment that holds the owner's words (<org>/<repo>#<issue> issuecomment-<id>)",
+  "<words.md>": "a file with the owner's words (or their summary) on one line, verbatim",
 };
 /** Fill `<model:tier>` placeholders from `--model <tier>=<id>` answers; name every other placeholder in `fill`. */
 function filled(argv: string[], models: Readonly<Record<string, string>>): { argv: string[]; fill: Record<string, string> } {
@@ -323,6 +334,9 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
   } else if (step.id === "rules") {
     add("Start an empty rule registry; add each owner rule with clossys rule as you state it.", ["clossys", "rule", "--init"]);
     add("Record one owner rule now, unenforced until a check enforces it.", ["clossys", "rule", "<R-ID>", "--quote", "<quote>", "--date", new Date().toISOString().slice(0, 10), "--status", "unenforced"]);
+  } else if (step.id === "owner.decisions") {
+    add("Register the ledger comment that holds your words, so an owner-gated verb can cite it with --owner-ref.", ["clossys", "owner-decision", "add", "--ref", "<ref>", "--scope", "ia", "--quote-file", "<words.md>", "--date", new Date().toISOString().slice(0, 10)]);
+    add("Start an empty registry now; register each ledger comment with clossys owner-decision add when an owner-gated verb needs it.", ["clossys", "owner-decision", "init"]);
   } else if (step.id === "writer.approve") {
     const names = candidatesOf(root, item).filter(name => name.endsWith(".md"));
     const keys = writerKeysUnapproved(root).get(item.slice("writer/".length)) ?? [];
@@ -443,6 +457,8 @@ export interface ChainOptions {
   readonly steps?: readonly Step[];
   readonly packageRoot?: string;
   readonly exec?: Exec;
+  /** On-demand flags this run asked for (`--capture`): steps whose chain skip names one run. */
+  readonly demand?: readonly string[];
 }
 
 function lastOf(root: string, step: Step, command: ChainCommand): { last: RunState; changed: string[]; run?: StoredRun } {
@@ -473,7 +489,7 @@ export function runChain(root: string, options: ChainOptions = {}): ChainResult 
   const measured = new Map<number, ReturnType<typeof lastOf>>();
   let ranAt = -1;
   steps.forEach((step, index) => {
-    const command = isDecide(step) ? null : chainCommand(step, root, packageRoot);
+    const command = isDecide(step) ? null : chainCommand(step, root, packageRoot, options.demand);
     const seen = command ? lastOf(root, step, command) : { last: "never-run" as RunState, changed: [] as string[] };
     if (command) measured.set(index, seen);
     const row = (state: RowState, detail: string, last = seen.last, changed = seen.changed) => rows.push({ step: step.id, kind: step.kind, state, detail, last, changed });
@@ -487,7 +503,7 @@ export function runChain(root: string, options: ChainOptions = {}): ChainResult 
       stop = { step: step.id, open: items.length, decider: packet.decider, packet };
       return row("open", `${items.length} open (${items.slice(0, 3).join(", ")}${items.length > 3 ? ", ..." : ""}); decided by ${packet.decider}; clossys next`);
     }
-    if ("skip" in command!) return row("skipped", command!.skip);
+    if ("skip" in command!) return row("skipped", command!.onDemand ? `on demand (clossys run ${command!.onDemand}): ${command!.skip}` : command!.skip);
     // A plumb step whose first workspace input matches no file has nothing to work on yet: an empty
     // consumer stops cleanly at that agent's owner interview, never red at the step's own check.
     const first = step.inputs[0]?.glob;
@@ -525,7 +541,7 @@ export function runChain(root: string, options: ChainOptions = {}): ChainResult 
   });
   const stale = steps.flatMap((step, index) => {
     if (isDecide(step)) return [];
-    const seen = index >= ranAt && measured.has(index) ? measured.get(index)! : lastOf(root, step, chainCommand(step, root, packageRoot));
+    const seen = index >= ranAt && measured.has(index) ? measured.get(index)! : lastOf(root, step, chainCommand(step, root, packageRoot, options.demand));
     return seen.last === "stale" ? [{ step: step.id, changed: seen.changed }] : [];
   });
   return { schema: CHAIN_SCHEMA, dry: Boolean(options.dry), rows, stop, failed, stale };
@@ -545,6 +561,8 @@ export interface ExplainRow {
    */
   readonly last: RunState;
   readonly open: number;
+  /** How `clossys run` treats the step: runs it, skips it, runs it only on demand (`on demand --capture`), or stops at it (decide). */
+  readonly chain: string;
 }
 export interface Explain {
   readonly schema: typeof EXPLAIN_SCHEMA;
@@ -559,17 +577,18 @@ function latestState(root: string, step: Step): RunState {
 }
 
 /** The whole graph as one table: what `clossys run --explain` prints and `/api/pipeline/explain` serves. */
-export function explainChain(root: string, options: { steps?: readonly Step[]; packageRoot?: string } = {}): Explain {
+export function explainChain(root: string, options: { steps?: readonly Step[]; packageRoot?: string; demand?: readonly string[] } = {}): Explain {
   const steps = options.steps ?? STEPS;
   const context = contextOf(root, steps);
   const packageRoot = options.packageRoot ?? PACKAGE_ROOT;
   const rows = steps.map(step => {
-    const command = isDecide(step) ? null : chainCommand(step, root, packageRoot);
+    const command = isDecide(step) ? null : chainCommand(step, root, packageRoot, options.demand);
     // Agree with runChain: a plumb step's chain drift is its chain invocation's latest record.
     const last: RunState = command && !("skip" in command) ? lastOf(root, step, command).last : latestState(root, step);
     const seat = context.seats[step.id];
     const decider = isDecide(step) ? (seat?.state === "assigned" ? deciderOf(step, seat) : `${step.decider ?? "owner"} (seat ${seat?.state ?? "none"})`) : "code";
-    return { step: step.id, agent: step.agent ?? "", kind: step.kind, decider, last, open: openItems(step, context).length };
+    const chain = !command ? "stop" : !("skip" in command) ? "run" : command.onDemand ? `on demand ${command.onDemand}` : "skip";
+    return { step: step.id, agent: step.agent ?? "", kind: step.kind, decider, last, open: openItems(step, context).length, chain };
   });
   const counts = { plumb: 0, "decide:creative": 0, "decide:judgment": 0 } as Record<Step["kind"], number>;
   for (const row of rows) counts[row.kind]++;

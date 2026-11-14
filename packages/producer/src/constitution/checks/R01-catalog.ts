@@ -12,11 +12,14 @@
  *   record folders R10 still accepts until the ledger form (W2-B) are accepted here too.
  * - R01.5 Designer, Director and Writer live slots are Foundry-placed leaves or listed extensions.
  * - R01.6 inside one agent, no two live slots share a contract (sha256 of canonical JSON, fixture left out).
+ * - R01.7-R01.15 the IA checks (levels, axes, labels, nav parity, extension facet, fanout) live in
+ *   rules/r01-ia.ts; rules.json registers them `building` (R01.15 `warn`) until the IA data units land.
  */
 import { createHash } from "node:crypto";
 import { hasSchema, loadSchema, validateValue } from "../../pipeline/schema.js";
 import { AGENT_KIND, fixtureShapeIssues, SLOT_KINDS, validateIa, validateSlotDoc, type SlotKind } from "../../records/slot-model/index.js";
 import type { AgentRecord, ConstitutionContext, FoundryAgent, Row, RuleModule, SlotRecord } from "../types.js";
+import { R01_IA_CHECKS } from "../rules/r01-ia.js";
 import { isObject, listed, liveSlots, row } from "./shared.js";
 
 const AGENT_FILES = new Set(["ia.json", "ledger.json", "policy.json"]);
@@ -183,5 +186,6 @@ export const R01: RuleModule = {
     "R01.4": treeShape,
     "R01.5": foundryPlaced,
     "R01.6": contractDedupe,
+    ...R01_IA_CHECKS,
   },
 };

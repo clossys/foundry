@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { after, test } = require('node:test');
 const { ROUTE_MARKER, readStudioPublication } = require('./check-studio-routes.cjs');
-const { readGates, applyGates, requestLedger, settle, gateReports, textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, servedCheck, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
+const { readGates, applyGates, requestLedger, settle, gateReports, textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, servedCheck, parseArgs, checkPort, freePort, browserRuntime } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
 // Fixtures live in the OS temp directory (TMPDIR), never under the checkout (a write there dirties the tree), and are removed after the run.
@@ -254,6 +254,34 @@ test('a Studio that cannot start is a setup failure (ENV exit 2), and nothing is
   assert.equal(result.report.status, 'ENV');
   assert.match(result.report.diagnostics[0].message, /already serving/);
   assert.equal(checked, false);
+});
+
+test('a self-started Studio takes --port, $STUDIO_CHECK_PORT or a free port, never 4380 or 4503', async () => {
+  const ports = [];
+  const start = async ({ port }) => { ports.push(port); return { origin: `http://127.0.0.1:${port}`, stop: async () => {} }; };
+  const ready = async () => {};
+  const origins = [];
+  const check = async options => { origins.push(options.origin); assert.equal(options.port, undefined); return { exitCode: 0, report: {} }; };
+  await servedCheck({ port: 4621 }, { env: {}, start, ready, check, pickPort: async () => { throw new Error('must not pick'); } });
+  await servedCheck({}, { env: { STUDIO_CHECK_PORT: '4622' }, start, ready, check });
+  await servedCheck({}, { env: {}, start, ready, check, pickPort: async () => 4623 });
+  assert.deepEqual(ports, [4621, 4622, 4623]);
+  assert.deepEqual(origins, ['http://127.0.0.1:4621', 'http://127.0.0.1:4622', 'http://127.0.0.1:4623']);
+  // The default needs no flag: a real free port from the OS.
+  await servedCheck({}, { env: {}, start, ready, check });
+  assert.ok(ports[3] > 0 && ![4380, 4503].includes(ports[3]));
+  // Reserved ports are refused before anything starts: a setup failure, nothing checked.
+  for (const env of [{ STUDIO_CHECK_PORT: '4503' }, { STUDIO_CHECK_PORT: '4380' }]) {
+    const result = await servedCheck({}, { env, start: async () => { throw new Error('must not start'); }, ready, check: async () => { throw new Error('must not check'); } });
+    assert.equal(result.exitCode, 2);
+    assert.match(result.report.diagnostics[0].message, /reserved/);
+  }
+  assert.throws(() => parseArgs(['--port', '4503']), /reserved/);
+  assert.throws(() => parseArgs(['--port', '70000']), /1-65535/);
+  assert.equal(parseArgs(['--port', '4624']).port, 4624);
+  assert.equal(checkPort('4625'), 4625);
+  const free = await freePort();
+  assert.ok(Number.isInteger(free) && free > 0 && ![4380, 4503].includes(free));
 });
 
 // Fake Playwright requests: url(), frame().isDetached(), failure(), resourceType().

@@ -1,8 +1,10 @@
 'use strict';
 // Which Studio routes the final checks render and screenshot (owner, clossys/workspace#46
 // issuecomment-6840407560). studio:check renders every route once (desktop light) and Designer slot
-// pages in every variant; capture shoots Designer slot pages plus routes whose inputs changed since
-// the last green capture. Inputs: the records and candidates a route uses, plus the Studio build.
+// pages in every variant; capture shoots only the routes whose inputs changed since the last green
+// capture. Inputs: given a pin graph (capture), the pinned sha of every slot a route shows and of
+// every slot those depend on (slot.json inputs and uses, transitively: R07's cascade); without one
+// (studio:check's ordering), the bytes of the slot folders a route uses. Plus the Studio build.
 // No last green state, or a changed build, frame or checker, selects everything. Check semantics
 // (what fails, scanners, allowlists, baselines) are not decided here; only the set of routes.
 
@@ -72,10 +74,37 @@ function slotDir(repositoryRoot, agents, route, slot) {
 }
 
 /**
- * Per-route input digests and the global digests (build, frame, checker) for a Studio map. A route
- * whose inputs cannot be resolved gets `null` and is always selected.
+ * The slot ids `ids` and every slot they depend on through the pin graph (slot.json inputs and uses,
+ * transitively). Undefined when a slot is absent from the graph or its dependencies are unreadable:
+ * such a route is always selected.
  */
-function routeInputs({ repositoryRoot, map, checker = [] }) {
+function dependencyClosure(pins, ids) {
+  const seen = new Set();
+  const stack = [...ids];
+  while (stack.length) {
+    const id = stack.pop();
+    if (seen.has(id)) continue;
+    const node = pins[id];
+    if (!node || !Array.isArray(node.deps)) return undefined;
+    seen.add(id);
+    stack.push(...node.deps);
+  }
+  return [...seen].sort();
+}
+/** sha256 over sorted (slot id, pinned sha); an unpinned slot digests as unpinned. */
+function digestPins(pins, ids) {
+  const hash = createHash('sha256');
+  for (const id of ids) hash.update(`${id}\0${pins[id].sha ?? 'unpinned'}\0`);
+  return hash.digest('hex');
+}
+
+/**
+ * Per-route input digests and the global digests (build, frame, checker) for a Studio map. A route
+ * whose inputs cannot be resolved gets `null` and is always selected. `pins` (slot id -> { sha, deps })
+ * switches slot inputs from folder bytes to pinned shas over the dependency closure, so a candidate
+ * added without a repin selects nothing and a repin selects its slot's routes and its dependants'.
+ */
+function routeInputs({ repositoryRoot, map, checker = [], pins }) {
   let agents = [];
   try { agents = fs.readdirSync(path.join(repositoryRoot, 'clossys/agents')).sort(); } catch {}
   const pages = new Map((map.pages ?? []).map(page => [page.id, page]));
@@ -116,14 +145,27 @@ function routeInputs({ repositoryRoot, map, checker = [] }) {
     const dir = slotDir(repositoryRoot, agents, leaf.path, leaf.slug);
     sources.set(leaf.path, dir ? [dir] : null);
   }
+  // With a pin graph, a slot folder stands for its slot id; `clossys/agents` (Home, Pipeline) for every slot.
+  const isSlotDir = entry => /^clossys\/agents\/[^/]+\/[^/]+$/.test(entry);
+  const digest = list => {
+    if (!pins) return digestPaths(repositoryRoot, list);
+    const ids = list.includes('clossys/agents') ? Object.keys(pins) : list.filter(isSlotDir).map(entry => entry.split('/')[3]);
+    const closure = dependencyClosure(pins, ids);
+    if (!closure) return null;
+    const other = list.filter(entry => entry !== 'clossys/agents' && !isSlotDir(entry));
+    return createHash('sha256').update(digestPins(pins, closure)).update('\0').update(digestPaths(repositoryRoot, other)).digest('hex');
+  };
   const routes = {};
-  for (const [route, list] of sources) routes[route] = list ? digestPaths(repositoryRoot, list) : null;
+  for (const [route, list] of sources) routes[route] = list ? digest(list) : null;
   const frames = [...new Set((map.pages ?? []).map(page => page.frameId).filter(Boolean))].map(frame => slotDir(repositoryRoot, agents, '/designer', frame) ?? `clossys/agents/designer/${frame}`);
   return {
     schema: SCHEMA,
     global: {
+      // Pin-graph and folder digests never compare with each other.
+      inputs: pins ? 'pins' : 'folders',
       build: digestPaths(repositoryRoot, buildPaths(repositoryRoot), NOT_SOURCE),
-      frame: digestPaths(repositoryRoot, frames),
+      // An unresolvable frame (absent from the pin graph) digests as such, which differs from any resolved state.
+      frame: digest(frames) ?? 'unresolved',
       checker: digestPaths(repositoryRoot, checker),
     },
     routes,
@@ -136,7 +178,7 @@ function routeInputs({ repositoryRoot, map, checker = [] }) {
  */
 function changedRoutes(current, last, routes) {
   if (!last || last.schema !== current.schema) return { all: true, reason: 'no previous green run', changed: [...routes] };
-  for (const key of ['build', 'frame', 'checker']) if (last.global?.[key] !== current.global[key]) return { all: true, reason: `${key} changed`, changed: [...routes] };
+  for (const key of ['inputs', 'build', 'frame', 'checker']) if (last.global?.[key] !== current.global[key]) return { all: true, reason: `${key} changed`, changed: [...routes] };
   const changed = routes.filter(route => current.routes[route] == null || last.routes?.[route] !== current.routes[route]);
   return { all: false, reason: 'inputs compared with the last green run', changed };
 }
@@ -151,4 +193,4 @@ function readState(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return undefined; }
 }
 
-module.exports = { SCHEMA, isDesignerSlotRoute, studioCheckMatrix, routeInputs, changedRoutes, changedFirst, digestPaths, readState };
+module.exports = { SCHEMA, isDesignerSlotRoute, studioCheckMatrix, routeInputs, dependencyClosure, changedRoutes, changedFirst, digestPaths, readState };

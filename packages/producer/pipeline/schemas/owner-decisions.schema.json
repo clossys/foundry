@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/owner-decisions.schema.json",
+  "title": "Owner decisions (clossys/owner-decisions.json): the registry an --owner-ref resolves against",
+  "description": "Derived from src/records/owner-decisions.ts validateOwnerDecisions (which also checks unique ids and that each ref cites its own id). Written by clossys owner-decision add.",
+  "type": "object",
+  "required": [
+    "schema",
+    "decisions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "clossys.owner-decisions/1"
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "ref",
+          "date",
+          "scope",
+          "summary"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "ref": {
+            "type": "string",
+            "pattern": "^(?:[\\w.-]+/[\\w.-]+#\\d+ issuecomment-\\d+|https://github\\.com/[\\w.-]+/[\\w.-]+/issues/\\d+#issuecomment-\\d+)(?: \\([^()]*\\))?$"
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "scope": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "enum": [
+                "ia"
+              ]
+            }
+          },
+          "summary": {
+            "type": "string",
+            "pattern": "^[^\\r\\n]*\\S[^\\r\\n]*$"
+          }
+        }
+      }
+    }
+  }
+}

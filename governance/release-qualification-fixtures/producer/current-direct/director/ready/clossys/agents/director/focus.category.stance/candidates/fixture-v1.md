@@ -1,15 +1,17 @@
 ---
 slot: "focus.category.stance"
-source: {"kind":"derived","ref":[]}
+source: {"kind":"derived","ref":["finding:active-customers"]}
 feeds: []
 functions: []
 ---
 
 ## Direction
-- Fictional positioning direction for qualification.
+- Stance: Only Fictional studios with 20 bookings each week
+- Against: Only Fictional studios with 20 bookings each week
+- Risk: Only Fictional studios with 20 bookings each week
 
 ## Because
-- Observed.
+- Five interviews (finding:active-customers)
 
 ## Watch
-- Review.
+- If trial count > 10 each month, then review this choice.

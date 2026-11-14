@@ -636,7 +636,10 @@ export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | u
         try { target = await realpath(file); if (!(await stat(target)).isFile() || relative(await realpath(build.dist), target).startsWith("..")) target = undefined; } catch (error) { if (!isAbsent(error)) throw error; target = undefined; }
       }
       if (!target) { response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }); response.end("Not found\n"); return true; }
-      response.writeHead(200, { "Content-Type": TYPES[extname(target)] ?? "application/octet-stream", "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": specimenSiteCsp(`http://${request.headers.host ?? ""}`, build.key) });
+      // A built file of an unregistered type is refused (415), never served as octet-stream.
+      const type = TYPES[extname(target)];
+      if (type === undefined) { response.writeHead(415, { "Content-Type": "text/plain; charset=utf-8" }); response.end(`Specimen file type ${extname(target) || "(none)"} is not registered\n`); return true; }
+      response.writeHead(200, { "Content-Type": type, "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": specimenSiteCsp(`http://${request.headers.host ?? ""}`, build.key) });
       response.end(request.method === "HEAD" ? undefined : await readFile(target));
       return true;
     },

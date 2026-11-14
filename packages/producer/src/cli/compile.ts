@@ -3,10 +3,14 @@
  *
  * Reads the files packages/producer/decision-inputs.json lists (IA, slot.json, pins, pinned
  * candidates) from the consumer root plus package code, and writes the Studio page projection,
- * the Publisher-installed route files and compile.lock.json (sha256 of every input and output).
+ * the Publisher-installed route files and compile.lock.json (sha256 of every input and output,
+ * plus `pinSetHash`, the pin-set hash of the live pins it was built from; R12.1 compares it).
  * Deterministic and offline: no model, no agent binary, no network (R-COMPILE-PURE).
  */
-import { resolve } from "node:path";
+import { readFile, realpath, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { buildContext } from "../constitution/context.js";
+import { pinSet, pinSetHash } from "../constitution/rules/r12.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -34,10 +38,19 @@ export async function runCompileCli(argv: readonly string[], cwd: string): Promi
   const { compileStudio } = await import("../../scripts/compile-studio.mjs");
   const workspace = discoverRoot(resolve(cwd, root ?? "."));
   const result = await compileStudio({ root: workspace, ...(out ? { out: resolve(cwd, out) } : {}) });
+  // The reader refuses any symlinked ancestor (a temp root under macOS /var), so read the real path.
+  const real = await realpath(workspace);
+  await recordPinSetHash(result.lock, pinSetHash(pinSet(buildContext(real, join(real, "clossys")))));
   return {
     exitCode: 0,
     message: `compile: ${result.inputs} decision inputs -> ${result.outputs} outputs (${result.lock})`,
     root: workspace,
     compilation: result,
   };
+}
+
+/** Writes `pinSetHash` into the lock compileStudio wrote, as its last field. */
+async function recordPinSetHash(lockPath: string, hash: string): Promise<void> {
+  const { schema, ...rest } = JSON.parse(await readFile(lockPath, "utf8")) as Record<string, unknown>;
+  await writeFile(lockPath, `${JSON.stringify({ schema, ...rest, pinSetHash: hash }, null, 2)}\n`);
 }

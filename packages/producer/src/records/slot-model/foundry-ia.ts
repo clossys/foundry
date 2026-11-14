@@ -137,13 +137,34 @@ export function writerIa(): FoundryIa {
   return { agent: "writer", ia: { schema: IA_SCHEMA, source: `@clossys/writer#${ref}`, extensions: [], nodes }, slots };
 }
 
-/** Slot -> its IA position (L0 for layered agents, L1, L2, order in IA order). */
-/** Each placed folder id (a slot, or a seat in the Producer tree) and its IA position. */
+/**
+ * Each L1 node's L0, for every agent. An IA that declares its axes (R01.7, `axes`) and its `layers`
+ * reads each layer as an L0: a node's L0 is the first layer that lists it (`<l1>` or `<l1>/<l2>`),
+ * the way the R01 checks read it (constitution/rules/r01-ia.ts iaView). Without declared axes the
+ * layers stay display-only (IaDoc.layers), and only Designer and Writer have an L0: the prefix of
+ * their dotted node ids (`themes.colors` is in `themes`). Declaring the axes (`clossys ia <agent>
+ * --axes`) is therefore the write that re-levels every slot.json of a layered agent.
+ */
+export function nodeLayers(agent: ModelAgent, ia: IaDoc): Map<string, string> {
+  const layers = new Map<string, string>();
+  if (ia.axes !== undefined && ia.layers?.length) {
+    for (const layer of ia.layers) for (const ref of layer.nodes) {
+      const l1 = ref.split("/")[0]!;
+      if (!layers.has(l1)) layers.set(l1, layer.id);
+    }
+    return layers;
+  }
+  if (agent === "designer" || agent === "writer") for (const node of ia.nodes) layers.set(node.id, node.id.split(".")[0]!);
+  return layers;
+}
+
+/** Each placed folder id (a slot, or a seat in the Producer tree) and its IA position (L0 per nodeLayers, L1, L2, order in IA order). */
 export function slotPositions(agent: ModelAgent, ia: IaDoc): Map<string, SlotPosition> {
   const positions = new Map<string, SlotPosition>();
+  const layers = nodeLayers(agent, ia);
   let order = 0;
   for (const node of ia.nodes) for (const child of node.children) for (const slot of child.slots) {
-    const l0 = agent === "designer" || agent === "writer" ? node.id.split(".")[0] : undefined;
+    const l0 = layers.get(node.id);
     positions.set(slot, { ...(l0 ? { l0 } : {}), l1: node.id, l2: child.id, order: order++ });
   }
   return positions;

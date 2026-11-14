@@ -84,8 +84,11 @@ export interface StepCommand {
 /** A step that lands (`adds`) or goes away (`removes`) on another branch. Pending is never passing. */
 export interface Pending { readonly branch: string; readonly change: "adds" | "removes" }
 
-/** Named counters of open decisions a decide step leaves, read from real files. */
-export type OpenCounter = "slots-without-slot-json" | `slots-without-candidates:${string}` | "writer-keys-unapproved" | `slots-undecided:${string}` | "seats-open";
+/**
+ * Named counters of open decisions a decide step leaves, read from real files. `on-demand` marks a
+ * verb the owner runs when a case arises (clossys retire): it is never owed, so it counts nothing.
+ */
+export type OpenCounter = "slots-without-slot-json" | `slots-without-candidates:${string}` | "writer-keys-unapproved" | `slots-undecided:${string}` | "seats-open" | "on-demand";
 
 export interface StepInput {
   readonly id: string;
@@ -166,9 +169,10 @@ export interface ActionGap { readonly unit: string; readonly reason: string; rea
 /**
  * How `clossys run` executes a plumb step: the concrete command when the run names placeholders
  * (`<file>`), or `skip` with why the chain never runs it (a server, a caller-chosen target).
+ * A skip with `onDemand` names the `clossys run` flag that runs `run` after all (capture: `--capture`).
  * Absent, the chain runs `run` itself.
  */
-export type ActionChain = string | { readonly skip: string };
+export type ActionChain = string | { readonly skip: string; readonly onDemand?: "--capture" };
 /** packages/<package>/actions/<id>/action.json (pipeline/schemas/action.schema.json). */
 export interface ActionContract {
   readonly schema: typeof ACTION_SCHEMA;

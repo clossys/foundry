@@ -49,8 +49,14 @@ export interface CliArgs {
   readiness: boolean;
   /** check: run the slot constitution suite (R01-R16) over every record instead of the default checks. */
   constitution: boolean;
-  /** check --constitution: only this rule (R01..R16). */
-  rule?: string;
+  /** check --constitution: the chain's constitution step; pending rows are listed, never failing; until E2 it exits by the delta against the last green report (constitution/green.ts), with --strict by every enforced row. */
+  enforced?: boolean;
+  /** check --constitution: write the last green report (a full run whose delta gate passes, or the bootstrap). */
+  recordGreen?: boolean;
+  /** check --constitution: the green report file (default `<P>/pipeline/constitution-green.json`). */
+  green?: string;
+  /** check --constitution: only these rules (R01..R16); repeated --rule flags accumulate. */
+  rule?: string[];
   /** check --constitution: only the rows about this agent's records (director, designer, writer, publisher or producer). */
   agent?: string;
 }
@@ -72,7 +78,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Owner: clossys ia <agent>/<slot> --contract <file> | --remove; clossys ia <agent> --adopt | --start; clossys evidence <id> --source <s> --observed <date> --by <who> --body <file>; clossys config --init; clossys seat <step> --by <who> ...; clossys rule <R-ID> --quote <text> --date <date> --status <status>; clossys approve writer/<slot> <candidate-id>\n"
   + "Decisions: clossys pin <agent>/<slot> <candidate-id> [--by <who>] | clossys pin <agent>/<slot> --not-needed --reason <text>; clossys decisions [--json]\n"
   + "Candidate options: clossys options [<agent>/<slot> [--more]] | clossys options --classes [--check]; clossys pick <agent>/<slot> <candidate-id> --by agent:<seat>\n"
-  + "Constitution: clossys check --constitution [--rule <R01..R16>] [--agent <agent>] [--strict] [--json] [--root <dir>] (every rule over every record; exits 1 on any row, pending rules included, building checks only with --strict; --agent keeps the rows about one agent's records)\n"
+  + "Constitution: clossys check --constitution [--enforced | --strict] [--record-green] [--green <file>] [--rule <R01..R16>] [--agent <agent>] [--json] [--root <dir>] (every rule over every record; exits 1 on any enforced or pending row; building checks report only unless --strict; warn checks never fail; --enforced, the chain's constitution step, exits 1 until E2 only on a new finding (an enforced row whose key the last green report lacks) or a hand-edited report; rows on records changed since that report (and their R07 dependants) and stale keys are counted, never blocking; --strict exits 1 on every enforced row, building rows included (the full gate); every run prints the new, changed-record, stale and total counts; --record-green seeds a missing green report, or rewrites it only when it adds no key (removals only); --agent keeps the rows about one agent's records)\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"
@@ -116,7 +122,10 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--slots": args.slots = true; break;
       case "--readiness": args.readiness = true; break;
       case "--constitution": args.constitution = true; break;
-      case "--rule": args.rule = value(); break;
+      case "--enforced": args.enforced = true; break;
+      case "--record-green": args.recordGreen = true; break;
+      case "--green": args.green = value(); break;
+      case "--rule": args.rule = [...(args.rule ?? []), value()]; break;
       case "--agent": args.agent = value(); break;
       case "--port": {
         const port = value();
@@ -138,8 +147,11 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.suites || args.strict) && args.verb !== "check") throw new CliUsageError("--suites and --strict require check");
   if ((args.slots || args.readiness) && args.verb !== "check") throw new CliUsageError("--slots and --readiness require check");
   if (args.constitution && args.verb !== "check") throw new CliUsageError("--constitution requires check");
+  if (args.enforced && !args.constitution) throw new CliUsageError("--enforced requires check --constitution");
+  if ((args.recordGreen || args.green !== undefined) && !args.constitution) throw new CliUsageError("--record-green and --green require check --constitution");
+  if (args.recordGreen && (args.rule !== undefined || args.agent !== undefined)) throw new CliUsageError("--record-green needs a full run: no --rule or --agent");
   if (args.rule !== undefined && !args.constitution) throw new CliUsageError("--rule requires check --constitution");
-  if (args.rule !== undefined && !/^R(?:0[1-9]|1[0-6])$/.test(args.rule)) throw new CliUsageError("--rule must be a rule id R01..R16");
+  if (args.rule !== undefined && !args.rule.every(id => /^R(?:0[1-9]|1[0-6])$/.test(id))) throw new CliUsageError("--rule must be a rule id R01..R16");
   if (args.agent !== undefined && !args.constitution) throw new CliUsageError("--agent requires check --constitution");
   if (args.agent !== undefined && !["director", "designer", "writer", "publisher", "producer"].includes(args.agent)) throw new CliUsageError("--agent must be director, designer, writer, publisher or producer");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");

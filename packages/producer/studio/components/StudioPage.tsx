@@ -46,6 +46,12 @@ interface LoaderProps { entry: ContentMapEntry; page: StudioPageRecord; spec: St
 
 /** A slot card's tone by its shown state. */
 const STATUS_TONE: Record<string, SlotTone> = { active: 'secondary', draft: 'outline', missing: 'outline', failing: 'destructive' };
+/** A card status STATUS_TONE does not name fails loudly instead of rendering as a neutral outline. */
+function statusTone(card: string, status: string): SlotTone {
+  const tone = STATUS_TONE[status];
+  if (tone === undefined) throw new Error(`slot card ${card} has status ${JSON.stringify(status)}, which has no registered tone`);
+  return tone;
+}
 /** A placed section's root, by the slot id the assembly's generated provenance marks it with. */
 const sectionTarget = (slot: string) => `[data-clossys-slot=${JSON.stringify(slot)}]`;
 const pageById = new Map(studioPages.map(page => [page.id, page]));
@@ -163,7 +169,7 @@ function useSlotGroupsInputs({ entry, page, spec }: LoaderProps): Loaded {
           const name = studioLeafTitle(agent, card.slug) ?? card.name;
           return {
             id: card.id, name, href: studioLeafHref(agent, card.slug) ?? '',
-            statusLabel: studioCopy(`studio.${card.status}`), statusTone: STATUS_TONE[card.status] ?? 'outline',
+            statusLabel: studioCopy(`studio.${card.status}`), statusTone: statusTone(card.id, card.status),
             // The card status is the gallery loader's pin check (failing: the pin's candidate or bytes do not hold), else the slot state.
             citation: card.status === 'failing' ? checkCitation(SLOT_PINS_CHECK, false) : slotStateCitation(card.state, card.status === 'active'),
             ...(card.version ? { version: card.version, versionLabel: versionLabel(card.version) } : {}), specimen: slotCardSpecimen(card, name, resolved, record.value.publication, !ready),

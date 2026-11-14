@@ -3,6 +3,50 @@
   "$id": "https://clossys.com/schemas/producer/ia.schema.json",
   "title": "Agent IA tree (ia.json)",
   "description": "Derived from src/records/slot-model/validate.ts validateIa and IaDoc (types.ts).",
+  "$defs": {
+    "axis": {
+      "description": "One IA level's axis (R01.7): a name plus a closed label list, or instance for data-driven tabs (L1 only). mirrors names the <agent>/<L0> whose L1 list this one must equal (R01.11).",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "instance": {
+          "const": true
+        },
+        "mirrors": {
+          "type": "string",
+          "pattern": "^(director|designer|writer|publisher|producer)/[a-z0-9][a-z0-9.-]*$"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "values"
+          ]
+        },
+        {
+          "required": [
+            "instance"
+          ]
+        }
+      ]
+    }
+  },
   "type": "object",
   "required": [
     "schema",
@@ -76,6 +120,34 @@
         }
       }
     },
+    "axes": {
+      "description": "The closed L0 and L1 vocabularies (R01.7): L0 is the axis of the layers, L1 maps each layer id to the axis of its tabs. shared lists the labels this agent declares shared with another level or agent (R01.12).",
+      "type": "object",
+      "required": [
+        "L0",
+        "L1"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "L0": {
+          "$ref": "#/$defs/axis"
+        },
+        "L1": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/axis"
+          }
+        },
+        "shared": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
     "layers": {
       "type": "array",
       "items": {
@@ -101,6 +173,44 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      }
+    },
+    "changes": {
+      "description": "The owner-authorized IA changes (clossys ia regroup operations, IA-V), oldest first: the operation, the owner-words ref it was authorized by (a registered clossys/owner-decisions.json decision), when, what changed and how many slot.json files the same write rewrote. Stands in for the slot ledger IA events until W2-B.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "op",
+          "ownerRef",
+          "at",
+          "detail",
+          "slotFiles"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "type": "string",
+            "pattern": "^[a-z][a-z-]*$"
+          },
+          "ownerRef": {
+            "type": "string",
+            "pattern": "^(?:[\\w.-]+\\/[\\w.-]+#\\d+ issuecomment-\\d+|https:\\/\\/github\\.com\\/[\\w.-]+\\/[\\w.-]+\\/issues\\/\\d+#issuecomment-\\d+)(?: \\([^()]*\\))?$"
+          },
+          "at": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T"
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "slotFiles": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }

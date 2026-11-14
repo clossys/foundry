@@ -6,7 +6,7 @@
     "l0": "sections",
     "l1": "sections.organize",
     "l2": "organize-summaries",
-    "order": 203
+    "order": 208
   },
   "kind": "element",
   "contract": {
@@ -279,6 +279,7 @@
     "themes.muted-foreground"
   ],
   "uses": [
+    "assets.icon-needs",
     "components.button",
     "components.item"
   ]

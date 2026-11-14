@@ -1,0 +1,59 @@
+{
+  "schema": "clossys.action/1",
+  "id": "constitution",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.pin",
+  "summary": "Slot constitution over every record before compile; until E2 blocks only on new enforced findings (a key the last green report, pipeline/constitution-green.json, lacks) and on a hand-edited report; findings on changed records and their R07 dependants, and stale keys, are counted and printed, not blocking.",
+  "run": "clossys check --constitution --enforced",
+  "inputs": [
+    {
+      "glob": "clossys/agents/*/ia.json",
+      "schema": "ia"
+    },
+    {
+      "glob": "clossys/agents/*/*/slot.json",
+      "schema": "slot"
+    },
+    {
+      "glob": "clossys/agents/*/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "clossys/agents/director/*/candidates/*",
+      "schema": "candidate-brief"
+    },
+    {
+      "glob": "clossys/agents/designer/*/candidates/*",
+      "schema": "candidate-element"
+    },
+    {
+      "glob": "clossys/agents/writer/*/candidates/*",
+      "schema": "candidate-strings"
+    },
+    {
+      "glob": "clossys/agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys check --constitution --enforced",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "constitution"
+  ],
+  "uses": []
+}

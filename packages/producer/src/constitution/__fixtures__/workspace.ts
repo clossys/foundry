@@ -2,7 +2,9 @@
  * Test fixture: writes a small workspace (`<root>/clossys/agents/<agent>/...`) from a plain spec and
  * builds the constitution context over it. ia.json and slot.json are full records (R01), and the
  * Producer seat is the slot `seat.director` (D5). Every rule test starts from `cleanSpec()`, which passes
- * every implemented check, and breaks exactly one thing.
+ * every implemented check, and breaks exactly one thing. Each agent's IA is one L0 (a layer) with one
+ * L1 tab and one L2 group `all`, with closed axes (FIXTURE_IA), so the IA checks R01.7-R01.14 hold;
+ * the warn-only fanout check R01.15 reports its one-L1 and one-leaf warnings.
  */
 import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -41,6 +43,14 @@ export interface FixtureExtras {
 const KIND: Record<Agent, string> = { director: "brief", designer: "element", writer: "strings", publisher: "page", producer: "seat" };
 /** The agents whose live slots R01.5 holds to the Foundry leaves; the fixture lists them as ia.json extensions. */
 const FOUNDRY_PLACED: readonly Agent[] = ["director", "designer", "writer"];
+/** Each agent's fixture IA levels: L0 layer, L1 node (with one L2 group `all`), labels slugging to the ids. */
+export const FIXTURE_IA: Record<Agent, { l0: { id: string; label: string }; l1: { id: string; label: string } }> = {
+  director: { l0: { id: "plan", label: "Plan" }, l1: { id: "goals", label: "Goals" } },
+  designer: { l0: { id: "kit", label: "Kit" }, l1: { id: "controls", label: "Controls" } },
+  writer: { l0: { id: "copy", label: "Copy" }, l1: { id: "headlines", label: "Headlines" } },
+  publisher: { l0: { id: "web", label: "Web" }, l1: { id: "home", label: "Home" } },
+  producer: { l0: { id: "pipeline", label: "Pipeline" }, l1: { id: "steps", label: "Steps" } },
+};
 /** The sample seat a fixture seat contract carries (seat.schema.json). */
 export const SAMPLE_SEAT = { by: "owner", llm: null, human: null };
 
@@ -67,9 +77,16 @@ export function contractOf(agent: Agent, id: string): Record<string, unknown> {
   }
 }
 
-/** A full slot.json (clossys.slot/1) at IA position root/all, valid for R01. */
+/**
+ * A full slot.json (clossys.slot/1) at the agent's fixture IA position <l0>/<l1>/all, valid for R01.
+ * Director, Designer and Writer slots are listed extensions in the fixture, so they carry `extension: true` (R01.14).
+ */
 export function slotDoc(agent: Agent, id: string, deps: { inputs?: string[]; uses?: string[] } = {}): Record<string, unknown> {
-  return { schema: "clossys.slot/1", id, agent, ia: { l1: "root", l2: "all", order: 0 }, kind: KIND[agent], contract: contractOf(agent, id), inputs: deps.inputs ?? [], uses: deps.uses ?? [] };
+  const { l0, l1 } = FIXTURE_IA[agent];
+  return {
+    schema: "clossys.slot/1", id, agent, ia: { l0: l0.id, l1: l1.id, l2: "all", order: 0 }, kind: KIND[agent], contract: contractOf(agent, id), inputs: deps.inputs ?? [], uses: deps.uses ?? [],
+    ...(FOUNDRY_PLACED.includes(agent) ? { extension: true } : {}),
+  };
 }
 
 /** A workspace that passes every implemented check: one live slot per agent, each pinned. */
@@ -99,9 +116,12 @@ export function writeWorkspace(spec: WorkspaceSpec, extras: FixtureExtras = {}):
     const agentAbs = join(consumer, "agents", agent);
     mkdirSync(agentAbs, { recursive: true });
     const live = Object.entries(slots).filter(([, slot]) => slot.live !== false).map(([id]) => id);
+    const { l0, l1 } = FIXTURE_IA[agent];
     write(join(agentAbs, "ia.json"), {
       schema: "clossys.ia/1", source: "fixture#test", extensions: FOUNDRY_PLACED.includes(agent) ? live : [],
-      nodes: [{ id: "root", label: "Root", children: [{ id: "all", label: "All", slots: live }] }],
+      nodes: [{ id: l1.id, label: l1.label, children: [{ id: "all", label: "All", slots: live }] }],
+      layers: [{ id: l0.id, label: l0.label, nodes: [l1.id] }],
+      axes: { L0: { name: "area", values: [l0.label] }, L1: { [l0.id]: { name: "topic", values: [l1.label] } } },
     });
     for (const [name, value] of Object.entries(extras.agentRetired?.[agent] ?? {})) write(join(agentAbs, "retired", name), value);
     for (const [id, slot] of Object.entries(slots)) {

@@ -1,15 +1,17 @@
 ---
 slot: "execution.roadmap.milestone"
-source: {"kind":"derived","ref":[]}
+source: {"kind":"derived","ref":["finding:active-customers"]}
 feeds: []
 functions: []
 ---
 
 ## Direction
-- Fictional roadmap direction for qualification.
+- Milestone: Only Fictional studios with 20 bookings each week
+- Date: 2027-01-01
+- Evidence: Only Fictional studios with 20 bookings each week
 
 ## Because
-- Observed.
+- Five interviews (finding:active-customers)
 
 ## Watch
-- Review.
+- If trial count > 10 each month, then review this choice.

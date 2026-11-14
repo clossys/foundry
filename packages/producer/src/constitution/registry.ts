@@ -26,12 +26,15 @@ import type { Check, RuleId, RuleModule } from "./types.js";
 export const RULE_MODULES: readonly RuleModule[] = [R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14, R15, R16];
 
 /**
- * `enforced` rows fail the run; `pending` rows are rules nobody has implemented (always a failure);
- * `building` rows are implemented checks still being driven to zero (slot-constitution.md section 4):
- * reported, but they fail the run only under `--strict`.
+ * A status: `enforced` rows fail the run; `pending` checks are stubs whose one row fails it (rules
+ * nobody has implemented); `building` checks are implemented and still being driven to zero
+ * (slot-constitution.md section 4): they report their rows, which fail the run only under --strict
+ * (the data units that make them pass run strict); `warn` rows are warnings and never fail it.
  */
-export type RuleStatus = "enforced" | "pending" | "building";
-export interface RuleCheckEntry { readonly id: string; readonly status: RuleStatus; readonly owner?: string }
+export type RuleStatus = "enforced" | "pending" | "building" | "warn";
+/** A check's status: the same set as a rule's. */
+export type CheckStatus = RuleStatus;
+export interface RuleCheckEntry { readonly id: string; readonly status: CheckStatus; readonly owner?: string }
 export interface RuleEntry {
   readonly id: RuleId;
   readonly statement: string;

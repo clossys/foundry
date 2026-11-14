@@ -8,8 +8,10 @@
  * - R07.4 the dependency graph of the live slots is acyclic (Tarjan) and only points upstream
  *   (director → designer/writer → publisher; Producer seats are outside the graph).
  * R07.5 (cascade by certification key) belongs to the certifier and is pending.
+ * R07.6 frame regions are composed, never inlined: ../rules/r07.ts.
  */
 import type { ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
+import { frameRegions } from "../rules/r07.js";
 import { allSlots, candidateCitations, dependencySet, installOwners, isObject, listed, liveSlotRecords, pending, row, slotHomes, versionCites } from "./shared.js";
 
 export function undeclaredCitations(ctx: ConstitutionContext): Row[] {
@@ -113,5 +115,6 @@ export const R07: RuleModule = {
     "R07.3": recitedPins,
     "R07.4": acyclicUpstream,
     "R07.5": pending("R07", "R07.5", "W2-C", "cascade: certification keyed on the pinned sha256s of the dependency set"),
+    "R07.6": frameRegions,
   },
 };

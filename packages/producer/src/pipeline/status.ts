@@ -132,6 +132,7 @@ function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["a
   if (counter.startsWith("slots-undecided:")) { const agent = counter.slice("slots-undecided:".length); return agents[agent]?.open ?? 0; }
   if (counter === "writer-keys-unapproved") return [...writerKeysUnapproved(root).values()].reduce((sum, keys) => sum + keys.length, 0);
   if (counter === "seats-open") return Object.values(seats).filter(seat => seat.state !== "assigned").length;
+  if (counter === "on-demand") return 0;
   if (counter === "slots-without-slot-json") {
     const dir = join(root, "clossys", "agents");
     if (!modelExists(dir)) return 0;

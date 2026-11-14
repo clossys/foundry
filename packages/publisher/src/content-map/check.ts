@@ -179,6 +179,18 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
   findings.push(...checkContentMapRedirects(input));
   return findings;
 }
+/** Every icon the map names (an entry's own, and each page action's) that resolves to no slot the
+ * consumer registers: a dangling asset reference is a blocking finding, never an icon that renders
+ * as nothing (foundry-audit-0001). `registered` is the consumer's resolvable icon slot ids. */
+export function checkContentMapIcons(map: ContentMap, registered: ReadonlySet<string>): readonly ContentMapFinding[] {
+  const findings: ContentMapFinding[] = [];
+  const dangling = (path: string, icon: string, entryId: string) => findings.push({ severity: "P0", code: "asset", path, entryId, message: `Icon ${icon} resolves to no registered slot` });
+  for (const [index, entry] of map.entries.entries()) {
+    if (typeof entry.icon === "string" && !registered.has(entry.icon)) dangling(`entries.${index}.icon`, entry.icon, entry.id);
+    for (const [at, action] of (entry.actions ?? []).entries()) if (!registered.has(action.icon)) dangling(`entries.${index}.actions.${at}.icon`, action.icon, entry.id);
+  }
+  return findings;
+}
 export function checkedContentMap(map: ContentMap): ContentMap {
   const findings = checkContentMap(map);
   if (findings.length) throw new TypeError(`Content map refused: ${findings.map(finding => `${finding.code} ${finding.path}`).join("; ")}`);

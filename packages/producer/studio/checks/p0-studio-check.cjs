@@ -493,17 +493,47 @@ async function checkCommand(options = {}) {
   catch (error) { const report = failureReport(error); return { exitCode: REPORT_EXIT_CODES[report.status] ?? 1, report }; }
 }
 /**
+ * Ports a self-started check Studio never takes: 4503 is the owner's preview and 4380 is reserved.
+ * A busy 4503 once stopped the chain at this step (W2-G).
+ */
+const RESERVED_PORTS = Object.freeze([4380, 4503]);
+/** A port the check may use: an integer 1-65535 that is not reserved; anything else throws. */
+function checkPort(value, source = '--port') {
+  const port = typeof value === 'number' ? value : /^\d+$/.test(String(value)) ? Number(value) : NaN;
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) throw new Error(`${source} must be a port 1-65535, got ${value}`);
+  if (RESERVED_PORTS.includes(port)) throw new Error(`${source} ${port} is reserved (${RESERVED_PORTS.join(', ')} are never used by studio:check)`);
+  return port;
+}
+/** A free loopback port from the OS, never a reserved one. */
+async function freePort({ attempts = 8 } = {}) {
+  const net = require('node:net');
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const port = await new Promise((resolve, reject) => {
+      const server = net.createServer();
+      server.unref();
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', () => { const { port } = server.address(); server.close(() => resolve(port)); });
+    });
+    if (!RESERVED_PORTS.includes(port)) return port;
+  }
+  throw new Error(`no free non-reserved port after ${attempts} attempts`);
+}
+/**
  * The command serves the Studio it checks, the one way every rendered check does
  * (studio/checks/studio-origin.mjs): --origin or $STUDIO_ORIGIN as given, otherwise check:studio's
- * startStudio (built from the current source, on the single preview port), stopped afterwards. A
- * Studio that cannot start is a setup failure (ENV exit 2), never a pass and never a skipped route.
+ * startStudio (built from the current source) on --port, $STUDIO_CHECK_PORT, or a free port the OS
+ * gives, never 4380 or 4503, stopped afterwards. A Studio that cannot start (or a reserved or invalid
+ * port) is a setup failure (ENV exit 2), never a pass and never a skipped route.
  */
-async function servedCheck(options = {}, { env = process.env, start, ready, check = checkCommand } = {}) {
+async function servedCheck(options = {}, { env = process.env, start, ready, check = checkCommand, pickPort = freePort } = {}) {
+  const { port: asked, ...rest } = options;
+  options = rest;
   if (options.origin) return check(options);
   if (env.STUDIO_ORIGIN) return check({ ...options, origin: studioOrigin(env) });
   let studio;
   try {
-    studio = await (start ?? (await import('../../scripts/check-studio.mjs')).startStudio)({ log: line => console.error(line) });
+    const port = asked !== undefined ? checkPort(asked) : env.STUDIO_CHECK_PORT ? checkPort(env.STUDIO_CHECK_PORT, '$STUDIO_CHECK_PORT') : await pickPort();
+    studio = await (start ?? (await import('../../scripts/check-studio.mjs')).startStudio)({ log: line => console.error(line), port });
     await (ready ?? specimensReady)(studio.origin);
   } catch (error) {
     await studio?.stop();
@@ -515,15 +545,16 @@ async function servedCheck(options = {}, { env = process.env, start, ready, chec
 }
 function parseArgs(args) {
   const options = {};
-  const flags = new Map([['--origin', 'origin'], ['--screenshots', 'screenshotRoot'], ['--studio-root', 'studioRoot'], ['--repository-root', 'repositoryRoot']]);
+  const flags = new Map([['--origin', 'origin'], ['--port', 'port'], ['--screenshots', 'screenshotRoot'], ['--studio-root', 'studioRoot'], ['--repository-root', 'repositoryRoot']]);
   for (let index = 0; index < args.length; index++) {
     // --full renders every route at every viewport and theme (the pre-scope matrix).
     if (args[index] === '--full' && !options.full) { options.full = true; continue; }
     const name = flags.get(args[index]);
-    if (!name || !args[index + 1] || args[index + 1].startsWith('--') || options[name]) throw new Error('Usage: studio:check [--full] [--origin URL] [--screenshots DIRECTORY] [--studio-root DIRECTORY] [--repository-root DIRECTORY]');
+    if (!name || !args[index + 1] || args[index + 1].startsWith('--') || options[name]) throw new Error('Usage: studio:check [--full] [--origin URL] [--port N] [--screenshots DIRECTORY] [--studio-root DIRECTORY] [--repository-root DIRECTORY]');
     options[name] = args[++index];
   }
+  if (options.port !== undefined) options.port = checkPort(options.port);
   return options;
 }
-module.exports = { readGates, applyGates, requestLedger, settle, gateReports, REPORTABLE_RULES, textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, inspectPage, screenshotName, checkStudio, checkCommand, servedCheck, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
+module.exports = { readGates, applyGates, requestLedger, settle, gateReports, REPORTABLE_RULES, textFindings, checkInitialData, initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, inspectPage, screenshotName, checkStudio, checkCommand, servedCheck, parseArgs, checkPort, freePort, RESERVED_PORTS, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
 if (require.main === module) Promise.resolve().then(() => servedCheck(parseArgs(process.argv.slice(2)))).then(({ exitCode, report }) => { console.log(JSON.stringify(report, null, 2)); process.exitCode = exitCode; }).catch(error => { const report = failureReport(error); console.error(JSON.stringify(report, null, 2)); process.exitCode = REPORT_EXIT_CODES[report.status] ?? 1; });

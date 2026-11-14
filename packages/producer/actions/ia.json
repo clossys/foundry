@@ -8,10 +8,12 @@
           "id": "direct.brief",
           "actions": [
             "ia",
+            "retire",
             "evidence",
             "workspace.config",
             "seats",
-            "rules"
+            "rules",
+            "owner.decisions"
           ]
         },
         {
@@ -40,11 +42,18 @@
       "id": "producer",
       "children": [
         {
+          "id": "publish.pin",
+          "actions": [
+            "constitution"
+          ]
+        },
+        {
           "id": "publish.assemble",
           "actions": [
             "compile",
             "options",
             "specimen",
+            "render",
             "migrate",
             "derive.uses",
             "studio.map",

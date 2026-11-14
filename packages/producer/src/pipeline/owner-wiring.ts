@@ -15,7 +15,7 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { RULES_FILE } from "../cli/owner.js";
+import { RULES_FILE } from "../cli/rules-file.js";
 import { writerCopyDuplicates } from "../records/writer-copy.js";
 import { gapsOf, interviewOf, INTERVIEW_AGENTS, type Gaps, type Interview, type InterviewAgent, type QuestionOption } from "./interview.js";
 

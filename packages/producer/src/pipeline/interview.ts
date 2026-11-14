@@ -419,7 +419,14 @@ const optionsFrom = (rows: readonly { label: string; calls: string[][] }[], mode
       fill[whole] = `the model id your account policy maps to the ${tier} tier (clossys seat --policy records it in ${SEAT_POLICY_FILE})`;
       return whole;
     })));
-    for (const argv of calls) for (const word of argv) { const match = PLACEHOLDER.exec(word); if (match) fill[match[1]!] ??= PLACEHOLDER_MEANING[match[1]!] ?? `fill ${match[1]} in your own words`; }
+    for (const argv of calls) for (const word of argv) {
+      const match = PLACEHOLDER.exec(word);
+      if (!match || fill[match[1]!] !== undefined) continue;
+      // An unregistered placeholder fails loudly: its meaning is registered copy, never an invented literal.
+      const meaning = PLACEHOLDER_MEANING[match[1]!];
+      if (meaning === undefined) throw new Error(`owner option placeholder ${match[1]} has no meaning in PLACEHOLDER_MEANING`);
+      fill[match[1]!] = meaning;
+    }
     return { id: String.fromCharCode(97 + index), label: row.label, recommended: index === 0, calls, fill };
   });
 

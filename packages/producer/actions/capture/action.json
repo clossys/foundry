@@ -6,6 +6,10 @@
   "stage": "publish.check",
   "summary": "Capture every Studio route as screenshots and a contact sheet.",
   "run": "clossys pipeline trace capture -- npm run capture:studio",
+  "chain": {
+    "skip": "capture runs only on demand, before an owner preview or a landing",
+    "onDemand": "--capture"
+  },
   "inputs": [
     {
       "glob": "pkg:studio/generated/studio-map.json",
