@@ -34,7 +34,7 @@ import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js"
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
-import { driftCounts, SYNC_AGENTS, syncDrift, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
+import { driftCounts, knownSlots, SYNC_AGENTS, syncDrift, syncPlan, syncState, type SyncAgent, type SyncFinding } from "../records/slot-model/ia-sync.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
 import { RETIRE_SCHEMA, appendIaEvent, appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, createModelFile, dropEmptyModelDir, moveModelEntry, removeModelFile, replaceModelFile, writePin } from "../records/slot-write.js";
@@ -447,7 +447,24 @@ function runIaSync(flags: Flags, cwd: string): CliResult {
       message: [`ia sync --check: ${findings.length ? `${findings.length} drift finding${findings.length === 1 ? "" : "s"}` : "in sync with the package IA"}`, ...summary.map(line => `  ${line}`), ...listed, ...(findings.length > 60 ? [`  ... and ${findings.length - 60} more`] : [])].join("\n"),
     };
   }
-  return refuse("ia", "sync writes land with SOURCE-MIGRATE step 3; run ia sync --check");
+  // The write: per agent, the sync plan (ia.json and the changed slot.json files); an undeclared leaf refuses the whole sync.
+  const writes: [string, string][] = [];
+  const lines: string[] = [];
+  for (const agent of agents) {
+    const state = syncState(consumer, agent);
+    const plan = syncPlan(consumer, agent, knownSlots(consumer, agent, state), state);
+    if ("error" in plan) return refuse("ia", `sync refused: ${plan.error}; declare them as extensions or upstream them into the package first`);
+    for (const [path, bytes] of plan.writes) {
+      if (path.endsWith("slot.json")) {
+        const issues = validateSlotDoc(JSON.parse(bytes), path);
+        if (issues.length) return refuse("ia", `sync refused: ${relative(root, path)}: ${issues.map(issue => issue.message).join("; ")}`);
+      }
+    }
+    writes.push(...plan.writes);
+    lines.push(`${agent}: ${plan.writes.length} file${plan.writes.length === 1 ? "" : "s"}${plan.adopted.length ? `, adopted ${plan.adopted.join(", ")}` : ""}`);
+  }
+  if (!writes.length) return { exitCode: 0, root, message: ["ia sync: in sync with the package IA; nothing written", ...summary.map(line => `  ${line}`)].join("\n") };
+  return commitIa(consumer, root, writes, flags.bare.has("--dry"), `sync ${agents.join(", ")} from the package IA (${findings.length} drift finding${findings.length === 1 ? "" : "s"})`, lines);
 }
 
 export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {

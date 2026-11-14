@@ -1,0 +1,73 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.specimen-copy-in-context",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.display",
+    "l2": "display-specimens",
+    "order": 153
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [
+      "items",
+      "axes",
+      "context",
+      "need",
+      "renderParts",
+      "expanded",
+      "labels"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing"
+      ],
+      "assets": [],
+      "components": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.table",
+        "components.rich-text",
+        "components.button",
+        "components.navigation-tree"
+      ]
+    },
+    "composes": [
+      "components.semantic-content",
+      "components.grid-list",
+      "components.disclosure",
+      "components.table",
+      "components.rich-text",
+      "components.button",
+      "components.navigation-tree"
+    ]
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.spacing"
+  ],
+  "uses": [
+    "components.button",
+    "components.disclosure",
+    "components.grid-list",
+    "components.navigation-tree",
+    "components.rich-text",
+    "components.semantic-content",
+    "components.table"
+  ]
+}
