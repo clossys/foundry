@@ -70,6 +70,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Agents (pinned slot model, read-only): direct|design|write [--brief | --check] [--out <projection.json>]; publish (dry run: every pinned page compiled and checked, nothing installed)\n"
   + "Migrate: clossys migrate copy-keys [--check] [--root <dir>] (camelCase copy ids to the catalog's kebab-case ids; record text unchanged)\n"
   + "Migrate: clossys migrate inputs [--check] [--root <dir>] (declare Designer and Writer slot inputs from the read graph; only adds)\n"
+  + "Migrate: clossys migrate ledger [--check] [--root <dir>] (backfill slot and agent ledger.json from git history; unexplained edits stay gaps; a second run changes nothing)\n"
   + "Migrate: clossys migrate citations-to-slots [--apply] [--json] [--root <dir>] (dry run by default: counts per agent of candidates whose citations still name a version and pins that still carry recited; --apply rewrites them in place)\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
   + "Slots: clossys check [--slots] [--readiness [--strict]] [--root <dir>] (enforced by default; --readiness --strict fails on every blocked slot)\n"

@@ -1,23 +1,25 @@
-/** `clossys migrate copy-keys|inputs|citations-to-slots [--check|--apply] [--root <dir>] [--json]`: deterministic slot-record codemods. */
+/** `clossys migrate copy-keys|inputs|ledger|citations-to-slots [--check|--apply] [--root <dir>] [--json]`: deterministic slot-record codemods. */
 import { resolve } from "node:path";
 import { applyCopyKeyMigration, planCopyKeyMigration } from "../migrate/copy-keys.js";
 import { applyCitationsToSlots, planCitationsToSlots } from "../migrate/citations-to-slots.js";
 import { applyInputsMigration, planInputsMigration } from "../migrate/inputs.js";
+import { applyLedgerBackfill, planLedgerBackfill } from "../migrate/ledger.js";
 import { SLOT_AGENTS } from "../records/slot-model/index.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
-export const MIGRATE_USAGE = "Usage: clossys migrate copy-keys|inputs [--check] [--root <dir>] [--json]\n"
+export const MIGRATE_USAGE = "Usage: clossys migrate copy-keys|inputs|ledger [--check] [--root <dir>] [--json]\n"
   + "       clossys migrate citations-to-slots [--apply] [--root <dir>] [--json]\n"
   + "copy-keys renames camelCase copy ids in Designer and Writer slot.json and Writer candidates to the catalog's kebab-case ids; record text is unchanged.\n"
   + "inputs declares Designer and Writer slot.json inputs from the read graph (the Designer brief, slot-contract theme and asset reads, pinned Writer source refs); inputs are only added.\n"
   + "citations-to-slots rewrites citations to slot ids, which resolve through the cited slot's pin: every versioned citation of a known slot (<slot>@<n>, <agent>:<slot>@<n>) in a candidate becomes <slot> or <agent>:<slot> (a line anchor <ref>@<n>#L<line> keeps a version: in the pinned candidate it moves to the version the pin's recited gave it), and every pin drops recited, its sha256 carried to the rewritten pinned bytes (the decision is kept). It is a dry run that reports counts per agent unless --apply is given; --apply records one migrated event per rewritten file in clossys/evidence/migrations.json (the provenance constitution R08.2 accepts); a second run plans nothing.\n"
+  + "ledger backfills every slot and agent ledger.json from git history for records written before the ledger: a submit per candidate add, a migrate per change the migration manifest explains, a pin, pick or confirm per pin.json change, a slot event per slot.json change and an ia event per ia.json change, each naming its commit (backfill); an unexplained edit gets no event (a gap); a ledger holding any non-backfill event is kept; a second run changes nothing.\n"
   + "--check reports pending changes and exits 1 when any remain.";
 
 export async function runMigrateCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const [command, ...rest] = argv;
   if (command === "--help" || command === undefined) return { exitCode: command ? 0 : 2, message: MIGRATE_USAGE };
-  if (command !== "copy-keys" && command !== "inputs" && command !== "citations-to-slots") return { exitCode: 2, message: `Unknown migrate command: ${command}\n${MIGRATE_USAGE}` };
+  if (command !== "copy-keys" && command !== "inputs" && command !== "ledger" && command !== "citations-to-slots") return { exitCode: 2, message: `Unknown migrate command: ${command}\n${MIGRATE_USAGE}` };
   let check = false, apply = false, root: string | undefined;
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index]!;
@@ -30,6 +32,7 @@ export async function runMigrateCli(argv: readonly string[], cwd: string): Promi
   const dir = discoverRoot(resolve(cwd, root ?? "."));
   const consumer = resolve(dir, "clossys");
   if (command === "inputs") return migrateInputs(consumer, dir, check);
+  if (command === "ledger") return migrateLedger(consumer, dir, check);
   if (command === "citations-to-slots") {
     if (apply && check) return { exitCode: 2, message: `--apply and --check do not combine\n${MIGRATE_USAGE}` };
     return migrateCitationsToSlots(consumer, dir, apply, check);
@@ -57,6 +60,21 @@ function migrateInputs(consumer: string, dir: string, check: boolean): CliResult
   ];
   const exitCode = plan.findings.length || (check && plan.files.length) ? 1 : 0;
   return { exitCode, message: lines.join("\n"), root: dir, check };
+}
+
+function migrateLedger(consumer: string, dir: string, check: boolean): CliResult {
+  const plan = planLedgerBackfill(consumer);
+  const applied = applyLedgerBackfill(consumer, plan, { dryRun: check });
+  const events = plan.folders.reduce((sum, folder) => sum + folder.events.length, 0);
+  const counts = Object.entries(plan.counts).sort(([a], [b]) => (a < b ? -1 : 1)).map(([op, n]) => `${op} ${n}`).join(", ");
+  const lines = [
+    `migrate ledger${check ? " --check" : ""}: ${plan.folders.length} ledger(s) planned (${events} event(s)); ${applied.written} ${check ? "to write" : "written"}, ${applied.unchanged} unchanged, ${applied.kept} kept (hold non-backfill events), ${applied.refused.length} refused; ${plan.gaps.length} gap(s)`,
+    `events: ${counts}`,
+    ...applied.refused.map(item => `refused: ${item.path}: ${item.message}`),
+    ...plan.gaps.map(gap => `gap: ${gap.path}: ${gap.message}`),
+  ];
+  const exitCode = applied.refused.length || (check && applied.written) ? 1 : 0;
+  return { exitCode, message: lines.join("\n"), root: dir, check, output: { ledgers: plan.folders.length, events, counts: plan.counts, written: applied.written, unchanged: applied.unchanged, kept: applied.kept, refused: applied.refused, gaps: plan.gaps } };
 }
 
 function migrateCitationsToSlots(consumer: string, dir: string, apply: boolean, check: boolean): CliResult {

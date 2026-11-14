@@ -166,6 +166,46 @@ function appendEvent(dir: string, scope: "slot" | "agent", event: LedgerEvent): 
 const AGENT_LOCK = ".agent-write.lock";
 const agentLocked = <T>(consumer: string, agent: SlotAgent, action: () => T): T =>
   withDirLock(join(consumer, "agents", agent, AGENT_LOCK), `The ${agent} agent ledger is unavailable or another write is in progress`, action);
+/**
+ * One event in the writer's shape (key order op, at, by, verb, skill, model, tier, fields, records),
+ * for a deterministic verb that builds a whole ledger (`clossys migrate ledger`).
+ */
+export function buildLedgerEvent(op: string, at: string, who: Provenance, fields: Record<string, unknown>, records?: readonly LedgerRecordState[]): LedgerEvent {
+  return ledgerEvent(op, at, who, fields, records);
+}
+
+/** What `writeBackfilledLedger` did (or, as a dry run, would do) with a folder's ledger. */
+export type BackfillOutcome = "written" | "unchanged" | "kept";
+const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
+/**
+ * The ledger backfill's one write (`clossys migrate ledger`): `<dir>/ledger.json` becomes exactly
+ * `events`, every one validated first, under the slot (or agent) lock. A ledger holding any event
+ * without `backfill` (one a verb appended while it ran) is kept untouched; one already equal to the
+ * backfill is unchanged; an unreadable ledger throws and is never replaced. `dryRun` reports the
+ * outcome without writing (and without the lock).
+ */
+export function writeBackfilledLedger(dir: string, scope: "slot" | "agent", events: readonly LedgerEvent[], options: { readonly dryRun?: boolean } = {}): BackfillOutcome {
+  for (const [index, event] of events.entries()) {
+    const issues = eventIssues(event, scope);
+    if (issues.length) throw new Error(`ledger backfill refused: events[${index}]: ${issues.join("; ")}`);
+    if (!isRecord(event.backfill)) throw new Error(`ledger backfill refused: events[${index}] names no backfill evidence`);
+  }
+  const bytes = jsonBytes({ schema: LEDGER_SCHEMA, events });
+  const decide = (): BackfillOutcome => {
+    const doc = readLedger(dir, scope);
+    if (doc && doc.events.some(event => !isRecord(event.backfill))) return "kept";
+    const path = join(dir, LEDGER_FILE);
+    return existsSync(path) && readFileSync(path, "utf8") === bytes ? "unchanged" : "written";
+  };
+  if (options.dryRun) return decide();
+  const lock = join(dir, scope === "slot" ? SLOT_LOCK : AGENT_LOCK);
+  return withDirLock(lock, `The ${scope} ledger in ${dir} is unavailable or another write is in progress`, () => {
+    const outcome = decide();
+    if (outcome === "written") replaceFile(join(dir, LEDGER_FILE), bytes);
+    return outcome;
+  });
+}
+
 /** The retire code of a retire reason (`<code>[: <note>]`). */
 function retireCode(reason: string): string {
   const code = reason.split(":")[0]!.trim();

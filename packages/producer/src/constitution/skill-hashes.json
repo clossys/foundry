@@ -9,6 +9,7 @@
       "04300ddb671c88f7d5571c82d406ab649b9ccbc14045bb9c83110c45b26ab5dd"
     ],
     "packages/director/actions/director.candidates/skill.md": [
+      "6f39005ec2cf6ddc107c7104f3409e0d0b952f7016b5ba0ad17e0f2969539cb6",
       "b7e3a9a5bf1737cbfd1ba4cb5351c73f60e701baabf893616de872e4cacf384e",
       "c88351994327ead27678bf7ff3f56a84a7414d74a6ac78d259c940749a1d086a"
     ],
@@ -21,6 +22,12 @@
     "packages/producer/actions/ia/skill.md": [
       "147a7eaf66267728953e0c8111a9c20b93475f95f8063745d9d1d1087658fe73"
     ],
+    "packages/producer/actions/migrate/skill.md": [
+      "b8ced2d84ff2384c57939a91813dfefa2e40cef595de8cd21a5620082a11c49d"
+    ],
+    "packages/producer/actions/owner.decisions/skill.md": [
+      "35bcd4caee250d49aec79da086bcab5285dfd724c1490c182394ce1837bc5766"
+    ],
     "packages/producer/actions/pin.designer/skill.md": [
       "6f838d31c7d3832d5051a19ad2ec23d58872e6c97c7f7fca0045456e1301580b"
     ],
@@ -32,6 +39,9 @@
     ],
     "packages/producer/actions/pin.writer/skill.md": [
       "f3954a64fffb29d6ed60e26fb83377e60dcd4a5f7565bb2dc23ece691524d2e4"
+    ],
+    "packages/producer/actions/retire/skill.md": [
+      "a15d2cbab558aa10df430529940672bc6dbca511a75b215e18f4281e474775b4"
     ],
     "packages/producer/actions/rules/skill.md": [
       "fc442a0b77fc000083b5b68d4c09f1dc6d1c4a2e46597c8942620b653bc0ffb7"
@@ -50,6 +60,7 @@
       "57c7590934758886f029372c3e9262e0afabc38f3c1dd9aa562000981272ff6f"
     ],
     "packages/publisher/actions/publisher.candidates/skill.md": [
+      "0aa3dec37c8073ce624cfd3f1fc28f44b62e6ec3a84add80eddc427cf807b95e",
       "59a01876c42af0dc901bff2602bed9f08729bf6f1c0c33eb5154731b28d8b02a",
       "c7f82644c9d1512bb7e80e72bf622342e0a05384cd6afbeb3c3ae0856d28a19b"
     ],
@@ -58,6 +69,7 @@
     ],
     "packages/writer/actions/writer.candidates/skill.md": [
       "2d880ef67f0ec3bd20cd1feb43531197ff654b6d4d14ab836cf588e1af0be047",
+      "60d582ac574de8e44ef422fa86cd159ce7b9cbc011d0035acc3d7529e6c2b216",
       "86d685050f2de06dfd57ee858ebeeff0d97a8c95521f727aa1ee01d1b266fa6c"
     ]
   }
