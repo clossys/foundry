@@ -18,8 +18,8 @@ describe("pin-set hash", () => {
   it("is the sha256 of sorted `<slot> <sha256>` lines over live pinned slots", () => {
     const ctx = contextOf(cleanSpec());
     const set = pinSet(ctx);
-    // Every live pinned slot of all five agents (the Producer seat `director` included), sorted.
-    expect(set.map(entry => entry.slot)).toEqual(["brand.voice", "director", "home.hero", "site.home", "ui.button", "ui.card"]);
+    // Every live pinned slot of all five agents (the Producer seat `seat.director` included), sorted.
+    expect(set.map(entry => entry.slot)).toEqual(["brand.voice", "home.hero", "seat.director", "site.home", "ui.button", "ui.card"]);
     const lines = set.map(entry => `${entry.slot} ${entry.sha256}\n`).join("");
     expect(pinSetHash(set)).toBe(createHash("sha256").update(lines).digest("hex"));
     expect(pinSetHash([])).toBe(sha(""));
