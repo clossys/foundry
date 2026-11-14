@@ -71,5 +71,6 @@
     "themes.muted-foreground",
     "themes.spacing"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

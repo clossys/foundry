@@ -81,5 +81,6 @@
     "components.skeleton",
     "components.tooltip",
     "themes.input"
-  ]
+  ],
+  "standard": "component"
 }

@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "shadcn-dashboard",
+      "ref": "https://ui.shadcn.com/examples/dashboard",
+      "source": "ui.shadcn.com",
+      "license": "MIT",
+      "description": "shadcn dashboard example: cards, chart and data table composed from stock components.",
+      "why": {
+        "density": "Dense data with calm spacing.",
+        "polish": "Consistent controls."
+      }
+    },
+    {
+      "id": "shadcn-tasks",
+      "ref": "https://ui.shadcn.com/examples/tasks",
+      "source": "ui.shadcn.com",
+      "license": "MIT",
+      "description": "shadcn tasks example: a filterable data table with toolbar, pagination and row actions.",
+      "why": {
+        "hierarchy": "Toolbar, table and actions in a clear order.",
+        "clarity": "Empty and filtered states."
+      }
+    },
+    {
+      "id": "linear-app",
+      "ref": "https://linear.app/docs",
+      "source": "linear.app",
+      "license": "all-rights-reserved",
+      "description": "Linear's docs of its app views: issue lists, boards and inspectors at high density.",
+      "why": {
+        "density": "Scanning density without clutter.",
+        "hierarchy": "The next action is always obvious."
+      }
+    },
+    {
+      "id": "geist-components",
+      "ref": "https://vercel.com/geist/introduction",
+      "source": "vercel.com",
+      "license": "all-rights-reserved",
+      "description": "Geist components: tables, empty states and forms with their states documented.",
+      "why": {
+        "clarity": "Empty, loading and error states are specified."
+      }
+    },
+    {
+      "id": "react-aria",
+      "ref": "https://react-spectrum.adobe.com/react-aria/",
+      "source": "react-spectrum.adobe.com",
+      "license": "Apache-2.0",
+      "description": "React Aria: accessible behaviour for every interactive part an app section composes.",
+      "why": {
+        "clarity": "Keyboard and screen-reader states are part of the design."
+      }
+    },
+    {
+      "id": "shadcn-mail",
+      "ref": "https://ui.shadcn.com/examples/mail",
+      "source": "ui.shadcn.com",
+      "license": "MIT",
+      "description": "shadcn mail example: list, detail and toolbar sections in one resizable layout.",
+      "why": {
+        "polish": "Every pane aligned on one grid."
+      }
+    }
+  ]
+}

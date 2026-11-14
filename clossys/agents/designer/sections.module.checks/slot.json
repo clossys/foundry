@@ -10,6 +10,7 @@
   },
   "kind": "element",
   "contract": {
+    "kind": "section",
     "schema": "clossys.slot-contract/1",
     "slot": "sections.module.checks",
     "package": "producer",
@@ -54,5 +55,6 @@
     "components.card",
     "components.field",
     "components.separator"
-  ]
+  ],
+  "standard": "section.app"
 }

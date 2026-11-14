@@ -188,5 +188,6 @@
     "components.avatar",
     "components.button",
     "components.spinner"
-  ]
+  ],
+  "standard": "section.app"
 }

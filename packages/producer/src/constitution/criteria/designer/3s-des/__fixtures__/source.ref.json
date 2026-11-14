@@ -1,0 +1,633 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"shadcn-aria/button@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn-aria/button@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"composition\", \"ref\": [\"shadcn-aria/sidebar-15@4.23.0\", \"designer:components.button\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "composition",
+              "ref": [
+                "shadcn-aria/sidebar-15@4.23.0",
+                "designer:components.button"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      },
+      "note": "a slot cited by id"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"original\", \"ref\": [], \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "original",
+              "ref": [],
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "original"
+        ],
+        "registries": []
+      },
+      "note": "an original drawing names no ref"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"npm/@xyflow/react@12.12.1\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "npm/@xyflow/react@12.12.1"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry"
+        ],
+        "registries": [
+          "npm"
+        ]
+      },
+      "note": "scoped npm package"
+    },
+    {
+      "note": "a composition names its parts (compose.layers judges them), no ref needed",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"home\", \"type\": \"registry:block\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"composition\", \"ref\": [], \"parts\": [{\"slot\": \"components.card\"}], \"license\": \"MIT\"}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "home",
+          "type": "registry:block",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "composition",
+              "ref": [],
+              "parts": [
+                {
+                  "slot": "components.card"
+                }
+              ],
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "composition"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"magicui/marquee@efe76fc\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "magicui/marquee@efe76fc"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      },
+      "note": "registry not listed"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"clossys/agents/designer/assets.mark/candidates/mark-v2.json\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "clossys/agents/designer/assets.mark/candidates/mark-v2.json"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      },
+      "note": "cross-slot dependency by file path"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"packages/producer/studio/public/studio-mark.svg\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "packages/producer/studio/public/studio-mark.svg"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      },
+      "note": "repository file path"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"npm\", \"ref\": [\"shadcn-aria/button@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "npm",
+              "ref": [
+                "shadcn-aria/button@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      },
+      "note": "kind not accepted"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"shadcn/button@4.23.0\"], \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/button@4.23.0"
+              ],
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      },
+      "note": "registry ref without hash"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"shadcn-aria/button@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"GPL-3.0\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn-aria/button@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "GPL-3.0"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      },
+      "note": "licence not listed"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      },
+      "note": "no ref"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"shadcn/button\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn/button"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      },
+      "note": "unversioned"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"designer:components.button\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "designer:components.button"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "composition"
+        ],
+        "registries": [
+          "shadcn",
+          "shadcn-aria",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ],
+        "slots": false
+      },
+      "note": "slot refs not accepted here"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"registry\", \"ref\": [\"shadcn-aria/button@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn-aria/button@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {},
+      "note": "no kinds listed"
+    },
+    {
+      "note": "derived with no ref fails even when it lists parts",
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"home\", \"type\": \"registry:block\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"derived\", \"ref\": [], \"parts\": [{\"slot\": \"components.card\"}], \"license\": \"MIT\"}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"x\"}}}",
+        "json": {
+          "name": "home",
+          "type": "registry:block",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "derived",
+              "ref": [],
+              "parts": [
+                {
+                  "slot": "components.card"
+                }
+              ],
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "kinds": [
+          "derived"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      }
+    }
+  ]
+}

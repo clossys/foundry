@@ -34,5 +34,6 @@
     "identity.visual.style"
   ],
   "uses": [],
-  "extension": true
+  "extension": true,
+  "standard": "asset.glyph"
 }

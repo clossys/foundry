@@ -197,5 +197,6 @@
   ],
   "uses": [
     "components.button"
-  ]
+  ],
+  "standard": "section.site"
 }

@@ -48,5 +48,6 @@
   ],
   "uses": [
     "components.field"
-  ]
+  ],
+  "standard": "component"
 }

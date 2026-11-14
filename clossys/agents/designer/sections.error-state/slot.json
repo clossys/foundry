@@ -157,5 +157,6 @@
     "assets.icon-folder",
     "components.button",
     "components.empty"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

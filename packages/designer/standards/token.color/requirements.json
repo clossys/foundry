@@ -1,0 +1,67 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "token.color",
+  "kinds": [
+    "element/token"
+  ],
+  "mode": "craft",
+  "craftTier": "high",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "derive.director",
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.essence",
+          "identity.brand.personality"
+        ]
+      }
+    },
+    {
+      "check": "token.dtcg",
+      "params": {
+        "type": "color",
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "provenance": true
+      }
+    },
+    {
+      "check": "source.ref",
+      "params": {
+        "kinds": [
+          "derived",
+          "registry",
+          "original"
+        ],
+        "registries": [
+          "shadcn",
+          "tailwindcss"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-swatch-mode=\"light\"]",
+        "[data-swatch-mode=\"dark\"]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

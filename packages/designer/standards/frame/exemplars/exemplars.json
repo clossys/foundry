@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "shadcn-sidebar-blocks",
+      "ref": "https://ui.shadcn.com/blocks/sidebar",
+      "source": "ui.shadcn.com",
+      "license": "MIT",
+      "description": "shadcn sidebar blocks: app shells with collapsible sidebars, adopted as frames.",
+      "why": {
+        "orientation": "Sidebar groups show location and siblings.",
+        "economy": "Collapses to icons."
+      }
+    },
+    {
+      "id": "linear-shell",
+      "ref": "https://linear.app",
+      "source": "linear.app",
+      "license": "all-rights-reserved",
+      "description": "Linear's app shell: a quiet sidebar, command menu and content-first layout.",
+      "why": {
+        "economy": "Chrome recedes behind the work.",
+        "orientation": "Command menu reaches every page."
+      }
+    },
+    {
+      "id": "vercel-dashboard",
+      "ref": "https://vercel.com/geist/introduction",
+      "source": "vercel.com",
+      "license": "all-rights-reserved",
+      "description": "Vercel's dashboard frame per Geist: top navigation with scoped tabs.",
+      "why": {
+        "orientation": "Scope and section always visible."
+      }
+    },
+    {
+      "id": "stripe-docs-frame",
+      "ref": "https://docs.stripe.com",
+      "source": "docs.stripe.com",
+      "license": "all-rights-reserved",
+      "description": "Stripe docs frame: header, sidebar navigation and on-page outline.",
+      "why": {
+        "orientation": "Three levels of location at once.",
+        "polish": "Responsive down to phone."
+      }
+    },
+    {
+      "id": "wai-landmarks",
+      "ref": "https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/",
+      "source": "w3.org",
+      "license": "all-rights-reserved",
+      "description": "WAI-ARIA landmark regions: the banner, navigation, main and contentinfo every frame holds.",
+      "why": {
+        "polish": "Landmarks make the frame navigable by assistive tech."
+      }
+    },
+    {
+      "id": "tailwind-docs-frame",
+      "ref": "https://tailwindcss.com/docs",
+      "source": "tailwindcss.com",
+      "license": "MIT",
+      "description": "Tailwind docs frame: a sticky header and sidebar with a content-first column.",
+      "why": {
+        "economy": "Chrome kept thin."
+      }
+    }
+  ]
+}

@@ -169,5 +169,6 @@
     "components.button",
     "components.card",
     "components.empty"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

@@ -1,0 +1,79 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "linear-home",
+      "ref": "https://linear.app",
+      "source": "linear.app",
+      "license": "all-rights-reserved",
+      "description": "Linear's home page: a dark hero with one product image, then paced feature bands.",
+      "why": {
+        "hierarchy": "One headline, one image, one action.",
+        "restraint": "Few colours, few effects."
+      }
+    },
+    {
+      "id": "vercel-home",
+      "ref": "https://vercel.com",
+      "source": "vercel.com",
+      "license": "all-rights-reserved",
+      "description": "Vercel's home page: a grid-led hero and proof bands built from one component set.",
+      "why": {
+        "rhythm": "A visible grid paces every band.",
+        "polish": "Consistent at every width."
+      }
+    },
+    {
+      "id": "stripe-home",
+      "ref": "https://stripe.com",
+      "source": "stripe.com",
+      "license": "all-rights-reserved",
+      "description": "Stripe's home page: editorial headline scale over product renders.",
+      "why": {
+        "hierarchy": "Type scale makes the first read.",
+        "polish": "Detail in every state."
+      }
+    },
+    {
+      "id": "openai-home",
+      "ref": "https://openai.com",
+      "source": "openai.com",
+      "license": "all-rights-reserved",
+      "description": "OpenAI's home page: monochrome layout where imagery and type carry the page.",
+      "why": {
+        "restraint": "The layout steps back for content."
+      }
+    },
+    {
+      "id": "shadcn-blocks",
+      "ref": "https://ui.shadcn.com/blocks",
+      "source": "ui.shadcn.com",
+      "license": "MIT",
+      "description": "shadcn blocks: open-source section compositions built from the stock components.",
+      "why": {
+        "rhythm": "Sections composed from one spacing scale."
+      }
+    },
+    {
+      "id": "tailark",
+      "ref": "https://tailark.com",
+      "source": "tailark.com",
+      "license": "MIT",
+      "description": "Tailark: open-source marketing blocks on shadcn (hero, features, pricing, footer).",
+      "why": {
+        "hierarchy": "Marketing sections with clear reads, composable by slot."
+      }
+    },
+    {
+      "id": "resend-home",
+      "ref": "https://resend.com",
+      "source": "resend.com",
+      "license": "all-rights-reserved",
+      "description": "Resend's home page: a developer brand with dark, restrained bands and precise type.",
+      "why": {
+        "polish": "Crisp detail at every size.",
+        "restraint": "One accent, much space."
+      }
+    }
+  ]
+}

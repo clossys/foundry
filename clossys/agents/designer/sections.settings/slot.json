@@ -230,5 +230,6 @@
     "components.slider",
     "components.switch",
     "themes.input"
-  ]
+  ],
+  "standard": "section.app"
 }

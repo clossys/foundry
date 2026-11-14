@@ -1,0 +1,64 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "token.scale",
+  "kinds": [
+    "element/token"
+  ],
+  "mode": "craft",
+  "craftTier": "mid",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "derive.director",
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.personality"
+        ]
+      }
+    },
+    {
+      "check": "token.dtcg",
+      "params": {
+        "modes": [
+          "light"
+        ],
+        "provenance": true
+      }
+    },
+    {
+      "check": "source.ref",
+      "params": {
+        "kinds": [
+          "derived",
+          "registry",
+          "original"
+        ],
+        "registries": [
+          "shadcn",
+          "tailwindcss",
+          "magicui"
+        ],
+        "licenses": [
+          "MIT"
+        ]
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-scale-ramp]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

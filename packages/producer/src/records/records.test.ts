@@ -134,6 +134,9 @@ describe("preview.json and slot contract schemas", () => {
       expect(validateSlotContract(copy).ok, `without ${field}`).toBe(false);
     }
     expect(validateSlotContract({ ...contract, specimenKind: "audio" }).ok).toBe(false);
+    expect(validateSlotContract({ kind: "section", ...contract }).ok, "a sub-kind the standards key on").toBe(true);
+    for (const kind of ["", "Section", "section/app", 3]) expect(validateSlotContract({ ...contract, kind }).ok, `kind ${String(kind)}`).toBe(false);
+    expect(validateSlotContract({ ...contract, extra: true }).ok, "still closed").toBe(false);
   });
 });
 

@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "geist-intro",
+      "ref": "https://vercel.com/geist/introduction",
+      "source": "vercel.com",
+      "license": "all-rights-reserved",
+      "description": "Geist's foundations: a small radius set, a 4px spacing base and restrained elevation.",
+      "why": {
+        "coherence": "Radius, spacing and elevation agree.",
+        "rhythm": "A small set of steps used everywhere."
+      }
+    },
+    {
+      "id": "tailwind-theme",
+      "ref": "https://tailwindcss.com/docs/theme",
+      "source": "tailwindcss.com",
+      "license": "MIT",
+      "description": "Tailwind v4 theme variables: the reference spacing, radius, shadow and tracking values a candidate overrides.",
+      "why": {
+        "rhythm": "The base ramp a brand value is measured against."
+      }
+    },
+    {
+      "id": "radix-radius",
+      "ref": "https://www.radix-ui.com/themes/docs/theme/radius",
+      "source": "radix-ui.com",
+      "license": "MIT",
+      "description": "Radix Themes radius: one radius factor that scales every component radius.",
+      "why": {
+        "coherence": "One factor keeps all radii consistent."
+      }
+    },
+    {
+      "id": "radix-spacing",
+      "ref": "https://www.radix-ui.com/themes/docs/theme/spacing",
+      "source": "radix-ui.com",
+      "license": "MIT",
+      "description": "Radix Themes spacing: a nine-step scale with a scaling factor.",
+      "why": {
+        "density": "Scaling factor tunes density without new steps.",
+        "rhythm": "Even steps."
+      }
+    },
+    {
+      "id": "every-layout-modular-scale",
+      "ref": "https://every-layout.dev/rudiments/modular-scale/",
+      "source": "every-layout.dev",
+      "license": "all-rights-reserved",
+      "description": "Every Layout on modular scales: deriving steps from one ratio.",
+      "why": {
+        "rhythm": "Steps from a ratio, not by eye."
+      }
+    },
+    {
+      "id": "linear-motion",
+      "ref": "https://linear.app",
+      "source": "linear.app",
+      "license": "all-rights-reserved",
+      "description": "Linear's interface motion: short, eased transitions and near-flat elevation.",
+      "why": {
+        "density": "Dense but calm.",
+        "coherence": "Motion and shadow share one quiet temperament."
+      }
+    }
+  ]
+}

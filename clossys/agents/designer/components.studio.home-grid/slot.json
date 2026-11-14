@@ -60,5 +60,6 @@
     "components.button",
     "components.card",
     "components.field"
-  ]
+  ],
+  "standard": "component"
 }

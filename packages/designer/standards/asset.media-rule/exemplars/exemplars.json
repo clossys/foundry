@@ -1,0 +1,66 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "web-dev-aspect-ratio",
+      "ref": "https://web.dev/articles/aspect-ratio",
+      "source": "web.dev",
+      "license": "CC-BY-4.0",
+      "description": "web.dev on the CSS aspect-ratio property: ratio as a rule rather than fixed sizes.",
+      "why": {
+        "consistency": "One ratio rule per media role."
+      }
+    },
+    {
+      "id": "wai-images-tree",
+      "ref": "https://www.w3.org/WAI/tutorials/images/decision-tree/",
+      "source": "w3.org",
+      "license": "all-rights-reserved",
+      "description": "W3C alt-text decision tree: when an image is informative, decorative or functional.",
+      "why": {
+        "consistency": "Every image role has a text rule."
+      }
+    },
+    {
+      "id": "wcag-pause-stop-hide",
+      "ref": "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide",
+      "source": "w3.org",
+      "license": "all-rights-reserved",
+      "description": "WCAG 2.2 pause, stop, hide: motion in video and animated patterns must be controllable.",
+      "why": {
+        "restraint": "Motion only where the user can stop it."
+      }
+    },
+    {
+      "id": "mdn-video",
+      "ref": "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video",
+      "source": "developer.mozilla.org",
+      "license": "CC-BY-4.0",
+      "description": "MDN video element: poster, muted autoplay and captions as the rules a video slot states.",
+      "why": {
+        "consistency": "Poster and captions as required parts."
+      }
+    },
+    {
+      "id": "stripe-imagery",
+      "ref": "https://stripe.com",
+      "source": "stripe.com",
+      "license": "all-rights-reserved",
+      "description": "Stripe's imagery: product renders and one gradient language, never stock photography.",
+      "why": {
+        "imagery-fit": "Every image is product or the brand gradient."
+      }
+    },
+    {
+      "id": "linear-imagery",
+      "ref": "https://linear.app",
+      "source": "linear.app",
+      "license": "all-rights-reserved",
+      "description": "Linear's imagery: product UI in dark frames with subtle grid patterns.",
+      "why": {
+        "imagery-fit": "Imagery is the product itself.",
+        "restraint": "One pattern, used sparingly."
+      }
+    }
+  ]
+}

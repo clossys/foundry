@@ -96,5 +96,6 @@
   "uses": [
     "components.button",
     "components.toggle-group"
-  ]
+  ],
+  "standard": "section.adaptive"
 }

@@ -10,6 +10,7 @@
   },
   "kind": "element",
   "contract": {
+    "kind": "section",
     "schema": "clossys.slot-contract/1",
     "slot": "sections.producer.pipeline-legend",
     "package": "producer",
@@ -57,5 +58,6 @@
     "components.badge",
     "components.card",
     "components.tooltip"
-  ]
+  ],
+  "standard": "section.app"
 }

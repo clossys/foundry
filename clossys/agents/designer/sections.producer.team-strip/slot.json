@@ -10,6 +10,7 @@
   },
   "kind": "element",
   "contract": {
+    "kind": "section",
     "schema": "clossys.slot-contract/1",
     "slot": "sections.producer.team-strip",
     "package": "producer",
@@ -73,5 +74,6 @@
     "components.button",
     "components.card",
     "components.tooltip"
-  ]
+  ],
+  "standard": "section.app"
 }

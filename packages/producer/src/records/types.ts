@@ -157,6 +157,8 @@ export type FrameOwnership =
 
 export type SlotContract = {
   readonly schema: "clossys.slot-contract/1";
+  /** The slot's sub-kind: a standard serves `<slot kind>/<kind>` (records/standards.ts slotKinds). */
+  readonly kind?: string;
   readonly slot: string;
   readonly package: string;
   readonly layer: string;

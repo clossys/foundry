@@ -1,0 +1,79 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "linear-palette",
+      "ref": "https://linear.app",
+      "source": "linear.app",
+      "license": "all-rights-reserved",
+      "description": "Linear's marketing and app surfaces: near-black neutrals, one restrained violet accent.",
+      "why": {
+        "restraint": "Colour is rare and therefore meaningful.",
+        "temperament": "A cool, exact neutral ramp that is recognisably Linear."
+      }
+    },
+    {
+      "id": "geist-colors",
+      "ref": "https://vercel.com/geist/colors",
+      "source": "vercel.com",
+      "license": "all-rights-reserved",
+      "description": "Vercel Geist colour scales: ten gray steps plus functional hues with stated roles.",
+      "why": {
+        "accent-economy": "Each functional colour has one documented job.",
+        "mode-balance": "Scales are tuned per mode, not inverted."
+      }
+    },
+    {
+      "id": "radix-colors",
+      "ref": "https://www.radix-ui.com/colors",
+      "source": "radix-ui.com",
+      "license": "MIT",
+      "description": "Radix Colors: 12-step scales with paired light and dark sets and role guidance per step.",
+      "why": {
+        "mode-balance": "Light and dark scales are designed as pairs.",
+        "accent-economy": "Steps map to roles (background, border, text)."
+      }
+    },
+    {
+      "id": "stripe-accessible-color",
+      "ref": "https://stripe.com/blog/accessible-color-systems",
+      "source": "stripe.com",
+      "license": "all-rights-reserved",
+      "description": "Stripe on building an accessible colour system: perceptual lightness, contrast-first ramps.",
+      "why": {
+        "temperament": "Brand hue kept while meeting contrast.",
+        "restraint": "Hues chosen for function before flavour."
+      }
+    },
+    {
+      "id": "openai-site",
+      "ref": "https://openai.com",
+      "source": "openai.com",
+      "license": "all-rights-reserved",
+      "description": "OpenAI's site: monochrome base where imagery supplies the colour.",
+      "why": {
+        "restraint": "The interface stays out of the way of content."
+      }
+    },
+    {
+      "id": "shadcn-themes",
+      "ref": "https://ui.shadcn.com/themes",
+      "source": "ui.shadcn.com",
+      "license": "MIT",
+      "description": "shadcn themes: the reference variable set and base palettes a candidate starts from (the base, not the reason).",
+      "why": {
+        "accent-economy": "The variable roles a candidate must fill, one value each."
+      }
+    },
+    {
+      "id": "tailwind-colors",
+      "ref": "https://tailwindcss.com/docs/colors",
+      "source": "tailwindcss.com",
+      "license": "MIT",
+      "description": "Tailwind v4 default palette in OKLCH: the reference values a brand candidate overrides.",
+      "why": {
+        "temperament": "Shows what an unbranded default looks like, the floor a candidate rises from."
+      }
+    }
+  ]
+}

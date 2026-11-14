@@ -49,5 +49,6 @@
   ],
   "uses": [
     "components.card"
-  ]
+  ],
+  "standard": "component"
 }

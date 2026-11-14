@@ -152,5 +152,6 @@
     "components.dropdown-menu",
     "components.separator",
     "components.sidebar"
-  ]
+  ],
+  "standard": "frame"
 }

@@ -1,0 +1,78 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "linear-brand",
+      "ref": "https://linear.app/brand",
+      "source": "linear.app",
+      "license": "all-rights-reserved",
+      "description": "Linear brand guidelines: one geometric mark, its clear space and its light and dark uses.",
+      "why": {
+        "reduction": "Mark holds from app icon to favicon.",
+        "construction": "Clear space stated as a rule."
+      }
+    },
+    {
+      "id": "stripe-brand",
+      "ref": "https://stripe.com/newsroom/brand-assets",
+      "source": "stripe.com",
+      "license": "all-rights-reserved",
+      "description": "Stripe brand assets: wordmark and icon with light and dark versions.",
+      "why": {
+        "distinctiveness": "A wordmark recognisable by its shape.",
+        "brand-fit": "Plain confidence in the letterforms."
+      }
+    },
+    {
+      "id": "openai-brand",
+      "ref": "https://openai.com/brand/",
+      "source": "openai.com",
+      "license": "all-rights-reserved",
+      "description": "OpenAI brand guidelines: the blossom mark, lockups and usage rules.",
+      "why": {
+        "construction": "A mark built from one repeated, rotated form.",
+        "brand-fit": "Restraint that matches the product voice."
+      }
+    },
+    {
+      "id": "github-logos",
+      "ref": "https://github.com/logos",
+      "source": "github.com",
+      "license": "all-rights-reserved",
+      "description": "GitHub logos: mark and wordmark lockups, light and dark, with misuse rules.",
+      "why": {
+        "reduction": "The mark carries alone at small sizes."
+      }
+    },
+    {
+      "id": "figma-brand",
+      "ref": "https://www.figma.com/using-the-figma-brand/",
+      "source": "figma.com",
+      "license": "all-rights-reserved",
+      "description": "Figma brand usage: the mark, lockup spacing and colour rules.",
+      "why": {
+        "distinctiveness": "Shapes ownable without the name."
+      }
+    },
+    {
+      "id": "favicon-guide",
+      "ref": "https://evilmartians.com/chronicles/how-to-favicon-in-2021-six-files-that-fit-most-needs",
+      "source": "evilmartians.com",
+      "license": "all-rights-reserved",
+      "description": "Evil Martians on favicons: the minimal file set, SVG with a dark-mode query and the app icons.",
+      "why": {
+        "reduction": "SVG favicon with a dark-mode variant and a small raster fallback."
+      }
+    },
+    {
+      "id": "maskable-icons",
+      "ref": "https://web.dev/articles/maskable-icon",
+      "source": "web.dev",
+      "license": "CC-BY-4.0",
+      "description": "web.dev on maskable icons: the safe zone an app icon needs.",
+      "why": {
+        "construction": "The mark sits in the 80% safe zone."
+      }
+    }
+  ]
+}

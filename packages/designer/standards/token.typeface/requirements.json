@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "token.typeface",
+  "kinds": [
+    "element/token"
+  ],
+  "mode": "craft",
+  "craftTier": "high",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "derive.director",
+      "params": {
+        "traits": [
+          "identity.visual.style",
+          "identity.brand.personality",
+          "identity.verbal.voice"
+        ]
+      }
+    },
+    {
+      "check": "token.dtcg",
+      "params": {
+        "type": "fontFamily",
+        "modes": [
+          "light"
+        ]
+      }
+    },
+    {
+      "check": "source.ref",
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "original"
+        ],
+        "registries": [
+          "shadcn",
+          "fontsource",
+          "npm"
+        ],
+        "licenses": [
+          "MIT",
+          "OFL-1.1",
+          "Apache-2.0"
+        ]
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "[data-type-specimen=\"glyphs\"]",
+        "[data-type-specimen=\"pangram\"]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

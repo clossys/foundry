@@ -1,0 +1,78 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "component",
+  "kinds": [
+    "element/component"
+  ],
+  "mode": "adopt-first",
+  "craftTier": "high",
+  "seeds": [],
+  "createGaps": [
+    "missing-behavior",
+    "a11y-failure",
+    "foundry-signature"
+  ],
+  "requirements": [
+    {
+      "check": "source.ref",
+      "params": {
+        "kinds": [
+          "registry",
+          "composition",
+          "npm"
+        ],
+        "registries": [
+          "shadcn-aria",
+          "shadcn",
+          "magicui",
+          "diceui",
+          "tailark-oss",
+          "assistant-ui",
+          "reactflow",
+          "corsair-ui",
+          "shadcn-app",
+          "npm"
+        ],
+        "licenses": [
+          "MIT",
+          "Apache-2.0",
+          "ISC"
+        ]
+      }
+    },
+    {
+      "check": "compose.layers",
+      "params": {
+        "layers": [
+          "components"
+        ]
+      }
+    },
+    {
+      "check": "composes.allowed",
+      "params": {
+        "allowed": [
+          "@/components",
+          "@/lib",
+          "@/hooks"
+        ]
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "frame",
+      "intrinsicWidth": 480,
+      "mustContain": [
+        "iframe[data-specimen]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

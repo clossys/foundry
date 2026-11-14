@@ -1,0 +1,66 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "section.site",
+  "kinds": [
+    "element/section"
+  ],
+  "mode": "craft",
+  "craftTier": "high",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "compose.layers",
+      "params": {
+        "layers": [
+          "components",
+          "sections"
+        ]
+      }
+    },
+    {
+      "check": "source.ref",
+      "params": {
+        "kinds": [
+          "registry",
+          "composition",
+          "npm",
+          "derived",
+          "original"
+        ],
+        "registries": [
+          "shadcn-aria",
+          "shadcn",
+          "magicui",
+          "tailark-oss",
+          "assistant-ui",
+          "reactflow",
+          "npm"
+        ],
+        "licenses": [
+          "MIT",
+          "Apache-2.0"
+        ]
+      }
+    },
+    {
+      "check": "tokens.only",
+      "params": {}
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "frame",
+      "intrinsicWidth": 1280,
+      "mustContain": [
+        "iframe[data-specimen]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

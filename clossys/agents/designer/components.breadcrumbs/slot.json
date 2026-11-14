@@ -64,5 +64,6 @@
   ],
   "uses": [
     "assets.icon-chevron-right"
-  ]
+  ],
+  "standard": "component"
 }

@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "standard",
+      "at": "2026-11-14T16:26:28.804Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "designer",
+        "id": "frame",
+        "sha256": "fa5c38864362cae260946d8edc6972219713c79a4c35319d73910beb05606f09"
+      },
+      "files": {
+        "exemplars/exemplars.json": "2bf5af9eae6fa170c35674228a73de955945e697b038ed7140ee9e6cfdc8235e",
+        "requirements.json": "c1bdfa91778f8a5be714b25addb35af0ea0f1a87838345f944aaa24089ba737f",
+        "taste.md": "1c3abca45cd97e603f9246f01bf08ff17d4189def3083771b6f8b1a88a84e1c6"
+      }
+    }
+  ]
+}

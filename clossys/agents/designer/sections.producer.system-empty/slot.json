@@ -10,6 +10,7 @@
   },
   "kind": "element",
   "contract": {
+    "kind": "section",
     "schema": "clossys.slot-contract/1",
     "slot": "sections.producer.system-empty",
     "package": "producer",
@@ -48,5 +49,6 @@
   ],
   "uses": [
     "components.empty"
-  ]
+  ],
+  "standard": "section.app"
 }

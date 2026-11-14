@@ -256,5 +256,6 @@
     "components.select",
     "components.table",
     "themes.input"
-  ]
+  ],
+  "standard": "section.app"
 }

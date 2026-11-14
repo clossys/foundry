@@ -1,0 +1,461 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.background.json\", \"type\": \"registry:file\", \"content\": \"{\\\"themes\\\": {\\\"background\\\": {\\\"default\\\": {\\\"$type\\\": \\\"color\\\", \\\"$value\\\": \\\"oklch(0.985 0 0)\\\", \\\"$extensions\\\": {\\\"com.clossys.css\\\": {\\\"raw\\\": \\\"oklch(0.985 0 0)\\\"}, \\\"com.clossys.modes\\\": {\\\"dark\\\": \\\"oklch(0.145 0 0)\\\"}, \\\"com.clossys.provenance\\\": {\\\"sourceLabel\\\": \\\"shadcn\\\", \\\"sourceVariable\\\": \\\"--background\\\"}}}}}}\"}], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"r\"}}, \"cssVars\": {\"light\": {\"background\": \"oklch(0.985 0 0)\"}, \"dark\": {\"background\": \"oklch(0.145 0 0)\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.background.json",
+              "type": "registry:file",
+              "content": "{\"themes\": {\"background\": {\"default\": {\"$type\": \"color\", \"$value\": \"oklch(0.985 0 0)\", \"$extensions\": {\"com.clossys.css\": {\"raw\": \"oklch(0.985 0 0)\"}, \"com.clossys.modes\": {\"dark\": \"oklch(0.145 0 0)\"}, \"com.clossys.provenance\": {\"sourceLabel\": \"shadcn\", \"sourceVariable\": \"--background\"}}}}}}"
+            }
+          ],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "r"
+            }
+          },
+          "cssVars": {
+            "light": {
+              "background": "oklch(0.985 0 0)"
+            },
+            "dark": {
+              "background": "oklch(0.145 0 0)"
+            }
+          }
+        }
+      },
+      "params": {
+        "type": "color",
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "provenance": true
+      }
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"radius\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.radius.json\", \"type\": \"registry:file\", \"content\": \"{\\\"themes\\\": {\\\"radius\\\": {\\\"default\\\": {\\\"$type\\\": \\\"dimension\\\", \\\"$value\\\": \\\"0.25rem\\\", \\\"$extensions\\\": {\\\"com.clossys.css\\\": {\\\"raw\\\": \\\"0.25rem\\\"}, \\\"com.clossys.provenance\\\": {\\\"sourceLabel\\\": \\\"shadcn\\\", \\\"sourceVariable\\\": \\\"--radius\\\"}}}}}}\"}], \"meta\": {\"slot\": \"themes.radius\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.radius\", \"reason\": \"r\"}}, \"cssVars\": {\"light\": {\"radius\": \"0.25rem\"}}}",
+        "json": {
+          "name": "radius",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.radius.json",
+              "type": "registry:file",
+              "content": "{\"themes\": {\"radius\": {\"default\": {\"$type\": \"dimension\", \"$value\": \"0.25rem\", \"$extensions\": {\"com.clossys.css\": {\"raw\": \"0.25rem\"}, \"com.clossys.provenance\": {\"sourceLabel\": \"shadcn\", \"sourceVariable\": \"--radius\"}}}}}}"
+            }
+          ],
+          "meta": {
+            "slot": "themes.radius",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.radius",
+              "reason": "r"
+            }
+          },
+          "cssVars": {
+            "light": {
+              "radius": "0.25rem"
+            }
+          }
+        }
+      },
+      "params": {
+        "type": "dimension",
+        "modes": [
+          "light"
+        ],
+        "provenance": true
+      }
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"shadow\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.shadow.json\", \"type\": \"registry:file\", \"content\": \"{\\\"themes\\\": {\\\"shadow\\\": {\\\"sm\\\": {\\\"$type\\\": \\\"shadow\\\", \\\"$value\\\": \\\"0 1px 2px #0000000d\\\", \\\"$extensions\\\": {\\\"com.clossys.css\\\": {\\\"raw\\\": \\\"0 1px 2px #0000000d\\\"}, \\\"com.clossys.provenance\\\": {\\\"sourceLabel\\\": \\\"shadcn\\\", \\\"sourceVariable\\\": \\\"--shadow\\\"}}}, \\\"md\\\": {\\\"$type\\\": \\\"shadow\\\", \\\"$value\\\": \\\"0 2px 4px #0000001a\\\", \\\"$extensions\\\": {\\\"com.clossys.css\\\": {\\\"raw\\\": \\\"0 2px 4px #0000001a\\\"}, \\\"com.clossys.provenance\\\": {\\\"sourceLabel\\\": \\\"shadcn\\\", \\\"sourceVariable\\\": \\\"--shadow\\\"}}}}}}\"}], \"meta\": {\"slot\": \"themes.shadow\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.shadow\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "shadow",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.shadow.json",
+              "type": "registry:file",
+              "content": "{\"themes\": {\"shadow\": {\"sm\": {\"$type\": \"shadow\", \"$value\": \"0 1px 2px #0000000d\", \"$extensions\": {\"com.clossys.css\": {\"raw\": \"0 1px 2px #0000000d\"}, \"com.clossys.provenance\": {\"sourceLabel\": \"shadcn\", \"sourceVariable\": \"--shadow\"}}}, \"md\": {\"$type\": \"shadow\", \"$value\": \"0 2px 4px #0000001a\", \"$extensions\": {\"com.clossys.css\": {\"raw\": \"0 2px 4px #0000001a\"}, \"com.clossys.provenance\": {\"sourceLabel\": \"shadcn\", \"sourceVariable\": \"--shadow\"}}}}}}"
+            }
+          ],
+          "meta": {
+            "slot": "themes.shadow",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.shadow",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "modes": [
+          "light"
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.background.json\", \"type\": \"registry:file\", \"content\": \"{\\\"themes\\\": {\\\"background\\\": {\\\"default\\\": {\\\"$type\\\": \\\"color\\\", \\\"$value\\\": \\\"oklch(0.985 0 0)\\\", \\\"$extensions\\\": {\\\"com.clossys.css\\\": {\\\"raw\\\": \\\"oklch(0.985 0 0)\\\"}, \\\"com.clossys.provenance\\\": {\\\"sourceLabel\\\": \\\"shadcn\\\", \\\"sourceVariable\\\": \\\"--background\\\"}}}}}}\"}], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"r\"}}, \"cssVars\": {\"light\": {\"background\": \"x\"}, \"dark\": {\"background\": \"y\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.background.json",
+              "type": "registry:file",
+              "content": "{\"themes\": {\"background\": {\"default\": {\"$type\": \"color\", \"$value\": \"oklch(0.985 0 0)\", \"$extensions\": {\"com.clossys.css\": {\"raw\": \"oklch(0.985 0 0)\"}, \"com.clossys.provenance\": {\"sourceLabel\": \"shadcn\", \"sourceVariable\": \"--background\"}}}}}}"
+            }
+          ],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "r"
+            }
+          },
+          "cssVars": {
+            "light": {
+              "background": "x"
+            },
+            "dark": {
+              "background": "y"
+            }
+          }
+        }
+      },
+      "params": {
+        "type": "color",
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "provenance": true
+      },
+      "note": "no dark value"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.background.json\", \"type\": \"registry:file\", \"content\": \"{\\\"themes\\\": {\\\"background\\\": {\\\"default\\\": {\\\"$type\\\": \\\"color\\\", \\\"$value\\\": \\\"oklch(0.985 0 0)\\\", \\\"$extensions\\\": {\\\"com.clossys.css\\\": {\\\"raw\\\": \\\"oklch(0.985 0 0)\\\"}, \\\"com.clossys.modes\\\": {\\\"dark\\\": \\\"oklch(0.1 0 0)\\\"}, \\\"com.clossys.provenance\\\": {\\\"sourceLabel\\\": \\\"shadcn\\\", \\\"sourceVariable\\\": \\\"--background\\\"}}}}}}\"}], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"r\"}}, \"cssVars\": {\"light\": {\"background\": \"x\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.background.json",
+              "type": "registry:file",
+              "content": "{\"themes\": {\"background\": {\"default\": {\"$type\": \"color\", \"$value\": \"oklch(0.985 0 0)\", \"$extensions\": {\"com.clossys.css\": {\"raw\": \"oklch(0.985 0 0)\"}, \"com.clossys.modes\": {\"dark\": \"oklch(0.1 0 0)\"}, \"com.clossys.provenance\": {\"sourceLabel\": \"shadcn\", \"sourceVariable\": \"--background\"}}}}}}"
+            }
+          ],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "r"
+            }
+          },
+          "cssVars": {
+            "light": {
+              "background": "x"
+            }
+          }
+        }
+      },
+      "params": {
+        "type": "color",
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "provenance": true
+      },
+      "note": "cssVars has no dark mode"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "type": "color",
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "provenance": true
+      },
+      "note": "no token file"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.background.json\", \"content\": \"{not json\"}], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.background.json",
+              "content": "{not json"
+            }
+          ],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "type": "color",
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "provenance": true
+      },
+      "note": "unparseable"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.background.json\", \"type\": \"registry:file\", \"content\": \"{\\\"themes\\\": {\\\"background\\\": {\\\"default\\\": {\\\"$type\\\": \\\"dimension\\\", \\\"$value\\\": \\\"0.25rem\\\", \\\"$extensions\\\": {\\\"com.clossys.css\\\": {\\\"raw\\\": \\\"0.25rem\\\"}, \\\"com.clossys.modes\\\": {\\\"dark\\\": \\\"0.25rem\\\"}, \\\"com.clossys.provenance\\\": {\\\"sourceLabel\\\": \\\"shadcn\\\", \\\"sourceVariable\\\": \\\"--background\\\"}}}}}}\"}], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.background.json",
+              "type": "registry:file",
+              "content": "{\"themes\": {\"background\": {\"default\": {\"$type\": \"dimension\", \"$value\": \"0.25rem\", \"$extensions\": {\"com.clossys.css\": {\"raw\": \"0.25rem\"}, \"com.clossys.modes\": {\"dark\": \"0.25rem\"}, \"com.clossys.provenance\": {\"sourceLabel\": \"shadcn\", \"sourceVariable\": \"--background\"}}}}}}"
+            }
+          ],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "type": "color",
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "provenance": true
+      },
+      "note": "wrong $type"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.background.json\", \"type\": \"registry:file\", \"content\": \"{\\\"themes\\\": {\\\"background\\\": {\\\"default\\\": {\\\"$type\\\": \\\"color\\\", \\\"$value\\\": \\\"oklch(0.9 0 0)\\\", \\\"$extensions\\\": {\\\"com.clossys.css\\\": {\\\"raw\\\": \\\"oklch(0.9 0 0)\\\"}, \\\"com.clossys.modes\\\": {\\\"dark\\\": \\\"oklch(0.1 0 0)\\\"}}}}}}\"}], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.background.json",
+              "type": "registry:file",
+              "content": "{\"themes\": {\"background\": {\"default\": {\"$type\": \"color\", \"$value\": \"oklch(0.9 0 0)\", \"$extensions\": {\"com.clossys.css\": {\"raw\": \"oklch(0.9 0 0)\"}, \"com.clossys.modes\": {\"dark\": \"oklch(0.1 0 0)\"}}}}}}"
+            }
+          ],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "type": "color",
+        "modes": [
+          "light",
+          "dark"
+        ],
+        "provenance": true
+      },
+      "note": "no provenance"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.background.json\", \"content\": \"{\\\"themes\\\": {\\\"background\\\": {\\\"a\\\": {\\\"$type\\\": \\\"color\\\", \\\"$value\\\": \\\"#fff\\\"}, \\\"b\\\": {\\\"$type\\\": \\\"dimension\\\", \\\"$value\\\": \\\"1px\\\"}}}}\"}], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.background.json",
+              "content": "{\"themes\": {\"background\": {\"a\": {\"$type\": \"color\", \"$value\": \"#fff\"}, \"b\": {\"$type\": \"dimension\", \"$value\": \"1px\"}}}}"
+            }
+          ],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "modes": [
+          "light"
+        ]
+      },
+      "note": "mixed $type"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"background\", \"type\": \"registry:theme\", \"files\": [{\"path\": \"clossys/themes.background.json\", \"content\": \"{}\"}], \"meta\": {\"slot\": \"themes.background\", \"source\": {\"kind\": \"derived\", \"ref\": [\"shadcn/neutral@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"themes.background\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "background",
+          "type": "registry:theme",
+          "files": [
+            {
+              "path": "clossys/themes.background.json",
+              "content": "{}"
+            }
+          ],
+          "meta": {
+            "slot": "themes.background",
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "shadcn/neutral@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "themes.background",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "modes": [
+          "light"
+        ]
+      },
+      "note": "no members"
+    }
+  ]
+}

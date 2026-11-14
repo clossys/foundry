@@ -100,5 +100,6 @@
     "components.field",
     "components.sheet",
     "themes.input"
-  ]
+  ],
+  "standard": "frame"
 }

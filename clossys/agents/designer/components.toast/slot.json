@@ -55,5 +55,6 @@
     "assets.icon-info",
     "assets.icon-success",
     "assets.icon-warning"
-  ]
+  ],
+  "standard": "component"
 }

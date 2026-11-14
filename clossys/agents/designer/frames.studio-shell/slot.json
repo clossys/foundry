@@ -10,6 +10,7 @@
   },
   "kind": "element",
   "contract": {
+    "kind": "frame",
     "schema": "clossys.slot-contract/1",
     "slot": "frames.studio-shell",
     "package": "producer",
@@ -107,5 +108,6 @@
     "components.sidebar",
     "components.skeleton",
     "components.tooltip"
-  ]
+  ],
+  "standard": "frame"
 }

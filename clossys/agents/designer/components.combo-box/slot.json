@@ -96,5 +96,6 @@
     "assets.icon-chevron-down",
     "assets.icon-close",
     "components.button"
-  ]
+  ],
+  "standard": "component"
 }

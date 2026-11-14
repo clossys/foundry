@@ -45,5 +45,6 @@
   ],
   "uses": [
     "components.button"
-  ]
+  ],
+  "standard": "component"
 }

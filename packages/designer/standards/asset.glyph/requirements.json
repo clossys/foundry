@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.standard/1",
+  "id": "asset.glyph",
+  "kinds": [
+    "element/asset"
+  ],
+  "mode": "craft",
+  "craftTier": "mid",
+  "seeds": [],
+  "requirements": [
+    {
+      "check": "derive.director",
+      "params": {
+        "required": [
+          "identity.visual.imagery"
+        ]
+      }
+    },
+    {
+      "check": "asset.svg-files",
+      "params": {
+        "viewbox": {
+          "size": 24
+        },
+        "modes": {},
+        "smallSize": {
+          "size": 16,
+          "minStrokePx": 1,
+          "maxShapes": 12
+        }
+      }
+    },
+    {
+      "check": "source.ref",
+      "params": {
+        "kinds": [
+          "registry",
+          "derived",
+          "original"
+        ],
+        "registries": [
+          "lucide"
+        ],
+        "licenses": [
+          "ISC",
+          "MIT"
+        ]
+      }
+    }
+  ],
+  "preview": {
+    "card": {
+      "method": "inline",
+      "intrinsicWidth": null,
+      "mustContain": [
+        "svg[data-glyph-size=\"48\"]",
+        "[data-glyph-sizes]"
+      ],
+      "states": [
+        "loading",
+        "not-needed",
+        "no-preview",
+        "failed",
+        "not-pinned"
+      ]
+    }
+  }
+}

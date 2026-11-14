@@ -1,0 +1,341 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"studio.home\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"composition\", \"ref\": [\"shadcn-aria/dashboard-01@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\", \"parts\": [{\"slot\": \"components.badge\", \"files\": [\"a.tsx\"]}, {\"slot\": \"components.button\", \"files\": [\"b.tsx\"]}]}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "studio.home",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "composition",
+              "ref": [
+                "shadcn-aria/dashboard-01@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT",
+              "parts": [
+                {
+                  "slot": "components.badge",
+                  "files": [
+                    "a.tsx"
+                  ]
+                },
+                {
+                  "slot": "components.button",
+                  "files": [
+                    "b.tsx"
+                  ]
+                }
+              ]
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "layers": [
+          "components"
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"studio.home\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"composition\", \"ref\": [\"shadcn-aria/dashboard-01@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\", \"parts\": [{\"slot\": \"designer:components.card\"}, {\"slot\": \"sections.studio.page-header\"}]}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "studio.home",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "composition",
+              "ref": [
+                "shadcn-aria/dashboard-01@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT",
+              "parts": [
+                {
+                  "slot": "designer:components.card"
+                },
+                {
+                  "slot": "sections.studio.page-header"
+                }
+              ]
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "layers": [
+          "components",
+          "sections"
+        ]
+      },
+      "note": "frame: components and sections"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"studio.home\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"registry\", \"ref\": [\"shadcn-aria/dashboard-01@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\"}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "studio.home",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "registry",
+              "ref": [
+                "shadcn-aria/dashboard-01@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT"
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "layers": [
+          "components"
+        ]
+      },
+      "note": "a stock registry item names no parts"
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"studio.home\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"composition\", \"ref\": [\"shadcn-aria/dashboard-01@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\", \"parts\": [{\"slot\": \"sections.studio.page-header\"}]}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "studio.home",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "composition",
+              "ref": [
+                "shadcn-aria/dashboard-01@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT",
+              "parts": [
+                {
+                  "slot": "sections.studio.page-header"
+                }
+              ]
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "layers": [
+          "components"
+        ]
+      },
+      "note": "section composing a section"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"studio.home\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"composition\", \"ref\": [\"shadcn-aria/dashboard-01@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\", \"parts\": [{\"slot\": \"packages/designer/ui/src/button.tsx\"}]}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "studio.home",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "composition",
+              "ref": [
+                "shadcn-aria/dashboard-01@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT",
+              "parts": [
+                {
+                  "slot": "packages/designer/ui/src/button.tsx"
+                }
+              ]
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "layers": [
+          "components"
+        ]
+      },
+      "note": "file path, not a slot id"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"studio.home\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"composition\", \"ref\": [\"shadcn-aria/dashboard-01@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\", \"parts\": [{\"slot\": \"writer:components.button\"}]}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "studio.home",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "composition",
+              "ref": [
+                "shadcn-aria/dashboard-01@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT",
+              "parts": [
+                {
+                  "slot": "writer:components.button"
+                }
+              ]
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "layers": [
+          "components"
+        ]
+      },
+      "note": "another agent's slot"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"studio.home\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"composition\", \"ref\": [\"shadcn-aria/dashboard-01@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\", \"parts\": [{\"slot\": \"components.button\"}, {\"slot\": \"components.button\"}]}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "studio.home",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "composition",
+              "ref": [
+                "shadcn-aria/dashboard-01@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT",
+              "parts": [
+                {
+                  "slot": "components.button"
+                },
+                {
+                  "slot": "components.button"
+                }
+              ]
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "layers": [
+          "components"
+        ]
+      },
+      "note": "named twice"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"studio.home\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"composition\", \"ref\": [\"shadcn-aria/dashboard-01@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\", \"parts\": []}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "studio.home",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "composition",
+              "ref": [
+                "shadcn-aria/dashboard-01@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT",
+              "parts": []
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {
+        "layers": [
+          "components"
+        ]
+      },
+      "note": "composition without parts"
+    },
+    {
+      "subject": {
+        "kind": "element",
+        "text": "{\"name\": \"studio.home\", \"type\": \"registry:theme\", \"files\": [], \"meta\": {\"slot\": \"sections.studio.home\", \"source\": {\"kind\": \"composition\", \"ref\": [\"shadcn-aria/dashboard-01@4.23.0\"], \"hash\": \"sha256:0000000000000000000000000000000000000000000000000000000000000000\", \"license\": \"MIT\", \"parts\": [{\"slot\": \"components.button\"}]}, \"element\": {\"slot\": \"sections.studio.home\", \"reason\": \"r\"}}}",
+        "json": {
+          "name": "studio.home",
+          "type": "registry:theme",
+          "files": [],
+          "meta": {
+            "slot": "sections.studio.home",
+            "source": {
+              "kind": "composition",
+              "ref": [
+                "shadcn-aria/dashboard-01@4.23.0"
+              ],
+              "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "license": "MIT",
+              "parts": [
+                {
+                  "slot": "components.button"
+                }
+              ]
+            },
+            "element": {
+              "slot": "sections.studio.home",
+              "reason": "r"
+            }
+          }
+        }
+      },
+      "params": {},
+      "note": "no layers listed"
+    }
+  ]
+}

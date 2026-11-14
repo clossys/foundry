@@ -98,5 +98,6 @@
   "uses": [
     "assets.icon-check",
     "assets.icon-chevron-right"
-  ]
+  ],
+  "standard": "component"
 }

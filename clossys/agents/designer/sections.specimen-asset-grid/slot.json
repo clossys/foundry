@@ -87,5 +87,6 @@
     "assets.icon-needs",
     "components.button",
     "components.item"
-  ]
+  ],
+  "standard": "section.app"
 }
