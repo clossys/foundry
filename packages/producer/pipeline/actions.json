@@ -67,6 +67,103 @@
     },
     {
       "package": "producer",
+      "path": "packages/producer/actions/retire/action.json",
+      "contract": {
+        "schema": "clossys.action/1",
+        "id": "retire",
+        "agent": "owner",
+        "kind": "decide:judgment",
+        "stage": "direct.brief",
+        "open": "on-demand",
+        "summary": "Retire a candidate (into its slot's retired/) or a whole slot (out of ia.json), with a clossys.retire/1 record (clossys retire).",
+        "run": "clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>",
+        "inputs": [
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          },
+          {
+            "glob": "clossys/agents/*/*/slot.json",
+            "schema": "slot"
+          },
+          {
+            "glob": "clossys/agents/*/*/pin.json",
+            "schema": "pin"
+          }
+        ],
+        "outputs": [
+          {
+            "glob": "clossys/agents/*/*/retired/*.md.json",
+            "schema": "retire"
+          },
+          {
+            "glob": "clossys/agents/*/*/retired/*.json.json",
+            "schema": "retire"
+          },
+          {
+            "glob": "clossys/agents/director/*/retired/*.md",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/writer/*/retired/*.md",
+            "schema": "candidate-strings"
+          }
+        ],
+        "pass": {
+          "command": "clossys check --slots",
+          "exit": {
+            "pass": [
+              0
+            ],
+            "fail": [
+              1
+            ],
+            "error": [
+              2
+            ]
+          }
+        },
+        "record": "clossys.pipeline-run/1",
+        "checks": [
+          "workspace"
+        ],
+        "uses": [
+          "skill/SKILL.md"
+        ],
+        "decider": "owner",
+        "packet": {
+          "inputs": [
+            "clossys/agents/*/ia.json",
+            "clossys/agents/*/*/slot.json",
+            "clossys/agents/*/*/pin.json"
+          ],
+          "write": [
+            {
+              "glob": "clossys/agents/*/*/retired/*.md.json",
+              "schema": "retire"
+            },
+            {
+              "glob": "clossys/agents/*/*/retired/*.json.json",
+              "schema": "retire"
+            },
+            {
+              "glob": "clossys/agents/director/*/retired/*.md",
+              "schema": "candidate-brief"
+            },
+            {
+              "glob": "clossys/agents/writer/*/retired/*.md",
+              "schema": "candidate-strings"
+            }
+          ],
+          "checks": [
+            "workspace"
+          ]
+        },
+        "skill": "skill.md"
+      }
+    },
+    {
+      "package": "producer",
       "path": "packages/producer/actions/evidence/action.json",
       "contract": {
         "schema": "clossys.action/1",

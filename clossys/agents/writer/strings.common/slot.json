@@ -17,7 +17,8 @@
     "maxWords": 60
   },
   "inputs": [
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "identity.brand.personality"
   ],
   "uses": []
 }

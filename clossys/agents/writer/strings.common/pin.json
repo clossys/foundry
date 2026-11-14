@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v24.md",
-  "sha256": "30c1011ed9be8341c5241104b4844474970374a0bd236ab64a2546581fd38a51",
-  "decidedBy": "planner:W2-G dependency; AUTO-DECIDED planner, sibling icon library",
+  "candidate": "common-v26.md",
+  "sha256": "44d75153dc9db050b6503bc1fc6cff4b6246dcaee52be66e2d20e5dcbba49a44",
+  "decidedBy": "planner:RETIRE-1; AUTO-DECIDED planner, common-v25 plus the retire step label",
   "basis": "planner",
-  "at": "2026-11-14T08:23:00.278Z"
+  "at": "2026-11-14T10:07:55.485Z"
 }

@@ -7,7 +7,7 @@ import { runDirectorVerb } from "../cli/director.js";
 import type { CliResult } from "../cli/main.js";
 import { runMigrateCli } from "../cli/migrate.js";
 import { runNextSubmitCli } from "../cli/next.js";
-import { runApproveCli, runConfigCli, runEvidenceCli, runIaCli, runOwnerDecisionCli, runRuleCli, runSeatCli } from "../cli/owner.js";
+import { runApproveCli, runConfigCli, runEvidenceCli, runIaCli, runOwnerDecisionCli, runRetireCli, runRuleCli, runSeatCli } from "../cli/owner.js";
 import { runDecisionsCli, runPinCli } from "../cli/pin.js";
 import { runOptionsCli, runPickCli } from "../cli/options.js";
 import { runPipelineCli } from "../cli/pipeline.js";
@@ -61,6 +61,7 @@ export const HANDLERS: Readonly<Record<string, Handler>> = {
   "src/cli/director.ts#runDirectorVerb": async context => runDirectorVerb(context.argv),
   "src/cli/next.ts#runNextSubmitCli": async context => runNextSubmitCli(context.argv, context.cwd, context.step),
   "src/cli/owner.ts#runIaCli": async context => runIaCli(context.argv, context.cwd),
+  "src/cli/owner.ts#runRetireCli": async context => runRetireCli(context.argv, context.cwd),
   "src/cli/owner.ts#runEvidenceCli": async context => runEvidenceCli(context.argv, context.cwd),
   "src/cli/owner.ts#runConfigCli": async context => runConfigCli(context.argv, context.cwd),
   "src/cli/owner.ts#runSeatCli": async context => runSeatCli(context.argv, context.cwd),

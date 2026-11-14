@@ -24,7 +24,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { checkSlotModel } from "../records/slot-check.js";
+import { checkSlotModel, RETIRED_DIR } from "../records/slot-check.js";
 import { ledgerComment, OWNER_DECISION_SCOPES, OWNER_DECISIONS_FILE, OWNER_DECISIONS_SCHEMA, resolveOwnerRef, validateOwnerDecisions, type OwnerDecision } from "../records/owner-decisions.js";
 import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, seatSlotId } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
@@ -47,6 +47,7 @@ import { CliUsageError } from "./args.js";
 import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
+import { RULES_FILE } from "./rules-file.js";
 
 export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]\n"
@@ -144,7 +145,7 @@ function snapshot(paths: readonly string[]): () => void {
 }
 interface ModelIssue { code: string; path: string; message: string }
 const issueKey = (issue: ModelIssue) => `${issue.code} ${issue.path} ${issue.message}`;
-const modelIssues = (consumer: string, allow?: (issue: ModelIssue) => boolean) => checkSlotModel(consumer).filter(issue => !allow?.(issue)).map(issueKey);
+const modelIssues = (consumer: string) => checkSlotModel(consumer).map(issueKey);
 /** The slot model issues `writes` would add, judged in memory (the reader's overlay): what `guarded` would undo, with nothing written. */
 function plannedIssues(consumer: string, writes: readonly (readonly [string, string])[]): string[] {
   const before = new Set(modelIssues(consumer));
@@ -152,10 +153,10 @@ function plannedIssues(consumer: string, writes: readonly (readonly [string, str
 }
 /**
  * Runs `write`; when the slot model check then has an issue it did not have before, undoes it and returns the issues.
- * `allow` names an issue the write is expected to add (none but retire's own folder); `undo` reverses what the file snapshot cannot (a moved folder).
+ * `undo` reverses what the file snapshot cannot (a moved folder).
  */
-function guarded(consumer: string, paths: readonly string[], write: () => void, options: { allow?: (issue: ModelIssue) => boolean; undo?: () => void } = {}): string[] {
-  const issues = () => modelIssues(consumer, options.allow);
+function guarded(consumer: string, paths: readonly string[], write: () => void, options: { undo?: () => void } = {}): string[] {
+  const issues = () => modelIssues(consumer);
   const before = new Set(issues());
   const files = snapshot(paths);
   const undo = () => { options.undo?.(); files(); };
@@ -597,7 +598,7 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
 const parseRule = parser(RULE_USAGE, ["--quote", "--date", "--status", "--check", "--fixture", "--fixture-run", "--note", "--root"], ["--init", "--replace"]);
 const RULE_ID = /^R-[A-Z0-9-]+$/;
 const RULE_STATUSES = ["enforced", "unenforced", "pending-wire"] as const;
-export const RULES_FILE = "scripts/rules/registry.json";
+export { RULES_FILE };
 
 export async function runRuleCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parseRule(argv);
@@ -734,7 +735,7 @@ export const RETIRE_USAGE = "Usage: clossys retire <agent>/<slot> <candidate> --
 /** The schema of a retirement record: a retired candidate's file, or a row of an agent ia.json's `retired` list. */
 export const RETIRE_SCHEMA = "clossys.retire/1";
 /** A slot's retired candidates and their records: `<slot>/retired/<candidate>` and `<slot>/retired/<candidate>.json`. */
-export const RETIRED_DIR = "retired";
+export { RETIRED_DIR };
 /** Retired slot folders, a non-slot (`_`) folder of the agent: `agents/<agent>/_retired/<slot>`. */
 export const RETIRED_SLOTS_DIR = "_retired";
 const parseRetire = parser(RETIRE_USAGE, ["--by", "--reason", "--at", "--root"], ["--slot"]);
@@ -766,11 +767,8 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
   if (modelExists(to) || modelExists(file)) return refuse("retire", `${target} already has ${RETIRED_DIR}/${candidate}`);
   // `slot` is the slot id (the folder names the agent), as constitution R10.1 and retire.schema.json read it.
   const record = { schema: RETIRE_SCHEMA, slot, candidate, sha256: sha(readModelBytes(from)), by: fields.by, reason: fields.reason, at: fields.at };
-  // The slot model check does not list retired/ among a slot folder's entries yet: that one orphan is this write's own.
-  const own = `agents/${agent}/${slot}/${RETIRED_DIR}`;
-  const added = guarded(consumer, [file, from, to], () => { replaceFile(file, jsonBytes(record)); moveModelEntry(from, to); }, {
-    allow: issue => issue.code === "orphan" && issue.path === own,
-  });
+  // The slot model check reads retired/ too: the record must validate and match the moved bytes.
+  const added = guarded(consumer, [file, from, to], () => { replaceFile(file, jsonBytes(record)); moveModelEntry(from, to); });
   if (added.length) { dropEmptyDir(retired); return refuse("retire", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`); }
   return { exitCode: 0, root, decision: { slot: target, retired: candidate, sha256: record.sha256, by: fields.by, at: fields.at }, message: `retire: ${target} ${candidate} retired by ${fields.by} (clossys/agents/${agent}/${slot}/${RETIRED_DIR}/${candidate}.json)` };
 }

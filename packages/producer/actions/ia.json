@@ -8,6 +8,7 @@
           "id": "direct.brief",
           "actions": [
             "ia",
+            "retire",
             "evidence",
             "workspace.config",
             "seats",
