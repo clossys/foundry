@@ -390,6 +390,26 @@
         }
       }
     },
+    "tailwindcss": {
+      "namespace": "tailwindcss",
+      "kind": "github-files",
+      "source": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/c2b24dd15fed1c59dd521bd86082f520c9f5ad0d/{path}",
+      "version": "4.3.3",
+      "versionBasis": "tailwindcss release tag v4.3.3 (npm tailwindcss@4.3.3, published 2026-07-16; the newest v4 release at least two weeks old on 2026-11-14); theme.css from the MIT GitHub repository at the tagged commit. Owner approval: \"Add Tailwind (Recommended)\", 2026-11-14 (clossys/workspace#46).",
+      "upstream": "github.com/tailwindlabs/tailwindcss@c2b24dd15fed1c59dd521bd86082f520c9f5ad0d",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/c2b24dd15fed1c59dd521bd86082f520c9f5ad0d/LICENSE"
+      },
+      "items": {
+        "theme": {
+          "type": "registry:theme",
+          "files": [
+            "packages/tailwindcss/theme.css"
+          ]
+        }
+      }
+    },
     "fontsource": {
       "namespace": "@fontsource-variable",
       "kind": "github-files",
@@ -1467,6 +1487,15 @@
         "sections.legal-prose",
         "sections.article",
         "sections.sectioned-document"
+      ]
+    },
+    {
+      "registry": "tailwindcss",
+      "name": "theme",
+      "slots": [
+        "themes.shadow",
+        "themes.spacing",
+        "themes.tracking-tight"
       ]
     },
     {

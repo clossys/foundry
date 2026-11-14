@@ -100,6 +100,18 @@
         "tailwindcss-typography/LICENSE"
       ]
     },
+    "tailwindcss": {
+      "namespace": "tailwindcss",
+      "source": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/c2b24dd15fed1c59dd521bd86082f520c9f5ad0d/{path}",
+      "version": "4.3.3",
+      "versionBasis": "tailwindcss release tag v4.3.3 (npm tailwindcss@4.3.3, published 2026-07-16; the newest v4 release at least two weeks old on 2026-11-14); theme.css from the MIT GitHub repository at the tagged commit. Owner approval: \"Add Tailwind (Recommended)\", 2026-11-14 (clossys/workspace#46).",
+      "upstream": "github.com/tailwindlabs/tailwindcss@c2b24dd15fed1c59dd521bd86082f520c9f5ad0d",
+      "fetchedAt": "2026-11-14T15:38:36Z",
+      "license": "MIT",
+      "licenseFiles": [
+        "tailwindcss/LICENSE"
+      ]
+    },
     "fontsource": {
       "namespace": "@fontsource-variable",
       "source": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/{path}",
@@ -249,6 +261,12 @@
       "sha256": "60e0b68c0f35c078eef3a5d29419d0b03ff84ec1df9c3f9d6e39a519a5ae7985",
       "bytes": 1071,
       "sourceUrl": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/LICENSE"
+    },
+    {
+      "path": "tailwindcss/LICENSE",
+      "sha256": "60e0b68c0f35c078eef3a5d29419d0b03ff84ec1df9c3f9d6e39a519a5ae7985",
+      "bytes": 1071,
+      "sourceUrl": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/c2b24dd15fed1c59dd521bd86082f520c9f5ad0d/LICENSE"
     }
   ],
   "items": [
@@ -19070,6 +19088,30 @@
           "sha256": "d6eef872ef76e56bdff51ebd0350818040d7bd53ad0ea96431f08d02cb2ea295",
           "bytes": 3124,
           "origin": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/src/utils.js"
+        }
+      ]
+    },
+    {
+      "registry": "tailwindcss",
+      "name": "theme",
+      "version": "4.3.3",
+      "dir": "tailwindcss/theme@4.3.3",
+      "type": "registry:theme",
+      "sourceUrl": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/c2b24dd15fed1c59dd521bd86082f520c9f5ad0d/packages/tailwindcss/theme.css",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "themes.shadow",
+        "themes.spacing",
+        "themes.tracking-tight"
+      ],
+      "hash": "sha256:06333b3d6040629f283541c73495f56fff092faf80eab63b2da49cce8e2c1c27",
+      "files": [
+        {
+          "path": "packages/tailwindcss/theme.css",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "bytes": 19586,
+          "origin": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/c2b24dd15fed1c59dd521bd86082f520c9f5ad0d/packages/tailwindcss/theme.css"
         }
       ]
     }

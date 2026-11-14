@@ -37,7 +37,7 @@ describe("check-references", () => {
   });
 
   it("covers every registry with items and a license file", () => {
-    assert.deepEqual(Object.keys(manifest.registries).sort(), ["assistant-ui", "corsair-ui", "diceui", "fontsource", "fontsource-source-serif-4", "lucide", "magicui", "reactflow", "shadcn", "shadcn-app", "shadcn-aria", "tailark-oss", "tailwindcss-typography"]);
+    assert.deepEqual(Object.keys(manifest.registries).sort(), ["assistant-ui", "corsair-ui", "diceui", "fontsource", "fontsource-source-serif-4", "lucide", "magicui", "reactflow", "shadcn", "shadcn-app", "shadcn-aria", "tailark-oss", "tailwindcss", "tailwindcss-typography"]);
     for (const id of Object.keys(manifest.registries)) {
       assert.ok(manifest.items.some((item) => item.registry === id), `${id} has items`);
       assert.ok(manifest.licenses.some((license) => license.path.startsWith(`${id}/`)), `${id} keeps its license`);
