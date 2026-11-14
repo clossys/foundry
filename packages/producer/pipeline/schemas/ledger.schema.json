@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/ledger.schema.json",
+  "title": "Ledger (ledger.json)",
+  "description": "The append-only event log of a slot folder or an agent tree (slot-constitution section 1). Derived from src/records/ledger.ts eventIssues and ledgerIssues, which also check each op's own fields and the model/tier pairing (R14.3). Written only by src/records/slot-write.ts.",
+  "type": "object",
+  "required": ["schema", "events"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "clossys.ledger/1" },
+    "events": { "type": "array", "items": { "$ref": "#/$defs/event" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "event": {
+      "type": "object",
+      "required": ["op", "at", "by", "verb", "skill", "model", "tier"],
+      "properties": {
+        "op": {
+          "description": "Slot ops: submit, options, verdict, pick, pin, confirm, contract, slot, not-needed, migrate, retire-candidate, retire-slot, craft:<stage>. Agent ops: ia, policy, retire-slot.",
+          "type": "string",
+          "pattern": "^(submit|options|verdict|pick|pin|confirm|contract|slot|not-needed|migrate|retire-candidate|retire-slot|ia|policy|craft:(brief|diverge|render|critique|refine))$"
+        },
+        "at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$" },
+        "by": { "type": "string", "minLength": 1 },
+        "verb": { "enum": ["submit", "options", "verdict", "pick", "pin", "retire", "reissue", "ia", "migrate", "standard", "critique", "request", "task", "triage"] },
+        "skill": {
+          "type": "object",
+          "required": ["path", "sha256"],
+          "additionalProperties": false,
+          "properties": {
+            "path": { "type": "string", "pattern": "^packages/[a-z][a-z0-9-]*/actions/[a-z0-9][a-z0-9.-]*/skill\\.md$" },
+            "sha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] }
+          }
+        },
+        "model": { "type": "string", "minLength": 1, "description": "The model id, or none for a deterministic verb." },
+        "tier": { "enum": ["low", "mid", "high", "none"] },
+        "records": {
+          "description": "The record files this event wrote, each with its sha256 after the write (null: the write removed it).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["file", "sha256"],
+            "additionalProperties": false,
+            "properties": {
+              "file": { "enum": ["pin.json", "slot.json", "ia.json", "policy.json"] },
+              "sha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] }
+            }
+          }
+        }
+      }
+    }
+  }
+}

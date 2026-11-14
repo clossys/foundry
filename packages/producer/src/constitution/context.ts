@@ -10,6 +10,7 @@ import { sha256Hex } from "../records/hash.js";
 import { MIGRATIONS_FILE, validateMigrations, type MigrationsDoc } from "../records/migrations.js";
 import { agentDir, candidatesDir, designerIa, directorIa, MODEL_AGENTS, writerIa, type FoundryIa, type ModelAgent } from "../records/slot-model/index.js";
 import { isModelDir, listModelDir, readModelBytes, withSlotReadScope } from "../records/slots.js";
+import { skillFile } from "../records/ledger.js";
 import { readCandidateHistory } from "./git.js";
 import type { AgentRecord, CandidateHistory, CandidateRecord, ConstitutionContext, FoundryAgent, JsonRecord, MigrationsRecord, RetiredRecord, SlotRecord } from "./types.js";
 
@@ -27,8 +28,31 @@ function readText(path: string): { text: string; bytes?: Buffer; error?: string 
 function readJsonRecord(abs: string, rel: string): JsonRecord {
   const read = readText(abs);
   if (read.error !== undefined) return { path: rel, text: "", error: read.error };
-  try { return { path: rel, text: read.text, value: JSON.parse(read.text) as unknown }; }
-  catch (error) { return { path: rel, text: read.text, error: `not JSON: ${errorText(error)}` }; }
+  const sha256 = sha256Hex(read.bytes!);
+  try { return { path: rel, text: read.text, sha256, value: JSON.parse(read.text) as unknown }; }
+  catch (error) { return { path: rel, text: read.text, sha256, error: `not JSON: ${errorText(error)}` }; }
+}
+
+/** src/constitution/skill-hashes.json (scripts/generate-skill-hashes.mjs): every past state of every action skill. */
+export function readSkillHashes(url: URL = new URL("../../src/constitution/skill-hashes.json", import.meta.url)): Map<string, Set<string>> {
+  const known = new Map<string, Set<string>>();
+  let value: unknown;
+  try { value = JSON.parse(readFileSync(url, "utf8")); } catch { return known; }
+  const skills = (value as { skills?: unknown } | null)?.skills;
+  if (!skills || typeof skills !== "object" || Array.isArray(skills)) return known;
+  for (const [path, list] of Object.entries(skills as Record<string, unknown>)) {
+    if (Array.isArray(list)) known.set(path, new Set(list.filter((sha): sha is string => typeof sha === "string")));
+  }
+  return known;
+}
+
+/** The sha256s an action skill is known by: the installed file's, plus its skill-hashes.json history. */
+export function installedSkillShas(history: ReadonlyMap<string, ReadonlySet<string>> = readSkillHashes()): (path: string) => ReadonlySet<string> {
+  return path => {
+    const shas = new Set(history.get(path) ?? []);
+    try { shas.add(sha256Hex(readFileSync(skillFile(path)))); } catch { /* not installed: only its history counts */ }
+    return shas;
+  };
 }
 
 /** The slot ids an ia.json places, read leniently: any string under nodes[].children[].slots[]. */
@@ -88,6 +112,8 @@ export interface ContextOptions {
   readonly history?: (root: string, consumer: string) => CandidateHistory;
   /** Foundry leaf reader; tests substitute one. Defaults to the installed Foundry IA (directorIa, designerIa, writerIa). */
   readonly foundryLeaves?: (agent: FoundryAgent) => ReadonlySet<string>;
+  /** Action skill sha256s (R14.2); tests substitute one. Defaults to the installed files plus skill-hashes.json. */
+  readonly skillShas?: (path: string) => ReadonlySet<string>;
 }
 
 const FOUNDRY_IA: Record<FoundryAgent, () => FoundryIa> = { director: directorIa, designer: designerIa, writer: writerIa };
@@ -112,6 +138,7 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
     const dir = agentDir(consumer, agent);
     const entries = listModelDir(dir).sort();
     const ia = entries.includes("ia.json") ? readJsonRecord(join(dir, "ia.json"), rel(join(dir, "ia.json"))) : undefined;
+    const ledger = entries.includes("ledger.json") ? readJsonRecord(join(dir, "ledger.json"), rel(join(dir, "ledger.json"))) : undefined;
     const liveIds = ia?.value === undefined ? [] : placedIds(ia.value);
     const live = new Set(liveIds);
     const slots = new Map<string, SlotRecord>();
@@ -138,7 +165,7 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
       });
     }
     return {
-      agent, dir: rel(dir), ia, liveIds, slots, entries,
+      agent, dir: rel(dir), ia, ...(ledger ? { ledger } : {}), liveIds, slots, entries,
       retired: entries.includes("retired") ? readRetired(join(dir, "retired")) : [],
     };
   }));
@@ -150,5 +177,12 @@ export function buildContext(root: string, consumer: string, options: ContextOpt
   const leaves = new Map<FoundryAgent, ReadonlySet<string>>();
   const readLeaves = options.foundryLeaves ?? installedFoundryLeaves;
   const foundryLeaves = (agent: FoundryAgent) => { let set = leaves.get(agent); if (!set) leaves.set(agent, set = readLeaves(agent)); return set; };
-  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), ...(migrations ? { migrations } : {}), history: () => (history ??= read(root, consumer)), foundryLeaves };
+  const skills = new Map<string, ReadonlySet<string>>();
+  let readSkill = options.skillShas;
+  const skillShas = (path: string) => {
+    let set = skills.get(path);
+    if (!set) skills.set(path, set = (readSkill ??= installedSkillShas())(path));
+    return set;
+  };
+  return { root, consumer, agents, ...(lockVersions ? { lockVersions } : {}), ...(migrations ? { migrations } : {}), history: () => (history ??= read(root, consumer)), foundryLeaves, skillShas };
 }

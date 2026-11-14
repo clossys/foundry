@@ -34,7 +34,8 @@ import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from 
 import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
 import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy, withModelOverlay } from "../records/slots.js";
-import { writePin } from "../records/slot-write.js";
+import { appendRetireCandidate, appendRetireSlot, appendSlotDocEvent, writePin } from "../records/slot-write.js";
+import { LEDGER_FILE, skillPath } from "../records/ledger.js";
 import { readStandard, slotKinds, standardFits } from "../records/standards.js";
 import type { ModelAgent } from "../records/slot-model/index.js";
 import { isDecide, roundOf, ROUNDS, STAGES } from "../pipeline/define.js";
@@ -789,7 +790,11 @@ function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot:
   // `slot` is the slot id (the folder names the agent), as constitution R10.1 and retire.schema.json read it.
   const record = { schema: RETIRE_SCHEMA, slot, candidate, sha256: sha(readModelBytes(from)), by: fields.by, reason: fields.reason, at: fields.at };
   // The slot model check reads retired/ too: the record must validate and match the moved bytes.
-  const added = guarded(consumer, [file, from, to], () => { replaceFile(file, jsonBytes(record)); moveModelEntry(from, to); });
+  // The retire verb's ledger event lands with the move (records/slot-write.ts); a refused write restores the ledger too.
+  const added = guarded(consumer, [file, from, to, join(entry.dir, LEDGER_FILE)], () => {
+    replaceFile(file, jsonBytes(record)); moveModelEntry(from, to);
+    appendRetireCandidate(consumer, agent, slot, { name: candidate, sha256: record.sha256, reason: fields.reason, by: fields.by, at: fields.at });
+  });
   if (added.length) { dropEmptyDir(retired); return refuse("retire", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`); }
   return { exitCode: 0, root, decision: { slot: target, retired: candidate, sha256: record.sha256, by: fields.by, at: fields.at }, message: `retire: ${target} ${candidate} retired by ${fields.by} (clossys/agents/${agent}/${slot}/${RETIRED_DIR}/${candidate}.json)` };
 }
@@ -832,9 +837,16 @@ function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: stri
   }
   const folder = isModelDir(dir);
   const moveBack = () => { if (folder && modelExists(to) && !modelExists(dir)) moveModelEntry(to, dir); dropEmptyDir(dirname(to)); };
-  const added = guarded(consumer, [iaFile, ...renumbered.map(([file]) => file)], () => {
+  // Ledger events (records/slot-write.ts): each renumbered slot.json, then retire-slot in the slot's
+  // ledger and the agent ledger, before the folder moves; a refused write restores every ledger.
+  const ledgers = [join(agentDir(consumer, agent), LEDGER_FILE), join(dir, LEDGER_FILE), ...renumbered.map(([file]) => join(dirname(file), LEDGER_FILE))];
+  const added = guarded(consumer, [iaFile, ...renumbered.map(([file]) => file), ...ledgers], () => {
     replaceFile(iaFile, jsonBytes(next));
-    for (const [file, bytes] of renumbered) replaceFile(file, bytes);
+    for (const [file, bytes] of renumbered) {
+      replaceFile(file, bytes);
+      appendSlotDocEvent(consumer, agent, (JSON.parse(bytes) as { id: string }).id, { by: fields.by, at: fields.at, verb: "retire", skill: skillPath("producer", "retire"), fields: { reason: `renumbered after ${target} retired` } });
+    }
+    appendRetireSlot(consumer, agent, slot, { reason: fields.reason, by: fields.by, at: fields.at });
     if (folder) moveModelEntry(dir, to);
   }, { undo: moveBack });
   if (added.length) return refuse("retire", `the slot model check fails after the removal: ${added.slice(0, 5).join("; ")}`);

@@ -1,8 +1,15 @@
 /**
  * The slot-model writer: a new candidate in a slot's `candidates/`, and the slot's decision —
  * `pin.json` naming one candidate by the sha256 of its bytes, or slot.json `notNeeded`.
- * Candidates are immutable (a change is the next version); a decision is replaced, and its
- * history is git. Decisions are written through `clossys pin` (rule R-DECISIONS-BY-CLI).
+ * Candidates are immutable (a change is the next version); a decision is replaced. Decisions are
+ * written through `clossys pin` (rule R-DECISIONS-BY-CLI).
+ *
+ * The one writer of the ledger (records/ledger.ts): every write here appends one event to the
+ * slot's `ledger.json` (or the agent tree's) under the same slot lock as the write, naming the
+ * verb, action skill (path and sha256 of the installed file), by, model and tier, the op's fields
+ * and the sha256 of each record it left. The one exemption is the P0 propagation probe's pin
+ * re-point (`repointThemeProbePin`), which `restoreThemeProbePin` undoes byte for byte, so the net
+ * byte state it leaves is the one the ledger already records.
  */
 import { createHash, randomUUID } from "node:crypto";
 import { closeSync, constants, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -13,7 +20,11 @@ import {
   CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
-import { directorStoreReader, forgetSlotReads, listModelDir, listSlots, readCandidate, readSlot } from "./slots.js";
+import { directorStoreReader, forgetSlotReads, listModelDir, listSlots, readCandidate, readLedger, readSlot } from "./slots.js";
+import {
+  LEDGER_FILE, LEDGER_SCHEMA, NONE, RETIRE_EVENT_CODES, eventIssues, skillFile, skillPath,
+  type LedgerEvent, type LedgerRecordState, type LedgerSkill, type Provenance, type RecordFile, type Verb,
+} from "./ledger.js";
 import { fileState, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, validateMigrations, type FileState, type FormatMigration, type MigratedEvent, type MigrationsDoc } from "./migrations.js";
 
 // ---------------------------------------------------------------------------
@@ -72,7 +83,7 @@ function replaceFile(path: string, bytes: string): void {
   finally { forgetSlotReads(); }
 }
 /** One decision write per slot at a time. */
-const SLOT_LOCK = ".slot-write.lock";
+export const SLOT_LOCK = ".slot-write.lock";
 const slotLocked = <T>(dir: string, action: () => T): T => withDirLock(join(dir, SLOT_LOCK), "Slot is unavailable or another decision write is in progress", action);
 
 function located(consumer: string, agent: SlotAgent, id: string) {
@@ -106,25 +117,150 @@ export function nextVersion(dir: string, candidates: readonly string[]): number 
   return Math.max(0, ...versions) + 1;
 }
 
+// ---------------------------------------------------------------------------
+// The ledger: one event per write, appended under the lock that guards the write.
+// ---------------------------------------------------------------------------
+
+/** An action skill as an event records it: its path and the sha256 of the installed file (null when the file is missing; R14.2 reports it). */
+export function skillState(path: string): LedgerSkill {
+  try { return { path, sha256: createHash("sha256").update(readFileSync(skillFile(path))).digest("hex") }; }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return { path, sha256: null }; throw error; }
+}
+
 /**
- * Write `<name>-v<next>` into the slot's candidates, where `<next>` is the slot's `nextVersion`. JSON kinds take the item object
- * (serialized as two-space JSON); Markdown kinds take the file text. Invalid candidates are refused.
- * `canonical` also refuses aliased candidate paths (no ancestor may be a symbolic link).
+ * What a caller may say about who wrote and how; the rest defaults per writer. `skill` is a skill
+ * path (hashed from the installed file) or the `{path, sha256}` the caller already verified.
  */
-export function writeCandidate(consumer: string, agent: SlotAgent, id: string, name: string, content: unknown, options: { readonly canonical?: boolean } = {}): { name: string; sha256: string } {
-  const { doc, entry } = located(consumer, agent, id);
-  const ext = KIND_EXT[doc.kind];
-  const file = `${name}-v${nextVersion(entry.dir, entry.candidates)}.${ext}`;
-  const bytes = ext === "md" ? String(content) : jsonBytes(content);
-  const issues = validateCandidate(doc.kind, id, file, bytes);
-  if (issues.length) throw new Error(`candidate refused: ${issues.map(issue => issue.message).join("; ")}`);
-  const directory = candidatesDir(entry.dir);
-  if (options.canonical) canonicalDirectory(directory);
-  mkdirSync(directory, { recursive: true });
-  if (options.canonical && realpathSync(directory) !== resolve(directory)) throw new Error("candidate refused: candidate directory leaves its canonical path");
-  writeFileSync(join(directory, file), bytes, { flag: "wx" });
-  forgetSlotReads();
-  return { name: file, sha256: readCandidate(consumer, agent, id, file).sha256 };
+export interface WriteProvenance { readonly verb?: Verb; readonly by?: string; readonly skill?: string | LedgerSkill; readonly model?: string; readonly tier?: string }
+function provenance(defaults: { verb: Verb; by: string; skill: string }, given: WriteProvenance = {}): Provenance {
+  const skill = given.skill ?? defaults.skill;
+  return {
+    verb: given.verb ?? defaults.verb,
+    by: given.by ?? defaults.by,
+    skill: typeof skill === "string" ? skillState(skill) : { path: skill.path, sha256: skill.sha256 },
+    model: given.model ?? NONE,
+    tier: given.tier ?? NONE,
+  };
+}
+const nowIso = () => new Date().toISOString();
+const sha256Of = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
+/** A record file's state after a write: the sha256 of its bytes, or null when it is absent. */
+function recordState(dir: string, file: RecordFile): LedgerRecordState {
+  const path = join(dir, file);
+  return { file, sha256: existsSync(path) ? sha256Of(readFileSync(path)) : null };
+}
+function ledgerEvent(op: string, at: string, who: Provenance, fields: Record<string, unknown>, records?: readonly LedgerRecordState[]): LedgerEvent {
+  return { op, at, by: who.by, verb: who.verb, skill: who.skill, model: who.model, tier: who.tier, ...fields, ...(records?.length ? { records } : {}) };
+}
+/**
+ * Append `event` to `<dir>/ledger.json`. The caller holds the lock that guards `dir`. The event is
+ * validated first and the existing ledger must read clean: an unreadable ledger is never replaced.
+ */
+function appendEvent(dir: string, scope: "slot" | "agent", event: LedgerEvent): void {
+  const issues = eventIssues(event, scope);
+  if (issues.length) throw new Error(`ledger event refused: ${issues.join("; ")}`);
+  const doc = readLedger(dir, scope);
+  replaceFile(join(dir, LEDGER_FILE), jsonBytes({ schema: LEDGER_SCHEMA, events: [...(doc?.events ?? []), event] }));
+}
+/** One agent-ledger write at a time. */
+const AGENT_LOCK = ".agent-write.lock";
+const agentLocked = <T>(consumer: string, agent: SlotAgent, action: () => T): T =>
+  withDirLock(join(consumer, "agents", agent, AGENT_LOCK), `The ${agent} agent ledger is unavailable or another write is in progress`, action);
+/** The retire code of a retire reason (`<code>[: <note>]`). */
+function retireCode(reason: string): string {
+  const code = reason.split(":")[0]!.trim();
+  if (!(RETIRE_EVENT_CODES as readonly string[]).includes(code)) throw new Error(`retire reason ${reason} does not start with a retire code (${RETIRE_EVENT_CODES.join(", ")})`);
+  return code;
+}
+
+/**
+ * The retire verb's ledger event for one candidate (`clossys retire <agent>/<slot> <candidate>`):
+ * `retire-candidate {name, sha256, code}` in the slot ledger, written after the candidate left
+ * `candidates/`. The note after the code stays in the retire record.
+ */
+export function appendRetireCandidate(consumer: string, agent: SlotAgent, id: string, input: { name: string; sha256: string; reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent {
+  const { entry } = located(consumer, agent, id);
+  const event = ledgerEvent("retire-candidate", input.at, provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given), { name: input.name, sha256: input.sha256, code: retireCode(input.reason) });
+  slotLocked(entry.dir, () => appendEvent(entry.dir, "slot", event));
+  return event;
+}
+
+/**
+ * The retire verb's ledger events for a whole slot (`clossys retire <agent>/<slot> --slot`), written
+ * after ia.json no longer places it and before its folder moves: `retire-slot {code}` in the slot's
+ * own ledger (when the folder exists), and `retire-slot {slot, code}` with ia.json's new state in
+ * the agent ledger.
+ */
+export function appendRetireSlot(consumer: string, agent: SlotAgent, id: string, input: { reason: string; by: string; at: string }, given?: WriteProvenance): LedgerEvent[] {
+  const who = provenance({ verb: "retire", by: input.by, skill: skillPath("producer", "retire") }, given);
+  const code = retireCode(input.reason);
+  const events: LedgerEvent[] = [];
+  const dir = join(consumer, "agents", agent, id);
+  canonicalDirectory(dir);
+  if (existsSync(dir) && lstatSync(dir).isDirectory()) {
+    const event = ledgerEvent("retire-slot", input.at, who, { code });
+    slotLocked(dir, () => appendEvent(dir, "slot", event));
+    events.push(event);
+  }
+  const base = join(consumer, "agents", agent);
+  const event = ledgerEvent("retire-slot", input.at, who, { slot: id, code }, [recordState(base, "ia.json")]);
+  agentLocked(consumer, agent, () => appendEvent(base, "agent", event));
+  events.push(event);
+  return events;
+}
+
+/**
+ * A `slot` event recording slot.json's current bytes, for a verb that rewrote slot.json as part of
+ * an agent-level change (retire --slot renumbers the positions of the slots after the retired one).
+ */
+export function appendSlotDocEvent(consumer: string, agent: SlotAgent, id: string, input: { by: string; at: string; verb: Verb; skill: string; fields?: Readonly<Record<string, unknown>> }, given?: WriteProvenance): LedgerEvent {
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+    const event = ledgerEvent("slot", input.at, provenance({ verb: input.verb, by: input.by, skill: input.skill }, given), { ...input.fields }, [recordState(entry.dir, "slot.json")]);
+    appendEvent(entry.dir, "slot", event);
+    return event;
+  });
+}
+
+/**
+ * Write `<name>-v<next>` (`<next>` the slot's `nextVersion`) into the slot's candidates and append its `submit {name, sha256}` event.
+ * JSON kinds take the item object (serialized as two-space JSON); Markdown kinds take the file text.
+ * Invalid candidates are refused. `canonical` also refuses aliased candidate paths (no ancestor may
+ * be a symbolic link). The version is chosen, the file written, `verify` run and the event appended
+ * under the slot lock, so two writers never take one version and the ledger names every file; a
+ * `verify` issue (or a refused event) removes the file again. `fields` are the submit's own record
+ * (`next --submit`: its basis and ladder); `provenance` its verb, by, skill, model and tier.
+ */
+export function writeCandidate(consumer: string, agent: SlotAgent, id: string, name: string, content: unknown, options: {
+  readonly canonical?: boolean; readonly provenance?: WriteProvenance; readonly at?: string;
+  readonly fields?: Readonly<Record<string, unknown>>; readonly verify?: (file: string) => readonly string[];
+} = {}): { name: string; sha256: string } {
+  const { entry } = located(consumer, agent, id);
+  if (options.canonical) canonicalDirectory(entry.dir);
+  return slotLocked(entry.dir, () => {
+    const { doc, entry: current } = located(consumer, agent, id);
+    const ext = KIND_EXT[doc.kind];
+    const file = `${name}-v${nextVersion(current.dir, current.candidates)}.${ext}`;
+    const bytes = ext === "md" ? String(content) : jsonBytes(content);
+    const issues = validateCandidate(doc.kind, id, file, bytes);
+    if (issues.length) throw new Error(`candidate refused: ${issues.map(issue => issue.message).join("; ")}`);
+    readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
+    const directory = candidatesDir(entry.dir);
+    if (options.canonical) canonicalDirectory(directory);
+    mkdirSync(directory, { recursive: true });
+    if (options.canonical && realpathSync(directory) !== resolve(directory)) throw new Error("candidate refused: candidate directory leaves its canonical path");
+    const path = join(directory, file);
+    writeFileSync(path, bytes, { flag: "wx" });
+    forgetSlotReads();
+    try {
+      const sha256 = readCandidate(consumer, agent, id, file).sha256;
+      const refused = options.verify?.(file) ?? [];
+      if (refused.length) throw new Error(`candidate refused: ${file} fails the slot model check: ${refused.slice(0, 5).join("; ")}`);
+      const who = provenance({ verb: "submit", by: "planner", skill: skillPath(agent, `${agent}.candidates`) }, options.provenance);
+      appendEvent(entry.dir, "slot", ledgerEvent("submit", options.at ?? nowIso(), who, { ...options.fields, name: file, sha256 }));
+      return { name: file, sha256 };
+    } catch (error) { unlinkSync(path); forgetSlotReads(); throw error; }
+  });
 }
 
 /**
@@ -132,7 +268,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
  * `:<message ref>`, `agent:<seat>`, or `migrated`); `basis` how (PIN_BASES). A `notNeeded` marker on
  * the slot is cleared: the pin replaces it.
  */
-export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }): PinDoc {
+export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }, given?: WriteProvenance): PinDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
   const { doc } = located(consumer, agent, id);
@@ -145,11 +281,20 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
   if (pinIssues.length) throw new Error(`pin refused: ${pinIssues.map(issue => issue.message).join("; ")}`);
   // The pin lands first: an interruption leaves a pinned slot still marked notNeeded, which the
   // slot check reports, never a slot whose notNeeded was cleared with no pin to replace it.
+  // An agent pick runs `pick.<agent>` (verb pick); every other pin runs the Producer's `pin.<agent>`.
+  const pick = input.basis === "agent";
+  const who = provenance(pick
+    ? { verb: "pick", by: input.decidedBy, skill: skillPath(agent, `pick.${agent}`) }
+    : { verb: "pin", by: input.decidedBy, skill: skillPath("producer", `pin.${agent}`) }, given);
+  readLedger(entry.dir, "slot"); // an unreadable ledger refuses before anything is written
   replaceFile(pinFile(entry.dir), jsonBytes(pin));
+  const records = [recordState(entry.dir, "pin.json")];
   if (doc.notNeeded) {
     const { notNeeded: _cleared, ...rest } = doc;
     replaceFile(slotFile(entry.dir), jsonBytes(rest));
+    records.push(recordState(entry.dir, "slot.json"));
   }
+  appendEvent(entry.dir, "slot", ledgerEvent(pick ? "pick" : "pin", input.at, who, { candidate, sha256: pin.sha256, decidedBy: pin.decidedBy, basis: pin.basis }, records));
   return pin;
   });
 }
@@ -160,7 +305,7 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
  * gains `confirmed: {by, ref, at}`. Refused unless the slot's current pin is an agent pick of exactly
  * this candidate with matching bytes: a confirmation never changes what is pinned.
  */
-export function writeConfirm(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { by: string; ref: string; at: string }): PinDoc {
+export function writeConfirm(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { by: string; ref: string; at: string }, given?: WriteProvenance): PinDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
     const path = pinFile(entry.dir);
@@ -174,7 +319,10 @@ export function writeConfirm(consumer: string, agent: SlotAgent, id: string, can
     const pin: PinDoc = { candidate: current.candidate, sha256: current.sha256, decidedBy: current.decidedBy, basis: current.basis, at: current.at, confirmed: { by: input.by, ref: input.ref, at: input.at } };
     const issues = validatePin(pin);
     if (issues.length) throw new Error(`confirm refused: ${issues.map(issue => issue.message).join("; ")}`);
+    const who = provenance({ verb: "pin", by: input.by, skill: skillPath("producer", `pin.${agent}`) }, given);
+    readLedger(entry.dir, "slot");
     replaceFile(path, jsonBytes(pin));
+    appendEvent(entry.dir, "slot", ledgerEvent("confirm", input.at, who, { candidate, sha256: pin.sha256, confirmed: pin.confirmed }, [recordState(entry.dir, "pin.json")]));
     return pin;
   });
 }
@@ -239,7 +387,7 @@ export interface InPlaceRewrite { readonly name: string; readonly before: string
  * validation issue, and the rewritten pin must be valid. Candidates otherwise stay immutable: this
  * is the only writer that replaces candidate bytes, and only for a citation-format change.
  */
-export function rewriteCitationsInPlace(consumer: string, agent: SlotAgent, id: string, change: { readonly candidates: readonly InPlaceRewrite[]; readonly pin?: { readonly before: string; readonly after: string } }): RewrittenFile[] {
+export function rewriteCitationsInPlace(consumer: string, agent: SlotAgent, id: string, change: { readonly candidates: readonly InPlaceRewrite[]; readonly pin?: { readonly before: string; readonly after: string } }, input: { readonly by?: string; readonly at?: string } = {}, given?: WriteProvenance): RewrittenFile[] {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
     const { doc } = located(consumer, agent, id);
@@ -260,15 +408,29 @@ export function rewriteCitationsInPlace(consumer: string, agent: SlotAgent, id: 
     // re-run recognises (the plan carries a sha256 that matches either form) and completes.
     // Each touched file's bytes are read from disk on both sides, so its recorded ids are exactly
     // what git sees for this change (records/migrations.ts).
+    // The ledger's `migrate` event carries each rewritten candidate's sha256 from and to (R08.2 follows
+    // a submit through it) and the pin's new bytes (R14.1).
+    const who = provenance({ verb: "migrate", by: input.by ?? "planner", skill: skillPath("producer", "migrate") }, given);
+    readLedger(entry.dir, "slot");
     const touched: RewrittenFile[] = [];
-    const rewrite = (path: string, after: string) => {
-      const from = fileState(readFileSync(path));
+    const files: { name: string; from: string; to: string }[] = [];
+    const rewrite = (path: string, after: string, name?: string) => {
+      const was = readFileSync(path);
+      const from = fileState(was);
       replaceFile(path, after);
-      const to = fileState(readFileSync(path));
-      if (from.blob !== to.blob) touched.push({ file: posixRelative(consumer, path), from, to });
+      const now = readFileSync(path);
+      const to = fileState(now);
+      if (from.blob !== to.blob) {
+        touched.push({ file: posixRelative(consumer, path), from, to });
+        if (name) files.push({ name, from: sha256Of(was), to: sha256Of(now) });
+      }
     };
     if (change.pin) rewrite(pinPath, change.pin.after);
-    for (const item of change.candidates) rewrite(join(candidatesDir(entry.dir), item.name), item.after);
+    for (const item of change.candidates) rewrite(join(candidatesDir(entry.dir), item.name), item.after, item.name);
+    if (touched.length) {
+      appendEvent(entry.dir, "slot", ledgerEvent("migrate", input.at ?? nowIso(), who, { migration: "citations-to-slots", files },
+        change.pin && touched.some(file => file.file.endsWith("/pin.json")) ? [recordState(entry.dir, "pin.json")] : undefined));
+    }
     return touched;
   });
 }
@@ -313,15 +475,19 @@ export function appendMigrationEvents(consumer: string, migration: FormatMigrati
 }
 
 /** Mark a slot not needed: slot.json `notNeeded {reason, since, decidedBy}`, and any pin.json removed. */
-export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded): SlotDoc {
+export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded, given?: WriteProvenance & { readonly at?: string }): SlotDoc {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
   const { doc } = located(consumer, agent, id);
   const next: SlotDoc = { ...doc, notNeeded: { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy } };
   const issues = validateSlotDoc(next);
   if (issues.length) throw new Error(`not-needed refused: ${issues.map(issue => issue.message).join("; ")}`);
+  const who = provenance({ verb: "pin", by: notNeeded.decidedBy, skill: skillPath("producer", `pin.${agent}`) }, given);
+  readLedger(entry.dir, "slot");
   replaceFile(slotFile(entry.dir), jsonBytes(next));
-  if (existsSync(pinFile(entry.dir))) unlinkSync(pinFile(entry.dir));
+  if (existsSync(pinFile(entry.dir))) { unlinkSync(pinFile(entry.dir)); forgetSlotReads(); }
+  appendEvent(entry.dir, "slot", ledgerEvent("not-needed", given?.at ?? nowIso(), who, { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy },
+    [recordState(entry.dir, "slot.json"), recordState(entry.dir, "pin.json")]));
   return next;
   });
 }
@@ -330,7 +496,7 @@ export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, n
  * Set a slot's `options` and `varyOn` from its option class (CANDIDATE-OPTIONS), keeping every
  * other key. options 1 removes both keys (1 is the default). Returns true when slot.json changed.
  */
-export function writeSlotOptions(consumer: string, agent: SlotAgent, id: string, input: { options: 1 | 2 | 3; varyOn?: string }): boolean {
+export function writeSlotOptions(consumer: string, agent: SlotAgent, id: string, input: { options: 1 | 2 | 3; varyOn?: string; at?: string }, given?: WriteProvenance): boolean {
   const { entry } = located(consumer, agent, id);
   return slotLocked(entry.dir, () => {
   const { doc } = located(consumer, agent, id);
@@ -340,7 +506,10 @@ export function writeSlotOptions(consumer: string, agent: SlotAgent, id: string,
   if (issues.length) throw new Error(`options refused: ${issues.map(issue => issue.message).join("; ")}`);
   const before = jsonBytes(doc), after = jsonBytes(next);
   if (before === after) return false;
+  const who = provenance({ verb: "options", by: "planner", skill: skillPath("producer", "options") }, given);
+  readLedger(entry.dir, "slot");
   replaceFile(slotFile(entry.dir), after);
+  appendEvent(entry.dir, "slot", ledgerEvent("slot", input.at ?? nowIso(), who, { options: input.options, ...(input.varyOn ? { varyOn: input.varyOn } : {}) }, [recordState(entry.dir, "slot.json")]));
   return true;
   });
 }

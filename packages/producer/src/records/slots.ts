@@ -12,6 +12,7 @@ import { lstat } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStoreEntry, DirectorStoreError, DirectorStoreFault, DirectorStoreReader } from "@clossys/director";
 import { sha256Hex } from "./hash.js";
+import { LEDGER_FILE, ledgerIssues, type LedgerDoc } from "./ledger.js";
 import {
   CANDIDATE_NAME, MODEL_AGENTS, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, retiredSeatFile, seatDir, seatSlotId, seatStepOf, slotDir, slotFile, slotPositions,
   validateCandidate, validateIa, validatePin, validateSlotDoc,
@@ -828,6 +829,30 @@ export function readSlotRecordText(dir: string, file: "slot.json" | "pin.json"):
   assertModelPath(path);
   if (!fsExists(path)) return undefined;
   return readBytes(path);
+}
+/**
+ * The ledger of a slot folder or an agent tree (`<dir>/ledger.json`, records/ledger.ts): its raw
+ * text, unvalidated, for the one writer's append and the checks; aliases refused; undefined when absent.
+ */
+export function readLedgerText(dir: string): string | undefined {
+  const path = join(dir, LEDGER_FILE);
+  assertModelPath(path);
+  if (!fsExists(path)) return undefined;
+  return readBytes(path);
+}
+/**
+ * The ledger of a slot folder or an agent tree, parsed and validated (ledgerIssues); undefined when
+ * absent. An unparseable or invalid ledger throws: a writer never appends to, and so never
+ * replaces, a ledger it cannot read.
+ */
+export function readLedger(dir: string, scope: "slot" | "agent" = "slot"): LedgerDoc | undefined {
+  const text = readLedgerText(dir);
+  if (text === undefined) return undefined;
+  let value: unknown;
+  try { value = JSON.parse(text); } catch { throw new Error(`${LEDGER_FILE} in ${dir} is not JSON`); }
+  const issues = ledgerIssues(value, scope);
+  if (issues.length) throw new Error(`${LEDGER_FILE} in ${dir} is invalid: ${issues.slice(0, 3).join("; ")}`);
+  return value as LedgerDoc;
 }
 /**
  * An agent-level file (`agents/<agent>/<name>`: Writer `declarations.json`, Designer

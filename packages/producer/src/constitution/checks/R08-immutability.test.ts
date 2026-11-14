@@ -3,13 +3,13 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildContext } from "../context.js";
-import { parseNameStatusLog, parseStatus, readCandidateHistory } from "../git.js";
-import { AT, cleanSpec, contextOf, expectCatches, writeWorkspace, type WorkspaceSpec } from "../__fixtures__/workspace.js";
+import { HISTORY_LOG_ARGS, parseNameStatusLog, parseStatus, readCandidateHistory } from "../git.js";
+import { AT, cleanSpec, contextOf, expectCatches, ledgerEvent, NO_FOUNDRY_LEAVES, writeWorkspace, type WorkspaceSpec } from "../__fixtures__/workspace.js";
 import type { CandidateHistory, PathChange } from "../types.js";
 import { gitBlobId, MIGRATIONS_FILE, MIGRATIONS_SCHEMA, type MigratedEvent } from "../../records/migrations.js";
 import { sha256Hex } from "../../records/hash.js";
 import { appendMigrationEvents } from "../../records/slot-write.js";
-import { R08, editedInPlace, naming } from "./R08-immutability.js";
+import { R08, addIndex, editedInPlace, isEdit, naming } from "./R08-immutability.js";
 
 const clean = () => contextOf(cleanSpec());
 const broken = (edit: (spec: WorkspaceSpec) => void) => { const spec = cleanSpec(); edit(spec); return contextOf(spec); };
@@ -77,7 +77,7 @@ describe("R08.2 edited in place", () => {
     git("commit", "-qm", "add");
     expect(editedInPlace(buildContext(root, consumer))).toEqual([]);
     writeFileSync(join(root, BUTTON), "{\"name\":\"button\",\"files\":[]}\n");
-    expect(editedInPlace(buildContext(root, consumer))).toEqual([expect.objectContaining({ slot: "ui.button", reason: "has uncommitted edits" })]);
+    expect(editedInPlace(buildContext(root, consumer))).toEqual([expect.objectContaining({ slot: "ui.button", reason: expect.stringMatching(/^has uncommitted edits; sha256 [0-9a-f]{12} differs from its submit event's [0-9a-f]{12}$/) })]);
     git("commit", "-qam", "edit in place");
     const rows = editedInPlace(buildContext(root, consumer));
     expect(rows).toEqual([expect.objectContaining({ slot: "ui.button", reason: expect.stringMatching(/^edited in 1 commit after the commit that added it/) })]);
@@ -153,6 +153,11 @@ describe("R08.2 edited in place", () => {
       writeFileSync(path, after);
       const recorded = appendMigrationEvents(consumer, "citations-to-slots", [{ file: BUTTON_FILE, from: { sha256: sha256Hex(before), blob: gitBlobId(before) }, to: { sha256: sha256Hex(after), blob: gitBlobId(after) } }], { by: "planner", at: AT });
       expect(recorded).toHaveLength(1);
+      // The slot ledger records the same rewrite (slot-write.ts rewriteCitationsInPlace appends it), carrying the submit sha.
+      const ledgerPath = join(consumer, "agents/designer/ui.button/ledger.json");
+      const ledger = JSON.parse(readFileSync(ledgerPath, "utf8")) as { events: unknown[] };
+      ledger.events.push(ledgerEvent("migrate", "migrate", "packages/producer/actions/migrate/skill.md", { migration: "citations-to-slots", files: [{ name: "button-v1.json", from: sha256Hex(before), to: sha256Hex(after) }] }));
+      writeFileSync(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`);
       // Recording the same rewrite again adds nothing.
       expect(appendMigrationEvents(consumer, "citations-to-slots", [{ file: BUTTON_FILE, from: recorded[0]!.from, to: recorded[0]!.to }], { by: "planner", at: AT })).toEqual([]);
       git("add", "-A");
@@ -161,7 +166,83 @@ describe("R08.2 edited in place", () => {
       expect(editedInPlace(buildContext(root, consumer))).toEqual([]);
       writeFileSync(path, `${after}\n`);
       git("commit", "-qam", "edit after the migration");
-      expect(editedInPlace(buildContext(root, consumer))).toEqual([expect.objectContaining({ slot: "ui.button", reason: expect.stringMatching(/^edited in 1 commit after the commit that added it/) })]);
+      expect(editedInPlace(buildContext(root, consumer))).toEqual([expect.objectContaining({ slot: "ui.button", reason: expect.stringMatching(/^edited in 1 commit after the commit that added it.*; sha256 [0-9a-f]{12} differs from its submit event's/) })]);
+    });
+  });
+
+  describe("the ledger's submit sha (the same sha R14.1 holds the file to)", () => {
+    it("flags a file whose bytes differ from its submit event, a file without one and a slot without a ledger", () => {
+      const rows = expectCatches(editedInPlace, clean(), broken(spec => {
+        spec.director!["brand.voice"]!.ledger = { schema: "clossys.ledger/1", events: [ledgerEvent("submit", "submit", "packages/director/actions/director.candidates/skill.md", { name: "voice-v1.md", sha256: "e".repeat(64) })] };
+        spec.writer!["home.hero"]!.ledger = { schema: "clossys.ledger/1", events: [] };
+        spec.designer!["ui.button"]!.ledger = false;
+        spec.publisher!["site.home"]!.ledger = "{not json";
+      }));
+      expect(rows.map(row => `${row.slot}: ${row.reason}`).sort()).toEqual([
+        expect.stringMatching(/^brand\.voice: sha256 [0-9a-f]{12} differs from its submit event's eeeeeeeeeeee$/),
+        "home.hero: the slot ledger has no submit event for it",
+        expect.stringMatching(/^site\.home: the slot ledger is unreadable \(not JSON/),
+        "ui.button: the slot has no ledger.json, so no submit event proves its bytes",
+      ]);
+    });
+  });
+
+  describe("merge commits (git log --diff-merges=first-parent)", () => {
+    const CARD = "clossys/agents/designer/ui.card/candidates/card-v1.json";
+    const MERGED = "clossys/agents/designer/ui.button/candidates/button-v9.json";
+    /** A repository whose side branch is merged with an evil edit to ui.card and a candidate that exists only in the merge. */
+    const mergedRepo = () => {
+      const { root, consumer } = writeWorkspace(cleanSpec());
+      const git = (...args: string[]) => execFileSync("git", ["-c", "user.name=fixture", "-c", "user.email=fixture@example.com", "-c", "commit.gpgsign=false", ...args], { cwd: root, stdio: "pipe" }).toString();
+      git("init", "-q", "-b", "main");
+      git("add", "-A");
+      git("commit", "-qm", "add");
+      git("checkout", "-qb", "side");
+      writeFileSync(join(root, "clossys/agents/writer/notes.txt"), "side\n");
+      git("add", "-A");
+      git("commit", "-qm", "side change");
+      git("checkout", "-q", "main");
+      git("merge", "-q", "--no-ff", "--no-commit", "side");
+      writeFileSync(join(root, CARD), "{\"evil\":true}\n");
+      writeFileSync(join(root, MERGED), "{\"merge\":\"only\"}\n");
+      git("add", "-A");
+      git("commit", "-qm", "merge side");
+      return { root, consumer };
+    };
+
+    it("sees a merge-only candidate and flags an edit made inside a merge", () => {
+      const { root, consumer } = mergedRepo();
+      const history = readCandidateHistory(root, consumer);
+      expect(history.changes.get(MERGED)).toEqual([expect.objectContaining({ status: "A", merge: true })]);
+      expect(history.changes.get(CARD)?.map(change => [change.status, change.merge ?? false])).toEqual([["A", false], ["M", true]]);
+      const rows = editedInPlace(buildContext(root, consumer, { foundryLeaves: NO_FOUNDRY_LEAVES }));
+      expect(rows.map(row => `${row.candidate}: ${row.reason.split(" (")[0]}`).sort()).toEqual([
+        "button-v9.json: the slot ledger has no submit event for it",
+        "card-v1.json: edited in 1 commit after the commit that added it",
+      ]);
+    });
+
+    it("judges a merge change by the byte state it brings: carrying a side-line change in is not a second edit", () => {
+      const a = "a".repeat(40), b = "b".repeat(40), c = "c".repeat(40), zero = "0".repeat(40);
+      const change = (commit: string, status: PathChange["status"], from: string, to: string, merge = false): PathChange => ({ commit: commit.repeat(40), status, from, to, ...(merge ? { merge: true as const } : {}) });
+      const carried = [change("1", "A", zero, a), change("2", "A", zero, a, true)];
+      expect(addIndex(carried)).toBe(0);
+      expect(isEdit(carried, 1)).toBe(false);
+      const sideEdit = [change("1", "A", zero, a), change("2", "M", a, b), change("3", "M", a, b, true)];
+      expect([isEdit(sideEdit, 1), isEdit(sideEdit, 2)]).toEqual([true, false]);
+      const evil = [change("1", "A", zero, a), change("2", "M", a, b), change("3", "M", a, c, true)];
+      expect(isEdit(evil, 2)).toBe(true);
+      expect(addIndex([change("1", "A", zero, a, true)])).toBe(0);
+      expect(addIndex([change("1", "M", a, b)])).toBe(-1);
+    });
+
+    it("parses parents from the log header and marks merge changes", () => {
+      const a = "a".repeat(40), zero = "0".repeat(40);
+      const log = `\0mmm p1 p2\n\n:000000 100644 ${zero} ${a} A\tclossys/x.json\n\0ccc p0\n\n:000000 100644 ${zero} ${a} A\tclossys/y.json\n`;
+      const parsed = parseNameStatusLog(log);
+      expect(parsed.get("clossys/x.json")).toEqual([{ commit: "mmm", status: "A", from: zero, to: a, merge: true }]);
+      expect(parsed.get("clossys/y.json")).toEqual([{ commit: "ccc", status: "A", from: zero, to: a }]);
+      expect(HISTORY_LOG_ARGS).toContain("--diff-merges=first-parent");
     });
   });
 

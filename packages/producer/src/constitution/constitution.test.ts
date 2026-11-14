@@ -6,11 +6,11 @@ import { buildContext } from "./context.js";
 import { readRules, registeredRules, RULE_MODULES } from "./registry.js";
 import { formatReport, runConstitution } from "./run.js";
 import { constitutionSchema, SCHEMA_NAMES, validateSchema } from "./schema.js";
-import { cleanSpec, contextOf, expectCatches, writeWorkspace, NO_HISTORY } from "./__fixtures__/workspace.js";
+import { cleanSpec, contextOf, expectCatches, writeWorkspace, FIXTURE_SKILL_SHAS, NO_HISTORY } from "./__fixtures__/workspace.js";
 
 const packageRoot = fileURLToPath(new URL("../../", import.meta.url));
 const IDS = Array.from({ length: 16 }, (_, index) => `R${String(index + 1).padStart(2, "0")}`);
-const ENFORCED = ["R01", "R04", "R06", "R07", "R08", "R09", "R10", "R11", "R13"];
+const ENFORCED = ["R01", "R02", "R04", "R06", "R07", "R08", "R09", "R10", "R11", "R13", "R14"];
 const BUILDING = ["R03", "R05", "R15", "R16"];
 
 describe("constitution registry", () => {
@@ -60,14 +60,16 @@ describe("constitution registry", () => {
 describe("constitution runner", () => {
   it("fails a clean workspace while any rule is pending, and says so", () => {
     const { root, consumer } = writeWorkspace(cleanSpec());
-    const report = runConstitution({ root, consumer, history: () => NO_HISTORY, now: () => 0 });
+    const report = runConstitution({ root, consumer, history: () => NO_HISTORY, skillShas: FIXTURE_SKILL_SHAS, now: () => 0 });
     expect(report.ok).toBe(false);
     expect(report.total).toBe(report.pending + report.building);
     expect(report.pending).toBeGreaterThan(0);
     expect(report.records).toEqual({ slots: 6, liveSlots: 6, pins: 6, candidates: 6 });
     const text = formatReport(report);
     expect(text).toMatch(/^R01 ok {2}rows 0$/m);
-    expect(text).toMatch(/^R02 PENDING {2}rows \d+/m);
+    expect(text).toMatch(/^R02 ok {2}rows 0$/m);
+    expect(text).toMatch(/^R03 BUILDING {2}rows \d+/m);
+    expect(text).toMatch(/^R14 ok {2}rows 0$/m);
     expect(text).toMatch(/^R04 ok {2}rows 0$/m);
     expect(text).toMatch(/constitution: FAIL {2}rows \d+ \(pending \d+, findings 0\)(?: {2}building \d+ \(report only; --strict fails them\))?/);
   });
