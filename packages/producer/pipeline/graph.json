@@ -106,12 +106,20 @@
       ],
       "outputs": [
         {
-          "glob": "clossys/agents/*/*/retired/*.json",
+          "glob": "clossys/agents/*/*/retired/*.md.json",
           "schema": "retire"
         },
         {
-          "glob": "clossys/agents/*/ia.json",
-          "schema": "ia"
+          "glob": "clossys/agents/*/*/retired/*.json.json",
+          "schema": "retire"
+        },
+        {
+          "glob": "clossys/agents/director/*/retired/*.md",
+          "schema": "candidate-brief"
+        },
+        {
+          "glob": "clossys/agents/writer/*/retired/*.md",
+          "schema": "candidate-strings"
         }
       ],
       "command": {
@@ -152,12 +160,20 @@
         ],
         "write": [
           {
-            "glob": "clossys/agents/*/*/retired/*.json",
+            "glob": "clossys/agents/*/*/retired/*.md.json",
             "schema": "retire"
           },
           {
-            "glob": "clossys/agents/*/ia.json",
-            "schema": "ia"
+            "glob": "clossys/agents/*/*/retired/*.json.json",
+            "schema": "retire"
+          },
+          {
+            "glob": "clossys/agents/director/*/retired/*.md",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/writer/*/retired/*.md",
+            "schema": "candidate-strings"
           }
         ],
         "checks": [
@@ -753,7 +769,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "direct.pin",
-        "rank": 14,
+        "rank": 7,
         "x": 1760,
         "y": 1128
       }
@@ -1999,7 +2015,7 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.pin",
-        "rank": 14,
+        "rank": 13,
         "x": 5360,
         "y": 1128
       }
@@ -2398,8 +2414,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 14,
-        "x": 7360,
+        "rank": 10,
+        "x": 6520,
         "y": 1472
       }
     },
@@ -2482,8 +2498,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 14,
-        "x": 7360,
+        "rank": 10,
+        "x": 6520,
         "y": 1300
       }
     },
@@ -2738,9 +2754,9 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 14,
-        "x": 7360,
-        "y": 1128
+        "rank": 13,
+        "x": 7080,
+        "y": 1300
       }
     },
     {
@@ -2917,7 +2933,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7680,
+        "x": 7400,
         "y": 1668
       }
     },
@@ -2983,7 +2999,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7680,
+        "x": 7400,
         "y": 1840
       }
     },
@@ -3049,7 +3065,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 10,
-        "x": 7960,
+        "x": 7680,
         "y": 1668
       }
     },
@@ -3116,7 +3132,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 8240,
+        "x": 7960,
         "y": 1840
       }
     },
@@ -3206,7 +3222,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 15,
-        "x": 8800,
+        "x": 8520,
         "y": 1668
       }
     },
@@ -3266,7 +3282,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 8240,
+        "x": 7960,
         "y": 1668
       }
     },
@@ -3354,7 +3370,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 8240,
+        "x": 7960,
         "y": 2012
       }
     },
@@ -3439,7 +3455,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 14,
-        "x": 8520,
+        "x": 8240,
         "y": 1668
       }
     },
@@ -3517,8 +3533,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 15,
-        "x": 8800,
+        "rank": 14,
+        "x": 8240,
         "y": 2012
       }
     },
@@ -3579,8 +3595,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 15,
-        "x": 8800,
+        "rank": 14,
+        "x": 8240,
         "y": 1840
       }
     },
@@ -3654,7 +3670,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 13,
-        "x": 9120,
+        "x": 8840,
         "y": 1128
       }
     },
@@ -3741,7 +3757,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 14,
-        "x": 9400,
+        "x": 9120,
         "y": 1128
       }
     }
@@ -4069,105 +4085,6 @@
           "output": "clossys/agents/*/*/slot.json",
           "input": "clossys/agents/*/*/slot.json",
           "schema": "slot"
-        }
-      ]
-    },
-    {
-      "from": "retire",
-      "to": "director.store",
-      "via": [
-        {
-          "output": "clossys/agents/*/ia.json",
-          "input": "clossys/agents/director/ia.json",
-          "schema": "ia"
-        }
-      ]
-    },
-    {
-      "from": "retire",
-      "to": "constitution",
-      "via": [
-        {
-          "output": "clossys/agents/*/ia.json",
-          "input": "clossys/agents/*/ia.json",
-          "schema": "ia"
-        }
-      ]
-    },
-    {
-      "from": "retire",
-      "to": "options",
-      "via": [
-        {
-          "output": "clossys/agents/*/ia.json",
-          "input": "clossys/agents/*/ia.json",
-          "schema": "ia"
-        }
-      ]
-    },
-    {
-      "from": "retire",
-      "to": "specimen",
-      "via": [
-        {
-          "output": "clossys/agents/*/ia.json",
-          "input": "clossys/agents/*/ia.json",
-          "schema": "ia"
-        }
-      ]
-    },
-    {
-      "from": "retire",
-      "to": "render",
-      "via": [
-        {
-          "output": "clossys/agents/*/ia.json",
-          "input": "clossys/agents/*/ia.json",
-          "schema": "ia"
-        }
-      ]
-    },
-    {
-      "from": "retire",
-      "to": "studio.map",
-      "via": [
-        {
-          "output": "clossys/agents/*/ia.json",
-          "input": "clossys/agents/*/ia.json",
-          "schema": "ia"
-        }
-      ]
-    },
-    {
-      "from": "retire",
-      "to": "workspace.check",
-      "via": [
-        {
-          "output": "clossys/agents/*/ia.json",
-          "input": "clossys/agents/*/ia.json",
-          "schema": "ia"
-        }
-      ]
-    },
-    {
-      "from": "retire",
-      "to": "build.receipt",
-      "via": [
-        {
-          "output": "clossys/agents/*/ia.json",
-          "input": "clossys/agents/*/ia.json",
-          "schema": "ia"
-        }
-      ]
-    },
-    {
-      "from": "retire",
-      "to": "studio.produce",
-      "via": [
-        {
-          "output": "clossys/agents/*/ia.json",
-          "input": "clossys/agents/*/ia.json",
-          "schema": "ia"
         }
       ]
     },
@@ -7859,8 +7776,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 12899,
-      "after": 12781
+      "before": 12231,
+      "after": 11977
     },
     "lanes": [
       {
@@ -7993,14 +7910,14 @@
         "index": 9,
         "x": 5680,
         "y": -72,
-        "width": 1920,
+        "width": 1640,
         "round": "publish",
         "name": "assemble"
       },
       {
         "id": "publish.check",
         "index": 10,
-        "x": 7680,
+        "x": 7400,
         "y": -72,
         "width": 1360,
         "round": "publish",
@@ -8009,7 +7926,7 @@
       {
         "id": "publish.publish",
         "index": 11,
-        "x": 9120,
+        "x": 8840,
         "y": -72,
         "width": 520,
         "round": "publish",
@@ -8047,7 +7964,7 @@
         "index": 2,
         "x": 4480,
         "y": -128,
-        "width": 5160,
+        "width": 4880,
         "stages": [
           "publish.make",
           "publish.pin",
@@ -8168,10 +8085,6 @@
       },
       {
         "from": "publisher.candidates",
-        "to": "options"
-      },
-      {
-        "from": "retire",
         "to": "options"
       },
       {

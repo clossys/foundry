@@ -92,12 +92,20 @@
         ],
         "outputs": [
           {
-            "glob": "clossys/agents/*/*/retired/*.json",
+            "glob": "clossys/agents/*/*/retired/*.md.json",
             "schema": "retire"
           },
           {
-            "glob": "clossys/agents/*/ia.json",
-            "schema": "ia"
+            "glob": "clossys/agents/*/*/retired/*.json.json",
+            "schema": "retire"
+          },
+          {
+            "glob": "clossys/agents/director/*/retired/*.md",
+            "schema": "candidate-brief"
+          },
+          {
+            "glob": "clossys/agents/writer/*/retired/*.md",
+            "schema": "candidate-strings"
           }
         ],
         "pass": {
@@ -130,12 +138,20 @@
           ],
           "write": [
             {
-              "glob": "clossys/agents/*/*/retired/*.json",
+              "glob": "clossys/agents/*/*/retired/*.md.json",
               "schema": "retire"
             },
             {
-              "glob": "clossys/agents/*/ia.json",
-              "schema": "ia"
+              "glob": "clossys/agents/*/*/retired/*.json.json",
+              "schema": "retire"
+            },
+            {
+              "glob": "clossys/agents/director/*/retired/*.md",
+              "schema": "candidate-brief"
+            },
+            {
+              "glob": "clossys/agents/writer/*/retired/*.md",
+              "schema": "candidate-strings"
             }
           ],
           "checks": [
