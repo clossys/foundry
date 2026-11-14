@@ -1,0 +1,13 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.glyph",
+  "produces": [
+    "asset.glyph"
+  ],
+  "rung": "create",
+  "axes": [
+    "metaphor",
+    "construction",
+    "weight"
+  ]
+}

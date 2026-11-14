@@ -1,0 +1,16 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.tokens",
+  "produces": [
+    "token.color",
+    "token.typeface",
+    "token.scale"
+  ],
+  "rung": "create",
+  "axes": [
+    "temperament",
+    "departure",
+    "emphasis"
+  ],
+  "generator": "generate.mjs"
+}

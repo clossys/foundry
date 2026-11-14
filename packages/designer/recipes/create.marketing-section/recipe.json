@@ -1,0 +1,13 @@
+{
+  "schema": "clossys.recipe/1",
+  "id": "create.marketing-section",
+  "produces": [
+    "section.site"
+  ],
+  "rung": "create",
+  "axes": [
+    "layout",
+    "emphasis",
+    "rhythm"
+  ]
+}
