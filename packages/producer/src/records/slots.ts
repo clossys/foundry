@@ -9,7 +9,7 @@
 import { execFileSync } from "node:child_process";
 import { closeSync, constants, existsSync, fstatSync, lstatSync, openSync, readdirSync, readFileSync, realpathSync, statSync, watch, type FSWatcher, type Stats } from "node:fs";
 import { lstat } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStoreEntry, DirectorStoreError, DirectorStoreFault, DirectorStoreReader } from "@clossys/director";
 import { sha256Hex } from "./hash.js";
 import {
@@ -113,7 +113,52 @@ function memoFor(path: string): TreeMemo | undefined {
   }
   return undefined;
 }
+/**
+ * A planned-write overlay (`clossys ia --dry`): while `withModelOverlay` runs, each file it names
+ * reads as its planned text and each missing folder above one as an empty directory, so the slot
+ * model check judges a write before a byte is written. Overlay answers bypass the tree memo and
+ * are never kept; the overlay lives only for its synchronous call and never nests.
+ */
+interface Overlay { readonly files: ReadonlyMap<string, string>; readonly dirs: ReadonlyMap<string, ReadonlySet<string>> }
+let overlay: Overlay | undefined;
+/** Runs `fn` (synchronous) with `files` (path, text) read as if written; nothing touches the disk. */
+export function withModelOverlay<T>(files: readonly (readonly [string, string])[], fn: () => T): T {
+  if (overlay) throw new Error("model overlays do not nest");
+  const texts = new Map<string, string>(), dirs = new Map<string, Set<string>>();
+  for (const [path, text] of files) {
+    let child = resolve(path);
+    texts.set(child, text);
+    for (let parent = dirname(child); parent !== child; child = parent, parent = dirname(parent)) {
+      const names = dirs.get(parent) ?? new Set<string>();
+      names.add(basename(child));
+      dirs.set(parent, names);
+    }
+  }
+  overlay = { files: texts, dirs };
+  try { return fn(); } finally { overlay = undefined; }
+}
+const overlayStats = (file: boolean, size: number) => ({ isFile: () => file, isDirectory: () => !file, isSymbolicLink: () => false, size, mtimeMs: 0, dev: 0, ino: 0 }) as unknown as Stats;
+const realOrUndefined = <T>(read: () => T): T | undefined => { try { return read(); } catch (error) { if (isAbsent(error)) return undefined; throw error; } };
+/** The overlay's answer for one read, or undefined when the overlay does not cover the path. */
+function overlaid(op: string, path: string, real: () => unknown): { value: unknown } | undefined {
+  const target = resolve(path);
+  const text = overlay!.files.get(target), names = overlay!.dirs.get(target);
+  if (text !== undefined) {
+    if (op === "lstat" || op === "stat") return { value: overlayStats(true, Buffer.byteLength(text)) };
+    if (op === "exists") return { value: true };
+    if (op === "text") return { value: text };
+    if (op === "buffer") return { value: Buffer.from(text) };
+    if (op === "sha") return { value: real() };
+    return undefined;
+  }
+  if (!names) return undefined;
+  if (op === "lstat" || op === "stat") return { value: realOrUndefined(real) ?? overlayStats(false, 0) };
+  if (op === "exists") return { value: true };
+  if (op === "list") return { value: [...new Set([...((realOrUndefined(real) as string[] | undefined) ?? []), ...names])] };
+  return undefined;
+}
 function kept<T>(op: string, path: string, read: () => T): T {
+  if (overlay) { const hit = overlaid(op, path, read); if (hit) return hit.value as T; }
   const memo = memoFor(path);
   if (!memo) return read();
   const key = `${op}\0${path}`;

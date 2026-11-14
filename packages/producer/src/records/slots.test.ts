@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "./hash.js";
 import { jsonBytes, serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent, type SlotDoc } from "./slot-model/index.js";
-import { listSeats, listSlots, readCandidate, readIa, readSeatText, readSlot, readSlotState, readiness, rejectedSlots, seatStates, slotIndex, usedBy } from "./slots.js";
+import { isModelDir, listModelDir, listSeats, listSlots, modelExists, readCandidate, readIa, readModelText, readSeatText, readSlot, readSlotState, readiness, rejectedSlots, seatStates, slotIndex, usedBy, withModelOverlay } from "./slots.js";
 import { validateIa, validateSlotDoc } from "./slot-model/index.js";
 
 let root: string;
@@ -292,5 +292,22 @@ describe("the seat kind (Producer tree)", () => {
   it("lists no seats without a Producer ia.json, and seats never count as slots", () => {
     expect(listSeats(root)).toEqual([]);
     expect([...slotIndex(root).keys()].some(id => id.startsWith("pin."))).toBe(false);
+  });
+});
+
+describe("planned-write overlay (withModelOverlay, clossys ia --dry)", () => {
+  it("reads planned files and their new folders inside the call only, and writes nothing", () => {
+    const ia = join(root, "agents", "designer", "ia.json"), fresh = join(root, "agents", "designer", "components.planned", "slot.json");
+    const planned = jsonBytes({ planned: true });
+    const before = readFileSync(ia, "utf8");
+    const seen = withModelOverlay([[ia, planned], [fresh, planned]], () => ({
+      ia: readModelText(ia), fresh: readModelText(fresh), exists: modelExists(fresh),
+      folder: isModelDir(join(root, "agents", "designer", "components.planned")), listed: listModelDir(join(root, "agents", "designer")).sort(),
+    }));
+    expect(seen).toEqual({ ia: planned, fresh: planned, exists: true, folder: true, listed: ["components.planned", "components.synthetic", "ia.json"] });
+    expect(readModelText(ia)).toBe(before);
+    expect(modelExists(fresh)).toBe(false);
+    expect(listModelDir(join(root, "agents", "designer")).sort()).toEqual(["components.synthetic", "ia.json"]);
+    expect(() => withModelOverlay([], () => withModelOverlay([], () => 0))).toThrow(/do not nest/);
   });
 });

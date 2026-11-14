@@ -324,6 +324,64 @@ describe("--dry", () => {
   });
 });
 
+describe("--contract --under: a slot placed before the end renumbers every later slot.json (IA-V2)", () => {
+  const later = ["assets.favicon", "assets.app-icon", "frames.studio-shell", "frames.workspace"];
+  const orders = () => Object.fromEntries(["assets.logo-mark", "assets.logo-word", "assets.logo-glyph", ...later].filter(id => tree()[`clossys/agents/designer/${id}/slot.json`]).map(id => [id, slotOf("designer", id).ia.order]));
+  let contract: string;
+  beforeEach(() => { contract = join(workspace, "contract.json"); writeFileSync(contract, jsonBytes({ shape: "svg" })); });
+
+  it("places a slot in the middle, renumbers the later slots (order only) and passes the slot model check", async () => {
+    const result = await owned("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork");
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(result.message).toMatch(/4 other slot\.json renumbered \(order only\)/);
+    clean();
+    expect(orders()).toEqual({ "assets.logo-mark": 0, "assets.logo-word": 1, "assets.logo-glyph": 2, "assets.favicon": 3, "assets.app-icon": 4, "frames.studio-shell": 5, "frames.workspace": 6 });
+    expect(slotOf("designer", "assets.favicon").ia).toEqual({ l0: "assets", l1: "assets.app-identity", l2: "app-identity-browser", order: 3 });
+    expect(lastChange("designer")).toEqual({ op: "place", ownerRef: REF, at: AT, detail: "placed assets.logo-glyph under assets.logo/logo-artwork; 4 later slot.json renumbered (order only)", slotFiles: 5 });
+  });
+
+  it("renumbers without an owner ref too, and records no change", async () => {
+    expect(await ia("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork")).toMatchObject({ exitCode: 0 });
+    clean();
+    expect(slotOf("designer", "frames.workspace").ia.order).toBe(6);
+    expect(iaOf("designer").changes).toBeUndefined();
+  });
+
+  it("--remove of a middle slot renumbers the later slots back", async () => {
+    expect(await ia("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork")).toMatchObject({ exitCode: 0 });
+    rmSync(join(agentDir("designer"), "assets.logo-glyph"), { recursive: true });
+    const removed = await owned("designer/assets.logo-glyph", "--remove");
+    expect(removed).toMatchObject({ exitCode: 0 });
+    clean();
+    expect(orders()).toEqual({ "assets.logo-mark": 0, "assets.logo-word": 1, "assets.favicon": 2, "assets.app-icon": 3, "frames.studio-shell": 4, "frames.workspace": 5 });
+    expect(lastChange("designer")).toMatchObject({ op: "remove", slotFiles: 4 });
+  });
+
+  it("--dry runs the post-write slot model check in memory: it passes where the write passes and lists every file", async () => {
+    const before = tree();
+    const result = await owned("designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", "--dry");
+    expect(result).toMatchObject({ exitCode: 0, output: { dry: true } });
+    expect((result.output as { writes: string[] }).writes).toEqual([
+      "clossys/agents/designer/ia.json", "clossys/agents/designer/assets.logo-glyph/slot.json",
+      ...later.map(id => `clossys/agents/designer/${id}/slot.json`),
+    ]);
+    expect(tree()).toEqual(before);
+  });
+
+  it("--dry fails (exit 1) exactly when the real write would be refused, and writes nothing", async () => {
+    const before = tree();
+    const args = ["designer/assets.logo-glyph", "--contract", contract, "--under", "assets.logo/logo-artwork", "--inputs", "assets.not-a-slot"];
+    const dry = await owned(...args, "--dry");
+    expect(dry).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^ia --dry refused: the slot model check would fail after the write: ref-unknown .*assets\.not-a-slot/) });
+    expect(dry.message).toMatch(/write clossys\/agents\/designer\/assets\.logo-glyph\/slot\.json/);
+    expect(dry.output).toMatchObject({ dry: true, refused: true, writes: expect.arrayContaining(["clossys/agents/designer/ia.json"]) });
+    expect(tree()).toEqual(before);
+    const real = await owned(...args);
+    expect(real).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^ia refused: the slot model check fails after the write: ref-unknown/) });
+    expect(tree()).toEqual(before);
+  });
+});
+
 it("ia --help lists the regroup operations", async () => {
   const help = await runIaCli(["--help"], workspace);
   for (const flag of ["--owner-ref", "--move", "--extension", "--add", "--rename", "--merge", "--drop", "--reorder", "--assign", "--layers", "--axes", "--dry"]) expect(help.message).toContain(flag);

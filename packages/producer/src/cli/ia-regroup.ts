@@ -347,6 +347,43 @@ const position = (value: unknown) => {
   return `${ia.l0 ? `${ia.l0}/` : ""}${ia.l1}/${ia.l2}#${ia.order}`;
 };
 
+/** The slot.json rewrites an ia.json change carries: the files with their new bytes, level moves listed, order-only renumbers counted. */
+export interface PositionFollow { readonly writes: [string, string][]; readonly moved: string[]; readonly reordered: number }
+/**
+ * Each slot.json whose `ia` was the slot's position in `before` and differs in `next` is rewritten to
+ * its `next` position (L0, L1, L2 and the agent-wide order), as `retire --slot` renumbers; the targeted
+ * slot is always rewritten (and its `extension` set). `except` names a slot whose slot.json the caller
+ * writes itself (a slot being placed). Shared by every regroup plan and by `--contract --under`.
+ */
+export function followPositions(consumer: string, agent: SlotAgent, before: IaFile, next: IaFile, slot?: { id: string; extension?: boolean }, except?: string): PositionFollow | { error: string } {
+  const was = slotPositions(agent, before as unknown as IaDoc), now = slotPositions(agent, next as unknown as IaDoc);
+  const writes: [string, string][] = [], moved: string[] = [];
+  let reordered = 0;
+  for (const [id, at] of now) {
+    if (id === except) continue;
+    const file = slotFile(slotDir(consumer, agent, id));
+    const targeted = slot?.id === id;
+    if (!modelExists(file)) {
+      if (targeted && slot?.extension !== undefined) return { error: `${agent}/${id} has no slot.json: write its contract first (--contract <file>)` };
+      continue;
+    }
+    const doc = JSON.parse(readModelText(file)) as Record<string, unknown>;
+    let nextDoc: Record<string, unknown> = doc;
+    if (jsonBytes(doc.ia) !== jsonBytes(at) && (targeted || jsonBytes(doc.ia) === jsonBytes(was.get(id)))) nextDoc = { ...nextDoc, ia: { ...at } };
+    if (targeted && slot?.extension === true) nextDoc = { ...nextDoc, extension: true };
+    if (targeted && slot?.extension === false) { const { extension: _drop, ...rest } = nextDoc; nextDoc = rest; }
+    const bytes = jsonBytes(nextDoc);
+    if (bytes === jsonBytes(doc)) continue;
+    const issues = validateSlotDoc(nextDoc, file);
+    if (issues.length) return { error: `${agent}/${id}: ${issues.map(issue => issue.message).join("; ")}` };
+    writes.push([file, bytes]);
+    const levelChanged = position({ ...(doc.ia as object), order: 0 }) !== position({ ...at, order: 0 });
+    if (targeted || levelChanged) moved.push(`slot.json ${id}: ia ${position(doc.ia)} -> ${position(at)}${targeted && slot?.extension !== undefined ? `, extension ${slot.extension}` : ""}`);
+    else reordered++;
+  }
+  return { writes, moved, reordered };
+}
+
 /**
  * The files one guarded write changes for an edit: ia.json (with the owner-authorized change recorded
  * when there is an owner ref) and each slot.json whose position follows. Validated, never written here.
@@ -359,30 +396,9 @@ export function planIaWrite(consumer: string, agent: SlotAgent, before: IaFile, 
     const unknown = Object.keys(next.axes.L1 ?? {}).filter(key => !levels.has(key));
     if (unknown.length) return { error: `axes.L1 names ${unknown.join(", ")}, which ${unknown.length === 1 ? "is" : "are"} not an L0 of this IA (${[...levels].join(", ") || "none"})` };
   }
-  const was = slotPositions(agent, before as unknown as IaDoc), now = slotPositions(agent, next as unknown as IaDoc);
-  const writes: [string, string][] = [], moved: string[] = [];
-  let reordered = 0;
-  for (const [id, at] of now) {
-    const file = slotFile(slotDir(consumer, agent, id));
-    const targeted = edit.slot?.id === id;
-    if (!modelExists(file)) {
-      if (targeted && edit.slot?.extension !== undefined) return { error: `${agent}/${id} has no slot.json: write its contract first (--contract <file>)` };
-      continue;
-    }
-    const doc = JSON.parse(readModelText(file)) as Record<string, unknown>;
-    let nextDoc: Record<string, unknown> = doc;
-    if (jsonBytes(doc.ia) !== jsonBytes(at) && (targeted || jsonBytes(doc.ia) === jsonBytes(was.get(id)))) nextDoc = { ...nextDoc, ia: { ...at } };
-    if (targeted && edit.slot?.extension === true) nextDoc = { ...nextDoc, extension: true };
-    if (targeted && edit.slot?.extension === false) { const { extension: _drop, ...rest } = nextDoc; nextDoc = rest; }
-    const bytes = jsonBytes(nextDoc);
-    if (bytes === jsonBytes(doc)) continue;
-    const issues = validateSlotDoc(nextDoc, file);
-    if (issues.length) return { error: `${agent}/${id}: ${issues.map(issue => issue.message).join("; ")}` };
-    writes.push([file, bytes]);
-    const levelChanged = position({ ...(doc.ia as object), order: 0 }) !== position({ ...at, order: 0 });
-    if (targeted || levelChanged) moved.push(`slot.json ${id}: ia ${position(doc.ia)} -> ${position(at)}${targeted && edit.slot?.extension !== undefined ? `, extension ${edit.slot.extension}` : ""}`);
-    else reordered++;
-  }
+  const follow = followPositions(consumer, agent, before, next, edit.slot);
+  if ("error" in follow) return follow;
+  const { writes, moved, reordered } = follow;
   const { changes: _beforeChanges, ...beforeRest } = before, { changes: _nextChanges, ...nextRest } = next;
   if (jsonBytes(beforeRest) === jsonBytes(nextRest) && !writes.length) return { unchanged: `${edit.detail}: nothing changes` };
   if (change.ownerRef) next.changes = [...(next.changes ?? []), { op: change.op, ownerRef: change.ownerRef, at: change.at, detail: edit.detail, slotFiles: writes.length }];
