@@ -85,6 +85,104 @@
       }
     },
     {
+      "id": "retire",
+      "kind": "decide:judgment",
+      "actor": "owner",
+      "stage": "direct.brief",
+      "summary": "Retire a candidate (into its slot's retired/) or a whole slot (out of ia.json), with a clossys.retire/1 record (clossys retire).",
+      "inputs": [
+        {
+          "glob": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "glob": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "glob": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ],
+      "outputs": [
+        {
+          "glob": "clossys/agents/*/*/retired/*.json",
+          "schema": "retire"
+        },
+        {
+          "glob": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        }
+      ],
+      "command": {
+        "cli": {
+          "verb": "retire",
+          "parser": "src/cli/owner.ts"
+        },
+        "entry": "src/cli/owner.ts#runRetireCli",
+        "skill": "packages/producer/actions/retire/skill.md"
+      },
+      "checks": [
+        "workspace"
+      ],
+      "agent": "owner",
+      "package": "producer",
+      "run": "clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>",
+      "pass": {
+        "command": "clossys check --slots",
+        "exit": {
+          "pass": [
+            0
+          ],
+          "fail": [
+            1
+          ],
+          "error": [
+            2
+          ]
+        }
+      },
+      "record": "clossys.pipeline-run/1",
+      "decider": "owner",
+      "packet": {
+        "inputs": [
+          "clossys/agents/*/ia.json",
+          "clossys/agents/*/*/slot.json",
+          "clossys/agents/*/*/pin.json"
+        ],
+        "write": [
+          {
+            "glob": "clossys/agents/*/*/retired/*.json",
+            "schema": "retire"
+          },
+          {
+            "glob": "clossys/agents/*/ia.json",
+            "schema": "ia"
+          }
+        ],
+        "checks": [
+          "workspace"
+        ]
+      },
+      "uses": [
+        "skill/SKILL.md"
+      ],
+      "seat": "clossys/agents/producer/seat.retire/pin.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "you",
+        "stage": "direct.brief",
+        "rank": 13,
+        "x": 560,
+        "y": 0
+      }
+    },
+    {
       "id": "evidence",
       "kind": "decide:judgment",
       "actor": "owner",
@@ -486,7 +584,7 @@
         "lane": "director",
         "stage": "direct.make",
         "rank": 1,
-        "x": 600,
+        "x": 880,
         "y": 540
       }
     },
@@ -572,7 +670,7 @@
         "lane": "director",
         "stage": "direct.pin",
         "rank": 6,
-        "x": 1200,
+        "x": 1480,
         "y": 540
       }
     },
@@ -655,8 +753,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "direct.pin",
-        "rank": 7,
-        "x": 1480,
+        "rank": 14,
+        "x": 1760,
         "y": 1128
       }
     },
@@ -756,7 +854,7 @@
         "lane": "you",
         "stage": "direct.pin",
         "rank": 5,
-        "x": 920,
+        "x": 1200,
         "y": 0
       }
     },
@@ -818,7 +916,7 @@
         "lane": "publisher",
         "stage": "design.brief",
         "rank": 7,
-        "x": 1800,
+        "x": 2080,
         "y": 1128
       }
     },
@@ -880,7 +978,7 @@
         "lane": "publisher",
         "stage": "design.brief",
         "rank": 7,
-        "x": 1800,
+        "x": 2080,
         "y": 1300
       }
     },
@@ -980,7 +1078,7 @@
         "lane": "designer",
         "stage": "design.make",
         "rank": 3,
-        "x": 2120,
+        "x": 2400,
         "y": 736
       }
     },
@@ -1077,7 +1175,7 @@
         "lane": "writer",
         "stage": "design.make",
         "rank": 7,
-        "x": 2400,
+        "x": 2680,
         "y": 932
       }
     },
@@ -1163,7 +1261,7 @@
         "lane": "designer",
         "stage": "design.pin",
         "rank": 6,
-        "x": 3000,
+        "x": 3280,
         "y": 736
       }
     },
@@ -1249,7 +1347,7 @@
         "lane": "writer",
         "stage": "design.pin",
         "rank": 9,
-        "x": 3560,
+        "x": 3840,
         "y": 932
       }
     },
@@ -1331,7 +1429,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 8,
-        "x": 3280,
+        "x": 3560,
         "y": 172
       }
     },
@@ -1431,7 +1529,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 5,
-        "x": 2720,
+        "x": 3000,
         "y": 0
       }
     },
@@ -1531,7 +1629,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 8,
-        "x": 3280,
+        "x": 3560,
         "y": 0
       }
     },
@@ -1633,7 +1731,7 @@
         "lane": "publisher",
         "stage": "publish.make",
         "rank": 10,
-        "x": 4200,
+        "x": 4480,
         "y": 1128
       }
     },
@@ -1719,7 +1817,7 @@
         "lane": "publisher",
         "stage": "publish.pin",
         "rank": 12,
-        "x": 4800,
+        "x": 5080,
         "y": 1128
       }
     },
@@ -1819,7 +1917,7 @@
         "lane": "you",
         "stage": "publish.pin",
         "rank": 11,
-        "x": 4520,
+        "x": 4800,
         "y": 0
       }
     },
@@ -1901,8 +1999,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.pin",
-        "rank": 13,
-        "x": 5080,
+        "rank": 14,
+        "x": 5360,
         "y": 1128
       }
     },
@@ -1971,7 +2069,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 5960,
+        "x": 6240,
         "y": 1128
       }
     },
@@ -2040,7 +2138,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 10,
-        "x": 6240,
+        "x": 6520,
         "y": 1128
       }
     },
@@ -2121,7 +2219,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 13,
-        "x": 6800,
+        "x": 7080,
         "y": 1128
       }
     },
@@ -2213,7 +2311,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 4,
-        "x": 5680,
+        "x": 5960,
         "y": 1128
       }
     },
@@ -2300,8 +2398,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 10,
-        "x": 6240,
+        "rank": 14,
+        "x": 7360,
         "y": 1472
       }
     },
@@ -2384,8 +2482,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 10,
-        "x": 6240,
+        "rank": 14,
+        "x": 7360,
         "y": 1300
       }
     },
@@ -2453,7 +2551,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 11,
-        "x": 6520,
+        "x": 6800,
         "y": 1128
       }
     },
@@ -2530,7 +2628,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 2,
-        "x": 5400,
+        "x": 5680,
         "y": 1128
       }
     },
@@ -2640,9 +2738,9 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish.assemble",
-        "rank": 13,
-        "x": 6800,
-        "y": 1300
+        "rank": 14,
+        "x": 7360,
+        "y": 1128
       }
     },
     {
@@ -2703,7 +2801,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 5960,
+        "x": 6240,
         "y": 1300
       }
     },
@@ -2760,7 +2858,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 5960,
+        "x": 6240,
         "y": 1472
       }
     },
@@ -2819,7 +2917,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7120,
+        "x": 7680,
         "y": 1668
       }
     },
@@ -2885,7 +2983,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 7,
-        "x": 7120,
+        "x": 7680,
         "y": 1840
       }
     },
@@ -2951,7 +3049,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 10,
-        "x": 7400,
+        "x": 7960,
         "y": 1668
       }
     },
@@ -3018,7 +3116,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 7680,
+        "x": 8240,
         "y": 1840
       }
     },
@@ -3108,7 +3206,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 15,
-        "x": 8240,
+        "x": 8800,
         "y": 1668
       }
     },
@@ -3168,7 +3266,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 7680,
+        "x": 8240,
         "y": 1668
       }
     },
@@ -3256,7 +3354,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 13,
-        "x": 7680,
+        "x": 8240,
         "y": 2012
       }
     },
@@ -3341,7 +3439,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 14,
-        "x": 7960,
+        "x": 8520,
         "y": 1668
       }
     },
@@ -3419,8 +3517,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 14,
-        "x": 7960,
+        "rank": 15,
+        "x": 8800,
         "y": 2012
       }
     },
@@ -3481,8 +3579,8 @@
       "layout": {
         "lane": "checks",
         "stage": "publish.check",
-        "rank": 14,
-        "x": 7960,
+        "rank": 15,
+        "x": 8800,
         "y": 1840
       }
     },
@@ -3556,7 +3654,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 13,
-        "x": 8560,
+        "x": 9120,
         "y": 1128
       }
     },
@@ -3643,12 +3741,28 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 14,
-        "x": 8840,
+        "x": 9400,
         "y": 1128
       }
     }
   ],
   "edges": [
+    {
+      "from": "ia",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
     {
       "from": "ia",
       "to": "director.candidates",
@@ -3959,6 +4073,105 @@
       ]
     },
     {
+      "from": "retire",
+      "to": "director.store",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/director/ia.json",
+          "schema": "ia"
+        }
+      ]
+    },
+    {
+      "from": "retire",
+      "to": "constitution",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        }
+      ]
+    },
+    {
+      "from": "retire",
+      "to": "options",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        }
+      ]
+    },
+    {
+      "from": "retire",
+      "to": "specimen",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        }
+      ]
+    },
+    {
+      "from": "retire",
+      "to": "render",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        }
+      ]
+    },
+    {
+      "from": "retire",
+      "to": "studio.map",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        }
+      ]
+    },
+    {
+      "from": "retire",
+      "to": "workspace.check",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        }
+      ]
+    },
+    {
+      "from": "retire",
+      "to": "build.receipt",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        }
+      ]
+    },
+    {
+      "from": "retire",
+      "to": "studio.produce",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        }
+      ]
+    },
+    {
       "from": "evidence",
       "to": "director.candidates",
       "via": [
@@ -3982,6 +4195,17 @@
           "output": "clossys/evidence/director/*.md",
           "input": "clossys/evidence/director/*.md",
           "schema": "director-evidence"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -4300,6 +4524,17 @@
     },
     {
       "from": "pick.director",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.director",
       "to": "director.store",
       "via": [
         {
@@ -4515,6 +4750,22 @@
           "output": "clossys/agents/director/*/pin.json#basis",
           "input": "clossys/agents/*/*/pin.json",
           "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin.director",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/director/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
         }
       ]
     },
@@ -5230,6 +5481,17 @@
     },
     {
       "from": "pick.designer",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.designer",
       "to": "publisher.candidates",
       "via": [
         {
@@ -5428,6 +5690,17 @@
     },
     {
       "from": "pick.writer",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.writer",
       "to": "publisher.candidates",
       "via": [
         {
@@ -5604,6 +5877,17 @@
     },
     {
       "from": "writer.approve",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "writer.approve",
       "to": "publisher.candidates",
       "via": [
         {
@@ -5775,6 +6059,22 @@
           "output": "clossys/agents/writer/*/pin.json",
           "input": "clossys/agents/*/*/pin.json",
           "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin.designer",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/designer/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
         }
       ]
     },
@@ -6048,6 +6348,22 @@
         },
         {
           "output": "clossys/agents/designer/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "pin.writer",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/writer/*/slot.json#notNeeded",
           "input": "clossys/agents/*/*/slot.json",
           "schema": "slot"
         }
@@ -6452,6 +6768,17 @@
     },
     {
       "from": "pick.publisher",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/pin.json#basis",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pick.publisher",
       "to": "constitution",
       "via": [
         {
@@ -6579,6 +6906,22 @@
           "output": "clossys/agents/publisher/*/pin.json#basis",
           "input": "clossys/agents/*/*/pin.json",
           "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin.publisher",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/publisher/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
         }
       ]
     },
@@ -6789,6 +7132,22 @@
           "output": "pkg:studio/compile.lock.json",
           "input": "pkg:studio/compile.lock.json",
           "schema": "compile-lock"
+        }
+      ]
+    },
+    {
+      "from": "options",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json#options",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json#varyOn",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
         }
       ]
     },
@@ -7155,6 +7514,17 @@
         },
         {
           "output": "clossys/agents/*/*/slot.json#varyOn",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "derive.uses",
+      "to": "retire",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json#uses",
           "input": "clossys/agents/*/*/slot.json",
           "schema": "slot"
         }
@@ -7489,8 +7859,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 11785,
-      "after": 11568
+      "before": 12899,
+      "after": 12781
     },
     "lanes": [
       {
@@ -7542,14 +7912,14 @@
         "index": 0,
         "x": 0,
         "y": -72,
-        "width": 520,
+        "width": 800,
         "round": "direct",
         "name": "brief"
       },
       {
         "id": "direct.make",
         "index": 1,
-        "x": 600,
+        "x": 880,
         "y": -72,
         "width": 240,
         "round": "direct",
@@ -7558,7 +7928,7 @@
       {
         "id": "direct.pin",
         "index": 2,
-        "x": 920,
+        "x": 1200,
         "y": -72,
         "width": 800,
         "round": "direct",
@@ -7567,7 +7937,7 @@
       {
         "id": "design.brief",
         "index": 3,
-        "x": 1800,
+        "x": 2080,
         "y": -72,
         "width": 240,
         "round": "design",
@@ -7576,7 +7946,7 @@
       {
         "id": "design.make",
         "index": 4,
-        "x": 2120,
+        "x": 2400,
         "y": -72,
         "width": 520,
         "round": "design",
@@ -7585,7 +7955,7 @@
       {
         "id": "design.pin",
         "index": 5,
-        "x": 2720,
+        "x": 3000,
         "y": -72,
         "width": 1080,
         "round": "design",
@@ -7594,7 +7964,7 @@
       {
         "id": "design.select",
         "index": 6,
-        "x": 3880,
+        "x": 4160,
         "y": -72,
         "width": 240,
         "round": "design",
@@ -7603,7 +7973,7 @@
       {
         "id": "publish.make",
         "index": 7,
-        "x": 4200,
+        "x": 4480,
         "y": -72,
         "width": 240,
         "round": "publish",
@@ -7612,7 +7982,7 @@
       {
         "id": "publish.pin",
         "index": 8,
-        "x": 4520,
+        "x": 4800,
         "y": -72,
         "width": 800,
         "round": "publish",
@@ -7621,16 +7991,16 @@
       {
         "id": "publish.assemble",
         "index": 9,
-        "x": 5400,
+        "x": 5680,
         "y": -72,
-        "width": 1640,
+        "width": 1920,
         "round": "publish",
         "name": "assemble"
       },
       {
         "id": "publish.check",
         "index": 10,
-        "x": 7120,
+        "x": 7680,
         "y": -72,
         "width": 1360,
         "round": "publish",
@@ -7639,7 +8009,7 @@
       {
         "id": "publish.publish",
         "index": 11,
-        "x": 8560,
+        "x": 9120,
         "y": -72,
         "width": 520,
         "round": "publish",
@@ -7652,7 +8022,7 @@
         "index": 0,
         "x": 0,
         "y": -128,
-        "width": 1720,
+        "width": 2000,
         "stages": [
           "direct.brief",
           "direct.make",
@@ -7662,7 +8032,7 @@
       {
         "id": "design",
         "index": 1,
-        "x": 1800,
+        "x": 2080,
         "y": -128,
         "width": 2320,
         "stages": [
@@ -7675,9 +8045,9 @@
       {
         "id": "publish",
         "index": 2,
-        "x": 4200,
+        "x": 4480,
         "y": -128,
-        "width": 4880,
+        "width": 5160,
         "stages": [
           "publish.make",
           "publish.pin",
@@ -7801,6 +8171,10 @@
         "to": "options"
       },
       {
+        "from": "retire",
+        "to": "options"
+      },
+      {
         "from": "writer.approve",
         "to": "derive.uses"
       },
@@ -7832,6 +8206,14 @@
         "procedure": "Decide where each L3 slot sits in its agent's IA tree (L1, L2) and what the slot is for: its contract in slot.json.",
         "command": "clossys ia"
       },
+      "issues": []
+    },
+    "retire": {
+      "path": "clossys/agents/producer/seat.retire/pin.json",
+      "state": "unassigned",
+      "by": null,
+      "llm": "open",
+      "human": "open",
       "issues": []
     },
     "evidence": {
@@ -8096,9 +8478,10 @@
       "kinds": [
         "you"
       ],
-      "steps": 10,
+      "steps": 11,
       "sources": [
-        "file"
+        "file",
+        "derived"
       ],
       "tiers": [
         "mid"
@@ -8174,7 +8557,19 @@
     "cli": {
       "ia": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8183,12 +8578,82 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
+          "value": null
+        }
+      ],
+      "retire": [
+        {
+          "flag": "--add",
+          "value": null
+        },
+        {
+          "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
       "evidence": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8197,12 +8662,40 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
       "workspace.config": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8211,12 +8704,40 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
       "seats": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8225,12 +8746,40 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
       "rules": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8239,6 +8788,22 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],
@@ -8616,7 +9181,19 @@
       ],
       "writer.approve": [
         {
+          "flag": "--add",
+          "value": null
+        },
+        {
           "flag": "--adopt",
+          "value": null
+        },
+        {
+          "flag": "--assign",
+          "value": null
+        },
+        {
+          "flag": "--drop",
           "value": null
         },
         {
@@ -8625,6 +9202,22 @@
         },
         {
           "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--layers",
+          "value": null
+        },
+        {
+          "flag": "--merge",
+          "value": null
+        },
+        {
+          "flag": "--rename",
+          "value": null
+        },
+        {
+          "flag": "--reorder",
           "value": null
         }
       ],

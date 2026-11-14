@@ -184,6 +184,7 @@
       ],
       "steps": [
         "ia",
+        "retire",
         "evidence",
         "workspace.config",
         "seats",
@@ -200,6 +201,7 @@
         "evidence",
         "ia",
         "pin",
+        "retire",
         "rule",
         "seat"
       ],
@@ -211,6 +213,7 @@
         "packages/producer/actions/pin.director/skill.md",
         "packages/producer/actions/pin.publisher/skill.md",
         "packages/producer/actions/pin.writer/skill.md",
+        "packages/producer/actions/retire/skill.md",
         "packages/producer/actions/rules/skill.md",
         "packages/producer/actions/seats/skill.md",
         "packages/producer/actions/workspace.config/skill.md",
@@ -223,6 +226,7 @@
         "packages/producer/src/cli/owner.ts#runConfigCli",
         "packages/producer/src/cli/owner.ts#runEvidenceCli",
         "packages/producer/src/cli/owner.ts#runIaCli",
+        "packages/producer/src/cli/owner.ts#runRetireCli",
         "packages/producer/src/cli/owner.ts#runRuleCli",
         "packages/producer/src/cli/owner.ts#runSeatCli",
         "packages/producer/src/cli/pin.ts",

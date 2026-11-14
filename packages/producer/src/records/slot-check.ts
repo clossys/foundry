@@ -2,12 +2,13 @@
  * `clossys check --slots [--readiness]`: the slot model's structure and coverage.
  *
  * check: folder == agents/<agent>/<slot-id> for every IA slot, slot.json ia == ia.json position, one pin, pin hash matches, a single `source`
- * key, no candidate-side status, inputs/uses name real slots, no orphans.
+ * key, no candidate-side status, inputs/uses name real slots, no orphans; a slot's retired/ holds only well-formed retired candidates.
  */
 import { join } from "node:path";
+import { validateAgainst } from "../constitution/schema.js";
 import { sha256Hex } from "./hash.js";
 import {
-  AGENT_FILES, AGENT_KIND, CANDIDATES_DIR, IA_FILE, PIN_FILE, SLOT_AGENTS, SLOT_FILE, agentDir, candidatesDir, iaPath, isNonSlotEntry, slotDir, slotRel,
+  AGENT_FILES, AGENT_KIND, CANDIDATE_NAME, CANDIDATES_DIR, IA_FILE, PIN_FILE, SLOT_AGENTS, SLOT_FILE, agentDir, candidatesDir, iaPath, isNonSlotEntry, slotDir, slotRel,
   slotPositions, validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotModelIssue,
 } from "./slot-model/index.js";
@@ -18,6 +19,51 @@ const readJsonFile = (path: string): any => JSON.parse(readModelText(path));
 
 const isDir = isModelDir;
 const list = (path: string) => listModelDir(path).sort(cmp);
+
+// ---------------- retired candidates ----------------
+/** A slot's retired candidates, as `clossys retire` writes them: `<slot>/retired/<candidate>` beside `<candidate>.json`. */
+export const RETIRED_DIR = "retired";
+const RETIRE_RECORD = /^(.+-v[1-9][0-9]*\.(?:md|json))\.json$/;
+
+/**
+ * The `retired/` folder of slot `id`: every entry is a retired candidate file or its clossys.retire/1 record
+ * (constitution schemas/retire.schema.json). A record names this slot and its own file name, its candidate's
+ * bytes sit beside it and match its sha256, and the candidate is gone from candidates/; a candidate file has
+ * a record. Anything else (a folder, an alias, another file) is an unexpected entry.
+ */
+function checkRetired(dir: string, rel: string, id: string, live: readonly string[]): SlotModelIssue[] {
+  const issues: SlotModelIssue[] = [];
+  const bad = (name: string, message: string) => issues.push({ code: "retired-invalid", path: `${rel}/${name}`, message });
+  const names = list(dir);
+  const files = new Set<string>(), records = new Set<string>();
+  for (const name of names) {
+    const record = RETIRE_RECORD.exec(name)?.[1];
+    if (record && CANDIDATE_NAME.test(record)) records.add(name);
+    else if (CANDIDATE_NAME.test(name)) files.add(name);
+    else issues.push({ code: "orphan", path: `${rel}/${name}`, message: `unexpected entry in retired folder of ${id}` });
+  }
+  const bytes = new Map<string, Buffer>();
+  for (const name of files) {
+    try { bytes.set(name, readModelBytes(join(dir, name))); } catch { /* not a regular file */ }
+    if (!bytes.has(name)) issues.push({ code: "orphan", path: `${rel}/${name}`, message: `unexpected entry in retired folder of ${id}: not a regular file` });
+    else if (!records.has(`${name}.json`)) bad(name, `retired candidate ${name} has no retire record ${name}.json`);
+  }
+  for (const name of records) {
+    const candidate = name.slice(0, -".json".length);
+    let value: unknown;
+    try { value = readJsonFile(join(dir, name)); } catch { bad(name, "retire record is not a readable JSON file"); continue; }
+    const found = validateAgainst("retire", value).map(error => `${error.at || "/"} ${error.message}`);
+    const doc = (value !== null && typeof value === "object" && !Array.isArray(value) ? value : {}) as Record<string, unknown>;
+    if (doc.slot !== id) found.push(`slot ${String(doc.slot)} is not this slot (${id})`);
+    if (doc.candidate !== candidate) found.push(`candidate ${String(doc.candidate)} is not ${candidate}, the record's file name`);
+    const file = bytes.get(candidate);
+    if (!file) found.push(`the retired candidate ${candidate} is not beside its record`);
+    else if (typeof doc.sha256 === "string" && sha256Hex(file) !== doc.sha256) found.push(`${candidate} bytes do not match the record sha256`);
+    if (live.includes(candidate)) found.push(`${candidate} is still in candidates/`);
+    if (found.length) bad(name, `retire record invalid: ${found.slice(0, 3).join("; ")}`);
+  }
+  return issues;
+}
 
 // ---------------- check ----------------
 export function checkSlotModel(consumer: string): SlotModelIssue[] {
@@ -77,7 +123,10 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
           else if (sha256Hex(readModelBytes(join(candidatesDir(dir), pin.candidate))) !== pin.sha256) issues.push({ code: "pin-hash", path: `${rel}/${PIN_FILE}`, message: `${pin.candidate} bytes do not match the pinned sha256` });
         }
       }
-      for (const name of list(dir)) if (![SLOT_FILE, PIN_FILE, CANDIDATES_DIR].includes(name) && !/^pin.*\.json$/.test(name)) issues.push({ code: "orphan", path: `${rel}/${name}`, message: `unexpected entry in slot folder ${id}` });
+      for (const name of list(dir)) {
+        if (name === RETIRED_DIR && isDir(join(dir, name))) { issues.push(...checkRetired(join(dir, name), `${rel}/${name}`, id, names)); continue; }
+        if (![SLOT_FILE, PIN_FILE, CANDIDATES_DIR].includes(name) && !/^pin.*\.json$/.test(name)) issues.push({ code: "orphan", path: `${rel}/${name}`, message: `unexpected entry in slot folder ${id}` });
+      }
     }
     // Orphans: agent-folder entries that are not an IA slot of this agent. The
     // layout is flat (agents/<agent>/<slot-id>), so grouping never shows up as

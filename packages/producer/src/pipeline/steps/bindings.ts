@@ -21,6 +21,7 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "designer.candidates": { ...NEXT, module: ["src/specimen/catalog-materialization.ts#materializeCatalogCandidate"] },
   // Owner decisions, each recorded by its own clossys verb (W6a).
   "ia": { entry: "src/cli/owner.ts#runIaCli", parser: "src/cli/owner.ts" },
+  "retire": { entry: "src/cli/owner.ts#runRetireCli", parser: "src/cli/owner.ts" },
   "evidence": { entry: "src/cli/owner.ts#runEvidenceCli", parser: "src/cli/owner.ts" },
   "workspace.config": { entry: "src/cli/owner.ts#runConfigCli", parser: "src/cli/owner.ts" },
   "seats": { entry: "src/cli/owner.ts#runSeatCli", parser: "src/cli/owner.ts" },

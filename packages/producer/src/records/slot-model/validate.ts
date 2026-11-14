@@ -13,7 +13,7 @@ export type SlotModelCode =
   | "ia-invalid" | "slot-invalid" | "slot-mismatch" | "slot-missing" | "ia-path" | "orphan"
   | "pin-invalid" | "pin-candidate" | "pin-hash"
   | "candidate-name" | "candidate-invalid" | "candidate-source" | "candidate-status"
-  | "ref-unknown" | "slot-state";
+  | "ref-unknown" | "slot-state" | "retired-invalid";
 export interface SlotModelIssue { readonly code: SlotModelCode; readonly path: string; readonly message: string }
 
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
