@@ -1,5 +1,5 @@
 /**
- * The constitution check suite (rules R01-R16, programs/release2-swaps/slot-constitution.md): types
+ * The constitution check suite (rules R01-R16 and R20, programs/release2-swaps/slot-constitution.md): types
  * shared by the context builder, the rule modules and the runner. Every rule is a pure function of
  * one `ConstitutionContext`, built once per run from one read of the tree. A rule module never opens
  * a file itself; the same records in give the same rows out.
@@ -7,8 +7,8 @@
 import type { ModelAgent } from "../records/slot-model/index.js";
 import type { MigratedEvent } from "../records/migrations.js";
 
-/** Rule ids R01..R16. */
-export type RuleId = `R${"01" | "02" | "03" | "04" | "05" | "06" | "07" | "08" | "09" | "10" | "11" | "12" | "13" | "14" | "15" | "16"}`;
+/** Rule ids R01..R16 and R20 (R17-R19 are reserved by slot-constitution.md and not yet registered). */
+export type RuleId = `R${"01" | "02" | "03" | "04" | "05" | "06" | "07" | "08" | "09" | "10" | "11" | "12" | "13" | "14" | "15" | "16" | "20"}`;
 
 /**
  * One finding. `rule` is the rule id, `check` the check id inside it (`R06.5`), `agent`/`slot`

@@ -21,9 +21,10 @@ import { R13 } from "./checks/R13-strings-pages.js";
 import { R14 } from "./checks/R14-provenance.js";
 import { R15 } from "./checks/R15-standards.js";
 import { R16 } from "./checks/R16-independence.js";
+import { R20 } from "./checks/R20-director-derived.js";
 import type { Check, RuleId, RuleModule } from "./types.js";
 
-export const RULE_MODULES: readonly RuleModule[] = [R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14, R15, R16];
+export const RULE_MODULES: readonly RuleModule[] = [R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14, R15, R16, R20];
 
 /**
  * A status: `enforced` rows fail the run; `pending` checks are stubs whose one row fails it (rules

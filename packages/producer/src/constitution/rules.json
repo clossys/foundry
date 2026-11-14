@@ -817,5 +817,26 @@
         ]
       }
     ]
+  },
+  {
+    "id": "R20",
+    "statement": "Director-derived (owner rule R-DIRECTOR-DERIVED). Every pinned Designer themes.* and assets.* candidate (meta.element.reason) and every pinned Writer candidate (frontmatter reason) cites the pinned Director slot it realises (director:<slot-id>), or keeps an upstream default as default:<ref> plus a Director citation; source.ref alone is not a trace.",
+    "scope": "all-records",
+    "status": "building",
+    "owner": "FIX-ENF",
+    "check": "src/constitution/checks/R20-director-derived.ts",
+    "test": "src/constitution/checks/R20-director-derived.test.ts",
+    "checks": [
+      {
+        "id": "R20.1",
+        "status": "building",
+        "owner": "FIX-ENF"
+      },
+      {
+        "id": "R20.2",
+        "status": "building",
+        "owner": "FIX-ENF"
+      }
+    ]
   }
 ]

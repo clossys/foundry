@@ -235,8 +235,10 @@ function validateBrief(fields: Record<string, unknown>, body: string, slot: stri
 function validateStrings(fields: Record<string, unknown>, body: string, slot: string, path: string): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "candidate-invalid", path, message });
-  for (const key of Object.keys(fields)) if (!["slot", "locales", "source", "vary"].includes(key) && !(CANDIDATE_STATUS_KEYS as readonly string[]).includes(key) && !(LEGACY_PROVENANCE_KEYS as readonly string[]).includes(key)) fail(`unknown frontmatter key ${key}`);
+  for (const key of Object.keys(fields)) if (!["slot", "locales", "source", "vary", "reason"].includes(key) && !(CANDIDATE_STATUS_KEYS as readonly string[]).includes(key) && !(LEGACY_PROVENANCE_KEYS as readonly string[]).includes(key)) fail(`unknown frontmatter key ${key}`);
   if (fields.slot !== slot) fail(`slot must be ${slot}`);
+  // The Writer equivalent of meta.element.reason: the pinned Director slot the copy realises (R20, records/director-trace.ts).
+  if (fields.reason !== undefined && (typeof fields.reason !== "string" || !fields.reason.trim())) fail("reason must be a non-empty string");
   if (!strings(fields.locales) || !fields.locales.length) { fail("locales must be a non-empty list"); return issues; }
   const lines = body.split(/\r?\n/);
   const seen: string[] = [];
