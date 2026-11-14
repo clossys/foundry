@@ -4,7 +4,7 @@
   "agent": "producer",
   "kind": "plumb",
   "stage": "publish.pin",
-  "summary": "Slot constitution over every record before compile; blocks on every enforced finding.",
+  "summary": "Slot constitution over every record before compile; until E2 blocks on the delta against the last green report (pipeline/constitution-green.json): enforced findings on changed records or their R07 dependants, or with a key that report lacks.",
   "run": "clossys check --constitution --enforced",
   "inputs": [
     {

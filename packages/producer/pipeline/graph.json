@@ -1828,7 +1828,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "publish.pin",
-      "summary": "Slot constitution over every record before compile; blocks on every enforced finding.",
+      "summary": "Slot constitution over every record before compile; until E2 blocks on the delta against the last green report (pipeline/constitution-green.json): enforced findings on changed records or their R07 dependants, or with a key that report lacks.",
       "inputs": [
         {
           "glob": "clossys/agents/*/ia.json",
@@ -8860,6 +8860,10 @@
           "value": false
         },
         {
+          "flag": "--green",
+          "value": true
+        },
+        {
           "flag": "--help",
           "value": false
         },
@@ -8876,6 +8880,10 @@
           "value": false
         },
         {
+          "flag": "--record-green",
+          "value": false
+        },
+        {
           "flag": "--report",
           "value": true
         },
@@ -8889,6 +8897,10 @@
         },
         {
           "flag": "--slots",
+          "value": false
+        },
+        {
+          "flag": "--strict",
           "value": false
         },
         {
@@ -9248,6 +9260,10 @@
           "value": false
         },
         {
+          "flag": "--green",
+          "value": true
+        },
+        {
           "flag": "--help",
           "value": false
         },
@@ -9261,6 +9277,10 @@
         },
         {
           "flag": "--readiness",
+          "value": false
+        },
+        {
+          "flag": "--record-green",
           "value": false
         },
         {

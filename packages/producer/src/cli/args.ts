@@ -49,8 +49,12 @@ export interface CliArgs {
   readiness: boolean;
   /** check: run the slot constitution suite (R01-R14) over every record instead of the default checks. */
   constitution: boolean;
-  /** check --constitution: exit by enforced rows only; pending rows are listed, never failing (the chain's constitution step). */
+  /** check --constitution: the chain's constitution step; pending rows are listed, never failing; until E2 it exits by the delta against the last green report (constitution/green.ts), with --strict by every enforced row. */
   enforced?: boolean;
+  /** check --constitution: write the last green report (a full run whose delta gate passes, or the bootstrap). */
+  recordGreen?: boolean;
+  /** check --constitution: the green report file (default `<P>/pipeline/constitution-green.json`). */
+  green?: string;
   /** check --constitution: only these rules (R01..R14); repeated --rule flags accumulate. */
   rule?: string[];
   /** check --constitution: only the rows about this agent's records (director, designer, writer, publisher or producer). */
@@ -74,7 +78,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Owner: clossys ia <agent>/<slot> --contract <file> | --remove; clossys ia <agent> --adopt | --start; clossys evidence <id> --source <s> --observed <date> --by <who> --body <file>; clossys config --init; clossys seat <step> --by <who> ...; clossys rule <R-ID> --quote <text> --date <date> --status <status>; clossys approve writer/<slot> <candidate-id>\n"
   + "Decisions: clossys pin <agent>/<slot> <candidate-id> [--by <who>] | clossys pin <agent>/<slot> --not-needed --reason <text>; clossys decisions [--json]\n"
   + "Candidate options: clossys options [<agent>/<slot> [--more]] | clossys options --classes [--check]; clossys pick <agent>/<slot> <candidate-id> --by agent:<seat>\n"
-  + "Constitution: clossys check --constitution [--enforced] [--rule <R01..R14>] [--agent <agent>] [--json] [--root <dir>] (every rule over every record; exits 1 on any row, pending rules included; --enforced exits 1 only on enforced rows, the chain's constitution step; --agent keeps the rows about one agent's records)\n"
+  + "Constitution: clossys check --constitution [--enforced | --strict] [--record-green] [--green <file>] [--rule <R01..R14>] [--agent <agent>] [--json] [--root <dir>] (every rule over every record; exits 1 on any row, pending rules included; --enforced, the chain's constitution step, exits 1 only on the delta until E2: an enforced row on a record changed since the last green report or on its R07 dependants, or one whose key that report lacks; --strict exits 1 on every enforced row (the full gate); every run prints the delta and total counts; --record-green writes the green report after a full run that passes the delta gate (or seeds a missing one); --agent keeps the rows about one agent's records)\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"
@@ -119,6 +123,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--readiness": args.readiness = true; break;
       case "--constitution": args.constitution = true; break;
       case "--enforced": args.enforced = true; break;
+      case "--record-green": args.recordGreen = true; break;
+      case "--green": args.green = value(); break;
       case "--rule": args.rule = [...(args.rule ?? []), value()]; break;
       case "--agent": args.agent = value(); break;
       case "--port": {
@@ -142,7 +148,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.slots || args.readiness) && args.verb !== "check") throw new CliUsageError("--slots and --readiness require check");
   if (args.constitution && args.verb !== "check") throw new CliUsageError("--constitution requires check");
   if (args.enforced && !args.constitution) throw new CliUsageError("--enforced requires check --constitution");
-  if (args.enforced && args.strict) throw new CliUsageError("check --constitution takes --enforced or --strict, not both");
+  if ((args.recordGreen || args.green !== undefined) && !args.constitution) throw new CliUsageError("--record-green and --green require check --constitution");
+  if (args.recordGreen && (args.rule !== undefined || args.agent !== undefined)) throw new CliUsageError("--record-green needs a full run: no --rule or --agent");
   if (args.rule !== undefined && !args.constitution) throw new CliUsageError("--rule requires check --constitution");
   if (args.rule !== undefined && !args.rule.every(id => /^R(?:0[1-9]|1[0-4])$/.test(id))) throw new CliUsageError("--rule must be a rule id R01..R14");
   if (args.agent !== undefined && !args.constitution) throw new CliUsageError("--agent requires check --constitution");

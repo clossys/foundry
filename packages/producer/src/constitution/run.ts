@@ -5,6 +5,7 @@
  * pending rows included, fails the run.
  */
 import { buildContext, type ContextOptions } from "./context.js";
+import { recordIndex, type RecordIndex } from "./green.js";
 import { registeredRules, type RegisteredRule } from "./registry.js";
 import type { Row } from "./types.js";
 
@@ -29,6 +30,8 @@ export interface ConstitutionReport {
   readonly rules: readonly RuleSummary[];
   readonly rows: readonly Row[];
   readonly ms: number;
+  /** Per-record digests and dependency sets, when the run asked for them (the delta gate, `--record-green`); never printed. */
+  readonly index?: RecordIndex;
 }
 
 export interface RunOptions extends ContextOptions {
@@ -42,6 +45,8 @@ export interface RunOptions extends ContextOptions {
   readonly agent?: string;
   /** Clock for the timing field; tests pass a fixed one. */
   readonly now?: () => number;
+  /** Also return the record index (green.ts) built from the same context. */
+  readonly index?: boolean;
 }
 
 const tally = (rows: readonly Row[], key: (row: Row) => string) => {
@@ -77,6 +82,7 @@ export function runConstitution(options: RunOptions): ConstitutionReport {
   return {
     schema: REPORT_SCHEMA, ok: rows.length === 0, total: rows.length, pending,
     records: { slots, liveSlots, pins, candidates }, rules: summaries, rows, ms: Math.round(now() - started),
+    ...(options.index ? { index: recordIndex(ctx) } : {}),
   };
 }
 

@@ -1,5 +1,6 @@
 import { runSlotResolve, slotResolveSummary, type SlotResolveReport } from "../check/slot-resolve.js";
-import { statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { lintPages } from "../check/page-lint.js";
@@ -111,16 +112,7 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
     root = findWorkspace(start) ?? start;
     consumer = join(root, "clossys");
   }
-  if (args.constitution) {
-    // The constitution suite alone: every rule over every record; any row (pending included) fails.
-    const { formatReport, runConstitution } = await import("../constitution/run.js");
-    const report = runConstitution({ root, consumer, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}) });
-    if (!args.enforced) return { verb: "check", root, check: true, exitCode: report.ok ? 0 : 1, message: formatReport(report), output: report };
-    // --enforced (the chain's constitution step, W2-G): every enforced row blocks; pending rows are listed, never passing or failing.
-    const enforced = report.total - report.pending;
-    const verdict = `constitution --enforced: ${enforced ? "FAIL" : "PASS"}  enforced findings ${enforced}; pending rows ${report.pending} listed, not blocking`;
-    return { verb: "check", root, check: true, exitCode: enforced ? 1 : 0, message: `${formatReport(report)}\n${verdict}`, output: { ...report, enforced: { ok: enforced === 0, findings: enforced } } };
-  }
+  if (args.constitution) return runConstitutionCheck(args, root, consumer);
   const slots = await runSlotResolve(consumer);
   const page = args.pages !== undefined ? await runPageCheck(args, cwd) : undefined;
   const suites = args.suites || (page && consumerRoot(start))
@@ -140,5 +132,68 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
     slots,
     ...(readiness ? { checks: { readiness: { strict: true, blocked: readiness.length, findings: readiness } } } : {}),
     ...(suites || referenceReport ? { suites: suites ?? referenceReport } : {}),
+  };
+}
+
+const workspaceName = (root: string): string => {
+  try { const name = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { name?: unknown }).name; return typeof name === "string" ? name : "(unnamed)"; }
+  catch { return "(no package.json)"; }
+};
+
+const headCommit = (root: string): string => {
+  try { return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, stdio: ["ignore", "pipe", "ignore"] }).toString("utf8").trim(); }
+  catch { return "unknown"; }
+};
+
+/**
+ * `check --constitution`: every rule over every record, then the delta against the last green
+ * report (constitution/green.ts), printed on every run.
+ * - plain: exits 1 on any row, pending included (and on a tampered green report);
+ * - --enforced (the chain's constitution step): until E2, exits 1 only on the delta, a stale green
+ *   key or a tampered report. TODO(E2): make the full gate (--strict) the default here;
+ * - --strict: the full gate, exits 1 on every enforced row (and on a tampered report);
+ * - --record-green: after a full run whose delta gate passes (or with no report yet), writes the report.
+ */
+async function runConstitutionCheck(args: CliArgs, root: string, consumer: string): Promise<CliResult> {
+  const { formatReport, runConstitution } = await import("../constitution/run.js");
+  const green = await import("../constitution/green.js");
+  const { index, ...report } = runConstitution({ root, consumer, index: true, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}) });
+  const path = resolve(root, args.green ?? green.DEFAULT_GREEN_PATH);
+  const workspace = workspaceName(root);
+  const read = green.readGreen(path, workspace);
+  const delta = green.evaluateDelta(report.rows, index!, read, { rules: report.rules.map(rule => rule.id), ...(args.agent ? { agent: args.agent } : {}) });
+  const mode = args.strict ? "strict" : args.enforced ? "enforced" : "report";
+  let exitCode: 0 | 1 = mode === "strict" ? (delta.enforced || delta.tampered.length ? 1 : 0)
+    : mode === "enforced" ? (delta.ok ? 0 : 1)
+    : (report.ok && !delta.tampered.length ? 0 : 1);
+  const lines = [formatReport(report), green.formatDelta(delta, mode)];
+  let recorded: { path: string; written: boolean; reason: string } | undefined;
+  if (args.recordGreen) {
+    const missing = !existsSync(path);
+    const otherWorkspace = !missing && !read.tampered.length && !read.report;
+    const refusal = read.tampered.length ? `the report at ${path} failed its integrity check; restore it from git (a deleted report re-seeds only through review)`
+      : otherWorkspace ? `${read.baseline}; pass --green <file> for this workspace`
+      : !missing && delta.blocking.length ? `the delta gate blocks on ${delta.blocking.length} row(s); only a green run is recorded`
+      : undefined;
+    if (refusal) {
+      recorded = { path, written: false, reason: refusal };
+      exitCode = 1;
+    } else {
+      const next = green.buildGreen(report.rows, index!, { workspace, commit: headCommit(root) });
+      await green.writeGreen(path, next);
+      recorded = { path, written: true, reason: missing ? "seeded (no report existed)" : `recorded (${delta.stale.length} fixed key(s) dropped)` };
+      exitCode = 0;
+    }
+    lines.push(`constitution --record-green: ${recorded.written ? `${recorded.reason}: ${path}` : `REFUSED: ${recorded.reason}`}`);
+  }
+  const deltaOut = {
+    mode, ok: delta.ok, green: path, ...(delta.baseline ? { baseline: delta.baseline } : {}),
+    total: delta.total, pending: delta.pending, enforced: delta.enforced, delta: delta.blocking.length,
+    newRows: delta.newRows, changedRows: delta.changedRows, changedRecords: delta.changedRecords, dependantRecords: delta.dependantRecords,
+    stale: delta.stale, tampered: delta.tampered, blocking: delta.blocking.map(row => ({ key: green.rowKey(row), ...row })),
+  };
+  return {
+    verb: "check", root, check: true, exitCode, message: lines.join("\n"),
+    output: { ...report, delta: deltaOut, enforced: { ok: delta.enforced === 0, findings: delta.enforced }, ...(recorded ? { recorded } : {}) },
   };
 }
