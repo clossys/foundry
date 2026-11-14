@@ -88,5 +88,6 @@
     "assets.icon-chevron-right",
     "components.button",
     "components.select"
-  ]
+  ],
+  "standard": "component"
 }

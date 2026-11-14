@@ -37,5 +37,6 @@
   ],
   "uses": [
     "components.flow.base-handle"
-  ]
+  ],
+  "standard": "component"
 }

@@ -42,5 +42,6 @@
     "themes.border",
     "themes.ring"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

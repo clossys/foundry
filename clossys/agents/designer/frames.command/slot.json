@@ -129,5 +129,6 @@
     "components.button",
     "components.card",
     "components.command"
-  ]
+  ],
+  "standard": "frame"
 }

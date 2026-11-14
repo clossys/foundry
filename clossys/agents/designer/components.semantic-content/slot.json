@@ -67,5 +67,6 @@
     "identity.visual.imagery",
     "identity.visual.style"
   ],
-  "uses": []
+  "uses": [],
+  "standard": "component"
 }

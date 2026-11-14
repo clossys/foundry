@@ -89,5 +89,6 @@
     "assets.icon-check",
     "assets.icon-search",
     "components.dialog"
-  ]
+  ],
+  "standard": "component"
 }

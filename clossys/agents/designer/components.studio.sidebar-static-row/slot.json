@@ -50,5 +50,6 @@
   ],
   "uses": [
     "components.item"
-  ]
+  ],
+  "standard": "component"
 }

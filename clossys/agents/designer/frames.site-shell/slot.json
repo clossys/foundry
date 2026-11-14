@@ -177,5 +177,6 @@
   ],
   "uses": [
     "components.logo"
-  ]
+  ],
+  "standard": "frame"
 }

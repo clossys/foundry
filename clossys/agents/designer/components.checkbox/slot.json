@@ -79,5 +79,6 @@
   ],
   "uses": [
     "assets.icon-check"
-  ]
+  ],
+  "standard": "component"
 }

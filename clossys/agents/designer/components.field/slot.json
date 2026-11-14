@@ -70,5 +70,6 @@
   ],
   "uses": [
     "components.separator"
-  ]
+  ],
+  "standard": "component"
 }

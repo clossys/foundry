@@ -102,5 +102,6 @@
     "components.card",
     "components.field",
     "themes.input"
-  ]
+  ],
+  "standard": "frame"
 }

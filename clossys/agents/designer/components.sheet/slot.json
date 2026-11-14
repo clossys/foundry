@@ -81,5 +81,6 @@
   "uses": [
     "assets.icon-close",
     "components.button"
-  ]
+  ],
+  "standard": "component"
 }

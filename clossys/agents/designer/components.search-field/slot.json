@@ -83,5 +83,6 @@
   "uses": [
     "components.button",
     "themes.input"
-  ]
+  ],
+  "standard": "component"
 }

@@ -1,0 +1,75 @@
+{
+  "schema": "clossys.exemplars/1",
+  "exemplars": [
+    {
+      "id": "shadcn-components",
+      "ref": "https://ui.shadcn.com/docs/components",
+      "source": "ui.shadcn.com",
+      "license": "MIT",
+      "description": "shadcn components: the stock component set adopted byte for byte.",
+      "why": {
+        "fidelity": "The source a component adopts unchanged."
+      }
+    },
+    {
+      "id": "react-aria-components",
+      "ref": "https://react-spectrum.adobe.com/react-aria/components.html",
+      "source": "react-spectrum.adobe.com",
+      "license": "Apache-2.0",
+      "description": "React Aria Components: the accessible behaviour shadcn-aria builds on.",
+      "why": {
+        "composition": "Behaviour from React Aria, styling from shadcn."
+      }
+    },
+    {
+      "id": "wai-apg",
+      "ref": "https://www.w3.org/WAI/ARIA/apg/patterns/",
+      "source": "w3.org",
+      "license": "all-rights-reserved",
+      "description": "WAI-ARIA Authoring Practices patterns: the keyboard and role contract each component meets.",
+      "why": {
+        "polish": "Focus and keyboard behaviour per pattern."
+      }
+    },
+    {
+      "id": "magicui",
+      "ref": "https://magicui.design",
+      "source": "magicui.design",
+      "license": "MIT",
+      "description": "Magic UI: a permissive partner registry for motion components.",
+      "why": {
+        "fidelity": "Partner items adopted as published."
+      }
+    },
+    {
+      "id": "diceui",
+      "ref": "https://www.diceui.com",
+      "source": "diceui.com",
+      "license": "MIT",
+      "description": "Dice UI: partner components on shadcn conventions (sortable, kanban, mention).",
+      "why": {
+        "composition": "Fills behaviour gaps without editing stock code."
+      }
+    },
+    {
+      "id": "assistant-ui",
+      "ref": "https://www.assistant-ui.com",
+      "source": "assistant-ui.com",
+      "license": "MIT",
+      "description": "assistant-ui: chat components on shadcn for the chat panel.",
+      "why": {
+        "composition": "A partner registry composed, not forked."
+      }
+    },
+    {
+      "id": "reactflow",
+      "ref": "https://reactflow.dev",
+      "source": "reactflow.dev",
+      "license": "MIT",
+      "description": "React Flow: the node graph library the pipeline canvas adopts.",
+      "why": {
+        "fidelity": "An npm library adopted at a pinned version."
+      }
+    }
+  ]
+}
