@@ -88,6 +88,7 @@
     "capture:studio": "node scripts/capture-studio.mjs",
     "check:studio-capture": "node scripts/capture-studio.mjs",
     "test:studio-capture": "node --test scripts/capture-studio.test.mjs",
+    "check:specimen-preflight": "node scripts/specimen-preflight.mjs",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
