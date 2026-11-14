@@ -28,7 +28,8 @@
         "director",
         "designer",
         "writer",
-        "publisher"
+        "publisher",
+        "producer"
       ]
     },
     "ia": {
@@ -67,8 +68,13 @@
         "element",
         "strings",
         "page",
-        "publication"
+        "publication",
+        "seat"
       ]
+    },
+    "standard": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*$"
     },
     "contract": {
       "type": "object"
@@ -164,6 +170,20 @@
             "page",
             "publication"
           ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "agent": {
+          "const": "producer"
+        },
+        "kind": {
+          "const": "seat"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^seat\\."
         }
       }
     }

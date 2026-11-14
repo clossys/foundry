@@ -13,7 +13,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStoreEntry, DirectorStoreError, DirectorStoreFault, DirectorStoreReader } from "@clossys/director";
 import { sha256Hex } from "./hash.js";
 import {
-  CANDIDATE_NAME, MODEL_AGENTS, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, retiredSeatFile, seatDir, slotDir, slotFile, slotPositions,
+  CANDIDATE_NAME, MODEL_AGENTS, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, retiredSeatFile, seatDir, seatSlotId, seatStepOf, slotDir, slotFile, slotPositions,
   validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
@@ -198,7 +198,7 @@ function loadIa(consumer: string, agent: ModelAgent): IaCacheEntry | null {
   if (cached?.bytes === bytes) return cached;
   iaCache.delete(path);
   const value = JSON.parse(bytes);
-  if (validateIa(value, path).length) throw new Error(`Invalid ${agent} IA`);
+  if (validateIa(value, path, agent).length) throw new Error(`Invalid ${agent} IA`);
   const ia = deepFreeze(value as IaDoc);
   const positions = slotPositions(agent, ia);
   for (const position of positions.values()) deepFreeze(position);
@@ -229,9 +229,15 @@ function locate(consumer: string, agent: SlotAgent, id: string): { position: Slo
   return { position, dir: slotDir(consumer, agent, id) };
 }
 
-/** One seat of the Producer tree (the seat kind): a decide step's folder, placed by producer ia.json. */
+/**
+ * One seat of the Producer tree: a slot of kind `seat` (D5). Its folder is `seat.<step>/` with a
+ * slot.json, placed by producer ia.json under the id `seat.<step>`; `step` is the decide step it seats.
+ */
 export interface SeatEntry {
+  /** The seat's slot id, `seat.<step>`. */
   readonly id: string;
+  /** The decide step id. */
+  readonly step: string;
   readonly position: SlotPosition;
   /** Absolute seat folder. */
   readonly dir: string;
@@ -239,39 +245,51 @@ export interface SeatEntry {
   readonly text: string | undefined;
 }
 
+/** The decide step of a placed seat id; loadIa already refused a Producer id outside `seat.<step>`. */
+const stepOfPlaced = (id: string): string => {
+  const step = seatStepOf(id);
+  if (step === undefined) throw new Error(`Invalid seat slot id ${JSON.stringify(id)}`);
+  return step;
+};
+
 /** Every seat producer ia.json places, in IA order; a seat without a pin is listed with no text. */
 export function listSeats(consumer: string): SeatEntry[] {
   return withSlotReadScope(() => {
     const ia = loadIa(consumer, SEAT_AGENT);
     if (!ia) return [];
-    return [...ia.positions].map(([id, position]) => ({ id, position, dir: seatDir(consumer, id), text: seatTextAt(consumer, id) }));
+    return [...ia.positions].map(([id, position]) => {
+      const step = stepOfPlaced(id);
+      return { id, step, position, dir: seatDir(consumer, step), text: seatTextAt(consumer, step) };
+    });
   });
 }
 
 /**
- * The pinned seat candidate's text of one decide step, read by step id whether or not producer
- * ia.json places it (check:git-cms fails an unplaced seat folder); undefined when the seat has no
- * pin.json. A pin that is malformed, names a missing candidate or drifts from its bytes throws, and
- * so does a retired seat.json: a seat is never read from anything but its pinned candidate.
+ * The pinned seat candidate's text of one decide step (by step id; the folder is `seat.<step>`),
+ * whether or not producer ia.json places it (the constitution fails an unplaced seat folder);
+ * undefined when the seat has no pin.json. A pinned seat must have a valid slot.json of kind `seat`
+ * for that step. A pin that is malformed, names a missing candidate or drifts from its bytes throws,
+ * and so does a retired seat.json: a seat is never read from anything but its pinned candidate.
  */
 export function readSeatText(consumer: string, step: string): string | undefined {
   return withSlotReadScope(() => seatTextAt(consumer, step));
 }
 
 /** The placed seats' pin state, in IA order: `pinned`, `open` (no pin.json) or `rejected` (why). */
-export function seatStates(consumer: string): { id: string; state: "pinned" | "open" | "rejected"; message?: string }[] {
+export function seatStates(consumer: string): { id: string; step: string; state: "pinned" | "open" | "rejected"; message?: string }[] {
   return withSlotReadScope(() => {
     const ia = loadIa(consumer, SEAT_AGENT);
     if (!ia) return [];
     return [...ia.positions.keys()].map(id => {
-      try { return { id, state: seatTextAt(consumer, id) === undefined ? "open" as const : "pinned" as const }; }
-      catch (error) { return { id, state: "rejected" as const, message: error instanceof Error ? error.message : String(error) }; }
+      const step = stepOfPlaced(id);
+      try { return { id, step, state: seatTextAt(consumer, step) === undefined ? "open" as const : "pinned" as const }; }
+      catch (error) { return { id, step, state: "rejected" as const, message: error instanceof Error ? error.message : String(error) }; }
     });
   });
 }
-const SEAT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
+const SEAT_STEP = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){0,2}$/;
 function seatTextAt(consumer: string, step: string): string | undefined {
-  if (!SEAT_ID.test(step)) throw new Error(`Invalid seat id ${JSON.stringify(step)}`);
+  if (!SEAT_STEP.test(step)) throw new Error(`Invalid seat id ${JSON.stringify(step)}`);
   const dir = seatDir(consumer, step);
   const retired = retiredSeatFile(dir);
   assertModelPath(retired);
@@ -279,6 +297,15 @@ function seatTextAt(consumer: string, step: string): string | undefined {
   const path = pinFile(dir);
   assertModelPath(path);
   if (!fsExists(path)) return undefined;
+  const docPath = slotFile(dir);
+  assertModelPath(docPath);
+  if (!fsExists(docPath)) throw new Error(`Seat ${step}: slot.json is missing; a seat is a slot of kind seat`);
+  let doc: unknown;
+  try { doc = JSON.parse(readBytes(docPath)); } catch { throw new Error(`Seat ${step}: slot.json is not JSON`); }
+  const docIssues = validateSlotDoc(doc, docPath);
+  if (docIssues.length) throw new Error(`Seat ${step}: slot.json is invalid (${docIssues.map(issue => issue.message).join("; ")})`);
+  const slot = doc as SlotDoc;
+  if (slot.agent !== SEAT_AGENT || slot.kind !== "seat" || slot.id !== seatSlotId(step)) throw new Error(`Seat ${step}: slot.json must be the producer seat ${seatSlotId(step)}`);
   let value: unknown;
   try { value = JSON.parse(readBytes(path)); } catch { throw new Error(`Seat ${step}: pin.json is not JSON`); }
   const issues = validatePin(value, path);

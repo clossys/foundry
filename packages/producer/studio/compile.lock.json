@@ -3678,152 +3678,224 @@
       "sha256": "6b33a9da34342e0ce0b9561950e8adfd933e3c1238c7a9ea6bf3057ff41fe902"
     },
     {
-      "path": "clossys/agents/producer/designer.candidates/candidates/designer.candidates-v1.json",
+      "path": "clossys/agents/producer/ia.json",
+      "sha256": "0a6a3848e80bb86814f3d8c9173a5dbdc1b980e03e6ce2f831aee7088cb1d539"
+    },
+    {
+      "path": "clossys/agents/producer/seat.designer.candidates/candidates/designer.candidates-v1.json",
       "sha256": "e0e9994a0e5c0a5f397dcb0367d821ed594003fec04093cfc3558669ddf5acae"
     },
     {
-      "path": "clossys/agents/producer/designer.candidates/pin.json",
+      "path": "clossys/agents/producer/seat.designer.candidates/pin.json",
       "sha256": "ea198f027d5cda2cc5a3fb0469a986241f82d949ae2ae2c5d7b4563b6de8966f"
     },
     {
-      "path": "clossys/agents/producer/director.candidates/candidates/director.candidates-v1.json",
+      "path": "clossys/agents/producer/seat.designer.candidates/slot.json",
+      "sha256": "77f3db3b8865e8d5add89096dc9ec703108c561efe469473635235a351cb0bfc"
+    },
+    {
+      "path": "clossys/agents/producer/seat.director.candidates/candidates/director.candidates-v1.json",
       "sha256": "eefbf277bbb78216abffd3341b0b8dd542203a7ee5f60958127cbdf3852d8371"
     },
     {
-      "path": "clossys/agents/producer/director.candidates/pin.json",
+      "path": "clossys/agents/producer/seat.director.candidates/pin.json",
       "sha256": "e394446adde5083daf23908999ab943d9c1ffd9e56a015f4f37c3b8865af0cc3"
     },
     {
-      "path": "clossys/agents/producer/evidence/candidates/evidence-v1.json",
+      "path": "clossys/agents/producer/seat.director.candidates/slot.json",
+      "sha256": "a253779a46ee6fe6b474d01ca479f6171d753f1a452527b4d1bd43d99a16c1d6"
+    },
+    {
+      "path": "clossys/agents/producer/seat.evidence/candidates/evidence-v1.json",
       "sha256": "94b5d5f18ea89ef017505e5c2d23a48bdb3ee6cfce5faa27eb5c32ff1dbe4f97"
     },
     {
-      "path": "clossys/agents/producer/evidence/pin.json",
+      "path": "clossys/agents/producer/seat.evidence/pin.json",
       "sha256": "3e017b39badb7d2333c6eb1bf84af7ffc831cc0131acd7b86cf7c2255f761827"
     },
     {
-      "path": "clossys/agents/producer/ia.json",
-      "sha256": "4721d33349a52042ac7dd4dfd6281bd80288beb3ab0dd6ab0155fbf46c133ab8"
+      "path": "clossys/agents/producer/seat.evidence/slot.json",
+      "sha256": "7b96ee91005b02fc7a1db7c6706932595b27dbd018e7b174b74f802f1f6a66e1"
     },
     {
-      "path": "clossys/agents/producer/ia/candidates/ia-v1.json",
+      "path": "clossys/agents/producer/seat.ia/candidates/ia-v1.json",
       "sha256": "2b7bc05113493f7d461115c8b1da4b5a93301e44a460d774cce0fd446cbc4dc8"
     },
     {
-      "path": "clossys/agents/producer/ia/pin.json",
+      "path": "clossys/agents/producer/seat.ia/pin.json",
       "sha256": "d2b63e5c3b3d6b38ed3a4644302b7e3b433b38faa61ec299b5966d7b952969c1"
     },
     {
-      "path": "clossys/agents/producer/pick.designer/candidates/pick.designer-v2.json",
+      "path": "clossys/agents/producer/seat.ia/slot.json",
+      "sha256": "a7f5ef11ef57457a59b9be74571aea8037c7c2edcb215ca2314e950e9e116d0e"
+    },
+    {
+      "path": "clossys/agents/producer/seat.pick.designer/candidates/pick.designer-v2.json",
       "sha256": "e3002a3f449d050c98308830c8f66d6f43940800d4f0646ad3ee77e7081d1991"
     },
     {
-      "path": "clossys/agents/producer/pick.designer/pin.json",
+      "path": "clossys/agents/producer/seat.pick.designer/pin.json",
       "sha256": "19a17ea737380c5de0f1efd353cb6dd6d4fb96f2e47d494b26336d28f3af6d85"
     },
     {
-      "path": "clossys/agents/producer/pick.director/candidates/pick.director-v2.json",
+      "path": "clossys/agents/producer/seat.pick.designer/slot.json",
+      "sha256": "4957219cf5c894e0d2a43b70ac9e1828b8fd4fa6b1786ea825c6660ab4ca092e"
+    },
+    {
+      "path": "clossys/agents/producer/seat.pick.director/candidates/pick.director-v2.json",
       "sha256": "136c39c4135403566c83df70d35522cf0b6efd53adc9dba622ac27a314a00923"
     },
     {
-      "path": "clossys/agents/producer/pick.director/pin.json",
+      "path": "clossys/agents/producer/seat.pick.director/pin.json",
       "sha256": "55c7f2a9123064695c7075321d6cae0f997bab87c255b62400936ce155540b33"
     },
     {
-      "path": "clossys/agents/producer/pick.publisher/candidates/pick.publisher-v2.json",
+      "path": "clossys/agents/producer/seat.pick.director/slot.json",
+      "sha256": "67c0db8c2e5c428a6a45f12af94a540be2bcc9a7eb398b8239b93e6b10a0c9f2"
+    },
+    {
+      "path": "clossys/agents/producer/seat.pick.publisher/candidates/pick.publisher-v2.json",
       "sha256": "1657bf5eeef787356d2785c47faed9fc32e54e049f6ea5bba6df543c673d622c"
     },
     {
-      "path": "clossys/agents/producer/pick.publisher/pin.json",
+      "path": "clossys/agents/producer/seat.pick.publisher/pin.json",
       "sha256": "986413454ea545d0ea15805d9718f12bb314ef1fd346b7901874c29d4a088c20"
     },
     {
-      "path": "clossys/agents/producer/pick.writer/candidates/pick.writer-v2.json",
+      "path": "clossys/agents/producer/seat.pick.publisher/slot.json",
+      "sha256": "0d88d98f8497dd776fd97d800e14a59d57015a1c9b3176f6c90b26fe0f54a9cb"
+    },
+    {
+      "path": "clossys/agents/producer/seat.pick.writer/candidates/pick.writer-v2.json",
       "sha256": "8ec16adc305a847b9fb74443bf072d755dd2586c1d0fbbefba80a618a26a9c98"
     },
     {
-      "path": "clossys/agents/producer/pick.writer/pin.json",
+      "path": "clossys/agents/producer/seat.pick.writer/pin.json",
       "sha256": "80514149026f9e2cd7cafdd33874311778130b6ea2ae5103acbf0b6a57b07c5f"
     },
     {
-      "path": "clossys/agents/producer/pin.designer/candidates/pin.designer-v2.json",
+      "path": "clossys/agents/producer/seat.pick.writer/slot.json",
+      "sha256": "bb719de3af99203ecaede76aa6803a6e63843583b3e160aedb7860cb631d906f"
+    },
+    {
+      "path": "clossys/agents/producer/seat.pin.designer/candidates/pin.designer-v2.json",
       "sha256": "c08c71b0da9913758e2377e46f29079b0572e23b4c69e1915bcfabbc68cb7e73"
     },
     {
-      "path": "clossys/agents/producer/pin.designer/pin.json",
+      "path": "clossys/agents/producer/seat.pin.designer/pin.json",
       "sha256": "bec073556e90454a05d3c6d353d6beb3ed0987346d5ddc5f2c8f5e4cdf3396f6"
     },
     {
-      "path": "clossys/agents/producer/pin.director/candidates/pin.director-v2.json",
+      "path": "clossys/agents/producer/seat.pin.designer/slot.json",
+      "sha256": "bd16138754242e9fc6f1e8853bb804e5d3020f165654fecc6d8d1fdfeebf500f"
+    },
+    {
+      "path": "clossys/agents/producer/seat.pin.director/candidates/pin.director-v2.json",
       "sha256": "a5176d77be2ae507316d95cc154ab7ec2866c04038b0667677d4bd2232dcad77"
     },
     {
-      "path": "clossys/agents/producer/pin.director/pin.json",
+      "path": "clossys/agents/producer/seat.pin.director/pin.json",
       "sha256": "dc85ebefb390b7bc5bc4578b5edeb647860ca84ba73a4cf2c311f5635b00218e"
     },
     {
-      "path": "clossys/agents/producer/pin.publisher/candidates/pin.publisher-v2.json",
+      "path": "clossys/agents/producer/seat.pin.director/slot.json",
+      "sha256": "62785d8056fa24a4db54dfcc65ccc140b3ee99e036117cf809a9234db17760d6"
+    },
+    {
+      "path": "clossys/agents/producer/seat.pin.publisher/candidates/pin.publisher-v2.json",
       "sha256": "a5bd8de9602e2dba0c276d6f7e549e55ad7a4efd3deaab811de95382c19cc012"
     },
     {
-      "path": "clossys/agents/producer/pin.publisher/pin.json",
+      "path": "clossys/agents/producer/seat.pin.publisher/pin.json",
       "sha256": "4db9af5aff3b31ccb0a771c7a2c5d7106e20d72c9d5d06de9894b2e458461828"
     },
     {
-      "path": "clossys/agents/producer/pin.writer/candidates/pin.writer-v2.json",
+      "path": "clossys/agents/producer/seat.pin.publisher/slot.json",
+      "sha256": "b71532eb3ed0898125e23ba051dc0cc55b42753f03b170af727578aef8334b3f"
+    },
+    {
+      "path": "clossys/agents/producer/seat.pin.writer/candidates/pin.writer-v2.json",
       "sha256": "64d40da279acfd96248c5d2c6a459d43e13af1dbef401ca5fb58829de3a8e7d6"
     },
     {
-      "path": "clossys/agents/producer/pin.writer/pin.json",
+      "path": "clossys/agents/producer/seat.pin.writer/pin.json",
       "sha256": "178355c66dfafabd07b802827a8e9bc150fdce4d62ac560c373a617844d6acb4"
     },
     {
-      "path": "clossys/agents/producer/publisher.candidates/candidates/publisher.candidates-v1.json",
+      "path": "clossys/agents/producer/seat.pin.writer/slot.json",
+      "sha256": "5c6dedbd91593cc3c1bbbf34cc1dc452b49595e6841e03dedd950adab1d9bcf4"
+    },
+    {
+      "path": "clossys/agents/producer/seat.publisher.candidates/candidates/publisher.candidates-v1.json",
       "sha256": "ce78503e928d7beddd91618b7e9af0ba3d27a0787fead03594df7c170fe73f40"
     },
     {
-      "path": "clossys/agents/producer/publisher.candidates/pin.json",
+      "path": "clossys/agents/producer/seat.publisher.candidates/pin.json",
       "sha256": "387f04d0b98401f224e0b0932b298725720c873eeff90fb79238bdbde37b89a3"
     },
     {
-      "path": "clossys/agents/producer/rules/candidates/rules-v1.json",
+      "path": "clossys/agents/producer/seat.publisher.candidates/slot.json",
+      "sha256": "8eb9a9931389040a3017d8f4ed6300d25a76e5a3135b865801589f4a038b4ad7"
+    },
+    {
+      "path": "clossys/agents/producer/seat.rules/candidates/rules-v1.json",
       "sha256": "b6fbe7cc9c4c0cb849ba5bdc9dd7c85c9ed9fd2a4782bf1ed050cf39eee56906"
     },
     {
-      "path": "clossys/agents/producer/rules/pin.json",
+      "path": "clossys/agents/producer/seat.rules/pin.json",
       "sha256": "8365cf1940e65c0c4baeb2e7a7f48941a70656b67442d0f519ba3f5d215fc64c"
     },
     {
-      "path": "clossys/agents/producer/seats/candidates/seats-v1.json",
+      "path": "clossys/agents/producer/seat.rules/slot.json",
+      "sha256": "d09f20a4bf403049cb48d1b4f53859573ec02fb14bd84ab9a093979c62270b61"
+    },
+    {
+      "path": "clossys/agents/producer/seat.seats/candidates/seats-v1.json",
       "sha256": "62fa29b9416ea439e96480cae1b060537a965a28571822c41d8570bb0d60406b"
     },
     {
-      "path": "clossys/agents/producer/seats/pin.json",
+      "path": "clossys/agents/producer/seat.seats/pin.json",
       "sha256": "fb48585cef5c7b717dfd6576a43f731d161ccc7fcab692290cd60bafe0fb8430"
     },
     {
-      "path": "clossys/agents/producer/workspace.config/candidates/workspace.config-v1.json",
+      "path": "clossys/agents/producer/seat.seats/slot.json",
+      "sha256": "7937748fad1be4c5a690142e9be9484a72cc3d2c814b6b18f9cb5c6744835855"
+    },
+    {
+      "path": "clossys/agents/producer/seat.workspace.config/candidates/workspace.config-v1.json",
       "sha256": "7baf363d0ecd672d1aef4c2703022ea732a001043099dbd66416b8ef7b869640"
     },
     {
-      "path": "clossys/agents/producer/workspace.config/pin.json",
+      "path": "clossys/agents/producer/seat.workspace.config/pin.json",
       "sha256": "91c8ecc1aa90399aff24f42b254ff8c34ad1b11fcd11a07fe8680387007d44d3"
     },
     {
-      "path": "clossys/agents/producer/writer.approve/candidates/writer.approve-v1.json",
+      "path": "clossys/agents/producer/seat.workspace.config/slot.json",
+      "sha256": "f882445d171234c381dc2c1dfe9d75fb79ceb8fda992f432cc6bff81399d524c"
+    },
+    {
+      "path": "clossys/agents/producer/seat.writer.approve/candidates/writer.approve-v1.json",
       "sha256": "a6c93ec4e48d6041d5e2fb11886d148f521be65611f9b47690bfdc3e0a03509f"
     },
     {
-      "path": "clossys/agents/producer/writer.approve/pin.json",
+      "path": "clossys/agents/producer/seat.writer.approve/pin.json",
       "sha256": "e87fdbde7df309e5c87322c5da30320a487ec78881d1da4d8970f843f3d00a2a"
     },
     {
-      "path": "clossys/agents/producer/writer.candidates/candidates/writer.candidates-v1.json",
+      "path": "clossys/agents/producer/seat.writer.approve/slot.json",
+      "sha256": "f0f3539c744ab443810ca7fe5a19eaf2e0382540ed7ca432062147e62e218d62"
+    },
+    {
+      "path": "clossys/agents/producer/seat.writer.candidates/candidates/writer.candidates-v1.json",
       "sha256": "d4234551a5d552ce9ca6bc6f44a1e072ed5b82e22f583b484529775649bfe101"
     },
     {
-      "path": "clossys/agents/producer/writer.candidates/pin.json",
+      "path": "clossys/agents/producer/seat.writer.candidates/pin.json",
       "sha256": "f3d8aed48aa95a2176d0b78aedaa630ab1c56d22ffaa9bae3971a3e819bfe1ec"
+    },
+    {
+      "path": "clossys/agents/producer/seat.writer.candidates/slot.json",
+      "sha256": "0b8622a962b0ae663436d99e6816d822152213bcd78f198aad380a5b7dc6c1f0"
     },
     {
       "path": "clossys/agents/publisher/ia.json",

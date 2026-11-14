@@ -69,7 +69,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/ia/pin.json",
+      "seat": "clossys/agents/producer/seat.ia/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -151,7 +151,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/evidence/pin.json",
+      "seat": "clossys/agents/producer/seat.evidence/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -227,7 +227,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/workspace.config/pin.json",
+      "seat": "clossys/agents/producer/seat.workspace.config/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -309,7 +309,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/seats/pin.json",
+      "seat": "clossys/agents/producer/seat.seats/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -382,7 +382,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/rules/pin.json",
+      "seat": "clossys/agents/producer/seat.rules/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -475,7 +475,7 @@
         "skill/SKILL.md",
         "skill/templates/cell.md"
       ],
-      "seat": "clossys/agents/producer/director.candidates/pin.json",
+      "seat": "clossys/agents/producer/seat.director.candidates/pin.json",
       "holder": {
         "id": "director",
         "kind": "ai",
@@ -561,7 +561,7 @@
         ]
       },
       "uses": [],
-      "seat": "clossys/agents/producer/pick.director/pin.json",
+      "seat": "clossys/agents/producer/seat.pick.director/pin.json",
       "holder": {
         "id": "director",
         "kind": "ai",
@@ -745,7 +745,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/pin.director/pin.json",
+      "seat": "clossys/agents/producer/seat.pin.director/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -969,7 +969,7 @@
         "skill/library-needs.md",
         "skill/check-codes.md"
       ],
-      "seat": "clossys/agents/producer/designer.candidates/pin.json",
+      "seat": "clossys/agents/producer/seat.designer.candidates/pin.json",
       "holder": {
         "id": "designer",
         "kind": "ai",
@@ -1066,7 +1066,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/writer.candidates/pin.json",
+      "seat": "clossys/agents/producer/seat.writer.candidates/pin.json",
       "holder": {
         "id": "writer",
         "kind": "ai",
@@ -1152,7 +1152,7 @@
         ]
       },
       "uses": [],
-      "seat": "clossys/agents/producer/pick.designer/pin.json",
+      "seat": "clossys/agents/producer/seat.pick.designer/pin.json",
       "holder": {
         "id": "designer",
         "kind": "ai",
@@ -1238,7 +1238,7 @@
         ]
       },
       "uses": [],
-      "seat": "clossys/agents/producer/pick.writer/pin.json",
+      "seat": "clossys/agents/producer/seat.pick.writer/pin.json",
       "holder": {
         "id": "writer",
         "kind": "ai",
@@ -1320,7 +1320,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/writer.approve/pin.json",
+      "seat": "clossys/agents/producer/seat.writer.approve/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -1420,7 +1420,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/pin.designer/pin.json",
+      "seat": "clossys/agents/producer/seat.pin.designer/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -1520,7 +1520,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/pin.writer/pin.json",
+      "seat": "clossys/agents/producer/seat.pin.writer/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -1622,7 +1622,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/publisher.candidates/pin.json",
+      "seat": "clossys/agents/producer/seat.publisher.candidates/pin.json",
       "holder": {
         "id": "publisher",
         "kind": "ai",
@@ -1708,7 +1708,7 @@
         ]
       },
       "uses": [],
-      "seat": "clossys/agents/producer/pick.publisher/pin.json",
+      "seat": "clossys/agents/producer/seat.pick.publisher/pin.json",
       "holder": {
         "id": "publisher",
         "kind": "ai",
@@ -1808,7 +1808,7 @@
       "uses": [
         "skill/SKILL.md"
       ],
-      "seat": "clossys/agents/producer/pin.publisher/pin.json",
+      "seat": "clossys/agents/producer/seat.pin.publisher/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -7307,7 +7307,7 @@
   },
   "seats": {
     "ia": {
-      "path": "clossys/agents/producer/ia/pin.json",
+      "path": "clossys/agents/producer/seat.ia/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -7322,7 +7322,7 @@
       "issues": []
     },
     "evidence": {
-      "path": "clossys/agents/producer/evidence/pin.json",
+      "path": "clossys/agents/producer/seat.evidence/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -7337,7 +7337,7 @@
       "issues": []
     },
     "workspace.config": {
-      "path": "clossys/agents/producer/workspace.config/pin.json",
+      "path": "clossys/agents/producer/seat.workspace.config/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -7352,7 +7352,7 @@
       "issues": []
     },
     "seats": {
-      "path": "clossys/agents/producer/seats/pin.json",
+      "path": "clossys/agents/producer/seat.seats/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -7367,7 +7367,7 @@
       "issues": []
     },
     "rules": {
-      "path": "clossys/agents/producer/rules/pin.json",
+      "path": "clossys/agents/producer/seat.rules/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -7382,7 +7382,7 @@
       "issues": []
     },
     "director.candidates": {
-      "path": "clossys/agents/producer/director.candidates/pin.json",
+      "path": "clossys/agents/producer/seat.director.candidates/pin.json",
       "state": "assigned",
       "by": "agent:director",
       "llm": {
@@ -7397,7 +7397,7 @@
       "issues": []
     },
     "pick.director": {
-      "path": "clossys/agents/producer/pick.director/pin.json",
+      "path": "clossys/agents/producer/seat.pick.director/pin.json",
       "state": "assigned",
       "by": "agent:director",
       "llm": {
@@ -7412,7 +7412,7 @@
       "issues": []
     },
     "pin.director": {
-      "path": "clossys/agents/producer/pin.director/pin.json",
+      "path": "clossys/agents/producer/seat.pin.director/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -7427,7 +7427,7 @@
       "issues": []
     },
     "designer.candidates": {
-      "path": "clossys/agents/producer/designer.candidates/pin.json",
+      "path": "clossys/agents/producer/seat.designer.candidates/pin.json",
       "state": "assigned",
       "by": "agent:designer",
       "llm": {
@@ -7442,7 +7442,7 @@
       "issues": []
     },
     "writer.candidates": {
-      "path": "clossys/agents/producer/writer.candidates/pin.json",
+      "path": "clossys/agents/producer/seat.writer.candidates/pin.json",
       "state": "assigned",
       "by": "agent:writer",
       "llm": {
@@ -7457,7 +7457,7 @@
       "issues": []
     },
     "pick.designer": {
-      "path": "clossys/agents/producer/pick.designer/pin.json",
+      "path": "clossys/agents/producer/seat.pick.designer/pin.json",
       "state": "assigned",
       "by": "agent:designer",
       "llm": {
@@ -7472,7 +7472,7 @@
       "issues": []
     },
     "pick.writer": {
-      "path": "clossys/agents/producer/pick.writer/pin.json",
+      "path": "clossys/agents/producer/seat.pick.writer/pin.json",
       "state": "assigned",
       "by": "agent:writer",
       "llm": {
@@ -7487,7 +7487,7 @@
       "issues": []
     },
     "writer.approve": {
-      "path": "clossys/agents/producer/writer.approve/pin.json",
+      "path": "clossys/agents/producer/seat.writer.approve/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -7502,7 +7502,7 @@
       "issues": []
     },
     "pin.designer": {
-      "path": "clossys/agents/producer/pin.designer/pin.json",
+      "path": "clossys/agents/producer/seat.pin.designer/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -7517,7 +7517,7 @@
       "issues": []
     },
     "pin.writer": {
-      "path": "clossys/agents/producer/pin.writer/pin.json",
+      "path": "clossys/agents/producer/seat.pin.writer/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -7532,7 +7532,7 @@
       "issues": []
     },
     "publisher.candidates": {
-      "path": "clossys/agents/producer/publisher.candidates/pin.json",
+      "path": "clossys/agents/producer/seat.publisher.candidates/pin.json",
       "state": "assigned",
       "by": "agent:publisher",
       "llm": {
@@ -7547,7 +7547,7 @@
       "issues": []
     },
     "pick.publisher": {
-      "path": "clossys/agents/producer/pick.publisher/pin.json",
+      "path": "clossys/agents/producer/seat.pick.publisher/pin.json",
       "state": "assigned",
       "by": "agent:publisher",
       "llm": {
@@ -7562,7 +7562,7 @@
       "issues": []
     },
     "pin.publisher": {
-      "path": "clossys/agents/producer/pin.publisher/pin.json",
+      "path": "clossys/agents/producer/seat.pin.publisher/pin.json",
       "state": "assigned",
       "by": "owner",
       "llm": {
@@ -8647,7 +8647,15 @@
       ],
       "workspace.check": [
         {
+          "flag": "--agent",
+          "value": true
+        },
+        {
           "flag": "--check",
+          "value": false
+        },
+        {
+          "flag": "--constitution",
           "value": false
         },
         {
@@ -8672,6 +8680,10 @@
         },
         {
           "flag": "--root",
+          "value": true
+        },
+        {
+          "flag": "--rule",
           "value": true
         },
         {

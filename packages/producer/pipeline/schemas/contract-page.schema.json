@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/contract-page.schema.json",
+  "title": "Page slot contract (contract in clossys/agents/publisher/<slot>/slot.json)",
+  "description": "Derived from src/records/slot-model/validate.ts fixtureShapeIssues (page). The contract is otherwise free-form; R01.3 requires the fixture, this schema gives its shape: a sample route entry.",
+  "type": "object",
+  "properties": {
+    "fixture": {
+      "type": "object",
+      "required": [
+        "route"
+      ],
+      "properties": {
+        "route": {
+          "type": "object",
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^/"
+            }
+          }
+        }
+      }
+    }
+  }
+}

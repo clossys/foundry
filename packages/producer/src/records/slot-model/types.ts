@@ -23,34 +23,49 @@ export const FOUNDRY_IA_AGENTS = Object.keys(FOUNDRY_IA_AFTER) as (keyof typeof 
 export type SlotAgent = typeof SLOT_AGENTS[number];
 
 /**
- * The seat kind: the Producer tree holds seats, not slots. A seat folder is one pipeline decide
- * step that has a seat (`pin.<agent>`, `pick.<agent>`, ...), placed by the Producer ia.json exactly
- * as a slot folder is placed by its agent's ia.json, and holds its seat as a candidate file plus a
- * pin under the slot pin contract (pin.json: candidate, sha256, decidedBy, basis, at):
+ * The seat kind (D5, W2-A): the Producer tree holds seats, read as slots. A seat is one pipeline
+ * decide step that has a seat (`pin.<agent>`, `pick.<agent>`, ...); its slot id is `seat.<step-id>`
+ * (`seat.pin.director`), placed by the Producer ia.json exactly as a slot is placed by its agent's
+ * ia.json, with a slot.json of kind `seat` (agent `producer`, contract valid against
+ * pipeline/schemas/contract-seat.schema.json) and its seat as a candidate file plus a pin under the
+ * slot pin contract (pin.json: candidate, sha256, decidedBy, basis, at):
  *
- *   <consumer>/agents/producer/ia.json                         seat ids in IA order (grouped by round and stage)
- *   <consumer>/agents/producer/<step>/candidates/<step>-v<n>.json  who decides that step (pipeline/schemas/seat.schema.json)
- *   <consumer>/agents/producer/<step>/pin.json                 the pinned seat candidate
+ *   <consumer>/agents/producer/ia.json                                    seat slot ids in IA order (grouped by round and stage)
+ *   <consumer>/agents/producer/seat.<step>/slot.json                      kind seat; contract {step, fixture}
+ *   <consumer>/agents/producer/seat.<step>/candidates/<step>-v<n>.json    who decides that step (pipeline/schemas/seat.schema.json)
+ *   <consumer>/agents/producer/seat.<step>/pin.json                       the pinned seat candidate
  *
- * A seat has no slot.json (the step is its contract). The pipeline (src/pipeline/seats.ts) reads the
- * pinned seat through records/slots.ts; check:git-cms (R-GIT-CMS) holds the tree to this layout and
- * check:slot-pins (R-SLOT-PINS) fails a placed seat without exactly one valid pin. The retired
- * seat.json file is refused wherever it is found.
+ * The pipeline (src/pipeline/seats.ts) reads the pinned seat through records/slots.ts by step id;
+ * check:git-cms (R-GIT-CMS) holds the tree to this layout, check:slot-pins (R-SLOT-PINS) fails a
+ * placed seat without exactly one valid pin and the constitution's R01 holds every seat to its
+ * slot.json and contract. The retired seat.json file is refused wherever it is found.
  */
 export const SEAT_AGENT = "producer" as const;
 export type SeatAgent = typeof SEAT_AGENT;
 /** Every agent tree under `<consumer>/agents`: the four slot trees and the seat tree. */
 export const MODEL_AGENTS = [...SLOT_AGENTS, SEAT_AGENT] as const;
 export type ModelAgent = typeof MODEL_AGENTS[number];
-/** What a folder in an agent tree is: a slot (slot.json, candidates/, pin.json) or a seat (candidates/, pin.json). */
+/**
+ * What a folder in an agent tree is: a slot, or a seat (a slot of kind `seat`, in the Producer tree).
+ * Kept for the readers that count content slots apart from seats (pipeline/status.ts, chain.ts) and for
+ * check:git-cms; retired with them in E1, now that a seat carries a slot.json like any slot.
+ */
 export const FOLDER_KINDS = ["slot", "seat"] as const;
 export type FolderKind = typeof FOLDER_KINDS[number];
 export const FOLDER_KIND: Readonly<Record<ModelAgent, FolderKind>> = {
   director: "slot", designer: "slot", writer: "slot", publisher: "slot", producer: "seat",
 };
 
-export const SLOT_KINDS = ["brief", "element", "strings", "page", "publication"] as const;
+export const SLOT_KINDS = ["brief", "element", "strings", "page", "publication", "seat"] as const;
 export type SlotKind = typeof SLOT_KINDS[number];
+/** The kinds of the four content agents' slots (every kind but the Producer's `seat`). */
+export type ContentKind = Exclude<SlotKind, "seat">;
+
+/** A seat's slot id is its decide step's id under `seat.` (D5): `seat.pin.director` seats `pin.director`. */
+export const SEAT_PREFIX = "seat." as const;
+export const seatSlotId = (step: string): string => `${SEAT_PREFIX}${step}`;
+/** The decide step a seat slot id seats, or undefined when the id is not a seat id. */
+export const seatStepOf = (id: string): string | undefined => (id.startsWith(SEAT_PREFIX) && id.length > SEAT_PREFIX.length ? id.slice(SEAT_PREFIX.length) : undefined);
 
 export const IA_SCHEMA = "clossys.ia/1" as const;
 export const SLOT_SCHEMA = "clossys.slot/1" as const;
@@ -116,10 +131,15 @@ export interface SlotPosition { readonly l0?: string; readonly l1: string; reado
 export interface SlotDoc {
   readonly schema: typeof SLOT_SCHEMA;
   readonly id: string;
-  readonly agent: SlotAgent;
+  readonly agent: ModelAgent;
   readonly ia: SlotPosition;
   readonly kind: SlotKind;
-  /** Copied from Foundry: Designer slot contract, Director question/mustContain, Writer leaf rule, Publisher format. */
+  /** The standard the slot is judged by (R15; optional until W2-I makes it required). */
+  readonly standard?: string;
+  /**
+   * Copied from Foundry: Designer slot contract, Director question/mustContain, Writer leaf rule, Publisher format;
+   * a seat's `{step, fixture}`. `fixture` (D1, R01.3) is the sample every candidate is certified with.
+   */
   readonly contract: Readonly<Record<string, unknown>>;
   /** Upstream slots this slot derives from (F10). Empty = not declared; readiness reports it. */
   readonly inputs: readonly string[];
@@ -205,15 +225,18 @@ export interface SourceDoc {
 export const LEGACY_PROVENANCE_KEYS = ["lineage", "cites", "links", "sources", "originKinds", "origin", "original"] as const;
 export const CANDIDATE_STATUS_KEYS = ["status", "active", "confirmed", "pinned"] as const;
 
-export const AGENT_KIND: Readonly<Record<SlotAgent, readonly SlotKind[]>> = {
+export const AGENT_KIND: Readonly<Record<ModelAgent, readonly SlotKind[]>> = {
   director: ["brief"],
   designer: ["element"],
   writer: ["strings"],
   publisher: ["page", "publication"],
+  producer: ["seat"],
 };
 export const KIND_EXT: Readonly<Record<SlotKind, "md" | "json">> = {
-  brief: "md", element: "json", strings: "md", page: "json", publication: "json",
+  brief: "md", element: "json", strings: "md", page: "json", publication: "json", seat: "json",
 };
+/** A standard id (slot.json `standard`, R15): lower-case words joined by dots and hyphens. */
+export const STANDARD_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
 
 export const SLOT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
 /** A page candidate's copy binding target: `<writer slot>#<key>`. Page `copy` maps copy slot to this ref, never the reverse. */

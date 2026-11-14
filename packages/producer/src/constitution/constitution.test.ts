@@ -10,7 +10,7 @@ import { cleanSpec, contextOf, expectCatches, writeWorkspace, NO_HISTORY } from 
 
 const packageRoot = fileURLToPath(new URL("../../", import.meta.url));
 const IDS = Array.from({ length: 14 }, (_, index) => `R${String(index + 1).padStart(2, "0")}`);
-const ENFORCED = ["R04", "R06", "R07", "R08", "R09", "R10"];
+const ENFORCED = ["R01", "R04", "R06", "R07", "R08", "R09", "R10"];
 
 describe("constitution registry", () => {
   it("rules.json lists R01-R14 once each, scope all-records, with existing module and test paths", () => {
@@ -63,7 +63,8 @@ describe("constitution runner", () => {
     expect(report.pending).toBeGreaterThan(0);
     expect(report.records).toEqual({ slots: 6, liveSlots: 6, pins: 6, candidates: 6 });
     const text = formatReport(report);
-    expect(text).toMatch(/^R01 PENDING {2}rows 6/m);
+    expect(text).toMatch(/^R01 ok {2}rows 0$/m);
+    expect(text).toMatch(/^R02 PENDING {2}rows \d+/m);
     expect(text).toMatch(/^R04 ok {2}rows 0$/m);
     expect(text).toMatch(/constitution: FAIL {2}rows \d+ \(pending \d+, findings 0\)/);
   });
@@ -73,7 +74,7 @@ describe("constitution runner", () => {
     expect(runConstitution({ root, consumer, rule: "R04", history: () => NO_HISTORY })).toMatchObject({ ok: true, total: 0 });
     const spec = cleanSpec();
     spec.designer!["ui.button"]!.pin = false;
-    spec.producer!.director!.pin = false;
+    spec.producer!["seat.director"]!.pin = false;
     const bad = writeWorkspace(spec);
     const report = runConstitution({ root: bad.root, consumer: bad.consumer, rule: "R04", history: () => NO_HISTORY });
     expect(report).toMatchObject({ ok: false, total: 2, pending: 0 });

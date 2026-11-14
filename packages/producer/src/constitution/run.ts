@@ -38,6 +38,8 @@ export interface RunOptions extends ContextOptions {
   readonly consumer: string;
   /** Only this rule (R01..R14). */
   readonly rule?: string;
+  /** Only the rows about this agent's records, plus rows about no one agent (`*`, pending rows); record counts narrow to it. */
+  readonly agent?: string;
   /** Clock for the timing field; tests pass a fixed one. */
   readonly now?: () => number;
 }
@@ -57,7 +59,7 @@ export function runConstitution(options: RunOptions): ConstitutionReport {
   const summaries: RuleSummary[] = [];
   const rows: Row[] = [];
   for (const rule of rules) {
-    const ruleRows = rule.run.flatMap(check => check.fn(ctx));
+    const ruleRows = rule.run.flatMap(check => check.fn(ctx)).filter(item => !options.agent || item.agent === options.agent || item.agent === "*");
     rows.push(...ruleRows);
     summaries.push({
       id: rule.id, statement: rule.statement, status: rule.status,
@@ -66,7 +68,7 @@ export function runConstitution(options: RunOptions): ConstitutionReport {
     });
   }
   let slots = 0, liveSlots = 0, pins = 0, candidates = 0;
-  for (const agent of ctx.agents) for (const slot of agent.slots.values()) {
+  for (const agent of ctx.agents) if (!options.agent || agent.agent === options.agent) for (const slot of agent.slots.values()) {
     slots++; if (slot.live) liveSlots++; if (slot.pin) pins++; candidates += slot.candidates.length;
   }
   const pending = rows.filter(item => item.pending).length;

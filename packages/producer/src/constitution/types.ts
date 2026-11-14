@@ -132,7 +132,12 @@ export interface ConstitutionContext {
   readonly history: () => CandidateHistory;
   /** Recorded format-only migrations; absent when the workspace has no manifest. */
   readonly migrations?: MigrationsRecord;
+  /** The Foundry-placed leaf ids of a Foundry-placed agent (R01.5); read lazily, once per agent. Throws when the Foundry IA is unreadable. */
+  readonly foundryLeaves: (agent: FoundryAgent) => ReadonlySet<string>;
 }
+
+/** The agents whose IA Foundry places (R01.5). */
+export type FoundryAgent = "director" | "designer" | "writer";
 
 /** A check: one pure function from the context to rows. */
 export type Check = (ctx: ConstitutionContext) => Row[];

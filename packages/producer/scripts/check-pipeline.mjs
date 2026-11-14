@@ -483,9 +483,13 @@ if (lib) for (const step of defined) {
   else if (!lib.roster.isRostered(holder.id)) fail("lane.unrostered", `step ${JSON.stringify(step.id)}: its holder ${holder.id} (${holder.source === "file" ? `${seatReports[step.id]?.path} by` : "derived from its actor"}) is not a roster entry (${lib.roster.ROSTER.join(", ")})`);
 }
 const seatDir = join(REPO, "clossys", "agents", "producer");
+/** A seat is the Producer slot `seat.<step-id>` (D5); the step id is the rest of the slot id. */
+const seatStep = id => (typeof id === "string" && id.startsWith("seat.") ? id.slice("seat.".length) : undefined);
 if (existsSync(seatDir)) for (const name of readdirSync(seatDir)) {
   if (!statSync(join(seatDir, name)).isDirectory()) continue;
-  const step = byId.get(name);
+  const id = seatStep(name);
+  if (id === undefined) { fail("seat.invalid", `clossys/agents/producer/${name}/ is not a seat slot: seat folders are named seat.<step-id>`); continue; }
+  const step = byId.get(id);
   if (!step || !isDecide(step)) fail("seat.invalid", `clossys/agents/producer/${name}/ has a seat, but ${step ? "that step is plumb" : "no step has that id"}`);
 }
 /** The seat kind's IA (producer ia.json) places each seat under its step's round (L1) and stage (L2). */
@@ -494,8 +498,8 @@ if (existsSync(seatIa)) {
   let ia;
   try { ia = JSON.parse(readFileSync(seatIa, "utf8")); } catch { fail("seat.invalid", "clossys/agents/producer/ia.json is not JSON"); }
   for (const node of Array.isArray(ia?.nodes) ? ia.nodes : []) for (const child of Array.isArray(node?.children) ? node.children : []) for (const id of Array.isArray(child?.slots) ? child.slots : []) {
-    const step = byId.get(id);
-    if (!step || !isDecide(step)) { fail("seat.invalid", `clossys/agents/producer/ia.json places ${id}, which is not a decide step`); continue; }
+    const step = byId.get(seatStep(id));
+    if (!step || !isDecide(step)) { fail("seat.invalid", `clossys/agents/producer/ia.json places ${id}, which is not seat.<decide step id>`); continue; }
     if (node.id !== step.stage.split(".")[0] || child.id !== step.stage) fail("seat.invalid", `clossys/agents/producer/ia.json places ${id} under ${node.id}/${child.id}; its step's stage is ${step.stage}`);
   }
 }

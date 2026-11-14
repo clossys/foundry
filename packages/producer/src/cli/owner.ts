@@ -20,7 +20,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { checkSlotModel } from "../records/slot-check.js";
-import { AGENT_KIND, CANDIDATE_NAME, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA } from "../records/slot-model/types.js";
+import { AGENT_KIND, CANDIDATE_NAME, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, seatSlotId } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
@@ -332,7 +332,8 @@ function runSeatPolicy(flags: Flags, cwd: string): CliResult {
  * A new round or group takes its id as its label, as `ia --under` does: display names come from the Writer (records/slot-labels.ts iaLabel), never words made from the id.
  */
 export function placeSeat(ia: { schema: string; source: string; extensions: string[]; nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] }, step: Step) {
-  if (ia.nodes.some(node => node.children.some(child => child.slots.includes(step.id)))) return ia;
+  const id = seatSlotId(step.id);
+  if (ia.nodes.some(node => node.children.some(child => child.slots.includes(id)))) return ia;
   const round = roundOf(step.stage), rounds: readonly string[] = ROUNDS.map(each => each.id);
   const nodes = ia.nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child, slots: [...child.slots] })) }));
   let node = nodes.find(each => each.id === round);
@@ -347,7 +348,7 @@ export function placeSeat(ia: { schema: string; source: string; extensions: stri
     const at = node.children.findIndex(each => STAGES.indexOf(each.id as never) > STAGES.indexOf(step.stage));
     node.children.splice(at < 0 ? node.children.length : at, 0, child);
   }
-  child.slots.push(step.id);
+  child.slots.push(id);
   return { ...ia, nodes };
 }
 
@@ -402,9 +403,18 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
   const ia = modelExists(iaFile) ? readModelJson(iaFile) as Parameters<typeof placeSeat>[0] : { schema: IA_SCHEMA, source: "@clossys/producer#src/pipeline/steps", extensions: [], nodes: [] };
   const placed = placeSeat(ia, step);
   const candidate = join(candidatesDir(dir), name);
-  const added = guarded(consumer, [iaFile, candidate, pinFile(dir)], () => {
+  // A seat is a slot of kind seat (D5): its slot.json is written once, with the step and a sample seat as the contract fixture.
+  const docFile = slotFile(dir);
+  const slotId = seatSlotId(id);
+  const doc = modelExists(docFile) ? undefined : {
+    schema: SLOT_SCHEMA, id: slotId, agent: "producer", ia: slotPositions("producer", placed as IaDoc).get(slotId)!, kind: "seat",
+    contract: { step: id, fixture: { step: id, seat } }, inputs: [], uses: [],
+  };
+  if (doc) { const docIssues = validateSlotDoc(doc, docFile); if (docIssues.length) return refuse("seat", docIssues.map(issue => issue.message).join("; ")); }
+  const added = guarded(consumer, [iaFile, candidate, pinFile(dir), ...(doc ? [docFile] : [])], () => {
     if (placed !== ia) replaceFile(iaFile, jsonBytes(placed));
     mkdirSync(candidatesDir(dir), { recursive: true });
+    if (doc) writeFileSync(docFile, jsonBytes(doc), { flag: "wx" });
     writeFileSync(candidate, bytes, { flag: "wx" });
     replaceFile(pinFile(dir), jsonBytes(pin));
   });

@@ -11,26 +11,26 @@
           "id": "direct.brief",
           "label": "Brief",
           "slots": [
-            "ia",
-            "evidence",
-            "workspace.config",
-            "seats",
-            "rules"
+            "seat.ia",
+            "seat.evidence",
+            "seat.workspace.config",
+            "seat.seats",
+            "seat.rules"
           ]
         },
         {
           "id": "direct.make",
           "label": "Make",
           "slots": [
-            "director.candidates"
+            "seat.director.candidates"
           ]
         },
         {
           "id": "direct.pin",
           "label": "Pin",
           "slots": [
-            "pin.director",
-            "pick.director"
+            "seat.pin.director",
+            "seat.pick.director"
           ]
         }
       ]
@@ -43,19 +43,19 @@
           "id": "design.make",
           "label": "Make",
           "slots": [
-            "designer.candidates",
-            "writer.candidates"
+            "seat.designer.candidates",
+            "seat.writer.candidates"
           ]
         },
         {
           "id": "design.pin",
           "label": "Pin",
           "slots": [
-            "pin.designer",
-            "pick.designer",
-            "pin.writer",
-            "pick.writer",
-            "writer.approve"
+            "seat.pin.designer",
+            "seat.pick.designer",
+            "seat.pin.writer",
+            "seat.pick.writer",
+            "seat.writer.approve"
           ]
         }
       ]
@@ -68,15 +68,15 @@
           "id": "publish.make",
           "label": "Make",
           "slots": [
-            "publisher.candidates"
+            "seat.publisher.candidates"
           ]
         },
         {
           "id": "publish.pin",
           "label": "Pin",
           "slots": [
-            "pin.publisher",
-            "pick.publisher"
+            "seat.pin.publisher",
+            "seat.pick.publisher"
           ]
         }
       ]

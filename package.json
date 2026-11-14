@@ -58,6 +58,7 @@
     "//check-decisions": "Rule R-DECISIONS-BY-CLI: every slot decision under clossys/agents is a record `clossys pin` wrote -- pin.json {candidate, sha256, decidedBy, at} whose hash matches the candidate file, or slot.json notNeeded {reason, since, decidedBy}, never both. Reads files only, so it runs before build.",
     "check:decisions": "node scripts/check-decisions.mjs",
     "check:git-cms": "node scripts/check-git-cms.mjs",
+    "check:constitution": "node packages/producer/dist/cli/index.js check --constitution",
     "check:slot-options": "node packages/producer/scripts/check-slot-options.mjs",
     "//check-visibility-declarations": "The OFFLINE half of probe:package-visibility, split out so it runs on every pull request in ci.yml's `scope` job. The live half calls the live public npm registry over the network, so it runs on demand only (`npm run probe:package-visibility`), not because it needs a credential (it needs none). This half needs no network access at all: it confirms governance/release-catalog.json's active release target actually resolves against package-scope.json, and that every \"deprecated\" package under the active scope declares a valid, unexpired docs/contracts/package-retention.json entry. This half is a real gate; the live half stays out of `check` only because it is a network call.",
     "check:package-evidence": "node scripts/check-package-evidence.mjs",

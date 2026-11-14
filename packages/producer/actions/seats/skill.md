@@ -4,4 +4,4 @@ Decide who holds each decide step: an llm seat (model and prompt file), a human 
 
 - A pick seat uses its agent's make-step llm.
 - A human seat names a clossys command that exists; a seat with no command is open, never passing.
-- Write a seat candidate `clossys/agents/producer/<step>/candidates/<step>-v<n>.json` and pin it; check:pipeline validates the seat.
+- Write a seat candidate `clossys/agents/producer/seat.<step>/candidates/<step>-v<n>.json` and pin it (the seat folder's slot.json is written once, kind seat); check:pipeline validates the seat.

@@ -1,0 +1,104 @@
+/**
+ * One-shot `migrate seats-to-slots` (W2-A, D5; deleted in E1): the Producer seats become slots of
+ * kind `seat`. Each placed seat folder `agents/producer/<step>/` moves to `seat.<step>/` (candidates
+ * and pin.json move with it, bytes unchanged), gains a slot.json (kind `seat`, its IA position, the
+ * contract `{step, fixture: {step, seat}}` with the pinned seat as the sample), and producer ia.json
+ * places `seat.<step>` where it placed `<step>`.
+ *
+ * Deterministic and idempotent: a second run plans no change. `check` plans without writing and
+ * fails while a change is still pending. A folder the IA does not place, or a move whose target
+ * already exists, is a finding and is never touched.
+ */
+import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { join, relative, sep } from "node:path";
+import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, slotFile } from "../records/slot-model/layout.js";
+import { slotPositions } from "../records/slot-model/foundry-ia.js";
+import { SEAT_AGENT, SEAT_PREFIX, SLOT_SCHEMA, seatSlotId, seatStepOf, type IaDoc } from "../records/slot-model/types.js";
+import { validateIa, validateSlotDoc } from "../records/slot-model/validate.js";
+import { loadSchema, validateValue } from "../pipeline/schema.js";
+
+/** The sample seat a seat with no valid pinned seat carries in its contract fixture. */
+export const SAMPLE_SEAT = { by: "owner", llm: null, human: null } as const;
+
+export interface SeatsToSlotsPlan {
+  /** Folder moves, consumer-relative (`agents/producer/<step>` to `agents/producer/seat.<step>`). */
+  readonly moves: readonly { readonly from: string; readonly to: string }[];
+  /** slot.json files to write, consumer-relative path (after the move) and bytes. */
+  readonly slots: readonly { readonly path: string; readonly bytes: string }[];
+  /** The rewritten producer ia.json, when any id changes. */
+  readonly ia?: { readonly path: string; readonly bytes: string };
+  readonly findings: readonly string[];
+}
+
+const posix = (path: string) => path.split(sep).join("/");
+const isDir = (path: string) => { try { return statSync(path).isDirectory(); } catch { return false; } };
+
+/** The pinned seat of a folder when it is valid against seat.schema.json; otherwise the sample seat. */
+function sampleSeat(dir: string): unknown {
+  try {
+    const pin = JSON.parse(readFileSync(pinFile(dir), "utf8")) as { candidate?: unknown };
+    if (typeof pin.candidate !== "string") return SAMPLE_SEAT;
+    const seat = JSON.parse(readFileSync(join(candidatesDir(dir), pin.candidate), "utf8")) as unknown;
+    return validateValue(seat, loadSchema("seat")).length ? SAMPLE_SEAT : seat;
+  } catch { return SAMPLE_SEAT; }
+}
+
+export function planSeatsToSlots(consumer: string): SeatsToSlotsPlan {
+  const root = agentDir(consumer, SEAT_AGENT);
+  const rel = (path: string) => posix(relative(consumer, path));
+  const findings: string[] = [];
+  const iaFile = iaPath(consumer, SEAT_AGENT);
+  if (!existsSync(iaFile)) return { moves: [], slots: [], findings: [`${rel(iaFile)} is missing`] };
+  const ia = JSON.parse(readFileSync(iaFile, "utf8")) as IaDoc;
+  const renamed: IaDoc = {
+    ...ia,
+    nodes: ia.nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child, slots: child.slots.map(id => (id.startsWith(SEAT_PREFIX) ? id : seatSlotId(id))) })) })),
+  };
+  const iaIssues = validateIa(renamed, rel(iaFile), SEAT_AGENT);
+  if (iaIssues.length) return { moves: [], slots: [], findings: iaIssues.map(issue => issue.message) };
+  const positions = slotPositions(SEAT_AGENT, renamed);
+  const placed = new Set(positions.keys());
+  const moves: { from: string; to: string }[] = [];
+  const slots: { path: string; bytes: string }[] = [];
+  for (const name of readdirSync(root).sort()) {
+    if (!isDir(join(root, name)) || name.startsWith(SEAT_PREFIX)) continue;
+    if (!placed.has(seatSlotId(name))) findings.push(`${rel(join(root, name))} is not a seat producer ia.json places; left as it is`);
+  }
+  for (const [id, position] of positions) {
+    const step = seatStepOf(id)!;
+    const from = join(root, step), to = join(root, id);
+    let dir = to;
+    if (isDir(from)) {
+      if (existsSync(to)) { findings.push(`${rel(from)} and ${rel(to)} both exist; resolve by hand`); continue; }
+      moves.push({ from: rel(from), to: rel(to) });
+      dir = from;
+    } else if (!isDir(to)) continue; // an open seat: placed, never written; its first `clossys seat` writes the folder.
+    if (existsSync(slotFile(dir))) continue;
+    const doc = { schema: SLOT_SCHEMA, id, agent: SEAT_AGENT, ia: position, kind: "seat", contract: { step, fixture: { step, seat: sampleSeat(dir) } }, inputs: [], uses: [] };
+    const issues = validateSlotDoc(doc, rel(slotFile(to)));
+    if (issues.length) { findings.push(...issues.map(issue => `${issue.path}: ${issue.message}`)); continue; }
+    slots.push({ path: rel(slotFile(to)), bytes: jsonBytes(doc) });
+  }
+  const bytes = jsonBytes(renamed);
+  const changed = bytes !== readFileSync(iaFile, "utf8");
+  return { moves, slots, ...(changed ? { ia: { path: rel(iaFile), bytes } } : {}), findings };
+}
+
+export function applySeatsToSlots(consumer: string, plan: SeatsToSlotsPlan): void {
+  if (plan.findings.length) throw new Error(`seats-to-slots: resolve the findings first: ${plan.findings.join("; ")}`);
+  for (const move of plan.moves) renameSync(join(consumer, move.from), join(consumer, move.to));
+  for (const slot of plan.slots) writeFileSync(join(consumer, slot.path), slot.bytes, { flag: "wx" });
+  if (plan.ia) writeFileSync(join(consumer, plan.ia.path), plan.ia.bytes);
+}
+
+/** `check`: plan only, exit 1 while anything is pending or a finding stands. Otherwise apply, exit 1 on a finding. */
+export function runSeatsToSlots(consumer: string, options: { readonly check?: boolean } = {}): { exitCode: number; message: string } {
+  const plan = planSeatsToSlots(consumer);
+  const summary = `seats-to-slots: ${plan.moves.length} folder(s) to move, ${plan.slots.length} slot.json to write, ia.json ${plan.ia ? "to rewrite" : "current"}`;
+  const findings = plan.findings.map(finding => `  ${finding}`).join("\n");
+  if (plan.findings.length) return { exitCode: 1, message: `${summary}\n${findings}` };
+  const pending = plan.moves.length + plan.slots.length + (plan.ia ? 1 : 0);
+  if (options.check) return { exitCode: pending ? 1 : 0, message: pending ? summary : "seats-to-slots: current" };
+  applySeatsToSlots(consumer, plan);
+  return { exitCode: 0, message: pending ? `seats-to-slots: moved ${plan.moves.length} folder(s), wrote ${plan.slots.length} slot.json, ia.json ${plan.ia ? "rewritten" : "current"}` : "seats-to-slots: current" };
+}

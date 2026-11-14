@@ -353,7 +353,7 @@
           "check": "packages/producer#check:slot-pins",
           "cwd": "packages/producer",
           "run": "node scripts/check-slot-pins.mjs --root {fixture}",
-          "expect": "^\\s+agents/producer/pin\\.director \\[seat-rejected\\]"
+          "expect": "^\\s+agents/producer/seat\\.pin\\.director \\[seat-rejected\\]"
         }
       ]
     },

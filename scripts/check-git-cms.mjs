@@ -11,12 +11,14 @@
  *   clossys/agents/<agent>/<slot>/pin.json            (absent only when slot.json says notNeeded)
  *
  * except the Producer tree, which is the seat kind (slot-model types.ts SEAT_AGENT): its folders are
- * pipeline decide-step seats, placed by its ia.json like slots, each holding its seat as candidate
- * files plus one pin under the slot pin contract (no slot.json: the step is its contract):
+ * pipeline decide-step seats, slots of kind `seat` with ids `seat.<step>` (D5), placed by its ia.json,
+ * each holding its slot.json (the contract names the step), its seat as candidate files and one pin
+ * under the slot pin contract:
  *
  *   clossys/agents/producer/ia.json
- *   clossys/agents/producer/<step>/candidates/<step>-v<n>.json
- *   clossys/agents/producer/<step>/pin.json
+ *   clossys/agents/producer/seat.<step>/slot.json
+ *   clossys/agents/producer/seat.<step>/candidates/<step>-v<n>.json
+ *   clossys/agents/producer/seat.<step>/pin.json
  *
  * Evidence, findings and other working files live outside the agent trees (clossys/evidence/).
  * The check reads the files directly (no build needed) and fails on:
@@ -58,7 +60,7 @@ const SLOT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
 export const SEAT_TREES = Object.freeze(['producer']);
 /** The only agent folders clossys/agents may hold (slot-model types.ts FOLDER_KIND keys). */
 export const AGENTS = Object.freeze(['director', 'designer', 'writer', 'publisher', 'producer']);
-const SEAT_ENTRIES = new Set(['candidates', 'pin.json']);
+const SEAT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
 
 const stat = path => { try { return lstatSync(path); } catch { return undefined; } };
 const isDir = path => { const info = stat(path); return !!info && info.isDirectory() && !info.isSymbolicLink(); };
@@ -127,12 +129,12 @@ function checkSlot(agentDir, agent, slot, add) {
   return { ...checkCandidatesPin(dir, where, add, 'slot'), notNeeded: notNeeded !== undefined };
 }
 
-/** One listed seat folder: candidates/ and pin.json only; the pinned candidate is a JSON object naming who holds the seat. */
+/** One listed seat folder: slot.json, candidates/ and pin.json only; the pinned candidate is a JSON object naming who holds the seat. */
 function checkSeat(agentDir, agent, seat, add) {
   const dir = join(agentDir, seat), where = `${agent}/${seat}`;
   for (const name of readdirSync(dir).sort()) {
     if (name === 'seat.json') add('seat-shape', `${where}/${name}`, 'seat.json is retired: a seat is a candidate file plus pin.json');
-    else if (!SEAT_ENTRIES.has(name)) add('seat-shape', `${where}/${name}`, 'a seat folder holds only candidates/ and pin.json');
+    else if (!SEAT_ENTRIES.has(name)) add('seat-shape', `${where}/${name}`, 'a seat folder holds only slot.json, candidates/ and pin.json');
   }
   const state = checkCandidatesPin(dir, where, add, 'seat');
   if (!state.pinned) { add('seat-shape', `${where}/pin.json`, 'seat folder has no pin.json'); return {}; }

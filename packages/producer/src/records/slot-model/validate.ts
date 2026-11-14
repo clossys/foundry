@@ -1,10 +1,11 @@
 import { pinIssues } from "@clossys/director";
 import { parseFrontmatter } from "./frontmatter.js";
+import { loadSchema, validateValue } from "../../pipeline/schema.js";
 import { contractFixtureIssues } from "./contract-fixture.js";
 import {
-  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
-  PUBLICATION_SCHEMA, OPTION_COUNTS, VARY_ID, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
-  type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
+  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, MODEL_AGENTS, NODE_ID, PAGE_SCHEMA,
+  PUBLICATION_SCHEMA, OPTION_COUNTS, VARY_ID, SEAT_AGENT, SEAT_PREFIX, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, STANDARD_ID, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
+  seatStepOf, type IaDoc, type ModelAgent, type PinDoc, type SlotDoc, type SlotKind, type SourceDoc,
 } from "./types.js";
 
 /** Stable finding codes; `clossys migrate slots --check` and the mutation proofs name them. */
@@ -19,7 +20,11 @@ const object = (value: unknown): value is Record<string, unknown> => value !== n
 const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === "string");
 const nonEmpty = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 
-export function validateIa(value: unknown, path = "ia.json"): SlotModelIssue[] {
+/**
+ * One agent's ia.json. With `agent`, the seat namespace is checked too (D5): every Producer id is
+ * `seat.<step-id>`, and no other agent places an id in the `seat.` namespace.
+ */
+export function validateIa(value: unknown, path = "ia.json", agent?: ModelAgent): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "ia-invalid", path, message });
   if (!object(value)) { fail("expected an object"); return issues; }
@@ -39,6 +44,8 @@ export function validateIa(value: unknown, path = "ia.json"): SlotModelIssue[] {
       childIds.add(child.id);
       for (const slot of child.slots) {
         if (!SLOT_ID.test(slot)) fail(`invalid slot id ${slot}`);
+        else if (agent === SEAT_AGENT && seatStepOf(slot) === undefined) fail(`producer slot id ${slot} must be ${SEAT_PREFIX}<step-id>`);
+        else if (agent !== undefined && agent !== SEAT_AGENT && slot.startsWith(SEAT_PREFIX)) fail(`slot id ${slot} is in the producer seat namespace`);
         if (seen.has(slot)) fail(`slot ${slot} appears twice`);
         seen.add(slot);
       }
@@ -84,16 +91,20 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "slot-invalid", path, message });
   if (!object(value)) { fail("expected an object"); return issues; }
-  const allowed = new Set(["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses", "notNeeded", "options", "varyOn"]);
+  const allowed = new Set(["schema", "id", "agent", "ia", "kind", "standard", "contract", "inputs", "uses", "notNeeded", "options", "varyOn"]);
   for (const key of Object.keys(value)) if (!allowed.has(key)) fail(`unknown key ${key}${key === "usedBy" ? " (usedBy is computed, never stored)" : ""}`);
   if (value.schema !== SLOT_SCHEMA) fail(`schema must be ${SLOT_SCHEMA}`);
   if (!nonEmpty(value.id) || !SLOT_ID.test(value.id)) fail("id must be a slot id");
-  if (!SLOT_AGENTS.includes(value.agent as SlotAgent)) fail("agent must be director, designer, writer or publisher");
-  if (!SLOT_KINDS.includes(value.kind as SlotKind)) fail("kind must be brief, element, strings, page or publication");
-  else if (SLOT_AGENTS.includes(value.agent as SlotAgent) && !AGENT_KIND[value.agent as SlotAgent].includes(value.kind as SlotKind)) fail(`kind ${String(value.kind)} does not belong to ${String(value.agent)}`);
+  const agent = MODEL_AGENTS.includes(value.agent as ModelAgent) ? value.agent as ModelAgent : undefined;
+  if (!agent) fail("agent must be director, designer, writer, publisher or producer");
+  if (!SLOT_KINDS.includes(value.kind as SlotKind)) fail(`kind must be ${SLOT_KINDS.join(", ")}`);
+  else if (agent && !AGENT_KIND[agent].includes(value.kind as SlotKind)) fail(`kind ${String(value.kind)} does not belong to ${String(value.agent)}`);
+  if (nonEmpty(value.id) && agent === SEAT_AGENT && seatStepOf(value.id) === undefined) fail(`producer slot id must be ${SEAT_PREFIX}<step-id>`);
+  if (value.standard !== undefined && (typeof value.standard !== "string" || !STANDARD_ID.test(value.standard))) fail("standard must be a standard id such as element.button");
   const ia = value.ia;
   if (!object(ia) || !nonEmpty(ia.l1) || !nonEmpty(ia.l2) || !Number.isSafeInteger(ia.order) || (ia.order as number) < 0 || (ia.l0 !== undefined && !nonEmpty(ia.l0))) fail("ia must be {l0?, l1, l2, order}");
-  if (!object(value.contract)) fail("contract must be an object"); else issues.push(...contractFixtureIssues(value.contract, path));
+  if (!object(value.contract)) fail("contract must be an object");
+  else issues.push(...contractIssues(value.kind as SlotKind, value.contract, typeof value.id === "string" ? value.id : "", path));
   for (const key of ["inputs", "uses"] as const) {
     if (!strings(value[key])) fail(`${key} must be a list of slot ids`);
     else for (const id of value[key] as string[]) if (!SLOT_ID.test(id)) fail(`${key} names an invalid slot id ${id}`);
@@ -110,6 +121,48 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   if (value.varyOn !== undefined && (typeof value.varyOn !== "string" || !VARY_ID.test(value.varyOn))) fail("varyOn must be an axis id such as tone");
   if (typeof value.options === "number" && value.options > 1 && value.varyOn === undefined) fail("varyOn is required when options > 1");
   return issues;
+}
+
+/** A kind's contract, beyond the object shape: the seat contract against contract-seat.schema.json, every kind's fixture by its shape. */
+function contractIssues(kind: SlotKind, contract: Record<string, unknown>, id: string, path: string): SlotModelIssue[] {
+  if (kind === "seat") return seatContractIssues(contract, id, path);
+  if (!SLOT_KINDS.includes(kind) || contract.fixture === undefined) return [];
+  return fixtureShapeIssues(kind, contract).map(message => ({ code: "slot-invalid" as const, path, message: `contract.fixture ${message}` }));
+}
+
+/** A seat slot's contract: `{step, fixture: {step, seat}}`, the step being the id after `seat.`. */
+export function seatContractIssues(contract: unknown, id: string, path = "slot.json"): SlotModelIssue[] {
+  const issues: SlotModelIssue[] = validateValue(contract, loadSchema("contract-seat")).map(issue => ({ code: "slot-invalid", path, message: `contract${issue.path === "/" ? "" : issue.path} ${issue.message}` }));
+  if (!object(contract)) return issues;
+  const step = seatStepOf(id);
+  if (step !== undefined && contract.step !== step) issues.push({ code: "slot-invalid", path, message: `contract.step must be ${step}` });
+  if (object(contract.fixture) && contract.fixture.step !== contract.step) issues.push({ code: "slot-invalid", path, message: "contract.fixture.step must equal contract.step" });
+  return issues;
+}
+
+/**
+ * The fixture a contract carries (R01.3), by kind. element: a `clossys.preview/1` preview with
+ * `fixtures {file, export, props}` (contract-fixture.ts); brief: the required `headings`; strings:
+ * the required `keys` and `locales`; page and publication: a sample `route` entry `{path}`; seat:
+ * the `step` id and a sample `seat`. Empty when the fixture has the kind's shape.
+ */
+export function fixtureShapeIssues(kind: SlotKind, contract: Readonly<Record<string, unknown>>): string[] {
+  const fixture = contract.fixture;
+  if (fixture === undefined) return ["is missing"];
+  if (!object(fixture)) return ["must be an object"];
+  const list = (key: string) => (Array.isArray(fixture[key]) && (fixture[key] as unknown[]).length > 0 && (fixture[key] as unknown[]).every(nonEmpty) ? [] : [`${key} must be a non-empty list of strings`]);
+  switch (kind) {
+    case "element": return contractFixtureIssues(contract).map(issue => issue.message.replace(/^contract\.fixture /, ""));
+    case "brief": return list("headings");
+    case "strings": return [...list("keys"), ...list("locales")];
+    case "page": case "publication": return object(fixture.route) && typeof fixture.route.path === "string" && fixture.route.path.startsWith("/") ? [] : ["route must be a sample route entry {path: \"/...\"}"];
+    case "seat": {
+      const issues = nonEmpty(fixture.step) ? [] : ["step must be the step id"];
+      if (!object(fixture.seat)) issues.push("seat must be a sample seat");
+      else issues.push(...validateValue(fixture.seat, loadSchema("seat")).map(issue => `seat${issue.path === "/" ? "" : issue.path} ${issue.message}`));
+      return issues;
+    }
+  }
 }
 
 /** pin.json against the one pin schema (planner R9): @clossys/director pinIssues, the same verdict Director's parseSlotPin and scripts/check-decisions.mjs give. */
@@ -250,6 +303,8 @@ export function validateCandidate(kind: SlotKind, slot: string, name: string, by
   let value: unknown;
   try { value = JSON.parse(bytes); } catch { return [{ code: "candidate-invalid", path, message: "candidate is not JSON" }]; }
   if (!object(value)) return [{ code: "candidate-invalid", path, message: "candidate must be a JSON object" }];
+  // A seat candidate is the seat itself (seat.schema.json): who decides the step, no source metadata.
+  if (kind === "seat") return validateValue(value, loadSchema("seat")).map(issue => ({ code: "candidate-invalid", path, message: `${issue.path} ${issue.message}` }));
   return validateJsonCandidate(kind, value, slot, path);
 }
 
