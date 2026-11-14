@@ -63,24 +63,34 @@
     "id": "R03",
     "statement": "Adopt or create, one certification. Every candidate names its rung, adopted bytes are verbatim, and one certifier serves every rung.",
     "scope": "all-records",
-    "status": "pending",
+    "status": "building",
     "owner": "W2-C",
     "check": "src/constitution/checks/R03-adopt-create.ts",
-    "test": "src/constitution/constitution.test.ts",
+    "test": "src/constitution/rules/r03.test.ts",
     "checks": [
       {
         "id": "R03.1",
-        "status": "pending",
+        "status": "building",
         "owner": "W2-C"
       },
       {
         "id": "R03.2",
-        "status": "pending",
+        "status": "building",
         "owner": "W2-C"
       },
       {
         "id": "R03.3",
-        "status": "pending",
+        "status": "building",
+        "owner": "W2-C"
+      },
+      {
+        "id": "R03.4",
+        "status": "building",
+        "owner": "W2-C"
+      },
+      {
+        "id": "R03.5",
+        "status": "building",
         "owner": "W2-C"
       }
     ]
@@ -103,24 +113,24 @@
     "id": "R05",
     "statement": "Certification. Every candidate in every live slot is certified against its own contract fixture, and a pin only points to a certified candidate.",
     "scope": "all-records",
-    "status": "pending",
+    "status": "building",
     "owner": "W2-C",
     "check": "src/constitution/checks/R05-certification.ts",
-    "test": "src/constitution/constitution.test.ts",
+    "test": "src/constitution/rules/r05.test.ts",
     "checks": [
       {
         "id": "R05.1",
-        "status": "pending",
+        "status": "building",
         "owner": "W2-C"
       },
       {
         "id": "R05.2",
-        "status": "pending",
+        "status": "building",
         "owner": "W2-C"
       },
       {
         "id": "R05.3",
-        "status": "pending",
+        "status": "building",
         "owner": "W2-C"
       }
     ]

@@ -4,31 +4,34 @@
  * (packages/designer/scripts/check-source-ladder.mjs: rung, chosen, reason), so there is one ladder
  * idea, not two.
  *
- *   select  a seed fits as it is: stock shadcn, a trusted free registry, an existing candidate or template;
- *   adapt   no seed fits as it is, so one seed is adapted;
- *   create  no seed can be adapted, so the candidate is new, with the reason no seed fit.
+ *   adopt   a seed fits as it is: stock shadcn, a trusted free registry, an existing candidate or template,
+ *           taken verbatim (R03.2);
+ *   adapt   no seed fits as it is, so one seed is adapted (under an adopt-first standard, only by adding
+ *           files that compose it, R03.4);
+ *   create  no seed can be adapted, so the candidate is new, with the reason no seed fit (R03.5).
  *
- * The Designer climbs the source ladder itself: L1 stock shadcn@aria, L2 the most popular partner
+ * These are the R03 rungs (slot-constitution.md R03.1); the ledger `submit` event names one. The
+ * Designer climbs the source ladder itself: L1 stock shadcn@aria, L2 the most popular partner
  * registry part, L3 question the slot (merge or compose stock), L4 a Foundry part last. L1 and L2
- * select a seed, L3 adapts one, L4 creates. Its rungs are the source ladder's names.
+ * adopt a seed, L3 adapts one, L4 creates. Its rungs are the source ladder's names.
  *
  * `clossys next <agent>/<slot> --submit` takes `--rung <rung> [--seed <id>] [--reason <text>]`, refuses
  * a submission whose record has an issue, and keeps the record in the run's decision.
  */
 import type { SlotAgent } from "../records/slot-model/types.js";
 
-export const GENERIC_RUNGS = ["select", "adapt", "create"] as const;
+export const GENERIC_RUNGS = ["adopt", "adapt", "create"] as const;
 /** The Designer's rungs, in the source ladder's order (stock, partner, question, Foundry last). */
 export const DESIGNER_RUNGS = ["L1", "L2", "L3", "L4"] as const;
 export type GenericRung = typeof GENERIC_RUNGS[number];
 export type LadderRung = GenericRung | typeof DESIGNER_RUNGS[number];
 
 /** What each Designer rung does, as a generic rung. */
-export const DESIGNER_RUNG_KIND: Readonly<Record<typeof DESIGNER_RUNGS[number], GenericRung>> = { L1: "select", L2: "select", L3: "adapt", L4: "create" };
+export const DESIGNER_RUNG_KIND: Readonly<Record<typeof DESIGNER_RUNGS[number], GenericRung>> = { L1: "adopt", L2: "adopt", L3: "adapt", L4: "create" };
 
 export interface CandidateLadder {
   readonly rung: string;
-  /** The seed selected or adapted: `shadcn@aria/<item>`, `<registry>/<item>`, `<slot>/<candidate>` or a template id. */
+  /** The seed adopted or adapted: `shadcn@aria/<item>`, `<registry>/<item>`, `<slot>/<candidate>` or a template id. */
   readonly seed?: string;
   /** Why this rung: required to create (no seed fit), optional otherwise. */
   readonly reason?: string;
@@ -47,7 +50,7 @@ const text = (value: unknown): value is string => typeof value === "string" && v
 
 /**
  * The issues of one candidate's ladder record; empty when it may be recorded. Rule names follow the
- * source ladder: missing-ladder (no record), ladder-fields (a malformed field, a select or adapt
+ * source ladder: missing-ladder (no record), ladder-fields (a malformed field, an adopt or adapt
  * without its seed), create-justification (a created candidate without the reason no seed fit).
  */
 export function ladderIssues(agent: SlotAgent | string, ladder: CandidateLadder | undefined): LadderIssue[] {
@@ -58,7 +61,7 @@ export function ladderIssues(agent: SlotAgent | string, ladder: CandidateLadder 
   const issues: LadderIssue[] = [];
   if (ladder.seed !== undefined && !text(ladder.seed)) issues.push({ rule: "ladder-fields", detail: "seed must name the seed" });
   if (ladder.reason !== undefined && !text(ladder.reason)) issues.push({ rule: "ladder-fields", detail: "reason must say why" });
-  if (kind !== "create" && !text(ladder.seed)) issues.push({ rule: "ladder-fields", detail: `rung ${ladder.rung} (${kind}) names the seed it ${kind === "select" ? "selected" : "adapted"}` });
+  if (kind !== "create" && !text(ladder.seed)) issues.push({ rule: "ladder-fields", detail: `rung ${ladder.rung} (${kind}) names the seed it ${kind === "adopt" ? "adopted" : "adapted"}` });
   if (kind === "create" && !text(ladder.reason)) issues.push({ rule: "create-justification", detail: `rung ${ladder.rung} (create) records the reason no seed fit` });
   return issues;
 }

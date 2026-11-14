@@ -268,8 +268,8 @@ describe("Director content questions (next --owner --agent director)", { timeout
 });
 
 describe("candidate selection ladder", () => {
-  it("select and adapt name their seed; create says why no seed fit", () => {
-    expect(ladderIssues("writer", { rung: "select", seed: "writer/strings.statuses/statuses-v1" })).toEqual([]);
+  it("adopt and adapt name their seed; create says why no seed fit", () => {
+    expect(ladderIssues("writer", { rung: "adopt", seed: "writer/strings.statuses/statuses-v1" })).toEqual([]);
     expect(ladderIssues("writer", { rung: "adapt" }).map(issue => issue.rule)).toEqual(["ladder-fields"]);
     expect(ladderIssues("writer", { rung: "create", reason: "no template covers it" })).toEqual([]);
     expect(ladderIssues("writer", { rung: "create" }).map(issue => issue.rule)).toEqual(["create-justification"]);

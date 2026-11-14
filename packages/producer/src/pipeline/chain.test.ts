@@ -302,7 +302,7 @@ describe("clossys next", { timeout: 60_000 }, () => {
     expect((await seat("--model", "fixture-model", "--tier", "mid")).exitCode).toBe(0);
     expect(existsSync(join(root, "clossys", "agents", "producer", "seat.writer.candidates", "pin.json"))).toBe(true);
     // The seat now binds submissions: another model is refused.
-    const refused = await runPipeline(["next", "writer/strings.statuses", "--submit", join(root, "clossys", "clossys.config.ts"), "--model", "other-model", "--tier", "mid", "--basis", "agent", "--skill", "packages/writer/actions/writer.candidates/skill.md", "--rung", "select", "--seed", "writer/strings.statuses", ...at], root);
+    const refused = await runPipeline(["next", "writer/strings.statuses", "--submit", join(root, "clossys", "clossys.config.ts"), "--model", "other-model", "--tier", "mid", "--basis", "agent", "--skill", "packages/writer/actions/writer.candidates/skill.md", "--rung", "adopt", "--seed", "writer/strings.statuses", ...at], root);
     expect(refused.message).toContain("seat assigns fixture-model");
     expect((await runPipeline(["rule", "--init", ...at], root)).exitCode).toBe(0);
     expect((await runPipeline(["rule", "R-W6A-FIXTURE", "--quote", "records change only through verbs", "--date", "2026-11-11", "--status", "enforced", ...at], root)).exitCode).toBe(1);

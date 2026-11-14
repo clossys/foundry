@@ -39,79 +39,40 @@ export function loadManifest(path = join(packageRoot, "references/manifest.json"
   return json(path);
 }
 
-const globMatch = (pattern, slot) => pattern.endsWith("*") ? slot.startsWith(pattern.slice(0, -1)) : pattern === slot;
-
-/** One reference (the source, or a part) against the manifest: trusted registry, listed item, same hash. Returns the manifest row. */
-function referenceFindings(label, at, ref, manifest, findings, { hashed = true } = {}) {
-  const missing = ["registry", "item", "version", ...(hashed ? ["hash"] : [])].filter(field => typeof ref?.[field] !== "string" || ref[field] === "");
-  if (missing.length) { findings.push(...missing.map(field => `${label}: ${at} has no ${field}`)); return undefined; }
-  const key = `${ref.registry}/${ref.item}@${ref.version}`;
-  if (!manifest.registries?.[ref.registry]) { findings.push(`${label}: ${key} is from ${ref.registry}, which is not a trusted registry (references/manifest.json)`); return undefined; }
-  const found = (manifest.items ?? []).find(row => row.registry === ref.registry && row.name === ref.item && row.version === ref.version);
-  if (!found) { findings.push(`${label}: ${key} is not in the references manifest`); return undefined; }
-  if (hashed && found.hash !== ref.hash) findings.push(`${label}: ${key} hash ${ref.hash} != manifest ${found.hash}`);
-  return found;
+/**
+ * The provenance logic lives in Producer's certify/source.ts (R03, slot-constitution.md W2-C), so
+ * every agent's adopt check runs the same code; this script calls it. Producer is an optional
+ * package, resolved by its public specifier as slot-pins.mjs does: only an unresolvable specifier
+ * means Producer is absent (a named error on first use); once it resolves, a load error is real.
+ */
+const SOURCE_ANCHOR = "@clossys/producer/records/slots";
+let sourceDir;
+let sourceMissing;
+try { sourceDir = new URL("../constitution/certify/", import.meta.resolve(SOURCE_ANCHOR)).href; }
+catch (error) {
+  if (error?.code !== "ERR_MODULE_NOT_FOUND" && error?.code !== "ERR_PACKAGE_PATH_NOT_EXPORTED") throw error;
+  sourceMissing = error;
+}
+// A string-shaped `.js` specifier: a bundler's dev transform must not prepend a helper import above
+// this file's shebang (it does for an opaque expression), so the script still parses under Vite.
+const lifted = sourceDir ? await import(/* @vite-ignore */ `${sourceDir}source.js`) : undefined;
+function source() {
+  if (!lifted) throw new Error(`check-provenance runs Producer's certify/source.ts; install @clossys/producer (${SOURCE_ANCHOR} could not be resolved: ${sourceMissing?.message})`, { cause: sourceMissing });
+  return lifted;
 }
 
-/** Findings for one item version's lineage against the rule and the manifest. */
+/** Findings for one item version's lineage against the rule and the manifest (certify/source.ts). */
 export function lineageFindings(label, lineage, { rule = loadRule(), manifest = loadManifest() } = {}) {
-  const findings = [];
-  const { slot, mode, source } = lineage;
-  const asset = (rule.consumerAssets?.slots ?? []).some(pattern => globMatch(pattern, slot ?? ""));
-  if (mode === "original") {
-    if (!asset) findings.push(`${label}: original item in ${slot}, which is not a consumer-asset slot; adopt or customize a trusted reference, or raise a NEED`);
-    return findings;
-  }
-  if (mode !== "verbatim" && mode !== "customized") return [`${label}: lineage.mode ${JSON.stringify(mode)} is not verbatim, customized or original`];
-  for (const ref of lineage.unresolved ?? []) findings.push(`${label}: lineage cites ${typeof ref === "string" ? ref : JSON.stringify(ref)}, which is not a reference-manifest row id (<registry>/<item>@<version>)`);
-  if (!source) return [...findings, `${label}: ${mode} item has no lineage.source`];
-  const found = referenceFindings(label, "lineage.source", source, manifest, findings);
-  if (!found) return findings;
-  for (const [index, part] of (lineage.parts ?? []).entries()) referenceFindings(label, `lineage.parts[${index}]`, part, manifest, findings, { hashed: lineage.partsHashed !== false || typeof part?.hash === "string" });
-  const cls = (rule.classes ?? []).find(row => globMatch(row.slots, slot ?? ""));
-  if (cls) {
-    const typed = (cls.sourceTypes ?? []).includes(found.type);
-    const named = (cls.sourceItems ?? []).includes(`${source.registry}/${source.item}`);
-    if (!typed && !named) findings.push(`${label}: ${slot} must come from ${[...(cls.sourceTypes ?? []), ...(cls.sourceItems ?? [])].join(" or ")}; ${source.registry}/${source.item}@${source.version} is ${found.type}`);
-  }
-  return findings;
+  return source().lineageFindings(label, lineage, { rule, manifest });
 }
-
-/** One `source.ref` entry as a reference-manifest row id, `<registry>/<item>@<version>`; anything else is null (unresolved). */
-function parseRef(ref) {
-  if (typeof ref !== "string") return null;
-  const m = /^([^/@{}\s]+)\/([^@{}\s]+)@([^@{}\s]+)$/.exec(ref);
-  return m ? { registry: m[1], item: m[2], version: m[3] } : null;
-}
-
-/** `source.ref` entries that all name the consumer's own Designer asset slots (`clossys/agents/designer/assets.<slot>[/candidates/<file>.json]`). */
-const CONSUMER_ASSET_REF = /^clossys\/agents\/designer\/assets\.[a-z0-9-]+(?:\/candidates\/[a-z0-9-]+-v[1-9][0-9]*\.json)?$/;
-const consumerOwnDerivation = refs => Array.isArray(refs) && refs.length > 0 && refs.every(ref => typeof ref === "string" && CONSUMER_ASSET_REF.test(ref));
 
 /**
- * Lineage of one Designer candidate (registry item): `original` stays original, `registry` is a
- * verbatim adoption, `derived` is customized; the first reference is the source, the rest are parts.
- * `composition` and `npm` candidates cite pinned slots or an npm package, not a registry item, and
- * are verified by check-ref-verbatim: null here.
+ * Lineage of one Designer candidate (registry item), certify/source.ts: `original` stays original,
+ * `registry` is a verbatim adoption, `derived` is customized. `composition` and `npm` candidates are
+ * verified by check-ref-verbatim: null here.
  */
 export function candidateLineage(slot, item) {
-  const source = item?.meta?.source ?? {};
-  if (source.kind === "original") return { slot, mode: "original" };
-  if (source.kind === "composition" || source.kind === "npm") return null;
-  // Derived only from the consumer's own Designer asset slots (no registry item, no outside file): the
-  // consumer's own artwork, so it is an original and passes only in a consumer-asset slot.
-  if (source.kind === "derived" && consumerOwnDerivation(source.ref)) return { slot, mode: "original" };
-  const mode = source.kind === "registry" ? "verbatim" : source.kind === "derived" ? "customized" : source.kind;
-  // Derived and adopted lineage cites reference-manifest row ids (and the consumer's own asset
-  // slots) only: any other entry (a JSON object, a self-lineage version, a file path) is an
-  // unresolved citation and fails.
-  const cited = Array.isArray(source.ref) ? source.ref : [];
-  const unresolved = cited.filter(ref => !parseRef(ref) && !(typeof ref === "string" && CONSUMER_ASSET_REF.test(ref)));
-  const [first, ...parts] = cited.map(parseRef).filter(Boolean);
-  // `source.hash` is the first reference's manifest hash; a further ref is a part named by registry, item and version.
-  const ref = first ? { ...first, hash: source.hash } : first;
-  // A candidate's part refs carry no hash of their own: they must still be trusted manifest items.
-  return { slot, mode, source: ref, parts, partsHashed: false, unresolved };
+  return source().candidateLineage(slot, item);
 }
 
 /** slot.json `notNeeded {reason, since, decidedBy}` as the slot loader accepts it (a malformed marker is not one). */

@@ -120,6 +120,27 @@ const treeHash = (files) =>
       .join(""),
   )}`;
 
+/**
+ * The seed lookup (`source.ref` → reference-manifest item) lives in Producer's certify/source.ts
+ * (R03, slot-constitution.md W2-C), which every agent's adopt check shares. This module is a shipped
+ * export (`@clossys/designer/ref-verbatim`) that must import without Producer, so source.ts is loaded
+ * when Producer resolves and required only when a candidate is read;
+ * sha256 and treeHash stay local and certify/source.test.ts pins them equal to source.ts's.
+ */
+const SOURCE_ANCHOR = "@clossys/producer/records/slots";
+let producerSourceDir; let producerSourceMissing;
+try { producerSourceDir = new URL("../constitution/certify/", import.meta.resolve(SOURCE_ANCHOR)).href; }
+catch (error) {
+  if (error?.code !== "ERR_MODULE_NOT_FOUND" && error?.code !== "ERR_PACKAGE_PATH_NOT_EXPORTED") throw error;
+  producerSourceMissing = error;
+}
+// A string-shaped `.js` specifier, so a bundler's dev transform prepends no helper above the shebang.
+const producerSourceModule = producerSourceDir ? await import(/* @vite-ignore */ `${producerSourceDir}source.js`) : undefined;
+function producerSource() {
+  if (!producerSourceModule) throw new Error(`check-ref-verbatim reads candidates through Producer's certify/source.ts; install @clossys/producer (${SOURCE_ANCHOR} could not be resolved)`, { cause: producerSourceMissing });
+  return producerSourceModule;
+}
+
 export const baselineKey = (row) => `${row.slot}/${row.element}@v${row.version}#${row.hash}`;
 
 /** Engine family of a shadcn style: aria-nova → aria, radix-nova/new-york → radix, base-nova → base. */
@@ -194,7 +215,7 @@ function designerCandidate(root, slot, element, version) {
 function candidateInput(candidate, manifest) {
   const refs = candidate.meta?.source?.ref ?? [];
   const source = candidate.meta?.source;
-  const item = (manifest.items ?? []).find(row => refs.includes(`${row.registry}/${row.name}@${row.version}`));
+  const item = producerSource().seedItem(manifest, refs);
   const files = Object.fromEntries((candidate.files ?? []).map(file => [file.path, file.content]));
   if (Object.values(files).some(content => typeof content !== "string")) throw new Error("registry candidate must carry every payload file's content");
   const mapping = candidate.meta?.refVerbatim ?? {};
