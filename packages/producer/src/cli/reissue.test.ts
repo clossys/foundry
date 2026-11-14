@@ -124,6 +124,36 @@ describe("clossys reissue <agent>/<slot> <candidate>", () => {
   });
 });
 
+describe("clossys reissue producer/<seat>", () => {
+  // A Producer seat (kind seat, JSON candidates) reissues like any slot: R08.1 names the next version by the leaf.
+  const SEAT_ID = "seat.owner.decisions";
+  const SEAT = jsonBytes({ by: "owner", llm: { model: "claude-opus-5-5", tier: "mid", promptFile: "packages/producer/actions/owner.decisions/skill.md" }, human: { procedure: "Record an owner decision through the verb.", command: "clossys owner-decision" } });
+  let seatDir: string;
+  beforeEach(() => {
+    const producer = join(workspace, "clossys", "agents", "producer");
+    const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "direct", label: "Direct", children: [{ id: "direct.brief", label: "Brief", slots: [SEAT_ID] }] }] };
+    seatDir = join(producer, SEAT_ID);
+    mkdirSync(join(seatDir, "candidates"), { recursive: true });
+    writeFileSync(join(producer, "ia.json"), jsonBytes(ia));
+    writeFileSync(join(seatDir, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id: SEAT_ID, agent: "producer", ia: slotPositions("producer", ia).get(SEAT_ID), kind: "seat", contract: { step: "owner.decisions", fixture: { step: "owner.decisions", seat: JSON.parse(SEAT) } }, inputs: [], uses: [] }));
+    writeFileSync(join(seatDir, "candidates", "owner.decisions-v1.json"), SEAT);
+    writeFileSync(join(seatDir, "pin.json"), jsonBytes({ candidate: "owner.decisions-v1.json", sha256: sha256Hex(SEAT), decidedBy: "planner", basis: "planner", at: AT }));
+  });
+
+  it("writes <leaf>-v<n>, retires the old seat file and repins with the same basis", async () => {
+    const result = await runReissueCli([`producer/${SEAT_ID}`, "owner.decisions-v1.json", "--by", "agent:producer.reissue", "--at", AT], workspace, NO_GUARD);
+    expect(result.exitCode, result.message).toBe(0);
+    expect(result.decision).toMatchObject({ candidate: "decisions-v2.json", rung: "adopt", retired: "superseded", repinned: true, usesChanged: false });
+    expect(readFileSync(join(seatDir, "candidates", "decisions-v2.json"), "utf8")).toBe(SEAT);
+    expect(readFileSync(join(seatDir, "retired", "owner.decisions-v1.json"), "utf8")).toBe(SEAT);
+    expect(load(join(seatDir, "pin.json"))).toEqual({ candidate: "decisions-v2.json", sha256: sha256Hex(SEAT), decidedBy: "planner", basis: "planner", at: AT });
+    const events = (load(join(seatDir, "ledger.json")) as { events: Record<string, unknown>[] }).events;
+    expect(events.map(event => event.op)).toEqual(["submit", "pin", "retire-candidate"]);
+    expect(events[0]).toMatchObject({ rung: "adopt", seed: `${SEAT_ID}/owner.decisions-v1.json@${sha256Hex(SEAT)}`, name: "decisions-v2.json" });
+    expect(checkSlotModel(join(workspace, "clossys"))).toEqual([]);
+  });
+});
+
 describe("lineAnchorsToSlots", () => {
   const owner = (slot: string) => (slot === "copy.hero" ? "writer" : slot === CARD ? "designer" : undefined);
   it("drops the version from line anchors of known slots only", () => {
