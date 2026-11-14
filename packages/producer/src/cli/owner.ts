@@ -9,23 +9,26 @@
  *   clossys rule --init [--root <dir>]
  *   clossys rule <R-ID> --quote <text> --date <YYYY-MM-DD> --status enforced|unenforced|pending-wire [--check <id>]... [--fixture <path>] [--fixture-run <cmd>]... [--note <text>] [--replace] [--root <dir>]
  *   clossys approve writer/<slot> <candidate-id> [--by owner[:<ref>]] [--at <iso>] [--root <dir>]
+ *   clossys retire <agent>/<slot> <candidate> --by <who> --reason <text> [--at <iso>] [--root <dir>]
+ *   clossys retire <agent>/<slot> --slot --by <who> --reason <text> [--at <iso>] [--root <dir>]
  *
  * Every write is validated against its schema and the slot model check: a write that adds a slot
  * model issue is rolled back and refused (exit 1). A refusal is recorded like any run (exit 1).
+ * Slot-model reads go through the one reader (records/slots.ts); see check:single-reader.
  */
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { checkSlotModel } from "../records/slot-check.js";
 import { AGENT_KIND, CANDIDATE_NAME, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
-import { candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
+import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
 import { deriveRefs, feedsIndex } from "../records/slot-model/derive.js";
 import { validateIa, validatePin, validateSlotDoc } from "../records/slot-model/validate.js";
-import { readSlotEntry } from "../records/slots.js";
+import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readSlot, readSlotEntry, readSlotRecordText, usedBy } from "../records/slots.js";
 import { writePin } from "../records/slot-write.js";
-import { isDecide, roundOf, ROUNDS, stageName, STAGES } from "../pipeline/define.js";
+import { isDecide, roundOf, ROUNDS, STAGES } from "../pipeline/define.js";
 import type { Step } from "../pipeline/define.js";
 import { loadSchema, validateFile, validateValue } from "../pipeline/schema.js";
 import { readSeat } from "../pipeline/seats.js";
@@ -100,20 +103,29 @@ function replaceFile(path: string, bytes: string): void {
 }
 /** The files a write touches, as they were, so a refused write is undone byte for byte. */
 function snapshot(paths: readonly string[]): () => void {
-  const before = paths.map(path => ({ path, bytes: existsSync(path) ? readFileSync(path, "utf8") : null }));
+  const before = paths.map(path => ({ path, bytes: modelExists(path) ? readModelText(path) : null }));
   return () => { for (const entry of before) { if (entry.bytes === null) rmSync(entry.path, { force: true }); else replaceFile(entry.path, entry.bytes); } };
 }
-const issueKey = (issue: { code: string; path: string; message: string }) => `${issue.code} ${issue.path} ${issue.message}`;
-/** Runs `write`; when the slot model check then has an issue it did not have before, undoes it and returns the issues. */
-function guarded(consumer: string, paths: readonly string[], write: () => void): string[] {
-  const before = new Set(checkSlotModel(consumer).map(issueKey));
-  const undo = snapshot(paths);
+interface ModelIssue { code: string; path: string; message: string }
+const issueKey = (issue: ModelIssue) => `${issue.code} ${issue.path} ${issue.message}`;
+/**
+ * Runs `write`; when the slot model check then has an issue it did not have before, undoes it and returns the issues.
+ * `allow` names an issue the write is expected to add (none but retire's own folder); `undo` reverses what the file snapshot cannot (a moved folder).
+ */
+function guarded(consumer: string, paths: readonly string[], write: () => void, options: { allow?: (issue: ModelIssue) => boolean; undo?: () => void } = {}): string[] {
+  const issues = () => checkSlotModel(consumer).filter(issue => !options.allow?.(issue)).map(issueKey);
+  const before = new Set(issues());
+  const files = snapshot(paths);
+  const undo = () => { options.undo?.(); files(); };
   try { write(); } catch (error) { undo(); throw error; }
-  const added = checkSlotModel(consumer).map(issueKey).filter(issue => !before.has(issue));
+  const added = issues().filter(issue => !before.has(issue));
   if (added.length) undo();
   return added;
 }
+/** A JSON file the caller names (a --contract file); never a slot-model path. */
 const readJsonFile = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
+/** A slot-model JSON file, read through the one reader. */
+const readModelJson = (path: string): unknown => JSON.parse(readModelText(path));
 
 // ---------------------------------------------------------------- clossys ia
 const parseIa = parser(IA_USAGE, ["--contract", "--under", "--kind", "--inputs", "--uses", "--root"], ["--remove", "--adopt", "--start"]);
@@ -125,7 +137,7 @@ export const WORKSPACE_IA_SOURCE = "workspace#owner";
 function startIa(agent: string, root: string): CliResult {
   if (!(SLOT_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`ia --start takes one of ${SLOT_AGENTS.join(", ")}\n${IA_USAGE}`);
   const consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent as SlotAgent);
-  if (existsSync(iaFile)) return refuse("ia", `${agent} ia.json exists; change it slot by slot (--under, --remove)`);
+  if (modelExists(iaFile)) return refuse("ia", `${agent} ia.json exists; change it slot by slot (--under, --remove)`);
   const doc = { schema: IA_SCHEMA, source: WORKSPACE_IA_SOURCE, extensions: [], nodes: [] };
   const added = guarded(consumer, [iaFile], () => replaceFile(iaFile, jsonBytes(doc)));
   if (added.length) return refuse("ia", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`);
@@ -137,21 +149,21 @@ function adoptIa(agent: string, root: string): CliResult {
   if (!(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent)) throw new CliUsageError(`ia --adopt takes ${FOUNDRY_IA_AGENTS.join(", ")}; the Publisher IA is the workspace's own (ia publisher --start)\n${IA_USAGE}`);
   const read = FOUNDRY_IA[agent as keyof typeof FOUNDRY_IA], after = FOUNDRY_IA_AFTER[agent as keyof typeof FOUNDRY_IA];
   const consumer = join(root, "clossys"), iaFile = iaPath(consumer, agent as SlotAgent);
-  if (existsSync(iaFile)) return refuse("ia", `${agent} ia.json exists; change it slot by slot (--under, --remove)`);
-  const first = after.filter(up => !existsSync(iaPath(consumer, up)));
+  if (modelExists(iaFile)) return refuse("ia", `${agent} ia.json exists; change it slot by slot (--under, --remove)`);
+  const first = after.filter(up => !modelExists(iaPath(consumer, up)));
   if (first.length) return refuse("ia", `adopt the ${first.join(", ")} IA first: ${agent} slots read its slots`);
   const foundry = read();
   // Refs resolve against the slots this workspace places, plus the adopted ones; the Director's feeds become downstream inputs.
   const known = new Set(foundry.slots.keys());
-  for (const other of SLOT_AGENTS) if (other !== agent && existsSync(iaPath(consumer, other))) {
-    for (const id of slotPositions(other, readJsonFile(iaPath(consumer, other)) as IaDoc).keys()) known.add(id);
+  for (const other of SLOT_AGENTS) if (other !== agent && modelExists(iaPath(consumer, other))) {
+    for (const id of slotPositions(other, readModelJson(iaPath(consumer, other)) as IaDoc).keys()) known.add(id);
   }
   const feeds = feedsIndex([...(agent === "director" ? foundry : directorIa()).slots.values()].map(slot => [slot.id, slot.feeds] as const), known);
   const writes: [string, string][] = [[iaFile, jsonBytes(foundry.ia)]];
   let dropped = 0;
   for (const [id, position] of slotPositions(agent as SlotAgent, foundry.ia)) {
     const slot = foundry.slots.get(id)!, file = slotFile(slotDir(consumer, agent as SlotAgent, id));
-    if (existsSync(file)) return refuse("ia", `clossys/agents/${agent}/${id}/slot.json exists with no ${agent} ia.json; place it with --under or remove it first`);
+    if (modelExists(file)) return refuse("ia", `clossys/agents/${agent}/${id}/slot.json exists with no ${agent} ia.json; place it with --under or remove it first`);
     const derived = deriveRefs(agent as SlotAgent, slot.kind, id, { inputs: slot.declaredInputs, uses: slot.declaredUses }, { known, feeds });
     dropped += derived.dropped.length;
     const doc = { schema: SLOT_SCHEMA, id, agent, ia: { ...position }, kind: slot.kind, contract: slot.contract, inputs: derived.inputs, uses: derived.uses };
@@ -165,6 +177,10 @@ function adoptIa(agent: string, root: string): CliResult {
   return { exitCode: 0, root, message: `ia: adopted the ${agent} IA from ${foundry.ia.source} (${foundry.ia.nodes.length} L1, ${slots} slots with their contracts)${dropped ? `; ${dropped} declared refs name no placed slot and were left out` : ""}` };
 }
 const ids = (value: string | undefined) => value ? value.split(",").map(id => id.trim()).filter(Boolean) : [];
+type AgentIaFile = { extensions?: string[]; nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] } & Record<string, unknown>;
+const isPlaced = (ia: AgentIaFile, slot: string) => ia.nodes.some(node => node.children.some(child => child.slots.includes(slot)));
+/** The agent IA with `slot` taken out of its group and its extensions (ia --remove, retire --slot). */
+const withoutSlot = (ia: AgentIaFile, slot: string): AgentIaFile => ({ ...ia, nodes: ia.nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child, slots: child.slots.filter(id => id !== slot) })) })), extensions: (ia.extensions ?? []).filter(id => id !== slot) });
 
 export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parseIa(argv);
@@ -181,15 +197,15 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   if (!(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`ia target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${IA_USAGE}`);
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");
   const iaFile = iaPath(consumer, agent);
-  if (!existsSync(iaFile)) return refuse("ia", `${agent} has no ia.json: ${(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent) ? `adopt the Foundry IA (clossys ia ${agent} --adopt) or start` : "start"} an empty one (clossys ia ${agent} --start)`);
-  const ia = readJsonFile(iaFile) as { extensions?: string[]; nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] } & Record<string, unknown>;
+  if (!modelExists(iaFile)) return refuse("ia", `${agent} has no ia.json: ${(FOUNDRY_IA_AGENTS as readonly string[]).includes(agent) ? `adopt the Foundry IA (clossys ia ${agent} --adopt) or start` : "start"} an empty one (clossys ia ${agent} --start)`);
+  const ia = readModelJson(iaFile) as AgentIaFile;
   const dir = slotDir(consumer, agent, slot);
-  const placed = ia.nodes.some(node => node.children.some(child => child.slots.includes(slot)));
+  const placed = isPlaced(ia, slot);
   if (flags.bare.has("--remove")) {
     if (!placed) return refuse("ia", `${target} is not in ${agent} ia.json`);
-    for (const file of [slotFile(dir), pinFile(dir)]) if (existsSync(file)) return refuse("ia", `${target} has ${file.slice(dir.length + 1)}; only a slot with no records leaves the IA`);
-    if (existsSync(candidatesDir(dir)) && readdirSync(candidatesDir(dir)).some(name => !name.startsWith("."))) return refuse("ia", `${target} has candidates; only a slot with no records leaves the IA`);
-    const next = { ...ia, nodes: ia.nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child, slots: child.slots.filter(id => id !== slot) })) })), extensions: (ia.extensions ?? []).filter(id => id !== slot) };
+    for (const file of [slotFile(dir), pinFile(dir)]) if (modelExists(file)) return refuse("ia", `${target} has ${file.slice(dir.length + 1)}; only a slot with no records leaves the IA`);
+    if (listModelDir(candidatesDir(dir)).some(name => !name.startsWith("."))) return refuse("ia", `${target} has candidates; only a slot with no records leaves the IA`);
+    const next = withoutSlot(ia, slot);
     const issues = validateIa(next, iaFile);
     if (issues.length) return refuse("ia", issues.map(issue => issue.message).join("; "));
     const added = guarded(consumer, [iaFile], () => replaceFile(iaFile, jsonBytes(next)));
@@ -218,7 +234,7 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   if (iaIssues.length) return refuse("ia", iaIssues.map(issue => issue.message).join("; "));
   const position = slotPositions(agent, next as unknown as IaDoc).get(slot);
   if (!position) return refuse("ia", `${target} has no position in ${agent} ia.json`);
-  const existing = existsSync(slotFile(dir)) ? readJsonFile(slotFile(dir)) as Record<string, unknown> : undefined;
+  const existing = modelExists(slotFile(dir)) ? readModelJson(slotFile(dir)) as Record<string, unknown> : undefined;
   const kind = (one(flags, "--kind") ?? (existing?.kind as string | undefined) ?? AGENT_KIND[agent][0]) as SlotKind;
   if (!(SLOT_KINDS as readonly string[]).includes(kind)) throw new CliUsageError(`--kind must be one of ${SLOT_KINDS.join(", ")}\n${IA_USAGE}`);
   const doc = {
@@ -310,22 +326,23 @@ function runSeatPolicy(flags: Flags, cwd: string): CliResult {
   replaceFile(file, bytes);
   return { exitCode: 0, root, message: `seat: wrote ${SEAT_POLICY_FILE} (${policy.humanOnly ? "human only" : Object.entries(models).map(([tier, id]) => `${tier}=${id}`).join(", ")})` };
 }
-const titleOf = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
-
-/** Producer ia.json with `step` placed in its stage's group (`<round>.<stage>`), groups and rounds in pipeline order. */
+/**
+ * Producer ia.json with `step` placed in its stage's group (`<round>.<stage>`), groups and rounds in pipeline order.
+ * A new round or group takes its id as its label, as `ia --under` does: display names come from the Writer (records/slot-labels.ts iaLabel), never words made from the id.
+ */
 export function placeSeat(ia: { schema: string; source: string; extensions: string[]; nodes: { id: string; label: string; children: { id: string; label: string; slots: string[] }[] }[] }, step: Step) {
   if (ia.nodes.some(node => node.children.some(child => child.slots.includes(step.id)))) return ia;
   const round = roundOf(step.stage), rounds: readonly string[] = ROUNDS.map(each => each.id);
   const nodes = ia.nodes.map(node => ({ ...node, children: node.children.map(child => ({ ...child, slots: [...child.slots] })) }));
   let node = nodes.find(each => each.id === round);
   if (!node) {
-    node = { id: round, label: titleOf(round), children: [] };
+    node = { id: round, label: round, children: [] };
     const at = nodes.findIndex(each => rounds.indexOf(each.id) > rounds.indexOf(round));
     nodes.splice(at < 0 ? nodes.length : at, 0, node);
   }
   let child = node.children.find(each => each.id === step.stage);
   if (!child) {
-    child = { id: step.stage, label: titleOf(stageName(step.stage)), slots: [] };
+    child = { id: step.stage, label: step.stage, slots: [] };
     const at = node.children.findIndex(each => STAGES.indexOf(each.id as never) > STAGES.indexOf(step.stage));
     node.children.splice(at < 0 ? node.children.length : at, 0, child);
   }
@@ -374,14 +391,14 @@ export async function runSeatCli(argv: readonly string[], cwd: string, steps: re
   if (!/^(owner|planner)(:\S.*)?$/.test(decidedBy)) throw new CliUsageError(`--decided-by must be owner[:<ref>] or planner[:<ref>]\n${SEAT_USAGE}`);
   const at = one(flags, "--at") ?? new Date().toISOString();
   const dir = seatDir(consumer, id);
-  const existing = existsSync(candidatesDir(dir)) ? readdirSync(candidatesDir(dir)).map(name => CANDIDATE_NAME.exec(name)).filter(match => match?.[1] === id).map(match => Number(match![2])) : [];
+  const existing = listModelDir(candidatesDir(dir)).map(name => CANDIDATE_NAME.exec(name)).filter(match => match?.[1] === id).map(match => Number(match![2]));
   const name = `${id}-v${Math.max(0, ...existing) + 1}.json`;
   const bytes = jsonBytes(seat);
   const pin = { candidate: name, sha256: sha(bytes), decidedBy, basis: decidedBy.startsWith("planner") ? "planner" : "picked", at };
   const pinIssues = validatePin(pin);
   if (pinIssues.length) return refuse("seat", pinIssues.map(issue => issue.message).join("; "));
   const iaFile = iaPath(consumer, "producer");
-  const ia = existsSync(iaFile) ? readJsonFile(iaFile) as Parameters<typeof placeSeat>[0] : { schema: IA_SCHEMA, source: "@clossys/producer#src/pipeline/steps", extensions: [], nodes: [] };
+  const ia = modelExists(iaFile) ? readModelJson(iaFile) as Parameters<typeof placeSeat>[0] : { schema: IA_SCHEMA, source: "@clossys/producer#src/pipeline/steps", extensions: [], nodes: [] };
   const placed = placeSeat(ia, step);
   const candidate = join(candidatesDir(dir), name);
   const added = guarded(consumer, [iaFile, candidate, pinFile(dir)], () => {
@@ -470,4 +487,118 @@ export async function runApproveCli(argv: readonly string[], cwd: string): Promi
   const after = new Set(writerKeysUnapproved(root).get(slot) ?? []);
   const approved = before.filter(key => !after.has(key));
   return { exitCode: 0, root, decision: { slot: target, state: "pinned", ...pinned, decidedBy: by, basis: "picked", at, approved }, message: `approve: ${target} ${candidate} pinned by ${by} (picked); ${approved.length} key${approved.length === 1 ? "" : "s"} approved${after.size ? `, ${after.size} still open` : ""}` };
+}
+
+// ---------------------------------------------------------------- clossys retire
+export const RETIRE_USAGE = "Usage: clossys retire <agent>/<slot> <candidate> --by <who> --reason <text> [--at <iso>] [--root <dir>]\n"
+  + "       clossys retire <agent>/<slot> --slot --by <who> --reason <text> [--at <iso>] [--root <dir>]\n"
+  + "  retires one candidate: writes <slot>/retired/<candidate>.json (clossys.retire/1: slot, candidate, sha256, by, reason, at) and moves\n"
+  + "  the candidate file from candidates/ into retired/. The pinned candidate is refused: repin first.\n"
+  + "  --slot retires a whole slot: it leaves its agent's ia.json, the removal is recorded in that ia.json's `retired` list, and its folder\n"
+  + "  moves to agents/<agent>/_retired/<slot>. Refused while another slot.json `uses` it or a pinned slot takes it as an input.";
+/** The schema of a retirement record: a retired candidate's file, or a row of an agent ia.json's `retired` list. */
+export const RETIRE_SCHEMA = "clossys.retire/1";
+/** A slot's retired candidates and their records: `<slot>/retired/<candidate>` and `<slot>/retired/<candidate>.json`. */
+export const RETIRED_DIR = "retired";
+/** Retired slot folders, a non-slot (`_`) folder of the agent: `agents/<agent>/_retired/<slot>`. */
+export const RETIRED_SLOTS_DIR = "_retired";
+const parseRetire = parser(RETIRE_USAGE, ["--by", "--reason", "--at", "--root"], ["--slot"]);
+interface RetireFields { by: string; reason: string; at: string }
+
+/** Move a model file or folder, creating the destination's parent. */
+function moveModelEntry(from: string, to: string): void {
+  mkdirSync(dirname(to), { recursive: true });
+  renameSync(from, to);
+}
+/** Remove a folder this verb created when an undo left it empty. */
+function dropEmptyDir(dir: string): void {
+  if (isModelDir(dir) && !listModelDir(dir).length) rmdirSync(dir);
+}
+
+function retireCandidate(consumer: string, root: string, agent: SlotAgent, slot: string, candidateId: string, fields: RetireFields): CliResult {
+  const target = `${agent}/${slot}`;
+  const entry = readSlotEntry(consumer, agent, slot);
+  if (!entry) return refuse("retire", `unknown slot ${target} (not in ${agent} ia.json)`);
+  const candidate = resolveCandidate(entry.candidates, candidateId);
+  if (!candidate) return refuse("retire", `${target} has no candidate ${candidateId}`);
+  // A present pin.json names the pinned candidate even when it no longer validates: never retire what it names.
+  const pinText = readSlotRecordText(entry.dir, "pin.json");
+  let pinned = entry.pin?.candidate;
+  if (!pinned && pinText !== undefined) { try { pinned = (JSON.parse(pinText) as { candidate?: string }).candidate; } catch { pinned = undefined; } }
+  if (pinned === candidate) return refuse("retire", `${candidate} is the pinned candidate of ${target}; repin first (clossys pin ${target} <candidate>)`);
+  const from = join(candidatesDir(entry.dir), candidate);
+  const retired = join(entry.dir, RETIRED_DIR), to = join(retired, candidate), file = join(retired, `${candidate}.json`);
+  if (modelExists(to) || modelExists(file)) return refuse("retire", `${target} already has ${RETIRED_DIR}/${candidate}`);
+  const record = { schema: RETIRE_SCHEMA, slot: target, candidate, sha256: sha(readModelBytes(from)), by: fields.by, reason: fields.reason, at: fields.at };
+  // The slot model check does not list retired/ among a slot folder's entries yet: that one orphan is this write's own.
+  const own = `agents/${agent}/${slot}/${RETIRED_DIR}`;
+  const added = guarded(consumer, [file, from, to], () => { replaceFile(file, jsonBytes(record)); moveModelEntry(from, to); }, {
+    allow: issue => issue.code === "orphan" && issue.path === own,
+  });
+  if (added.length) { dropEmptyDir(retired); return refuse("retire", `the slot model check fails after the write: ${added.slice(0, 5).join("; ")}`); }
+  return { exitCode: 0, root, decision: { slot: target, retired: candidate, sha256: record.sha256, by: fields.by, at: fields.at }, message: `retire: ${target} ${candidate} retired by ${fields.by} (clossys/agents/${agent}/${slot}/${RETIRED_DIR}/${candidate}.json)` };
+}
+
+function retireSlot(consumer: string, root: string, agent: SlotAgent, slot: string, fields: RetireFields): CliResult {
+  const target = `${agent}/${slot}`;
+  const iaFile = iaPath(consumer, agent);
+  if (!modelExists(iaFile)) return refuse("retire", `${agent} has no ia.json`);
+  const ia = readModelJson(iaFile) as AgentIaFile;
+  if (!isPlaced(ia, slot)) return refuse("retire", `${target} is not in ${agent} ia.json`);
+  let users: { agent: SlotAgent; id: string }[];
+  try { users = usedBy(consumer, slot).filter(user => !(user.agent === agent && user.id === slot)); }
+  catch (error) { return refuse("retire", `cannot read every slot.json to find what uses ${target}: ${error instanceof Error ? error.message : String(error)}`); }
+  if (users.length) return refuse("retire", `${target} is used by ${users.map(user => `${user.agent}/${user.id}`).join(", ")}; change their uses first`);
+  const dependents: string[] = [];
+  for (const other of SLOT_AGENTS) for (const entry of listSlots(consumer, other)) {
+    if ((other === agent && entry.id === slot) || !entry.pin) continue;
+    let inputs: readonly string[];
+    try { inputs = readSlot(consumer, other, entry.id).inputs; } catch { continue; }
+    if (inputs.includes(slot)) dependents.push(`${other}/${entry.id}`);
+  }
+  if (dependents.length) return refuse("retire", `pinned slots take ${target} as an input: ${dependents.join(", ")}; repin or change their inputs first`);
+  const dir = slotDir(consumer, agent, slot), to = join(agentDir(consumer, agent), RETIRED_SLOTS_DIR, slot);
+  if (modelExists(to)) return refuse("retire", `agents/${agent}/${RETIRED_SLOTS_DIR}/${slot} exists; ${target} was retired before`);
+  const slotBytes = modelExists(slotFile(dir)) ? readModelBytes(slotFile(dir)) : undefined;
+  const history = Array.isArray(ia.retired) ? ia.retired as unknown[] : [];
+  const record = { schema: RETIRE_SCHEMA, slot: target, sha256: slotBytes ? sha(slotBytes) : null, by: fields.by, reason: fields.reason, at: fields.at };
+  const next = { ...withoutSlot(ia, slot), retired: [...history, record] };
+  const issues = validateIa(next, iaFile);
+  if (issues.length) return refuse("retire", issues.map(issue => issue.message).join("; "));
+  // Positions number slots across the whole agent IA: every slot after the retired one moves up, so its slot.json follows.
+  const was = slotPositions(agent, ia as unknown as IaDoc), now = slotPositions(agent, next as unknown as IaDoc);
+  const renumbered: [string, string][] = [];
+  for (const [id, position] of now) {
+    const file = slotFile(slotDir(consumer, agent, id));
+    if (!modelExists(file)) continue;
+    const doc = readModelJson(file) as Record<string, unknown> & { ia?: unknown };
+    if (jsonBytes(doc.ia) === jsonBytes(position) || jsonBytes(doc.ia) !== jsonBytes(was.get(id))) continue;
+    renumbered.push([file, jsonBytes({ ...doc, ia: position })]);
+  }
+  const folder = isModelDir(dir);
+  const moveBack = () => { if (folder && modelExists(to) && !modelExists(dir)) moveModelEntry(to, dir); dropEmptyDir(dirname(to)); };
+  const added = guarded(consumer, [iaFile, ...renumbered.map(([file]) => file)], () => {
+    replaceFile(iaFile, jsonBytes(next));
+    for (const [file, bytes] of renumbered) replaceFile(file, bytes);
+    if (folder) moveModelEntry(dir, to);
+  }, { undo: moveBack });
+  if (added.length) return refuse("retire", `the slot model check fails after the removal: ${added.slice(0, 5).join("; ")}`);
+  return { exitCode: 0, root, decision: { slot: target, retired: "slot", sha256: record.sha256, by: fields.by, at: fields.at }, message: `retire: ${target} left ${agent} ia.json, retired by ${fields.by}${folder ? ` (its folder is clossys/agents/${agent}/${RETIRED_SLOTS_DIR}/${slot})` : ""}` };
+}
+
+export async function runRetireCli(argv: readonly string[], cwd: string): Promise<CliResult> {
+  const flags = parseRetire(argv);
+  if (flags.help) return { exitCode: 0, message: RETIRE_USAGE };
+  const whole = flags.bare.has("--slot");
+  const [target, candidate, ...extra] = flags.positional;
+  if (!target || extra.length || (whole ? candidate !== undefined : candidate === undefined)) throw new CliUsageError(`retire takes <agent>/<slot> and a candidate, or <agent>/<slot> --slot\n${RETIRE_USAGE}`);
+  const slash = target.indexOf("/");
+  const agent = target.slice(0, slash) as SlotAgent, slot = target.slice(slash + 1);
+  if (slash < 0 || !(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`retire target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${RETIRE_USAGE}`);
+  const by = need(flags, "--by", RETIRE_USAGE), reason = need(flags, "--reason", RETIRE_USAGE);
+  if (/[\r\n]/.test(by) || /[\r\n]/.test(reason)) return refuse("retire", "--by and --reason are one line each");
+  const at = one(flags, "--at") ?? new Date().toISOString();
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${RETIRE_USAGE}`);
+  const root = rootOf(cwd, flags), consumer = join(root, "clossys");
+  return whole ? retireSlot(consumer, root, agent, slot, { by, reason, at }) : retireCandidate(consumer, root, agent, slot, candidate!, { by, reason, at });
 }

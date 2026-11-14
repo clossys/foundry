@@ -115,14 +115,14 @@ export function packageBarrelExports(text: string): { values: string[]; types: s
 
 type PackageJson = { name?: unknown; version?: unknown; exports?: unknown; type?: unknown };
 const exists = async (path: string): Promise<boolean> => { try { return (await fs.stat(path)).isFile(); } catch { return false; } };
-const readJson = async (path: string): Promise<PackageJson | undefined> => { try { return JSON.parse(await fs.readFile(path, "utf8")) as PackageJson; } catch { return undefined; } };
+const readManifest = async (path: string): Promise<PackageJson | undefined> => { try { return JSON.parse(await fs.readFile(path, "utf8")) as PackageJson; } catch { return undefined; } };
 
 /** Nearest installed copy of `name`: the package that owns `from` itself, else `node_modules/<name>` walking up. */
 async function locatePackage(name: string, from: string): Promise<{ root: string; manifest: PackageJson } | undefined> {
   for (let dir = resolve(from); ; dir = dirname(dir)) {
-    const own = await readJson(join(dir, "package.json"));
+    const own = await readManifest(join(dir, "package.json"));
     if (own?.name === name && own.exports != null) return { root: dir, manifest: own };
-    const installed = await readJson(join(dir, "node_modules", name, "package.json"));
+    const installed = await readManifest(join(dir, "node_modules", name, "package.json"));
     if (installed?.name === name) return { root: join(dir, "node_modules", name), manifest: installed };
     if (dirname(dir) === dir) return undefined;
   }
@@ -177,7 +177,7 @@ async function commonJs(file: string): Promise<boolean> {
   if (file.endsWith(".cjs")) return true;
   if (file.endsWith(".mjs")) return false;
   for (let dir = dirname(file); ; dir = dirname(dir)) {
-    const manifest = await readJson(join(dir, "package.json"));
+    const manifest = await readManifest(join(dir, "package.json"));
     if (manifest) return manifest.type !== "module";
     if (dirname(dir) === dir) return true;
   }
