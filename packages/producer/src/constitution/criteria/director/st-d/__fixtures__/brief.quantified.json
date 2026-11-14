@@ -1,0 +1,54 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Target: 3 outside projects publish a site from one brief.\n- Date: 2027-06-30.\n- Scope: public packages and docs only.\n\n## Because\n- The public readme names one system for every agent (finding:public-readme)\n- The core segment already runs more than one site (focus.segment.core)\n\n## Watch\n- If pages shipped with a hand edit > 0 in any month, then review whether the agents still share one system.\n",
+        "json": {
+          "slot": "aspiration.purpose.mission",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"finding:public-readme\", \"focus.segment.core\"]}"
+        }
+      }
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Target: none; the project earns nothing.\n- Date: 2027-06-30.\n- Scope: public packages and docs only.\n\n## Because\n- The public readme names one system for every agent (finding:public-readme)\n- The core segment already runs more than one site (focus.segment.core)\n\n## Watch\n- If pages shipped with a hand edit > 0 in any month, then review whether the agents still share one system.\n",
+        "json": {
+          "slot": "aspiration.purpose.mission",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"finding:public-readme\", \"focus.segment.core\"]}"
+        }
+      },
+      "params": {
+        "min": 2
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Do: build one system the agents run on, so the work comes out consistent.\n- For: the people directing it.\n- Why: consistency is how a small team scales without losing quality.\n\n## Because\n- The public readme names one system for every agent (finding:public-readme)\n- The core segment already runs more than one site (focus.segment.core)\n\n## Watch\n- If pages shipped with a hand edit > 0 in any month, then review whether the agents still share one system.\n",
+        "json": {
+          "slot": "aspiration.purpose.mission",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"finding:public-readme\", \"focus.segment.core\"]}"
+        }
+      },
+      "note": "no quantities"
+    },
+    {
+      "subject": {
+        "kind": "brief",
+        "text": "\n## Direction\n- Target: 3 outside projects publish a site from one brief.\n- Date: 2027-06-30.\n- Scope: public packages and docs only.\n\n## Because\n- The public readme names one system for every agent (finding:public-readme)\n- The core segment already runs more than one site (focus.segment.core)\n\n## Watch\n- If pages shipped with a hand edit > 0 in any month, then review whether the agents still share one system.\n",
+        "json": {
+          "slot": "aspiration.purpose.mission",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"finding:public-readme\", \"focus.segment.core\"]}"
+        }
+      },
+      "params": {
+        "min": 3
+      },
+      "note": "too few"
+    }
+  ]
+}

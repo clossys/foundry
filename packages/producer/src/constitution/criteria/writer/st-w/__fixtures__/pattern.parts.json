@@ -1,0 +1,90 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings/pattern",
+        "text": "\n## en\n\n### home.intro.eyebrow\n<!-- {\"id\":\"home.intro.eyebrow\",\"bindings\":[]} -->\nClossys Studio\n\n### home.intro.headline\n<!-- {\"id\":\"home.intro.headline\",\"bindings\":[]} -->\nSee where every choice came from\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "parts": [
+          {
+            "id": "eyebrow",
+            "required": true
+          },
+          {
+            "id": "headline",
+            "required": true
+          }
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings/pattern",
+        "text": "\n## en\n\n### home.intro.kicker\n<!-- {\"id\":\"home.intro.kicker\",\"bindings\":[]} -->\nClossys Studio\n\n### home.intro.headline\n<!-- {\"id\":\"home.intro.headline\",\"bindings\":[]} -->\nSee where every choice came from\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "parts": [
+          {
+            "id": "eyebrow",
+            "required": true
+          },
+          {
+            "id": "headline",
+            "required": true
+          }
+        ]
+      },
+      "note": "unknown part and missing eyebrow"
+    },
+    {
+      "subject": {
+        "kind": "strings/pattern",
+        "text": "\n## en\n\n### home.intro.eyebrow\n<!-- {\"id\":\"home.intro.eyebrow\",\"bindings\":[]} -->\nClossys Studio\n\n### home.intro.headline\n<!-- {\"id\":\"home.intro.headline\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.intro.headline\n<!-- {\"id\":\"home.intro.headline\",\"bindings\":[]} -->\nAgain\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "parts": [
+          {
+            "id": "eyebrow",
+            "required": true
+          },
+          {
+            "id": "headline",
+            "required": true
+          }
+        ]
+      },
+      "note": "two headlines"
+    },
+    {
+      "subject": {
+        "kind": "strings/pattern",
+        "text": "\n## en\n\n### home.intro.eyebrow\n<!-- {\"id\":\"home.intro.eyebrow\",\"bindings\":[]} -->\nClossys Studio\n\n### home.intro.headline\n<!-- {\"id\":\"home.intro.headline\",\"bindings\":[]} -->\nSee where every choice came from\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {},
+      "note": "parts missing"
+    }
+  ]
+}

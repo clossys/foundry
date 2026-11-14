@@ -14,12 +14,13 @@
  * contract, pinSet); the certifier version and environment hash sit in the cache header (cache.ts).
  */
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { fixtureShapeIssues, validateCandidate, type SlotKind } from "../../records/slot-model/index.js";
 import { standardFits, standardFor } from "../../records/standards.js";
+import { AGENT_CRITERIA } from "../criteria/agent-criteria.js";
 import { CORE_CRITERIA } from "../criteria/core/index.js";
 import { canonicalJson, certifyKey, type CertifyKey } from "../criteria/core/verdict.js";
 import { candidateCitations, dependencySet, isObject, liveSlotRecords, registryFiles, stringList } from "../checks/shared.js";
@@ -175,9 +176,21 @@ export function pinSetOf(input: CertifyInput, env: CertifyEnv): string {
   }));
 }
 
-/** The certifier's version: a hash of its own source modules (so editing a certifier drops the cache). */
+/** The certifier's version: a hash of its own source modules and every criteria module and registry (so editing a certifier or a criterion drops the cache). */
 const HERE = dirname(fileURLToPath(import.meta.url));
+const CRITERIA_DIR = join(HERE, "..", "criteria");
 let ownVersion: string | undefined;
+function hashModules(hash: ReturnType<typeof createHash>, dir: string, label: string): void {
+  let names: string[];
+  try { names = readdirSync(dir).sort(); } catch { return; }
+  for (const name of names) {
+    const path = join(dir, name);
+    if (name === "__fixtures__") continue;
+    if (statSync(path).isDirectory()) { hashModules(hash, path, `${label}${name}/`); continue; }
+    if (!/\.(?:ts|js|json)$/.test(name) || /\.(?:test|world)\.|\.d\.ts$|\.map$/.test(name)) continue;
+    hash.update(`${label}${name}`).update("\0").update(readFileSync(path));
+  }
+}
 export function certifierVersion(): string {
   if (ownVersion) return ownVersion;
   const hash = createHash("sha256");
@@ -185,16 +198,17 @@ export function certifierVersion(): string {
     if (!/\.(?:ts|js)$/.test(name) || /\.(?:test|world)\.|\.d\.ts$/.test(name)) continue;
     hash.update(name).update("\0").update(readFileSync(join(HERE, name)));
   }
+  hashModules(hash, CRITERIA_DIR, "criteria/");
   return (ownVersion = hash.digest("hex"));
 }
 
-/** The environment the cache header pins: TypeScript, React, the lock, the step graph, the core criteria. */
+/** The environment the cache header pins: TypeScript, React, the lock, the step graph, the registered (core and agent) criteria. */
 export function certifyEnvHash(env: CertifyEnv): string {
   let react = "none";
   try { react = (hostRequire(env.root)("react/package.json") as { version?: string }).version ?? "none"; } catch { /* no react */ }
   let lock = "none";
   try { lock = sha(readFileSync(join(env.root, "package-lock.json"), "utf8")); } catch { /* no lock */ }
-  return sha(canonicalJson({ typescript: ts.version, react, lock, graph: env.graphSha, criteria: Object.keys(CORE_CRITERIA).sort() }));
+  return sha(canonicalJson({ typescript: ts.version, react, lock, graph: env.graphSha, criteria: [...Object.keys(CORE_CRITERIA), ...Object.keys(AGENT_CRITERIA)].sort() }));
 }
 
 export interface CertifiedCandidate {

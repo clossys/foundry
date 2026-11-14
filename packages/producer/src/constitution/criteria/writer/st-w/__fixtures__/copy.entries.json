@@ -1,0 +1,89 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "meta id mismatch"
+    },
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nAgain\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "duplicate"
+    },
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\",\"fr\"]"
+        }
+      },
+      "note": "missing locale section"
+    },
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "Intro text.\n\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "loose text"
+    },
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\n\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "empty value"
+    },
+    {
+      "subject": {
+        "kind": "strings/passage",
+        "text": "\n## en\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "note": "no entries"
+    }
+  ]
+}

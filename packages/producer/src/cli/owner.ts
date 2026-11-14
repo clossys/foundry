@@ -3,6 +3,7 @@
  *
  *   clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref>] [--dry] [--root <dir>]
  *   clossys ia <agent>/<slot> --standard <id> [--owner-ref <ref>] [--dry] [--root <dir>]
+ *   clossys ia producer/<seat> --standard <id> [--contract <file>] [--owner-ref <ref>] [--dry] [--root <dir>]
  *   clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]
  *   clossys ia <agent>/<slot> --move --under <l1>/<l2>|<l0>/<l1>/<l2> [--extension true|false] --owner-ref <ref> [--at <iso>] [--dry] [--root <dir>]
  *   clossys ia <agent>/<slot> --extension true|false --owner-ref <ref> [--at <iso>] [--dry] [--root <dir>]
@@ -27,7 +28,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { checkSlotModel, RETIRED_DIR } from "../records/slot-check.js";
 import { ledgerComment, OWNER_DECISION_SCOPES, OWNER_DECISIONS_FILE, OWNER_DECISIONS_SCHEMA, resolveOwnerRef, validateOwnerDecisions, type OwnerDecision } from "../records/owner-decisions.js";
-import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId } from "../records/slot-model/types.js";
+import { AGENT_KIND, CANDIDATE_NAME, OWNER_WORDS_REF_FORM, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, IA_SCHEMA, SEAT_AGENT, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, STANDARD_ID, seatSlotId } from "../records/slot-model/types.js";
 import type { IaDoc, SlotAgent, SlotKind } from "../records/slot-model/types.js";
 import { agentDir, candidatesDir, iaPath, jsonBytes, pinFile, seatDir, slotDir, slotFile } from "../records/slot-model/layout.js";
 import { designerIa, directorIa, slotPositions, writerIa, type FoundryIa } from "../records/slot-model/foundry-ia.js";
@@ -57,10 +58,12 @@ import { RULES_FILE } from "./rules-file.js";
 
 export const IA_USAGE = "Usage: clossys ia <agent>/<slot> --contract <file> [--standard <id>] [--under <l1>/<l2>] [--kind <kind>] [--inputs <id,...>] [--uses <id,...>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --standard <id> [--owner-ref <ref>] [--dry] [--root <dir>]\n"
+  + "       clossys ia producer/<seat> --standard <id> [--contract <file>] [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent>/<slot> --remove [--owner-ref <ref>] [--dry] [--root <dir>]\n"
   + "       clossys ia <agent> --adopt | --start [--dry] [--root <dir>]\n"
   + "  places a slot in its agent's ia.json (--under, when it is not placed yet) and writes its slot.json with the contract (a JSON object file).\n"
   + "  --standard names the standard the slot is judged by (packages/<agent>/standards/<id>/, R15.1): it must exist, be valid and serve the slot's kind; alone it keeps the written contract.\n"
+  + "  producer/<seat>: names the standard of a seat slot clossys seat wrote (kind seat); --contract may add requirements but keeps the seat's step. Nothing else of a seat is written here.\n"
   + "  --adopt writes the agent's Foundry IA (ia.json and every slot.json, inputs and uses derived) where it has no ia.json (Director, Designer, Writer; the Director's first).\n"
   + "  --start writes an empty workspace IA instead; --under then adds its L1/L2 groups as it places each slot.\n"
   + "Regroup (owner-authorized; leaf ids never change, only placement; every slot.json position follows in the same guarded write):\n"
@@ -234,7 +237,7 @@ const iaWho = (ownerRef: string | undefined, at: string): IaWho => ({ by: ownerR
 function iaWriteTarget(consumer: string, path: string, bytes: string): { agent: SlotAgent; slot?: string; kind: string } {
   const parts = relative(join(consumer, "agents"), path).split(sep);
   const agent = parts[0] as SlotAgent;
-  if (!(SLOT_AGENTS as readonly string[]).includes(agent)) throw new Error(`ia write outside an agent tree: ${path}`);
+  if (!(SLOT_AGENTS as readonly string[]).includes(agent) && (agent as string) !== SEAT_AGENT) throw new Error(`ia write outside an agent tree: ${path}`);
   if (parts.length === 2 && parts[1] === "ia.json") return { agent, kind: IA_KIND };
   if (parts.length === 3 && parts[2] === "slot.json") return { agent, slot: parts[1]!, kind: slotWriteKind(modelExists(path) ? readModelText(path) : null, bytes) };
   throw new Error(`ia write is neither an ia.json nor a slot.json: ${path}`);
@@ -364,6 +367,47 @@ function runIaSlotRegroup(flags: Flags, consumer: string, root: string, agent: S
   return applyEdit(consumer, root, agent, ia, edit, move ? "move" : "extension", owner.ref!, at, flags.bare.has("--dry"));
 }
 
+/**
+ * `clossys ia producer/<seat> --standard <id> [--contract <file>]`: names the standard a seat slot is
+ * judged by (R15.1). A seat's slot.json is written once by `clossys seat`; this only adds `standard`
+ * and, with --contract, a contract that keeps the seat's step (its requirements, R15/R16). It never
+ * places, moves or removes a seat.
+ */
+function runIaSeatStandard(flags: Flags, cwd: string, target: string, slot: string): CliResult {
+  const allowed = new Set(["--standard", "--contract", "--root", "--owner-ref", "--at"]);
+  const extra = [...flags.values.keys()].filter(flag => !allowed.has(flag));
+  if (extra.length || [...flags.bare].some(flag => flag !== "--dry")) throw new CliUsageError(`ia ${target} takes only --standard, --contract, --owner-ref, --at, --dry and --root (a seat is placed by clossys seat)\n${IA_USAGE}`);
+  const standardId = need(flags, "--standard", IA_USAGE);
+  if (!STANDARD_ID.test(standardId)) throw new CliUsageError(`--standard must be a standard id such as element.button, got ${standardId}\n${IA_USAGE}`);
+  const root = rootOf(cwd, flags), consumer = join(root, "clossys");
+  const owner = ownerRefOf(flags, consumer, false);
+  if (isResult(owner)) return owner;
+  const eventAt = (owner.ref || flags.values.has("--at")) ? atOf(flags) : "";
+  const dir = join(agentDir(consumer, SEAT_AGENT), slot);
+  const file = slotFile(dir);
+  if (!modelExists(file)) return refuse("ia", `${target} has no slot.json: a seat slot is written by clossys seat <step>`);
+  const existing = readModelJson(file) as Record<string, unknown>;
+  if (existing.kind !== "seat") return refuse("ia", `${target} is kind ${String(existing.kind)}, not seat`);
+  const step = isRecordValue(existing.contract) ? existing.contract.step : undefined;
+  let contract: unknown = existing.contract;
+  const contractFile = one(flags, "--contract");
+  if (contractFile !== undefined) {
+    try { contract = readJsonFile(resolve(cwd, contractFile)); } catch { return refuse("ia", `--contract ${contractFile} is not a readable JSON file`); }
+    if (!isRecordValue(contract) || contract.step !== step) return refuse("ia", `--contract must keep the seat's step ${JSON.stringify(step)}`);
+  }
+  if (!existsSync(join(root, "packages", SEAT_AGENT, "standards", standardId, "requirements.json"))) return refuse("ia", `standard ${standardId} does not exist under packages/${SEAT_AGENT}/standards/`);
+  const standard = readStandard(root, SEAT_AGENT, standardId);
+  if (!standard.doc || standard.issues.length) return refuse("ia", `standard ${standardId} is not valid: ${standard.issues.slice(0, 5).join("; ")}`);
+  if (!standardFits(standard.doc, "seat", contract)) return refuse("ia", `standard ${standardId} serves ${standard.doc.kinds.join(", ")}, not ${slotKinds("seat", contract).join(" or ")}`);
+  const doc = { ...existing, standard: standardId, contract };
+  const docIssues = validateSlotDoc(doc, file);
+  if (docIssues.length) return refuse("ia", docIssues.map(issue => issue.message).join("; "));
+  const bytes = jsonBytes(doc);
+  if (readModelText(file) === bytes) return { exitCode: 0, root, message: `ia: ${target} already names standard ${standardId}; nothing written` };
+  return commitIa(consumer, root, [[file, bytes]], flags.bare.has("--dry"), `${target} standard ${standardId}${contractFile !== undefined ? " and contract" : ""}`, [], `ia: ${target} standard ${standardId} named (clossys/agents/${SEAT_AGENT}/${slot}/slot.json)`, iaWho(owner.ref, eventAt));
+}
+const isRecordValue = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+
 export async function runIaCli(argv: readonly string[], cwd: string): Promise<CliResult> {
   const flags = parseIa(argv);
   if (flags.help) return { exitCode: 0, message: IA_USAGE };
@@ -383,6 +427,7 @@ export async function runIaCli(argv: readonly string[], cwd: string): Promise<Cl
   if (!target || extra.length) throw new CliUsageError(`ia takes one <agent>/<slot>\n${IA_USAGE}`);
   const slash = target.indexOf("/");
   const agent = target.slice(0, slash) as SlotAgent, slot = target.slice(slash + 1);
+  if ((agent as string) === SEAT_AGENT && SLOT_ID.test(slot)) return runIaSeatStandard(flags, cwd, target, slot);
   if (!(SLOT_AGENTS as readonly string[]).includes(agent) || !SLOT_ID.test(slot)) throw new CliUsageError(`ia target must be <agent>/<slot> with agent ${SLOT_AGENTS.join(", ")} and a slot id, got ${target}\n${IA_USAGE}`);
   const root = rootOf(cwd, flags), consumer = join(root, "clossys");
   const iaFile = iaPath(consumer, agent);

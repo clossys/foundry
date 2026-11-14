@@ -1,0 +1,186 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### voice.formality\n<!-- {\"id\":\"voice.formality\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"voice.formality\",\n  \"context\": \"voice.formality\",\n  \"kind\": \"voice-rule\",\n  \"rule\": \"formality\",\n  \"value\": \"neutral: plain working language\"\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "voice-rule"
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### term.slot\n<!-- {\"id\":\"term.slot\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"term.slot\",\n  \"context\": \"term.slot\",\n  \"kind\": \"term\",\n  \"term\": \"slot\",\n  \"forms\": [\n    \"slot\",\n    \"slots\"\n  ],\n  \"termStatus\": \"preferred\",\n  \"reason\": \"One choice the workspace records.\"\n}\n```\n\n### pattern.exclamation\n<!-- {\"id\":\"pattern.exclamation\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"pattern.exclamation\",\n  \"context\": \"pattern.exclamation\",\n  \"kind\": \"pattern-rule\",\n  \"pattern\": {\n    \"source\": \"!(?=\\\\s|$)\"\n  },\n  \"severity\": \"warning\",\n  \"reason\": \"Exclamation marks read as hype.\"\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "term",
+          "pattern-rule"
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### format.date\n<!-- {\"id\":\"format.date\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"format.date\",\n  \"context\": \"format.date\",\n  \"kind\": \"format\",\n  \"format\": \"date\",\n  \"value\": {\n    \"display\": \"MMM D, YYYY\"\n  }\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "format"
+        ]
+      }
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### claim.open\n<!-- {\"id\":\"claim.open\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"claim.open\",\n  \"context\": \"claim.open\",\n  \"kind\": \"claim\",\n  \"strategy\": \"director:advantage.proposition.proof\",\n  \"phrasings\": [\n    \"The packages are free and open under the MIT license.\"\n  ],\n  \"requiresCitation\": true\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "claim"
+        ]
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### voice.formality\n<!-- {\"id\":\"voice.formality\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"voice.formality\",\n  \"context\": \"voice.formality\",\n  \"kind\": \"voice-rule\",\n  \"rule\": \"formality\",\n  \"value\": \"neutral: plain working language\"\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "term"
+        ]
+      },
+      "note": "wrong kind"
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### term.slot\n<!-- {\"id\":\"term.slot\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"term.slot\",\n  \"context\": \"term.slot\",\n  \"kind\": \"term\",\n  \"term\": \"slot\",\n  \"forms\": [\n    \"slot\",\n    \"slots\"\n  ],\n  \"termStatus\": \"maybe\",\n  \"reason\": \"One choice the workspace records.\"\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "term"
+        ]
+      },
+      "note": "bad status"
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### pattern.exclamation\n<!-- {\"id\":\"pattern.exclamation\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"pattern.exclamation\",\n  \"context\": \"pattern.exclamation\",\n  \"kind\": \"pattern-rule\",\n  \"pattern\": {\n    \"source\": \"(unclosed\"\n  },\n  \"severity\": \"warning\",\n  \"reason\": \"Exclamation marks read as hype.\"\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "pattern-rule"
+        ]
+      },
+      "note": "bad regex"
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### claim.open\n<!-- {\"id\":\"claim.open\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"claim.open\",\n  \"context\": \"claim.open\",\n  \"kind\": \"claim\",\n  \"strategy\": \"proof\",\n  \"phrasings\": [\n    \"The packages are free and open under the MIT license.\"\n  ],\n  \"requiresCitation\": true\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "claim"
+        ]
+      },
+      "note": "bad strategy"
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### voice.formality\n<!-- {\"id\":\"voice.formality\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"voice.formality\",\n  \"context\": \"other\",\n  \"kind\": \"voice-rule\",\n  \"rule\": \"formality\",\n  \"value\": \"neutral: plain working language\"\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "voice-rule"
+        ]
+      },
+      "note": "context"
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### home.hero.header.heading\n<!-- {\"id\":\"home.hero.header.heading\",\"bindings\":[]} -->\nSee where every choice came from\n\n### home.hero.header.description\n<!-- {\"id\":\"home.hero.header.description\",\"bindings\":[]} -->\nDirection, design, copy and pages, slot by slot.\n\n### home.hero.actions.primary.label\n<!-- {\"id\":\"home.hero.actions.primary.label\",\"bindings\":[]} -->\nOpen Director\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {
+        "kinds": [
+          "voice-rule"
+        ]
+      },
+      "note": "plain values"
+    },
+    {
+      "subject": {
+        "kind": "strings/lexicon",
+        "text": "\n## en\n\n### voice.formality\n<!-- {\"id\":\"voice.formality\",\"bindings\":[]} -->\n```json\n{\n  \"id\": \"voice.formality\",\n  \"context\": \"voice.formality\",\n  \"kind\": \"voice-rule\",\n  \"rule\": \"formality\",\n  \"value\": \"neutral: plain working language\"\n}\n```\n",
+        "json": {
+          "slot": "passages.hero",
+          "source": "{\"kind\": \"derived\", \"ref\": [\"director:advantage.proposition.promise\", \"director:identity.verbal.voice\"]}",
+          "locales": "[\"en\"]"
+        }
+      },
+      "params": {},
+      "note": "kinds missing"
+    }
+  ]
+}

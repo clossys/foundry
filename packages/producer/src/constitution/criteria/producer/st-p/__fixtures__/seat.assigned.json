@@ -1,0 +1,152 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "seat",
+        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
+        "json": {
+          "by": "agent:director",
+          "llm": {
+            "model": "claude-opus-5-5",
+            "tier": "mid",
+            "promptFile": "packages/director/actions/director.candidates/skill.md"
+          },
+          "human": {
+            "procedure": "Create Director candidates for the open slots, one immutable file per option.",
+            "command": "clossys next"
+          }
+        }
+      }
+    },
+    {
+      "subject": {
+        "kind": "seat",
+        "text": "{\"by\": \"owner\", \"llm\": null, \"human\": {\"procedure\": \"Compare a slot's candidates against its contract and pin one.\", \"command\": \"clossys pin\"}}",
+        "json": {
+          "by": "owner",
+          "llm": null,
+          "human": {
+            "procedure": "Compare a slot's candidates against its contract and pin one.",
+            "command": "clossys pin"
+          }
+        }
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "seat",
+        "text": "{\"by\": \"someone\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
+        "json": {
+          "by": "someone",
+          "llm": {
+            "model": "claude-opus-5-5",
+            "tier": "mid",
+            "promptFile": "packages/director/actions/director.candidates/skill.md"
+          },
+          "human": {
+            "procedure": "Create Director candidates for the open slots, one immutable file per option.",
+            "command": "clossys next"
+          }
+        }
+      },
+      "note": "bad by"
+    },
+    {
+      "subject": {
+        "kind": "seat",
+        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"x\", \"tier\": \"max\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
+        "json": {
+          "by": "agent:director",
+          "llm": {
+            "model": "x",
+            "tier": "max",
+            "promptFile": "packages/director/actions/director.candidates/skill.md"
+          },
+          "human": {
+            "procedure": "Create Director candidates for the open slots, one immutable file per option.",
+            "command": "clossys next"
+          }
+        }
+      },
+      "note": "bad tier"
+    },
+    {
+      "subject": {
+        "kind": "seat",
+        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"prompts/director.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
+        "json": {
+          "by": "agent:director",
+          "llm": {
+            "model": "claude-opus-5-5",
+            "tier": "mid",
+            "promptFile": "prompts/director.md"
+          },
+          "human": {
+            "procedure": "Create Director candidates for the open slots, one immutable file per option.",
+            "command": "clossys next"
+          }
+        }
+      },
+      "note": "bad prompt path"
+    },
+    {
+      "subject": {
+        "kind": "seat",
+        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Do it.\", \"command\": \"clossys next\"}}",
+        "json": {
+          "by": "agent:director",
+          "llm": {
+            "model": "claude-opus-5-5",
+            "tier": "mid",
+            "promptFile": "packages/director/actions/director.candidates/skill.md"
+          },
+          "human": {
+            "procedure": "Do it.",
+            "command": "clossys next"
+          }
+        }
+      },
+      "note": "short procedure"
+    },
+    {
+      "subject": {
+        "kind": "seat",
+        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one file per option.\", \"command\": \"npm run fill\"}}",
+        "json": {
+          "by": "agent:director",
+          "llm": {
+            "model": "claude-opus-5-5",
+            "tier": "mid",
+            "promptFile": "packages/director/actions/director.candidates/skill.md"
+          },
+          "human": {
+            "procedure": "Create Director candidates for the open slots, one file per option.",
+            "command": "npm run fill"
+          }
+        }
+      },
+      "note": "not a clossys verb"
+    },
+    {
+      "subject": {
+        "kind": "seat",
+        "text": "{\"by\": \"owner\", \"llm\": null, \"human\": null}",
+        "json": {
+          "by": "owner",
+          "llm": null,
+          "human": null
+        }
+      },
+      "note": "nothing set; owner without human"
+    },
+    {
+      "subject": {
+        "kind": "seat",
+        "text": "x"
+      },
+      "note": "not json"
+    }
+  ]
+}

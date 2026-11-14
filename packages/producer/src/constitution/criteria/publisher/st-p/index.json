@@ -1,0 +1,26 @@
+{
+  "schema": "clossys.criteria/1",
+  "criteria": [
+    {
+      "id": "page.assembled",
+      "module": "page",
+      "export": "assembled",
+      "fixtures": "__fixtures__/page.assembled.json",
+      "summary": "A clossys.page/1 record: route path, frames.* frame, unique sections.* sections, Writer title key, <slot>#<key> copy."
+    },
+    {
+      "id": "page.no-inline-copy",
+      "module": "page",
+      "export": "noInlineCopy",
+      "fixtures": "__fixtures__/page.no-inline-copy.json",
+      "summary": "Every display string on the page (label, title, prompt ...) is a Writer key, never inline text."
+    },
+    {
+      "id": "publication.routes",
+      "module": "page",
+      "export": "routes",
+      "fixtures": "__fixtures__/publication.routes.json",
+      "summary": "A clossys.publication/1 record: format, unique entry order, home route in it, derived source, tree of page slots."
+    }
+  ]
+}

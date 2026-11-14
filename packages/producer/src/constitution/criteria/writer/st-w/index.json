@@ -1,0 +1,75 @@
+{
+  "schema": "clossys.criteria/1",
+  "criteria": [
+    {
+      "id": "copy.voice-derived",
+      "module": "copy",
+      "export": "voiceDerived",
+      "fixtures": "__fixtures__/copy.voice-derived.json",
+      "summary": "The source cites director:identity.verbal.voice: Writer copy derives from the pinned voice."
+    },
+    {
+      "id": "copy.derived-upstream",
+      "module": "copy",
+      "export": "derivedUpstream",
+      "fixtures": "__fixtures__/copy.derived-upstream.json",
+      "summary": "The source is derived and every ref is director:<slot>, writer:<slot> or a finding: no bare id, other agent or URL."
+    },
+    {
+      "id": "copy.entries",
+      "module": "copy",
+      "export": "entries",
+      "fixtures": "__fixtures__/copy.entries.json",
+      "summary": "One ## <locale> per frontmatter locale; each ### key has a meta comment whose id is the key, a value, and appears once."
+    },
+    {
+      "id": "copy.plain-values",
+      "module": "copy",
+      "export": "plainValues",
+      "fixtures": "__fixtures__/copy.plain-values.json",
+      "summary": "Plain values are finished: no placeholder, markup, doubled spaces, and valid ICU when params.icu."
+    },
+    {
+      "id": "copy.within-limits",
+      "module": "copy",
+      "export": "withinLimits",
+      "fixtures": "__fixtures__/copy.within-limits.json",
+      "summary": "Every plain value is within its params.limits row (by key suffix) or the default maxChars and maxWords."
+    },
+    {
+      "id": "copy.sentence-case",
+      "module": "copy",
+      "export": "sentenceCase",
+      "fixtures": "__fixtures__/copy.sentence-case.json",
+      "summary": "Heading-like values are sentence case (params.proper names excepted) and never end in !."
+    },
+    {
+      "id": "lexicon.record",
+      "module": "copy",
+      "export": "lexiconRecord",
+      "fixtures": "__fixtures__/lexicon.record.json",
+      "summary": "Every entry is one json record of a params.kinds kind, id and context the key, with that kind's fields."
+    },
+    {
+      "id": "lexicon.claim-sourced",
+      "module": "copy",
+      "export": "claimSourced",
+      "fixtures": "__fixtures__/lexicon.claim-sourced.json",
+      "summary": "Every claim cites a director: strategy, requires a citation and has no unprovable superlative."
+    },
+    {
+      "id": "narrative.sequence",
+      "module": "copy",
+      "export": "narrativeSequence",
+      "fixtures": "__fixtures__/narrative.sequence.json",
+      "summary": "Every narrative is one json record in a frames.* frame, told as <slot>#<key> references or typed text blocks."
+    },
+    {
+      "id": "pattern.parts",
+      "module": "copy",
+      "export": "patternParts",
+      "fixtures": "__fixtures__/pattern.parts.json",
+      "summary": "Every key ends in one of params.parts, and each group holds each required part exactly once."
+    }
+  ]
+}

@@ -1,0 +1,286 @@
+{
+  "pass": [
+    {
+      "subject": {
+        "kind": "publication",
+        "text": "{\"schema\": \"clossys.publication/1\", \"format\": \"web.page.responsive\", \"entryOrder\": [\"home\", \"director\"], \"routePack\": {\"packId\": \"studio\", \"homeRouteId\": \"home\"}, \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher:ia.json\"]}, \"tree\": {\"id\": \"studio\", \"name\": \"studio.nav.studio\", \"children\": [{\"id\": \"studio.pages\", \"name\": \"studio.nav.pages\", \"cells\": [\"page.home\", \"page.director\"]}]}}}",
+        "json": {
+          "schema": "clossys.publication/1",
+          "format": "web.page.responsive",
+          "entryOrder": [
+            "home",
+            "director"
+          ],
+          "routePack": {
+            "packId": "studio",
+            "homeRouteId": "home"
+          },
+          "meta": {
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "publisher:ia.json"
+              ]
+            },
+            "tree": {
+              "id": "studio",
+              "name": "studio.nav.studio",
+              "children": [
+                {
+                  "id": "studio.pages",
+                  "name": "studio.nav.pages",
+                  "cells": [
+                    "page.home",
+                    "page.director"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "fail": [
+    {
+      "subject": {
+        "kind": "publication",
+        "text": "{\"schema\": \"clossys.publication/1\", \"format\": \"web.page.responsive\", \"entryOrder\": [], \"routePack\": {\"packId\": \"studio\", \"homeRouteId\": \"home\"}, \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher:ia.json\"]}, \"tree\": {\"id\": \"studio\", \"name\": \"studio.nav.studio\", \"children\": [{\"id\": \"studio.pages\", \"name\": \"studio.nav.pages\", \"cells\": [\"page.home\", \"page.director\"]}]}}}",
+        "json": {
+          "schema": "clossys.publication/1",
+          "format": "web.page.responsive",
+          "entryOrder": [],
+          "routePack": {
+            "packId": "studio",
+            "homeRouteId": "home"
+          },
+          "meta": {
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "publisher:ia.json"
+              ]
+            },
+            "tree": {
+              "id": "studio",
+              "name": "studio.nav.studio",
+              "children": [
+                {
+                  "id": "studio.pages",
+                  "name": "studio.nav.pages",
+                  "cells": [
+                    "page.home",
+                    "page.director"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "note": "no routes"
+    },
+    {
+      "subject": {
+        "kind": "publication",
+        "text": "{\"schema\": \"clossys.publication/1\", \"format\": \"web.page.responsive\", \"entryOrder\": [\"home\", \"home\"], \"routePack\": {\"packId\": \"studio\", \"homeRouteId\": \"home\"}, \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher:ia.json\"]}, \"tree\": {\"id\": \"studio\", \"name\": \"studio.nav.studio\", \"children\": [{\"id\": \"studio.pages\", \"name\": \"studio.nav.pages\", \"cells\": [\"page.home\", \"page.director\"]}]}}}",
+        "json": {
+          "schema": "clossys.publication/1",
+          "format": "web.page.responsive",
+          "entryOrder": [
+            "home",
+            "home"
+          ],
+          "routePack": {
+            "packId": "studio",
+            "homeRouteId": "home"
+          },
+          "meta": {
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "publisher:ia.json"
+              ]
+            },
+            "tree": {
+              "id": "studio",
+              "name": "studio.nav.studio",
+              "children": [
+                {
+                  "id": "studio.pages",
+                  "name": "studio.nav.pages",
+                  "cells": [
+                    "page.home",
+                    "page.director"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "note": "duplicate"
+    },
+    {
+      "subject": {
+        "kind": "publication",
+        "text": "{\"schema\": \"clossys.publication/1\", \"format\": \"web.page.responsive\", \"entryOrder\": [\"home\", \"director\"], \"routePack\": {\"packId\": \"studio\", \"homeRouteId\": \"start\"}, \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher:ia.json\"]}, \"tree\": {\"id\": \"studio\", \"name\": \"studio.nav.studio\", \"children\": [{\"id\": \"studio.pages\", \"name\": \"studio.nav.pages\", \"cells\": [\"page.home\", \"page.director\"]}]}}}",
+        "json": {
+          "schema": "clossys.publication/1",
+          "format": "web.page.responsive",
+          "entryOrder": [
+            "home",
+            "director"
+          ],
+          "routePack": {
+            "packId": "studio",
+            "homeRouteId": "start"
+          },
+          "meta": {
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "publisher:ia.json"
+              ]
+            },
+            "tree": {
+              "id": "studio",
+              "name": "studio.nav.studio",
+              "children": [
+                {
+                  "id": "studio.pages",
+                  "name": "studio.nav.pages",
+                  "cells": [
+                    "page.home",
+                    "page.director"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "note": "home not in order"
+    },
+    {
+      "subject": {
+        "kind": "publication",
+        "text": "{\"schema\": \"clossys.publication/1\", \"format\": \"web.page.responsive\", \"entryOrder\": [\"home\", \"director\"], \"routePack\": {\"packId\": \"studio\", \"homeRouteId\": \"home\"}, \"meta\": {\"source\": {\"kind\": \"original\", \"ref\": []}, \"tree\": {\"id\": \"studio\", \"name\": \"studio.nav.studio\", \"children\": [{\"id\": \"studio.pages\", \"name\": \"studio.nav.pages\", \"cells\": [\"page.home\", \"page.director\"]}]}}}",
+        "json": {
+          "schema": "clossys.publication/1",
+          "format": "web.page.responsive",
+          "entryOrder": [
+            "home",
+            "director"
+          ],
+          "routePack": {
+            "packId": "studio",
+            "homeRouteId": "home"
+          },
+          "meta": {
+            "source": {
+              "kind": "original",
+              "ref": []
+            },
+            "tree": {
+              "id": "studio",
+              "name": "studio.nav.studio",
+              "children": [
+                {
+                  "id": "studio.pages",
+                  "name": "studio.nav.pages",
+                  "cells": [
+                    "page.home",
+                    "page.director"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "note": "not derived"
+    },
+    {
+      "subject": {
+        "kind": "publication",
+        "text": "{\"schema\": \"clossys.publication/1\", \"format\": \"web.page.responsive\", \"entryOrder\": [\"home\", \"director\"], \"routePack\": {\"packId\": \"studio\", \"homeRouteId\": \"home\"}, \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher:ia.json\"]}, \"tree\": {\"id\": \"studio\", \"name\": \"studio.nav.studio\", \"children\": [{\"id\": \"studio.pages\", \"name\": \"studio.nav.pages\", \"cells\": [\"sections.hero\"]}]}}}",
+        "json": {
+          "schema": "clossys.publication/1",
+          "format": "web.page.responsive",
+          "entryOrder": [
+            "home",
+            "director"
+          ],
+          "routePack": {
+            "packId": "studio",
+            "homeRouteId": "home"
+          },
+          "meta": {
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "publisher:ia.json"
+              ]
+            },
+            "tree": {
+              "id": "studio",
+              "name": "studio.nav.studio",
+              "children": [
+                {
+                  "id": "studio.pages",
+                  "name": "studio.nav.pages",
+                  "cells": [
+                    "sections.hero"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "note": "cell not a page"
+    },
+    {
+      "subject": {
+        "kind": "publication",
+        "text": "{\"schema\": \"clossys.publication/1\", \"format\": \"\", \"entryOrder\": [\"home\", \"director\"], \"routePack\": {\"packId\": \"studio\", \"homeRouteId\": \"home\"}, \"meta\": {\"source\": {\"kind\": \"derived\", \"ref\": [\"publisher:ia.json\"]}, \"tree\": {\"id\": \"studio\", \"name\": \"studio.nav.studio\", \"children\": [{\"id\": \"studio.pages\", \"name\": \"studio.nav.pages\", \"cells\": [\"page.home\", \"page.director\"]}]}}}",
+        "json": {
+          "schema": "clossys.publication/1",
+          "format": "",
+          "entryOrder": [
+            "home",
+            "director"
+          ],
+          "routePack": {
+            "packId": "studio",
+            "homeRouteId": "home"
+          },
+          "meta": {
+            "source": {
+              "kind": "derived",
+              "ref": [
+                "publisher:ia.json"
+              ]
+            },
+            "tree": {
+              "id": "studio",
+              "name": "studio.nav.studio",
+              "children": [
+                {
+                  "id": "studio.pages",
+                  "name": "studio.nav.pages",
+                  "cells": [
+                    "page.home",
+                    "page.director"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "note": "no format"
+    }
+  ]
+}
