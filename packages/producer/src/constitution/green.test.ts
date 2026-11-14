@@ -119,6 +119,18 @@ describe("constitution delta gate (until E2)", () => {
     expect(formatDelta(delta, "enforced")).toMatch(/stale 1 \(not blocking\)/);
   });
 
+  it("a focused run (--slot, --changed) judges only the focused slots: another slot's green key is not stale", () => {
+    const base = run(baselineSpec());
+    const green = stored(buildGreen(base.report.rows, base.index, { workspace: WS, commit: "unknown" }));
+    const focus = [{ agent: "designer", slot: "ui.card" }];
+    const focused = runConstitution({ root: base.root, consumer: base.consumer, history: () => NO_HISTORY, index: true, now: () => 0, focus });
+    expect(focused.rows.every(row => row.agent === "designer" && row.slot === "ui.card")).toBe(true);
+    expect(r04(focused.rows)).toEqual([]);
+    // Unscoped, the ui.button key the focused run never looked at reads as stale; scoped, it does not.
+    expect(evaluateDelta(focused.rows, focused.index!, green.read, scope(focused)).stale.map(item => item.key)).toContain("R04 designer/ui.button .");
+    expect(evaluateDelta(focused.rows, focused.index!, green.read, { ...scope(focused), slots: ["designer/ui.card"] }).stale).toEqual([]);
+  });
+
   it("D1: an order-only renumber by the ia verb does not change a record; its pre-existing finding stays passing", () => {
     const { root, consumer } = writeWorkspace(baselineSpec());
     const again = () => runConstitution({ root, consumer, history: () => NO_HISTORY, index: true, now: () => 0 });

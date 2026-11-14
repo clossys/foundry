@@ -80,6 +80,8 @@ export interface DeltaScope {
   readonly rules: readonly string[];
   /** The agent the run was narrowed to, if any. */
   readonly agent?: string;
+  /** The slots (`<agent>/<slot>`) the run was narrowed to (`--slot`, `--changed`), if any: a green key on another slot is not judged stale. */
+  readonly slots?: readonly string[];
 }
 
 export interface Delta {
@@ -344,7 +346,8 @@ export function evaluateDelta(rows: readonly Row[], index: RecordIndex, read: Gr
   const inScope = (key: string) => {
     const check = key.slice(0, key.indexOf(" "));
     const agent = key.slice(key.indexOf(" ") + 1).split("/")[0];
-    return rules.has(check.split(".")[0]!) && (!scope.agent || agent === scope.agent || agent === "*");
+    const slot = key.slice(key.indexOf(" ") + 1).split(" ")[0]!;
+    return rules.has(check.split(".")[0]!) && (!scope.agent || agent === scope.agent || agent === "*") && (!scope.slots || scope.slots.includes(slot));
   };
   const stale = Object.entries(green.keys)
     .filter(([key, recorded]) => inScope(key) && (seen[key] ?? 0) < recorded)

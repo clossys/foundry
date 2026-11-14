@@ -132,6 +132,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     // The chain orchestrators are not steps: they run (and record through) the steps they walk.
     if (head === "run") return await (await import("../cli/run.js")).runRunCli(argv.slice(1), cwd, steps);
     if (head === "next" && !argv.includes("--submit")) return await (await import("../cli/next.js")).runNextCli(argv.slice(1), cwd, steps);
+    // The craft stages by name: `next <agent>/<slot> --stage <stage>` under one implementation.
+    if (head === "craft") return await (await import("../cli/craft.js")).runCraftCli(argv.slice(1), cwd, steps);
     // The gap finder reads only; the interview (next --owner) asks what it finds.
     if (head === "gaps") return await (await import("../cli/gaps.js")).runGapsCli(argv.slice(1), cwd, steps);
     // A verb with its own parser (specimen, migrate, pipeline) gets its argv untouched.

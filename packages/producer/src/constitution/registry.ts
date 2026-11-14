@@ -40,7 +40,14 @@ export type CheckStatus = RuleStatus;
  * about to write and refuse on any finding, whatever the status (slot-constitution.md sections 4
  * and 6; constitution/guard.ts).
  */
-export interface RuleCheckEntry { readonly id: string; readonly status: CheckStatus; readonly owner?: string; readonly guard?: readonly string[] }
+export interface RuleCheckEntry {
+  readonly id: string;
+  readonly status: CheckStatus;
+  readonly owner?: string;
+  readonly guard?: readonly string[];
+  /** The one-line fix a guard refusal prints beside the check id (INLINE-GATES); the rule statement when absent. */
+  readonly fix?: string;
+}
 export interface RuleEntry {
   readonly id: RuleId;
   readonly statement: string;
@@ -54,7 +61,7 @@ export interface RuleEntry {
   readonly checks: readonly RuleCheckEntry[];
 }
 
-export interface RegisteredRule extends RuleEntry { readonly run: readonly { readonly id: string; readonly status: RuleCheckEntry["status"]; readonly guard: readonly string[]; readonly fn: Check }[] }
+export interface RegisteredRule extends RuleEntry { readonly run: readonly { readonly id: string; readonly status: RuleCheckEntry["status"]; readonly guard: readonly string[]; readonly fix?: string; readonly fn: Check }[] }
 
 let rulesCache: RuleEntry[] | undefined;
 /** rules.json, read from the package source (src/ and dist/ both resolve to it). */
@@ -78,7 +85,7 @@ export function registeredRules(rules: readonly RuleEntry[] = readRules(), modul
     const run = rule.checks.map(check => {
       const fn = module.checks[check.id];
       if (!fn) throw new Error(`constitution: rules.json check ${check.id} has no module function`);
-      return { id: check.id, status: check.status, guard: check.guard ?? [], fn };
+      return { id: check.id, status: check.status, guard: check.guard ?? [], ...(check.fix ? { fix: check.fix } : {}), fn };
     });
     return { ...rule, run };
   });

@@ -159,19 +159,31 @@ const headCommit = (root: string): string => {
 async function runConstitutionCheck(args: CliArgs, root: string, consumer: string): Promise<CliResult> {
   const { formatReport, runConstitution } = await import("../constitution/run.js");
   const green = await import("../constitution/green.js");
-  const { index, ...report } = runConstitution({ root, consumer, index: true, strict: args.strict, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}) });
+  // --slot (the per-slot preflight) and --changed <ref> (check:changed) narrow the run to a focus:
+  // only those slots' rows are judged and printed, each with its one-line fix (constitution/fix.ts).
+  const changed = args.changed ? (await import("../constitution/changed.js")).changedSlots(root, consumer, args.changed) : undefined;
+  const focus = args.slot?.length ? args.slot.map(item => { const [agent, slot] = item.split("/") as [string, string]; return { agent, slot }; })
+    : changed ? changed.focus : undefined;
+  const { fixHint } = await import("../constitution/fix.js");
+  const { index, ...report } = runConstitution({
+    root, consumer, index: true, strict: args.strict, ...(args.rule ? { rule: args.rule } : {}), ...(args.agent ? { agent: args.agent } : {}),
+    ...(focus ? { focus, ...(changed?.paths.length ? { paths: changed.paths } : {}) } : {}),
+  });
   // Building rows (IA-C) stay report-only outside --strict: the delta gate and the green report
   // count non-pending, non-building rows; --strict gates every row, building included.
   const gated = args.strict ? report.rows : report.rows.filter(row => row.level !== "building");
   const path = resolve(root, args.green ?? green.DEFAULT_GREEN_PATH);
   const workspace = workspaceName(root);
   const read = green.readGreen(path, workspace);
-  const delta = green.evaluateDelta(gated, index!, read, { rules: report.rules.map(rule => rule.id), ...(args.agent ? { agent: args.agent } : {}) });
+  const delta = green.evaluateDelta(gated, index!, read, { rules: report.rules.map(rule => rule.id), ...(args.agent ? { agent: args.agent } : {}), ...(focus ? { slots: focus.map(item => `${item.agent}/${item.slot}`) } : {}) });
   const mode = args.strict ? "strict" : args.enforced ? "enforced" : "report";
   let exitCode: 0 | 1 = mode === "strict" ? (delta.enforced || delta.tampered.length ? 1 : 0)
     : mode === "enforced" ? (delta.ok ? 0 : 1)
     : (report.ok && !delta.tampered.length ? 0 : 1);
-  const lines = [formatReport(report), green.formatDelta(delta, mode)];
+  const lines = [
+    ...(focus ? [`constitution focus: ${focus.length} slot(s)${changed ? ` changed vs ${args.changed} (${changed.files.length} file(s), ${changed.paths.length} agent-level)` : ""}: ${focus.map(item => `${item.agent}/${item.slot}`).join(", ") || "(none)"}`] : []),
+    formatReport(report, focus ? { fix: fixHint } : {}), green.formatDelta(delta, mode),
+  ];
   let recorded: { path: string; written: boolean; reason: string } | undefined;
   if (args.recordGreen) {
     const missing = !existsSync(path);
@@ -203,6 +215,6 @@ async function runConstitutionCheck(args: CliArgs, root: string, consumer: strin
   };
   return {
     verb: "check", root, check: true, exitCode, message: lines.join("\n"),
-    output: { ...report, delta: deltaOut, enforced: { ok: delta.enforced === 0, findings: delta.enforced }, ...(recorded ? { recorded } : {}) },
+    output: { ...report, ...(focus ? { focus, ...(changed ? { changed } : {}) } : {}), delta: deltaOut, enforced: { ok: delta.enforced === 0, findings: delta.enforced }, ...(recorded ? { recorded } : {}) },
   };
 }

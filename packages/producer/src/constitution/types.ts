@@ -153,7 +153,17 @@ export interface ConstitutionContext {
    * from pipeline/actions.json; undefined for a step the registry does not have. Read lazily, once.
    */
   readonly actionKind: (pkg: string, step: string) => string | undefined;
+  /**
+   * The slots one write guard or one `--slot` preflight judges (INLINE-GATES); absent, the whole
+   * tree. The per-candidate checks (R03.2, R05.1, R06.7, R20) iterate only these slots, and R20 also
+   * judges a focus entry's `candidate` before it is pinned (a submit's target). Global lookups (every
+   * slot id, the pinned Director slots, the citation graph) still read every slot.
+   */
+  readonly focus?: readonly FocusTarget[];
 }
+
+/** One focused slot, and the candidate file a write is putting there (submit, reissue) or pinning. */
+export interface FocusTarget { readonly agent: string; readonly slot: string; readonly candidate?: string }
 
 /** The agents whose IA Foundry places (R01.5). */
 export type FoundryAgent = "director" | "designer" | "writer";

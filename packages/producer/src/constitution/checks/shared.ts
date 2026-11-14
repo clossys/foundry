@@ -33,6 +33,26 @@ export function* liveSlotRecords(ctx: ConstitutionContext): Generator<SlotRecord
   for (const agent of ctx.agents) for (const { record } of liveSlots(agent)) if (record) yield record;
 }
 
+/** Whether a slot is in the run's focus (ConstitutionContext.focus); every slot is when there is none. */
+export function inFocus(ctx: ConstitutionContext, slot: Pick<SlotRecord, "agent" | "id">): boolean {
+  return !ctx.focus || ctx.focus.some(target => target.agent === slot.agent && target.slot === slot.id);
+}
+
+/** The candidate files the focus names on a slot (a write's target), in focus order. */
+export function focusCandidates(ctx: ConstitutionContext, slot: Pick<SlotRecord, "agent" | "id">): string[] {
+  return [...new Set((ctx.focus ?? []).filter(target => target.agent === slot.agent && target.slot === slot.id && target.candidate).map(target => target.candidate!))];
+}
+
+/** Every slot folder in the focus (every slot without one): the per-candidate checks' iteration. */
+export function* focusedSlots(ctx: ConstitutionContext): Generator<SlotRecord> {
+  for (const slot of allSlots(ctx)) if (inFocus(ctx, slot)) yield slot;
+}
+
+/** Every live slot folder in the focus (every live slot without one). */
+export function* focusedLiveSlots(ctx: ConstitutionContext): Generator<SlotRecord> {
+  for (const slot of liveSlotRecords(ctx)) if (inFocus(ctx, slot)) yield slot;
+}
+
 /** slot.json `inputs` ∪ `uses` (the dependency set), or undefined without a parseable slot.json. */
 export function dependencySet(slot: SlotRecord): Set<string> | undefined {
   const doc = slot.slot?.value;

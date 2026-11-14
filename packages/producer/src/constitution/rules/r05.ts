@@ -16,7 +16,7 @@ import { join, posix, relative } from "node:path";
 import { certifyWorld, resultKey } from "../certify/index.js";
 import { pinnedOf } from "../certify/env.js";
 import type { Reason } from "../certify/types.js";
-import { liveSlotRecords, row } from "../checks/shared.js";
+import { focusedLiveSlots, row } from "../checks/shared.js";
 import type { Check, Row, RuleModule } from "../types.js";
 
 /** `[code,code] first message (+n more)`. */
@@ -38,7 +38,7 @@ export const r05_1: Check = ctx => {
 export const r05_2: Check = ctx => {
   const rows: Row[] = [];
   const { results } = certifyWorld(ctx);
-  for (const slot of liveSlotRecords(ctx)) {
+  for (const slot of focusedLiveSlots(ctx)) {
     const candidate = pinnedOf(slot);
     if (!candidate) continue;
     const result = results.get(resultKey(slot.agent, slot.id, candidate.name));

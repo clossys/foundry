@@ -9,11 +9,15 @@
  * - R20.2 the same for the pinned candidate of every Writer slot, in its frontmatter `reason`.
  * `source.ref` alone does not satisfy it: it says where bytes came from, not what they realise.
  * The predicate is records/director-trace.ts, shared with `clossys design --check` and `clossys write --check`.
+ *
+ * A full run judges pinned candidates only, so an unpinned option never blocks. A write guard
+ * focuses the run on the candidate it writes (ConstitutionContext.focus): `submit` and `reissue`
+ * then refuse a candidate with no Director trace before it can ever be pinned (INLINE-GATES).
  */
 import { candidateReason, directorTraceProblem, owesDirectorTrace } from "../../records/director-trace.js";
 import type { ConstitutionContext, Row, RuleModule, SlotRecord } from "../types.js";
 import { pinBlocker } from "./R02-pins-order.js";
-import { allSlots, row } from "./shared.js";
+import { focusCandidates, focusedSlots, row } from "./shared.js";
 
 /** Director slots whose pin is intact. */
 export function pinnedDirectorIds(ctx: ConstitutionContext): Set<string> {
@@ -25,12 +29,15 @@ export function pinnedDirectorIds(ctx: ConstitutionContext): Set<string> {
 function traceRows(ctx: ConstitutionContext, check: "R20.1" | "R20.2", accept: (slot: SlotRecord) => boolean): Row[] {
   const pinned = pinnedDirectorIds(ctx);
   const rows: Row[] = [];
-  for (const slot of allSlots(ctx)) {
-    if (!accept(slot) || !owesDirectorTrace(slot.agent, slot.id) || pinBlocker(slot)) continue;
-    const name = (slot.pin!.value as Record<string, unknown>).candidate as string;
-    const candidate = slot.candidates.find(each => each.name === name)!;
-    const problem = directorTraceProblem(name, candidateReason(name, candidate.text), pinned);
-    if (problem) rows.push(row("R20", check, slot, `pinned ${name}: ${problem}`, candidate.path, name));
+  for (const slot of focusedSlots(ctx)) {
+    if (!accept(slot) || !owesDirectorTrace(slot.agent, slot.id)) continue;
+    const pinnedName = pinBlocker(slot) ? undefined : (slot.pin!.value as Record<string, unknown>).candidate as string;
+    for (const name of new Set([...(pinnedName ? [pinnedName] : []), ...focusCandidates(ctx, slot)])) {
+      const candidate = slot.candidates.find(each => each.name === name);
+      if (!candidate) continue;
+      const problem = directorTraceProblem(name, candidateReason(name, candidate.text), pinned);
+      if (problem) rows.push(row("R20", check, slot, `${name === pinnedName ? "pinned " : ""}${name}: ${problem}`, candidate.path, name));
+    }
   }
   return rows;
 }
