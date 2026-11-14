@@ -101,7 +101,7 @@ export function optionsBrief(consumer: string, view: SlotOptions, mode: "more" |
     reference: reference?.name ?? null,
     held: view.candidates.map(c => ({ name: c.name, vary: c.vary ? c.vary.value : "baseline", pinned: c.pinned })),
     writer: view.agent === "director" ? "Director skill (packages/director/skill)" : view.agent === "writer" ? "Writer skill (packages/writer/skill)" : `${view.agent} skill`,
-    how: `one pass per L2 group with shared context; submit each file with clossys next ${view.agent}/${view.slot} --submit <file> --model <id> --tier <tier> --basis agent --skill <the step's skill path> --rung <rung> [--seed <id>] [--reason <text>] (select a seed first, adapt one only when none fits, create only when none can be adapted, with the reason); a byte-identical candidate is refused`,
+    how: `one pass per L2 group with shared context; submit each file with clossys next ${view.agent}/${view.slot} --submit <file> --model <id> --tier <tier> --basis agent --skill <the step's skill path> --rung <rung> [--seed <id>] [--reason <text>] (adopt a seed verbatim first, adapt one only when none fits, create only when none can be adapted, with the reason); a byte-identical candidate is refused`,
   };
 }
 

@@ -12,7 +12,7 @@
  * declared skill must be the contract's skill, its seat's llm (when assigned) must match the model and
  * tier, its file must pass the output port's schema and the slot model check, and its canonical bytes
  * must differ from every candidate the slot holds, and its selection-ladder record (--rung, --seed,
- * --reason; pipeline/candidate-ladder.ts) must name a seed it selected or adapted, or the reason no
+ * --reason; pipeline/candidate-ladder.ts) must name a seed it adopted or adapted, or the reason no
  * seed fit when it creates; a rejection writes
  * nothing and leaves no run record. An accepted one writes `<name>-v<n>` into the slot's candidates
  * and its run record keeps the model, tier, basis, ladder, skill file and output file with their sha256.
@@ -52,8 +52,8 @@ export const NEXT_USAGE = "Usage: clossys next [--json] [--root <dir>]\n"
   + "  (recommended first, each the exact argv of every call it runs) and a free-text answer; --agent <id> keeps one agent's.\n"
   + "  --model <tier>=<id>: the seat-policy question's recommended answer while clossys/seat-policy.json is missing (never guessed).\n"
   + "  --submit: record one candidate for <agent>/<slot> (the <agent>.candidates step); --skill must be that step's skill.\n"
-  + "  --rung: the selection-ladder rung it came from (select, adapt, create; the Designer's L1 stock, L2 partner, L3 question, L4 Foundry);\n"
-  + "  --seed names the seed selected or adapted; --reason says why no seed fit (required to create).";
+  + "  --rung: the ladder rung it came from (adopt, adapt, create; the Designer's L1 stock, L2 partner, L3 question, L4 Foundry);\n"
+  + "  --seed names the seed adopted or adapted; --reason says why no seed fit (required to create).";
 
 const TIERS = ["low", "mid", "high"] as const;
 const BASES = ["agent", "owner", "planner"] as const;
@@ -187,7 +187,7 @@ export async function runNextSubmitCli(argv: readonly string[], cwd: string, ste
   for (const [flag, given] of [["--model", flags.model], ["--tier", flags.tier], ["--basis", flags.basis], ["--skill", flags.skill]] as const) if (!given) throw new CliUsageError(`next --submit requires ${flag}\n${NEXT_USAGE}`);
   if (!(TIERS as readonly string[]).includes(flags.tier!)) throw new CliUsageError(`--tier must be ${TIERS.join(", ")}, got ${flags.tier}\n${NEXT_USAGE}`);
   if (!(BASES as readonly string[]).includes(flags.basis!)) throw new CliUsageError(`--basis must be ${BASES.join(", ")}, got ${flags.basis}\n${NEXT_USAGE}`);
-  // The selection ladder: a seed selected or adapted is named, a created candidate says why no seed fit.
+  // The selection ladder: a seed adopted or adapted is named, a created candidate says why no seed fit.
   const ladder: CandidateLadder | undefined = flags.rung === undefined ? undefined
     : { rung: flags.rung, ...(flags.seed !== undefined ? { seed: flags.seed } : {}), ...(flags.reason !== undefined ? { reason: flags.reason } : {}) };
   const ladderFindings = ladderIssues(agent, ladder);

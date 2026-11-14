@@ -147,7 +147,7 @@ There is no session log. What the owner says is recorded as findings:
    the finding's `Informs:` bullet, and say in one clause what you noted for
    later ("Noted for pricing; back to who we serve.").
 6. **Draft** the candidate from the template in a scratch file, then submit it:
-   `npx clossys next director/<id> --submit <name>.md --name <name> --model <id> --tier <tier> --basis owner --skill <packet skill path> --rung <select|adapt|create> [--seed <id>@<N>] [--reason <why no seed fit>]`.
+   `npx clossys next director/<id> --submit <name>.md --name <name> --model <id> --tier <tier> --basis owner --skill <packet skill path> --rung <adopt|adapt|create> [--seed <id>@<N>] [--reason <why no seed fit>]`.
    The verb writes `<id>/candidates/<name>-v<N>.md` and refuses an invalid or
    byte-identical draft. Select or adapt a pinned version or template first;
    create only when none fits, saying why. Options the owner wants to compare in

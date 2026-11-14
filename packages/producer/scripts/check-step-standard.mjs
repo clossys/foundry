@@ -68,7 +68,7 @@
 //                      (when, rounds of at most 4, the verbs, clossys run, 0 gaps, no hand-fill); another
 //                      agent's does not cite the Producer's contract, or restates a part of it
 //   skill.ladder       a <agent>.candidates step skill lacks the selection ladder: its rungs, bold, in order
-//                      (select, adapt, create; the Designer's L1 stock, L2 partner, L3 question, L4
+//                      (adopt, adapt, create; the Designer's L1 stock, L2 partner, L3 question, L4
 //                      Foundry) and the --rung record next --submit keeps
 //   owner.argv         an owner question of `clossys next --owner` has an option with no exact clossys
 //                      argv, an unfilled placeholder, a round over 4, or not 2-4 answers recommended first
@@ -399,7 +399,7 @@ for (const agent of INTERVIEW_AGENTS) {
   for (const [needle, what] of parts) if (!body.includes(needle)) fail("skill.interview", `${file}'s Interview section misses ${what} ("${needle}")`);
   if (agent !== "producer") for (const [needle, what] of shared) if (body.includes(needle)) fail("skill.interview", `${file}'s Interview section restates the contract's ${what} ("${needle}"); state it once, in the Producer skill`);
 }
-const LADDERS = { designer: ["L1", "L2", "L3", "L4"], other: ["select", "adapt", "create"] };
+const LADDERS = { designer: ["L1", "L2", "L3", "L4"], other: ["adopt", "adapt", "create"] };
 for (const action of loaded.filter(each => /^(director|designer|writer|publisher)\.candidates$/.test(each.contract.id))) {
   const file = `packages/${action.package}/${ACTIONS_DIR}/${action.contract.id}/${SKILL_FILE}`;
   const body = text(join(PACKAGES_DIR, action.package, ACTIONS_DIR, action.contract.id, SKILL_FILE));
@@ -407,7 +407,7 @@ for (const action of loaded.filter(each => /^(director|designer|writer|publisher
   if (!match) { fail("skill.ladder", `${file} has no "## Selection ladder" section`); continue; }
   const section = body.slice(match.index);
   const rungs = LADDERS[action.contract.agent] ?? LADDERS.other;
-  // Each rung is a bold list item (`**select**`, `**L1**`), in ladder order.
+  // Each rung is a bold list item (`**adopt**`, `**L1**`), in ladder order.
   const at = rungs.map(rung => section.indexOf(`**${rung}**`));
   if (at.some(index => index < 0) || at.some((index, i) => i && index < at[i - 1])) fail("skill.ladder", `${file}'s selection ladder does not list ${rungs.join(", ")} in order`);
   if (!section.includes("--rung")) fail("skill.ladder", `${file}'s selection ladder does not say how the rung is recorded (next --submit --rung)`);

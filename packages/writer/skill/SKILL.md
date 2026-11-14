@@ -76,7 +76,7 @@ in a candidate.
    ```sh
    npx clossys next writer/<slot> --submit draft.md --name <name> \
      --model <id> --tier <tier> --basis agent --skill <packet skill path> \
-     --rung <select|adapt|create> [--seed <slot>/<candidate>] [--reason <why no seed fit>]
+     --rung <adopt|adapt|create> [--seed <slot>/<candidate>] [--reason <why no seed fit>]
    ```
 5. **Check the slots.**
    ```sh
