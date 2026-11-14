@@ -28,6 +28,8 @@ const strings = (value: unknown): value is string[] => Array.isArray(value) && v
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 const NODE_ID = /^[a-z0-9][a-z0-9.-]*$/;
 const SLOT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
+/** The slot's judge (`clossys ia --standard`): the slot-model STANDARD_ID, mirrored (publisher cannot import producer). */
+const STANDARD_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
 const CANDIDATE = /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/;
 function fail(path: string, message: string): never { throw new TypeError(`${path}: ${message}`); }
 function keys(value: JsonObject, allowed: readonly string[], path: string) {
@@ -95,7 +97,8 @@ function pinned(records: PinnedPublicationSource, index: Map<string, Position>, 
   // Flat layout: agents/publisher/<slot-id>; grouping lives only in ia.json + slot.json ia.
   const dir = id, slotPath = `${dir}/slot.json`;
   const slot = parse(present(records.record(id, "slot.json"), slotPath), slotPath);
-  keys(slot, ["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses"], slotPath);
+  keys(slot, ["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses", "standard"], slotPath);
+  if (slot.standard !== undefined && (typeof slot.standard !== "string" || !STANDARD_ID.test(slot.standard))) fail(slotPath, "Invalid slot standard");
   if (slot.schema !== "clossys.slot/1" || slot.id !== id || slot.agent !== "publisher" || slot.kind !== kind || !object(slot.ia)
     || slot.ia.l1 !== position.l1 || slot.ia.l2 !== position.l2 || slot.ia.order !== position.order || slot.ia.l0 !== undefined
     || !object(slot.contract) || !strings(slot.inputs) || !strings(slot.uses)

@@ -233,6 +233,17 @@ it("NATIVE rejects a missing home Route at the route pack header guard", async (
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Conflicting route pack header/);
 });
 
+it("NATIVE reads a slot that names its standard and refuses a malformed standard", async () => {
+  const f = await fixture();
+  await edit(join(dir(f.path, f.pubId), "slot.json"), value => { value.standard = "publication"; });
+  await edit(join(dir(f.path, "page.designer"), "slot.json"), value => { value.standard = "page"; });
+  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
+  for (const bad of ["Page", "", 7, "page..x"]) {
+    await edit(join(dir(f.path, "page.designer"), "slot.json"), value => { value.standard = bad; });
+    await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Invalid slot standard/);
+  }
+});
+
 it("NATIVE cannot borrow a page not declared by the publication slot", async () => {
   const f = await fixture();
   await edit(join(dir(f.path, f.pubId), "slot.json"), value => { value.inputs = value.inputs.filter((id: string) => id !== "page.designer"); });
