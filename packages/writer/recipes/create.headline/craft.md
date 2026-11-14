@@ -82,19 +82,19 @@ Write each direction's draft candidate in the contract's shape: a Markdown copy 
 Nothing is generated; the checks read it mechanically.
 
 For each direction's draft candidate, check the draft first (the voice cited, a derived source of `director:`/`writer:` pins and findings, one entry per key with its meta id equal to the key, plain values (no markup or placeholder, valid ICU), within the contract's limits, sentence case except the standard's proper names, pattern parts where the contract has them; a requirement it does not
-check is named in its clean line as left to `clossys check --slot`), then render and preflight:
+check is named in its clean line as left to `clossys check --constitution --slot`), then render and preflight:
 
 ```sh
 node packages/writer/recipes/stage-check.mjs draft <slot> <draft>
 clossys render <slot> <candidate>          # cached by (candidate sha256, dependency pin-set hash)
-clossys check --slot writer/<slot>       # per-slot preflight, under 10s, cached by sha
+clossys check --constitution --slot writer/<slot>       # per-slot preflight, under 10s, cached by sha
 ```
 
 A failing check prints the rule id, the requirement and the fix: fix the draft and re-check; never edit the check.
 Open tooling gaps (foundry-feedback-0015, -0018): `clossys render` renders submitted candidates only, and
-`clossys check --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
+`clossys check --constitution --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
 the missing verb; it never renders by hand or skips the preflight. The draft check above is the maker's
-own preflight and runs now; it does not replace `clossys check --slot`.
+own preflight and runs now; it does not replace `clossys check --constitution --slot`.
 Then record the render set (`renders.json`: `{"renders": [{"direction": "<id>", "candidate": "<name>",
 "path": "<render path>", "sha256": "<render sha>"}]}`):
 
@@ -137,7 +137,7 @@ taste id, submit the best render with that finding in the reason, or stop at `NE
 
 ```sh
 node packages/writer/recipes/stage-check.mjs draft <slot> <draft>
-clossys check --slot writer/<slot>       # same preflight, last time before the write
+clossys check --constitution --slot writer/<slot>       # same preflight, last time before the write
 clossys next writer/<slot> --submit <draft> --rung create --reason "<create gap and the upstream it derives from>" --basis agent --model <model> --tier <tier> --skill packages/writer/actions/writer.candidates/skill.md
 ```
 

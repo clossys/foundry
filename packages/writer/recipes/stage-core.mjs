@@ -252,7 +252,7 @@ export const excerpt = (text, max = 60) => {
 /**
  * Stage 3 preflight (draft): runs each `checks[<requirement id>]` the slot's standard names over the
  * draft, with "$contract" bound; a requirement this file has no check for is listed as left to
- * `clossys check --slot` (the judge's own preflight). `extra(world, draft)` adds maker-only rules.
+ * `clossys check --constitution --slot` (the judge's own preflight). `extra(world, draft)` adds maker-only rules.
  */
 export function checkDraftWith(root, agent, slot, draft, checks, extra) {
   let world;
@@ -289,7 +289,7 @@ export function runStageCli(agent, api, argv, cwd) {
     let draft;
     try { draft = readDraft(resolve(cwd, path)); } catch (error) { return { code: 2, text: `stage-check: cannot read ${path}: ${error.message}\n` }; }
     const { issues, judgeOnly } = api.draft(root, slot, draft);
-    const tail = judgeOnly.length ? ` (left to clossys check --slot: ${judgeOnly.join(", ")})` : "";
+    const tail = judgeOnly.length ? ` (left to clossys check --constitution --slot: ${judgeOnly.join(", ")})` : "";
     if (!issues.length) return { code: 0, text: `stage-check draft ${agent}/${slot}: clean${tail}\n` };
     return { code: 1, text: issues.map(formatIssue).join("\n") + "\n" };
   }

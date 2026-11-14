@@ -83,19 +83,19 @@ Write each direction's draft candidate in the contract's shape: a JSON record: a
 Nothing is generated; the checks read it mechanically.
 
 For each direction's draft candidate, check the draft first (schema, a route path, a pinned `frames.*` frame the slot names, unique pinned `sections.*` sections, a Writer title key found in a pinned Writer slot the page uses, `<slot>#<key>` copy references, no inline display text; for a publication, a format, a unique kebab-case entry order with its home in it, a derived source and a tree of pinned page slots the slot lists; a requirement it does not
-check is named in its clean line as left to `clossys check --slot`), then render and preflight:
+check is named in its clean line as left to `clossys check --constitution --slot`), then render and preflight:
 
 ```sh
 node packages/publisher/recipes/stage-check.mjs draft <slot> <draft>
 clossys render <slot> <candidate>          # cached by (candidate sha256, dependency pin-set hash)
-clossys check --slot publisher/<slot>       # per-slot preflight, under 10s, cached by sha
+clossys check --constitution --slot publisher/<slot>       # per-slot preflight, under 10s, cached by sha
 ```
 
 A failing check prints the rule id, the requirement and the fix: fix the draft and re-check; never edit the check.
 Open tooling gaps (foundry-feedback-0015, -0018): `clossys render` renders submitted candidates only, and
-`clossys check --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
+`clossys check --constitution --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
 the missing verb; it never renders by hand or skips the preflight. The draft check above is the maker's
-own preflight and runs now; it does not replace `clossys check --slot`.
+own preflight and runs now; it does not replace `clossys check --constitution --slot`.
 Then record the render set (`renders.json`: `{"renders": [{"direction": "<id>", "candidate": "<name>",
 "path": "<render path>", "sha256": "<render sha>"}]}`):
 
@@ -138,7 +138,7 @@ taste id, submit the best render with that finding in the reason, or stop at `NE
 
 ```sh
 node packages/publisher/recipes/stage-check.mjs draft <slot> <draft>
-clossys check --slot publisher/<slot>       # same preflight, last time before the write
+clossys check --constitution --slot publisher/<slot>       # same preflight, last time before the write
 clossys next publisher/<slot> --submit <draft> --rung create --reason "<create gap and the upstream it derives from>" --basis agent --model <model> --tier <tier> --skill packages/publisher/actions/publisher.candidates/skill.md
 ```
 

@@ -106,12 +106,12 @@ For each direction's draft candidate:
 
 ```sh
 clossys render <slot> <candidate>          # cached by (candidate sha256, dependency pin-set hash)
-clossys check --slot designer/<slot>       # per-slot preflight, under 10s, cached by sha
+clossys check --constitution --slot designer/<slot>       # per-slot preflight, under 10s, cached by sha
 ```
 
 A failing preflight prints the rule id and the fix: fix the draft and re-render; never edit the check.
 Open tooling gaps (foundry-feedback-0015, -0018): `clossys render` renders submitted candidates only, and
-`clossys check --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
+`clossys check --constitution --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
 the missing verb; it never renders by hand or skips the preflight.
 Then record the render set (`renders.json`: `{"renders": [{"direction": "<id>", "candidate": "<name>",
 "path": "<render path>", "sha256": "<render sha>"}]}`):
@@ -154,7 +154,7 @@ taste id, submit the best render with that finding in the reason, or stop at `NE
 ### 6. submit (deterministic)
 
 ```sh
-clossys check --slot designer/<slot>       # same preflight, last time before the write
+clossys check --constitution --slot designer/<slot>       # same preflight, last time before the write
 clossys next designer/<slot> --submit <draft> --rung L4 --reason "<create gap or Director reason>" --basis agent --model <model> --tier <tier> --skill packages/designer/actions/designer.candidates/skill.md
 ```
 

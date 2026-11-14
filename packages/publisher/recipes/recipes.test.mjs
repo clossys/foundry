@@ -110,13 +110,13 @@ describe("craft.md runs the fixed 5b stages with a check at each", () => {
       assert.match(section(1), new RegExp(`stage-check\\.mjs brief <slot> brief\\.json\\nclossys next ${AGENT}/<slot> --stage brief `), `${id} checks the brief before recording it`);
       assert.match(section(2), new RegExp(`stage-check\\.mjs diverge <slot> directions\\.json\\nclossys next ${AGENT}/<slot> --stage diverge `), `${id} checks the axes before recording diverge`);
       const render = section(3);
-      const draft = render.indexOf(`stage-check.mjs draft <slot> <draft>`), rendered = render.indexOf("clossys render <slot> <candidate>"), slotCheck = render.indexOf(`clossys check --slot ${AGENT}/<slot>`);
+      const draft = render.indexOf(`stage-check.mjs draft <slot> <draft>`), rendered = render.indexOf("clossys render <slot> <candidate>"), slotCheck = render.indexOf(`clossys check --constitution --slot ${AGENT}/<slot>`);
       assert.ok(draft >= 0 && rendered > draft && slotCheck > rendered, `${id} checks the draft, renders, then preflights`);
       assert.match(section(4), new RegExp(`clossys critique-packet ${AGENT}/<slot> --standard <standard>`));
       assert.match(section(4), new RegExp(`clossys critique ${AGENT}/<slot> --record critique\\.json`));
       assert.match(section(5), /stage-check\.mjs diverge <slot> directions\.json/, `${id} re-checks a refine against the other directions`);
       const submit = section(6);
-      const submitDraft = submit.indexOf("stage-check.mjs draft <slot> <draft>"), submitCheck = submit.indexOf(`clossys check --slot ${AGENT}/<slot>`);
+      const submitDraft = submit.indexOf("stage-check.mjs draft <slot> <draft>"), submitCheck = submit.indexOf(`clossys check --constitution --slot ${AGENT}/<slot>`);
       assert.ok(submitDraft >= 0 && submitCheck > submitDraft && submit.indexOf("--submit") > submitCheck, `${id} checks the draft and preflights before submit`);
       for (const stage of ["brief", "diverge", "render", "critique", "refine"]) assert.match(text, new RegExp(`--stage ${stage} [^\\n]*--recipe ${id.replace(".", "\\.")} `), `${id} records craft:${stage} under its id`);
       assert.doesNotMatch(text, /\.\.\/|packages\/producer\/src/, `${id} names no judge source`);

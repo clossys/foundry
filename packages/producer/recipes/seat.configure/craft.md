@@ -87,19 +87,19 @@ Write each direction's draft candidate in the contract's shape: a JSON seat: `{"
 Nothing is generated; the checks read it mechanically.
 
 For each direction's draft candidate, check the draft first (a holder of owner, planner or agent:<agent>, an llm with a model id, a tier and a skill path of the holder's agent that exists, the seat policy's model for that tier, a human procedure sentence and a clossys verb, a human for an owner seat; a requirement it does not
-check is named in its clean line as left to `clossys check --slot`), then render and preflight:
+check is named in its clean line as left to `clossys check --constitution --slot`), then render and preflight:
 
 ```sh
 node packages/producer/recipes/stage-check.mjs draft <slot> <draft>
 clossys render <slot> <candidate>          # cached by (candidate sha256, dependency pin-set hash)
-clossys check --slot producer/<slot>       # per-slot preflight, under 10s, cached by sha
+clossys check --constitution --slot producer/<slot>       # per-slot preflight, under 10s, cached by sha
 ```
 
 A failing check prints the rule id, the requirement and the fix: fix the draft and re-check; never edit the check.
 Open tooling gaps (foundry-feedback-0015, -0018): `clossys render` renders submitted candidates only, and
-`clossys check --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
+`clossys check --constitution --slot` is being built (INLINE-GATES). Until each lands, this stage stops at `NEED` naming
 the missing verb; it never renders by hand or skips the preflight. The draft check above is the maker's
-own preflight and runs now; it does not replace `clossys check --slot`.
+own preflight and runs now; it does not replace `clossys check --constitution --slot`.
 Then record the render set (`renders.json`: `{"renders": [{"direction": "<id>", "candidate": "<name>",
 "path": "<render path>", "sha256": "<render sha>"}]}`):
 
@@ -142,7 +142,7 @@ taste id, submit the best render with that finding in the reason, or stop at `NE
 
 ```sh
 node packages/producer/recipes/stage-check.mjs draft <slot> <draft>
-clossys check --slot producer/<slot>       # same preflight, last time before the write
+clossys check --constitution --slot producer/<slot>       # same preflight, last time before the write
 clossys seat <step> --by <holder> --model <model> --tier <tier> --prompt-file <promptFile> --procedure "<procedure>" --command "<clossys verb>"
 ```
 
