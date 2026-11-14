@@ -157,6 +157,63 @@ describe("clossys migrate ledger", () => {
     expect(summary(rows(fixture.root, fixture.consumer))).toEqual(NONE);
   });
 
+  it("takes the genesis from the parallel side-line add whose bytes the chain kept", () => {
+    const fixture = repo();
+    const path = `${BUTTON}/candidates/button-v3.json`;
+    const kept = json({ ...BUTTON_V1, files: [{ ...BUTTON_V1.files[0]!, content: "export const Button = 3;\n" }] });
+    const dropped = json({ ...BUTTON_V1, files: [{ ...BUTTON_V1.files[0]!, content: "export const Button = 30;\n" }] });
+    fixture.git("checkout", "-qb", "keep");
+    fixture.write(path, kept);
+    const keep = fixture.commit("add v3 (kept)", CLAUDE);
+    fixture.git("checkout", "-q", "main");
+    fixture.git("checkout", "-qb", "drop");
+    fixture.write(path, dropped);
+    fixture.commit("add v3 (dropped)");
+    fixture.git("checkout", "-q", "main");
+    fixture.git("checkout", "-qb", "int");
+    fixture.git("merge", "-q", "--no-ff", "-m", "merge keep", "keep");
+    fixture.git("merge", "-q", "-s", "ours", "-m", "merge drop, keep ours", "drop");
+    fixture.git("checkout", "-q", "main");
+    fixture.git("merge", "-q", "--no-ff", "-m", "merge int", "int");
+    const merge = fixture.git("rev-parse", "HEAD").trim();
+    const plan = planLedgerBackfill(fixture.consumer);
+    expect(plan.gaps).toEqual([]);
+    applyLedgerBackfill(fixture.consumer, plan);
+    const submit = ledgerOf(fixture.root, BUTTON).events.find(event => event.op === "submit" && event.name === "button-v3.json");
+    expect(submit).toMatchObject({ sha256: sha(kept), by: "history:claude", backfill: { commit: merge, authoredIn: keep } });
+    expect(summary(rows(fixture.root, fixture.consumer))).toEqual(NONE);
+  });
+
+  it("a side-line edit before the chain is a gap, and a migrate event only when the manifest records it", () => {
+    const fixture = repo();
+    const path = `${BUTTON}/candidates/button-v3.json`;
+    const added = json({ ...BUTTON_V1, files: [{ ...BUTTON_V1.files[0]!, content: "export const Button = 3;\n" }] });
+    const edited = added.replace("Button = 3", "Button = 4");
+    fixture.git("checkout", "-qb", "side");
+    fixture.write(path, added);
+    fixture.commit("add v3");
+    fixture.write(path, edited);
+    const edit = fixture.commit("edit v3 in place");
+    fixture.git("checkout", "-q", "main");
+    fixture.git("merge", "-q", "--no-ff", "-m", "merge side", "side");
+    const merge = fixture.git("rev-parse", "HEAD").trim();
+    const plan = planLedgerBackfill(fixture.consumer);
+    expect(plan.gaps).toEqual([{ path, message: `edited in ${edit.slice(0, 9)} before it reached the first-parent chain (${merge.slice(0, 9)}) without a recorded migration: no event` }]);
+    applyLedgerBackfill(fixture.consumer, plan);
+    const before = rows(fixture.root, fixture.consumer);
+    expect(summary(before)).toEqual({ ...NONE, "R14.1": 1, "R08.2": 1 });
+    expect(ledgerOf(fixture.root, BUTTON).events.filter(event => event.op === "migrate")).toEqual([]);
+    fixture.write("clossys/evidence/migrations.json", json({ schema: MIGRATIONS_SCHEMA, events: [
+      { type: "migrated", migration: "citations-to-slots", file: "agents/designer/ui.button/candidates/button-v3.json", from: fileState(added), to: fileState(edited), by: "planner", at: "2026-11-03T00:00:00Z" },
+    ] }));
+    const explained = planLedgerBackfill(fixture.consumer);
+    expect(explained.gaps).toEqual([]);
+    applyLedgerBackfill(fixture.consumer, explained);
+    const migrate = ledgerOf(fixture.root, BUTTON).events.filter(event => event.op === "migrate");
+    expect(migrate).toEqual([expect.objectContaining({ files: [{ name: "button-v3.json", from: sha(added), to: sha(edited) }], backfill: expect.objectContaining({ commit: merge, authoredIn: edit }) })]);
+    expect(summary(rows(fixture.root, fixture.consumer))).toEqual(NONE);
+  });
+
   it("records a pin removed by a not-needed decision as not-needed, and a retired candidate's add and retire", () => {
     const fixture = repo();
     const seat = "clossys/agents/producer/seat.director";

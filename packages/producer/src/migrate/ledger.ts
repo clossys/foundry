@@ -198,16 +198,38 @@ export function planLedgerBackfill(consumer: string): LedgerPlan {
       const changes = topo.get(candidatePath) ?? [];
       const added = addIndex(changes);
       if (added < 0) { gaps.push({ path: candidatePath, message: "no commit added it: no submit event" }); return undefined; }
-      const add = changes[added]!;
+      let add = changes[added]!;
+      const own = chain.changes.get(candidatePath) ?? [];
+      const at = own.findIndex(change => change.to === add.to && change.status !== "D");
+      const anchor = at >= 0 ? own[at]! : own.find(change => change.status === "A");
+      // The chain first got other bytes than R08's add (the last side-line `A`): when another side-line
+      // `A` produced exactly those bytes (parallel adds, one kept by a merge), that add is the genesis.
+      if (anchor && anchor.to !== add.to) {
+        const parallel = changes.filter(change => change.status === "A" && !change.merge && change.to === anchor.to).pop();
+        if (parallel) add = parallel;
+      }
       const genesis = add.to;
       let sha = shaOf(genesis);
-      const own = chain.changes.get(candidatePath) ?? [];
-      const at = own.findIndex(change => change.to === genesis && change.status !== "D");
-      const anchor = at >= 0 ? own[at]! : own.find(change => change.status === "A");
       if (!sha || !anchor || !onChain(anchor)) { gaps.push({ path: candidatePath, message: "its add is not on the first-parent chain before the ledger: no submit event" }); return undefined; }
       const proof = evidence(anchor, anchor.commit === add.commit ? undefined : add.commit);
       entries.push({ position: chain.index.get(anchor.commit)!, rank: RANK.submit!, name, op: "submit", at: proof.at, by: proof.by, fields: { name, sha256: sha }, evidence: proof.evidence });
       count("submit");
+      // Still other bytes: a side-line edit made them before they reached the chain. Only a manifest
+      // explained edit of the sha so far becomes a migrate event; anything else stays a gap.
+      if (anchor.to !== genesis) {
+        const edit = changes.find(change => !change.merge && (change.status === "M" || change.status === "T") && change.to === anchor.to);
+        const migration = edit ? explains(candidatePath, edit) : undefined;
+        const to = shaOf(anchor.to);
+        if (edit && migration && to && shaOf(edit.from) === sha) {
+          const side = evidence(anchor, edit.commit);
+          entries.push({ position: chain.index.get(anchor.commit)!, rank: RANK.migrate!, name, op: "migrate", at: side.at, by: side.by, fields: { migration, files: [{ name, from: sha, to }] }, evidence: side.evidence });
+          count("migrate");
+          sha = to;
+        } else {
+          if (!retired) gaps.push({ path: candidatePath, message: `edited in ${edit ? edit.commit.slice(0, 9) : "an unknown commit"} before it reached the first-parent chain (${anchor.commit.slice(0, 9)}) without a recorded migration: no event` });
+          count("unexplained-edit");
+        }
+      }
       for (const change of own.slice(own.indexOf(anchor) + 1)) {
         if (!onChain(change) || change.status === "D") continue;
         const from = shaOf(change.from), to = shaOf(change.to);
