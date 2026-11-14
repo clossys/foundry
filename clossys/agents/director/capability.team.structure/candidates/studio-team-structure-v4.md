@@ -1,6 +1,6 @@
 ---
 slot: "capability.team.structure"
-source: {"kind": "derived", "ref": ["capability.operation.delivery@4", "focus.offer.excluded@3"]}
+source: {"kind": "derived", "ref": ["capability.operation.delivery", "focus.offer.excluded"]}
 feeds: []
 functions: ["people"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -12,8 +12,8 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Rhythm: Director, then Designer, then Writer, then Publisher, each run ending when its strict check passes.
 
 ## Because
-- The chain runs in order, with the owner only at decide steps (capability.operation.delivery@4)
-- Agents make every change through the system (focus.offer.excluded@3)
+- The chain runs in order, with the owner only at decide steps (capability.operation.delivery)
+- Agents make every change through the system (focus.offer.excluded)
 
 ## Watch
 - If owner decisions outside decide steps > 0 in any week, then move the step to plumbing or record it as a decide step.

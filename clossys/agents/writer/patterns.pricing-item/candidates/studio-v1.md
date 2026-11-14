@@ -1,7 +1,7 @@
 ---
 slot: "patterns.pricing-item"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.model.pricing@1","director:focus.offer.included@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.model.pricing","director:focus.offer.included","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

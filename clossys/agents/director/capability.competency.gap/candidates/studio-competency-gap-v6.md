@@ -1,6 +1,6 @@
 ---
 slot: "capability.competency.gap"
-source: {"kind":"derived","ref":["execution.priority.bet@4","execution.measure.north-star@3","focus.offer.excluded@2","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["execution.priority.bet","execution.measure.north-star","focus.offer.excluded","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["tech"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted after the per-cell judge fails of 2026-11-11 (Q2: Size states where it stands; Q6: names the routes given up)."
@@ -13,9 +13,9 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 - Not: closing the gap with people making the hand edits, or moving the 2026-12-31 date.
 
 ## Because
-- Step 1 of the bet is Studio rebuilt natively from one brief, and its kill rule fires if hand edits are still needed on 2026-12-31 (execution.priority.bet@4)
-- The north-star target date is 2026-12-31 (execution.measure.north-star@3)
-- Hand-made pages and components are outside the offer (focus.offer.excluded@2)
+- Step 1 of the bet is Studio rebuilt natively from one brief, and its kill rule fires if hand edits are still needed on 2026-12-31 (execution.priority.bet)
+- The north-star target date is 2026-12-31 (execution.measure.north-star)
+- Hand-made pages and components are outside the offer (focus.offer.excluded)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 
 ## Watch

@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.product-claims"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:advantage.proposition.proof@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:advantage.proposition.proof","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -13,7 +13,7 @@ source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","dir
   "id": "studio.claim.open-source",
   "context": "studio.claim.open-source",
   "kind": "claim",
-  "strategy": "director:advantage.proposition.proof@1",
+  "strategy": "director:advantage.proposition.proof",
   "phrasings": [
     "Clossys Foundry is free and open under the MIT license, and its packages are public on npm."
   ],
@@ -28,7 +28,7 @@ source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","dir
   "id": "studio.claim.traced",
   "context": "studio.claim.traced",
   "kind": "claim",
-  "strategy": "director:advantage.proposition.promise@1",
+  "strategy": "director:advantage.proposition.promise",
   "phrasings": [
     "Each candidate cites the upstream slots it came from."
   ],
@@ -43,7 +43,7 @@ source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","dir
   "id": "studio.claim.read-only",
   "context": "studio.claim.read-only",
   "kind": "claim",
-  "strategy": "director:advantage.proposition.proof@1",
+  "strategy": "director:advantage.proposition.proof",
   "phrasings": [
     "Studio is read-only; changes go through the owning agent."
   ],

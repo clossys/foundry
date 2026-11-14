@@ -1,6 +1,6 @@
 ---
 slot: "execution.priority.parked"
-source: {"kind":"derived","ref":["focus.segment.core@2","focus.offer.excluded@2","execution.priority.bet@3","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["focus.segment.core","focus.offer.excluded","execution.priority.bet","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["product"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted from the 24 owner answers and the J1-J5 critic follow-ups."
@@ -12,9 +12,9 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 - Revisit: when one business runs idea to live on its own.
 
 ## Because
-- Outside teams wait until one business runs idea to live (focus.segment.core@2)
-- Editing inside Studio is excluded (focus.offer.excluded@2)
-- The bet is Studio first (execution.priority.bet@3)
+- Outside teams wait until one business runs idea to live (focus.segment.core)
+- Editing inside Studio is excluded (focus.offer.excluded)
+- The bet is Studio first (execution.priority.bet)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 
 ## Watch

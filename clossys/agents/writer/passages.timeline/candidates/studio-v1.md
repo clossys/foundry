@@ -1,7 +1,7 @@
 ---
 slot: "passages.timeline"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:execution.roadmap.milestone@1","director:identity.verbal.voice@1","director:execution.roadmap.release@1","director:execution.measure.driver@1","director:execution.measure.north-star@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:execution.roadmap.milestone","director:identity.verbal.voice","director:execution.roadmap.release","director:execution.measure.driver","director:execution.measure.north-star","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

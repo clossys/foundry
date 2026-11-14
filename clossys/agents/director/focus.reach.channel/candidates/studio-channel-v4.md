@@ -1,6 +1,6 @@
 ---
 slot: "focus.reach.channel"
-source: {"kind": "derived", "ref": ["finding:owner-channel-2026-11-11", "focus.segment.core@3"]}
+source: {"kind": "derived", "ref": ["finding:owner-channel-2026-11-11", "focus.segment.core"]}
 feeds: []
 functions: ["gtm"]
 note: "Option B: the sites the agents build first."
@@ -13,7 +13,7 @@ note: "Option B: the sites the agents build first."
 
 ## Because
 - The owner picked the shipped work as the showcase, with no ads or sales (finding:owner-channel-2026-11-11)
-- The core segment is reached where it builds (focus.segment.core@3)
+- The core segment is reached where it builds (focus.segment.core)
 
 ## Watch
 - If visits through the 'built by the Clossys agents' link < 1 in any month, then check the link is visible on each site.

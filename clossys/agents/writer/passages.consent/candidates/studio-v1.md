@@ -1,7 +1,7 @@
 ---
 slot: "passages.consent"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof","director:identity.verbal.voice","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

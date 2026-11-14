@@ -1,6 +1,6 @@
 ---
 slot: "advantage.defensibility.moat"
-source: {"kind":"derived","ref":["advantage.defensibility.differentiator@2","aspiration.goal.long-term@2","finding:foundry-public-repo-facts","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["advantage.defensibility.differentiator","aspiration.goal.long-term","finding:foundry-public-repo-facts","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["product"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted after the per-cell judge fails of 2026-11-11 (Q6: name the moat passed over)."
@@ -13,8 +13,8 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 - Not the code: the engine is MIT and open, so anyone can copy it; the moat is the records a business builds, not the engine.
 
 ## Because
-- The difference is a system that keeps making the right pages (advantage.defensibility.differentiator@2)
-- The long-term measure is one business idea to live (aspiration.goal.long-term@2)
+- The difference is a system that keeps making the right pages (advantage.defensibility.differentiator)
+- The long-term measure is one business idea to live (aspiration.goal.long-term)
 - The repository is public and MIT licensed (finding:foundry-public-repo-facts)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 

@@ -1,7 +1,7 @@
 ---
 slot: "passages.data-table"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@6"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice"]}
 ---
 
 ## en

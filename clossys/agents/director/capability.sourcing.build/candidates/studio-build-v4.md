@@ -1,6 +1,6 @@
 ---
 slot: "capability.sourcing.build"
-source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "context.competition.gap@4", "finding:foundry-public-studio-offer"]}
+source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "context.competition.gap", "finding:foundry-public-studio-offer"]}
 feeds: []
 functions: ["tech"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR fix round 1, 2026-11-11): re-drafted after the critic's reading; cites the recommended project core options; re-cite when the owner picks."
@@ -13,7 +13,7 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR fix roun
 
 ## Because
 - These are the packages and the slot model in the public tree (finding:foundry-public-repo-facts)
-- The gap is a cited, pinned record from brief to page (context.competition.gap@4)
+- The gap is a cited, pinned record from brief to page (context.competition.gap)
 - Studio is read-only (finding:foundry-public-studio-offer)
 
 ## Watch

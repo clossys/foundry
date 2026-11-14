@@ -1,7 +1,7 @@
 ---
 slot: "passages.status-list"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.offer.included@3","director:identity.verbal.voice@4"]}
+source: {"kind":"derived","ref":["director:focus.offer.included","director:identity.verbal.voice"]}
 ---
 
 ## en

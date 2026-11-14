@@ -1,6 +1,6 @@
 ---
 slot: "capability.competency.critical"
-source: {"kind": "derived", "ref": ["capability.operation.delivery@4", "execution.priority.bet@6", "execution.measure.north-star@4"]}
+source: {"kind": "derived", "ref": ["capability.operation.delivery", "execution.priority.bet", "execution.measure.north-star"]}
 feeds: []
 functions: ["ops", "tech"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -13,9 +13,9 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Only checks that read disk state count, never a self-declared pass.
 
 ## Because
-- Done means the strict check passes (capability.operation.delivery@4)
-- The bet is Studio rebuilt natively (execution.priority.bet@6)
-- The north star targets zero hand edits (execution.measure.north-star@4)
+- Done means the strict check passes (capability.operation.delivery)
+- The bet is Studio rebuilt natively (execution.priority.bet)
+- The north star targets zero hand edits (execution.measure.north-star)
 
 ## Watch
 - If strict checks failing on the integrated head > 0 in any week, then fix them before new work starts.

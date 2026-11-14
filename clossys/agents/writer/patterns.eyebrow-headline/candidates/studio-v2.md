@@ -1,7 +1,7 @@
 ---
 slot: "patterns.eyebrow-headline"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@4","director:identity.verbal.voice@4"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:identity.verbal.voice"]}
 ---
 
 ## en

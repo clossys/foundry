@@ -1,6 +1,6 @@
 ---
 slot: "identity.verbal.voice"
-source: {"kind": "derived", "ref": ["finding:foundry-public-readme", "identity.brand.essence@4"]}
+source: {"kind": "derived", "ref": ["finding:foundry-public-readme", "identity.brand.essence"]}
 feeds: []
 functions: ["brand"]
 note: "Option A (recommended): same Direction as the pinned v4, re-cited to public findings only (R2F-L2 public scrub, 2026-11-12)."
@@ -13,7 +13,7 @@ note: "Option A (recommended): same Direction as the pinned v4, re-cited to publ
 
 ## Because
 - The README words the project plainly and scopes its claims (finding:foundry-public-readme)
-- The voice carries the essence, said plainly (identity.brand.essence@4)
+- The voice carries the essence, said plainly (identity.brand.essence)
 
 ## Watch
 - If public copy using a Never word > 0 in any month, then return it to Writer.

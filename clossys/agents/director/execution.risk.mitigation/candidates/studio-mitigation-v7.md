@@ -1,6 +1,6 @@
 ---
 slot: "execution.risk.mitigation"
-source: {"kind": "derived", "ref": ["focus.offer.excluded@3", "capability.operation.delivery@7", "execution.priority.bet@6"]}
+source: {"kind": "derived", "ref": ["focus.offer.excluded", "capability.operation.delivery", "execution.priority.bet"]}
 feeds: []
 functions: ["ops"]
 note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4 meaning re-addressed (owner r9); text unchanged."
@@ -12,9 +12,9 @@ note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4
 - Owner: the agent whose step needed the edit fixes its tool or skill; the integrator runs the strict checks; the owner decides only at decide steps.
 
 ## Because
-- Agents make every change through the system (focus.offer.excluded@3)
-- Done means the strict check passes (capability.operation.delivery@7)
-- The threat is the bet's kill rule (execution.priority.bet@6)
+- Agents make every change through the system (focus.offer.excluded)
+- Done means the strict check passes (capability.operation.delivery)
+- The threat is the bet's kill rule (execution.priority.bet)
 
 ## Watch
 - If hand edits on records > 0 in any week, then revert them and file a tool or skill fix.

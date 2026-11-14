@@ -1,6 +1,6 @@
 ---
 slot: "capability.team.role"
-source: {"kind": "derived", "ref": ["capability.operation.delivery@4", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["capability.operation.delivery", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["people"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -12,7 +12,7 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Next-hire: none; agents and public contributors only.
 
 ## Because
-- The owner decides only at decide steps (capability.operation.delivery@4)
+- The owner decides only at decide steps (capability.operation.delivery)
 - The repository is public, so contributors can send pull requests (finding:foundry-public-repo-facts)
 
 ## Watch

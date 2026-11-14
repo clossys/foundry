@@ -1,7 +1,7 @@
 ---
 slot: "patterns.headline-subhead"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@4","director:focus.segment.core@3","director:identity.verbal.voice@4"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:focus.segment.core","director:identity.verbal.voice"]}
 ---
 
 ## en

@@ -1,6 +1,6 @@
 ---
 slot: "capability.resource.allocation"
-source: {"kind": "derived", "ref": ["finding:foundry-owner-answers-2026-11-03", "execution.priority.bet@6", "capability.operation.delivery@7"]}
+source: {"kind": "derived", "ref": ["finding:foundry-owner-answers-2026-11-03", "execution.priority.bet", "capability.operation.delivery"]}
 feeds: []
 functions: ["ops"]
 note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4 meaning re-addressed (owner r9); text unchanged."
@@ -13,8 +13,8 @@ note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4
 
 ## Because
 - The owner set the split: 50% engine and Studio, 40% filling and publishing consumer workspaces, 10% docs and release (finding:foundry-owner-answers-2026-11-03)
-- The bet puts Studio first, rather than features for outside projects (execution.priority.bet@6)
-- The owner is asked only at decide steps (capability.operation.delivery@7)
+- The bet puts Studio first, rather than features for outside projects (execution.priority.bet)
+- The owner is asked only at decide steps (capability.operation.delivery)
 
 ## Watch
 - If merged pull requests for outside-project features > 0 by 2026-12-31, then stop that work and return it to the Studio rebuild.

@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.time-format"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@2","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

@@ -1,6 +1,6 @@
 ---
 slot: "identity.brand.essence"
-source: {"kind":"derived","ref":["finding:owner-critic-autonomous-2026-11-11","finding:owner-essence-2026-11-11","advantage.proposition.proof@3"]}
+source: {"kind":"derived","ref":["finding:owner-critic-autonomous-2026-11-11","finding:owner-essence-2026-11-11","advantage.proposition.proof"]}
 feeds: ["patterns.messaging-kit","strings.taglines"]
 functions: []
 note: "Owner pick, owner chat 2026-11-11 Director critic follow-ups after C4-JUDGE (J3); owner words kept where given."
@@ -14,7 +14,7 @@ note: "Owner pick, owner chat 2026-11-11 Director critic follow-ups after C4-JUD
 ## Because
 - The owner banned autonomy in claims, not in goals (finding:owner-critic-autonomous-2026-11-11)
 - The owner picked judgment where it matters as the essence (finding:owner-essence-2026-11-11)
-- Autonomy is never claimed until one business runs idea to live (advantage.proposition.proof@3)
+- Autonomy is never claimed until one business runs idea to live (advantage.proposition.proof)
 
 ## Watch
 - If public pages whose story leaves out where people decide > 0 in any month, then return them to Writer.

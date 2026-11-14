@@ -1,7 +1,7 @@
 ---
 slot: "strings.common"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.brand.personality@3","director:identity.verbal.voice@4"]}
+source: {"kind":"derived","ref":["director:identity.brand.personality","director:identity.verbal.voice"]}
 ---
 
 ## en

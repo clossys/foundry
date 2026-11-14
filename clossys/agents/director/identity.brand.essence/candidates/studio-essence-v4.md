@@ -1,6 +1,6 @@
 ---
 slot: "identity.brand.essence"
-source: {"kind": "derived", "ref": ["finding:owner-essence-2026-11-11", "advantage.proposition.proof@4"]}
+source: {"kind": "derived", "ref": ["finding:owner-essence-2026-11-11", "advantage.proposition.proof"]}
 feeds: []
 functions: ["brand"]
 note: "Option A (recommended): the business answer kept unchanged; it fits the open-source project as it stands. Citations re-pointed to the project cells."
@@ -13,7 +13,7 @@ note: "Option A (recommended): the business answer kept unchanged; it fits the o
 
 ## Because
 - The owner picked judgment where it matters (finding:owner-essence-2026-11-11)
-- Autonomy is never claimed before the proof (advantage.proposition.proof@4)
+- Autonomy is never claimed before the proof (advantage.proposition.proof)
 
 ## Watch
 - If public pages whose story leaves out where people decide > 0 in any month, then return them to Writer.

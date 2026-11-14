@@ -1,7 +1,7 @@
 ---
 slot: "narratives.page-story"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:advantage.proposition.proof@1","director:focus.lifecycle.acquisition@1","director:identity.verbal.narrative@1","director:identity.naming.name@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:advantage.proposition.proof","director:focus.lifecycle.acquisition","director:identity.verbal.narrative","director:identity.naming.name"]}
 vary: {"arc":"action-first"}
 ---
 

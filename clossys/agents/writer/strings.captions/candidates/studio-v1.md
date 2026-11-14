@@ -1,7 +1,7 @@
 ---
 slot: "strings.captions"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","director:identity.visual.imagery@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof","director:identity.visual.imagery","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

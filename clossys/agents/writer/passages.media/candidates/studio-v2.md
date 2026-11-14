@@ -1,7 +1,7 @@
 ---
 slot: "passages.media"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@4","director:identity.visual.imagery@4"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice","director:identity.visual.imagery"]}
 ---
 
 ## en

@@ -1,7 +1,7 @@
 ---
 slot: "patterns.stat"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@4"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof"]}
 ---
 
 ## en

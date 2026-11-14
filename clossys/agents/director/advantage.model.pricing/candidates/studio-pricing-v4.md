@@ -1,6 +1,6 @@
 ---
 slot: "advantage.model.pricing"
-source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "advantage.defensibility.differentiator@4"]}
+source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "advantage.defensibility.differentiator"]}
 feeds: []
 functions: ["finance", "gtm"]
 note: "Option A (recommended): free and open; the anchor is the plumbing people would otherwise build."
@@ -14,7 +14,7 @@ note: "Option A (recommended): free and open; the anchor is the plumbing people 
 
 ## Because
 - The repository and packages are MIT licensed (finding:foundry-public-repo-facts)
-- The anchor follows the difference: the system is the work saved (advantage.defensibility.differentiator@4)
+- The anchor follows the difference: the system is the work saved (advantage.defensibility.differentiator)
 
 ## Watch
 - If public pages that show a price for Foundry > 0 in any month, then remove the price.

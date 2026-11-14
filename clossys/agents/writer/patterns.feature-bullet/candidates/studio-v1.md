@@ -1,7 +1,7 @@
 ---
 slot: "patterns.feature-bullet"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.defensibility.differentiator@1","director:focus.offer.included@1"]}
+source: {"kind":"derived","ref":["director:advantage.defensibility.differentiator","director:focus.offer.included"]}
 ---
 
 ## en

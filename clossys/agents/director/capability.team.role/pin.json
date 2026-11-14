@@ -1,6 +1,6 @@
 {
   "candidate": "studio-team-role-v5.md",
-  "sha256": "60ec01142b20e5f11767aa108f75314d1b75133a1cd2b9476d3b613548151a1d",
+  "sha256": "d058c329b4f9c66cd18b9598f01647bdb0c8f201dd0731165c0d0762737ab222",
   "decidedBy": "agent:director",
   "basis": "agent",
   "at": "2026-11-11T23:18:17.660Z",
@@ -8,15 +8,5 @@
     "by": "owner",
     "ref": "clossys/workspace#46 issuecomment-6809267928",
     "at": "2026-11-11T23:18:51.881Z"
-  },
-  "recited": {
-    "by": "agent:producer",
-    "at": "2026-11-13T02:43:00.955Z",
-    "cites": {
-      "director:capability.operation.delivery": 8
-    },
-    "proof": {
-      "director:capability.operation.delivery": "sha256:db71e66d9bf7184965ce8ee65a656d0db7e254b91f685c7e6087713a6bcdfbb8"
-    }
   }
 }

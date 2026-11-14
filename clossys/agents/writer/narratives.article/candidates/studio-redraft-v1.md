@@ -1,7 +1,7 @@
 ---
 slot: "narratives.article"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.narrative@6","director:identity.verbal.voice@6"]}
+source: {"kind":"derived","ref":["director:identity.verbal.narrative","director:identity.verbal.voice"]}
 ---
 
 ## en

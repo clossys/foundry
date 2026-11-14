@@ -1,6 +1,6 @@
 ---
 slot: "focus.lifecycle.retention"
-source: {"kind": "derived", "ref": ["context.customer.need@6", "capability.operation.delivery@7", "focus.segment.core@3"]}
+source: {"kind": "derived", "ref": ["context.customer.need", "capability.operation.delivery", "focus.segment.core"]}
 feeds: []
 functions: ["product"]
 note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4 meaning re-addressed (owner r9); text unchanged."
@@ -12,9 +12,9 @@ note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4
 - Expansion: more sites and contributions on the same packages, rather than a new tool each time.
 
 ## Because
-- The need's trigger is a second site needing the same decisions (context.customer.need@6)
-- The chain runs with the owner only at decide steps (capability.operation.delivery@7)
-- The core segment runs more than one site (focus.segment.core@3)
+- The need's trigger is a second site needing the same decisions (context.customer.need)
+- The chain runs with the owner only at decide steps (capability.operation.delivery)
+- The core segment runs more than one site (focus.segment.core)
 
 ## Watch
 - If outside projects that publish a second site from the same records < 1 by 2027-06-30, then review this cell.

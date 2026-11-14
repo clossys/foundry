@@ -1,7 +1,7 @@
 ---
 slot: "narratives.release-notes"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@4","director:identity.verbal.voice@4","director:execution.roadmap.release@6","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof","director:identity.verbal.voice","director:execution.roadmap.release","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

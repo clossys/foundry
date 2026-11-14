@@ -1,6 +1,6 @@
 ---
 slot: "aspiration.culture.behavior"
-source: {"kind": "derived", "ref": ["focus.offer.excluded@3", "capability.operation.delivery@7", "finding:foundry-public-studio-behavior"]}
+source: {"kind": "derived", "ref": ["focus.offer.excluded", "capability.operation.delivery", "finding:foundry-public-studio-behavior"]}
 feeds: []
 functions: ["people"]
 note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4 meaning re-addressed (owner r9); text unchanged."
@@ -12,8 +12,8 @@ note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4
 - Signal: every merged change names the agent run and the check exit that produced it.
 
 ## Because
-- Hand-made pages and components are outside the offer (focus.offer.excluded@3)
-- Done means the strict check passes (capability.operation.delivery@7)
+- Hand-made pages and components are outside the offer (focus.offer.excluded)
+- Done means the strict check passes (capability.operation.delivery)
 - Studio requirements assign visuals, copy and assembly to separate agents (finding:foundry-public-studio-behavior)
 
 ## Watch

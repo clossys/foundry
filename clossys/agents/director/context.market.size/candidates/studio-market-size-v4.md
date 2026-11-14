@@ -1,6 +1,6 @@
 ---
 slot: "context.market.size"
-source: {"kind": "derived", "ref": ["focus.segment.core@3", "aspiration.goal.long-term@3", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["focus.segment.core", "aspiration.goal.long-term", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["gtm"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -12,8 +12,8 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Method: count public repositories or sites whose records cite the clossys CLI at each release; npm downloads are a signal, not a count.
 
 ## Because
-- The core segment is developers building with coding agents (focus.segment.core@3)
-- The long-term target is 3 outside projects by 2027-06-30 (aspiration.goal.long-term@3)
+- The core segment is developers building with coding agents (focus.segment.core)
+- The long-term target is 3 outside projects by 2027-06-30 (aspiration.goal.long-term)
 - The public tree holds no market sizing, so the count starts from the project's own measure (finding:foundry-public-repo-facts)
 
 ## Watch

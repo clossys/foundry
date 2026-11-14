@@ -1,6 +1,6 @@
 ---
 slot: "execution.priority.bet"
-source: {"kind":"derived","ref":["finding:owner-critic2-bet-2026-11-11","finding:owner-critic-bet-2026-11-11","capability.operation.delivery@2","aspiration.goal.long-term@2"]}
+source: {"kind":"derived","ref":["finding:owner-critic2-bet-2026-11-11","finding:owner-critic-bet-2026-11-11","capability.operation.delivery","aspiration.goal.long-term"]}
 feeds: []
 functions: ["product"]
 note: "Owner pick, owner chat 2026-11-11 Director critic round 2 after C5-DIR (K1); owner words kept where given."
@@ -15,8 +15,8 @@ note: "Owner pick, owner chat 2026-11-11 Director critic round 2 after C5-DIR (K
 ## Because
 - The owner made Studio step 1 of a bet that takes one Clossys business from idea to live, with the same dated kill rule (finding:owner-critic2-bet-2026-11-11)
 - The owner set the dated kill rule and Studio as the first proof (finding:owner-critic-bet-2026-11-11)
-- The chain runs in order with the owner only at decide steps (capability.operation.delivery@2)
-- The long-term measure is one business from idea to live (aspiration.goal.long-term@2)
+- The chain runs in order with the owner only at decide steps (capability.operation.delivery)
+- The long-term measure is one business from idea to live (aspiration.goal.long-term)
 
 ## Watch
 - If hand edits needed to rebuild Studio from one brief > 0 by 2026-12-31, then stop and rethink the chain with the owner.

@@ -1,7 +1,7 @@
 ---
 slot: "passages.steps"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.offer.included@1","director:identity.verbal.voice@1","director:capability.operation.delivery@1"]}
+source: {"kind":"derived","ref":["director:focus.offer.included","director:identity.verbal.voice","director:capability.operation.delivery"]}
 ---
 
 ## en

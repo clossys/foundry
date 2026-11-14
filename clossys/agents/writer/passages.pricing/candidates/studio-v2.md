@@ -1,7 +1,7 @@
 ---
 slot: "passages.pricing"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.model.pricing@5","director:focus.lifecycle.acquisition@4","director:focus.offer.included@3","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.model.pricing","director:focus.lifecycle.acquisition","director:focus.offer.included","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

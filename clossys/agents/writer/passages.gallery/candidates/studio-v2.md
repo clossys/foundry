@@ -1,7 +1,7 @@
 ---
 slot: "passages.gallery"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@4","director:identity.visual.imagery@4","director:focus.offer.included@3"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice","director:identity.visual.imagery","director:focus.offer.included"]}
 ---
 
 ## en
@@ -19,7 +19,7 @@ Specimen widths
 Mobile
 
 ### studio.specimens.images.items.0.caption
-<!-- {"id":"studio.specimens.images.items.0.caption","bindings":[],"evidence":"director:focus.offer.included@3"} -->
+<!-- {"id":"studio.specimens.images.items.0.caption","bindings":[],"evidence":"director:focus.offer.included"} -->
 375 px wide.
 
 ### studio.specimens.images.items.1.label
@@ -27,7 +27,7 @@ Mobile
 Tablet
 
 ### studio.specimens.images.items.1.caption
-<!-- {"id":"studio.specimens.images.items.1.caption","bindings":[],"evidence":"director:focus.offer.included@3"} -->
+<!-- {"id":"studio.specimens.images.items.1.caption","bindings":[],"evidence":"director:focus.offer.included"} -->
 768 px wide.
 
 ### studio.specimens.images.items.2.label
@@ -35,5 +35,5 @@ Tablet
 Desktop
 
 ### studio.specimens.images.items.2.caption
-<!-- {"id":"studio.specimens.images.items.2.caption","bindings":[],"evidence":"director:focus.offer.included@3"} -->
+<!-- {"id":"studio.specimens.images.items.2.caption","bindings":[],"evidence":"director:focus.offer.included"} -->
 1280 px wide.

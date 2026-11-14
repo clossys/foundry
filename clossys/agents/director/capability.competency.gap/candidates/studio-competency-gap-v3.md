@@ -1,6 +1,6 @@
 ---
 slot: "capability.competency.gap"
-source: {"kind":"derived","ref":["execution.priority.bet@2","execution.measure.north-star@2","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["execution.priority.bet","execution.measure.north-star","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["tech"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted from the 24 owner answers."
@@ -12,8 +12,8 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 - Close-by: 2026-12-31, through the wiring plan, then one full re-run from one brief.
 
 ## Because
-- The bet's kill rule names hand edits after the wiring plan (execution.priority.bet@2)
-- The north-star target date is 2026-12-31 (execution.measure.north-star@2)
+- The bet's kill rule names hand edits after the wiring plan (execution.priority.bet)
+- The north-star target date is 2026-12-31 (execution.measure.north-star)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 
 ## Watch

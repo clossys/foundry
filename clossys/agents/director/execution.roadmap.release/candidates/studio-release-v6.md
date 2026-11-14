@@ -1,6 +1,6 @@
 ---
 slot: "execution.roadmap.release"
-source: {"kind": "derived", "ref": ["focus.lifecycle.acquisition@4", "focus.reach.channel@3", "focus.offer.included@3"]}
+source: {"kind": "derived", "ref": ["focus.lifecycle.acquisition", "focus.reach.channel", "focus.offer.included"]}
 feeds: []
 functions: ["product", "gtm"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -13,9 +13,9 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - No ads or sales for the release.
 
 ## Because
-- A new user finds the repository or Studio, then installs and gives a brief (focus.lifecycle.acquisition@4)
-- The channel is the public repository and npm (focus.reach.channel@3)
-- The packages are the four agents, the CLI and Studio (focus.offer.included@3)
+- A new user finds the repository or Studio, then installs and gives a brief (focus.lifecycle.acquisition)
+- The channel is the public repository and npm (focus.reach.channel)
+- The packages are the four agents, the CLI and Studio (focus.offer.included)
 
 ## Watch
 - If releases published without every strict check green > 0 in any quarter, then hold the next release until the checks pass.

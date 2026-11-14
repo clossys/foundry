@@ -1,7 +1,7 @@
 ---
 slot: "narratives.deck-script"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@4","director:advantage.proposition.proof@4","director:identity.verbal.narrative@4","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:advantage.proposition.proof","director:identity.verbal.narrative","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

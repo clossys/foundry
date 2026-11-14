@@ -1,6 +1,6 @@
 ---
 slot: "execution.priority.bet"
-source: {"kind": "derived", "ref": ["finding:owner-foundry-director-2026-11-11", "capability.operation.delivery@4"]}
+source: {"kind": "derived", "ref": ["finding:owner-foundry-director-2026-11-11", "capability.operation.delivery"]}
 feeds: []
 functions: ["product"]
 note: "Option B: a first outside project."
@@ -14,7 +14,7 @@ note: "Option B: a first outside project."
 
 ## Because
 - The owner set Foundry on the open-source part of the project (finding:owner-foundry-director-2026-11-11)
-- The chain is what an outside project would run (capability.operation.delivery@4)
+- The chain is what an outside project would run (capability.operation.delivery)
 
 ## Watch
 - If outside projects that publish a site < 1 by 2027-03-31, then stop and rethink the install path with the owner.

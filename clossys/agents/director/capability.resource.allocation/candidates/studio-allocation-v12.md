@@ -1,6 +1,6 @@
 ---
 slot: "capability.resource.allocation"
-source: {"kind": "derived", "ref": ["finding:owner-foundry-director-2026-11-11", "execution.priority.bet@6", "capability.operation.delivery@7"]}
+source: {"kind": "derived", "ref": ["finding:owner-foundry-director-2026-11-11", "execution.priority.bet", "capability.operation.delivery"]}
 feeds: []
 functions: ["ops"]
 note: "Agent pick for the Foundry open-source project Director (R2F-L2 public scrub, 2026-11-12): adapted from v10; the split percentages are dropped for want of a public basis, the Rule loses its percentage and the Reserve is kept."
@@ -13,8 +13,8 @@ note: "Agent pick for the Foundry open-source project Director (R2F-L2 public sc
 
 ## Because
 - The owner said to focus on Foundry and run the full loop on Studio first (finding:owner-foundry-director-2026-11-11)
-- The bet puts Studio first, rather than features for outside projects (execution.priority.bet@6)
-- The owner is asked only at decide steps (capability.operation.delivery@7)
+- The bet puts Studio first, rather than features for outside projects (execution.priority.bet)
+- The owner is asked only at decide steps (capability.operation.delivery)
 
 ## Watch
 - If merged pull requests for outside-project features > 0 by 2026-12-31, then stop that work and return it to the Studio rebuild.

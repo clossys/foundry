@@ -1,6 +1,6 @@
 ---
 slot: "identity.visual.style"
-source: {"kind": "derived", "ref": ["finding:foundry-public-studio-offer", "finding:foundry-public-studio-behavior", "identity.brand.essence@4", "identity.verbal.voice@4"]}
+source: {"kind": "derived", "ref": ["finding:foundry-public-studio-offer", "finding:foundry-public-studio-behavior", "identity.brand.essence", "identity.verbal.voice"]}
 feeds: []
 functions: ["brand"]
 note: "Option A (recommended): same Direction as the pinned v7, re-cited to public findings only (R2F-L2 public scrub, 2026-11-12)."
@@ -14,8 +14,8 @@ note: "Option A (recommended): same Direction as the pinned v7, re-cited to publ
 ## Because
 - Studio cards run full width with the live preview first (finding:foundry-public-studio-offer)
 - Designer items come only from shadcn and trusted registries (finding:foundry-public-studio-behavior)
-- The look serves the essence (identity.brand.essence@4)
-- The voice is plain, so the look stays quiet (identity.verbal.voice@4)
+- The look serves the essence (identity.brand.essence)
+- The voice is plain, so the look stays quiet (identity.verbal.voice)
 
 ## Watch
 - If Studio components that are not stock shadcn > 0 in any month, then return them to Designer.

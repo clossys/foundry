@@ -1,6 +1,6 @@
 ---
 slot: "focus.segment.next"
-source: {"kind":"derived","ref":["focus.segment.core@2","aspiration.goal.long-term@2","advantage.proposition.proof@3","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["focus.segment.core","aspiration.goal.long-term","advantage.proposition.proof","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["gtm"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted from the 24 owner answers and the J1-J5 critic follow-ups."
@@ -12,9 +12,9 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 - Change: the proof can then show a business result, and Studio must explain each slot to people who did not run the chain.
 
 ## Because
-- Outside teams wait until one business runs idea to live (focus.segment.core@2)
-- The long-term measure is one business idea to live (aspiration.goal.long-term@2)
-- Business results are never claimed until then (advantage.proposition.proof@3)
+- Outside teams wait until one business runs idea to live (focus.segment.core)
+- The long-term measure is one business idea to live (aspiration.goal.long-term)
+- Business results are never claimed until then (advantage.proposition.proof)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 
 ## Watch

@@ -1,6 +1,6 @@
 ---
 slot: "capability.resource.allocation"
-source: {"kind": "derived", "ref": ["execution.priority.bet@6", "finding:foundry-owner-answers-2026-11-03"]}
+source: {"kind": "derived", "ref": ["execution.priority.bet", "finding:foundry-owner-answers-2026-11-03"]}
 feeds: []
 functions: ["ops"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -12,7 +12,7 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Reserve: owner time for decide steps only, which agents cannot spend.
 
 ## Because
-- The largest share goes to the active bet (execution.priority.bet@6)
+- The largest share goes to the active bet (execution.priority.bet)
 - The owner set a 50 and 10 share split on 2026-11-03 (finding:foundry-owner-answers-2026-11-03)
 
 ## Watch

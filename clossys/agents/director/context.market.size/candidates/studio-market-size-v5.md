@@ -1,6 +1,6 @@
 ---
 slot: "context.market.size"
-source: {"kind": "derived", "ref": ["finding:foundry-owner-answers-2026-11-03", "focus.segment.core@3", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["finding:foundry-owner-answers-2026-11-03", "focus.segment.core", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["gtm"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR fix round 1, 2026-11-11): re-drafted after the critic's reading; cites the recommended project core options; re-cite when the owner picks."
@@ -13,7 +13,7 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR fix roun
 
 ## Because
 - The owner gave the market in words with no count, and a count only once a dated source exists (finding:foundry-owner-answers-2026-11-03)
-- The core segment is developers and founders building with coding agents (focus.segment.core@3)
+- The core segment is developers and founders building with coding agents (focus.segment.core)
 - The public tree holds no market sizing (finding:foundry-public-repo-facts)
 
 ## Watch

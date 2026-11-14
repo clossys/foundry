@@ -1,6 +1,6 @@
 ---
 slot: "context.market.trend"
-source: {"kind":"derived","ref":["finding:owner-narrative-2026-11-11","identity.verbal.narrative@3","finding:foundry-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["finding:owner-narrative-2026-11-11","identity.verbal.narrative","finding:foundry-owner-answers-2026-11-03"]}
 feeds: []
 functions: ["product","tech"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted after the per-cell judge fails of 2026-11-11 (Q3: the Shift now rests on the owner's recorded reading, not on Foundry's own CLI)."
@@ -13,7 +13,7 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 
 ## Because
 - The owner reads the shift as production solved and judgment not (finding:owner-narrative-2026-11-11)
-- The pinned narrative tells the same change: production is cheap, judgment is scarce (identity.verbal.narrative@3)
+- The pinned narrative tells the same change: production is cheap, judgment is scarce (identity.verbal.narrative)
 - Timing is a planner default recorded with the owner answers (finding:foundry-owner-answers-2026-11-03)
 
 ## Watch

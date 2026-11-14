@@ -1,7 +1,7 @@
 ---
 slot: "passages.notices"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@1","director:execution.risk.mitigation@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice","director:execution.risk.mitigation"]}
 ---
 
 ## en

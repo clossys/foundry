@@ -1,7 +1,7 @@
 ---
 slot: "passages.comparison"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.model.pricing@1","director:context.competition.alternative@1","director:focus.offer.included@1"]}
+source: {"kind":"derived","ref":["director:advantage.model.pricing","director:context.competition.alternative","director:focus.offer.included"]}
 ---
 
 ## en

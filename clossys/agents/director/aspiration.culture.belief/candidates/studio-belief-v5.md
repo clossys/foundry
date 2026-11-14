@@ -1,6 +1,6 @@
 ---
 slot: "aspiration.culture.belief"
-source: {"kind": "derived", "ref": ["advantage.proposition.proof@4", "identity.brand.essence@4"]}
+source: {"kind": "derived", "ref": ["advantage.proposition.proof", "identity.brand.essence"]}
 feeds: []
 functions: ["people"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -12,8 +12,8 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Cost: every change takes a record and a passing check, which is slower than editing by hand.
 
 ## Because
-- The proof is public records and checks anyone can run (advantage.proposition.proof@4)
-- Judgment goes where it matters (identity.brand.essence@4)
+- The proof is public records and checks anyone can run (advantage.proposition.proof)
+- Judgment goes where it matters (identity.brand.essence)
 
 ## Watch
 - If merged changes without a record or a passing check > 0 in any month, then treat each one as a defect.

@@ -1,6 +1,6 @@
 ---
 slot: "advantage.proposition.promise"
-source: {"kind":"derived","ref":["finding:owner-promise-2026-11-11","context.customer.need@2","focus.segment.core@2","context.competition.alternative@2"]}
+source: {"kind":"derived","ref":["finding:owner-promise-2026-11-11","context.customer.need","focus.segment.core","context.competition.alternative"]}
 feeds: []
 functions: ["gtm","product"]
 note: "Owner pick, owner chat 2026-11-11 W5 interview (ledger clossys/workspace#46 comment 6790683271); owner words kept where given."
@@ -14,9 +14,9 @@ note: "Owner pick, owner chat 2026-11-11 W5 interview (ledger clossys/workspace#
 
 ## Because
 - The owner picked direction in, a running business out, with this promise (finding:owner-promise-2026-11-11)
-- It answers the need: skilled people spending judgment on repeated production (context.customer.need@2)
-- It is made to the core segment (focus.segment.core@2)
-- It is set against the alternative, people plus ad-hoc agents (context.competition.alternative@2)
+- It answers the need: skilled people spending judgment on repeated production (context.customer.need)
+- It is made to the core segment (focus.segment.core)
+- It is set against the alternative, people plus ad-hoc agents (context.competition.alternative)
 
 ## Watch
 - If pages that needed a hand edit after the brief > 0 in any month, then review the promise wording with the owner.

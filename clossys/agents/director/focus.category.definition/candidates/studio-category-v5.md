@@ -1,6 +1,6 @@
 ---
 slot: "focus.category.definition"
-source: {"kind": "derived", "ref": ["finding:owner-critic-category-2026-11-11", "finding:owner-category-2026-11-11", "advantage.proposition.proof@4"]}
+source: {"kind": "derived", "ref": ["finding:owner-critic-category-2026-11-11", "finding:owner-category-2026-11-11", "advantage.proposition.proof"]}
 feeds: []
 functions: ["gtm", "product"]
 note: "Option A (recommended): the business answer kept unchanged; it fits the open-source project as it stands. Citations re-pointed to the project cells."
@@ -15,7 +15,7 @@ note: "Option A (recommended): the business answer kept unchanged; it fits the o
 ## Because
 - The owner stated the aim as direction and limited claims to what proof shows (finding:owner-critic-category-2026-11-11)
 - The owner picked a system for agent teams (finding:owner-category-2026-11-11)
-- Public claims wait for proof (advantage.proposition.proof@4)
+- Public claims wait for proof (advantage.proposition.proof)
 
 ## Watch
 - If public pages that claim Foundry runs whole businesses > 0 in any month, then correct them to the aim.

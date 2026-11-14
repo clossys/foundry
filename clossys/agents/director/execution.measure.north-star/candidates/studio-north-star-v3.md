@@ -1,6 +1,6 @@
 ---
 slot: "execution.measure.north-star"
-source: {"kind":"derived","ref":["finding:owner-critic-north-star-2026-11-11","finding:owner-north-star-2026-11-11","aspiration.goal.long-term@2"]}
+source: {"kind":"derived","ref":["finding:owner-critic-north-star-2026-11-11","finding:owner-north-star-2026-11-11","aspiration.goal.long-term"]}
 feeds: []
 functions: ["product"]
 note: "Owner pick, owner chat 2026-11-11 Director critic follow-ups after C4-JUDGE (J2); owner words kept where given."
@@ -14,7 +14,7 @@ note: "Owner pick, owner chat 2026-11-11 Director critic follow-ups after C4-JUD
 ## Because
 - The owner kept the metric and set this target (finding:owner-critic-north-star-2026-11-11)
 - The owner picked decisions per shipped page as the north star (finding:owner-north-star-2026-11-11)
-- The long-term goal this number tracks toward (aspiration.goal.long-term@2)
+- The long-term goal this number tracks toward (aspiration.goal.long-term)
 
 ## Watch
 - If plumbing decisions asked of the owner in a Studio rebuild from one brief > 0 by 2026-12-31, then report each one and the step that asked it.

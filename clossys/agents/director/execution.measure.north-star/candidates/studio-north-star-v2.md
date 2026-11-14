@@ -1,6 +1,6 @@
 ---
 slot: "execution.measure.north-star"
-source: {"kind":"derived","ref":["finding:owner-north-star-2026-11-11","aspiration.goal.long-term@2"]}
+source: {"kind":"derived","ref":["finding:owner-north-star-2026-11-11","aspiration.goal.long-term"]}
 feeds: []
 functions: ["product"]
 note: "Owner pick, owner chat 2026-11-11 W5 interview (ledger clossys/workspace#46 comment 6790683271); owner words kept where given."
@@ -13,7 +13,7 @@ note: "Owner pick, owner chat 2026-11-11 W5 interview (ledger clossys/workspace#
 
 ## Because
 - The owner picked decisions per shipped page, with this target (finding:owner-north-star-2026-11-11)
-- The long-term goal this number tracks toward (aspiration.goal.long-term@2)
+- The long-term goal this number tracks toward (aspiration.goal.long-term)
 
 ## Watch
 - If hand edits in a Studio rebuild from one brief > 0 by 2026-12-31, then report each one and the step that needed it.

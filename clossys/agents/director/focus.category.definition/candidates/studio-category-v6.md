@@ -1,6 +1,6 @@
 ---
 slot: "focus.category.definition"
-source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "advantage.proposition.proof@4"]}
+source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "advantage.proposition.proof"]}
 feeds: []
 functions: ["gtm", "product"]
 note: "Option B: a developer toolkit category."
@@ -14,7 +14,7 @@ note: "Option B: a developer toolkit category."
 
 ## Because
 - The packages are agent skills, gates and a CLI (finding:foundry-public-repo-facts)
-- Claims wait for proof (advantage.proposition.proof@4)
+- Claims wait for proof (advantage.proposition.proof)
 
 ## Watch
 - If public pages that call Foundry a platform > 0 in any month, then correct them to the toolkit frame.

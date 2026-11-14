@@ -1,7 +1,7 @@
 ---
 slot: "narratives.email"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.lifecycle.acquisition@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:focus.lifecycle.acquisition","director:identity.verbal.voice"]}
 ---
 
 ## en

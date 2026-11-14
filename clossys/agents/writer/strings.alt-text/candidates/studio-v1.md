@@ -1,7 +1,7 @@
 ---
 slot: "strings.alt-text"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.visual.imagery@1","director:identity.naming.name@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:identity.visual.imagery","director:identity.naming.name","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

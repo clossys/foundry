@@ -1,7 +1,7 @@
 ---
 slot: "passages.faq"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","director:context.customer.buying@2","director:identity.verbal.voice@1","director:context.company.constraint@2","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof","director:context.customer.buying","director:identity.verbal.voice","director:context.company.constraint","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -15,7 +15,7 @@ Questions
 Can I edit a slot in Studio?
 
 ### studio.faq.items.0.answer
-<!-- {"id":"studio.faq.items.0.answer","bindings":[],"evidence":"director:context.company.constraint@2"} -->
+<!-- {"id":"studio.faq.items.0.answer","bindings":[],"evidence":"director:context.company.constraint"} -->
 No. Studio is read-only. Copy the prompt from the slot and give it to the agent that owns it.
 
 ### studio.faq.items.1.question

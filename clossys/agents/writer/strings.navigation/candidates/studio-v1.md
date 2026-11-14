@@ -1,7 +1,7 @@
 ---
 slot: "strings.navigation"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.naming.architecture@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:identity.naming.architecture","director:identity.verbal.voice"]}
 ---
 
 ## en

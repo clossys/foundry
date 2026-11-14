@@ -1,7 +1,7 @@
 ---
 slot: "passages.band"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.visual.imagery@1"]}
+source: {"kind":"derived","ref":["director:identity.visual.imagery"]}
 ---
 
 ## en

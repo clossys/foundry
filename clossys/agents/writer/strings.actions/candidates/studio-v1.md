@@ -1,7 +1,7 @@
 ---
 slot: "strings.actions"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice"]}
 ---
 
 ## en

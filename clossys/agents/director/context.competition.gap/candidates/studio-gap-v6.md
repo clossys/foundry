@@ -1,6 +1,6 @@
 ---
 slot: "context.competition.gap"
-source: {"kind": "derived", "ref": ["context.competition.alternative@5", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["context.competition.alternative", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["product", "gtm"]
 note: "Agent pick for the Foundry open-source project Director (DIR-FIX, 2026-11-11): adapted from v5; names the positioning given up, a better single-layer tool."
@@ -13,7 +13,7 @@ note: "Agent pick for the Foundry open-source project Director (DIR-FIX, 2026-11
 - The link across layers, rather than a better prompt, builder or framework for one layer.
 
 ## Because
-- The default is a prompt per task, or a site builder or framework with checks wired by hand (context.competition.alternative@5)
+- The default is a prompt per task, or a site builder or framework with checks wired by hand (context.competition.alternative)
 - Foundry pins each candidate by its sha256 and checks what is on disk (finding:foundry-public-repo-facts)
 
 ## Watch

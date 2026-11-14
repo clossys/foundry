@@ -1,6 +1,6 @@
 ---
 slot: "context.competition.gap"
-source: {"kind": "derived", "ref": ["context.competition.alternative@5", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["context.competition.alternative", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["product", "gtm"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -12,7 +12,7 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Why-open: each tool owns one layer, and provenance across layers only matters once agents, not people, do the assembly.
 
 ## Because
-- The alternatives are one-task prompts, site builders and agent frameworks (context.competition.alternative@5)
+- The alternatives are one-task prompts, site builders and agent frameworks (context.competition.alternative)
 - Foundry's slots keep candidates apart from one pin with a sha256 (finding:foundry-public-repo-facts)
 
 ## Watch

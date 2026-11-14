@@ -1,6 +1,6 @@
 ---
 slot: "focus.lifecycle.acquisition"
-source: {"kind": "derived", "ref": ["focus.reach.channel@3", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["focus.reach.channel", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["gtm"]
 note: "Option A (recommended): from Studio or the repository to a first brief."
@@ -13,7 +13,7 @@ note: "Option A (recommended): from Studio or the repository to a first brief."
 - No ads or outbound sales on the path.
 
 ## Because
-- The channel is the public repository and npm, with Studio as the showcase (focus.reach.channel@3)
+- The channel is the public repository and npm, with Studio as the showcase (focus.reach.channel)
 - The packages install from public npm (finding:foundry-public-repo-facts)
 
 ## Watch

@@ -1,6 +1,6 @@
 ---
 slot: "execution.priority.bet"
-source: {"kind": "derived", "ref": ["finding:owner-critic2-bet-2026-11-11", "capability.operation.delivery@4"]}
+source: {"kind": "derived", "ref": ["finding:owner-critic2-bet-2026-11-11", "capability.operation.delivery"]}
 feeds: []
 functions: ["product"]
 note: "Option C: the business bet kept unchanged (one Clossys business from idea to live, Studio as step 1)."
@@ -14,7 +14,7 @@ note: "Option C: the business bet kept unchanged (one Clossys business from idea
 
 ## Because
 - The owner made Studio step 1 of the business bet (finding:owner-critic2-bet-2026-11-11)
-- The chain runs in order with the owner only at decide steps (capability.operation.delivery@4)
+- The chain runs in order with the owner only at decide steps (capability.operation.delivery)
 
 ## Watch
 - If hand edits needed to rebuild Studio from one brief > 0 by 2026-12-31, then stop and rethink the chain with the owner.

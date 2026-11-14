@@ -1,6 +1,6 @@
 ---
 slot: "execution.roadmap.release"
-source: {"kind":"derived","ref":["focus.lifecycle.acquisition@2","focus.reach.channel@2","focus.offer.included@2","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["focus.lifecycle.acquisition","focus.reach.channel","focus.offer.included","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["product","gtm"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted from the 24 owner answers."
@@ -13,9 +13,9 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 - No ads or sales for the release.
 
 ## Because
-- A new user sees a live business, then installs and gives a brief (focus.lifecycle.acquisition@2)
-- Each live business links to the public repository and npm (focus.reach.channel@2)
-- The packages are the four agents, the clossys CLI and Studio (focus.offer.included@2)
+- A new user sees a live business, then installs and gives a brief (focus.lifecycle.acquisition)
+- Each live business links to the public repository and npm (focus.reach.channel)
+- The packages are the four agents, the clossys CLI and Studio (focus.offer.included)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 
 ## Watch

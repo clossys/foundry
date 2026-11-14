@@ -1,7 +1,7 @@
 ---
 slot: "passages.newsletter"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.lifecycle.acquisition@1","director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:focus.lifecycle.acquisition","director:identity.verbal.voice","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

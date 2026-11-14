@@ -1,7 +1,7 @@
 ---
 slot: "passages.cards"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.offer.included@5","director:identity.verbal.voice@6"]}
+source: {"kind":"derived","ref":["director:focus.offer.included","director:identity.verbal.voice"]}
 ---
 
 ## en

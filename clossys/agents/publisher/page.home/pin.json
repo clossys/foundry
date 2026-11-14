@@ -8,16 +8,5 @@
     "by": "owner",
     "ref": "https://github.com/clossys/workspace/issues/46#issuecomment-6811506269",
     "at": "2026-11-12T01:19:44.348Z"
-  },
-  "recited": {
-    "by": "agent:publisher",
-    "at": "2026-11-12T00:37:00.170Z",
-    "cites": {
-      "designer:frames.studio-shell": 21,
-      "designer:sections.studio.home": 10,
-      "designer:sections.studio.page-header": 5,
-      "designer:sections.task-list": 3
-    },
-    "reason": "CASCADE fc9d9cd80 re-pinned these Designer inputs with each candidate unchanged (clossys/workspace#46)"
   }
 }

@@ -1,7 +1,7 @@
 ---
 slot: "narratives.video-script"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:identity.brand.personality@1","director:identity.verbal.narrative@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:identity.brand.personality","director:identity.verbal.narrative","finding:writer-owner-answers-2026-11-03"]}
 vary: {"arc":"proof-first"}
 ---
 

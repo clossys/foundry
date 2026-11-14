@@ -1,6 +1,6 @@
 ---
 slot: "capability.resource.allocation"
-source: {"kind":"derived","ref":["finding:foundry-owner-answers-2026-11-03","execution.priority.bet@4","capability.operation.delivery@3","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["finding:foundry-owner-answers-2026-11-03","execution.priority.bet","capability.operation.delivery","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["ops"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted after the per-cell judge fails of 2026-11-11 (Q4: the Watch names the one share it tracks)."
@@ -13,8 +13,8 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 
 ## Because
 - The owner set the 50/40/10 split on 2026-11-03 (finding:foundry-owner-answers-2026-11-03)
-- The largest share goes to the active bet's step 1, Studio built natively by the chain (execution.priority.bet@4)
-- The owner is asked only at decide steps, and the Director is accountable for delivery (capability.operation.delivery@3)
+- The largest share goes to the active bet's step 1, Studio built natively by the chain (execution.priority.bet)
+- The owner is asked only at decide steps, and the Director is accountable for delivery (capability.operation.delivery)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 
 ## Watch

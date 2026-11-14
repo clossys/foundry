@@ -1,7 +1,7 @@
 ---
 slot: "strings.taglines"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@4","director:identity.brand.essence@4"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:identity.brand.essence"]}
 ---
 
 ## en

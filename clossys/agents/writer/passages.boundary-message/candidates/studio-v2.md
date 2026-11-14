@@ -1,7 +1,7 @@
 ---
 slot: "passages.boundary-message"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.brand.personality@1","director:identity.verbal.voice@1","director:context.company.constraint@2"]}
+source: {"kind":"derived","ref":["director:identity.brand.personality","director:identity.verbal.voice","director:context.company.constraint"]}
 ---
 
 ## en
@@ -15,7 +15,7 @@ Read-only
 Studio does not edit records
 
 ### studio.read-only.description
-<!-- {"id":"studio.read-only.description","bindings":[],"evidence":"director:context.company.constraint@2"} -->
+<!-- {"id":"studio.read-only.description","bindings":[],"evidence":"director:context.company.constraint"} -->
 Changes go through the agent that owns the slot. Copy the prompt and paste it into your coding agent.
 
 ### studio.read-only.actions.0.label

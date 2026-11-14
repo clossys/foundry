@@ -1,6 +1,6 @@
 ---
 slot: "execution.risk.threat"
-source: {"kind": "derived", "ref": ["execution.priority.bet@6", "execution.measure.north-star@4", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["execution.priority.bet", "execution.measure.north-star", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["ops"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -13,8 +13,8 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Ranked below: a private detail leaking into the public record, which the public-safety gate guards.
 
 ## Because
-- The bet's kill rule fires if hand edits remain on 2026-12-31 (execution.priority.bet@6)
-- The north star needs zero hand edits by 2026-12-31 (execution.measure.north-star@4)
+- The bet's kill rule fires if hand edits remain on 2026-12-31 (execution.priority.bet)
+- The north star needs zero hand edits by 2026-12-31 (execution.measure.north-star)
 - The repository is public and permanent (finding:foundry-public-repo-facts)
 
 ## Watch

@@ -1,7 +1,7 @@
 ---
 slot: "passages.access-matrix"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@6","director:capability.team.structure@4"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice","director:capability.team.structure"]}
 ---
 
 ## en

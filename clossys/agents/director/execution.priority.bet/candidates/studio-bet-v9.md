@@ -1,6 +1,6 @@
 ---
 slot: "execution.priority.bet"
-source: {"kind": "derived", "ref": ["finding:owner-foundry-director-2026-11-11", "finding:owner-critic-bet-2026-11-11", "capability.operation.delivery@7"]}
+source: {"kind": "derived", "ref": ["finding:owner-foundry-director-2026-11-11", "finding:owner-critic-bet-2026-11-11", "capability.operation.delivery"]}
 feeds: []
 functions: ["product"]
 note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4 meaning re-addressed (owner r9); text unchanged."
@@ -15,7 +15,7 @@ note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4
 ## Because
 - The owner said to focus on Foundry and run the full loop on Studio (finding:owner-foundry-director-2026-11-11)
 - The owner set the dated kill rule and Studio as the first proof (finding:owner-critic-bet-2026-11-11)
-- The chain runs in order with the owner only at decide steps (capability.operation.delivery@7)
+- The chain runs in order with the owner only at decide steps (capability.operation.delivery)
 
 ## Watch
 - If hand edits needed to rebuild Studio from one brief > 0 by 2026-12-31, then stop and rethink the chain with the owner.

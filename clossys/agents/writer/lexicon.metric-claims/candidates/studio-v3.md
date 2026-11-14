@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.metric-claims"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@4","director:execution.measure.driver@9","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof","director:execution.measure.driver","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -13,7 +13,7 @@ source: {"kind":"derived","ref":["director:advantage.proposition.proof@4","direc
   "id": "studio.claim.metric",
   "context": "studio.claim.metric",
   "kind": "claim",
-  "strategy": "director:execution.measure.driver@9",
+  "strategy": "director:execution.measure.driver",
   "phrasings": [
     "{filled} of {total} slots hold a candidate, as clossys check --slots reports."
   ],

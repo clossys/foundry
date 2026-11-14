@@ -1,9 +1,9 @@
 ---
 slot: "capability.team.structure"
-source: {"kind":"derived","ref":["capability.operation.delivery@3","focus.offer.excluded@2","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["capability.operation.delivery","focus.offer.excluded","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["people","ops"]
-note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-cite only after the owner's round 3 answers: Direction and Watch unchanged from studio-team-structure-v2.md, now citing capability.operation.delivery@3."
+note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-cite only after the owner's round 3 answers: Direction and Watch unchanged from studio-team-structure-v2.md, now citing capability.operation.delivery."
 ---
 
 ## Direction
@@ -12,8 +12,8 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 - Rhythm: Director, then Designer, then Writer, then Publisher, each run ending when its strict check passes.
 
 ## Because
-- The chain runs in order, with the owner only at decide steps (capability.operation.delivery@3)
-- People direct and pin; agents make every change through the system (focus.offer.excluded@2)
+- The chain runs in order, with the owner only at decide steps (capability.operation.delivery)
+- People direct and pin; agents make every change through the system (focus.offer.excluded)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 
 ## Watch

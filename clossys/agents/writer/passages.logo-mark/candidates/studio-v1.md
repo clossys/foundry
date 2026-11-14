@@ -1,7 +1,7 @@
 ---
 slot: "passages.logo-mark"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.naming.name@1","director:identity.visual.style@1"]}
+source: {"kind":"derived","ref":["director:identity.naming.name","director:identity.visual.style"]}
 ---
 
 ## en

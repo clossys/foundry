@@ -1,7 +1,7 @@
 ---
 slot: "passages.content"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.narrative@1","director:identity.verbal.voice@1","director:aspiration.goal.long-term@1","director:execution.measure.driver@2","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:identity.verbal.narrative","director:identity.verbal.voice","director:aspiration.goal.long-term","director:execution.measure.driver","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

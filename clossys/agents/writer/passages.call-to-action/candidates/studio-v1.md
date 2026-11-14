@@ -1,7 +1,7 @@
 ---
 slot: "passages.call-to-action"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:focus.lifecycle.acquisition@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:focus.lifecycle.acquisition","director:identity.verbal.voice"]}
 ---
 
 ## en

@@ -1,7 +1,7 @@
 ---
 slot: "narratives.site-chrome"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.naming.architecture@1","director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:identity.naming.architecture","director:identity.verbal.voice","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

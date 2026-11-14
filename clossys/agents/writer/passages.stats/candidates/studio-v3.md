@@ -1,7 +1,7 @@
 ---
 slot: "passages.stats"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof"]}
 ---
 
 ## en

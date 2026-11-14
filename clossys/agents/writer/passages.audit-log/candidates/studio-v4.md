@@ -1,7 +1,7 @@
 ---
 slot: "passages.audit-log"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@4"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice"]}
 ---
 
 ## en

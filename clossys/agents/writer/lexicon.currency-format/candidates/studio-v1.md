@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.currency-format"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.model.pricing@1","director:focus.reach.geography@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.model.pricing","director:focus.reach.geography","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

@@ -1,6 +1,6 @@
 ---
 slot: "aspiration.purpose.vision"
-source: {"kind": "derived", "ref": ["finding:foundry-public-studio-readonly-bound", "finding:owner-foundry-director-2026-11-11", "aspiration.goal.long-term@3"]}
+source: {"kind": "derived", "ref": ["finding:foundry-public-studio-readonly-bound", "finding:owner-foundry-director-2026-11-11", "aspiration.goal.long-term"]}
 feeds: []
 functions: ["brand"]
 note: "Option A (recommended): same Direction as the pinned v3, re-cited to public findings only (R2F-L2 public scrub, 2026-11-12)."
@@ -15,7 +15,7 @@ note: "Option A (recommended): same Direction as the pinned v3, re-cited to publ
 ## Because
 - Studio is read-only; people request changes and the agents make them (finding:foundry-public-studio-readonly-bound)
 - The owner set Foundry on the open-source part of the project, with the full loop on Studio first (finding:owner-foundry-director-2026-11-11)
-- The long-term goal is outside projects building sites from one brief by 2027-06-30 (aspiration.goal.long-term@3)
+- The long-term goal is outside projects building sites from one brief by 2027-06-30 (aspiration.goal.long-term)
 
 ## Watch
 - If sites built from one brief on the public packages < 1 by 2027-06-30, then review with the owner whether the 2027 picture still holds.

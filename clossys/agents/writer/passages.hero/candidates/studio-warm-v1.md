@@ -1,7 +1,7 @@
 ---
 slot: "passages.hero"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:focus.lifecycle.acquisition@1","director:focus.segment.core@1","director:identity.verbal.voice@1","director:identity.naming.name@1","director:context.company.constraint@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:focus.lifecycle.acquisition","director:focus.segment.core","director:identity.verbal.voice","director:identity.naming.name","director:context.company.constraint"]}
 vary: {"tone":"warm"}
 ---
 
@@ -16,7 +16,7 @@ Clossys Studio
 See how your workspace came together
 
 ### studio.home.hero.header.description
-<!-- {"id":"studio.home.hero.header.description","bindings":[],"evidence":"director:context.company.constraint@1"} -->
+<!-- {"id":"studio.home.hero.header.description","bindings":[],"evidence":"director:context.company.constraint"} -->
 Look through direction, design, copy and pages, slot by slot. Nothing here edits; ask the owning agent for any change.
 
 ### studio.home.hero.actions.primary.label

@@ -1,6 +1,6 @@
 ---
 slot: "aspiration.goal.annual"
-source: {"kind": "derived", "ref": ["aspiration.goal.long-term@3", "aspiration.purpose.vision@3", "execution.priority.bet@6"]}
+source: {"kind": "derived", "ref": ["aspiration.goal.long-term", "aspiration.purpose.vision", "execution.priority.bet"]}
 feeds: []
 functions: ["product"]
 note: "Agent pick for the Foundry open-source project Director (DIR-FIX, 2026-11-11): adapted from v6; the target is the first 2027 step toward the long-term goal, not the bet restated."
@@ -13,9 +13,9 @@ note: "Agent pick for the Foundry open-source project Director (DIR-FIX, 2026-11
 - One outside project, rather than a launch campaign or any revenue goal.
 
 ## Because
-- The long-term goal is 3 outside projects by 2027-06-30, reviewed if fewer than 1 by 2027-03-31 (aspiration.goal.long-term@3)
-- The vision's horizon is 2027 (aspiration.purpose.vision@3)
-- Studio rebuilt from one brief is the first proof, due 2026-12-31 (execution.priority.bet@6)
+- The long-term goal is 3 outside projects by 2027-06-30, reviewed if fewer than 1 by 2027-03-31 (aspiration.goal.long-term)
+- The vision's horizon is 2027 (aspiration.purpose.vision)
+- Studio rebuilt from one brief is the first proof, due 2026-12-31 (execution.priority.bet)
 
 ## Watch
 - If outside projects that have run the chain from one brief < 1 by 2027-02-28, then report to the owner and review the 2027-03-31 date.

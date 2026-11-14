@@ -1,6 +1,6 @@
 ---
 slot: "focus.segment.next"
-source: {"kind": "derived", "ref": ["focus.segment.core@3", "aspiration.goal.long-term@3"]}
+source: {"kind": "derived", "ref": ["focus.segment.core", "aspiration.goal.long-term"]}
 feeds: []
 functions: ["gtm"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -12,8 +12,8 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Change: contributor docs for each agent's extension points, and a review path for outside pull requests.
 
 ## Because
-- The core segment uses the packages; the next one extends them (focus.segment.core@3)
-- The long-term target is outside projects building with the packages (aspiration.goal.long-term@3)
+- The core segment uses the packages; the next one extends them (focus.segment.core)
+- The long-term target is outside projects building with the packages (aspiration.goal.long-term)
 
 ## Watch
 - If outside pull requests that extend an agent > 0 before the trigger by 2027-03-31, then review this cell.

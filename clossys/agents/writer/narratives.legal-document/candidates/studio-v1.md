@@ -1,7 +1,7 @@
 ---
 slot: "narratives.legal-document"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1","director:identity.verbal.voice@1","director:advantage.proposition.proof@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography","director:identity.verbal.voice","director:advantage.proposition.proof","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

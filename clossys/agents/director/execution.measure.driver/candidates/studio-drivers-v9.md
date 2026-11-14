@@ -1,6 +1,6 @@
 ---
 slot: "execution.measure.driver"
-source: {"kind": "derived", "ref": ["execution.measure.north-star@4", "capability.operation.delivery@7", "execution.priority.bet@6"]}
+source: {"kind": "derived", "ref": ["execution.measure.north-star", "capability.operation.delivery", "execution.priority.bet"]}
 feeds: []
 functions: ["ops"]
 note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4 meaning re-addressed (owner r9); text unchanged."
@@ -13,9 +13,9 @@ note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4
 - Not counted: tickets closed or lines changed, rather than steps that move the north star.
 
 ## Because
-- The north star counts owner decisions per shipped page, so plumbing questions are the input to cut first (execution.measure.north-star@4)
-- Plumb steps run on their own and the owner is asked only at decide steps (capability.operation.delivery@7)
-- The bet is Studio rebuilt natively, so rebuilt pages are the leading count (execution.priority.bet@6)
+- The north star counts owner decisions per shipped page, so plumbing questions are the input to cut first (execution.measure.north-star)
+- Plumb steps run on their own and the owner is asked only at decide steps (capability.operation.delivery)
+- The bet is Studio rebuilt natively, so rebuilt pages are the leading count (execution.priority.bet)
 
 ## Watch
 - If plumb steps asking the owner > 0 by 2026-11-30, then name each step and move it out of the owner's interview.

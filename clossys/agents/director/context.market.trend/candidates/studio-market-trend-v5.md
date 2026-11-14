@@ -1,6 +1,6 @@
 ---
 slot: "context.market.trend"
-source: {"kind": "derived", "ref": ["finding:foundry-public-studio-behavior", "identity.verbal.narrative@4", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["finding:foundry-public-studio-behavior", "identity.verbal.narrative", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["gtm"]
 note: "Agent pick for the Foundry open-source project Director (R2F-L2 public scrub, 2026-11-12): same Direction as v4, re-cited to public findings only."
@@ -13,7 +13,7 @@ note: "Agent pick for the Foundry open-source project Director (R2F-L2 public sc
 
 ## Because
 - The public Studio requirements make every visual piece through the Designer skill, with nothing hand-rolled (finding:foundry-public-studio-behavior)
-- The narrative tells the same change (identity.verbal.narrative@4)
+- The narrative tells the same change (identity.verbal.narrative)
 - The public tree holds no market records, so Timing stays a default (finding:foundry-public-repo-facts)
 
 ## Watch

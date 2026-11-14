@@ -1,7 +1,7 @@
 ---
 slot: "patterns.table-caption"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof","director:identity.verbal.voice"]}
 ---
 
 ## en

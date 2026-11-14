@@ -1,7 +1,7 @@
 ---
 slot: "strings.transcripts"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.narrative@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:identity.verbal.narrative","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

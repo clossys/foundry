@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.plural-rules"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography"]}
 ---
 
 ## en

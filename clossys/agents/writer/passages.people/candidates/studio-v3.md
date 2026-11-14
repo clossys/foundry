@@ -1,7 +1,7 @@
 ---
 slot: "passages.people"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@4","director:identity.verbal.voice@4","director:capability.team.role@6"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof","director:identity.verbal.voice","director:capability.team.role"]}
 ---
 
 ## en

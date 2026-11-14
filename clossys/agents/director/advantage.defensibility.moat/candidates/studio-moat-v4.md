@@ -1,6 +1,6 @@
 ---
 slot: "advantage.defensibility.moat"
-source: {"kind": "derived", "ref": ["advantage.defensibility.differentiator@4", "finding:foundry-public-repo-facts", "execution.priority.bet@6"]}
+source: {"kind": "derived", "ref": ["advantage.defensibility.differentiator", "finding:foundry-public-repo-facts", "execution.priority.bet"]}
 feeds: []
 functions: ["product"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -13,9 +13,9 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Not the code: the engine is MIT and anyone can copy it; the moat is the records and checks kept green.
 
 ## Because
-- The difference is a system that keeps making the right pages (advantage.defensibility.differentiator@4)
+- The difference is a system that keeps making the right pages (advantage.defensibility.differentiator)
 - The repository is public and MIT licensed (finding:foundry-public-repo-facts)
-- The bet is the Studio rebuild (execution.priority.bet@6)
+- The bet is the Studio rebuild (execution.priority.bet)
 
 ## Watch
 - If pages that drift from a pinned record after release > 0 in any quarter, then add a strict check for that drift.

@@ -1,6 +1,6 @@
 ---
 slot: "execution.priority.bet"
-source: {"kind": "derived", "ref": ["finding:owner-foundry-director-2026-11-11", "finding:foundry-public-studio-offer", "capability.operation.delivery@7"]}
+source: {"kind": "derived", "ref": ["finding:owner-foundry-director-2026-11-11", "finding:foundry-public-studio-offer", "capability.operation.delivery"]}
 feeds: []
 functions: ["product"]
 note: "Option A (recommended): same Direction as the pinned v6, re-cited to public findings only (R2F-L2 public scrub, 2026-11-12)."
@@ -15,7 +15,7 @@ note: "Option A (recommended): same Direction as the pinned v6, re-cited to publ
 ## Because
 - The owner said to focus on Foundry and run the full loop on Studio, weeks behind schedule (finding:owner-foundry-director-2026-11-11)
 - A Studio requirement is ticked only after a browser check on the integrated head (finding:foundry-public-studio-offer)
-- The chain runs in order with the owner only at decide steps (capability.operation.delivery@7)
+- The chain runs in order with the owner only at decide steps (capability.operation.delivery)
 
 ## Watch
 - If hand edits needed to rebuild Studio from one brief > 0 by 2026-12-31, then stop and rethink the chain with the owner.

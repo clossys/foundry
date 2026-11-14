@@ -1,7 +1,7 @@
 ---
 slot: "patterns.quote"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

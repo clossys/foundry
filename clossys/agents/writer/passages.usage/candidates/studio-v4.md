@@ -1,7 +1,7 @@
 ---
 slot: "passages.usage"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.model.pricing@5","director:identity.verbal.voice@4"]}
+source: {"kind":"derived","ref":["director:advantage.model.pricing","director:identity.verbal.voice"]}
 ---
 
 ## en

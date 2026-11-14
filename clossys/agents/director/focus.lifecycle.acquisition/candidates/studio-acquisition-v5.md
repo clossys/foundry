@@ -1,6 +1,6 @@
 ---
 slot: "focus.lifecycle.acquisition"
-source: {"kind": "derived", "ref": ["finding:owner-acquisition-2026-11-11", "focus.reach.channel@3"]}
+source: {"kind": "derived", "ref": ["finding:owner-acquisition-2026-11-11", "focus.reach.channel"]}
 feeds: []
 functions: ["gtm"]
 note: "Option B: from a live site's built-by link to a first brief."
@@ -14,7 +14,7 @@ note: "Option B: from a live site's built-by link to a first brief."
 
 ## Because
 - The owner picked see it live, then run it (finding:owner-acquisition-2026-11-11)
-- The channel brings developers to the packages (focus.reach.channel@3)
+- The channel brings developers to the packages (focus.reach.channel)
 
 ## Watch
 - If built-by link visits that lead to an install < 1 in any month, then review the step from the link to install.

@@ -1,6 +1,6 @@
 ---
 slot: "context.market.size"
-source: {"kind": "derived", "ref": ["focus.segment.core@3", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["focus.segment.core", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["gtm"]
 note: "Agent pick for the Foundry open-source project Director (R2F-L2 public scrub, 2026-11-12): same Direction as v5, re-cited to public findings only."
@@ -12,7 +12,7 @@ note: "Agent pick for the Foundry open-source project Director (R2F-L2 public sc
 - Method: qualitative; a count is added only once a dated public source exists, rather than an estimate.
 
 ## Because
-- The core segment is developers and founders building with coding agents (focus.segment.core@3)
+- The core segment is developers and founders building with coding agents (focus.segment.core)
 - The public tree holds no market sizing (finding:foundry-public-repo-facts)
 
 ## Watch

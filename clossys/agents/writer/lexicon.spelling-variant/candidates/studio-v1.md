@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.spelling-variant"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

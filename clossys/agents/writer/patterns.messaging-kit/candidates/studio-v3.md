@@ -1,7 +1,7 @@
 ---
 slot: "patterns.messaging-kit"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@4","director:aspiration.purpose.mission@3","director:identity.brand.essence@4","director:identity.verbal.narrative@4","director:identity.naming.architecture@5","director:focus.category.definition@5","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:aspiration.purpose.mission","director:identity.brand.essence","director:identity.verbal.narrative","director:identity.naming.architecture","director:focus.category.definition","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

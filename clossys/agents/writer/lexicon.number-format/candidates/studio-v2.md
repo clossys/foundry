@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.number-format"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@2"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography"]}
 ---
 
 ## en

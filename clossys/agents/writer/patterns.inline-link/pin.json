@@ -1,17 +1,7 @@
 {
   "candidate": "studio-v1.md",
-  "sha256": "e803a86a6058cd989cd554b17b787ea433af9d243899c5c38e18bcd8d75a96bf",
+  "sha256": "ec78f57c9f74253987740e83a082abb20c69a8ed4d0f6915e25db1b684706535",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
   "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z",
-  "recited": {
-    "by": "agent:producer",
-    "at": "2026-11-13T02:43:02.845Z",
-    "cites": {
-      "director:identity.verbal.voice": 6
-    },
-    "proof": {
-      "director:identity.verbal.voice": "sha256:4589ab9e6ffc89d3c6cee7210823b6311e9636b47762b832ca010522d8778013"
-    }
-  }
+  "at": "2026-11-03T08:58:39Z"
 }

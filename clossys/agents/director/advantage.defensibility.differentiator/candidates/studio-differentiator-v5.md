@@ -1,6 +1,6 @@
 ---
 slot: "advantage.defensibility.differentiator"
-source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "advantage.proposition.promise@4"]}
+source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "advantage.proposition.promise"]}
 feeds: []
 functions: ["product", "tech"]
 note: "Option B: the open record as the difference."
@@ -14,7 +14,7 @@ note: "Option B: the open record as the difference."
 
 ## Because
 - Slots keep candidates apart from one pin naming a sha256 and who pinned it (finding:foundry-public-repo-facts)
-- It is why the project promise holds (advantage.proposition.promise@4)
+- It is why the project promise holds (advantage.proposition.promise)
 
 ## Watch
 - If releases shipped with a failing strict check > 0 in any quarter, then hold the difference claim until fixed.

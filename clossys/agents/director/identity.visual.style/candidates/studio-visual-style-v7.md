@@ -1,6 +1,6 @@
 ---
 slot: "identity.visual.style"
-source: {"kind": "derived", "ref": ["finding:owner-style-2026-11-11", "finding:owner-round3-style-2026-11-11", "identity.brand.essence@4", "identity.verbal.voice@4"]}
+source: {"kind": "derived", "ref": ["finding:owner-style-2026-11-11", "finding:owner-round3-style-2026-11-11", "identity.brand.essence", "identity.verbal.voice"]}
 feeds: []
 functions: ["brand"]
 note: "Option A (recommended): the business answer kept unchanged; it fits the open-source project as it stands. Citations re-pointed to the project cells."
@@ -14,8 +14,8 @@ note: "Option A (recommended): the business answer kept unchanged; it fits the o
 ## Because
 - The owner picked quiet and exact, stock shadcn, the preview card as signature (finding:owner-style-2026-11-11)
 - The owner restored the signature detail (finding:owner-round3-style-2026-11-11)
-- The look serves the essence (identity.brand.essence@4)
-- The voice is plain, so the look stays quiet (identity.verbal.voice@4)
+- The look serves the essence (identity.brand.essence)
+- The voice is plain, so the look stays quiet (identity.verbal.voice)
 
 ## Watch
 - If Studio components that are not stock shadcn > 0 in any month, then return them to Designer.

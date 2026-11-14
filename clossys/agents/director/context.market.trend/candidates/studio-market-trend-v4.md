@@ -1,6 +1,6 @@
 ---
 slot: "context.market.trend"
-source: {"kind": "derived", "ref": ["finding:owner-narrative-2026-11-11", "identity.verbal.narrative@4", "finding:foundry-owner-answers-2026-11-03"]}
+source: {"kind": "derived", "ref": ["finding:owner-narrative-2026-11-11", "identity.verbal.narrative", "finding:foundry-owner-answers-2026-11-03"]}
 feeds: []
 functions: ["gtm"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR fix round 1, 2026-11-11): re-drafted after the critic's reading; cites the recommended project core options; re-cite when the owner picks."
@@ -13,7 +13,7 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR fix roun
 
 ## Because
 - The owner reads the shift as production solved and judgment not (finding:owner-narrative-2026-11-11)
-- The narrative tells the same change (identity.verbal.narrative@4)
+- The narrative tells the same change (identity.verbal.narrative)
 - Timing now is a planner default recorded with the owner answers (finding:foundry-owner-answers-2026-11-03)
 
 ## Watch

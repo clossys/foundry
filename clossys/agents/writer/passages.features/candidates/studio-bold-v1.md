@@ -1,7 +1,7 @@
 ---
 slot: "passages.features"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.defensibility.differentiator@1","director:advantage.proposition.promise@1","director:focus.offer.included@1"]}
+source: {"kind":"derived","ref":["director:advantage.defensibility.differentiator","director:advantage.proposition.promise","director:focus.offer.included"]}
 vary: {"tone":"bold"}
 ---
 

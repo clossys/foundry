@@ -1,7 +1,7 @@
 ---
 slot: "strings.email-subjects"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.lifecycle.retention@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:focus.lifecycle.retention","director:identity.verbal.voice"]}
 ---
 
 ## en

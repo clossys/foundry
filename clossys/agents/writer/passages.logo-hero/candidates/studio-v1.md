@@ -1,7 +1,7 @@
 ---
 slot: "passages.logo-hero"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.naming.name@1"]}
+source: {"kind":"derived","ref":["director:identity.naming.name"]}
 ---
 
 ## en

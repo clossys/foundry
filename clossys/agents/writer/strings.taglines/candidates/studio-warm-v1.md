@@ -1,7 +1,7 @@
 ---
 slot: "strings.taglines"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.promise@1","director:identity.brand.essence@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.promise","director:identity.brand.essence"]}
 vary: {"tone":"warm"}
 ---
 

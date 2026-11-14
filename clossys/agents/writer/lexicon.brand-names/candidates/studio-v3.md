@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.brand-names"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.naming.architecture@5","director:identity.naming.name@3","finding:writer-owner-answers-2026-11-03"]}
+source: {"kind":"derived","ref":["director:identity.naming.architecture","director:identity.naming.name","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en

@@ -1,6 +1,6 @@
 ---
 slot: "advantage.defensibility.moat"
-source: {"kind":"derived","ref":["advantage.defensibility.differentiator@2","aspiration.goal.long-term@2","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["advantage.defensibility.differentiator","aspiration.goal.long-term","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["product"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted from the 24 owner answers."
@@ -12,8 +12,8 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 - Milestone: one business run from idea to live on its own.
 
 ## Because
-- The difference is a system that keeps making the right pages (advantage.defensibility.differentiator@2)
-- The long-term measure is one business idea to live (aspiration.goal.long-term@2)
+- The difference is a system that keeps making the right pages (advantage.defensibility.differentiator)
+- The long-term measure is one business idea to live (aspiration.goal.long-term)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 
 ## Watch

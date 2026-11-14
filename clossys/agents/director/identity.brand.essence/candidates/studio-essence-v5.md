@@ -1,6 +1,6 @@
 ---
 slot: "identity.brand.essence"
-source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "advantage.proposition.proof@4"]}
+source: {"kind": "derived", "ref": ["finding:foundry-public-repo-facts", "advantage.proposition.proof"]}
 feeds: []
 functions: ["brand"]
 note: "Option B: open and checked."
@@ -13,7 +13,7 @@ note: "Option B: open and checked."
 
 ## Because
 - The records and gates are in the public tree (finding:foundry-public-repo-facts)
-- Claims wait for proof (advantage.proposition.proof@4)
+- Claims wait for proof (advantage.proposition.proof)
 
 ## Watch
 - If public claims with no check behind them > 0 in any month, then return them to Writer.

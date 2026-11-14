@@ -1,6 +1,6 @@
 ---
 slot: "identity.brand.essence"
-source: {"kind":"derived","ref":["finding:owner-essence-2026-11-11","advantage.proposition.proof@2"]}
+source: {"kind":"derived","ref":["finding:owner-essence-2026-11-11","advantage.proposition.proof"]}
 feeds: ["patterns.messaging-kit","strings.taglines"]
 functions: []
 note: "Owner pick, owner chat 2026-11-11 W5 interview (ledger clossys/workspace#46 comment 6790683271); owner words kept where given."
@@ -13,7 +13,7 @@ note: "Owner pick, owner chat 2026-11-11 W5 interview (ledger clossys/workspace#
 
 ## Because
 - The owner picked judgment where it matters as the essence (finding:owner-essence-2026-11-11)
-- Autonomy is never claimed until one business runs idea to live (advantage.proposition.proof@2)
+- Autonomy is never claimed until one business runs idea to live (advantage.proposition.proof)
 
 ## Watch
 - If public pages whose story leaves out where people decide > 0 in any month, then return them to Writer.

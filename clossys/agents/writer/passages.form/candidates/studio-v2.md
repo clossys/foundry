@@ -1,7 +1,7 @@
 ---
 slot: "passages.form"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@1","director:context.company.constraint@2","director:focus.offer.excluded@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice","director:context.company.constraint","director:focus.offer.excluded"]}
 ---
 
 ## en

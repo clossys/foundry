@@ -1,7 +1,7 @@
 ---
 slot: "passages.wizard"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@1","director:capability.operation.delivery@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice","director:capability.operation.delivery"]}
 ---
 
 ## en

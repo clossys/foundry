@@ -1,7 +1,7 @@
 ---
 slot: "strings.page-titles"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:aspiration.purpose.mission@1","director:identity.naming.name@1"]}
+source: {"kind":"derived","ref":["director:aspiration.purpose.mission","director:identity.naming.name"]}
 ---
 
 ## en

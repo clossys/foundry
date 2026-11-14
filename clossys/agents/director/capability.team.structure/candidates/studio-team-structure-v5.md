@@ -1,6 +1,6 @@
 ---
 slot: "capability.team.structure"
-source: {"kind": "derived", "ref": ["capability.operation.delivery@7", "focus.offer.excluded@3"]}
+source: {"kind": "derived", "ref": ["capability.operation.delivery", "focus.offer.excluded"]}
 feeds: []
 functions: ["people"]
 note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4 meaning re-addressed (owner r9); text unchanged."
@@ -12,8 +12,8 @@ note: "Citation-only re-cite (CASCADE, 2026-11-11): Delivery v7 is the pinned v4
 - Rhythm: Director, then Designer, then Writer, then Publisher, each run ending when its strict check passes.
 
 ## Because
-- The chain runs in order, with the owner only at decide steps (capability.operation.delivery@7)
-- Agents make every change through the system (focus.offer.excluded@3)
+- The chain runs in order, with the owner only at decide steps (capability.operation.delivery)
+- Agents make every change through the system (focus.offer.excluded)
 
 ## Watch
 - If owner decisions outside decide steps > 0 in any week, then move the step to plumbing or record it as a decide step.

@@ -1,6 +1,6 @@
 ---
 slot: "context.competition.gap"
-source: {"kind": "derived", "ref": ["context.competition.alternative@5", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["context.competition.alternative", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["product", "gtm"]
 note: "Agent pick for the Foundry open-source project Director (DIR-FIX, 2026-11-11): adapted from v4; the Evidence bullet now states only what the pinned alternative records, so the claim is sourced."
@@ -12,7 +12,7 @@ note: "Agent pick for the Foundry open-source project Director (DIR-FIX, 2026-11
 - Why-open: each alternative covers one layer, and provenance across layers only pays once agents, not people, do the assembly.
 
 ## Because
-- The default is a prompt per task, or a site builder or framework with checks wired by hand (context.competition.alternative@5)
+- The default is a prompt per task, or a site builder or framework with checks wired by hand (context.competition.alternative)
 - Foundry pins each candidate by its sha256 and checks what is on disk (finding:foundry-public-repo-facts)
 
 ## Watch

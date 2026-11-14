@@ -1,6 +1,6 @@
 ---
 slot: "context.competition.gap"
-source: {"kind":"derived","ref":["finding:owner-alternative-2026-11-11","context.competition.alternative@4","finding:foundry-public-repo-facts"]}
+source: {"kind":"derived","ref":["finding:owner-alternative-2026-11-11","context.competition.alternative","finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["product"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted after the per-cell judge fails of 2026-11-11 (Q2: Evidence is about the alternatives; Q4: the Watch tracks the market)."
@@ -13,7 +13,7 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 
 ## Because
 - The owner named people plus one-task agent prompts as the default (finding:owner-alternative-2026-11-11)
-- Switching means one brief up front in place of more hires or one prompt per task (context.competition.alternative@4)
+- Switching means one brief up front in place of more hires or one prompt per task (context.competition.alternative)
 - Foundry's slots keep candidates separate from one pin naming a sha256 and who pinned it (finding:foundry-public-repo-facts)
 
 ## Watch

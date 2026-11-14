@@ -1,6 +1,6 @@
 ---
 slot: "execution.measure.north-star"
-source: {"kind": "derived", "ref": ["aspiration.goal.long-term@3", "finding:owner-foundry-director-2026-11-11"]}
+source: {"kind": "derived", "ref": ["aspiration.goal.long-term", "finding:owner-foundry-director-2026-11-11"]}
 feeds: []
 functions: ["product"]
 note: "Option B: an adoption number."
@@ -12,7 +12,7 @@ note: "Option B: an adoption number."
 - Why: it counts the long-term goal directly.
 
 ## Because
-- The long-term goal is outside projects building with the packages (aspiration.goal.long-term@3)
+- The long-term goal is outside projects building with the packages (aspiration.goal.long-term)
 - The owner set Foundry on the open-source part of the project (finding:owner-foundry-director-2026-11-11)
 
 ## Watch

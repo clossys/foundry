@@ -1,7 +1,7 @@
 ---
 slot: "lexicon.comparison-claims"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@4","director:context.competition.alternative@5"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof","director:context.competition.alternative"]}
 ---
 
 ## en
@@ -13,7 +13,7 @@ source: {"kind":"derived","ref":["director:advantage.proposition.proof@4","direc
   "id": "studio.claim.comparison",
   "context": "studio.claim.comparison",
   "kind": "claim",
-  "strategy": "director:context.competition.alternative@5",
+  "strategy": "director:context.competition.alternative",
   "phrasings": [
     "Unlike an unguided agent run, each slot keeps its candidates, its pin and its lineage on disk."
   ],

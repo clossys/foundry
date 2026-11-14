@@ -1,6 +1,6 @@
 ---
 slot: "aspiration.goal.annual"
-source: {"kind":"derived","ref":["execution.measure.north-star@2","execution.priority.bet@2","aspiration.goal.long-term@2","finding:owner-noncore-2026-11-11"]}
+source: {"kind":"derived","ref":["execution.measure.north-star","execution.priority.bet","aspiration.goal.long-term","finding:owner-noncore-2026-11-11"]}
 feeds: []
 functions: ["product"]
 note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat 2026-11-11 W5 interview); re-drafted from the 24 owner answers."
@@ -13,9 +13,9 @@ note: "Agent pick under the owner's W5 rule 'Agent picks, no review' (owner chat
 - Only Studio this year, rather than outside businesses.
 
 ## Because
-- The north-star target is Studio re-built from one brief with zero hand edits by 2026-12-31 (execution.measure.north-star@2)
-- The bet is Studio built natively by the chain (execution.priority.bet@2)
-- The year ends before the long-term date 2027-06-30 (aspiration.goal.long-term@2)
+- The north-star target is Studio re-built from one brief with zero hand edits by 2026-12-31 (execution.measure.north-star)
+- The bet is Studio built natively by the chain (execution.priority.bet)
+- The year ends before the long-term date 2027-06-30 (aspiration.goal.long-term)
 - The owner let Director re-draft and pick the non-core cells (finding:owner-noncore-2026-11-11)
 
 ## Watch

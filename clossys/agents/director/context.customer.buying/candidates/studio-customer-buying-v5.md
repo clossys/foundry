@@ -1,6 +1,6 @@
 ---
 slot: "context.customer.buying"
-source: {"kind": "derived", "ref": ["focus.segment.core@3", "focus.lifecycle.acquisition@4", "advantage.model.pricing@4"]}
+source: {"kind": "derived", "ref": ["focus.segment.core", "focus.lifecycle.acquisition", "advantage.model.pricing"]}
 feeds: []
 functions: ["gtm"]
 note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11-11): project answer, cites the recommended project core options; re-cite when the owner picks."
@@ -13,9 +13,9 @@ note: "Agent pick for the Foundry open-source project Director (C6-FDIR, 2026-11
 - Only the user decides; no procurement step.
 
 ## Because
-- The core segment is developers and founders building with coding agents (focus.segment.core@3)
-- The path follows acquisition (focus.lifecycle.acquisition@4)
-- Foundry has no price (advantage.model.pricing@4)
+- The core segment is developers and founders building with coding agents (focus.segment.core)
+- The path follows acquisition (focus.lifecycle.acquisition)
+- Foundry has no price (advantage.model.pricing)
 
 ## Watch
 - If public issues reporting a stall between install and first brief > 3 in any month, then review the acquisition path.

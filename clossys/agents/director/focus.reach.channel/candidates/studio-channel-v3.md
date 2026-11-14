@@ -1,6 +1,6 @@
 ---
 slot: "focus.reach.channel"
-source: {"kind": "derived", "ref": ["focus.segment.core@3", "finding:foundry-public-repo-facts"]}
+source: {"kind": "derived", "ref": ["focus.segment.core", "finding:foundry-public-repo-facts"]}
 feeds: []
 functions: ["gtm"]
 note: "Option A (recommended): the public repository and npm first."
@@ -12,7 +12,7 @@ note: "Option A (recommended): the public repository and npm first."
 - Not: ads or sales.
 
 ## Because
-- The core segment works from a terminal and a repository (focus.segment.core@3)
+- The core segment works from a terminal and a repository (focus.segment.core)
 - The repository is public and the packages are on npm (finding:foundry-public-repo-facts)
 
 ## Watch

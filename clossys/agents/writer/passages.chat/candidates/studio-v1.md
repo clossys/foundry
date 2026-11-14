@@ -1,7 +1,7 @@
 ---
 slot: "passages.chat"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.brand.personality@1","director:identity.verbal.voice@1","director:context.company.constraint@1"]}
+source: {"kind":"derived","ref":["director:identity.brand.personality","director:identity.verbal.voice","director:context.company.constraint"]}
 ---
 
 ## en
@@ -11,7 +11,7 @@ source: {"kind":"derived","ref":["director:identity.brand.personality@1","direct
 Ask about this slot
 
 ### studio.chat.parts.0.content
-<!-- {"id":"studio.chat.parts.0.content","bindings":[],"evidence":"director:context.company.constraint@1"} -->
+<!-- {"id":"studio.chat.parts.0.content","bindings":[],"evidence":"director:context.company.constraint"} -->
 Studio is read-only. Describe the change you want and copy the prompt for the agent that owns this slot.
 
 ### studio.chat.composer.placeholder
