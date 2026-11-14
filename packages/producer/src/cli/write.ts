@@ -5,6 +5,7 @@ import { agentModule } from "../server/cells.js";
 import { directorLineRef, directorRef, pinnedStrategyModel, readPinnedDirector } from "../records/director-pinned.js";
 import { resolveCitation, sourceCitations } from "../records/citations.js";
 import { candidateDocument, readPinned, type PinnedCandidate } from "../records/pinned.js";
+import { candidateReason, directorTraceProblem } from "../records/director-trace.js";
 import { hasSlotModel, readIa } from "../records/slots.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
@@ -100,6 +101,13 @@ export async function runWrite(args: CliArgs, root: string): Promise<CliResult> 
         if (ref.versioned) findings.push({ rule: "director-link-versioned", slot: candidate.id, message: `Director link names a version, not a slot id: ${ref.ref} (clossys migrate citations-to-slots)` });
         else if (!pinnedDirector.has(ref.slot) || !resolveCitation(consumer, ref.ref)) findings.push({ rule: "director-link-dangling", slot: candidate.id, message: `Director link resolves to no pinned Director slot: ${ref.ref}` });
       }
+    }
+    // R-DIRECTOR-DERIVED (constitution R20): every pinned Writer candidate names, in its frontmatter
+    // reason, the pinned Director slot it realises; source.ref alone is not a trace. One finding per
+    // pinned candidate, promoted from the slot-level-only trace (foundry-feedback-0016).
+    for (const candidate of writer.pinned) {
+      const problem = directorTraceProblem(candidate.name, candidateReason(candidate.name, candidate.bytes), pinnedDirector);
+      if (problem) findings.push({ rule: "director-trace-missing", slot: candidate.id, message: `pinned ${candidate.name}: ${problem}` });
     }
     // Voice derivation: record-level directorSources against the pinned voice/personality lines.
     const ia = await agentModule("writer", "catalog/ia/index.js");

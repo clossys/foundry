@@ -9,12 +9,12 @@ import { constitutionSchema, SCHEMA_NAMES, validateSchema } from "./schema.js";
 import { cleanSpec, contextOf, expectCatches, writeWorkspace, FIXTURE_SKILL_SHAS, NO_HISTORY } from "./__fixtures__/workspace.js";
 
 const packageRoot = fileURLToPath(new URL("../../", import.meta.url));
-const IDS = Array.from({ length: 16 }, (_, index) => `R${String(index + 1).padStart(2, "0")}`);
+const IDS = [...Array.from({ length: 16 }, (_, index) => `R${String(index + 1).padStart(2, "0")}`), "R20"];
 const ENFORCED = ["R01", "R02", "R04", "R06", "R07", "R08", "R09", "R10", "R11", "R13", "R14"];
-const BUILDING = ["R03", "R05", "R15", "R16"];
+const BUILDING = ["R03", "R05", "R15", "R16", "R20"];
 
 describe("constitution registry", () => {
-  it("rules.json lists R01-R16 once each, scope all-records, with existing module and test paths", () => {
+  it("rules.json lists R01-R16 and R20 once each, scope all-records, with existing module and test paths", () => {
     const rules = readRules();
     expect(rules.map(rule => rule.id)).toEqual(IDS);
     for (const rule of rules) {
@@ -89,7 +89,7 @@ describe("constitution runner", () => {
 
   it("refuses an unknown rule", () => {
     const { root, consumer } = writeWorkspace(cleanSpec());
-    expect(() => runConstitution({ root, consumer, rule: "R17" })).toThrow(/Unknown constitution rule R17 \(R01..R16\)/);
+    expect(() => runConstitution({ root, consumer, rule: "R17" })).toThrow(/Unknown constitution rule R17 \(R01..R16, R20\)/);
   });
 
   it("reports building rows without failing, and fails on them under strict (section 4)", () => {
@@ -150,5 +150,7 @@ describe("clossys check --constitution arguments", () => {
     expect(() => parseArgs(["check", "--rule", "R04"])).toThrow(/--rule requires check --constitution/);
     expect(() => parseArgs(["check", "--constitution", "--rule", "R17"])).toThrow(/R01..R16/);
     expect(parseArgs(["check", "--constitution", "--rule", "R16", "--strict"])).toMatchObject({ rule: ["R16"], strict: true });
+    expect(parseArgs(["check", "--constitution", "--rule", "R20"])).toMatchObject({ rule: ["R20"] });
+    expect(() => parseArgs(["check", "--constitution", "--rule", "R19"])).toThrow(/R01..R16 or R20/);
   });
 });

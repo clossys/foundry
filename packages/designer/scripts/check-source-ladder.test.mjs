@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { aliasesFrom, checkSourceLadder, componentModulesFrom, licenceAllowed, loadInputs } from "./check-source-ladder.mjs";
+import fs from "node:fs";
+import os from "node:os";
+import { aliasesFrom, checkConsumerLeafFreeze, checkConsumerPins, checkSourceLadder, componentModulesFrom, consumerFrom, leafFreezeFrom, licenceAllowed, loadInputs } from "./check-source-ladder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const designer = path.resolve(here, "..");
@@ -134,6 +136,87 @@ test("index and alias parsing: value re-exports with PascalCase names are compon
     { file: "field.js", names: ["Field"] },
   ]);
   assert.deepEqual([...aliasesFrom(`"act.icon-button": "components.button",\n  "depict.logomark": "components.logo",`)], [["icon-button", "components.button"], ["logomark", "components.logo"]]);
+});
+
+// Consumer pins (foundry-audit-0006): the consumer's pinned choices are held to the ladder, themes included.
+const pin = (slot, refs, reason = "") => ({ slot, candidate: `${slot.split(".").at(-1)}-v1.json`, refs, reason });
+const ariaItems = () => new Set(["alert", "login-03", "font-inter", "form"]);
+
+test("pin-stock-available: a radix shadcn/<item> pin with an aria twin needs a reason naming the twin", () => {
+  const clean = [
+    pin("components.banner", ["shadcn-aria/alert@4.23.0"]),
+    pin("themes.font-sans", ["shadcn/font-inter@4.23.0"], "Kept radix: shadcn-aria/font-inter ships the same files; director:brand.voice"),
+    pin("themes.radius", ["shadcn/neutral@4.23.0"]), // no aria neutral: nothing to pass over
+  ];
+  assert.deepEqual(checkConsumerPins({ consumerPins: clean, pinStockItems: ariaItems() }), []);
+  const broken = [
+    pin("components.banner", ["shadcn/alert@4.23.0"], "Stock alert with a dismiss slot."),
+    pin("sections.sign-in-form", ["shadcn/login-03@4.23.0"]),
+    pin("themes.font-sans", ["shadcn/font-inter@4.23.0"]),
+  ];
+  const findings = checkConsumerPins({ consumerPins: broken, pinStockItems: ariaItems() });
+  assert.deepEqual(findings.map(finding => `${finding.rule} ${finding.subject}`), [
+    "pin-stock-available consumer/components.banner",
+    "pin-stock-available consumer/sections.sign-in-form",
+    "pin-stock-available consumer/themes.font-sans",
+  ]);
+  assert.match(findings[0].detail, /shadcn-aria ships alert/);
+});
+
+test("pin-stock-skipped: a non-theme leaf with aria stock, sourced elsewhere, needs a reason naming the stock", () => {
+  assert.deepEqual(checkConsumerPins({ consumerPins: [
+    pin("components.form", ["shadcn-aria/field@4.23.0"]),
+    pin("sections.form", ["tailark-oss/mist-contact-1@8139698"], "shadcn-aria/form has no contact layout; tailark is the most popular partner block."),
+    pin("themes.card", ["shadcn/neutral@4.23.0"]), // a theme token group named like a component is not a component
+  ], pinStockItems: ariaItems() }), []);
+  const findings = checkConsumerPins({ consumerPins: [pin("sections.form", ["tailark-oss/mist-contact-1@8139698"], "Contact form.")], pinStockItems: ariaItems() });
+  assert.deepEqual(findings.map(finding => finding.rule), ["pin-stock-skipped"]);
+  assert.match(findings[0].detail, /stock shadcn-aria\/form/);
+});
+
+test("consumer-leaf-freeze: every consumer themes/assets/components id must be owner-signed; pending is not signed", () => {
+  const leafFreeze = { signed: { themes: new Set(["themes.primary"]), assets: new Set(["assets.logo"]), components: new Set(["components.button"]) }, pending: new Map([["components.sheet", "src/catalog/ia/components.leaf-amendments.json"]]) };
+  assert.deepEqual(checkConsumerLeafFreeze({ consumerSlots: ["themes.primary", "assets.logo", "components.button", "sections.hero", "frames.page"], leafFreeze }), []);
+  const findings = checkConsumerLeafFreeze({ consumerSlots: ["themes.primary", "themes.success", "components.sheet", "sections.hero"], leafFreeze });
+  assert.deepEqual(findings.map(finding => `${finding.rule} ${finding.subject}`), ["consumer-leaf-freeze consumer/components.sheet", "consumer-leaf-freeze consumer/themes.success"]);
+  assert.match(findings[0].detail, /listed only in src\/catalog\/ia\/components\.leaf-amendments\.json, pending owner ratification/);
+  assert.doesNotMatch(findings[1].detail, /pending/);
+});
+
+test("checkSourceLadder runs the consumer rules alongside the roster rules", () => {
+  const leafFreeze = { signed: { themes: new Set(), assets: new Set(), components: new Set(["components.banner"]) }, pending: new Map() };
+  const clean = { ...input({ ladder: L2() }), consumerPins: [pin("components.banner", ["shadcn-aria/alert@4.23.0"])], consumerSlots: ["components.banner"], pinStockItems: ariaItems(), leafFreeze };
+  assert.deepEqual(checkSourceLadder(clean), []);
+  const broken = { ...clean, consumerPins: [pin("components.banner", ["shadcn/alert@4.23.0"])], consumerSlots: ["components.banner", "components.gadget"] };
+  assert.deepEqual(rules(checkSourceLadder(broken)), ["consumer-leaf-freeze", "pin-stock-available"]);
+});
+
+test("leaf freeze and consumer loaders read signed amendments as signed and pending ones as pending", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ladder-freeze-"));
+  const write = (file, value) => { fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true }); fs.writeFileSync(path.join(dir, file), JSON.stringify(value)); };
+  for (const layer of ["themes", "assets", "components"]) write(`ia/${layer}.leaf-freeze.json`, { layer, signedHead: "abc", leafIds: [`${layer}.base`] });
+  write("ia/assets.leaf-amendments.json", { layer: "assets", status: "owner-signed", baseSignedHead: "abc", addedLeafIds: ["assets.signed"] });
+  write("ia/assets.draft-leaf-amendments.json", { layer: "assets", status: "pending-owner-ratification", baseSignedHead: "abc", addedLeafIds: ["assets.draft"] });
+  write("ia/components.leaf-amendments.json", { layer: "components", status: "owner-signed", baseSignedHead: "stale", addedLeafIds: ["components.stale"] });
+  const freeze = leafFreezeFrom(path.join(dir, "ia"));
+  assert.deepEqual([...freeze.signed.assets].sort(), ["assets.base", "assets.signed"]);
+  assert.deepEqual([...freeze.pending.keys()].sort(), ["assets.draft", "components.stale"]);
+  write("consumer/agents/designer/themes.base/slot.json", {});
+  write("consumer/agents/designer/themes.base/pin.json", { candidate: "base-v1.json" });
+  write("consumer/agents/designer/themes.base/candidates/base-v1.json", { meta: { source: { ref: ["shadcn/font-inter@4.23.0"] }, element: { reason: "r" } } });
+  write("consumer/agents/designer/assets.draft/slot.json", {});
+  const consumer = consumerFrom(path.join(dir, "consumer"));
+  assert.deepEqual(consumer.consumerSlots, ["assets.draft", "themes.base"]);
+  assert.deepEqual(consumer.consumerPins, [{ slot: "themes.base", candidate: "base-v1.json", refs: ["shadcn/font-inter@4.23.0"], reason: "r" }]);
+  assert.throws(() => consumerFrom(path.join(dir, "nowhere")), /no consumer Designer slots/);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test("the real consumer: pins and slot ids load, themes included", () => {
+  const loaded = loadInputs(designer);
+  assert.ok(loaded.consumerSlots.some(slot => slot.startsWith("themes.")) && loaded.consumerPins.some(entry => entry.slot.startsWith("themes.")));
+  assert.ok(loaded.pinStockItems.has("font-inter") && !loaded.stockItems.has("font-inter"));
+  assert.ok(loaded.leafFreeze.signed.components.has("components.specimen-frame") || loaded.leafFreeze.signed.components.size > 50);
 });
 
 test("the real package inputs load offline and the check runs to a verdict", () => {

@@ -12,7 +12,13 @@ import { StudioRouteMapProvider } from './StudioRouteMap';
 import copyRegistry from '../generated/studio-copy.json';
 
 export type { Resource, StudioBrandInfo } from '../lib/studio-seed';
-export type ThemeMode = 'light' | 'dark' | 'system';
+/**
+ * The Studio's theme: light by default, dark only when the viewer chose it with the toggle
+ * (foundry-audit-0009). The operating system's preference is never followed: the Studio shows the
+ * consumer brand the same way on every machine until someone switches it.
+ */
+export type ThemeMode = 'light' | 'dark';
+export const DEFAULT_THEME_MODE: ThemeMode = 'light';
 
 /** `census` is only the server-rendered slot census; Home refreshes it per revision itself. */
 interface StudioData { revision: number; reports: Resource<StudioReport[]>; brand: Resource<StudioBrandInfo>; census?: StudioSeed['census'] }
@@ -21,13 +27,13 @@ const DataContext = createContext<StudioData>({ revision: 0, reports: { state: '
  * `ready` is false through the server render and hydration and true once the client has applied the
  * stored mode: `resolved` is then the theme the page shows, not the server's light default.
  */
-const ThemeContext = createContext<{ mode: ThemeMode; resolved: 'light' | 'dark'; ready: boolean; setMode: (mode: ThemeMode) => void }>({ mode: 'system', resolved: 'light', ready: false, setMode: () => {} });
+const ThemeContext = createContext<{ mode: ThemeMode; resolved: 'light' | 'dark'; ready: boolean; setMode: (mode: ThemeMode) => void }>({ mode: DEFAULT_THEME_MODE, resolved: DEFAULT_THEME_MODE, ready: false, setMode: () => {} });
 
 export function useStudioData() { return useContext(DataContext); }
 export function useThemeMode() { return useContext(ThemeContext); }
 
 /** Runs before hydration so the first paint already carries the stored mode. */
-export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||((!t||t==='system')&&matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.classList.toggle('dark',d);r.dataset.theme=d?'dark':'light';r.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
+export const THEME_INIT_SCRIPT = `(function(){var d=false;try{d=localStorage.getItem('theme')==='dark';}catch(e){}try{var r=document.documentElement;r.classList.toggle('dark',d);r.dataset.theme=d?'dark':'light';r.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
 
 /**
  * The publication's one document element: `<html>` in the Writer registry's locale around a head
@@ -51,13 +57,13 @@ function framedPage(): boolean {
 }
 
 function storedMode(): ThemeMode {
-  // No stored choice means the system mode; storage the browser denies is reported, then treated as no choice.
+  // No stored choice (or a stale 'system' one) means the light default; storage the browser denies is reported, then treated as no choice.
   let value: string | null = null;
   try { value = localStorage.getItem('theme'); } catch (error) { console.warn('Theme preference storage is unavailable', error); }
-  return value === 'light' || value === 'dark' ? value : 'system';
+  return value === 'dark' ? 'dark' : DEFAULT_THEME_MODE;
 }
 function applyMode(mode: ThemeMode): 'light' | 'dark' {
-  const dark = mode === 'dark' || mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = mode === 'dark';
   const root = document.documentElement;
   root.classList.toggle('dark', dark);
   root.dataset.theme = dark ? 'dark' : 'light';
@@ -72,8 +78,8 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
   const [reports, setReports] = useState<Resource<StudioReport[]>>(() => seed?.reports ?? { state: 'loading' });
   const [brand, setBrand] = useState<Resource<StudioBrandInfo>>(() => seed ? { state: 'ready', value: seed.brand } : { state: 'loading' });
   const seeded = useRef(seed ? 0 : undefined);
-  const [mode, setModeState] = useState<ThemeMode>('system');
-  const [resolved, setResolved] = useState<'light' | 'dark'>('light');
+  const [mode, setModeState] = useState<ThemeMode>(DEFAULT_THEME_MODE);
+  const [resolved, setResolved] = useState<'light' | 'dark'>(DEFAULT_THEME_MODE);
   const [ready, setReady] = useState(false);
 
   // A layout effect: the stored mode is resolved before the first client paint, in one update with
@@ -83,14 +89,10 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
     setModeState(initial);
     setResolved(applyMode(initial));
     setReady(true);
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const follow = () => { if (storedMode() === 'system') setResolved(applyMode('system')); };
-    media.addEventListener('change', follow);
-    return () => media.removeEventListener('change', follow);
   }, []);
   const setMode = useCallback((next: ThemeMode) => {
     // The mode still applies when the browser denies storage; the failure to remember it is reported.
-    try { if (next === 'system') localStorage.removeItem('theme'); else localStorage.setItem('theme', next); } catch (error) { console.warn('Theme preference was not saved', error); }
+    try { localStorage.setItem('theme', next); } catch (error) { console.warn('Theme preference was not saved', error); }
     setModeState(next);
     setResolved(applyMode(next));
   }, []);

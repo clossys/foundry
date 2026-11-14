@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { writeDesignerSlot } from "../../scripts/__fixtures__/slot-model.mjs";
-import { BASELINE_CEILING, CODES, ADAPTATION_KINDS, adaptationHash, baselineKey, checkElement, checkRegistryItem, engineFamily, loadBaseline, refVerbatimFindings, refVerbatimReport } from "../../scripts/check-ref-verbatim.mjs";
+import { BASELINE_CEILING, CODES, ADAPTATION_KINDS, adaptationHash, baselineKey, byteExactAdoption, checkElement, checkRegistryItem, engineFamily, loadBaseline, refVerbatimFindings, refVerbatimReport } from "../../scripts/check-ref-verbatim.mjs";
 import { cleanClasses, configFromComponents, mapImport, normalizeReference } from "../../scripts/ref-verbatim/normalize.mjs";
 import { replayDataFit, sourceHash } from "../../scripts/ref-verbatim/data-fit.mjs";
 import { ALLOWED, HUNK_CODES, diffSources, isEngineNeutral, tokenSwapAllowed } from "../../scripts/ref-verbatim/diff.mjs";
@@ -117,7 +117,7 @@ const sourceOf = (registry: string, name: string, files?: Record<string, string>
 
 /** One Designer candidate `<element>-v<version>.json` of `slot`: a registry item whose meta carries its lineage. */
 type Version = {
-  slot: string; element: string; version?: number; kind?: "registry" | "original"; ref?: string[];
+  slot: string; element: string; version?: number; kind?: "registry" | "original" | "derived"; ref?: string[];
   refVerbatim?: Record<string, unknown>; deps?: unknown; reads?: unknown; files: Record<string, string>;
 };
 const candidateOf = (v: Version) => ({
@@ -715,18 +715,55 @@ describe("recorded adaptations", () => {
     expect(hunks.length).toBeGreaterThan(0);
     const adaptations = hunks.map((h: Hunk) => ({ kind: "token-mapping", file: "button.tsx", reason: "Bind the consumer brand token", hash: adaptationHash(h, normalized, file) }));
     const record = { files: { "button.tsx": BUTTON_REF } };
-    const missing = consumer([button({ refVerbatim: record, files: { "button.tsx": file } })]);
-    expect(gate(missing, "components.button/button/v1")).toEqual(["REF-ADAPTATION"]);
-    const recorded = consumer([button({ refVerbatim: { ...record, adaptations }, files: { "button.tsx": file } })]);
-    expect(gate(recorded, "components.button/button/v1")).toEqual([]);
-    const forged = consumer([button({ refVerbatim: { ...record, adaptations: adaptations.map((a: object) => ({ ...a, reason: " " })) }, files: { "button.tsx": file } })]);
-    expect(gate(forged, "components.button/button/v1")).toContain("REF-ADAPTATION");
-    const edited = consumer([button({ refVerbatim: { ...record, adaptations }, files: { "button.tsx": file.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } })]);
-    expect(gate(edited, "components.button/button/v1")).toContain("REF-HUNK-CLASS");
+    // A crafted (derived) candidate outside the components layer may record the swap.
+    const crafted = (patch: Partial<Version>) => button({ slot: "assets.button-glyph", kind: "derived", ...patch });
+    const missing = consumer([crafted({ refVerbatim: record, files: { "button.tsx": file } })]);
+    expect(gate(missing, "assets.button-glyph/button/v1")).toEqual(["REF-ADAPTATION"]);
+    const recorded = consumer([crafted({ refVerbatim: { ...record, adaptations }, files: { "button.tsx": file } })]);
+    expect(gate(recorded, "assets.button-glyph/button/v1")).toEqual([]);
+    const forged = consumer([crafted({ refVerbatim: { ...record, adaptations: adaptations.map((a: object) => ({ ...a, reason: " " })) }, files: { "button.tsx": file } })]);
+    expect(gate(forged, "assets.button-glyph/button/v1")).toContain("REF-ADAPTATION");
+    const edited = consumer([crafted({ refVerbatim: { ...record, adaptations }, files: { "button.tsx": file.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } })]);
+    expect(gate(edited, "assets.button-glyph/button/v1")).toContain("REF-HUNK-CLASS");
     expect(ADAPTATION_KINDS).toEqual(["import-paths", "token-mapping", "data-binding", "data-fit", "slot-bound-copy", "slot-bound-identity"]);
   });
 });
 
+
+describe("byte-exact adoption (foundry-audit-0008: adopt components, craft rest)", () => {
+  const swapped = BUTTON.replace("bg-primary", "bg-(--brand)");
+  const recordFor = (file: string, kind = "token-mapping") => {
+    const normalized = normalizeReference(read(`references/shadcn-aria/button@4.23.0/${BUTTON_REF}`), BUTTON_REF, config);
+    return { files: { "button.tsx": BUTTON_REF }, adaptations: diffSources(normalized, BUTTON_REF, file, "button.tsx", { themeVars: [] }).hunks.map((h: Hunk) => ({ kind, file: "button.tsx", reason: "Bind the consumer brand token", hash: adaptationHash(h, normalized, file) })) };
+  };
+  const detail = (root: string, spec: string) => refVerbatimFindings(root, spec).filter((f: Finding) => f.code === "REF-ADAPTATION").map((f: Finding & { detail?: string }) => f.detail ?? "").join("\n");
+
+  it("names registry lineage and every components candidate as adoptions, and crafted non-components as not", () => {
+    expect(byteExactAdoption("sections.hero", { meta: { source: { kind: "registry" } } })).toBe("registry lineage");
+    expect(byteExactAdoption("components.sidebar", { meta: { source: { kind: "derived" } } })).toBe("components layer");
+    expect(byteExactAdoption("sections.hero", { meta: { source: { kind: "derived" } } })).toBeUndefined();
+    expect(byteExactAdoption("frames.shell", { meta: { source: { kind: "original" } } })).toBeUndefined();
+  });
+
+  it("passes a verbatim adoption and fails one that records an in-file adaptation, reason or not", () => {
+    expect(gate(consumer([button()]), "components.button/button/v1")).toEqual([]);
+    const registry = consumer([button({ refVerbatim: recordFor(swapped), files: { "button.tsx": swapped } })]);
+    expect(gate(registry, "components.button/button/v1")).toEqual(["REF-ADAPTATION"]);
+    expect(detail(registry, "components.button/button/v1")).toMatch(/byte-exact adoption \(registry lineage\) but records 1 in-file adaptation\(s\) \(token-mapping\)/);
+    // A derived components candidate is still an adoption: the layer is adopt-only.
+    const derived = consumer([button({ kind: "derived", refVerbatim: recordFor(swapped, "data-binding"), files: { "button.tsx": swapped } })]);
+    expect(detail(derived, "components.button/button/v1")).toMatch(/byte-exact adoption \(components layer\)/);
+    // The same record on a crafted asset is allowed.
+    const crafted = consumer([button({ slot: "assets.button-glyph", kind: "derived", refVerbatim: recordFor(swapped), files: { "button.tsx": swapped } })]);
+    expect(gate(crafted, "assets.button-glyph/button/v1")).toEqual([]);
+  });
+
+  it("the --all inventory reports every adoption with adaptations, pinned or not", () => {
+    const root = consumer([button({ version: 2, refVerbatim: recordFor(swapped), files: { "button.tsx": swapped } }), button()]);
+    const report = refVerbatimReport(root, { all: true });
+    expect(report.elements.map((e: { key: string; status: string }) => `${e.key} ${e.status}`).sort()).toEqual(["components.button/button@v1 pass", "components.button/button@v2 fail"]);
+  });
+});
 
 describe("import-path adaptations", () => {
   it("permits a recorded path move while refusing a new side-effect import", () => {
@@ -735,8 +772,8 @@ describe("import-path adaptations", () => {
     for (const [candidate, allowed] of [[BUTTON.replace("@/lib/utils", "./utils"), true], [`import "./side-effect";\n${BUTTON}`, false]] as const) {
       const hunks = diffSources(normalized, BUTTON_REF, candidate, "button.tsx").hunks;
       const adaptations = hunks.map((h: Hunk) => ({ kind: "import-paths", file: "button.tsx", reason: "Resolve the local import path", hash: adaptationHash(h, normalized, candidate) }));
-      const root = consumer([button({ refVerbatim: { files: { "button.tsx": BUTTON_REF }, adaptations }, files: { "button.tsx": candidate } })]);
-      expect(gate(root, "components.button/button/v1")).toEqual(allowed ? [] : ["REF-ADAPTATION"]);
+      const root = consumer([button({ slot: "assets.button-glyph", kind: "derived", refVerbatim: { files: { "button.tsx": BUTTON_REF }, adaptations }, files: { "button.tsx": candidate } })]);
+      expect(gate(root, "assets.button-glyph/button/v1")).toEqual(allowed ? [] : ["REF-ADAPTATION"]);
     }
   });
 });
@@ -800,8 +837,10 @@ describe("finite data-fit and additional source parts", () => {
     const source = sourceOf("shadcn-aria", "sidebar-15", { [file]: path });
     const adaptation = { kind: "data-fit", file, reason: "Mirror the same stock edge control", operation: "sidebar-mirrored-edge", sourceHash: sourceHash(raw), bindings: { side: "right" } };
     const text = replayDataFit(normalized, path, adaptation, { raw, source, sources: [] });
-    const make = (candidate: string, proof = adaptation) => consumer([{ slot: "frames.edge", element: "edge", ref: [refOf("shadcn-aria", "sidebar-15")], refVerbatim: { files: source.files, adaptations: [proof] }, files: { [file]: candidate } }]);
+    const make = (candidate: string, proof = adaptation, kind: Version["kind"] = "derived") => consumer([{ slot: "frames.edge", element: "edge", kind, ref: [refOf("shadcn-aria", "sidebar-15")], refVerbatim: { files: source.files, adaptations: [proof] }, files: { [file]: candidate } }]);
     expect(gate(make(text), "frames.edge/edge/v1")).toEqual([]);
+    // The same replay on a registry adoption is an in-file edit the adoption forbids.
+    expect(gate(make(text, adaptation, "registry"), "frames.edge/edge/v1")).toEqual(["REF-ADAPTATION"]);
     expect(gate(make(text.replace("data-[orientation=vertical]:h-4", "data-[orientation=vertical]:h-4 gap-8")), "frames.edge/edge/v1")).toContain("REF-HUNK-CLASS");
     expect(gate(make(text, { ...adaptation, sourceHash: `sha256:${"0".repeat(64)}` }), "frames.edge/edge/v1")).toContain("REF-NORMALIZE");
   });

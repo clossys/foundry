@@ -149,6 +149,8 @@ export declare const NPM_CONTRACT_ITEM_KEYS: readonly string[];
 export declare const NPM_CONTRACT_VARIANTS: readonly string[];
 
 export declare function checkRegistryItem(root: string, slot: string, candidate: any, options?: RefVerbatimOptions): RefVerbatimElement;
+/** Why a consumer candidate is a byte-exact adoption (registry lineage, or the components layer), or undefined. */
+export declare function byteExactAdoption(slot: string, candidate: any): string | undefined;
 
 export type DataFitOperation = "sidebar15-frame-split" | "sidebar15-right-offcanvas" | "sidebar07-single-option" | "sidebar-mirrored-edge" | "sidebar-resizable-panels";
 export type RecordedDataFit = {

@@ -52,7 +52,7 @@ export interface RunOptions extends ContextOptions {
   readonly root: string;
   /** The consumer folder holding `agents/`. */
   readonly consumer: string;
-  /** Only these rules (R01..R16). */
+  /** Only these rules (R01..R16, R20). */
   readonly rule?: string | readonly string[];
   /** Only the rows about this agent's records, plus rows about no one agent (`*`, pending rows); record counts narrow to it. */
   readonly agent?: string;
@@ -76,7 +76,7 @@ export function runConstitution(options: RunOptions): ConstitutionReport {
   const only = options.rule === undefined ? undefined : new Set(typeof options.rule === "string" ? [options.rule] : options.rule);
   const rules = registeredRules().filter(rule => !only || only.has(rule.id));
   const unknown = only && [...only].filter(id => !rules.some(rule => rule.id === id));
-  if (unknown?.length) throw new Error(`Unknown constitution rule ${unknown.join(", ")} (R01..R16)`);
+  if (unknown?.length) throw new Error(`Unknown constitution rule ${unknown.join(", ")} (R01..R16, R20)`);
   const ctx = buildContext(options.root, options.consumer, options);
   const strict = options.strict === true;
   const fails = (item: Row) => item.level !== "building" || strict;

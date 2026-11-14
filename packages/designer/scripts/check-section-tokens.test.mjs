@@ -109,20 +109,26 @@ test("an unproven stock pick is linted in full", () => {
   refused("partial", { heroFiles: { "hero.tsx": STOCK_CODE, "extra.tsx": notStock }, heroMeta: lineage({ "hero.tsx": STOCK_PATH }) });
 });
 
-test("an adapted file passes ref-verbatim but is not stock bytes: it is linted and the shell rule holds", () => {
+test("an adapted file passes ref-verbatim only on a crafted section; it is linted with the rest and the shell rule holds", () => {
   const adapted = STOCK_CODE.replace('from "cn"', 'from "@/lib/utils"');
   const files = { "hero.tsx": STOCK_CODE, "extra.tsx": adapted };
-  const options = adaptations => ({ heroDeps: ["example"], heroFiles: files, heroMeta: lineage({ "hero.tsx": STOCK_PATH, "extra.tsx": STOCK_PATH }, { adaptations }) });
+  // A crafted (derived) section may record adaptations; a registry adoption may not (byte-exact adoption).
+  const crafted = meta => ({ ...meta, source: { ...meta.source, kind: "derived" } });
+  const options = (adaptations, adopt = false) => ({ heroDeps: ["example"], heroFiles: files, heroMeta: (adopt ? meta => meta : crafted)(lineage({ "hero.tsx": STOCK_PATH, "extra.tsx": STOCK_PATH }, { adaptations })) });
   const strict = root => checkRegistryItem(root, "sections.hero", heroItem(root), { strict: true });
   const first = consumer(options([]));
   const hashes = strict(first).findings.map(row => /unrecorded adaptation (sha256:[a-f0-9]{64})/.exec(row.detail)?.[1]).filter(Boolean);
   assert.ok(hashes.length > 0);
-  const root = consumer(options(hashes.map(hash => ({ kind: "import-paths", file: "extra.tsx", hash, reason: "consumer utils alias" }))));
+  const recorded = hashes.map(hash => ({ kind: "import-paths", file: "extra.tsx", hash, reason: "consumer utils alias" }));
+  const adoption = strict(consumer(options(recorded, true)));
+  assert.equal(adoption.status, "fail");
+  assert.ok(adoption.findings.some(row => row.code === "REF-ADAPTATION" && /byte-exact adoption \(registry lineage\)/.test(row.detail)));
+  const root = consumer(options(recorded));
   assert.equal(strict(root).status, "pass");
   const findings = sectionShellFindings(root, catalog);
   for (const row of SHELL) assert.ok(findings.includes(row), row);
-  // Only the stock file is exempt; the adapted one is linted in full.
-  assert.deepEqual(findings.filter(row => !row.startsWith("shell:")), tokenFindings("hero", [["extra.tsx", adapted]]));
+  // A crafted section is not stock: no file is exempt, so the stock-derived and the adapted file are both linted in full.
+  assert.deepEqual(findings.filter(row => !row.startsWith("shell:")), tokenFindings("hero", [["hero.tsx", STOCK_CODE], ["extra.tsx", adapted]]));
 });
 
 test("stock bytes still need a strict ref-verbatim pass", () => {

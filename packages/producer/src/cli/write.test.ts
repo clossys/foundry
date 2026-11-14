@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -31,6 +32,25 @@ describe("clossys write over the flat slot model", () => {
     expect(result.status).toBe(1);
     expect(result.value.message).toContain(`hash-drift (${pinned.id})`);
   }, 60_000);
+
+  it("reports a pinned Writer candidate without a Director trace as a finding (R20)", () => {
+    const pinned = firstPinned(root, "writer", id => !id.startsWith("lexicon."));
+    const director = firstPinned(root, "director", id => id === "identity.verbal.voice");
+    const repin = (reason?: string) => {
+      const text = readFileSync(pinned.candidate, "utf8").replace(/^reason: .*\n/m, "");
+      const bytes = reason === undefined ? text : text.replace(/\n---\n/, `\nreason: ${JSON.stringify(reason)}\n---\n`);
+      writeFileSync(pinned.candidate, bytes);
+      const pinFile = join(pinned.dir, "pin.json");
+      writeFileSync(pinFile, `${JSON.stringify({ ...JSON.parse(readFileSync(pinFile, "utf8")), sha256: createHash("sha256").update(bytes).digest("hex") }, null, 2)}\n`);
+    };
+    const traceRows = (result: ReturnType<typeof runVerb>) => result.value.checks.findings.filter((finding: { rule: string; slot: string }) => finding.rule === "director-trace-missing" && finding.slot === pinned.id);
+    repin();
+    const missing = runVerb(["write", "--check"], root);
+    expect(missing.status).not.toBe(0);
+    expect(traceRows(missing)).toEqual([expect.objectContaining({ message: expect.stringMatching(/frontmatter reason is missing/) })]);
+    repin(`Realises director:${director.id}.`);
+    expect(traceRows(runVerb(["write", "--check"], root))).toEqual([]);
+  }, 240_000);
 
   it("could not run without the Writer IA", () => {
     rmSync(join(root, "clossys", "agents", "writer", "ia.json"));

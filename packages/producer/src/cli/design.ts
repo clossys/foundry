@@ -4,6 +4,7 @@ import { agentModule } from "../server/cells.js";
 import { libraryTheme } from "../server/library-selection.js";
 import { directorLineRef, directorRef, readPinnedDirector } from "../records/director-pinned.js";
 import { readPinned, type PinnedSet } from "../records/pinned.js";
+import { candidateReason, directorTraceProblem, owesDirectorTrace } from "../records/director-trace.js";
 import { hasSlotModel, readIa } from "../records/slots.js";
 import type { CliArgs } from "./args.js";
 import { emitProjection } from "./projection.js";
@@ -103,9 +104,18 @@ function checkDesign(consumer: string, director: Awaited<ReturnType<typeof readP
       if (!directorPinned.has(input) && !designerSlots.has(input)) findings.push({ code: "unpinned-director-input", subject: `designer:${candidate.id}`, message: `Declared input director:${input} has no pinned candidate` });
     }
   }
+  // R-DIRECTOR-DERIVED (constitution R20): a pinned themes.* / assets.* candidate names, in
+  // meta.element.reason, the pinned Director slot it realises. Promoted from the old
+  // director-trace-undeclared limit to one finding per pinned candidate (foundry-audit-0005).
+  for (const candidate of designer.pinned) {
+    if (!owesDirectorTrace("designer", candidate.id)) continue;
+    const problem = directorTraceProblem(candidate.name, candidateReason(candidate.name, candidate.bytes), directorPinned);
+    if (problem) findings.push({ code: "director-trace-missing", subject: `designer:${candidate.id}`, message: `pinned ${candidate.name}: ${problem}` });
+  }
   const theme = libraryTheme(consumer);
   if (!theme) findings.push({ code: "theme-not-compiled", subject: "designer:themes.*", message: "No pinned themes.* item declares CSS variables; Studio and the site have no consumer theme" });
-  const undeclared = designer.pinned.filter(candidate => !candidate.doc.inputs.length).length;
+  // Slots outside R20's scope that declare no inputs stay a limit (their trace is not modelled yet).
+  const undeclared = designer.pinned.filter(candidate => !owesDirectorTrace("designer", candidate.id) && !candidate.doc.inputs.length).length;
   const limits: Finding[] = [
     ...brief.limits.filter(limit => limit.code !== "missing-director-input"),
     ...(designer.unpinned.length ? [{ code: "unpinned-designer-slots", subject: "designer", message: `${designer.unpinned.length} Designer slot(s) have no pin yet (an owner decision; clossys check reports each one)` }] : []),

@@ -26,10 +26,26 @@
  *   unrostered-component  a component module exported from src/components/index.ts maps to no
  *                         roster leaf.
  *
+ * Consumer pins (foundry-audit-0006): the roster says what Foundry offers; the consumer's pins say what
+ * was chosen. Every pinned Designer candidate under <consumer>/agents/designer/<slot>/, themes
+ * included, is held to the same ladder:
+ *   pin-stock-available   the pin's source.ref names a radix-base `shadcn/<item>` that the vendored
+ *                         shadcn-aria tree also ships (ui, block, component or font), and the pin's
+ *                         meta.element.reason does not name the aria twin (`shadcn-aria/<item>` or
+ *                         `shadcn@aria/<item>`) to say why it was passed over;
+ *   pin-stock-skipped     a components/assets/sections/frames pin whose leaf has a vendored aria stock
+ *                         item, sourced from no shadcn-aria ref and with no reason naming that item;
+ *   consumer-leaf-freeze  a consumer themes/assets/components slot id is in no owner-signed leaf
+ *                         list (the signed freeze plus owner-signed amendments). An id listed only in
+ *                         a pending-owner-ratification amendment is not signed and still fails; the
+ *                         finding names the pending file.
+ *
  * Offline only: it reads recorded numbers and vendored files, never the network. Dependency-free
  * (node builtins only), so it runs in check:gates' safety job.
  *
- * Usage: node scripts/check-source-ladder.mjs [--root <designer package dir>] [--json]
+ * Usage: node scripts/check-source-ladder.mjs [--root <designer package dir>] [--consumer <consumer dir>] [--json]
+ * The consumer defaults to <root>/../../clossys (this repository's dogfood consumer); a missing
+ * consumer is unreadable input (exit 2), never a silent skip.
  * Exit 0 clean, 1 findings, 2 unreadable input.
  */
 import fs from "node:fs";
@@ -44,6 +60,10 @@ export const LIGHT_CATEGORIES = Object.freeze(["studio-composition", "brand-asse
 export const ALLOWED_LICENCES = Object.freeze(["MIT", "Apache-2.0", "BSD", "BSD-2-Clause", "BSD-3-Clause", "ISC"]);
 export const LAYERS = Object.freeze(["components", "assets", "sections", "frames"]);
 const STOCK_ITEM_TYPES = new Set(["registry:ui", "registry:block", "registry:component"]);
+/** Aria items a consumer pin may take as stock: the component types plus fonts (themes.font-*). */
+const PIN_STOCK_ITEM_TYPES = new Set([...STOCK_ITEM_TYPES, "registry:font"]);
+export const FROZEN_LAYERS = Object.freeze(["themes", "assets", "components"]);
+const PIN_SKIP_LAYERS = new Set(["components", "assets", "sections", "frames"]);
 const MAX_REJECTED = 2, MAX_CANDIDATES = 3;
 
 const text = value => typeof value === "string" && value.trim().length > 0;
@@ -80,8 +100,12 @@ function partFields(part, where, add, { numbers }) {
  * @param {Set<string>} input.stockFills leaves with a shadcn@aria fill
  * @param {{file: string, names: string[]}[]} input.componentModules modules exported from components/index.ts
  * @param {Map<string, string>} [input.aliases] alias leaf suffix -> roster leaf
+ * @param {{slot: string, candidate: string, refs: string[], reason: string}[]} [input.consumerPins] pinned consumer Designer candidates
+ * @param {string[]} [input.consumerSlots] every consumer Designer slot id, pinned or not
+ * @param {Set<string>} [input.pinStockItems] vendored shadcn-aria item names a pin may take (ui, block, component, font)
+ * @param {{signed: Record<string, Set<string>>, pending: Map<string, string>}} [input.leafFreeze] owner-signed leaf ids per frozen layer; pending id -> amendment file
  */
-export function checkSourceLadder({ roster, stockItems, stockFills, componentModules, aliases = new Map() }) {
+export function checkSourceLadder({ roster, stockItems, stockFills, componentModules, aliases = new Map(), consumerPins = [], consumerSlots = [], pinStockItems = new Set(), leafFreeze }) {
   const findings = [];
   const leaves = new Set();
   for (const layer of LAYERS) for (const row of roster[layer] ?? []) for (const leaf of row.leaves ?? []) leaves.add(leaf);
@@ -139,6 +163,46 @@ export function checkSourceLadder({ roster, stockItems, stockFills, componentMod
     const rostered = [...candidates].some(name => LAYERS.some(layer => leaves.has(`${layer}.${name}`)) || leaves.has(aliases.get(name)));
     if (!rostered) findings.push({ rule: "unrostered-component", subject: `src/components/${module.file}`, detail: `exports ${module.names.join(", ")}; no roster row for ${[...candidates].join(" | ")}` });
   }
+  findings.push(...checkConsumerPins({ consumerPins, pinStockItems }), ...checkConsumerLeafFreeze({ consumerSlots, leafFreeze }));
+  return findings;
+}
+
+/** Whether a pin's reason names an aria item, which is how a pin records passing it over. */
+const namesAria = (reason, item) => reason.includes(`shadcn-aria/${item}`) || reason.includes(`shadcn@aria/${item}`);
+
+/** pin-stock-available and pin-stock-skipped over the consumer's pinned Designer candidates. Pure. */
+export function checkConsumerPins({ consumerPins, pinStockItems }) {
+  const findings = [];
+  for (const pin of consumerPins) {
+    const subject = `consumer/${pin.slot}`;
+    const reason = typeof pin.reason === "string" ? pin.reason : "";
+    const refs = Array.isArray(pin.refs) ? pin.refs.filter(ref => typeof ref === "string") : [];
+    for (const ref of refs) {
+      const match = /^shadcn\/([a-z0-9][a-z0-9-]*)@/.exec(ref);
+      if (!match || !pinStockItems.has(match[1]) || namesAria(reason, match[1])) continue;
+      findings.push({ rule: "pin-stock-available", subject, detail: `pinned ${pin.candidate} takes radix ${ref} but shadcn-aria ships ${match[1]}; use shadcn-aria/${match[1]} or say in meta.element.reason why shadcn-aria/${match[1]} was passed over` });
+    }
+    const layer = pin.slot.split(".")[0];
+    if (!PIN_SKIP_LAYERS.has(layer)) continue;
+    const suffix = pin.slot.split(".").at(-1);
+    const items = stockNames(suffix).filter(name => pinStockItems.has(name) && !name.startsWith("font-"));
+    if (!items.length || refs.some(ref => ref.startsWith("shadcn-aria/") || ref.startsWith("shadcn/")) || items.some(item => namesAria(reason, item))) continue;
+    findings.push({ rule: "pin-stock-skipped", subject, detail: `pinned ${pin.candidate} has stock shadcn-aria/${items[0]} but is sourced from ${refs.join(", ") || "no ref"}; use stock or say in meta.element.reason why shadcn-aria/${items[0]} was passed over` });
+  }
+  return findings;
+}
+
+/** consumer-leaf-freeze: every consumer themes/assets/components slot id is an owner-signed leaf. Pure. */
+export function checkConsumerLeafFreeze({ consumerSlots, leafFreeze }) {
+  if (!leafFreeze) return [];
+  const findings = [];
+  for (const slot of [...new Set(consumerSlots)].sort()) {
+    const layer = slot.split(".")[0];
+    if (!FROZEN_LAYERS.includes(layer)) continue;
+    if (leafFreeze.signed[layer]?.has(slot)) continue;
+    const pending = leafFreeze.pending.get(slot);
+    findings.push({ rule: "consumer-leaf-freeze", subject: `consumer/${slot}`, detail: `${slot} is in no owner-signed ${layer} leaf list${pending ? ` (listed only in ${pending}, pending owner ratification)` : ""}; retire the slot or get the leaf signed` });
+  }
   return findings;
 }
 
@@ -160,17 +224,64 @@ export function aliasesFrom(aliasText) {
   return new Map([...aliasText.matchAll(/"[a-z-]+\.([a-z0-9-]+)"\s*:\s*"([a-z]+\.[a-z0-9-]+)"/g)].map(match => [match[1], match[2]]));
 }
 
-export function loadInputs(designer) {
+/**
+ * The owner-signed leaf ids per frozen layer, from the vendored freeze files: the signed freeze plus
+ * every amendment whose status is owner-signed against the same signed head. Pending amendments map
+ * id -> file so findings can name them.
+ */
+export function leafFreezeFrom(iaDir) {
+  const readJson = file => JSON.parse(fs.readFileSync(path.join(iaDir, file), "utf8"));
+  const signed = {}, pending = new Map();
+  for (const layer of FROZEN_LAYERS) {
+    const freeze = readJson(`${layer}.leaf-freeze.json`);
+    if (!Array.isArray(freeze.leafIds) || !freeze.leafIds.length) throw new Error(`${layer}.leaf-freeze.json has no leafIds`);
+    signed[layer] = new Set(freeze.leafIds);
+  }
+  for (const file of fs.readdirSync(iaDir).filter(name => /[.-]leaf-amendments\.json$/.test(name)).sort()) {
+    const amendment = readJson(file);
+    const layer = amendment.layer;
+    if (!FROZEN_LAYERS.includes(layer) || !Array.isArray(amendment.addedLeafIds)) throw new Error(`${file} is not a leaf amendment`);
+    const base = readJson(`${layer}.leaf-freeze.json`);
+    if (amendment.status === "owner-signed" && amendment.baseSignedHead === base.signedHead) for (const id of amendment.addedLeafIds) signed[layer].add(id);
+    else for (const id of amendment.addedLeafIds) pending.set(id, `src/catalog/ia/${file}`);
+  }
+  return { signed, pending };
+}
+
+/** Every consumer Designer slot id, and the pinned candidate's source refs and reason. */
+export function consumerFrom(consumer) {
+  const agents = path.join(consumer, "agents/designer");
+  if (!fs.existsSync(agents)) throw new Error(`no consumer Designer slots at ${agents}`);
+  const consumerSlots = [], consumerPins = [];
+  for (const entry of fs.readdirSync(agents, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !fs.existsSync(path.join(agents, entry.name, "slot.json"))) continue;
+    consumerSlots.push(entry.name);
+    const pinFile = path.join(agents, entry.name, "pin.json");
+    if (!fs.existsSync(pinFile)) continue;
+    const name = JSON.parse(fs.readFileSync(pinFile, "utf8")).candidate;
+    if (typeof name !== "string" || !name.endsWith(".json")) continue;
+    const doc = JSON.parse(fs.readFileSync(path.join(agents, entry.name, "candidates", name), "utf8"));
+    const refs = doc?.meta?.source?.ref;
+    const reason = doc?.meta?.element?.reason;
+    consumerPins.push({ slot: entry.name, candidate: name, refs: Array.isArray(refs) ? refs : [], reason: typeof reason === "string" ? reason : "" });
+  }
+  if (!consumerSlots.length) throw new Error(`no consumer Designer slots at ${agents}`);
+  return { consumerSlots: consumerSlots.sort(), consumerPins: consumerPins.sort((a, b) => a.slot.localeCompare(b.slot)) };
+}
+
+export function loadInputs(designer, consumer = path.resolve(designer, "../../clossys")) {
   const read = file => fs.readFileSync(path.join(designer, file), "utf8");
   const roster = JSON.parse(read("src/catalog/rules/source-roster.json"));
   const vendored = path.join(designer, "references/shadcn-aria");
-  const stockItems = new Set();
+  const stockItems = new Set(), pinStockItems = new Set();
   for (const entry of fs.readdirSync(vendored, { withFileTypes: true })) {
     if (!entry.isDirectory() || !entry.name.includes("@")) continue;
     const name = entry.name.slice(0, entry.name.lastIndexOf("@"));
     const file = path.join(vendored, entry.name, `${name}.json`);
     if (!fs.existsSync(file)) continue;
-    if (STOCK_ITEM_TYPES.has(JSON.parse(fs.readFileSync(file, "utf8")).type)) stockItems.add(name);
+    const type = JSON.parse(fs.readFileSync(file, "utf8")).type;
+    if (STOCK_ITEM_TYPES.has(type)) stockItems.add(name);
+    if (PIN_STOCK_ITEM_TYPES.has(type)) pinStockItems.add(name);
   }
   if (!stockItems.size) throw new Error("Empty vendored shadcn-aria index");
   const fills = path.join(designer, "src/catalog/fills/shadcn@aria");
@@ -185,7 +296,7 @@ export function loadInputs(designer) {
   if (!componentModules.length) throw new Error("No component modules exported from src/components/index.ts");
   const aliasFile = path.join(designer, "src/catalog/component-aliases.ts");
   const aliases = fs.existsSync(aliasFile) ? aliasesFrom(fs.readFileSync(aliasFile, "utf8")) : new Map();
-  return { roster, stockItems, stockFills, componentModules, aliases };
+  return { roster, stockItems, stockFills, componentModules, aliases, pinStockItems, leafFreeze: leafFreezeFrom(path.join(designer, "src/catalog/ia")), ...consumerFrom(consumer) };
 }
 
 export function summarize(findings) {
@@ -200,8 +311,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const json = args.includes("--json");
   const rootIndex = args.indexOf("--root");
   const designer = rootIndex >= 0 ? path.resolve(args[rootIndex + 1] ?? ".") : path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const consumerIndex = args.indexOf("--consumer");
+  const consumer = consumerIndex >= 0 ? path.resolve(args[consumerIndex + 1] ?? ".") : undefined;
   try {
-    const findings = checkSourceLadder(loadInputs(designer));
+    const findings = checkSourceLadder(loadInputs(designer, consumer));
     const summary = summarize(findings);
     if (json) console.log(JSON.stringify({ gate: "source-ladder", ok: findings.length === 0, ...summary, violations: findings }, null, 2));
     else {
