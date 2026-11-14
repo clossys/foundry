@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { slotIndex } from "../records/slots.js";
@@ -95,6 +95,48 @@ describe("clossys render <slot> <candidate>", () => {
       expect(result.message).toContain(`${dependency} (unpinned)`);
       expect(harness.calls).toHaveLength(0);
     } finally { writeFileSync(pinPath, original); }
+  });
+
+  it("--draft renders a direction before submit as the slot's next candidate, writing no consumer record", async () => {
+    const consumer = join(root, "clossys"), entry = slotIndex(consumer).get(slot)!;
+    const tree = () => readdirSync(entry.dir, { recursive: true }).map(String).sort().map(path => [path, statSync(join(entry.dir, path)).isFile() ? readFileSync(join(entry.dir, path), "utf8") : "/"]);
+    const before = tree();
+    const pinned = JSON.parse(readFileSync(join(entry.dir, "candidates", candidate), "utf8")) as { name: string; meta?: Record<string, unknown> };
+    const next = Math.max(...entry.candidates.map(name => Number(/-v(\d+)\./.exec(name)![1])), ...(existsSync(join(entry.dir, "retired")) ? readdirSync(join(entry.dir, "retired")).map(name => Number(/-v(\d+)\./.exec(name)?.[1] ?? 0)) : [])) + 1;
+    const draft = { ...pinned, meta: { ...pinned.meta, draftDirection: "d2" } };
+    writeFileSync(join(root, "draft.json"), JSON.stringify(draft));
+    const seen: string[] = [];
+    const harness = fakeHarness(root);
+    const snapshot = async (options: SnapshotOptions) => {
+      // The harness reads the draft from a copy, as the slot's next candidate in canonical bytes.
+      const copied = join(options.records[0]!, "agents", "designer", slot, "candidates", `${pinned.name}-v${next}.json`);
+      seen.push(options.records[0]!, readFileSync(copied, "utf8"));
+      return harness.snapshot(options);
+    };
+    const result = await runRenderCli([slot, "--draft", "draft.json"], root, snapshot);
+    expect(result.exitCode, result.message).toBe(0);
+    expect(result.output).toMatchObject({ slot, candidate: `${pinned.name}-v${next}.json`, draft: join(root, "draft.json") });
+    expect(harness.calls).toHaveLength(1);
+    expect(harness.calls[0]).toMatchObject({ element: `${slot}/${pinned.name}`, version: next });
+    expect(seen[0]).not.toBe(consumer);
+    expect(seen[1]).toBe(`${JSON.stringify(draft, null, 2)}\n`);
+    expect(existsSync(seen[0]!)).toBe(false); // the copy is removed
+    expect(tree()).toEqual(before); // no consumer record written
+    // The key is the candidate key: the same draft again is cached, and a draft equal to the pinned bytes reuses the pinned render.
+    expect((await runRenderCli([slot, "--draft", "draft.json"], root, snapshot)).output?.renders.every(row => row.cached)).toBe(true);
+    await runRenderCli([slot, candidate], root, harness.snapshot);
+    const calls = harness.calls.length;
+    writeFileSync(join(root, "draft.json"), readFileSync(join(entry.dir, "candidates", candidate)));
+    const same = await runRenderCli([slot, "--draft", "draft.json"], root, snapshot);
+    expect(same.output?.renders.map(row => row.key)).toEqual((await runRenderCli([slot, candidate], root, harness.snapshot)).output?.renders.map(row => row.key));
+    expect(harness.calls.length).toBe(calls);
+    // Refusals: no JSON object, no element name, a candidate name together with --draft.
+    writeFileSync(join(root, "draft.json"), "[1]");
+    expect((await runRenderCli([slot, "--draft", "draft.json"], root, snapshot)).exitCode).toBe(2);
+    writeFileSync(join(root, "draft.json"), JSON.stringify({ type: "registry:ui" }));
+    expect((await runRenderCli([slot, "--draft", "draft.json"], root, snapshot)).message).toContain("names no element");
+    expect(() => parseRenderArgs([slot, candidate, "--draft", "draft.json"])).toThrow(/separate calls/);
+    expect(tree()).toEqual(before);
   });
 
   it("refuses usage errors with exit 2: a missing candidate, a non-element name, a Writer slot", async () => {
