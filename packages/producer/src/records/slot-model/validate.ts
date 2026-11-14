@@ -1,5 +1,6 @@
 import { parseSlotRecite } from "@clossys/director";
 import { parseFrontmatter } from "./frontmatter.js";
+import { contractFixtureIssues } from "./contract-fixture.js";
 import {
   AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
   PUBLICATION_SCHEMA, OPTION_COUNTS, PIN_BASES, VARY_ID, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
@@ -92,7 +93,7 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   else if (SLOT_AGENTS.includes(value.agent as SlotAgent) && !AGENT_KIND[value.agent as SlotAgent].includes(value.kind as SlotKind)) fail(`kind ${String(value.kind)} does not belong to ${String(value.agent)}`);
   const ia = value.ia;
   if (!object(ia) || !nonEmpty(ia.l1) || !nonEmpty(ia.l2) || !Number.isSafeInteger(ia.order) || (ia.order as number) < 0 || (ia.l0 !== undefined && !nonEmpty(ia.l0))) fail("ia must be {l0?, l1, l2, order}");
-  if (!object(value.contract)) fail("contract must be an object");
+  if (!object(value.contract)) fail("contract must be an object"); else issues.push(...contractFixtureIssues(value.contract, path));
   for (const key of ["inputs", "uses"] as const) {
     if (!strings(value[key])) fail(`${key} must be a list of slot ids`);
     else for (const id of value[key] as string[]) if (!SLOT_ID.test(id)) fail(`${key} names an invalid slot id ${id}`);

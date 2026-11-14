@@ -6,9 +6,10 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix, resolve } from "node:path";
-import { adaptTheme, installedPath, recordStoreSource, SPECIMEN_SAMPLE_COPY_KEYS, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
+import { adaptTheme, installedPath, recordStoreSource, SPECIMEN_SAMPLE_COPY_KEYS, specimenKindOf, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
 import { listSlots, pinStamp, readCandidate, readSlot, readSlotEntry, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { contractFixtureIssues, contractFixtureOf, type ContractFixture } from "../records/slot-model/contract-fixture.js";
 import { RecordError } from "../records/validate.js";
 import { dependencyPart, fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues, treeDependencyParts } from "../server/specimen-tree.js";
 import { installedCode, itemSpecimenState, specimenStateOf, VISIBLE_STATE_CSS } from "../server/specimen-state.js";
@@ -201,12 +202,12 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
       if (issues.length) throw new RecordError(`candidate ${slot}/${candidate.name}`, issues);
       const item = JSON.parse(read.bytes);
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element) || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== slot)) throw new Error(`candidate ${slot}/${candidate.name}: element identity differs from the candidate name or slot`);
-      const fixture = slotFixture(root, entry, element, candidate.name, item);
+      const fixture = withContractFixture(doc.contract, item);
       const specimen = specimenInputs(root, `${slot}/${candidate.name}`, fixture.item, true, writer(root));
       const row: SpecimenElementVersion = {
         id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
         files: [{ path: `${element}.json`, content: read.bytes }],
-        preview: fixture.from ? { ...specimen.preview, fixtureFrom: fixture.from } : specimen.preview, contentHash: read.sha256,
+        preview: fixture.fromContract ? { ...specimen.preview, fixtureFrom: CONTRACT_FIXTURE_SOURCE } : specimen.preview, contentHash: read.sha256,
       };
       if (options.slotStates === false) return row;
       return withSlotState(slot, item, withSlotInputs(`${slot}/${candidate.name}`, specimen, withDependencyParts(row)));
@@ -225,28 +226,102 @@ function fixtureFits(item: CandidateItem, preview: Record<string, unknown>): boo
   const source = item.files?.find(row => row.path === file)?.content;
   if (typeof source !== "string") return false;
   const exported = typeof fixtures?.export === "string" ? fixtures.export : typeof preview.export === "string" ? preview.export : undefined;
+  if (exported === "default") return exportsDefault(source);
   return exported === undefined || moduleExports(source).has(exported);
 }
 
+/** Whether a module has a default export (`export default ...` or `export { x as default }`); moduleExports lists named exports only. */
+function exportsDefault(source: string): boolean {
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:\\])\/\/.*$/gm, "$1");
+  return /\bexport\s+default\b/.test(code) || /\bexport\s*\{[^}]*\bas\s+default\b[^}]*\}/.test(code);
+}
+
+/** What a specimen preview names as its fixture's source when it mounts the slot's contract fixture. */
+export const CONTRACT_FIXTURE_SOURCE = "slot.json#contract.fixture";
+
 /**
- * A preview fixture is the props contract of the slot, not of one candidate. An option (a candidate
- * other than the pinned one) with no `meta.preview` of its own previews with the fixture of the nearest fixture-bearing candidate of
- * the same slot and element: the pinned candidate when it carries one, else the newest version that
- * does. A fixture applies only to a candidate that ships the file it names and exports the component
- * it mounts; a candidate of another module shape (a replaced bundle) keeps no fixture. `from` names
- * the supplying candidate (`<slot>/<candidate file>`). With no such candidate the item is unchanged.
- * The pinned candidate always previews with its own preview, so a pin's specimen never changes here.
- * The candidate's own bytes are never changed.
+ * The preview a candidate's specimen mounts (planner decision D1): its own `meta.preview` when it
+ * has one (an override), else the slot's contract fixture (`contract.fixture`) when the candidate
+ * ships the file it names and exports the component it mounts, else none. The fixture is part of
+ * the slot contract; a candidate never borrows the preview of another candidate of its slot, pinned
+ * or not. The candidate's own bytes are never changed.
  */
-function slotFixture(root: string, entry: SlotEntry, element: string, name: string, item: CandidateItem): { readonly item: CandidateItem; readonly from?: string } {
-  const pinned = entry.pin?.candidate;
-  if (item.meta?.preview !== undefined || name === pinned) return { item };
-  const order = versions(entry, element).sort((a, b) => Number(b.name === pinned) - Number(a.name === pinned) || b.version - a.version);
-  for (const donor of order) {
-    const preview = (JSON.parse(readCandidate(root, "designer", entry.id, donor.name).bytes) as CandidateItem).meta?.preview;
-    if (preview && typeof preview === "object" && !Array.isArray(preview) && fixtureFits(item, preview as Record<string, unknown>)) return { item: { ...item, meta: { ...item.meta, preview } }, from: `${entry.id}/${donor.name}` };
+function withContractFixture(contract: Readonly<Record<string, unknown>> | undefined, item: CandidateItem): { readonly item: CandidateItem; readonly fromContract: boolean } {
+  if (item.meta?.preview !== undefined) return { item, fromContract: false };
+  const fixture = contractFixtureOf(contract);
+  if (!fixture || !fixtureFits(item, fixture as unknown as Record<string, unknown>)) return { item, fromContract: false };
+  return { item: { ...item, meta: { ...item.meta, preview: fixture } }, fromContract: true };
+}
+
+/** One candidate's certification: certified, or every reason it is not. */
+export interface CandidateCertification {
+  readonly certified: boolean;
+  readonly reasons: readonly string[];
+  /** Whether the candidate's specimen mounts a component (a `visual` specimen), which the contract fixture supplies props to. */
+  readonly mounts: boolean;
+}
+
+export interface CertifyCandidateInput {
+  /** The consumer root (holds agents/designer and the pinned Writer copy). */
+  readonly root: string;
+  readonly slot: string;
+  /** The candidate file name (`<element>-v<n>.json`). */
+  readonly name: string;
+  readonly bytes: string;
+  /** The slot's contract (slot.json `contract`); a caller may pass a proposed one (derive --dry-run). */
+  readonly contract: Readonly<Record<string, unknown>> | undefined;
+  /** The slot's L0 layer (`components`, `assets`, `themes`, ...); defaults to the slot id's first segment. */
+  readonly layer?: string;
+  readonly writerSource?: () => Readonly<Record<string, string>>;
+}
+
+/**
+ * Certify one Designer element candidate against its slot contract, pinned or not, with no
+ * browser (planner decision D1). A candidate whose specimen mounts a component is certified only
+ * by compiling it with the slot's contract fixture: the slot declares a valid `contract.fixture`;
+ * the candidate ships the file the fixture names and that file exports the fixture's component;
+ * the fixture's inputs resolve from the pins (the specimen build's own rules, `specimenInputs`);
+ * and the candidate needs no prop the fixture does not supply (its own `meta.preview`, an
+ * override it may keep, names no prop beyond the contract fixture's). A candidate's own preview is
+ * never what certifies it, and no other candidate's preview is borrowed: with no contract fixture
+ * the candidate is uncertified. A candidate whose specimen mounts no component (a theme, a font,
+ * an asset) needs no fixture; it is certified when its own specimen inputs resolve.
+ */
+export function certifyCandidate(input: CertifyCandidateInput): CandidateCertification {
+  const { root, slot, name, bytes, contract } = input;
+  const where = `${slot}/${name}`;
+  const writerSource = input.writerSource ?? (() => pinnedWriterCopy(root));
+  let item: CandidateItem;
+  try { item = JSON.parse(bytes) as CandidateItem; }
+  catch { return { certified: false, reasons: ["the candidate is not JSON"], mounts: false }; }
+  let mounts: boolean;
+  try { mounts = specimenKindOf({ id: where, kind: item.type, layer: input.layer ?? slot.split(".")[0] }) === "visual"; }
+  catch (error) { return { certified: false, reasons: [error instanceof Error ? error.message : String(error)], mounts: false }; }
+  const reasons: string[] = [];
+  const build = (candidate: CandidateItem) => {
+    try { specimenInputs(root, where, candidate, true, writerSource); }
+    catch (error) { reasons.push(error instanceof Error ? error.message : String(error)); }
+  };
+  if (!mounts) { build(item); return { certified: !reasons.length, reasons, mounts }; }
+  const declared = contract?.fixture;
+  if (declared === undefined) return { certified: false, reasons: [`uncertified: slot ${slot} declares no contract fixture (slot.json contract.fixture)`], mounts };
+  const invalid = contractFixtureIssues(contract ?? {});
+  if (invalid.length) return { certified: false, reasons: invalid.map(issue => `the slot's ${issue.message}`), mounts };
+  const fixture = declared as ContractFixture;
+  if (!fixtureFits(item, fixture as unknown as Record<string, unknown>)) {
+    return { certified: false, reasons: [`the candidate does not ship ${fixture.fixtures.file} exporting ${fixture.fixtures.export}, which the contract fixture mounts`], mounts };
   }
-  return { item };
+  build({ ...item, meta: { ...item.meta, preview: fixture } });
+  // The candidate's own preview names its props as `fixtures.props` ({ file, export, props }), or as `fixtures` itself (the older flat form).
+  const ownFixtures = (item.meta?.preview as { fixtures?: unknown } | undefined)?.fixtures;
+  const ownProps = ownFixtures && typeof ownFixtures === "object" && !Array.isArray(ownFixtures)
+    ? ["file", "export", "props"].some(key => Object.hasOwn(ownFixtures, key)) ? (ownFixtures as { props?: unknown }).props : ownFixtures
+    : undefined;
+  if (ownProps && typeof ownProps === "object" && !Array.isArray(ownProps)) {
+    const extra = Object.keys(ownProps).filter(key => !Object.hasOwn(fixture.fixtures.props, key)).sort();
+    if (extra.length) reasons.push(`the candidate needs props the contract fixture does not supply: ${extra.join(", ")}`);
+  }
+  return { certified: !reasons.length, reasons, mounts };
 }
 
 /** One declared copy slot (`meta.element.reads.copyKeys` entry); a bare string there is a key the element reads through host data. */
@@ -352,8 +427,10 @@ function specimenInputs(root: string, where: string, item: CandidateItem, mounti
  */
 export function specimenPreviewIssue(root: string, slot: string, name: string, bytes: string, writerSource: () => Readonly<Record<string, string>> = () => pinnedWriterCopy(root)): string | undefined {
   try {
-    const item = JSON.parse(bytes) as CandidateItem & { name?: unknown }, entry = readSlotEntry(root, "designer", slot);
-    const fixture = entry && typeof item.name === "string" ? slotFixture(root, entry, item.name, name, item) : { item };
+    const item = JSON.parse(bytes) as CandidateItem;
+    let contract: Readonly<Record<string, unknown>> | undefined;
+    try { contract = readSlot(root, "designer", slot).contract; } catch { contract = undefined; }
+    const fixture = withContractFixture(contract, item);
     specimenInputs(root, `${slot}/${name}`, fixture.item, true, writerSource); return undefined;
   }
   catch (error) { return error instanceof Error ? error.message : String(error); }
