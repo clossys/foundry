@@ -49,8 +49,8 @@ export interface CliArgs {
   readiness: boolean;
   /** check: run the slot constitution suite (R01-R14) over every record instead of the default checks. */
   constitution: boolean;
-  /** check --constitution: only this rule (R01..R14). */
-  rule?: string;
+  /** check --constitution: only these rules (R01..R14); repeated --rule flags accumulate. */
+  rule?: string[];
 }
 
 export class CliUsageError extends Error {
@@ -114,7 +114,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--slots": args.slots = true; break;
       case "--readiness": args.readiness = true; break;
       case "--constitution": args.constitution = true; break;
-      case "--rule": args.rule = value(); break;
+      case "--rule": args.rule = [...(args.rule ?? []), value()]; break;
       case "--port": {
         const port = value();
         if (!/^\d+$/.test(port) || Number(port) > 65535) throw new CliUsageError("--port must be an integer from 0 to 65535");
@@ -136,7 +136,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.slots || args.readiness) && args.verb !== "check") throw new CliUsageError("--slots and --readiness require check");
   if (args.constitution && args.verb !== "check") throw new CliUsageError("--constitution requires check");
   if (args.rule !== undefined && !args.constitution) throw new CliUsageError("--rule requires check --constitution");
-  if (args.rule !== undefined && !/^R(?:0[1-9]|1[0-4])$/.test(args.rule)) throw new CliUsageError("--rule must be a rule id R01..R14");
+  if (args.rule !== undefined && !args.rule.every(id => /^R(?:0[1-9]|1[0-4])$/.test(id))) throw new CliUsageError("--rule must be a rule id R01..R14");
   if (args.records.length && args.verb !== "publish") throw new CliUsageError("--records requires publish");
   if ((args.install || args.page !== undefined || args.site !== undefined || args.build || args.origin !== undefined) && args.verb !== "publish") throw new CliUsageError("--install, --page, --site, --origin and --build require publish");
   if (args.page !== undefined && args.site !== undefined) throw new CliUsageError("publish --install takes --page or --site, not both");
