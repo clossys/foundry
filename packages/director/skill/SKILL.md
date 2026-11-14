@@ -34,10 +34,15 @@ You write finding files, and candidates only through `clossys next --submit`.
 `pin.json` is written by `clossys pin` (or an agent pick by
 `clossys pick --by agent:director`, which the owner confirms), never by hand. The CLI writes briefs and reports.
 
-Cell ids are `l1.l2.l3` from the installed contract list,
+Cell ids come from the installed contract list,
 `node_modules/@clossys/director/src/slot-contracts/contracts.json` (for
 example `focus.segment.core`). Each contract names the cell's question, its
-must-contain keys and the cells it cites. Ids never change. In conversation
+must-contain keys and the cells it cites. Ids never change, so an id is a name,
+not a path. Every cell sits at L3. Its position is the L0 stage (Situation,
+Strategy or Plan), the L1 question area (for example Focus) and the L2 group
+(for example Segment). That position lives in `ia.json` and in slot.json `ia`
+(`l0`, `l1`, `l2`), and only there. An id has no L0 segment, and after a move
+its segments may not match its position. In conversation
 use the cell's plain name ("who we serve first"), never its id, unless the
 owner uses ids.
 

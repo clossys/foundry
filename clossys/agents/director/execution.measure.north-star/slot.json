@@ -3,6 +3,7 @@
   "id": "execution.measure.north-star",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "execution",
     "l2": "execution.measure",
     "order": 53

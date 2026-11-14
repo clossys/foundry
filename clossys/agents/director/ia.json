@@ -297,5 +297,51 @@
         "execution"
       ]
     }
+  ],
+  "axes": {
+    "L0": {
+      "name": "Strategy cascade stage",
+      "values": [
+        "Situation",
+        "Strategy",
+        "Plan"
+      ]
+    },
+    "L1": {
+      "situation": {
+        "name": "Question area",
+        "values": [
+          "Context",
+          "Aspiration"
+        ]
+      },
+      "strategy": {
+        "name": "Question area",
+        "values": [
+          "Focus",
+          "Advantage",
+          "Identity"
+        ]
+      },
+      "plan": {
+        "name": "Question area",
+        "values": [
+          "Capability",
+          "Execution"
+        ]
+      }
+    },
+    "shared": [
+      "Identity"
+    ]
+  },
+  "changes": [
+    {
+      "op": "axes",
+      "ownerRef": "clossys/workspace#46 issuecomment-6873279813 (OWNER WORDS 2026-11-13 IA review Q1-Q7: recommended option)",
+      "at": "2026-11-14T09:24:55.927Z",
+      "detail": "declared axes L0 \"Strategy cascade stage\" with L1 axes for situation, strategy, plan",
+      "slotFiles": 57
+    }
   ]
 }

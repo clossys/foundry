@@ -3,6 +3,7 @@
   "id": "capability.resource.funding",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.resource",
     "order": 47

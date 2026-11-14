@@ -3,6 +3,7 @@
   "id": "capability.competency.critical",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.competency",
     "order": 38

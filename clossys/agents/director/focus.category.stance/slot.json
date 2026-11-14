@@ -3,6 +3,7 @@
   "id": "focus.category.stance",
   "agent": "director",
   "ia": {
+    "l0": "strategy",
     "l1": "focus",
     "l2": "focus.category",
     "order": 15
