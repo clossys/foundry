@@ -3,6 +3,7 @@
   "id": "capability.team.structure",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.team",
     "order": 46

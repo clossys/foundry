@@ -3,6 +3,7 @@
   "id": "capability.sourcing.build",
   "agent": "director",
   "ia": {
+    "l0": "plan",
     "l1": "capability",
     "l2": "capability.sourcing",
     "order": 40

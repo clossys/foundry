@@ -3,6 +3,7 @@
   "id": "context.market.trend",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "context",
     "l2": "context.market",
     "order": 1

@@ -3,6 +3,7 @@
   "id": "context.competition.alternative",
   "agent": "director",
   "ia": {
+    "l0": "situation",
     "l1": "context",
     "l2": "context.competition",
     "order": 4
