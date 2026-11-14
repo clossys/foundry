@@ -183,7 +183,7 @@ Pending options
 No option waits for approval.
 
 ### studio.open-needs
-<!-- {"id":"studio.open-needs","bindings":["components/StudioPage.tsx"],"directorSources":[{"ref":"director:identity.brand.personality@3","line":12}]} -->
+<!-- {"id":"studio.open-needs","bindings":["components/StudioPage.tsx"],"directorSources":[{"ref":"director:identity.brand.personality@5","line":12}]} -->
 Open needs
 
 ### studio.nothing-is-waiting-on-you
@@ -1397,7 +1397,7 @@ A seat judges: a review, an approval or an IA call.
 No steps yet
 
 ### studio.pipeline.empty.description
-<!-- {"id":"studio.pipeline.empty.description","bindings":["components/StudioPage.tsx","lib/pipeline-flow.ts","lib/studio-seed.ts"],"directorSources":[{"ref":"director:identity.brand.personality@3","line":11},{"ref":"director:identity.verbal.voice@4","line":12}]} -->
+<!-- {"id":"studio.pipeline.empty.description","bindings":["components/StudioPage.tsx","lib/pipeline-flow.ts","lib/studio-seed.ts"],"directorSources":[{"ref":"director:identity.brand.personality@5","line":11},{"ref":"director:identity.verbal.voice@6","line":12}]} -->
 The pipeline graph has no steps to show.
 
 ### studio.pipeline.seat.open
@@ -1521,7 +1521,7 @@ Check {id}
 {step} ({mode})
 
 ### studio.pipeline.legend.untyped
-<!-- {"id":"studio.pipeline.legend.untyped","bindings":["lib/pipeline-flow.ts"],"directorSources":[{"ref":"director:identity.brand.personality@3","line":10}]} -->
+<!-- {"id":"studio.pipeline.legend.untyped","bindings":["lib/pipeline-flow.ts"],"directorSources":[{"ref":"director:identity.brand.personality@5","line":10}]} -->
 {count, plural, one {# declared step has} other {# declared steps have}} no command that runs {count, plural, one {it} other {them}} and {count, plural, one {is} other {are}} not drawn.
 
 ### studio.pipeline.step.holder
@@ -1589,7 +1589,7 @@ Show {name} on the map
 Sets the brief, chooses between options and approves what ships.
 
 ### studio.team.about.director
-<!-- {"id":"studio.team.about.director","bindings":["lib/pipeline-flow.ts"],"directorSources":[{"ref":"director:identity.verbal.voice@4","line":11}]} -->
+<!-- {"id":"studio.team.about.director","bindings":["lib/pipeline-flow.ts"],"directorSources":[{"ref":"director:identity.verbal.voice@6","line":11}]} -->
 Drafts the direction every other agent works from.
 
 ### studio.team.about.designer
@@ -1605,7 +1605,7 @@ Writes the copy candidates every page reads.
 Assembles pinned parts into pages and serves them.
 
 ### studio.team.about.checks
-<!-- {"id":"studio.team.about.checks","bindings":["lib/pipeline-flow.ts"],"directorSources":[{"ref":"director:identity.verbal.voice@4","line":10}]} -->
+<!-- {"id":"studio.team.about.checks","bindings":["lib/pipeline-flow.ts"],"directorSources":[{"ref":"director:identity.verbal.voice@6","line":10}]} -->
 Verifies each output before the next step reads it.
 
 ### studio.team.about.unassigned

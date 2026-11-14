@@ -14910,6 +14910,36 @@
       },
       "by": "planner",
       "at": "2026-11-14T02:54:04.608Z"
+    },
+    {
+      "type": "migrated",
+      "migration": "citations-to-slots",
+      "file": "agents/writer/strings.common/pin.json",
+      "from": {
+        "sha256": "9fca7bcf4370a9c68d2e5a7b0dbed13fa83b54352c998c6041d5494eae36b998",
+        "blob": "0aed9feac412598a00e269461faa13dd684a2d8d"
+      },
+      "to": {
+        "sha256": "741f8461746428c93fe062f49a572ebbc3a1ed16846b2f253d9813e80ca8e11d",
+        "blob": "dbe2c27fc7f49852dce518dc68162c51161cbf94"
+      },
+      "by": "planner",
+      "at": "2026-11-14T04:43:17.383Z"
+    },
+    {
+      "type": "migrated",
+      "migration": "citations-to-slots",
+      "file": "agents/writer/strings.common/candidates/studio-v23.md",
+      "from": {
+        "sha256": "fcea08be993d16dc89133a0feb47c60db59ea09bedc11aa3a037952573f21c75",
+        "blob": "7a30360fa2cdf89e2b13bdaca2602b246a42b85f"
+      },
+      "to": {
+        "sha256": "ea9822b1f74e3516c98092709fe37f106a87a7a659bf08ed820e7ae4b40cba6d",
+        "blob": "efc52eb6f9b46bfcdbc194e0e334badfd016b2b3"
+      },
+      "by": "planner",
+      "at": "2026-11-14T04:43:17.383Z"
     }
   ]
 }
