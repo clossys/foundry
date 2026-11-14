@@ -97,6 +97,10 @@
     "varyOn": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "extension": {
+      "description": "A consumer extension leaf (R01.14): listed in ia.json extensions and placed under a Foundry L1. A leaf property, never a tab.",
+      "type": "boolean"
     }
   },
   "anyOf": [

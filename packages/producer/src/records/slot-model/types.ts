@@ -124,8 +124,13 @@ export interface IaDoc {
    * own L1. Display only: folders and slot.json positions never change.
    */
   readonly layers?: readonly IaLayer[];
+  /** The closed L0 and L1 vocabularies (R01.7); `L1` is keyed by layer id. */
+  readonly axes?: IaAxes;
 }
 export interface IaLayer { readonly id: string; readonly label: string; readonly nodes: readonly string[] }
+/** One IA level's axis: a name plus a closed label list, or `instance` for data-driven tabs (L1 only); `mirrors` names `<agent>/<L0>` (R01.11). */
+export interface IaAxis { readonly name: string; readonly values?: readonly string[]; readonly instance?: true; readonly mirrors?: string }
+export interface IaAxes { readonly L0: IaAxis; readonly L1: Readonly<Record<string, IaAxis>>; readonly shared?: readonly string[] }
 
 export interface SlotPosition { readonly l0?: string; readonly l1: string; readonly l2: string; readonly order: number }
 export interface SlotDoc {
@@ -151,6 +156,8 @@ export interface SlotDoc {
   readonly options?: typeof OPTION_COUNTS[number];
   /** The axis candidates differ on (e.g. `tone`); required when options > 1. Each candidate tags its value as `vary: {"<axis>": "<value>"}`. */
   readonly varyOn?: string;
+  /** A consumer extension leaf (R01.14): listed in ia.json `extensions`, under a Foundry L1. */
+  readonly extension?: boolean;
 }
 
 /** Why a slot is not needed, since when (ISO date) and who decided. Written by `clossys pin --not-needed`, never by an agent fill. */
