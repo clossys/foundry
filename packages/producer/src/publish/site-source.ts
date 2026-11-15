@@ -10,7 +10,7 @@ import { readPinnedPublication } from "./pinned-publication.js";
 import { writerDeclarationsText } from "./studio-defaults.js";
 import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
 import { parseFrontmatter, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
-import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "./site-plan.js";
+import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "@clossys/publisher/build";
 
 const isRecord = (value: unknown): value is Record<string, any> => !!value && typeof value === "object" && !Array.isArray(value);
 /** Publisher: the pinned native publication (content map, route pack and page copy all come from pins and candidates). */

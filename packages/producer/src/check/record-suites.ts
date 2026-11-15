@@ -12,7 +12,7 @@ import { join } from "node:path";
 import { agentModule } from "../read/cells.js";
 import { readPinnedDirector } from "../records/director-pinned.js";
 import { readPublisher, readWriter } from "../publish/site-source.js";
-import { writerText } from "../publish/site-plan.js";
+import { writerText } from "@clossys/publisher/build";
 import { validateSlotContract } from "../records/validate.js";
 import { listSlots, readCandidate } from "../records/slots.js";
 import { parseFrontmatter } from "../records/slot-model/index.js";

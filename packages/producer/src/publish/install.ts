@@ -27,13 +27,13 @@ import {
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { isHostPackage } from "../specimen/host-packages.js";
 import { dependencyPart, treeDependencyParts } from "../specimen/specimen-tree.js";
-import { firstComponentSource } from "./component-export.js";
+import { firstComponentSource } from "@clossys/publisher/build";
 import { hasSlotModel, readCandidate, readIa, readPin, readSlot } from "../records/slots.js";
 import { slotPositions, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { readWriter } from "./site-source.js";
 import { specimenRoots } from "./publish.js";
-import { defaultInstallOut, INSTALL_MARKER } from "./install-out.js";
+import { defaultInstallOut, INSTALL_MARKER } from "@clossys/publisher/build";
 
 const MARKER = INSTALL_MARKER;
 const requireHere = createRequire(import.meta.url);

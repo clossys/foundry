@@ -13,7 +13,7 @@ import { contractFixtureIssues, contractFixtureOf, type ContractFixture } from "
 import { RecordError } from "../records/validate.js";
 import { dependencyPart, fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues, treeDependencyParts } from "./specimen-tree.js";
 import { installedCode, itemSpecimenState, specimenStateOf, VISIBLE_STATE_CSS } from "./specimen-state.js";
-import { firstComponentSource } from "../publish/component-export.js";
+import { firstComponentSource } from "@clossys/publisher/build";
 
 const SEGMENT = /^[a-z0-9][a-z0-9.-]*$/;
 export interface LibrarySourceOptions {
