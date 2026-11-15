@@ -3,10 +3,10 @@
   "id": "aspiration.goal.annual",
   "agent": "director",
   "ia": {
-    "l0": "situation",
-    "l1": "aspiration",
-    "l2": "aspiration.goal",
-    "order": 13
+    "l0": "roadmap",
+    "l1": "targets",
+    "l2": "targets.goal",
+    "order": 37
   },
   "kind": "brief",
   "contract": {
@@ -35,7 +35,5 @@
   },
   "inputs": [],
   "uses": [],
-  "options": 3,
-  "varyOn": "angle",
   "standard": "brief.measure"
 }

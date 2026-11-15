@@ -60,14 +60,6 @@
             "aspiration.culture.belief",
             "aspiration.culture.behavior"
           ]
-        },
-        {
-          "id": "aspiration.goal",
-          "label": "Goal",
-          "slots": [
-            "aspiration.goal.long-term",
-            "aspiration.goal.annual"
-          ]
         }
       ]
     },
@@ -103,8 +95,8 @@
           "id": "focus.reach",
           "label": "Reach",
           "slots": [
-            "focus.reach.geography",
-            "focus.reach.channel"
+            "focus.reach.channel",
+            "focus.reach.geography"
           ]
         },
         {
@@ -138,8 +130,8 @@
           ]
         },
         {
-          "id": "advantage.model",
-          "label": "Model",
+          "id": "advantage.economics",
+          "label": "Economics",
           "slots": [
             "advantage.model.pricing",
             "advantage.model.margin"
@@ -186,58 +178,33 @@
       ]
     },
     {
-      "id": "capability",
-      "label": "Capability",
+      "id": "targets",
+      "label": "Targets",
       "children": [
         {
-          "id": "capability.competency",
-          "label": "Competency",
+          "id": "targets.goal",
+          "label": "Goal",
           "slots": [
-            "capability.competency.critical",
-            "capability.competency.gap"
+            "aspiration.goal.long-term",
+            "aspiration.goal.annual"
           ]
         },
         {
-          "id": "capability.sourcing",
-          "label": "Sourcing",
+          "id": "targets.measure",
+          "label": "Measure",
           "slots": [
-            "capability.sourcing.build",
-            "capability.sourcing.partner",
-            "capability.sourcing.acquire"
-          ]
-        },
-        {
-          "id": "capability.operation",
-          "label": "Operation",
-          "slots": [
-            "capability.operation.delivery",
-            "capability.operation.technology"
-          ]
-        },
-        {
-          "id": "capability.team",
-          "label": "Team",
-          "slots": [
-            "capability.team.role",
-            "capability.team.structure"
-          ]
-        },
-        {
-          "id": "capability.resource",
-          "label": "Resource",
-          "slots": [
-            "capability.resource.funding",
-            "capability.resource.allocation"
+            "execution.measure.north-star",
+            "execution.measure.driver"
           ]
         }
       ]
     },
     {
-      "id": "execution",
-      "label": "Execution",
+      "id": "timeline",
+      "label": "Timeline",
       "children": [
         {
-          "id": "execution.priority",
+          "id": "timeline.priority",
           "label": "Priority",
           "slots": [
             "execution.priority.bet",
@@ -245,23 +212,60 @@
           ]
         },
         {
-          "id": "execution.roadmap",
-          "label": "Roadmap",
+          "id": "timeline.schedule",
+          "label": "Schedule",
           "slots": [
             "execution.roadmap.milestone",
             "execution.roadmap.release"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "id": "task-force",
+      "label": "Task force",
+      "children": [
         {
-          "id": "execution.measure",
-          "label": "Measure",
+          "id": "task-force.team",
+          "label": "Team",
           "slots": [
-            "execution.measure.north-star",
-            "execution.measure.driver"
+            "capability.team.role",
+            "capability.competency.critical",
+            "capability.competency.gap"
           ]
         },
         {
-          "id": "execution.risk",
+          "id": "task-force.sourcing",
+          "label": "Sourcing",
+          "slots": [
+            "capability.sourcing.build",
+            "capability.sourcing.partner"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "label": "Plan",
+      "children": [
+        {
+          "id": "plan.resource",
+          "label": "Resource",
+          "slots": [
+            "capability.resource.funding",
+            "capability.resource.allocation"
+          ]
+        },
+        {
+          "id": "plan.operation",
+          "label": "Operation",
+          "slots": [
+            "capability.operation.delivery",
+            "capability.team.structure"
+          ]
+        },
+        {
+          "id": "plan.risk",
           "label": "Risk",
           "slots": [
             "execution.risk.threat",
@@ -273,66 +277,70 @@
   ],
   "layers": [
     {
-      "id": "situation",
-      "label": "Situation",
-      "nodes": [
-        "context",
-        "aspiration"
-      ]
-    },
-    {
       "id": "strategy",
       "label": "Strategy",
       "nodes": [
+        "context",
+        "aspiration",
         "focus",
         "advantage",
         "identity"
       ]
     },
     {
-      "id": "plan",
-      "label": "Plan",
+      "id": "roadmap",
+      "label": "Roadmap",
       "nodes": [
-        "capability",
-        "execution"
+        "targets",
+        "timeline"
+      ]
+    },
+    {
+      "id": "execution",
+      "label": "Execution",
+      "nodes": [
+        "task-force",
+        "plan"
       ]
     }
   ],
   "axes": {
     "L0": {
-      "name": "Strategy cascade stage",
+      "name": "Coverage ownership",
       "values": [
-        "Situation",
         "Strategy",
-        "Plan"
+        "Roadmap",
+        "Execution"
       ]
     },
     "L1": {
-      "situation": {
-        "name": "Question area",
-        "values": [
-          "Context",
-          "Aspiration"
-        ]
-      },
       "strategy": {
         "name": "Question area",
         "values": [
+          "Context",
+          "Aspiration",
           "Focus",
           "Advantage",
           "Identity"
         ]
       },
-      "plan": {
+      "roadmap": {
         "name": "Question area",
         "values": [
-          "Capability",
-          "Execution"
+          "Targets",
+          "Timeline"
+        ]
+      },
+      "execution": {
+        "name": "Question area",
+        "values": [
+          "Task force",
+          "Plan"
         ]
       }
     },
     "shared": [
-      "Identity"
+      "Category"
     ]
   }
 }

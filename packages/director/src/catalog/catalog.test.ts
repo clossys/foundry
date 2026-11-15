@@ -3,13 +3,13 @@ import { loadCatalog, validateCatalog, type StrategyCatalog } from "../catalog.j
 import { readFileSync } from "node:fs";
 
 describe("strategy catalog", () => {
-  it("loads the 57 leaves, 28 L2, 7 L1 and 24 default core cells", () => {
+  it("loads the 55 leaves, 27 L2, 9 L1 and 24 default core cells", () => {
     const catalog = loadCatalog();
-    expect(catalog.cells).toHaveLength(57);
-    expect(catalog.ia.nodes).toHaveLength(7);
-    expect(catalog.ia.nodes.flatMap(node => node.children)).toHaveLength(28);
+    expect(catalog.cells).toHaveLength(55);
+    expect(catalog.ia.nodes).toHaveLength(9);
+    expect(catalog.ia.nodes.flatMap(node => node.children)).toHaveLength(27);
     expect(catalog.archetypes.default).toHaveLength(24);
-    expect(catalog.freeze.leaves).toHaveLength(57);
+    expect(catalog.freeze.leaves).toHaveLength(55);
     expect(catalog.coherence.links).toHaveLength(11);
     expect(catalog.coherence.contradictions).toHaveLength(7);
     expect(validateCatalog(catalog).ok).toBe(true);
@@ -20,9 +20,11 @@ describe("strategy catalog", () => {
     ["duplicate leaf contract", "CAT2", c => { c.cells.push(structuredClone(c.cells[0]!)); }],
     ["duplicate placement", "CAT2", c => { c.ia.nodes[0]!.children[0]!.leaves.push(c.cells[0]!.id); }],
     ["wrong prefix", "CAT2", c => { c.ia.nodes[0]!.children[0]!.leaves[0] = c.cells[5]!.id; }],
+    ["group outside its L1", "CAT2", c => { c.ia.nodes[0]!.children[0]!.id = "focus.market"; }],
     ["ampersand name", "CAT3", c => { c.ia.nodes[0]!.name = "A & B"; }],
     ["or name", "CAT3", c => { c.cells[0]!.names.l3 = "This or that"; }],
     ["one must-contain key", "CAT4", c => { c.cells[0]!.mustContain.splice(1); }],
+    ["seven must-contain keys", "CAT4", c => { for (const key of ["A", "B", "C", "D"]) c.cells[0]!.mustContain.push({ key, hint: key }); }],
     ["duplicate key", "CAT4", c => { c.cells[0]!.mustContain[1]!.key = c.cells[0]!.mustContain[0]!.key; }],
     ["dangling cell link", "CAT5", c => { c.cells[0]!.links.push({ cites: "unknown.cell.id", label: "Missing" }); }],
     ["dangling coherence link", "CAT5", c => { c.coherence.links[0]!.upstream = "unknown.cell.id"; }],
@@ -46,7 +48,7 @@ describe("strategy catalog", () => {
   it("loads fresh data without sharing mutable state", () => {
     const first = loadCatalog();
     first.cells.pop();
-    expect(loadCatalog().cells).toHaveLength(57);
+    expect(loadCatalog().cells).toHaveLength(55);
   });
   it("preserves packet cell contracts and grouping mechanically", () => {
     const packet = JSON.parse(readFileSync(new URL("../../docs/v2/catalog/tree.json", import.meta.url), "utf8"));
