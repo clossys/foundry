@@ -7,7 +7,12 @@
  *   clossys pin <agent>/<slot> <candidate-id> --confirm --ref <ledger ref> [--by owner[:<ref>]] [--at <iso>] [--root <dir>] [--json]
  *   clossys decisions [--root <dir>] [--json]
  */
-import { join, resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { parseCandidateName } from "../records/candidate.js";
+import { cliActor, ownerAnswerRef, toIsoZ } from "../records/pin.js";
+import { writeTargetPin } from "../records/pin-map.js";
+import type { AgentId, PinRecord } from "../records/types.js";
 import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AGENTS, type PinBasis, type PinConfirmation, type SlotAgent } from "../records/slot-model/index.js";
 import { listSlots, readSlotEntry } from "../records/slots.js";
 import { GuardRefusal, writeConfirm, writeNotNeeded, writePin, type WriteGuard } from "../records/slot-write.js";
@@ -111,6 +116,9 @@ export async function runPinCli(argv: readonly string[], cwd: string, guard: Wri
   const agent = target.slice(0, slash), id = target.slice(slash + 1);
   if (slash < 1 || !id) throw new CliUsageError(`pin target must be <agent>/<slot>, got ${target}\n${PIN_USAGE}`);
   if (!(SLOT_AGENTS as readonly string[]).includes(agent)) return { exitCode: 1, message: `pin refused: unknown agent ${agent} (expected ${SLOT_AGENTS.join(", ")})` };
+  const workspace = dirname(consumerOf(cwd, flags.root));
+  if (isTargetSlot(workspace, agent, id.split("#")[0]!)) return runTargetPin(workspace, agent, id, candidateId, flags);
+  if (id.includes("#")) throw new CliUsageError(`a #record target is only for a clossys.slot/2 record slot, got ${target}\n${PIN_USAGE}`);
   if (flags.notNeeded === (candidateId !== undefined)) {
     throw new CliUsageError(`pin takes either <candidate-id> or --not-needed --reason <text>\n${PIN_USAGE}`);
   }
@@ -150,6 +158,62 @@ export async function runPinCli(argv: readonly string[], cwd: string, guard: Wri
     if (error instanceof GuardRefusal) return { exitCode: 1, message: `pin refused: ${error.message}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${id}`, verb: error.verb, checks: error.checks, findings: error.findings } };
     const message = error instanceof Error ? error.message : String(error);
     return { exitCode: 1, message: /^(?:pin|not-needed|confirm) refused/.test(message) ? message : `pin refused: ${message}` };
+  }
+}
+
+/** True when `<root>/clossys/agents/<agent>/<slot-id>/slot.json` is a target `clossys.slot/2` slot. */
+function isTargetSlot(root: string, agent: string, slotId: string): boolean {
+  const file = join(root, "clossys", "agents", agent, slotId, "slot.json");
+  if (!existsSync(file)) return false;
+  try { return (JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown }).schema === "clossys.slot/2"; } catch { return false; }
+}
+
+/**
+ * The target pin (system.md 6.3): writes `clossys.pin/2`, or one record of a Writer `clossys.pin-map/1`
+ * (`<agent>/<slot-id>#<record>`). Deciders and bases pair as the pin rules require; an owner decision names the
+ * queue entry it answers (`--by owner:queue.<kind>#<id>`, basis picked or --basis bulk) and that entry must exist.
+ * A bare `--by owner` is refused: the CLI never invents an owner basis.
+ */
+function runTargetPin(root: string, agent: string, target: string, candidateId: string | undefined, flags: Flags): CliResult {
+  const hash = target.indexOf("#");
+  const slotId = hash < 0 ? target : target.slice(0, hash);
+  const record = hash < 0 ? undefined : target.slice(hash + 1);
+  if (hash >= 0 && !record) throw new CliUsageError(`pin target #<record> is empty\n${PIN_USAGE}`);
+  if (flags.notNeeded || flags.confirm || flags.reason !== undefined || flags.ref !== undefined) {
+    throw new CliUsageError(`a clossys.slot/2 pin takes <candidate> [--by] [--basis] [--at] only\n${PIN_USAGE}`);
+  }
+  if (candidateId === undefined) throw new CliUsageError(`pin requires <candidate>\n${PIN_USAGE}`);
+  const candidate = parseCandidateName(candidateId) ? candidateId : undefined;
+  if (!candidate) return { exitCode: 1, message: `pin refused: ${candidateId} is not a candidate file name (<name>-v<n>.md|json|svg)` };
+  const by = flags.by;
+  let basis: PinRecord["basis"];
+  if (/^planner(:|$)/.test(by)) {
+    if (flags.basis !== undefined && flags.basis !== "planner") throw new CliUsageError(`--by ${by} is a planner pin: its basis is planner\n${PIN_USAGE}`);
+    basis = "planner";
+  } else if (/^agent:(director|designer|writer|publisher|producer)$/.test(by)) {
+    if (flags.basis !== undefined && flags.basis !== "agent") throw new CliUsageError(`--by ${by} is an agent pin: its basis is agent\n${PIN_USAGE}`);
+    basis = "agent";
+  } else if (ownerAnswerRef(by)) {
+    if (flags.basis !== undefined && flags.basis !== "picked" && flags.basis !== "bulk") throw new CliUsageError(`--by ${by} is an owner pin: --basis picked or bulk\n${PIN_USAGE}`);
+    basis = (flags.basis ?? "picked") as PinRecord["basis"];
+  } else {
+    return { exitCode: 1, message: `pin refused: --by ${by} names no queue answer; an owner pin is --by owner:queue.<kind>#<id>, else planner[:<ref>] or agent:<agent>` };
+  }
+  const at = flags.at ?? new Date().toISOString();
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(at) || Number.isNaN(Date.parse(at))) throw new CliUsageError(`--at must be an ISO timestamp\n${PIN_USAGE}`);
+  const answer = ownerAnswerRef(by);
+  if (answer && !existsSync(join(root, "clossys", "agents", answer.to, "entries", `${answer.record}.json`))) {
+    return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} is not a queue entry` };
+  }
+  try {
+    const doc = writeTargetPin(root, {
+      agent: agent as AgentId, slotId, ...(record !== undefined ? { record } : {}),
+      candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: answer ? [answer] : [], createdBy: cliActor("clossys pin"),
+    });
+    const pinned = doc.kind === "pin-map" ? doc.records[record!]! : doc;
+    return { exitCode: 0, message: `${agent}/${target}: pinned ${pinned.candidate} (${pinned.sha256.slice(0, 12)}), decided by ${pinned.decidedBy} (${pinned.basis})`, output: doc };
+  } catch (error) {
+    return { exitCode: 1, message: `pin refused: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
 
