@@ -8,6 +8,7 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
 import { PACKAGES, packageSkills, PKG, REPO } from "./action-registry.mjs";
+import { consumerPath } from "./consumer-root.mjs";
 
 const CHECK = join(PKG, "scripts", "check-step-standard.mjs");
 const DIST = join(PKG, "dist", "pipeline");
@@ -157,7 +158,7 @@ const interview = (f, body) => ["--interview", f.module("interview.mjs", `import
 const INTERVIEW_LIB = await import(pathToFileURL(join(DIST, "interview.js")).href);
 function openWorkspace(f) {
   const workspace = join(f.root, "workspace");
-  cpSync(join(REPO, "clossys"), join(workspace, "clossys"), { recursive: true });
+  cpSync(consumerPath(), join(workspace, "clossys"), { recursive: true });
   rmSync(join(workspace, "clossys", "agents", "writer", "strings.descriptions", "pin.json"));
   const open = INTERVIEW_LIB.interviewOf(workspace, { agent: "writer" }).rounds.flat().filter(question => question.options.length);
   assert.ok(open.length, "the owner.argv fixture workspace has no open Writer owner option");

@@ -14,7 +14,7 @@ test("the Designer's ui workspace components.json is the generator's output", ()
 });
 
 test("the consumer components.json is the same flavor with its own stylesheet", () => {
-  const consumer = JSON.parse(readFileSync(join(repo, "clossys", "components.json"), "utf8"));
+  const consumer = JSON.parse(readFileSync(join(process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : join(repo, "packages/producer/test-fixtures/consumer/clossys"), "components.json"), "utf8"));
   assert.deepEqual(consumer, shadcnComponentsJson({ css: consumer.tailwind.css }));
   assert.notEqual(consumer.tailwind.css, "src/index.css");
 });

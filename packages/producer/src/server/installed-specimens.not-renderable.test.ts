@@ -8,17 +8,16 @@ import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import type { BoundPage } from '@clossys/publisher/install';
 import { pageModule } from '../publish/install.js';
 import { commonJsEntry, itemSpecimenPage, leafPageFiles, SPECIMEN_NOT_RENDERABLE_KEY } from './installed-specimens.js';
+import { consumerPath } from '../consumer-root.js';
 
-const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
-const designer = join(repo, 'clossys/agents/designer');
+const designer = consumerPath('agents', 'designer');
 
 /** The plugin's shape: `plugin.withOptions(...)` is a function returning `{ handler, config }`. */
 const PLUGIN_CJS = [

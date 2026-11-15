@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
+import { consumerPath } from '../consumer-root.js';
 
 // These fixtures test gallery data, not names: a synthetic consumer's labels are its ids (the
 // pinned-names contract, with no fallback, is slot-labels.test.ts). The real repository keeps its
@@ -32,7 +33,7 @@ import { SpecimenContent } from '../../studio/sections/studio-specimen';
 const drawn = (record: any) => { const resolved = resolveCopy(record); return slotSpecimen({ name: resolved.name, description: '', state: { state: 'pinned' }, record: resolved, fallback: resolved }); };
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
-const consumer = join(repo, 'clossys');
+const consumer = consumerPath();
 const ids = (sections: readonly { cards: readonly { id?: string; slot?: string }[] }[]) => sections.flatMap(section => section.cards.map(card => card.id ?? card.slot));
 /** The record specimen the detail route renders inline for a slot's candidate (only an intact pin carries one). */
 const detailRecord = (repo: string, agent: SlotAgent, id: string, candidate?: string) => {

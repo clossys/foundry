@@ -19,6 +19,7 @@ import { generate, generateBytes } from "./create.tokens/generate.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..", "..", "..");
+const CONSUMER = process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : join(ROOT, "packages/producer/test-fixtures/consumer/clossys");
 const dist = path => import(pathToFileURL(join(ROOT, "packages", "producer", "dist", path)).href);
 const { generatorIssues, loadRecipes, produceIssues, recipesFor } = await dist("records/recipes.js");
 const { loadStandards } = await dist("records/standards.js");
@@ -118,7 +119,7 @@ describe("create.tokens generator: deterministic plumbing that meets the standar
   });
 
   it("refuses a spec that does not fit the contract or gives no Director reason (mutation)", () => {
-    const contract = readJson(join(ROOT, "clossys", "agents", "designer", slot, "slot.json")).contract;
+    const contract = readJson(join(CONSUMER, "agents", "designer", slot, "slot.json")).contract;
     const noDark = clone(spec); noDark.members.default = { light: "oklch(0.985 0 0)" };
     assert.throws(() => generate(noDark, contract), /no dark value/);
     const extra = clone(spec); extra.members.accent = "oklch(0.5 0.1 250)";
@@ -128,7 +129,7 @@ describe("create.tokens generator: deterministic plumbing that meets the standar
   });
 
   it("a reason without a Director citation fails derive.director (the generator's refusal is not the only guard)", () => {
-    const json = generate(spec, readJson(join(ROOT, "clossys", "agents", "designer", slot, "slot.json")).contract);
+    const json = generate(spec, readJson(join(CONSUMER, "agents", "designer", slot, "slot.json")).contract);
     json.meta.element.reason = "keeps default:shadcn/neutral@4.23.0";
     const derive = standard.requirements.find(item => item.check === "derive.director");
     assert.notDeepEqual(DESIGNER_STANDARD_CRITERIA["derive.director"]({ kind: "element/token", text: "", json }, derive.params), []);

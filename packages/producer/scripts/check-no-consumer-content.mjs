@@ -6,7 +6,8 @@
  *   consumer-tree  no tracked file under packages/** sits in a `clossys/agents/` folder, except the
  *                  synthetic fixture consumers (test-fixtures/, __fixtures__/).
  *   consumer-reach no tracked package file climbs out of its package into a `clossys` folder
- *                  (`..` segments up to a clossys folder): a package reads its consumer from configuration, never by path.
+ *                  (a relative path string, or a join of `".."` segments ending in `"clossys"`): a
+ *                  package reads its consumer from configuration, never by path.
  *   pinned-text    no tracked package file outside the fixtures has the bytes of a consumer's pinned
  *                  candidate, or of a file a pinned Designer candidate carries inline. The consumer is
  *                  `--consumer <root>`, else `$CLOSSYS_ROOT` (a root holding clossys/), else the
@@ -34,7 +35,7 @@ const consumerRoot = value("--consumer") !== undefined ? resolve(value("--consum
 if (!existsSync(join(repo, "packages"))) { console.error(`check-no-consumer-content: no packages/ under ${repo}`); process.exit(2); }
 
 export const FIXTURE_ROOT = /(^|\/)(test-fixtures|__fixtures__)\//;
-export const CONSUMER_REACH = /\.\.\/(?:\.\.\/)+clossys(?:\/|['"`]|$)/;
+export const CONSUMER_REACH = /\.\.\/(?:\.\.\/)+clossys(?:\/|['"`]|$)|['"]\.\.['"],\s*['"]clossys['"]/;
 const sha = bytes => createHash("sha256").update(bytes).digest("hex");
 
 const tracked = execFileSync("git", ["ls-files", "-z", "packages"], { cwd: repo, encoding: "utf8", maxBuffer: 1 << 28 }).split("\0").filter(Boolean);

@@ -33,6 +33,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { consumerPath } from "./consumer-root.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(process.env.CLOSSYS_CHECK_REPO ?? join(here, "../../.."));
@@ -73,7 +74,7 @@ export async function checkPinPropagation(repo) {
   const temp = realpathSync(mkdtempSync(join(tmpdir(), "check-pin-propagation-")));
   try {
     const consumer = join(temp, "clossys");
-    cpSync(join(repo, "clossys", "agents"), join(consumer, "agents"), { recursive: true });
+    cpSync(consumerPath("agents"), join(consumer, "agents"), { recursive: true });
     const slotPath = (agent, id) => join(consumer, "agents", agent, id);
     const publication = async () => m.readPinnedPublication ? m.readPinnedPublication(consumer, STUDIO_PUBLICATION) : Promise.reject(new Error("no readPinnedPublication through the one reader"));
 

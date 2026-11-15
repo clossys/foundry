@@ -15,9 +15,10 @@ import { STEPS } from "./steps/index.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { directorIa } from "../records/slot-model/foundry-ia.js";
 import { appendRecord, buildRecord, readStore, STEP_ENV, storeFile } from "./trace.js";
+import { consumerPath } from "../consumer-root.js";
 
 /** The foundry consumer this package ships beside: a real slot model to copy. */
-const FOUNDRY = join(PACKAGE_ROOT, "..", "..", "clossys");
+const FOUNDRY = consumerPath();
 const dirs: string[] = [];
 /**
  * The package data the submit guard reads off the workspace root (R03.2 provenance and reference

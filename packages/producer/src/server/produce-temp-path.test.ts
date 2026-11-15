@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { agentRoot } from "./cells.js";
 import { studioSelection, type StudioSelection } from "./selection.js";
 import { studioTheme, type StudioTheme } from "./theme.js";
+import { consumerPath } from "../consumer-root.js";
 
 const repository = fileURLToPath(new URL("../../../../", import.meta.url));
 const timeout = 90_000;
@@ -28,7 +29,7 @@ describe("clossys produce temporary projection paths", () => {
     await mkdir(join(consumer, "clossys"), { recursive: true });
     await writeFile(join(consumer, "clossys/clossys.config.ts"), "export default {};\n");
     // The repository's own flat Designer slots: agents/designer/<slot-id>/{slot.json,candidates/,pin.json}.
-    await cp(join(repository, "clossys/agents/designer"), agentRoot(consumer, "designer"), { recursive: true });
+    await cp(consumerPath("agents", "designer"), agentRoot(consumer, "designer"), { recursive: true });
 
     const runtime = join(directory, "runtime");
     await cp(join(repository, "packages/producer/dist"), join(runtime, "dist"), { recursive: true });

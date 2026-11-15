@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ARCHETYPE_IDS, PAGE_ARCHETYPES, roleSections, writerGroupOf } from "./archetypes.js";
 import { PAGE_FORMAT_IDS, PAGE_FORMATS } from "./formats.js";
@@ -13,7 +13,7 @@ const designerFrames = ids("designer/src/catalog/slots/frames.json");
 const writerPassages = ids("writer/src/catalog/slots/passages.json");
 const directorCells = ids("director/src/catalog/cells/strategy.json");
 // The repository's own consumer records: package extension slots name their package in `contract.package`.
-const consumerDesigner = resolve(packages, "../clossys/agents/designer");
+const consumerDesigner = join(process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : resolve(packages, "producer/test-fixtures/consumer/clossys"), "agents/designer");
 const extensionSlots = (layer: "sections" | "frames"): Map<string, string> => new Map(readdirSync(consumerDesigner, { withFileTypes: true })
   .filter(dir => dir.isDirectory() && dir.name.startsWith(`${layer}.`))
   .map(dir => JSON.parse(readFileSync(resolve(consumerDesigner, dir.name, "slot.json"), "utf8")) as { id: string; contract?: { package?: string; layer?: string } })

@@ -34,6 +34,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { consumerPath } from "./consumer-root.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(process.env.CLOSSYS_CHECK_REPO ?? join(here, "../../.."));
@@ -65,7 +66,7 @@ function specimenInputs(repo, slotInstallInputs) {
   const temp = realpathSync(mkdtempSync(join(tmpdir(), "check-every-candidate-previewable-")));
   const consumer = join(temp, "clossys"), dropped = [];
   try {
-    cpSync(join(repo, "clossys", "agents"), join(consumer, "agents"), { recursive: true });
+    cpSync(consumerPath("agents"), join(consumer, "agents"), { recursive: true });
     for (let attempt = 0; attempt <= 50; attempt++) {
       try { return { inputs: slotInstallInputs(consumer), dropped }; }
       catch (error) {
@@ -90,7 +91,7 @@ export async function checkEveryCandidatePreviewable(repo) {
   const writerSource = typeof pinnedWriterCopy === "function" ? () => writer ??= pinnedWriterCopy(consumer) : undefined;
   const { readCandidate, listSeats } = await load(repo, "packages/producer/dist/records/slots.js");
   if (typeof slotDetail !== "function" || typeof listSlots !== "function") throw new Error("packages/producer is not built (dist/server/slot-detail.js, dist/records/slots.js)");
-  const consumer = join(repo, "clossys");
+  const consumer = consumerPath();
   const { inputs, inputsError, dropped } = specimenInputs(repo, slotInstallInputs);
   const findings = [], uncovered = new Map();
   const counts = { candidates: 0, rendered: 0, previews: 0, certified: 0, baselined: 0, assembled: 0, unassembled: 0, publications: 0, seats: 0 };

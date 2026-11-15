@@ -8,6 +8,7 @@ import { build as bundle } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import { installedSpecimenRoutes } from './installed-specimens.js';
 import { sandboxSpecimenFrames, specimenHostCsp } from './publication.js';
+import { consumerPath } from '../consumer-root.js';
 
 // A specimen that frames another specimen (components.studio.block-viewer-iframe frames
 // /__specimen?element=components.card/card), loaded in a real browser through the real specimen
@@ -20,7 +21,7 @@ import { sandboxSpecimenFrames, specimenHostCsp } from './publication.js';
 //     the pinned candidate answers it by rendering a static card instead of the nested frame.
 // The viewer page is the pinned candidate's own code (and v4, the last one without that answer).
 const repo = resolve(fileURLToPath(new URL('../../../..', import.meta.url)));
-const SLOT_DIR = join(repo, 'clossys/agents/designer/components.studio.block-viewer-iframe');
+const SLOT_DIR = consumerPath('agents', 'designer', 'components.studio.block-viewer-iframe');
 const CARD_FILE = join(repo, 'packages/designer/references/shadcn-aria/card@4.23.0/registry/aria-nova/ui/card.tsx');
 const VIEWER = '/__specimen?element=components.studio.block-viewer-iframe/block-viewer-iframe&width=1280';
 const CARD_TEXT = 'card specimen';

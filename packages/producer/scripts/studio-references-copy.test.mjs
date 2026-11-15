@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, mkdtemp, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { consumerPath } from './consumer-root.mjs';
 import { createHash } from 'node:crypto';
 import { build } from 'esbuild';
 import { createElement } from 'react';
@@ -17,16 +18,16 @@ const expected = { title: 'Uses and used by', description: "Links to the other a
 
 test('References copy resolves all existing labels as draft and its normal pinned payload matches', async () => {
   // The normal payload is the one the Designer slot model pins today (re-pinned past v2 by later adoptions).
-  const pinned = JSON.parse(await readFile(join(root, 'clossys/agents/designer/sections.studio.references/pin.json'), 'utf8')).candidate;
-  const files = await candidateFiles(join(root, 'clossys'), 'sections.studio.references', pinned);
+  const pinned = JSON.parse(await readFile(join(consumerPath(), 'agents/designer/sections.studio.references/pin.json'), 'utf8')).candidate;
+  const files = await candidateFiles(consumerPath(), 'sections.studio.references', pinned);
   await checkPayload({ slot: 'sections.studio.references', element: 'studio-references', version: Number(/-v([1-9][0-9]*)\.json$/.exec(pinned)[1]), files, studioDir: source,
     payload: [...files.keys()] });
-  const registry = await studioCopyRegistry(join(root, 'clossys'));
+  const registry = await studioCopyRegistry(consumerPath());
   for (const [field, text] of Object.entries(expected)) {
     const id = `studio.references-${field.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`;
     assert.deepEqual(registry.entries.find(entry => entry.id === id), { id, text, context: 'lib/references-copy.ts, sections/studio-references/index.tsx', status: 'draft' });
   }
-  const candidateDir = join(root, 'clossys/agents/designer/sections.studio.references');
+  const candidateDir = join(consumerPath(), 'agents/designer/sections.studio.references');
   const pin = JSON.parse(await readFile(join(candidateDir, 'pin.json'), 'utf8'));
   const bytes = await readFile(join(candidateDir, 'candidates', pin.candidate), 'utf8');
   assert.equal(createHash('sha256').update(bytes).digest('hex'), pin.sha256);
@@ -47,7 +48,7 @@ test('Writer input preserves exact References markup across all conditional bran
   const bundles = [];
   for (const version of ['v1', 'v2']) {
     const out = join(dir, `${version}.cjs`);
-    await build({ entryPoints: [join(await materializeCandidate(join(root, 'clossys'), 'sections.studio.references', `studio-references-${version}.json`, join(dir, `candidate-${version}`)), 'index.tsx')], outfile: out, bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', packages: 'external',
+    await build({ entryPoints: [join(await materializeCandidate(consumerPath(), 'sections.studio.references', `studio-references-${version}.json`, join(dir, `candidate-${version}`)), 'index.tsx')], outfile: out, bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', packages: 'external',
       alias: { '@clossys/designer-ui': join(root, 'packages/designer/ui/src/index.ts'), '@': join(root, 'packages/designer/ui/src') },
       nodePaths: [join(root, 'node_modules')] });
     // Keep React's server render and components on the same instance.

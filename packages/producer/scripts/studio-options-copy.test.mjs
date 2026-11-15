@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, mkdtemp, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { consumerPath } from './consumer-root.mjs';
 import { createHash } from 'node:crypto';
 import { build } from 'esbuild';
 import { createElement } from 'react';
@@ -17,16 +18,16 @@ const expected = { title: 'Options (pending approval)', key: 'Key', text: 'Text'
 
 test('Options copy resolves all existing labels as draft and its normal pinned payload matches', async () => {
   // The normal payload is the one the Designer slot model pins today (re-pinned past v2 by later adoptions).
-  const pinned = JSON.parse(await readFile(join(root, 'clossys/agents/designer/sections.studio.options/pin.json'), 'utf8')).candidate;
-  const files = await candidateFiles(join(root, 'clossys'), 'sections.studio.options', pinned);
+  const pinned = JSON.parse(await readFile(join(consumerPath(), 'agents/designer/sections.studio.options/pin.json'), 'utf8')).candidate;
+  const files = await candidateFiles(consumerPath(), 'sections.studio.options', pinned);
   await checkPayload({ slot: 'sections.studio.options', element: 'studio-options', version: Number(/-v([1-9][0-9]*)\.json$/.exec(pinned)[1]), files, studioDir: source,
     payload: [...files.keys()] });
-  const registry = await studioCopyRegistry(join(root, 'clossys'));
+  const registry = await studioCopyRegistry(consumerPath());
   for (const [field, text] of Object.entries(expected)) {
     const id = `studio.options-${field.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`;
     assert.deepEqual(registry.entries.find(entry => entry.id === id), { id, text, context: 'lib/options-copy.ts, sections/studio-options/index.tsx', status: 'draft' });
   }
-  const candidateDir = join(root, 'clossys/agents/designer/sections.studio.options');
+  const candidateDir = join(consumerPath(), 'agents/designer/sections.studio.options');
   const pin = JSON.parse(await readFile(join(candidateDir, 'pin.json'), 'utf8'));
   const bytes = await readFile(join(candidateDir, 'candidates', pin.candidate), 'utf8');
   assert.equal(createHash('sha256').update(bytes).digest('hex'), pin.sha256);
@@ -48,7 +49,7 @@ test('Writer input preserves exact Options markup across all conditional branche
   assert.deepEqual(copy.changeLabels, { added: 'Added', changed: 'Changed', removed: 'Removed', same: 'Same' });
   const bundles = [];
   // Pinned v1 predates inherited viewport/class changes; compare exact pre-cut running source.
-  for (const [version, entry] of [['before', join(root, 'packages/producer/scripts/__fixtures__/studio-options-before-copy.tsx')], ['v2', join(await materializeCandidate(join(root, 'clossys'), 'sections.studio.options', 'studio-options-v2.json', join(dir, 'candidate-v2')), 'index.tsx')]]) {
+  for (const [version, entry] of [['before', join(root, 'packages/producer/scripts/__fixtures__/studio-options-before-copy.tsx')], ['v2', join(await materializeCandidate(consumerPath(), 'sections.studio.options', 'studio-options-v2.json', join(dir, 'candidate-v2')), 'index.tsx')]]) {
     const out = join(dir, `${version}.cjs`);
     await build({ entryPoints: [entry], outfile: out, bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', packages: 'external',
       alias: { '@clossys/designer-ui': join(root, 'packages/designer/ui/src/index.ts'), '@': join(root, 'packages/designer/ui/src') },

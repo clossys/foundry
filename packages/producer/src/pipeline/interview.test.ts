@@ -9,13 +9,13 @@ import { runNextCli } from "../cli/next.js";
 import { ladderIssues } from "./candidate-ladder.js";
 import { CONFIRM_REF, gapsOf, interviewIssues, interviewOf, ROUND_SIZE } from "./interview.js";
 import type { Gap, Question } from "./interview.js";
-import { PACKAGE_ROOT } from "./options.js";
 import { runPipeline } from "./runner.js";
 import { readSeatPolicy, SEAT_POLICY_FILE } from "./seat-policy.js";
 import { appendRecord, buildRecord } from "./trace.js";
+import { consumerPath } from "../consumer-root.js";
 
 /** The foundry consumer this package ships beside: a real slot model to copy (never the real records). */
-const FOUNDRY = join(PACKAGE_ROOT, "..", "..", "clossys");
+const FOUNDRY = consumerPath();
 const dirs: string[] = [];
 function workspace(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "interview-")));

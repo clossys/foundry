@@ -2,8 +2,7 @@ import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import { resolvePage, type BoundPage } from '@clossys/publisher/install';
@@ -19,9 +18,9 @@ import { componentSpecimenPage, hostOnlyFinding, installedRecordSource, installe
 import { SPECIMEN_FRAME_CSP, SPECIMEN_FRAME_SCRIPT_HASH } from './specimen-frame.js';
 import { placeholderImageText, SPECIMEN_IMAGE_PLACEHOLDER } from './specimen-images.js';
 import { PREVIEW_PAGE_CSP, specimenHostCsp } from './publication.js';
+import { consumerPath } from '../consumer-root.js';
 
-const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
-const designer = join(repo, 'clossys/agents/designer');
+const designer = consumerPath('agents', 'designer');
 
 /** A stand-in compound component module: each part renders a tagged element around its children. */
 const TABS_MODULE = [
@@ -86,7 +85,7 @@ describe('specimen element trees', () => {
   });
 
   it('every pinned component fixture tree resolves against its own exports and the pinned Writer copy', async () => {
-    const copy = pinnedWriterCopy(join(repo, 'clossys'));
+    const copy = pinnedWriterCopy(consumerPath());
     expect(copy['studio.specimen.tabs-overview']).toBe('Overview');
     for (const slot of ['components.tabs', 'components.card']) {
       const pin = JSON.parse(readFileSync(join(designer, slot, 'pin.json'), 'utf8'));
@@ -253,7 +252,7 @@ describe('a component slot that reads a context', () => {
   }, 60_000);
 
   it.each(['components.navigation-tree', 'components.flow.canvas', 'components.flow.base-handle'])('resolves the pinned %s through the installed record source and mounts it inside exactly one provider', async slot => {
-    const library = join(repo, 'clossys');
+    const library = consumerPath();
     const { pins } = slotInstallInputs(library)!;
     const provider = (specimenStateOf(slot) as Extract<SpecimenState, { state: 'provider' }>).provider;
     // The production path: installed records -> resolvePage -> componentSpecimenPage.
@@ -278,7 +277,7 @@ describe('a component slot that reads a context', () => {
   }, 60_000);
 
   it.each(['components.chart-area', 'components.chart-bar', 'components.chart-line', 'components.tooltip', 'components.toast', 'components.flow.labeled-handle'])('resolves the pinned %s through the installed record source to its own registry file, with no generated specimen module', async slot => {
-    const library = join(repo, 'clossys');
+    const library = consumerPath();
     const { pins } = slotInstallInputs(library)!;
     const copy = pinnedWriterCopy(library);
     // The production path: installed records -> resolvePage -> the build pass's tree check -> componentSpecimenPage.

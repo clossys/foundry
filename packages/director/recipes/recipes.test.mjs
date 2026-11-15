@@ -21,6 +21,7 @@ import { pinOf, slotWorld, tasteWindow } from "./stage-core.mjs";
 const AGENT = "director";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..", "..", "..");
+const CONSUMER = process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : join(ROOT, "packages/producer/test-fixtures/consumer/clossys");
 const dist = path => import(pathToFileURL(join(ROOT, "packages", "producer", "dist", path)).href);
 const { loadRecipes, produceIssues, recipesFor } = await dist("records/recipes.js");
 const { loadStandards } = await dist("records/standards.js");
@@ -39,13 +40,13 @@ const STANDARD_COUNT = 4;
 
 /** The pinned candidate of a slot: its name and text. */
 function pinned(slot) {
-  const pin = readJson(join(ROOT, "clossys", "agents", AGENT, slot, "pin.json"));
-  return { name: pin.candidate, text: readFileSync(join(ROOT, "clossys", "agents", AGENT, slot, "candidates", pin.candidate), "utf8") };
+  const pin = readJson(join(CONSUMER, "agents", AGENT, slot, "pin.json"));
+  return { name: pin.candidate, text: readFileSync(join(CONSUMER, "agents", AGENT, slot, "candidates", pin.candidate), "utf8") };
 }
 const asDraft = ({ name, text }) => { let json; if (name.endsWith(".json")) { try { json = JSON.parse(text); } catch { json = undefined; } } return { name, text, json }; };
 /** The judge's verdict per requirement id, as the certifier runs it (the standard's criteria, $contract bound). */
 async function judge(slot, candidate) {
-  const slotDoc = readJson(join(ROOT, "clossys", "agents", AGENT, slot, "slot.json"));
+  const slotDoc = readJson(join(CONSUMER, "agents", AGENT, slot, "slot.json"));
   const standard = readJson(join(ROOT, "packages", AGENT, "standards", slotDoc.standard, "requirements.json"));
   const verdict = await requirementsVerdict({ candidate: { name: candidate.name, bytes: candidate.text }, kind: slotDoc.kind, standard: { id: standard.id, sha256: "0".repeat(64), requirements: standard.requirements.map(item => ({ check: item.check, params: item.params ?? {} })) }, contract: slotDoc.contract, pinSet: "0".repeat(64) });
   return Object.fromEntries(verdict.results.map(result => [result.check, result.pass]));

@@ -7,11 +7,11 @@ import { readCandidate } from "../records/slots.js";
 import { writeCandidate, writePin } from "../records/slot-write.js";
 import { writerWording } from "../records/writer-wording.js";
 import { gapsOf, interviewOf } from "./interview.js";
-import { PACKAGE_ROOT } from "./options.js";
 import { SEAT_POLICY_FILE } from "./seat-policy.js";
+import { consumerPath } from "../consumer-root.js";
 
 /** The foundry consumer this package ships beside: its pinned Writer lexicon is the rule source under test. */
-const FOUNDRY = join(PACKAGE_ROOT, "..", "..", "clossys");
+const FOUNDRY = consumerPath();
 const dirs: string[] = [];
 function workspace(): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "writer-lexicon-")));
