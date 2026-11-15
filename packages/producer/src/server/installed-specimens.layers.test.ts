@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { installPage, reconcileInstalled, type InstallPins, type ShadcnRunner } from '@clossys/publisher/install';
 import { installedPath, recordStoreSource } from '@clossys/publisher/specimen';
-import { buildOption, buildSite, renderFailedFinding, savedSite, specimenSiteCsp, type PassOptions, type PassResult, type SiteInputs } from './installed-specimens.js';
+import { buildOption, buildSite, renderFailedFinding, savedSite, specimenSiteCsp, type PassOptions, type PassResult, type SiteInputs } from '../specimen/installed-specimens.js';
 
 const temps: string[] = [];
 afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });

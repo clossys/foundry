@@ -1,10 +1,10 @@
 "use client";
 
 import { createElement, type ReactNode } from "react";
-import type { SpecimenLeafProps } from "../../studio/specimen-layouts.js";
-import { SpecimenSwatch as SwatchSection, SpecimenColorRamp, SpecimenTypeLadder, SpecimenSpacingLadder, SpecimenRadiusLadder, SpecimenMotionPlayer, SpecimenAssetGrid, SpecimenIconGrid } from "../../studio/specimen-token-assets.js";
-import { SpecimenVariantMatrix, SpecimenSectionViewports, SpecimenFrameViewports } from "../../studio/specimen-viewports.js";
-import { SpecimenRichPassage, SpecimenCopyInContext as CopyInContextSection, SpecimenPageViewports } from "../../studio/specimen-content.js";
+import type { SpecimenLeafProps } from "../../specimen/specimen-layouts.js";
+import { SpecimenSwatch as SwatchSection, SpecimenColorRamp, SpecimenTypeLadder, SpecimenSpacingLadder, SpecimenRadiusLadder, SpecimenMotionPlayer, SpecimenAssetGrid, SpecimenIconGrid } from "../../specimen/specimen-token-assets.js";
+import { SpecimenVariantMatrix, SpecimenSectionViewports, SpecimenFrameViewports } from "../../specimen/specimen-viewports.js";
+import { SpecimenRichPassage, SpecimenCopyInContext as CopyInContextSection, SpecimenPageViewports } from "../../specimen/specimen-content.js";
 
 /**
  * Registered `components.specimen-*` leaves (owner 2026-11-05, DESIGNER-READOPT): the visual unit a Studio

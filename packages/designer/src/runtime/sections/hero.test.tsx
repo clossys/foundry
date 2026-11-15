@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { heroSpecimenInput, HERO_SPECIMEN_COPY } from "../../studio/hero-specimen.js";
+import { heroSpecimenInput, HERO_SPECIMEN_COPY } from "../../specimen/hero-specimen.js";
 import { runtimeHash, type RuntimeJson } from "../../catalog-core/runtime-ports.js";
 import { heroCopyOf } from "./hero-copy.js";
 import { renderHeroSection } from "./hero.js";

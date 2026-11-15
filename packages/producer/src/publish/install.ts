@@ -26,7 +26,7 @@ import {
 } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { isHostPackage } from "../specimen/host-packages.js";
-import { dependencyPart, treeDependencyParts } from "../server/specimen-tree.js";
+import { dependencyPart, treeDependencyParts } from "../specimen/specimen-tree.js";
 import { firstComponentSource } from "@clossys/publisher/build";
 import { hasSlotModel, readCandidate, readIa, readPin, readSlot } from "../records/slots.js";
 import { slotPositions, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";

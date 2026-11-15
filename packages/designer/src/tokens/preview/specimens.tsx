@@ -14,7 +14,7 @@ import { TOKENS } from "../tokens.js";
 import { checkedPreviewCss } from "./checked-css.js";
 import { displayTokenValue } from "./member-order.js";
 import { TokenValuePreview } from "./index.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 /**
  * One specimen type per token leaf (C21-4). Every member of a leaf paints the same specimen;

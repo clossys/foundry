@@ -6,7 +6,7 @@ import { FeatureLayouts } from "./FeatureLayouts.js";
 import type { FeatureLayoutItem } from "./types.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { Suspense } from "react";
-import { MarketingComponentProvider } from "../../studio/marketing-component-selection.js";
+import { MarketingComponentProvider } from "../../specimen/marketing-component-selection.js";
 
 const items: FeatureLayoutItem[] = [
   { id: "one", heading: "First feature", description: "First detail", visual: <SemanticContent as="div">First figure</SemanticContent>, span: "two-thirds" },

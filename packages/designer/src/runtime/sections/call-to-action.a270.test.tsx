@@ -20,7 +20,7 @@ import { surfaceRuntimePreview } from "../preview.js";
 import { groupASectionInput } from "./group-a-dataset.js";
 import fill from "../../catalog/fills/foundry/sections.call-to-action.json" with { type: "json" };
 import { renderCallToActionSection } from "./call-to-action.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 let selection: ConsumerComponentSelection;
 const SelectedButton = componentLeaf<typeof Button>("components.button");
@@ -61,7 +61,7 @@ beforeAll(async () => {
     return result.exports;
   }
   const native = compile(descriptor.impl.entry);
-  const profile: ResolvedComponents = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../studio/default-component-preview-profile.json"), "utf8"));
+  const profile: ResolvedComponents = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../specimen/default-component-preview-profile.json"), "utf8"));
   const previous = profile.components["components.card"];
   if (!previous) throw new Error("NEED registered Card preview selection");
   profile.components = { ...profile.components, "components.card": { ...previous, descriptor, impl: descriptor.impl, propMap: descriptor.propMap } };

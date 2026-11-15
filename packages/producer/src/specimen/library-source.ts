@@ -11,8 +11,8 @@ import { listSlots, pinStamp, readCandidate, readSlot, readSlotEntry, type SlotE
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { contractFixtureIssues, contractFixtureOf, type ContractFixture } from "../records/slot-model/contract-fixture.js";
 import { RecordError } from "../records/validate.js";
-import { dependencyPart, fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues, treeDependencyParts } from "../server/specimen-tree.js";
-import { installedCode, itemSpecimenState, specimenStateOf, VISIBLE_STATE_CSS } from "../server/specimen-state.js";
+import { dependencyPart, fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues, treeDependencyParts } from "./specimen-tree.js";
+import { installedCode, itemSpecimenState, specimenStateOf, VISIBLE_STATE_CSS } from "./specimen-state.js";
 import { firstComponentSource } from "@clossys/publisher/build";
 
 const SEGMENT = /^[a-z0-9][a-z0-9.-]*$/;

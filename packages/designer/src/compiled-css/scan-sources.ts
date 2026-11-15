@@ -1,5 +1,6 @@
 /**
  * Class candidates for `styles/compiled.css` — components, blocks, shell, canonical Frames, public Studio,
+ * the specimen renderers moved out of the Studio (foundry-build-0007),
  * and the surface runtime Studio renders sections and frames through.
  * Pre-auth pages mount Hero and shell chrome; limiting the scan to components
  * left those classes Tailwind-only and unstyled on the default CSS path. The
@@ -9,7 +10,7 @@
 import { join } from "node:path";
 import { scanClassCandidates, type ClassScanResult } from "./class-scan.js";
 
-export const COMPILED_CSS_SOURCE_DIRS = ["components", "blocks", "shell", "frames", "runtime", "studio"] as const;
+export const COMPILED_CSS_SOURCE_DIRS = ["components", "blocks", "shell", "frames", "runtime", "studio", "specimen"] as const;
 
 export interface CompiledCssScanResult extends ClassScanResult {
   /** Per-directory file counts for reporting. */
@@ -18,7 +19,7 @@ export interface CompiledCssScanResult extends ClassScanResult {
 
 /**
  * Directories whose components are exported (`./components`, `./blocks`, `./shell`,
- * `./frames`, `./studio`, `./charts`, `./theme`, plus token preview tooling). `styles/utilities.css` lists the classes of all of
+ * `./frames`, `./studio`, `./specimen`, `./charts`, `./theme`, plus token preview tooling). `styles/utilities.css` lists the classes of all of
  * them; `compiled.css` keeps the narrower scan above.
  */
 export const UTILITIES_SOURCE_DIRS = [...COMPILED_CSS_SOURCE_DIRS, "charts", "theme", "tokens/preview"] as const;

@@ -9,7 +9,7 @@
  * remain report-only unless `strict` is set.
  */
 import { join } from "node:path";
-import { agentModule } from "../server/cells.js";
+import { agentModule } from "../read/cells.js";
 import { readPinnedDirector } from "../records/director-pinned.js";
 import { readPublisher, readWriter } from "../publish/site-source.js";
 import { writerText } from "@clossys/publisher/build";

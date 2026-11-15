@@ -8,7 +8,7 @@ import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
 import { assertModelTree, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
-import { agentModule } from "../server/cells.js";
+import { agentModule } from "../read/cells.js";
 import { checkSlotModel, formatCoverage, slotCoverage, writerRecords, type AgentCoverage } from "../records/slot-check.js";
 import { writerDeclarationsText } from "../publish/studio-defaults.js";
 import {

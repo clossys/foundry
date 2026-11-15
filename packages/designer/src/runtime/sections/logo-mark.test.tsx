@@ -9,7 +9,7 @@ import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { scanProvenance } from "../../catalog-core/provenance-scan.js";
 import { loadSectionRegistry } from "../../catalog-core/sections-contract.js";
 import { FOUNDRY_SECTION_MAP, importFoundrySections } from "../../importers/foundry-sections.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { sectionRenderers } from "./index.js";
 import { logoMarkRenderer } from "./logo-mark.js";
 

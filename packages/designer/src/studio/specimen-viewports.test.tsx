@@ -17,7 +17,7 @@ import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
-import componentData from "./default-component-preview-profile.json" with { type: "json" };
+import componentData from "../specimen/default-component-preview-profile.json" with { type: "json" };
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import { emittedDesignerSpecimenContext } from "./emitted-specimens.js";
 import { surfaceSpecimenItems, SpecimenSectionViewports } from "./specimen-viewports.js";

@@ -1,7 +1,2 @@
-import type { Resolved } from '../catalog-core/types.js';
-import { createStudioTokenReference } from '../catalog-core/studio-host-parts.js';
-
-/** The token's registered emit mapping supplies the property; a caller supplies only its member id. */
-export function specimenTokenReference(values: Resolved, memberId: string, mode: 'light' | 'dark') {
-  return createStudioTokenReference(values, memberId, mode);
-}
+// Moved to the engine (foundry-build-0007): Studio keeps this path only until unit 0008 deletes it.
+export * from "../specimen/specimen-token-reference.js";

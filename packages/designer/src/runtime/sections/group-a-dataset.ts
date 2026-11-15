@@ -10,8 +10,8 @@ import sectionSlots from "../../catalog/slots/sections.json" with { type: "json"
 import type { SectionSlot } from "../../catalog-core/sections-contract.js";
 import type { CompositeResolved } from "../../catalog-core/types.js";
 import { runtimeHash, type RuntimeContent, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeJson, type RuntimeRenderInput, type RuntimeSourceClosure } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset as data } from "../../studio/specimen-dataset.js";
-import { heroCopyFromDataset, HERO_SPECIMEN_BACKDROP, HERO_PREVIEW_MEMBERS } from "../../studio/hero-specimen.js";
+import { specimenDataset as data } from "../../specimen/specimen-dataset.js";
+import { heroCopyFromDataset, HERO_SPECIMEN_BACKDROP, HERO_PREVIEW_MEMBERS } from "../../specimen/hero-specimen.js";
 import { plainJson } from "./dataset-json.js";
 
 export const GROUP_A_LEAVES = ["article", "band", "call-to-action", "comparison", "content", "faq", "features", "gallery", "hero", "logo-cloud", "media", "newsletter", "people", "pricing", "testimonials"] as const;

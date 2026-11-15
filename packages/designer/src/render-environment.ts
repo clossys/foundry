@@ -80,6 +80,8 @@ export const RENDER_ENVIRONMENT: Readonly<Record<string, RenderEnvironment>> = {
   "./catalog/server": "server-safe",
   "./catalog/node": "server-safe",
   "./catalog/dogfood/node": "server-safe",
+  "./specimen": "client-only",
+  "./queries": "server-safe",
   "./studio": "client-only",
   "./studio/queries": "server-safe",
   "./studio/state": "client-only",

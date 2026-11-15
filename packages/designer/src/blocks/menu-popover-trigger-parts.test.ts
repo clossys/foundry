@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 // (Menu.Item, Menu.Section, Menu.Separator), so such a call silently drops its trigger. Callers
 // compose the declared parts (DropdownMenuTrigger/MenuItem/..., DialogTrigger + Popover) instead.
 const SRC = join(import.meta.dirname, "..");
-const ROOTS = ["blocks", "frames", "shell", "runtime", "studio"].map(dir => join(SRC, dir));
+const ROOTS = ["blocks", "frames", "shell", "runtime", "studio", "specimen"].map(dir => join(SRC, dir));
 const LEAF = /const (\w+) = componentLeaf<[^;]*?>\("components\.(menu|popover)"\);/g;
 
 function files(dir: string): string[] {

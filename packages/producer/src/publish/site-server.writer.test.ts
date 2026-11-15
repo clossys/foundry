@@ -9,12 +9,12 @@ import { canonicalLibrary } from "../specimen/__fixtures__/canonical-library.js"
 
 // Count every Writer scan the record handler makes; the scan itself runs unchanged.
 const scans = vi.hoisted(() => ({ count: 0 }));
-vi.mock("../server/specimen-tree.js", async importOriginal => {
-  const actual = await importOriginal<typeof import("../server/specimen-tree.js")>();
+vi.mock("../specimen/specimen-tree.js", async importOriginal => {
+  const actual = await importOriginal<typeof import("../specimen/specimen-tree.js")>();
   return { ...actual, pinnedWriterCopy: (...args: Parameters<typeof actual.pinnedWriterCopy>) => { scans.count++; return actual.pinnedWriterCopy(...args); } };
 });
 const { specimenMount, writerSnapshot } = await import("./site-server.js");
-const { pinnedWriterCopy } = await import("../server/specimen-tree.js");
+const { pinnedWriterCopy } = await import("../specimen/specimen-tree.js");
 
 const workspace = fileURLToPath(new URL("../../../../", import.meta.url));
 const temps: string[] = [];

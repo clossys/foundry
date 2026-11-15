@@ -1,6 +1,6 @@
 import { TaskList, type TaskListItem } from "../../blocks/TaskList.js";
 import { recordsOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 const { taskList, taskProgress } = specimenDataset.sections;
 

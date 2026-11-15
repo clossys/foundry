@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { SITE_MAIN_ID } from "../../frames/site-frame/types.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { DocumentFrame, FRAME_CRITICAL_STYLE_ATTRIBUTE, documentRenderer, type DocumentFrameProps } from "./document.js";
 
 const props: DocumentFrameProps = { lang: "en", dir: "ltr", variant: "page", title: "Projects", children: <main>Host body</main> };
