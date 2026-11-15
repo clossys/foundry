@@ -1,5 +1,5 @@
-import { deriveDesignerLayerBoardsV1, DESIGNER_LAYER_BOARDS_QUERY } from "@clossys/designer/studio/queries";
-import type { DesignerLayerBoardsInput } from "@clossys/designer/studio/queries";
+import { deriveDesignerLayerBoardsV1, DESIGNER_LAYER_BOARDS_QUERY } from "@clossys/designer/queries";
+import type { DesignerLayerBoardsInput } from "@clossys/designer/queries";
 import { libraryHash, resolve, runtimeHash, runtimeSnapshot, runtimeSourceFindings } from "@clossys/designer/catalog";
 import type { CompositeEngineInput, RuntimeContent, RuntimeContentRef, RuntimeJson, RuntimeRendererDescriptor } from "@clossys/designer/catalog";
 import type { ConsumerInstanceLibrary, ContentRef, InstanceBinding, InstanceRegistries, PublicationBinding, RegionPageBinding } from "../core/instance-binding.js";
