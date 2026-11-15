@@ -13,33 +13,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "roles[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -49,6 +53,7 @@
           {
             "key": "permissions[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -58,6 +63,7 @@
           {
             "key": "permissions[].permissions[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -67,6 +73,7 @@
           {
             "key": "permissions[].permissions[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -76,6 +83,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -85,6 +93,7 @@
           {
             "key": "roles[].locked-reason",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -94,6 +103,7 @@
           {
             "key": "labels.permission-header",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -103,6 +113,7 @@
           {
             "key": "labels.cell",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -112,6 +123,7 @@
           {
             "key": "labels.group-all",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -121,6 +133,7 @@
           {
             "key": "labels.inherited",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -130,6 +143,7 @@
           {
             "key": "labels.locked",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -139,6 +153,7 @@
           {
             "key": "labels.change-summary",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -165,15 +180,17 @@
           {
             "key": "heading",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "identity.name",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -183,6 +200,7 @@
           {
             "key": "identity.name-label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -192,15 +210,17 @@
           {
             "key": "identity.email",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
-              "en": 320
+              "en": 160
             },
             "dir": "auto"
           },
           {
             "key": "identity.email-label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -210,6 +230,7 @@
           {
             "key": "rows[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -219,6 +240,7 @@
           {
             "key": "rows[].value",
             "kind": "plain",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 1000
@@ -228,9 +250,10 @@
           {
             "key": "actions[].label",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 24
             },
             "dir": "auto"
           }
@@ -254,33 +277,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "grouping[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -290,6 +317,7 @@
           {
             "key": "filters.links[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -299,6 +327,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -308,6 +337,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -317,6 +347,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -326,6 +357,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -335,6 +367,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -344,6 +377,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -353,6 +387,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -362,6 +397,7 @@
           {
             "key": "events[].actor.name",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -371,6 +407,7 @@
           {
             "key": "events[].summary",
             "kind": "rich",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 480
@@ -380,6 +417,7 @@
           {
             "key": "events[].time-text",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -389,6 +427,7 @@
           {
             "key": "events[].changes[].field",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -398,6 +437,7 @@
           {
             "key": "events[].changes[].from",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -407,6 +447,7 @@
           {
             "key": "events[].changes[].to",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -416,6 +457,7 @@
           {
             "key": "events[].detail",
             "kind": "rich",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -425,6 +467,7 @@
           {
             "key": "labels.unread",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -434,6 +477,7 @@
           {
             "key": "labels.changed-from",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -443,6 +487,7 @@
           {
             "key": "labels.changed-to",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -452,6 +497,7 @@
           {
             "key": "labels.cleared",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -478,33 +524,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "body[].text",
             "kind": "plain",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 8000
@@ -514,6 +564,7 @@
           {
             "key": "body[].items[]",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 8000
@@ -523,6 +574,7 @@
           {
             "key": "toc.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -532,6 +584,7 @@
           {
             "key": "toc.items[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -558,33 +611,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "entries[].actor",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -594,15 +651,17 @@
           {
             "key": "entries[].action",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "entries[].target",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -612,6 +671,7 @@
           {
             "key": "filter.search.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -621,6 +681,7 @@
           {
             "key": "filter.search.placeholder",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -630,6 +691,7 @@
           {
             "key": "export.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -639,6 +701,7 @@
           {
             "key": "labels.time",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -648,6 +711,7 @@
           {
             "key": "labels.actor",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -657,15 +721,17 @@
           {
             "key": "labels.action",
             "kind": "plain",
+            "role": "action",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "labels.target",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -675,6 +741,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -684,6 +751,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -693,6 +761,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -702,6 +771,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -711,6 +781,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -720,6 +791,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -729,6 +801,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -738,6 +811,7 @@
           {
             "key": "entries[].time-text",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -780,6 +854,7 @@
           {
             "key": "status",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 80
@@ -789,15 +864,17 @@
           {
             "key": "title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "description",
             "kind": "plain",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 480
@@ -807,15 +884,17 @@
           {
             "key": "actions[].label",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "notes",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -842,45 +921,50 @@
           {
             "key": "header.title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "actions.primary.label",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "actions.secondary.label",
             "kind": "plain",
+            "role": "action",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           }
@@ -904,42 +988,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "records[].title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "records[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -949,6 +1038,7 @@
           {
             "key": "records[].meta",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -958,6 +1048,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -967,6 +1058,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -976,6 +1068,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -985,6 +1078,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -994,6 +1088,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1003,6 +1098,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1012,6 +1108,7 @@
           {
             "key": "records[].badge.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1021,15 +1118,17 @@
           {
             "key": "records[].image.alt",
             "kind": "plain",
+            "role": "alt",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 140
             },
             "dir": "auto"
           },
           {
             "key": "records[].editorial.author.name",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1039,6 +1138,7 @@
           {
             "key": "records[].editorial.author.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1048,6 +1148,7 @@
           {
             "key": "records[].editorial.date.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1057,6 +1158,7 @@
           {
             "key": "records[].editorial.reading-time.value",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1066,6 +1168,7 @@
           {
             "key": "records[].editorial.reading-time.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1075,6 +1178,7 @@
           {
             "key": "records[].editorial.tags[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1084,6 +1188,7 @@
           {
             "key": "records[].editorial.summary",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1093,6 +1198,7 @@
           {
             "key": "records[].editorial.outcome-stats[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1102,6 +1208,7 @@
           {
             "key": "records[].editorial.outcome-stats[].value",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1128,33 +1235,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "parts[].content",
             "kind": "rich",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 2400
@@ -1164,6 +1275,7 @@
           {
             "key": "composer.placeholder",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1173,6 +1285,7 @@
           {
             "key": "composer.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1182,6 +1295,7 @@
           {
             "key": "labels.status",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1191,6 +1305,7 @@
           {
             "key": "parts[].timestamp",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1217,33 +1332,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "source-columns[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1253,6 +1372,7 @@
           {
             "key": "target-fields[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1262,6 +1382,7 @@
           {
             "key": "target-fields[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1271,6 +1392,7 @@
           {
             "key": "labels.source",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1280,6 +1402,7 @@
           {
             "key": "labels.target",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1289,6 +1412,7 @@
           {
             "key": "labels.unmapped",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1315,33 +1439,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "columns[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1351,6 +1479,7 @@
           {
             "key": "columns[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1360,6 +1489,7 @@
           {
             "key": "rows[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1369,6 +1499,7 @@
           {
             "key": "rows[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1378,6 +1509,7 @@
           {
             "key": "rows[].cells[].text",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1387,6 +1519,7 @@
           {
             "key": "highlight.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1396,6 +1529,7 @@
           {
             "key": "controls[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1405,6 +1539,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1414,6 +1549,7 @@
           {
             "key": "labels.feature",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1423,6 +1559,7 @@
           {
             "key": "rows[].cells[].value",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1432,6 +1569,7 @@
           {
             "key": "rows[].cells[].delta",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1458,42 +1596,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "copy.title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "copy.body",
             "kind": "rich",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 2400
@@ -1503,15 +1646,17 @@
           {
             "key": "actions[].label",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "policy.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1538,33 +1683,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "header.actions[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1574,6 +1723,7 @@
           {
             "key": "body[].text",
             "kind": "plain",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 8000
@@ -1583,6 +1733,7 @@
           {
             "key": "body[].items[]",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 8000
@@ -1592,15 +1743,17 @@
           {
             "key": "media.title",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "media.series[].name",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -1610,6 +1763,7 @@
           {
             "key": "footnote",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1619,6 +1773,7 @@
           {
             "key": "aside[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1628,6 +1783,7 @@
           {
             "key": "aside[].value",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1654,33 +1810,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "cells[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1690,6 +1850,7 @@
           {
             "key": "rows[].cells[].text",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1699,6 +1860,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1708,6 +1870,7 @@
           {
             "key": "labels.selection",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1717,6 +1880,7 @@
           {
             "key": "labels.sort",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1726,6 +1890,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1735,6 +1900,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1744,6 +1910,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1753,6 +1920,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1762,6 +1930,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1771,6 +1940,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1797,33 +1967,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "columns[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1833,6 +2007,7 @@
           {
             "key": "rows[].cells[].text",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1842,6 +2017,7 @@
           {
             "key": "toolbar.search.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1851,6 +2027,7 @@
           {
             "key": "toolbar.search.placeholder",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1860,6 +2037,7 @@
           {
             "key": "toolbar.actions[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1869,6 +2047,7 @@
           {
             "key": "pagination.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1878,6 +2057,7 @@
           {
             "key": "pagination.page-text",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1887,6 +2067,7 @@
           {
             "key": "pagination.total-text",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1896,6 +2077,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1905,6 +2087,7 @@
           {
             "key": "labels.selection",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1914,6 +2097,7 @@
           {
             "key": "labels.sort",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -1923,6 +2107,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1932,6 +2117,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1941,6 +2127,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1950,6 +2137,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1959,6 +2147,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -1968,6 +2157,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -1994,42 +2184,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "actions[].label",
             "kind": "plain",
+            "role": "action",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "illustration.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2056,33 +2251,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "code",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2092,6 +2291,7 @@
           {
             "key": "retry.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2101,6 +2301,7 @@
           {
             "key": "report.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2127,33 +2328,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "tree.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2163,6 +2368,7 @@
           {
             "key": "tree.nodes[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2172,6 +2378,7 @@
           {
             "key": "tree.nodes[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -2181,6 +2388,7 @@
           {
             "key": "list.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2190,6 +2398,7 @@
           {
             "key": "list.items[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2199,6 +2408,7 @@
           {
             "key": "labels.details",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2225,33 +2435,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "items[].question",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2261,6 +2475,7 @@
           {
             "key": "items[].answer",
             "kind": "rich",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 2400
@@ -2287,42 +2502,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "items[].heading",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "items[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -2349,33 +2569,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "fields[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2385,6 +2609,7 @@
           {
             "key": "fields[].options[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2394,6 +2619,7 @@
           {
             "key": "operators[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2403,6 +2629,7 @@
           {
             "key": "groups[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2412,6 +2639,7 @@
           {
             "key": "labels.add-rule",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2421,6 +2649,7 @@
           {
             "key": "labels.add-group",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2430,6 +2659,7 @@
           {
             "key": "labels.remove",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2439,6 +2669,7 @@
           {
             "key": "labels.match-all",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2448,6 +2679,7 @@
           {
             "key": "labels.match-any",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2457,6 +2689,7 @@
           {
             "key": "labels.value",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2483,33 +2716,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "fields[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2519,6 +2756,7 @@
           {
             "key": "fields[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -2528,6 +2766,7 @@
           {
             "key": "fields[].placeholder",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2537,6 +2776,7 @@
           {
             "key": "fields[].options[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2546,6 +2786,7 @@
           {
             "key": "fields[].error",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2555,6 +2796,7 @@
           {
             "key": "submit.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2564,15 +2806,17 @@
           {
             "key": "error-summary.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "error-summary.items[].message",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2582,6 +2826,7 @@
           {
             "key": "success.message",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -2591,6 +2836,7 @@
           {
             "key": "error.message",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -2617,33 +2863,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "images.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2653,6 +2903,7 @@
           {
             "key": "images.items[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2662,6 +2913,7 @@
           {
             "key": "images.items[].caption",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -2671,9 +2923,10 @@
           {
             "key": "images.items[].media.title",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           }
@@ -2697,60 +2950,67 @@
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "actions.primary.label",
             "kind": "plain",
+            "role": "action",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "actions.secondary.label",
             "kind": "plain",
+            "role": "action",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "media.title",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "media.series[].name",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -2777,15 +3037,17 @@
           {
             "key": "heading",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "revision.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -2795,6 +3057,7 @@
           {
             "key": "revision.value",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -2804,6 +3067,7 @@
           {
             "key": "body",
             "kind": "rich",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 48000
@@ -2830,42 +3094,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "links[].title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "links[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -2875,6 +3144,7 @@
           {
             "key": "links[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2884,6 +3154,7 @@
           {
             "key": "links[].badge",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -2910,33 +3181,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "logos[].name",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -2963,6 +3238,7 @@
           {
             "key": "name",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -3005,33 +3281,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "figure.caption",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3041,15 +3321,17 @@
           {
             "key": "figure.media.title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "figure.media.series[].name",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -3059,6 +3341,7 @@
           {
             "key": "figure.chrome-label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -3068,6 +3351,7 @@
           {
             "key": "callouts.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -3077,6 +3361,7 @@
           {
             "key": "callouts.items[].body",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3103,33 +3388,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "email.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3139,6 +3428,7 @@
           {
             "key": "email.placeholder",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3148,6 +3438,7 @@
           {
             "key": "consent",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3157,6 +3448,7 @@
           {
             "key": "submit.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3166,6 +3458,7 @@
           {
             "key": "submit.pending-label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3175,6 +3468,7 @@
           {
             "key": "submit.sent-message",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3184,6 +3478,7 @@
           {
             "key": "submit.failed-message",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3210,42 +3505,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "notices[].title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "notices[].body",
             "kind": "rich",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 2400
@@ -3255,6 +3555,7 @@
           {
             "key": "notices[].action.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3264,6 +3565,7 @@
           {
             "key": "notices[].dismiss-label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3290,42 +3592,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3335,6 +3642,7 @@
           {
             "key": "breadcrumbs.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3344,6 +3652,7 @@
           {
             "key": "breadcrumbs.items[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3353,15 +3662,17 @@
           {
             "key": "actions[].label",
             "kind": "plain",
+            "role": "action",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "meta[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3371,6 +3682,7 @@
           {
             "key": "meta[].value",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3397,6 +3709,7 @@
           {
             "key": "page.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3406,6 +3719,7 @@
           {
             "key": "page.previous-label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3415,6 +3729,7 @@
           {
             "key": "page.next-label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3424,6 +3739,7 @@
           {
             "key": "page.page-text",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3433,6 +3749,7 @@
           {
             "key": "total.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3442,6 +3759,7 @@
           {
             "key": "page.no-results-label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3451,6 +3769,7 @@
           {
             "key": "page.page-size-label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3460,6 +3779,7 @@
           {
             "key": "total.range-text",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3486,33 +3806,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "people[].name",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -3522,6 +3846,7 @@
           {
             "key": "people[].role",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3531,6 +3856,7 @@
           {
             "key": "people[].initials",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3557,33 +3883,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "plans[].name",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -3593,6 +3923,7 @@
           {
             "key": "plans[].price",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3602,6 +3933,7 @@
           {
             "key": "plans[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3611,6 +3943,7 @@
           {
             "key": "plans[].features[]",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3620,6 +3953,7 @@
           {
             "key": "plans[].cta.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3629,6 +3963,7 @@
           {
             "key": "plans[].badge",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3638,6 +3973,7 @@
           {
             "key": "interval",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3647,6 +3983,7 @@
           {
             "key": "plans[].price-by-interval[].amount",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -3656,6 +3993,7 @@
           {
             "key": "plans[].price-by-interval[].price-text",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -3682,33 +4020,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "fields[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3718,6 +4060,7 @@
           {
             "key": "fields[].value",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3727,6 +4070,7 @@
           {
             "key": "groups[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3736,6 +4080,7 @@
           {
             "key": "status",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3745,15 +4090,17 @@
           {
             "key": "actions[].label",
             "kind": "plain",
+            "role": "action",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3763,6 +4110,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3772,6 +4120,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3781,6 +4130,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3790,6 +4140,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3799,6 +4150,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3808,9 +4160,10 @@
           {
             "key": "labels.title",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           }
@@ -3834,42 +4187,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "records[].title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "records[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3879,6 +4237,7 @@
           {
             "key": "records[].meta",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3888,6 +4247,7 @@
           {
             "key": "toolbar.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3897,6 +4257,7 @@
           {
             "key": "toolbar.search.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3906,6 +4267,7 @@
           {
             "key": "toolbar.search.placeholder",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3915,6 +4277,7 @@
           {
             "key": "pagination.page-text",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3924,6 +4287,7 @@
           {
             "key": "pagination.total-text",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3933,6 +4297,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -3942,6 +4307,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3951,6 +4317,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3960,6 +4327,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3969,6 +4337,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -3978,6 +4347,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -3987,6 +4357,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4013,24 +4384,27 @@
           {
             "key": "eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "heading",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4040,9 +4414,10 @@
           {
             "key": "actions[].label",
             "kind": "plain",
+            "role": "action",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           }
@@ -4082,33 +4457,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "groups[].legend",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4118,6 +4497,7 @@
           {
             "key": "groups[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4127,6 +4507,7 @@
           {
             "key": "groups[].controls[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4136,6 +4517,7 @@
           {
             "key": "groups[].controls[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4145,6 +4527,7 @@
           {
             "key": "groups[].controls[].placeholder",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4154,6 +4537,7 @@
           {
             "key": "groups[].controls[].options[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4163,6 +4547,7 @@
           {
             "key": "save-bar.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4172,6 +4557,7 @@
           {
             "key": "save-bar.save",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4181,6 +4567,7 @@
           {
             "key": "save-bar.discard",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4190,6 +4577,7 @@
           {
             "key": "save-bar.unsaved",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4216,24 +4604,27 @@
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "providers[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4243,6 +4634,7 @@
           {
             "key": "credentials.identifier-label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4252,6 +4644,7 @@
           {
             "key": "credentials.identifier-placeholder",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4261,6 +4654,7 @@
           {
             "key": "credentials.password-label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4270,6 +4664,7 @@
           {
             "key": "credentials.password-placeholder",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4279,6 +4674,7 @@
           {
             "key": "verification.code-label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4288,6 +4684,7 @@
           {
             "key": "verification.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4297,6 +4694,7 @@
           {
             "key": "verification.placeholder",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4306,51 +4704,57 @@
           {
             "key": "actions.submit",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "actions.verify",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "actions.pending",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "actions.back",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "actions.resend",
             "kind": "plain",
+            "role": "action",
             "required": true,
             "maxLength": {
-              "en": 120
+              "en": 24
             },
             "dir": "auto"
           },
           {
             "key": "actions.divider",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 160
@@ -4360,6 +4764,7 @@
           {
             "key": "error.message",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4369,27 +4774,30 @@
           {
             "key": "error.identifier",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
-              "en": 240
+              "en": 160
             },
             "dir": "auto"
           },
           {
             "key": "error.password",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
-              "en": 240
+              "en": 160
             },
             "dir": "auto"
           },
           {
             "key": "error.code",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
-              "en": 240
+              "en": 160
             },
             "dir": "auto"
           }
@@ -4413,33 +4821,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "stats[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4449,6 +4861,7 @@
           {
             "key": "stats[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4458,6 +4871,7 @@
           {
             "key": "stats[].value",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4467,6 +4881,7 @@
           {
             "key": "stats[].delta",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4476,6 +4891,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4485,6 +4901,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4494,6 +4911,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4503,6 +4921,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4512,6 +4931,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4521,6 +4941,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4547,42 +4968,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "items[].heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "items[].items[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4592,6 +5018,7 @@
           {
             "key": "legend",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4601,6 +5028,7 @@
           {
             "key": "labels.available",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4610,6 +5038,7 @@
           {
             "key": "labels.partial",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4619,6 +5048,7 @@
           {
             "key": "labels.planned",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4628,6 +5058,7 @@
           {
             "key": "labels.not-offered",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4637,6 +5068,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4646,6 +5078,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4655,6 +5088,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4664,6 +5098,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4673,6 +5108,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4682,6 +5118,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4691,6 +5128,7 @@
           {
             "key": "items[].label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -4700,6 +5138,7 @@
           {
             "key": "items[].detail",
             "kind": "rich",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4709,6 +5148,7 @@
           {
             "key": "items[].items[].detail",
             "kind": "rich",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4735,42 +5175,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "steps[].heading",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "steps[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4780,6 +5225,7 @@
           {
             "key": "steps[].ordinal",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4806,6 +5252,7 @@
           {
             "key": "headings[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4815,6 +5262,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4824,6 +5272,7 @@
           {
             "key": "label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4850,42 +5299,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "tasks[].title",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "tasks[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4895,6 +5349,7 @@
           {
             "key": "tasks[].meta",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4904,6 +5359,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4913,6 +5369,7 @@
           {
             "key": "labels.progress",
             "kind": "icu",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4922,6 +5379,7 @@
           {
             "key": "labels.done",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -4931,6 +5389,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4940,6 +5399,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4949,6 +5409,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4958,6 +5419,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4967,6 +5429,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -4976,6 +5439,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -4985,6 +5449,7 @@
           {
             "key": "labels.todo",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -4994,6 +5459,7 @@
           {
             "key": "labels.in-progress",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -5003,6 +5469,7 @@
           {
             "key": "labels.blocked",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -5029,33 +5496,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "quotes[].quote",
             "kind": "plain",
+            "role": "body",
             "required": true,
             "maxLength": {
               "en": 2400
@@ -5065,6 +5536,7 @@
           {
             "key": "quotes[].attributor-name",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -5074,6 +5546,7 @@
           {
             "key": "quotes[].attributor-role",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -5100,42 +5573,47 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "events[].heading",
             "kind": "plain",
+            "role": "heading",
             "required": true,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "events[].date-text",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -5145,6 +5623,7 @@
           {
             "key": "events[].description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -5171,33 +5650,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "meters[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -5207,6 +5690,7 @@
           {
             "key": "meters[].used-text",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -5216,6 +5700,7 @@
           {
             "key": "meters[].limit-text",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -5225,6 +5710,7 @@
           {
             "key": "meters[].period-text",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -5234,6 +5720,7 @@
           {
             "key": "labels.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -5243,6 +5730,7 @@
           {
             "key": "states.loading.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -5252,6 +5740,7 @@
           {
             "key": "states.loading.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -5261,6 +5750,7 @@
           {
             "key": "states.empty.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -5270,6 +5760,7 @@
           {
             "key": "states.empty.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -5279,6 +5770,7 @@
           {
             "key": "states.error.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -5288,6 +5780,7 @@
           {
             "key": "states.error.description",
             "kind": "plain",
+            "role": "body",
             "required": false,
             "maxLength": {
               "en": 480
@@ -5297,6 +5790,7 @@
           {
             "key": "meters[].projected-text",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -5306,6 +5800,7 @@
           {
             "key": "meters[].thresholds[].message",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 160
@@ -5332,33 +5827,37 @@
           {
             "key": "header.eyebrow",
             "kind": "plain",
+            "role": "eyebrow",
             "required": false,
             "maxLength": {
-              "en": 120
+              "en": 48
             },
             "dir": "auto"
           },
           {
             "key": "header.heading",
             "kind": "plain",
+            "role": "heading",
             "required": false,
             "maxLength": {
-              "en": 160
+              "en": 60
             },
             "dir": "auto"
           },
           {
             "key": "header.description",
             "kind": "plain",
+            "role": "lead",
             "required": false,
             "maxLength": {
-              "en": 480
+              "en": 200
             },
             "dir": "auto"
           },
           {
             "key": "steps[].label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -5368,6 +5867,7 @@
           {
             "key": "progress.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -5377,6 +5877,7 @@
           {
             "key": "back.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -5386,6 +5887,7 @@
           {
             "key": "next.label",
             "kind": "plain",
+            "role": "label",
             "required": true,
             "maxLength": {
               "en": 120
@@ -5395,6 +5897,7 @@
           {
             "key": "next.finish",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
@@ -5404,6 +5907,7 @@
           {
             "key": "review.label",
             "kind": "plain",
+            "role": "label",
             "required": false,
             "maxLength": {
               "en": 120
