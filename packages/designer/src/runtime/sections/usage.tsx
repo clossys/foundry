@@ -1,6 +1,6 @@
 import { UsageSummary, type UsageSummaryMeter } from "../../blocks/UsageSummary.js";
 import { recordsAs, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 /** sections.usage: each meter record renders through UsageSummary's UsageMeter. */
 export function renderUsage(input: SectionRenderInput) {

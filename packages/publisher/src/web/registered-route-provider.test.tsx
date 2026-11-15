@@ -98,15 +98,14 @@ it("materializes original provider checked records from the read-only committed 
   expect(owner!.previews.render({ ...identity, selectionHash: runtimeHash("stale") })).toBeUndefined();
   expect(result.materialization.binding.fills["sections.comparison"]).toHaveLength(projection.boards.length);
   expect(document.querySelector("[data-studio-canvas]")).toBeNull();
-  // Exercise the public mounted route through the real original-provider check.
-  // No source proof or Stage is fabricated: reaching the existing source refusal
-  // proves the callback-bearing catalog no longer fails JSON hashing first.
+  // Exercise the public mounted route. The derived Designer body read the whole-Studio provider, which
+  // retired with the Studio (owner decision 8, foundry-build-0007): the mounted route now refuses closed.
   const route = { ...syntheticRoute(), composition: { ...syntheticRoute().composition, binding } };
   const registry = { version: 1 as const, consumer: projection.consumer!, routes: [route] };
   const runtime = { assembly: { engine: current.whole.input!, ports: {} }, instanceLibrary: library, registries, cell: {}, designerQuery: query } as unknown as RegisteredRouteRuntime;
   vi.spyOn(console, "error").mockImplementation(() => {});
   view.rerender(<RegisteredProvider data={data}><Probe /><RouteGateBoundary><RegisteredRoutePage registry={registry} routeId={route.routeId} useRuntime={() => runtime} /></RouteGateBoundary></RegisteredProvider>);
-  expect(screen.getByTestId("route-gate-finding")).toHaveTextContent("Current reached original provider/query source materialization evidence unavailable");
+  expect(screen.getByTestId("route-gate-finding")).toHaveTextContent("Registered route refused: the derived Designer body needs the retired Studio provider");
 
   // The read-only Designer holds no edit session: no edit, nothing blocks a layer move, the committed identity stays put.
   const before = projection.session, sessionIdentity = current.whole.sessionIdentity;

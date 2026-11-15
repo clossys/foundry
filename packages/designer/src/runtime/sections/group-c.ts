@@ -1,6 +1,6 @@
 import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";
-import { blogSpecimenRecords } from "../../studio/blog-specimen-data.js";
-import type { SpecimenDataset } from "../../studio/specimen-dataset.js";
+import { blogSpecimenRecords } from "../../specimen/blog-specimen-data.js";
+import type { SpecimenDataset } from "../../specimen/specimen-dataset.js";
 import { cardsInputs, renderCards } from "./cards.js";
 import { chatInputs, renderChat } from "./chat.js";
 import { consentInputs, renderConsent } from "./consent.js";

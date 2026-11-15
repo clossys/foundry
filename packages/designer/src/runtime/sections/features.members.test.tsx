@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { Suspense } from "react";
-import { MarketingComponentProvider } from "../../studio/marketing-component-selection.js";
+import { MarketingComponentProvider } from "../../specimen/marketing-component-selection.js";
 import { createCopyResolver } from "../../../../writer/src/resolve.js";
 import type { CopyRegistry } from "../../../../writer/src/types.js";
 import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";

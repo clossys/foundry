@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import slots from "../../catalog/slots/frames.json" with { type: "json" };
 import type { RuntimeFrameHost, RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { FOUNDRY_FRAME_MAP } from "../../importers/foundry-frames.map.js";
 import { surfaceRuntimeRenderers } from "../index.js";
 import { frameRenderers } from "./index.js";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AccessMatrix, type AccessCellValue, type AccessGroup, type AccessMatrixValue, type AccessPermission, type AccessRole } from "../../blocks/AccessMatrix.js";
 import { recordsAs, recordsOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 /** One permission record: the block's permission plus the role cells it already holds. */
 export interface AccessPermissionRecord extends AccessPermission { readonly grants?: Readonly<Record<string, AccessCellValue>> }

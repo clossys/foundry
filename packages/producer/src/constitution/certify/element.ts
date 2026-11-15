@@ -23,7 +23,7 @@ import { join, posix } from "node:path";
 import ts from "typescript";
 import { specimenKindOf } from "@clossys/publisher/specimen";
 import { contractFixtureIssues, type ContractFixture } from "../../records/slot-model/contract-fixture.js";
-import { dependencyPart } from "../../server/specimen-tree.js";
+import { dependencyPart } from "../../specimen/specimen-tree.js";
 import { installPathOf, isObject, registryFiles, stringList } from "../checks/shared.js";
 import type { CandidateRecord, SlotRecord } from "../types.js";
 import { pinKey, type CertifyEnv } from "./env.js";

@@ -13,7 +13,7 @@ import type { RuntimeAssemblyInput, RuntimeContentRef, RuntimeFillSelection, Run
 import { surfaceRendererId, surfaceRuntimeCallbacks, surfaceRuntimePointers, surfaceRuntimeRenderers } from "../../dist/frames/index.js";
 import { packageSurfaceLibrary } from "../../dist/library-cli/__fixtures__/package-surface-library.js";
 import { packageBarrelExports } from "../../dist/library-cli/surface-package-evidence.js";
-import { specimenDataset } from "../../dist/studio/specimen-dataset.js";
+import { specimenDataset } from "../../dist/specimen/specimen-dataset.js";
 import { SECTION_HEADER_CONTENT_KEY } from "../../dist/catalog-core/runtime-ports.js";
 
 const FRAME = "frames.auth-shell", LOGO = "sections.logo-mark", SIGN_IN = "sections.sign-in-form", ERROR = "sections.error-state";

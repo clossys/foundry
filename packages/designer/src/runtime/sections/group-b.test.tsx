@@ -13,7 +13,7 @@ import { copyPortsFor } from "./__fixtures__/copy-ports.js";
 import { STATS_COPY_REFS, statsCopyFrom } from "./stats.copy.js";
 import { sectionCopyFixtureResolver } from "../../../../writer/src/catalog/__fixtures__/section-copy-resolver.fixture.js";
 import { GROUP_B_SECTIONS, groupBRenderers } from "./group-b.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { groupBDataset } from "./group-b-dataset.js";
 import type { SectionRenderInput } from "./group-b-support.js";
 import { hostedRender } from "../../frames/__fixtures__/shell-copy.js";

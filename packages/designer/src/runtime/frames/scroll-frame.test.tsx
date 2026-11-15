@@ -10,7 +10,7 @@ import { renderSectionHeader } from "../sections/section-header.js";
 import { renderDataTable } from "../sections/data-table.js";
 import { renderBandSection } from "../sections/band.js";
 import { appHeaderRenderer } from "./app-header.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
 import { shellCopyFixtureResolver } from "../../frames/__fixtures__/shell-copy.js";
 

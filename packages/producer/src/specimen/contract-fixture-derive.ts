@@ -13,7 +13,7 @@
 import { listSlots, readCandidate, readSlot } from "../records/slots.js";
 import { CANDIDATE_NAME } from "../records/slot-model/index.js";
 import { CONTRACT_FIXTURE_SCHEMA, type ContractFixture } from "../records/slot-model/contract-fixture.js";
-import { pinnedWriterCopy } from "../server/specimen-tree.js";
+import { pinnedWriterCopy } from "./specimen-tree.js";
 import { certifyCandidate } from "./library-source.js";
 
 /** One Designer element slot's proposal. */

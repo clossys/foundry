@@ -4,7 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { authShellRenderer } from "./auth-shell.js";
 
 afterEach(cleanup);

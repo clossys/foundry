@@ -5,7 +5,7 @@
  */
 import { join } from "node:path";
 import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
-import { agentModule } from "../server/cells.js";
+import { agentModule } from "../read/cells.js";
 import { readPinnedPublication } from "./pinned-publication.js";
 import { writerDeclarationsText } from "./studio-defaults.js";
 import { hasPinFile, hasSlotModel, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";

@@ -19,7 +19,7 @@ import { readPinnedPublication, resolvePublicationTitles } from "../publish/pinn
 import { listSlots, readCandidate, readSlotEntry } from "../records/slots.js";
 import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/types.js";
 import type { PreviewView } from "../records/types.js";
-import { PREVIEW_PREFIX, servePreview } from "../server/publication.js";
+import { PREVIEW_PREFIX, servePreview } from "./publication.js";
 
 /** The preview's own port (system.md 12.5). */
 export const PREVIEW_PORT = 4600;

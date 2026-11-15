@@ -10,7 +10,7 @@ import { valueLibraryBoardPreviews, valueLibraryBoardRecords, type PreparedLibra
 import { adopt, emptyLibrary, labels, smallCatalog } from "../../studio/__fixtures__/studio.js";
 import { resolve } from "../../catalog-core/api.js";
 import { runtimeHash, runtimeSnapshot, type RuntimeJson, type RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { sectionRenderers } from "./index.js";
 import { assertLibraryBoardRecords, type LibraryBoardRecords } from "../../blocks/library-board/model.js";
 import type { LibraryBoardSectionHost } from "./library-board.js";

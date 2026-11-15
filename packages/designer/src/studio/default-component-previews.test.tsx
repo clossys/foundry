@@ -4,7 +4,7 @@ import type { CompositeResolved } from "../catalog-core/index.js";
 import { glyphs } from "../components/preview-runtime/adapters/glyphs.js";
 import { defaultComponentPreviews } from "./default-component-previews.js";
 import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
-import profileData from "./default-component-preview-profile.json" with { type: "json" };
+import profileData from "../specimen/default-component-preview-profile.json" with { type: "json" };
 
 const profile = () => ({ selectionHash: profileData.selectionHash, components: structuredClone(profileData), values: { members: Object.fromEntries(Object.entries(glyphs).map(([slot, value]) => [slot, { slot, value: { light: value } }])) } }) as unknown as CompositeResolved;
 // 59 -> 67: ab36457b2 adopts the eight composed defaults (command, dropdown-menu, empty, item, rich-text, scroll-area, sheet, sidebar).

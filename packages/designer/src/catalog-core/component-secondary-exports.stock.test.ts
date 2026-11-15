@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import profile from "../studio/default-component-preview-profile.json" with { type: "json" };
+import profile from "../specimen/default-component-preview-profile.json" with { type: "json" };
 import { componentSecondaryExports } from "./component-secondary-exports.js";
 import { sha256 } from "./digest.js";
 import type { ComponentCandidate } from "./resolve-components.js";

@@ -7,7 +7,7 @@ import { LogoHero } from "../../blocks/LogoHero.js";
 import { BLOCK_ENTRIES } from "../../catalog/blocks.js";
 import { loadSectionRegistry } from "../../catalog-core/sections-contract.js";
 import { FOUNDRY_SECTION_MAP } from "../../importers/foundry-sections.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { sectionRenderers } from "./index.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import type { ReactNode } from "react";
