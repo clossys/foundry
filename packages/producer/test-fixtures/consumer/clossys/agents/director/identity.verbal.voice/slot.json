@@ -6,7 +6,7 @@
     "l0": "strategy",
     "l1": "identity",
     "l2": "identity.verbal",
-    "order": 35
+    "order": 33
   },
   "kind": "brief",
   "contract": {
@@ -22,7 +22,7 @@
       },
       {
         "key": "Never",
-        "hint": "words and moves we never use, quoted"
+        "hint": "behaviours we never show (word lists belong to Writer)"
       }
     ],
     "fixture": {

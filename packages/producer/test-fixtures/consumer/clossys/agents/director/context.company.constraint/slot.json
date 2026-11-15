@@ -3,7 +3,7 @@
   "id": "context.company.constraint",
   "agent": "director",
   "ia": {
-    "l0": "situation",
+    "l0": "strategy",
     "l1": "context",
     "l2": "context.company",
     "order": 7

@@ -6,7 +6,7 @@
     "l0": "strategy",
     "l1": "focus",
     "l2": "focus.reach",
-    "order": 20
+    "order": 19
   },
   "kind": "brief",
   "contract": {
@@ -23,6 +23,10 @@
       {
         "key": "Why",
         "hint": "why this order"
+      },
+      {
+        "key": "Language",
+        "hint": "the locale list and the register per locale"
       }
     ],
     "fixture": {

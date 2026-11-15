@@ -68,7 +68,7 @@ const CATALOG_IA_DIR = "src/catalog/ia";
 export const DESIGNER_LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 export const WRITER_LAYERS = ["lexicon", "strings", "patterns", "passages", "narratives"] as const;
 
-/** Director: the director catalog (57 slots, 7 L1 / 28 L2). */
+/** Director: the director catalog (55 slots, 9 L1 / 27 L2). */
 export function directorIa(): FoundryIa {
   const root = resolveAgent("director").packageRoot;
   const ia = readJson(root, DIRECTOR_IA_FILE) as { nodes: { id: string; name: string; children: { id: string; name: string; leaves: string[] }[] }[]; layers?: IaLayer[]; axes?: IaAxes };

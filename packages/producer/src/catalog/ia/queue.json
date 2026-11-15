@@ -1,0 +1,45 @@
+{
+  "layer": "queue",
+  "nodes": [
+    {
+      "id": "choices",
+      "label": "Choices",
+      "children": [
+        {
+          "id": "choices-selection",
+          "label": "Selection",
+          "leaves": [
+            "queue.pick"
+          ]
+        },
+        {
+          "id": "choices-sign-off",
+          "label": "Sign-off",
+          "leaves": [
+            "queue.approve"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "problems",
+      "label": "Problems",
+      "children": [
+        {
+          "id": "problems-questions",
+          "label": "Questions",
+          "leaves": [
+            "queue.clarify"
+          ]
+        },
+        {
+          "id": "problems-defects",
+          "label": "Defects",
+          "leaves": [
+            "queue.fix"
+          ]
+        }
+      ]
+    }
+  ]
+}

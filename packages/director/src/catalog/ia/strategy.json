@@ -1,5 +1,92 @@
 {
   "schemaVersion": 1,
+  "layers": [
+    {
+      "id": "strategy",
+      "label": "Strategy",
+      "nodes": [
+        "context",
+        "aspiration",
+        "focus",
+        "advantage",
+        "identity"
+      ]
+    },
+    {
+      "id": "roadmap",
+      "label": "Roadmap",
+      "nodes": [
+        "targets",
+        "timeline"
+      ]
+    },
+    {
+      "id": "execution",
+      "label": "Execution",
+      "nodes": [
+        "task-force",
+        "plan"
+      ]
+    }
+  ],
+  "axes": {
+    "L0": {
+      "name": "Coverage ownership",
+      "values": [
+        "Strategy",
+        "Roadmap",
+        "Execution"
+      ]
+    },
+    "L1": {
+      "strategy": {
+        "name": "Question area",
+        "values": [
+          "Context",
+          "Aspiration",
+          "Focus",
+          "Advantage",
+          "Identity"
+        ]
+      },
+      "roadmap": {
+        "name": "Question area",
+        "values": [
+          "Targets",
+          "Timeline"
+        ]
+      },
+      "execution": {
+        "name": "Question area",
+        "values": [
+          "Task force",
+          "Plan"
+        ]
+      }
+    },
+    "shared": [
+      "Category"
+    ]
+  },
+  "ownership": {
+    "strategy": {
+      "owns": "Where we play and why we win: context, aspiration, focus, advantage and identity (brand, naming, verbal and visual direction)",
+      "doesNotOwn": "Measurable style values (Writer Voice, Designer Theme); components; copy"
+    },
+    "roadmap": {
+      "owns": "Pace: dated numeric targets, the bet now, what is parked, milestones and the next release",
+      "doesNotOwn": "Running the work (Producer Loops)"
+    },
+    "execution": {
+      "owns": "Who and with what: team and capabilities, what we own or rent, money, operating model, governance and risk",
+      "doesNotOwn": "Seat, model or prompt bindings (Producer Loops); step order (Producer)"
+    }
+  },
+  "forbid": [
+    "style values (sizes, colors, word lists)",
+    "agent step order",
+    "model or seat names"
+  ],
   "nodes": [
     {
       "id": "context",
@@ -60,14 +147,6 @@
             "aspiration.culture.belief",
             "aspiration.culture.behavior"
           ]
-        },
-        {
-          "id": "aspiration.goal",
-          "name": "Goal",
-          "leaves": [
-            "aspiration.goal.long-term",
-            "aspiration.goal.annual"
-          ]
         }
       ]
     },
@@ -104,8 +183,8 @@
           "id": "focus.reach",
           "name": "Reach",
           "leaves": [
-            "focus.reach.geography",
-            "focus.reach.channel"
+            "focus.reach.channel",
+            "focus.reach.geography"
           ]
         },
         {
@@ -140,8 +219,8 @@
           ]
         },
         {
-          "id": "advantage.model",
-          "name": "Model",
+          "id": "advantage.economics",
+          "name": "Economics",
           "leaves": [
             "advantage.model.pricing",
             "advantage.model.margin"
@@ -189,60 +268,35 @@
       ]
     },
     {
-      "id": "capability",
-      "name": "Capability",
-      "question": "What must we be able to do, and with what resources?",
+      "id": "targets",
+      "name": "Targets",
+      "question": "Which dated numeric targets do we aim for?",
       "children": [
         {
-          "id": "capability.competency",
-          "name": "Competency",
+          "id": "targets.goal",
+          "name": "Goal",
           "leaves": [
-            "capability.competency.critical",
-            "capability.competency.gap"
+            "aspiration.goal.long-term",
+            "aspiration.goal.annual"
           ]
         },
         {
-          "id": "capability.sourcing",
-          "name": "Sourcing",
+          "id": "targets.measure",
+          "name": "Measure",
           "leaves": [
-            "capability.sourcing.build",
-            "capability.sourcing.partner",
-            "capability.sourcing.acquire"
-          ]
-        },
-        {
-          "id": "capability.operation",
-          "name": "Operation",
-          "leaves": [
-            "capability.operation.delivery",
-            "capability.operation.technology"
-          ]
-        },
-        {
-          "id": "capability.team",
-          "name": "Team",
-          "leaves": [
-            "capability.team.role",
-            "capability.team.structure"
-          ]
-        },
-        {
-          "id": "capability.resource",
-          "name": "Resource",
-          "leaves": [
-            "capability.resource.funding",
-            "capability.resource.allocation"
+            "execution.measure.north-star",
+            "execution.measure.driver"
           ]
         }
       ]
     },
     {
-      "id": "execution",
-      "name": "Execution",
-      "question": "What do we do now, how do we measure it, and what could stop us?",
+      "id": "timeline",
+      "name": "Timeline",
+      "question": "What is the bet now, what is parked, and which milestones lead to the next release?",
       "children": [
         {
-          "id": "execution.priority",
+          "id": "timeline.priority",
           "name": "Priority",
           "leaves": [
             "execution.priority.bet",
@@ -250,23 +304,62 @@
           ]
         },
         {
-          "id": "execution.roadmap",
-          "name": "Roadmap",
+          "id": "timeline.schedule",
+          "name": "Schedule",
           "leaves": [
             "execution.roadmap.milestone",
             "execution.roadmap.release"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "id": "task-force",
+      "name": "Task force",
+      "question": "Who is on the team, with which capabilities, and what do we own or rent?",
+      "children": [
         {
-          "id": "execution.measure",
-          "name": "Measure",
+          "id": "task-force.team",
+          "name": "Team",
           "leaves": [
-            "execution.measure.north-star",
-            "execution.measure.driver"
+            "capability.team.role",
+            "capability.competency.critical",
+            "capability.competency.gap"
           ]
         },
         {
-          "id": "execution.risk",
+          "id": "task-force.sourcing",
+          "name": "Sourcing",
+          "leaves": [
+            "capability.sourcing.build",
+            "capability.sourcing.partner"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "name": "Plan",
+      "question": "With what money, operating model, governance and risk do we run?",
+      "children": [
+        {
+          "id": "plan.resource",
+          "name": "Resource",
+          "leaves": [
+            "capability.resource.funding",
+            "capability.resource.allocation"
+          ]
+        },
+        {
+          "id": "plan.operation",
+          "name": "Operation",
+          "leaves": [
+            "capability.operation.delivery",
+            "capability.team.structure"
+          ]
+        },
+        {
+          "id": "plan.risk",
           "name": "Risk",
           "leaves": [
             "execution.risk.threat",
@@ -276,68 +369,233 @@
       ]
     }
   ],
-  "layers": [
-    {
-      "id": "situation",
-      "label": "Situation",
-      "nodes": [
-        "context",
-        "aspiration"
+  "slots": {
+    "context.market.size": {
+      "label": "Market size",
+      "mark": "other-live"
+    },
+    "context.market.trend": {
+      "label": "Trend",
+      "mark": "other-live"
+    },
+    "context.customer.need": {
+      "label": "Need",
+      "mark": "other-live"
+    },
+    "context.customer.buying": {
+      "label": "Buying",
+      "mark": "starter"
+    },
+    "context.competition.alternative": {
+      "label": "Alternative",
+      "mark": "other-live"
+    },
+    "context.competition.gap": {
+      "label": "Open gap",
+      "mark": "other-live"
+    },
+    "context.company.strength": {
+      "label": "Strength",
+      "mark": "other-live"
+    },
+    "context.company.constraint": {
+      "label": "Constraint",
+      "mark": "starter"
+    },
+    "aspiration.purpose.mission": {
+      "label": "Mission",
+      "mark": "starter"
+    },
+    "aspiration.purpose.vision": {
+      "label": "Vision",
+      "mark": "other-live"
+    },
+    "aspiration.culture.belief": {
+      "label": "Values",
+      "mark": "other-live"
+    },
+    "aspiration.culture.behavior": {
+      "label": "Behaviors",
+      "mark": "other-live"
+    },
+    "focus.category.definition": {
+      "label": "Category",
+      "mark": "starter"
+    },
+    "focus.category.stance": {
+      "label": "Stance",
+      "mark": "other-live"
+    },
+    "focus.segment.core": {
+      "label": "Core segment",
+      "mark": "starter"
+    },
+    "focus.segment.next": {
+      "label": "Next segment",
+      "mark": "other-live"
+    },
+    "focus.offer.included": {
+      "label": "Included",
+      "mark": "starter"
+    },
+    "focus.offer.excluded": {
+      "label": "Excluded",
+      "mark": "starter"
+    },
+    "focus.reach.channel": {
+      "label": "Channel",
+      "mark": "starter"
+    },
+    "focus.reach.geography": {
+      "label": "Geography",
+      "mark": "starter"
+    },
+    "focus.lifecycle.acquisition": {
+      "label": "Acquisition",
+      "mark": "starter"
+    },
+    "focus.lifecycle.retention": {
+      "label": "Retention",
+      "mark": "other-live"
+    },
+    "advantage.proposition.promise": {
+      "label": "Promise",
+      "mark": "starter"
+    },
+    "advantage.proposition.proof": {
+      "label": "Proof",
+      "mark": "starter"
+    },
+    "advantage.defensibility.differentiator": {
+      "label": "Differentiator",
+      "mark": "other-live"
+    },
+    "advantage.defensibility.moat": {
+      "label": "Moat",
+      "mark": "other-live"
+    },
+    "advantage.model.pricing": {
+      "label": "Pricing",
+      "mark": "other-live"
+    },
+    "advantage.model.margin": {
+      "label": "Margin",
+      "mark": "other-live"
+    },
+    "identity.brand.essence": {
+      "label": "Essence",
+      "mark": "starter"
+    },
+    "identity.brand.personality": {
+      "label": "Personality",
+      "mark": "starter"
+    },
+    "identity.naming.name": {
+      "label": "Name",
+      "mark": "starter"
+    },
+    "identity.naming.architecture": {
+      "label": "Brand architecture",
+      "mark": "starter"
+    },
+    "identity.verbal.narrative": {
+      "label": "Narrative",
+      "mark": "starter"
+    },
+    "identity.verbal.voice": {
+      "label": "Voice",
+      "mark": "starter"
+    },
+    "identity.visual.style": {
+      "label": "Visual style",
+      "mark": "starter"
+    },
+    "identity.visual.imagery": {
+      "label": "Imagery",
+      "mark": "starter"
+    },
+    "aspiration.goal.long-term": {
+      "label": "Long-term goal",
+      "mark": "other-live"
+    },
+    "aspiration.goal.annual": {
+      "label": "Annual goal",
+      "mark": "other-live"
+    },
+    "execution.measure.north-star": {
+      "label": "North star",
+      "mark": "other-live"
+    },
+    "execution.measure.driver": {
+      "label": "Drivers",
+      "mark": "other-live"
+    },
+    "execution.priority.bet": {
+      "label": "Bet",
+      "mark": "other-live"
+    },
+    "execution.priority.parked": {
+      "label": "Parked",
+      "mark": "other-live"
+    },
+    "execution.roadmap.milestone": {
+      "label": "Milestones",
+      "mark": "other-live"
+    },
+    "execution.roadmap.release": {
+      "label": "Next release",
+      "mark": "starter",
+      "forbid": [
+        "hosts, channels or deploy targets (Distribution is parked)"
       ]
     },
-    {
-      "id": "strategy",
-      "label": "Strategy",
-      "nodes": [
-        "focus",
-        "advantage",
-        "identity"
+    "capability.team.role": {
+      "label": "Roles",
+      "mark": "other-live"
+    },
+    "capability.competency.critical": {
+      "label": "Critical capabilities",
+      "mark": "other-live"
+    },
+    "capability.competency.gap": {
+      "label": "Capability gap",
+      "mark": "other-live"
+    },
+    "capability.sourcing.build": {
+      "label": "Own",
+      "mark": "other-live"
+    },
+    "capability.sourcing.partner": {
+      "label": "Partners",
+      "mark": "starter"
+    },
+    "capability.resource.funding": {
+      "label": "Funding",
+      "mark": "other-live"
+    },
+    "capability.resource.allocation": {
+      "label": "Allocation",
+      "mark": "other-live"
+    },
+    "capability.operation.delivery": {
+      "label": "Delivery model",
+      "mark": "other-live"
+    },
+    "capability.team.structure": {
+      "label": "Governance",
+      "mark": "starter",
+      "forbid": [
+        "agent step order",
+        "model or seat names (Producer owns loop deciders)"
       ]
     },
-    {
-      "id": "plan",
-      "label": "Plan",
-      "nodes": [
-        "capability",
-        "execution"
-      ]
+    "execution.risk.threat": {
+      "label": "Threats",
+      "mark": "other-live"
+    },
+    "execution.risk.mitigation": {
+      "label": "Mitigations",
+      "mark": "starter"
     }
-  ],
-  "axes": {
-    "L0": {
-      "name": "Strategy cascade stage",
-      "values": [
-        "Situation",
-        "Strategy",
-        "Plan"
-      ]
-    },
-    "L1": {
-      "situation": {
-        "name": "Question area",
-        "values": [
-          "Context",
-          "Aspiration"
-        ]
-      },
-      "strategy": {
-        "name": "Question area",
-        "values": [
-          "Focus",
-          "Advantage",
-          "Identity"
-        ]
-      },
-      "plan": {
-        "name": "Question area",
-        "values": [
-          "Capability",
-          "Execution"
-        ]
-      }
-    },
-    "shared": [
-      "Identity"
-    ]
   }
 }

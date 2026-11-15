@@ -1,0 +1,45 @@
+{
+  "layer": "ledger",
+  "nodes": [
+    {
+      "id": "build-runs",
+      "label": "Build runs",
+      "children": [
+        {
+          "id": "build-runs-fill",
+          "label": "Fill runs",
+          "leaves": [
+            "ledger.fill"
+          ]
+        },
+        {
+          "id": "build-runs-refine",
+          "label": "Refine runs",
+          "leaves": [
+            "ledger.refine"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "assure-runs",
+      "label": "Assure runs",
+      "children": [
+        {
+          "id": "assure-runs-ready",
+          "label": "Ready runs",
+          "leaves": [
+            "ledger.release"
+          ]
+        },
+        {
+          "id": "assure-runs-inspect",
+          "label": "Inspect runs",
+          "leaves": [
+            "ledger.audit"
+          ]
+        }
+      ]
+    }
+  ]
+}
