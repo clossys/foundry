@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { applyThemeAttributes } from "@clossys/designer/theme/server";
 import { resolveAgent } from "../agents.js";
 import { SPECIMEN_FRAME_CSP, SPECIMEN_FRAME_STYLESHEET, specimenFramePage } from "./specimen-frame.js";
-import { designerStylesheet, designerStylesheetHref } from "./publisher-preview-render.js";
+import { designerStylesheet, designerStylesheetHref } from "../server/publisher-preview-render.js";
 
 // DS-COMPLETE D2: served documents take their theme attributes and stylesheets from Designer.
 describe("Designer-owned specimen and preview document styling", () => {
