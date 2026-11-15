@@ -52,7 +52,19 @@ function done(root: string, output: ReleaseOutput, message: string, failed = out
   return { exitCode: failed ? 1 : 0, root, message: lines.join("\n"), output };
 }
 
+/**
+ * Exit 0 ready or written, 1 a gate or the ready-pin fails, 2 usage or environment (system.md 6.2): a thrown error,
+ * such as no workspace at --root, is never read as a red gate.
+ */
 export async function runReleaseCli(argv: readonly string[], cwd: string, options: ReleaseCliOptions = {}): Promise<CliResult> {
+  try {
+    return await releaseCli(argv, cwd, options);
+  } catch (error) {
+    return { exitCode: 2, message: `release: ${error instanceof Error ? error.message : String(error)}\n${RELEASE_USAGE}` };
+  }
+}
+
+async function releaseCli(argv: readonly string[], cwd: string, options: ReleaseCliOptions): Promise<CliResult> {
   const actions: Action[] = [];
   let publication: string | undefined;
   let rootFlag: string | undefined;

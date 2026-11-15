@@ -5,7 +5,8 @@
  * planner) to a placeholder candidate; the release slot starts with no pin. A `packages/` folder with package.json
  * stubs keeps package lookups local, so no installed package default leaks in.
  */
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { answerQueueEntry } from "../../queue/answer.js";
@@ -44,8 +45,11 @@ export interface ReleaseWorld {
   readonly root: string;
   /** Writes a new placeholder candidate `<name>-v<n>` of a slot and pins it (basis planner); returns the file name. */
   repin(ref: string, version: number, content?: unknown): string;
-  /** Raises a release sign-off entry and answers it as the owner; returns `queue.approve#<id>`. */
-  signoff(now: () => Date, answer?: string): string;
+  /**
+   * Raises a release sign-off entry naming `manifest` (default: the latest manifest on disk) with its sha256, as the
+   * release loop does, and answers it as the owner; returns `queue.approve#<id>`.
+   */
+  signoff(now: () => Date, answer?: string, manifest?: string): string;
   read(rel: string): string;
   write(rel: string, text: string): void;
   dispose(): void;
@@ -106,14 +110,19 @@ export function releaseWorld(options: { locales?: { required?: string[]; from?: 
       writeTargetPin(root, { agent, slotId, ...(record ? { record } : {}), candidate: name, decidedBy: "planner", basis: "planner", at: AT, refs: [], createdBy: cliActor("clossys pin") });
       return name;
     },
-    signoff(now, answer = "ready") {
+    signoff(now, answer = "ready", manifest) {
+      const dir = join(root, "clossys/agents/publisher/release.site/candidates");
+      const name = manifest ?? (existsSync(dir) ? readdirSync(dir).filter(file => /^site-v\d+\.json$/.test(file)).sort((a, b) => Number(a.slice(6, -5)) - Number(b.slice(6, -5))).pop() : undefined);
+      const file = name ? join(dir, name) : undefined;
+      const refs = name && file && existsSync(file) ? [{ to: `publisher/release.site/${name}`, sha256: createHash("sha256").update(readFileSync(file)).digest("hex"), rel: "input" } as Ref] : [];
       const { entry } = raiseEntry(root, {
         queue: "queue.approve", subject: { to: "publisher/release.site", rel: "input" } as Ref, decider: "owner", ask: "mark the release ready (publisher/release.site)",
-        slug: "release.site", default: "not-ready", options: [{ id: "ready", summary: "mark it ready" }, { id: "not-ready", summary: "keep the current ready pin" }],
+        slug: "release.site", default: "not-ready", refs,
+        options: [{ id: "ready", ...(name ? { candidate: name as never } : {}), summary: "mark it ready" }, { id: "not-ready", summary: "keep the current ready pin" }],
       }, now().toISOString().replace(/\.\d{3}Z$/, "Z") as Iso, false);
-      const name = `queue.approve#${entry.id}`;
-      answerQueueEntry(root, { entry: name, answer, by: "owner", via: "chat", quote: `owner said: ${answer}` }, now());
-      return name;
+      const entryRef = `queue.approve#${entry.id}`;
+      answerQueueEntry(root, { entry: entryRef, answer, by: "owner", via: "chat", quote: `owner said: ${answer}` }, now());
+      return entryRef;
     },
     read: rel => readFileSync(join(root, rel), "utf8"),
     write: (rel, text) => put(rel, text),
