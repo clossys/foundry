@@ -8921,10 +8921,10 @@
           {
             "key": "actions.divider",
             "kind": "plain",
-            "role": "action",
+            "role": "label",
             "required": true,
             "maxLength": {
-              "en": 24
+              "en": 160
             },
             "dir": "auto"
           },

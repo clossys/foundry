@@ -138,7 +138,8 @@ export function checkTree(trees: readonly LayerTree[], retired: readonly Retired
 /** Live starter leaves, per layer. */
 export const starterLeaves = (trees: readonly LayerTree[]): string[] => trees.flatMap(tree => [...(tree.starter ?? [])]);
 
-/** Ids a frame contract names (composes and slot accepts) that are retired component leaves. */
+/** Ids a frame contract names (composes and slot accepts) that are retired leaves of any layer (review r1 P1: a retired frame
+ * composed by a live frame is the same defect as a retired component). */
 export function retiredFrameReferences(
   frameSlots: readonly { id: string; contract: { composes?: readonly string[]; slots?: readonly { id: string; accepts: string }[] } }[],
   retired: readonly RetiredEntry[],
@@ -146,8 +147,8 @@ export function retiredFrameReferences(
   const retiredIds = new Set(retired.map(entry => entry.id));
   const findings: string[] = [];
   for (const frame of frameSlots) {
-    for (const id of frame.contract.composes ?? []) if (id.startsWith("components.") && retiredIds.has(id)) findings.push(`${frame.id}: composes retired ${id}`);
-    for (const slot of frame.contract.slots ?? []) if (slot.accepts.startsWith("components.") && retiredIds.has(slot.accepts)) findings.push(`${frame.id}: slot ${slot.id} accepts retired ${slot.accepts}`);
+    for (const id of frame.contract.composes ?? []) if (retiredIds.has(id)) findings.push(`${frame.id}: composes retired ${id}`);
+    for (const slot of frame.contract.slots ?? []) if (retiredIds.has(slot.accepts)) findings.push(`${frame.id}: slot ${slot.id} accepts retired ${slot.accepts}`);
   }
   return findings;
 }

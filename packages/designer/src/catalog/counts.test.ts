@@ -1,6 +1,6 @@
 /**
  * Designer slot tree recut (foundry-build-0018): three L0s (Theme, Art, Interface) over the five layer files.
- * Target from ia-target/designer.md section 2 is 3 / 10 / 38 / 208. This unit reaches 3 / 10 / 37 / 203 live; the gap is
+ * Target from ia-target/designer.md section 2 is 3 / 10 / 38 / 208. This unit reaches 3 / 10 / 37 / 205 live; the gap is
  * recorded as SELF-AMENDs in the build-0018 receipt:
  * - the 8 NEW themes leaves (success, warning, info, font-size, breakpoint, container, ease, duration) need slot
  *   registrations outside this unit, so Theme has 42 leaves, 11 L2 (Motion > Timing has no leaf yet);
@@ -8,7 +8,9 @@
  *   repoint first;
  * - components.navigation-tree stays live: frames.app-sidebar's tree slot now accepts components.sidebar, but the
  *   AppNavigation fill still renders NavigationTree, so the frame truthfully composes both until that render moves
- *   (Interface 112, not 109).
+ *   (Interface 114, not 109);
+ * - frames.sheet and frames.command stay live (review r1 P1): app-shell, app-sidebar and inspector compose them, so their
+ *   merge into components.sheet and components.command waits for the same frame repoint.
  */
 import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -33,23 +35,23 @@ const STUDIO_IDS = [
 describe("Designer tree counts (3 L0)", () => {
   const counts = countTree(DESIGNER_TREES, DESIGNER_RETIRED);
 
-  it("has 3 L0, 10 L1, 37 L2 and 203 live L3 (designer.md 3/10/38/208 less the self-amended gap)", () => {
-    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 203 });
+  it("has 3 L0, 10 L1, 37 L2 and 205 live L3 (designer.md 3/10/38/208 less the self-amended gap)", () => {
+    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 205 });
   });
 
   it("counts per L0 in owner order: Theme, Art, Interface", () => {
     expect(counts.byL0).toEqual({
       theme: { l1: 4, l2: 11, l3: 42 },
       art: { l1: 3, l2: 10, l3: 49 },
-      interface: { l1: 3, l2: 16, l3: 112 },
+      interface: { l1: 3, l2: 16, l3: 114 },
     });
-    expect(counts.byLayer).toEqual({ themes: 42, assets: 49, components: 59, sections: 45, frames: 8 });
+    expect(counts.byLayer).toEqual({ themes: 42, assets: 49, components: 59, sections: 45, frames: 10 });
   });
 
-  it("keeps every one of the 246 placed ids; 43 retire in place", () => {
+  it("keeps every one of the 246 placed ids; 41 retire in place", () => {
     expect(counts.placed).toBe(246);
     expect(new Set(placedLeaves(DESIGNER_TREES)).size).toBe(246);
-    expect(counts.retired).toBe(43);
+    expect(counts.retired).toBe(41);
     expect(counts.placed - counts.retired).toBe(counts.l3);
   });
 
@@ -152,6 +154,36 @@ describe("frames never point at a retired component", () => {
     const frames = clone(frameSlots) as { id: string; contract: { slots?: { id: string; accepts: string }[] } }[];
     frames.find(slot => slot.id === "frames.app-sidebar")!.contract.slots!.find(slot => slot.id === "tree")!.accepts = "components.canvas-map";
     expect(retiredFrameReferences(frames as never, DESIGNER_RETIRED)).toEqual(["frames.app-sidebar: slot tree accepts retired components.canvas-map"]);
+  });
+
+  it("frames.sheet and frames.command stay live: app-shell, app-sidebar and inspector compose them (review r1 P1)", () => {
+    const frames = tree(DESIGNER_TREES as LayerTree[], "frames");
+    const retiredIds = new Set(DESIGNER_RETIRED.map(entry => entry.id));
+    for (const id of ["frames.sheet", "frames.command"]) {
+      expect(retiredIds.has(id), id).toBe(false);
+      expect(frames.retired ?? [], id).not.toContain(id);
+      expect(placedLeaves(DESIGNER_TREES), id).toContain(id);
+    }
+    expect(checkTree(DESIGNER_TREES, DESIGNER_RETIRED)).toEqual([]);
+  });
+
+  it("mutation: a frame composing a retired leaf of another layer (frames, sections) fails", () => {
+    const frames = clone(frameSlots) as { id: string; contract: { composes?: string[]; slots?: { id: string; accepts: string }[] } }[];
+    frames.find(slot => slot.id === "frames.app-shell")!.contract.composes!.push("frames.document");
+    frames.find(slot => slot.id === "frames.site-shell")!.contract.slots!.find(slot => slot.id === "consent")!.accepts = "sections.cards";
+    expect(retiredFrameReferences(frames as never, DESIGNER_RETIRED)).toEqual([
+      "frames.site-shell: slot consent accepts retired sections.cards",
+      "frames.app-shell: composes retired frames.document",
+    ]);
+  });
+
+  it("mutation: re-retiring frames.sheet fails the frame reference check", () => {
+    const retired: RetiredEntry[] = [...DESIGNER_RETIRED, { id: "frames.sheet", retiredAt: "2026-11-15", decidedBy: "mutation", reason: "mutation" } as RetiredEntry];
+    expect(retiredFrameReferences(frameSlots as never, retired)).toEqual([
+      "frames.app-shell: composes retired frames.sheet",
+      "frames.app-sidebar: composes retired frames.sheet",
+      "frames.inspector: composes retired frames.sheet",
+    ]);
   });
 
   it("site-shell consent slot accepts sections.consent only, in a named region landmark", () => {

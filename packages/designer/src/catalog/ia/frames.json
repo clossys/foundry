@@ -32,9 +32,7 @@
     }
   ],
   "retired": [
-    "frames.command",
-    "frames.document",
-    "frames.sheet"
+    "frames.document"
   ],
   "starter": [
     "frames.site-shell",
