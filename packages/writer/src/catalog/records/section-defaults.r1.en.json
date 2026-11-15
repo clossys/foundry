@@ -1171,7 +1171,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.logo-hero",
-      "schemaDigest": "5ca531b1533debc43208a4aa3697b79f9f6830672fad7dd46b5e5c2a8aaecfe3",
+      "schemaDigest": "10c4e80128ecd99abcd4f646e1d2603878846948ff3b4418c719dfdf6dc44791",
       "fields": {
         "name": {
           "ref": "string",
@@ -1186,7 +1186,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.record-detail",
-      "schemaDigest": "698e7960910172f88c5089d29e3f950d772ff610fab50fa7ded746da4265672c",
+      "schemaDigest": "a1be644b39e14a8925348931640586cd2eac7e15d917977bd3e5c5d7cef01fa5",
       "fields": {
         "header.heading": {
           "ref": "string",
@@ -1209,7 +1209,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.error-state",
-      "schemaDigest": "5a1153ac50a43d8fb11e8a8baf922f5bff73d3c15769a28a1c0e067d38b29db3",
+      "schemaDigest": "f98d620e53b78e59631141d6ff2133c38df0f68e854e25fc8f1b7da413f14b41",
       "fields": {
         "header.heading": {
           "ref": "string",
@@ -1236,7 +1236,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.pagination",
-      "schemaDigest": "ab135754c96afe5fcef97ed853a2e04bd95936e65fd14aeab1f5e977d8096a9f",
+      "schemaDigest": "cac8d782e1db5130d44da44c418d4840d9cad5f6e974fe659f746b04ba52d858",
       "fields": {
         "page.label": {
           "ref": "string",
