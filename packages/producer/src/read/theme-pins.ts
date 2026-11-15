@@ -5,8 +5,17 @@
  * not resolve is a visible error, never a silent fallback.
  */
 import { join } from "node:path";
-import { defaultThemeCss, isEmptyProjection, projectTheme, themeHash, toCss, type ResolvedThemePins } from "@clossys/designer/build/theme";
+import { defaultThemeCss, isEmptyProjection, projectTheme, themeHash, toCss, type ResolvedThemePins, type ThemeProjection as DesignerThemeProjection } from "@clossys/designer/build/theme";
+import type { ThemeProjection } from "../records/types.js";
 import { hasAgentModel, hasPinFile, listSlots, readCandidate, withSlotReadScope } from "../records/slots.js";
+
+/**
+ * Designer declares `clossys.theme/1` locally (it never imports producer, system.md 14.2); this
+ * fails the build if that declaration and the canonical record type in `records/types.ts` drift.
+ */
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+const projectionMatchesRecord: Same<DesignerThemeProjection, ThemeProjection> = true;
+void projectionMatchesRecord;
 
 export interface ConsumerTheme {
   source: "consumer" | "foundry" | "error";
@@ -40,6 +49,11 @@ export function pinnedDesignerItems(library: string): Map<string, PinnedItem> {
     }
     return items;
   });
+}
+
+/** The consumer's `themes.*` pins projected to the `clossys.theme/1` record. */
+export function consumerThemeProjection(library: string): ThemeProjection {
+  return projectTheme(resolveThemePins(library));
 }
 
 /** The consumer's resolved `themes.*` pins, ready for `projectTheme()`. */

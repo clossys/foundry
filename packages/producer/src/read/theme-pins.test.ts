@@ -6,7 +6,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { FIXTURE_CONSUMER } from "../consumer-root.js";
 import { studioTheme } from "../server/theme.js";
 import { PINNED_CANDIDATES, pinnedConsumer } from "./__fixtures__/theme-pins/pinned-consumer.js";
-import { packageDefaultTheme, pinnedThemeCss, readConsumerTheme, resolveThemePins } from "./theme-pins.js";
+import { validateAgainst, type JsonSchema } from "../records/schema.js";
+import { consumerThemeProjection, packageDefaultTheme, pinnedThemeCss, readConsumerTheme, resolveThemePins } from "./theme-pins.js";
 
 /** Goldens: the Studio server's `studioTheme` CSS on the int2 fixture, captured before the move. */
 const golden = (name: string) => readFileSync(fileURLToPath(new URL(`./__fixtures__/theme-pins/${name}`, import.meta.url)), "utf8");
@@ -36,6 +37,14 @@ describe("theme pins (designer.md 9.8, system.md 14.2)", () => {
     expect(theme.css).toMatch(/\n\.dark \{\n {2}--primary: oklch\(0\.78 0\.11 160\);\n\}\n$/);
     expect(pinnedThemeCss(join(root, "clossys"))).toBe(theme.css);
     expect(await studioTheme(root)).toEqual(theme);
+  });
+
+  it("projects to a record that validates against the clossys.theme/1 schema", () => {
+    const schema = JSON.parse(readFileSync(fileURLToPath(new URL("../../schemas/theme.json", import.meta.url)), "utf8")) as JsonSchema;
+    const projection = consumerThemeProjection(join(pinned(), "clossys"));
+    expect(projection.vars.dark["--primary"]).toBe("oklch(0.78 0.11 160)");
+    expect(validateAgainst(schema, projection)).toEqual([]);
+    expect(validateAgainst(schema, consumerThemeProjection(join(FIXTURE_CONSUMER, "clossys")))).toEqual([]);
   });
 
   it("is a visible error, never the default, when a pinned theme candidate drifts", () => {
