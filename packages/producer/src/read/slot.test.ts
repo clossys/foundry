@@ -6,7 +6,7 @@
  * data only; never a consumer's copy.
  */
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,10 +16,13 @@ import { writeFixtureNames } from "../server/__fixtures__/writer-names.js";
 import { serializeFrontmatter, type SlotAgent } from "../records/slot-model/index.js";
 import { runSlotCli } from "../cli/slot.js";
 import { runCli } from "../cli/main.js";
+import { validateAgainst, type JsonSchema } from "../records/schema.js";
 import { formatRef, parseRef, RefError } from "./ref.js";
 import { slotView, SlotViewError, type SlotView } from "./slot.js";
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer", import.meta.url));
+const TALLYHOUSE = fileURLToPath(new URL("../../test-fixtures/tallyhouse", import.meta.url));
+const SCHEMA = JSON.parse(readFileSync(fileURLToPath(new URL("../../schemas/slot-view.json", import.meta.url)), "utf8")) as JsonSchema;
 const roots: string[] = [];
 const sha = (bytes: string) => createHash("sha256").update(bytes).digest("hex");
 const noPackage = { packageRoot: () => undefined };
@@ -33,6 +36,12 @@ function tempDir(prefix: string): string {
 function copyFixture(): string {
   const root = tempDir("slot-view-");
   cpSync(FIXTURE, root, { recursive: true });
+  // slot-detail labels need pinned Writer names. This fixture's writer IA already places
+  // strings.names, so keep its IA bytes and take only the names candidate and pin.
+  const writerIa = join(root, "clossys/agents/writer/ia.json");
+  const ia = readFileSync(writerIa);
+  writeFixtureNames(root);
+  writeFileSync(writerIa, ia);
   return root;
 }
 const slotDir = (root: string, agent: string, id: string) => join(root, "clossys/agents", agent, id);
@@ -56,8 +65,9 @@ const CASES: { agent: SlotAgent; id: string; first: string; second: string; make
   { agent: "writer", id: "lexicon.mood", first: "mood-v1.md", second: "mood-v2.md", make: (_name, text) => mdCandidate("lexicon.mood", text) },
 ];
 
-/** The keys of clossys.slot-view/1 (system.md 12.3), standing in for schemas/slot-view-1.json until foundry-build-0001 lands. */
+/** clossys.slot-view/1 (system.md 12.3): valid against schemas/slot-view.json, with every key present. */
 function expectSlotViewShape(view: SlotView) {
+  expect(validateAgainst(SCHEMA, view)).toEqual([]);
   expect(Object.keys(view).sort()).toEqual(["candidates", "consumedBy", "ledger", "pin", "queue", "ref", "schema", "slot"]);
   expect(view.schema).toBe("clossys.slot-view/1");
   expect(Object.keys(view.slot).sort()).toEqual(["agent", "brief", "briefSha256", "contract", "ia", "id", "kind", "status", "tightenCount"]);
@@ -91,7 +101,6 @@ describe("ref strings (system.md 5)", () => {
 describe("clossys slot read model", () => {
   it("matches slot-detail on the int2 fixture: candidates, pin and used-by, one slot per agent", () => {
     const root = copyFixture();
-    writeFixtureNames(root);
     for (const { agent, id, first, second, make } of CASES) {
       const firstSha = addCandidate(root, agent, id, first, make(first, "First synthetic answer."));
       addCandidate(root, agent, id, second, make(second, "Second synthetic answer."));
@@ -113,17 +122,16 @@ describe("clossys slot read model", () => {
     const icon = slotView(root, "designer/components.icon", noPackage);
     expect(icon.consumedBy).toContain("designer/components.button");
     expect(icon.consumedBy).toEqual(slotDetail(root, "designer", "components.icon")!.usedBy.map(row => `${row.agent}/${row.id}`));
-  });
+  }, 30_000); // copies the fixture and reads every agent's IA; slow on a loaded machine
 
   it("an empty fixture slot is honest: no candidates, no pin, same as slot-detail", () => {
     const root = copyFixture();
-    writeFixtureNames(root);
     const view = slotView(root, "writer/lexicon.mood", noPackage);
     expectSlotViewShape(view);
     expect(view.candidates).toEqual([]);
     expect(view.pin).toEqual([]);
     expect(slotDetail(root, "writer", "lexicon.mood")!.candidates).toEqual([]);
-    expect(view.slot.ia).toEqual({ l0: "lexicon", l1: "lexicon.voice", l2: "voice-person-and-mood" });
+    expect(view.slot.ia).toEqual({ l0: "lexicon", l1: "lexicon/voice", l2: "lexicon/voice/voice-person-and-mood" });
     expect(view.slot.brief.inputs).toEqual([{ to: "director/identity.verbal.voice", rel: "input" }]);
     expect(view.queue).toEqual([]);
     expect(view.ledger).toEqual([]);
@@ -151,16 +159,16 @@ describe("clossys slot read model", () => {
     const options = { packageRoot: (agent: string) => agent === "designer" ? pkg : undefined };
     const view = slotView(root, "designer/components.button", options);
     expectSlotViewShape(view);
-    expect(view.candidates.map(row => row.name)).toEqual(["package:button-v1.json"]);
+    expect(view.candidates.map(row => row.name)).toEqual(["button-v1.json"]);
     expect(view.candidates[0]).toMatchObject({ sha256: sha(bytes), createdBy: { actor: "package", package: "@clossys/designer", version: "0.0.0-test" } });
-    expect(view.pin).toEqual([expect.objectContaining({ candidate: "package:button-v1.json", sha256: sha(bytes), basis: "package-default", state: "sample" })]);
+    expect(view.pin).toEqual([expect.objectContaining({ candidate: "button-v1.json", sha256: sha(bytes), basis: "package-default", state: "sample" })]);
     // The ref form for the package default resolves to it.
-    expect(slotView(root, "designer/components.button/package:button-v1.json", options).candidates.map(row => row.name)).toEqual(["package:button-v1.json"]);
+    expect(slotView(root, "designer/components.button/package:button-v1.json", options).candidates.map(row => row.name)).toEqual(["button-v1.json"]);
     // A valid consumer pin wins over the package default.
     const own = addCandidate(root, "designer", "components.button", "button-v2.json", jsonCandidate("button", "own"));
     addPin(root, "designer", "components.button", "button-v2.json", own);
     const pinned = slotView(root, "designer/components.button", options);
-    expect(pinned.candidates.map(row => row.name)).toEqual(["package:button-v1.json", "button-v2.json"]);
+    expect(pinned.candidates.map(row => row.name)).toEqual(["button-v1.json", "button-v2.json"]);
     expect(pinned.pin).toEqual([expect.objectContaining({ candidate: "button-v2.json", state: "pinned" })]);
   });
 
@@ -205,5 +213,65 @@ describe("clossys slot read model", () => {
     const routed = await runCli(["slot", "designer/components.button", "--json"], root);
     expect(routed.exitCode).toBe(0);
     expect((routed.output as SlotView).ref).toBe("designer/components.button");
+  });
+});
+
+describe("Tallyhouse golden (target clossys.slot/2 records)", () => {
+  const packages = { packageRoot: (agent: string) => join(TALLYHOUSE, "packages", agent) };
+  const REFS = ["writer/sections.hero.copy#home.hero", "designer/sections.hero", "director/identity.naming.name"];
+  const PINS = ["writer/sections.hero.copy/pin.json", "designer/sections.hero/pin.json", "director/identity.naming.name/pin.json"];
+  /** A copy whose pins carry the real sha256 of their candidates (the fixture's digests are illustrative). */
+  function sealedCopy(): string {
+    const root = tempDir("slot-view-tally-");
+    cpSync(TALLYHOUSE, root, { recursive: true });
+    for (const rel of PINS) {
+      const file = join(root, "clossys/agents", rel);
+      const doc = JSON.parse(readFileSync(file, "utf8"));
+      const rows = doc.records ? Object.values(doc.records) as { candidate: string; sha256: string }[] : [doc];
+      for (const row of rows) row.sha256 = sha(readFileSync(join(file, "..", "candidates", row.candidate), "utf8"));
+      writeFileSync(file, JSON.stringify(doc));
+    }
+    return root;
+  }
+  const golden = (view: SlotView) => ({
+    ref: view.ref, kind: view.slot.kind, status: view.slot.status, ia: view.slot.ia, tightenCount: view.slot.tightenCount,
+    candidates: view.candidates.map(row => [row.name, row.record ?? null, row.createdBy.actor, row.createdAt, row.check.status, row.rationale.length]),
+    pin: view.pin.map(row => [row.record ?? null, row.candidate, row.decidedBy, row.basis, row.at, row.state]),
+    consumedBy: view.consumedBy, queue: view.queue, ledger: view.ledger,
+  });
+
+  it("three slots, one per agent kind, match the golden and validate", () => {
+    const views = REFS.map(ref => slotView(sealedCopy(), ref, packages));
+    for (const view of views) expectSlotViewShape(view);
+    expect(views.map(golden)).toEqual([
+      { ref: "writer/sections.hero.copy#home.hero", kind: "copy", status: "live", ia: { l0: "copy", l1: "copy/section-copy", l2: "copy/section-copy/story" }, tightenCount: 1,
+        candidates: [["home.hero-v3.json", "home.hero", "agent", "2026-11-18T09:48:20Z", "pass", 5]],
+        pin: [["home.hero", "home.hero-v3.json", "agent:writer", "agent", "2026-11-18T10:04:12Z", "pinned"]],
+        consumedBy: ["publisher/page.home"], queue: [], ledger: ["20261118T0915Z-refine-home-hero"] },
+      { ref: "designer/sections.hero", kind: "element/section", status: "live", ia: { l0: "interface", l1: "interface/sections", l2: "interface/sections/story" }, tightenCount: 0,
+        candidates: [["hero-v2.json", null, "agent", "2026-11-16T12:40:00Z", "pass", 2]],
+        pin: [[null, "hero-v2.json", "agent:designer", "agent", "2026-11-16T13:02:40Z", "confirm"]],
+        consumedBy: ["publisher/layout.marketing-home", "publisher/page.home", "writer/sections.hero.copy"], queue: [], ledger: [] },
+      { ref: "director/identity.naming.name", kind: "brief", status: "live", ia: { l0: "strategy", l1: "strategy/identity", l2: "strategy/identity/naming" }, tightenCount: 1,
+        candidates: [["name-v1.md", null, "agent", "2026-11-16T09:24:10Z", "pass", 2]],
+        pin: [[null, "name-v1.md", "owner:queue.pick#20261116T0930Z-name", "picked", "2026-11-16T09:31:02Z", "pinned"]],
+        consumedBy: ["designer/assets.lockup", "writer/lexicon.capitalization", "writer/narratives.legal-document", "writer/sections.hero.copy"], queue: [], ledger: [] },
+    ]);
+  });
+
+  it("the fixture as shipped: pins whose digest does not match their bytes resolve nothing (system.md 8)", () => {
+    for (const ref of REFS) expect(slotView(TALLYHOUSE, ref, packages).pin).toEqual([]);
+  });
+
+  it("a Tallyhouse package default is the sample pin of a slot with no consumer candidate", () => {
+    const root = tempDir("slot-view-tally-empty-");
+    mkdirSync(join(root, "clossys/agents/publisher/chrome.site-header"), { recursive: true });
+    writeFileSync(join(root, "clossys/agents/publisher/chrome.site-header/slot.json"), JSON.stringify({ schema: "clossys.slot/2", kind: "chrome", status: "starter",
+      ia: { l0: "chrome", l1: "chrome/site", l2: "chrome/site/header" }, brief: { purpose: "Synthetic test slot.", mustDo: [], inputs: [], acceptance: [] }, refs: [] }));
+    const view = slotView(root, "publisher/chrome.site-header", packages);
+    expectSlotViewShape(view);
+    const bytes = readFileSync(join(TALLYHOUSE, "packages/publisher/src/catalog/defaults/chrome.site-header/header-v1.json"), "utf8");
+    expect(view.candidates.map(row => [row.name, row.sha256])).toEqual([["header-v1.json", sha(bytes)]]);
+    expect(view.pin).toEqual([expect.objectContaining({ candidate: "header-v1.json", sha256: sha(bytes), basis: "package-default", state: "sample" })]);
   });
 });
