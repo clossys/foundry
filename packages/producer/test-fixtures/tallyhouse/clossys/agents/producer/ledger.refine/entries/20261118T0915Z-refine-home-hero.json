@@ -19,7 +19,7 @@
       "wrote": [ { "file": "writer/sections.hero.copy/slot.json", "sha256": null } ] },
     { "id": "create", "decider": { "by": "agent", "agent": "writer", "verb": "create-candidates", "tier": "mid", "model": "claude-opus-5-5" },
       "cli": "clossys next writer/sections.hero.copy#home.hero --submit home.hero-v3.json ...", "exit": 0,
-      "wrote": [ { "file": "writer/sections.hero.copy/candidates/home.hero-v3.json", "sha256": "9ac6a62e571641d7071bae79ca067f995dbc00d8296f54d77bb7c8611a7bac48" } ] },
+      "wrote": [ { "file": "writer/sections.hero.copy/candidates/home.hero-v3.json", "sha256": "f5fc89108726e8260bb2c0447e7c633a4d9e2c257c06b593da60a0cd2fc7b801" } ] },
     { "id": "check", "decider": { "by": "code" }, "cli": "clossys check writer/sections.hero.copy#home.hero", "exit": 0, "wrote": [] },
     { "id": "pick", "decider": { "by": "agent", "agent": "writer", "verb": "pick", "tier": "mid", "model": "claude-opus-5-5" },
       "cli": "clossys pick writer/sections.hero.copy#home.hero home.hero-v3.json --by agent:writer", "exit": 0,

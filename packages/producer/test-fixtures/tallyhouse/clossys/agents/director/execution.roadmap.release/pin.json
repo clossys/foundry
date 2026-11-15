@@ -3,6 +3,6 @@
   "createdBy": { "actor": "code", "cli": "clossys pin", "version": "1.0.0" },
   "createdAt": "2026-11-16T10:12:44Z", "updatedAt": "2026-11-16T10:12:44Z",
   "refs": [ { "to": "producer/queue.pick", "record": "20261116T1010Z-release", "rel": "answers" } ],
-  "candidate": "release-v1.md", "sha256": "a64509e47e752685682025ba2ecf65764dbb6bf931bb3827657ed802341e20bd",
+  "candidate": "release-v1.md", "sha256": "38395369d4492485cd2250e343771781f8ebd797b703eb987bfc132fbc7fdaeb",
   "decidedBy": "owner:queue.pick#20261116T1010Z-release", "basis": "picked", "at": "2026-11-16T10:12:44Z"
 }

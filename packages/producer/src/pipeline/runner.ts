@@ -137,6 +137,9 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     if (head === "craft") return await (await import("../cli/craft.js")).runCraftCli(argv.slice(1), cwd, steps);
     // The gap finder reads only; the interview (next --owner) asks what it finds.
     if (head === "gaps") return await (await import("../cli/gaps.js")).runGapsCli(argv.slice(1), cwd, steps);
+    // The workspace read model (system.md 12.2) reads only, like gaps.
+    if (head === "status") return await (await import("../cli/status.js")).runStatusCli(argv.slice(1), cwd, steps);
+    if (head === "slot") return await (await import("../cli/slot.js")).runSlotCli(argv.slice(1), cwd);
     // The preview builds a publication from resolved pins and serves it (system.md 12.5); it records nothing.
     if (head === "preview") return await (await import("../cli/preview.js")).runPreviewCli(argv.slice(1), cwd);
     // A verb with its own parser (specimen, migrate, pipeline) gets its argv untouched.
