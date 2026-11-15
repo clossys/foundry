@@ -1,0 +1,53 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "writer/lexicon.mood/package:mood-v2.json",
+    "agent": "writer",
+    "kind": "candidate",
+    "status": "submitted",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/writer",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Do"
+      }
+    ],
+    "slot": "writer/lexicon.mood",
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "ia-target/writer.md#2-voice"
+      ]
+    },
+    "rationale": [
+      {
+        "purpose": "package default",
+        "why": "Re-certified as a measurable shape: neutral package starting values a consumer's Writer run replaces.",
+        "sources": [
+          {
+            "to": "director/identity.verbal.voice",
+            "rel": "input",
+            "key": "Do"
+          }
+        ]
+      }
+    ]
+  },
+  "content": {
+    "byRole": {
+      "eyebrow": "declarative",
+      "heading": "declarative",
+      "lead": "declarative",
+      "body": "declarative",
+      "action": "imperative",
+      "label": "declarative",
+      "alt": "declarative"
+    }
+  }
+}

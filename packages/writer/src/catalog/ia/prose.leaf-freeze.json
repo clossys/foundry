@@ -1,0 +1,14 @@
+{
+  "schema": "clossys.leaf-freeze/2",
+  "group": "prose",
+  "basis": "ia-target writer.md 8 Q6 default (foundry-build-0019); owner signature pending",
+  "signed": null,
+  "leafIds": [
+    "narratives.article",
+    "narratives.case-study",
+    "narratives.release-notes",
+    "narratives.guide",
+    "narratives.legal-document"
+  ],
+  "amendments": []
+}

@@ -1,0 +1,412 @@
+{
+  "schema": "clossys.writer-ia/1",
+  "group": "prose",
+  "label": "Prose",
+  "nodes": [
+    {
+      "id": "prose/editorial",
+      "label": "Editorial",
+      "children": [
+        {
+          "id": "prose/editorial/narratives",
+          "label": "Narratives",
+          "leaves": [
+            "narratives.article",
+            "narratives.case-study"
+          ]
+        },
+        {
+          "id": "prose/editorial/changelog",
+          "label": "Changelog",
+          "leaves": [
+            "narratives.release-notes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prose/reference",
+      "label": "Reference",
+      "children": [
+        {
+          "id": "prose/reference/help",
+          "label": "Help",
+          "leaves": [
+            "narratives.guide"
+          ]
+        },
+        {
+          "id": "prose/reference/policies",
+          "label": "Policies",
+          "leaves": [
+            "narratives.legal-document"
+          ]
+        }
+      ]
+    }
+  ],
+  "slots": [
+    {
+      "id": "narratives.article",
+      "kind": "prose",
+      "mark": "other-live",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        }
+      ],
+      "contract": {
+        "placedBy": [
+          "sections.article.copy:content"
+        ],
+        "records": "many pieces per slot, keyed by type or release",
+        "exists": "only once placed"
+      }
+    },
+    {
+      "id": "narratives.case-study",
+      "kind": "prose",
+      "mark": "parked",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Proof"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Metrics"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        }
+      ],
+      "contract": {
+        "placedBy": [
+          "sections.article.copy:content"
+        ],
+        "records": "many pieces per slot, keyed by type or release",
+        "exists": "only once placed"
+      },
+      "new": true
+    },
+    {
+      "id": "narratives.release-notes",
+      "kind": "prose",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.promise",
+          "key": "Promise"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Never-claim"
+        }
+      ],
+      "contract": {
+        "placedBy": [
+          "sections.timeline.copy:content",
+          "sections.article.copy:content"
+        ],
+        "records": "many pieces per slot, keyed by type or release",
+        "exists": "only once placed"
+      }
+    },
+    {
+      "id": "narratives.guide",
+      "kind": "prose",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "placedBy": [
+          "sections.article.copy:content"
+        ],
+        "records": "many pieces per slot, keyed by type or release",
+        "exists": "only once placed"
+      }
+    },
+    {
+      "id": "narratives.legal-document",
+      "kind": "prose",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "writer/lexicon.formality",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.warmth",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.energy",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.person",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.mood",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.sentence-length",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.reading-level",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.capitalization",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.punctuation",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.preferred-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-terms",
+          "rel": "input"
+        },
+        {
+          "to": "writer/lexicon.avoid-patterns",
+          "rel": "input"
+        },
+        {
+          "to": "director/advantage.proposition.proof",
+          "key": "Compliance"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        }
+      ],
+      "contract": {
+        "placedBy": [
+          "sections.article.copy:content"
+        ],
+        "records": "many pieces per slot, keyed by type or release",
+        "exists": "only once placed",
+        "types": [
+          "privacy",
+          "terms",
+          "cookies",
+          "license"
+        ]
+      }
+    }
+  ]
+}

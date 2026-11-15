@@ -1,0 +1,607 @@
+[
+  {
+    "id": "lexicon.brand-names",
+    "fate": "director-field",
+    "target": "identity.naming.name:Casing"
+  },
+  {
+    "id": "lexicon.spelling-variant",
+    "fate": "intl-code",
+    "target": "Intl/CLDR from the Language tag (director/focus.reach.geography:Language)"
+  },
+  {
+    "id": "lexicon.pronunciation",
+    "fate": "director-field",
+    "target": "identity.naming.name:Pronunciation"
+  },
+  {
+    "id": "lexicon.product-claims",
+    "fate": "director-field",
+    "target": "advantage.proposition.proof:Proof"
+  },
+  {
+    "id": "lexicon.metric-claims",
+    "fate": "director-field",
+    "target": "advantage.proposition.proof:Metrics"
+  },
+  {
+    "id": "lexicon.compliance-statements",
+    "fate": "director-field",
+    "target": "advantage.proposition.proof:Compliance"
+  },
+  {
+    "id": "lexicon.comparison-claims",
+    "fate": "director-field",
+    "target": "advantage.proposition.proof:Comparisons"
+  },
+  {
+    "id": "lexicon.number-format",
+    "fate": "intl-code",
+    "target": "Intl/CLDR from the Language tag (director/focus.reach.geography:Language)"
+  },
+  {
+    "id": "lexicon.plural-rules",
+    "fate": "intl-code",
+    "target": "Intl/CLDR from the Language tag (director/focus.reach.geography:Language)"
+  },
+  {
+    "id": "lexicon.date-format",
+    "fate": "intl-code",
+    "target": "Intl/CLDR from the Language tag (director/focus.reach.geography:Language)"
+  },
+  {
+    "id": "lexicon.time-format",
+    "fate": "intl-code",
+    "target": "Intl/CLDR from the Language tag (director/focus.reach.geography:Language)"
+  },
+  {
+    "id": "lexicon.currency-format",
+    "fate": "intl-code",
+    "target": "Intl/CLDR from the Language tag (director/focus.reach.geography:Language)"
+  },
+  {
+    "id": "lexicon.unit-format",
+    "fate": "intl-code",
+    "target": "Intl/CLDR from the Language tag (director/focus.reach.geography:Language)"
+  },
+  {
+    "id": "lexicon.direction",
+    "fate": "intl-code",
+    "target": "Intl/CLDR from the Language tag (director/focus.reach.geography:Language)"
+  },
+  {
+    "id": "lexicon.expansion-budget",
+    "fate": "intl-code",
+    "target": "package expansion table keyed by locale"
+  },
+  {
+    "id": "strings.actions",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.navigation",
+    "fate": "copy",
+    "target": "frames.site-header.copy + frames.app-sidebar.copy:nav"
+  },
+  {
+    "id": "strings.field-labels",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.common",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.statuses",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.counters",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.errors",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.warnings",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.confirmations",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.empty",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.loading",
+    "fate": "field-role",
+    "target": "designer copy.fields role vocabulary + per-role length budget"
+  },
+  {
+    "id": "strings.names",
+    "fate": "director-field",
+    "target": "identity.naming.architecture"
+  },
+  {
+    "id": "strings.taglines",
+    "fate": "copy",
+    "target": "sections.hero.copy:header.eyebrow"
+  },
+  {
+    "id": "strings.legal-lines",
+    "fate": "copy",
+    "target": "frames.site-footer.copy:legal"
+  },
+  {
+    "id": "strings.alt-text",
+    "fate": "copy",
+    "target": "assets.image.copy:alt"
+  },
+  {
+    "id": "strings.captions",
+    "fate": "copy",
+    "target": "assets.image.copy:caption + assets.video.copy:captions"
+  },
+  {
+    "id": "strings.transcripts",
+    "fate": "copy",
+    "target": "assets.video.copy:transcript"
+  },
+  {
+    "id": "strings.page-titles",
+    "fate": "copy",
+    "target": "page.<id>.meta:title"
+  },
+  {
+    "id": "strings.descriptions",
+    "fate": "copy",
+    "target": "page.<id>.meta:description"
+  },
+  {
+    "id": "strings.share-text",
+    "fate": "copy",
+    "target": "page.<id>.meta:share"
+  },
+  {
+    "id": "strings.email-subjects",
+    "fate": "dropped",
+    "target": "no Writer slot (email out of scope at the recut)"
+  },
+  {
+    "id": "strings.email-preheaders",
+    "fate": "dropped",
+    "target": "no Writer slot (email out of scope at the recut)"
+  },
+  {
+    "id": "patterns.headline",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#headline"
+  },
+  {
+    "id": "patterns.headline-subhead",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#headline-subhead"
+  },
+  {
+    "id": "patterns.eyebrow-headline",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#eyebrow-headline"
+  },
+  {
+    "id": "patterns.section-title",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#section-title"
+  },
+  {
+    "id": "patterns.primary-action",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#primary-action"
+  },
+  {
+    "id": "patterns.secondary-action",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#secondary-action"
+  },
+  {
+    "id": "patterns.inline-link",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#inline-link"
+  },
+  {
+    "id": "patterns.error-message",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#error-message"
+  },
+  {
+    "id": "patterns.warning-message",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#warning-message"
+  },
+  {
+    "id": "patterns.confirmation",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#confirmation"
+  },
+  {
+    "id": "patterns.empty-state",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#empty-state"
+  },
+  {
+    "id": "patterns.hint",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#hint"
+  },
+  {
+    "id": "patterns.tooltip",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#tooltip"
+  },
+  {
+    "id": "patterns.form-field",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#form-field"
+  },
+  {
+    "id": "patterns.consent-line",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#consent-line"
+  },
+  {
+    "id": "patterns.feature-bullet",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#feature-bullet"
+  },
+  {
+    "id": "patterns.stat",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#stat"
+  },
+  {
+    "id": "patterns.pricing-item",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#pricing-item"
+  },
+  {
+    "id": "patterns.table-header",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#table-header"
+  },
+  {
+    "id": "patterns.table-caption",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#table-caption"
+  },
+  {
+    "id": "patterns.quote",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#quote"
+  },
+  {
+    "id": "patterns.testimonial",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#testimonial"
+  },
+  {
+    "id": "patterns.figure-caption",
+    "fate": "purpose-shape",
+    "target": "src/contract/copy-shapes.json#figure-caption"
+  },
+  {
+    "id": "patterns.messaging-kit",
+    "fate": "dropped",
+    "target": "messaging kit lives in Director advantage cells"
+  },
+  {
+    "id": "passages.band",
+    "fate": "dropped",
+    "target": "Designer unit has no copy (sections.band, retired sections.logo-mark, sections.record-detail)"
+  },
+  {
+    "id": "passages.section-header",
+    "fate": "copy",
+    "target": "sections.section-header.copy"
+  },
+  {
+    "id": "passages.pagination",
+    "fate": "copy",
+    "target": "sections.pagination.copy"
+  },
+  {
+    "id": "passages.hero",
+    "fate": "copy",
+    "target": "sections.hero.copy"
+  },
+  {
+    "id": "passages.logo-hero",
+    "fate": "copy",
+    "target": "sections.hero.copy"
+  },
+  {
+    "id": "passages.page-header",
+    "fate": "copy",
+    "target": "sections.page-header.copy"
+  },
+  {
+    "id": "passages.logo-mark",
+    "fate": "dropped",
+    "target": "Designer unit has no copy (sections.band, retired sections.logo-mark, sections.record-detail)"
+  },
+  {
+    "id": "passages.content",
+    "fate": "copy",
+    "target": "sections.content.copy"
+  },
+  {
+    "id": "passages.article",
+    "fate": "copy",
+    "target": "sections.article.copy"
+  },
+  {
+    "id": "passages.sectioned-document",
+    "fate": "copy",
+    "target": "sections.sectioned-document.copy"
+  },
+  {
+    "id": "passages.legal-prose",
+    "fate": "prose",
+    "target": "narratives.legal-document"
+  },
+  {
+    "id": "passages.features",
+    "fate": "copy",
+    "target": "sections.features.copy"
+  },
+  {
+    "id": "passages.call-to-action",
+    "fate": "copy",
+    "target": "sections.call-to-action.copy"
+  },
+  {
+    "id": "passages.testimonials",
+    "fate": "copy",
+    "target": "sections.testimonials.copy"
+  },
+  {
+    "id": "passages.logo-cloud",
+    "fate": "copy",
+    "target": "sections.logo-cloud.copy"
+  },
+  {
+    "id": "passages.people",
+    "fate": "copy",
+    "target": "sections.people.copy"
+  },
+  {
+    "id": "passages.media",
+    "fate": "copy",
+    "target": "sections.media.copy"
+  },
+  {
+    "id": "passages.gallery",
+    "fate": "copy",
+    "target": "sections.gallery.copy"
+  },
+  {
+    "id": "passages.faq",
+    "fate": "copy",
+    "target": "sections.faq.copy"
+  },
+  {
+    "id": "passages.steps",
+    "fate": "copy",
+    "target": "sections.steps.copy"
+  },
+  {
+    "id": "passages.timeline",
+    "fate": "copy",
+    "target": "sections.timeline.copy"
+  },
+  {
+    "id": "passages.cards",
+    "fate": "copy",
+    "target": "sections.link-index.copy"
+  },
+  {
+    "id": "passages.resource-list",
+    "fate": "copy",
+    "target": "sections.resource-list.copy"
+  },
+  {
+    "id": "passages.task-list",
+    "fate": "copy",
+    "target": "sections.task-list.copy"
+  },
+  {
+    "id": "passages.comparison",
+    "fate": "copy",
+    "target": "sections.comparison.copy"
+  },
+  {
+    "id": "passages.pricing",
+    "fate": "copy",
+    "target": "sections.pricing.copy"
+  },
+  {
+    "id": "passages.stats",
+    "fate": "copy",
+    "target": "sections.stats.copy"
+  },
+  {
+    "id": "passages.status-list",
+    "fate": "copy",
+    "target": "sections.status-list.copy"
+  },
+  {
+    "id": "passages.usage",
+    "fate": "copy",
+    "target": "sections.usage.copy"
+  },
+  {
+    "id": "passages.account-summary",
+    "fate": "copy",
+    "target": "sections.account-summary.copy"
+  },
+  {
+    "id": "passages.data-table",
+    "fate": "copy",
+    "target": "sections.data-table.copy"
+  },
+  {
+    "id": "passages.data-grid",
+    "fate": "copy",
+    "target": "sections.data-grid.copy"
+  },
+  {
+    "id": "passages.record-detail",
+    "fate": "dropped",
+    "target": "Designer unit has no copy (sections.band, retired sections.logo-mark, sections.record-detail)"
+  },
+  {
+    "id": "passages.activity-feed",
+    "fate": "copy",
+    "target": "sections.activity-feed.copy"
+  },
+  {
+    "id": "passages.audit-log",
+    "fate": "copy",
+    "target": "sections.audit-log.copy"
+  },
+  {
+    "id": "passages.form",
+    "fate": "copy",
+    "target": "sections.form.copy"
+  },
+  {
+    "id": "passages.newsletter",
+    "fate": "copy",
+    "target": "sections.form.copy"
+  },
+  {
+    "id": "passages.wizard",
+    "fate": "copy",
+    "target": "sections.wizard.copy"
+  },
+  {
+    "id": "passages.settings",
+    "fate": "copy",
+    "target": "sections.settings.copy"
+  },
+  {
+    "id": "passages.column-mapper",
+    "fate": "copy",
+    "target": "sections.column-mapper.copy"
+  },
+  {
+    "id": "passages.access-matrix",
+    "fate": "copy",
+    "target": "sections.access-matrix.copy"
+  },
+  {
+    "id": "passages.chat",
+    "fate": "copy",
+    "target": "sections.chat.copy"
+  },
+  {
+    "id": "passages.sign-in-form",
+    "fate": "copy",
+    "target": "sections.sign-in-form.copy"
+  },
+  {
+    "id": "passages.link-index",
+    "fate": "copy",
+    "target": "sections.link-index.copy"
+  },
+  {
+    "id": "passages.table-of-contents",
+    "fate": "copy",
+    "target": "sections.table-of-contents.copy"
+  },
+  {
+    "id": "passages.explorer",
+    "fate": "copy",
+    "target": "sections.explorer.copy"
+  },
+  {
+    "id": "passages.filter-builder",
+    "fate": "copy",
+    "target": "sections.filter-builder.copy"
+  },
+  {
+    "id": "passages.empty-state",
+    "fate": "copy",
+    "target": "sections.empty-state.copy"
+  },
+  {
+    "id": "passages.error-state",
+    "fate": "copy",
+    "target": "sections.error-state.copy"
+  },
+  {
+    "id": "passages.boundary-message",
+    "fate": "copy",
+    "target": "sections.error-state.copy"
+  },
+  {
+    "id": "passages.notices",
+    "fate": "copy",
+    "target": "sections.notices.copy"
+  },
+  {
+    "id": "passages.consent",
+    "fate": "copy",
+    "target": "sections.consent.copy"
+  },
+  {
+    "id": "narratives.page-story",
+    "fate": "dropped",
+    "target": "not a Prose kind at the recut (writer.md 2 Prose)"
+  },
+  {
+    "id": "narratives.screen",
+    "fate": "dropped",
+    "target": "not a Prose kind at the recut (writer.md 2 Prose)"
+  },
+  {
+    "id": "narratives.site-chrome",
+    "fate": "copy",
+    "target": "frames.site-header.copy + frames.site-footer.copy"
+  },
+  {
+    "id": "narratives.app-chrome",
+    "fate": "copy",
+    "target": "frames.app-header.copy + frames.app-sidebar.copy"
+  },
+  {
+    "id": "narratives.deck-script",
+    "fate": "dropped",
+    "target": "not a Prose kind at the recut (writer.md 2 Prose)"
+  },
+  {
+    "id": "narratives.email",
+    "fate": "dropped",
+    "target": "not a Prose kind at the recut (writer.md 2 Prose)"
+  },
+  {
+    "id": "narratives.notification",
+    "fate": "dropped",
+    "target": "not a Prose kind at the recut (writer.md 2 Prose)"
+  },
+  {
+    "id": "narratives.video-script",
+    "fate": "copy",
+    "target": "assets.video.copy:transcript"
+  }
+]
