@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/sections.slide-title/package:standard-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/sections.slide-title",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/designer"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+    "name": "slide-title",
+    "type": "registry:block",
+    "export": "SlideTitle",
+    "variants": {
+      "medium": [
+        "web",
+        "slide"
+      ]
+    },
+    "dependencies": [],
+    "registryDependencies": [
+      "utils"
+    ],
+    "files": [
+      {
+        "path": "registry/default/blocks/slide-title.tsx",
+        "type": "registry:block",
+        "content": "import { cn } from \"@/lib/utils\"\n\ntype Medium = \"web\" | \"slide\"\ntype SlideTitleCopy = { heading: string; subheading?: string; eyebrow?: string }\n\nexport function SlideTitle({ copy, medium = \"web\" }: { copy: SlideTitleCopy; medium?: Medium }) {\n  const slide = medium === \"slide\"\n  return (\n    <section data-slot=\"slide-title\" data-medium={medium} className={cn(\"flex flex-col justify-center gap-8 bg-background text-foreground\", slide ? \"aspect-video w-full overflow-hidden px-24 py-20\" : \"px-6 py-20 md:px-12\")}>\n      {copy.eyebrow ? <p className=\"text-sm font-medium uppercase tracking-wide text-muted-foreground\">{copy.eyebrow}</p> : null}\n      <h1 className={cn(\"font-heading font-semibold tracking-tight\", slide ? \"text-7xl\" : \"text-4xl md:text-5xl\")}>{copy.heading}</h1>\n      {copy.subheading ? <p className={cn(\"max-w-3xl text-muted-foreground\", slide ? \"text-3xl\" : \"text-lg\")}>{copy.subheading}</p> : null}\n    </section>\n  )\n}\n"
+      }
+    ]
+  }
+}

@@ -18,8 +18,8 @@ const check = (pageId: string, content: PageOptionContent) => {
 const checks = (findings: { check: string }[]) => [...new Set(findings.map(finding => finding.check))];
 
 describe("page option checks on the starter pages", () => {
-  it("every one of the 20 starter page defaults passes", () => {
-    expect(pageIds).toHaveLength(20);
+  it("every one of the 21 starter page defaults passes (20 + page.deck, build-0027)", () => {
+    expect(pageIds).toHaveLength(21);
     for (const id of pageIds) {
       const option = defaults.get(`${id}/starter-v1.json`);
       expect(option, id).toBeDefined();

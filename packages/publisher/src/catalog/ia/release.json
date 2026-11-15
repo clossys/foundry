@@ -34,8 +34,15 @@
     {
       "id": "release/slides",
       "label": "Slides",
-      "parked": true,
-      "children": []
+      "children": [
+        {
+          "id": "release/slides/slides",
+          "label": "Slide releases",
+          "leaves": [
+            "release.slides"
+          ]
+        }
+      ]
     },
     {
       "id": "release/documents",
@@ -121,6 +128,34 @@
       "exports": [
         {
           "kind": "react-static"
+        }
+      ],
+      "locales": {
+        "from": "director/focus.reach.geography:Language"
+      },
+      "gates": [
+        "copy.sample-remaining",
+        "pins.resolve",
+        "constitution.strict",
+        "copy.locales",
+        "release.locales"
+      ],
+      "signoff": {
+        "by": "owner",
+        "raise": "queue.approve"
+      },
+      "readyMeans": "pinned; not live (Distribution parked)"
+    },
+    "release.slides": {
+      "kind": "release",
+      "publication": "slides",
+      "exports": [
+        {
+          "kind": "static-html",
+          "per": "slide"
+        },
+        {
+          "kind": "print-css"
         }
       ],
       "locales": {
