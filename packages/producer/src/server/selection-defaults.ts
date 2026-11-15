@@ -5,7 +5,7 @@ import { installedHeadlessLibrary, loadCatalogBundles, prepareCatalogSurfaceDefa
 import { agentModule } from "./cells.js";
 import type { StudioDesignerLibrary } from "./theme.js";
 import type { StudioSelectionLeaf } from "./selection.js";
-import { DESIGNER_SPECIMEN_REQUIRED_LEAVES } from "./designer-specimen-requirements.js";
+import { DESIGNER_SPECIMEN_REQUIRED_LEAVES } from "../specimen/designer-specimen-requirements.js";
 import { studioEvidence, studioSurfaceDefaults, type StudioReportSink } from './studio-render-policy.js';
 
 const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header", "sections.content", "sections.article", "sections.empty-state", "components.badge", "components.disclosure", "components.icon", "components.link", "components.navigation-tree", "components.button", "components.rich-text", "components.semantic-content", "sections.record-detail", "sections.cards", "components.card", "components.table", ...DESIGNER_SPECIMEN_REQUIRED_LEAVES];

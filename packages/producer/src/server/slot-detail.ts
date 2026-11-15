@@ -7,7 +7,7 @@ import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCa
 import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent, type SlotModelIssue } from "../records/slot-model/index.js";
 import { parseJson } from "../errors.js";
 import { candidateImportIssue, specimenPreviewIssue } from "../specimen/library-source.js";
-import { pinnedWriterCopy } from "./specimen-tree.js";
+import { pinnedWriterCopy } from "../specimen/specimen-tree.js";
 
 export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;

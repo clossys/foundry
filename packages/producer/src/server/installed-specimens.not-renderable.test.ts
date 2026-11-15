@@ -14,7 +14,7 @@ import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import type { BoundPage } from '@clossys/publisher/install';
 import { pageModule } from '../publish/install.js';
-import { commonJsEntry, itemSpecimenPage, leafPageFiles, SPECIMEN_NOT_RENDERABLE_KEY } from './installed-specimens.js';
+import { commonJsEntry, itemSpecimenPage, leafPageFiles, SPECIMEN_NOT_RENDERABLE_KEY } from '../specimen/installed-specimens.js';
 import { consumerPath } from '../consumer-root.js';
 
 const designer = consumerPath('agents', 'designer');

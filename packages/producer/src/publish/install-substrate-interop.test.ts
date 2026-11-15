@@ -16,7 +16,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it } from "vitest";
 import type { BoundPage } from "@clossys/publisher/install";
 import { ensureSubstrate, renderBoundPage, SUBSTRATE_HOST_FILE, SUBSTRATE_VITE_CONFIG } from "./install.js";
-import { placeholderImages, SPECIMEN_IMAGE_PLACEHOLDER } from "../server/specimen-images.js";
+import { placeholderImages, SPECIMEN_IMAGE_PLACEHOLDER } from "../specimen/specimen-images.js";
 
 const requireHere = createRequire(import.meta.url);
 const temps: string[] = [];

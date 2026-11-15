@@ -10,7 +10,7 @@ import { startProducerServer, type ProducerServer } from "./index.js";
 import { createServer, type Server } from "node:http";
 import { PREVIEW_PAGE_CSP, publication, previewRoot, sandboxSpecimenFrames, servePreview, specimenHostCsp, staticPage, themePage, type ServedApp } from "./publication.js";
 import { publishNext } from "../publish/install-next.js";
-import { opaqueSpecimenRequest, SPECIMEN_FRAME_SCRIPT_HASH } from "./specimen-frame.js";
+import { opaqueSpecimenRequest, SPECIMEN_FRAME_SCRIPT_HASH } from "../specimen/specimen-frame.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { renderNativePreview } from "./publisher-preview-render.js";
 import { readPinnedPublication as readPinned } from "../publish/pinned-publication.js";

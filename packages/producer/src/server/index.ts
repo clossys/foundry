@@ -1,5 +1,5 @@
 import { attachStudioUpgrade } from "./studio-upgrade.js";
-import { sendWriterText } from "./writer-text.js";
+import { sendWriterText } from "../specimen/writer-text.js";
 import { studioChecks } from './studio-checks.js';
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
@@ -15,8 +15,8 @@ import { publication, servePreview, type ServedApp } from "./publication.js";
 import { selectionProfile, selectionRuntime, studioSelection } from "./selection.js";
 import { consumerApps } from "./publications.js";
 import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals } from "./designer-globals.js";
-import { installedSpecimens } from "./installed-specimens.js";
-import { opaqueSpecimenRequest } from "./specimen-frame.js";
+import { installedSpecimens } from "../specimen/installed-specimens.js";
+import { opaqueSpecimenRequest } from "../specimen/specimen-frame.js";
 import { designerStylesheet } from "./publisher-preview-render.js";
 import { slotGallery } from "./slot-gallery.js";
 import { slotDetail } from "./slot-detail.js";
