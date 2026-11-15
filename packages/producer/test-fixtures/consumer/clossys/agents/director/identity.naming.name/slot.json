@@ -6,23 +6,27 @@
     "l0": "strategy",
     "l1": "identity",
     "l2": "identity.naming",
-    "order": 32
+    "order": 30
   },
   "kind": "brief",
   "contract": {
-    "question": "What are we called, how is it written, and what does it mean?",
+    "question": "What is the name, how is it written and said, and what does it mean?",
     "mustContain": [
       {
         "key": "Name",
-        "hint": "the public name"
+        "hint": "the name as customers see it"
       },
       {
         "key": "Casing",
-        "hint": "exact casing and forms"
+        "hint": "every allowed written form and where"
       },
       {
         "key": "Meaning",
-        "hint": "what the name means or stands for"
+        "hint": "one plain sentence"
+      },
+      {
+        "key": "Pronunciation",
+        "hint": "respelled, stressed syllable in capitals"
       }
     ],
     "fixture": {

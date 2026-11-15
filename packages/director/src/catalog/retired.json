@@ -1,0 +1,18 @@
+[
+  {
+    "id": "capability.operation.technology",
+    "fate": "merged",
+    "target": "capability.sourcing.build",
+    "retiredAt": "2026-11-14",
+    "decidedBy": "spec:release2-swaps/ia-target/director.md#7",
+    "reason": "merged into Own (what we own or rent)"
+  },
+  {
+    "id": "capability.sourcing.acquire",
+    "fate": "merged",
+    "target": "capability.sourcing.build",
+    "retiredAt": "2026-11-14",
+    "decidedBy": "spec:release2-swaps/ia-target/director.md#7",
+    "reason": "merged into Own (what we own or rent)"
+  }
+]

@@ -48,8 +48,8 @@ describe("cell format", () => {
     expect(parsed.ok).toBe(false);
     if (!parsed.ok) expect(parsed.issues).toContainEqual(expect.objectContaining({ path: "links", line: 9 }));
   });
-  it("keeps all 57 catalog leaf templates without links byte-compatible", () => {
-    expect(catalog.cells).toHaveLength(57);
+  it("keeps all 55 catalog leaf templates without links byte-compatible", () => {
+    expect(catalog.cells).toHaveLength(55);
     for (const { id } of catalog.cells) {
       const text = example.replace("id: focus.segment.core", `id: ${id}`);
       const parsed = parseCell(text);

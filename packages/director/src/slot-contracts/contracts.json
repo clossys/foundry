@@ -12,8 +12,10 @@
       "focus",
       "advantage",
       "identity",
-      "capability",
-      "execution"
+      "targets",
+      "timeline",
+      "task-force",
+      "plan"
     ],
     "good": [
       "Direction bullets are specific enough that a stranger could act on them and disagree with them.",
@@ -1850,43 +1852,6 @@
       "feeds": []
     },
     {
-      "id": "capability.sourcing.acquire",
-      "package": "director",
-      "layer": "strategy",
-      "purpose": "Would we buy a capability, what would trigger it, and what is the limit?",
-      "inputs": [],
-      "limits": {
-        "requiredKeys": [
-          "Target",
-          "Trigger",
-          "Limit"
-        ],
-        "minWordsPerKey": 2,
-        "singleTokenKeys": []
-      },
-      "references": [
-        {
-          "id": "capability.sourcing.acquire.framework",
-          "kind": "framework",
-          "meaning": "Whether we would buy a capability, what would trigger it, and the limit.",
-          "good": [
-            "Target: a small note-template publisher with clinician authors",
-            "Trigger: rule coverage stalls below 15 insurers for two quarters",
-            "Limit: no deal above 6 months of runway"
-          ],
-          "bad": [
-            "Target: opportunities",
-            "Trigger: when it makes sense",
-            "Limit: none"
-          ],
-          "whyBad": "Without a trigger or a limit, acquisition is a mood, not a choice."
-        }
-      ],
-      "checkSuiteId": "director.cell.v1",
-      "specimenKind": "text",
-      "feeds": []
-    },
-    {
       "id": "capability.operation.delivery",
       "package": "director",
       "layer": "strategy",
@@ -1917,43 +1882,6 @@
             "Owner: the team"
           ],
           "whyBad": "No steps, no measurable standard and nobody accountable."
-        }
-      ],
-      "checkSuiteId": "director.cell.v1",
-      "specimenKind": "text",
-      "feeds": []
-    },
-    {
-      "id": "capability.operation.technology",
-      "package": "director",
-      "layer": "strategy",
-      "purpose": "Which technology is strategic, and which is commodity?",
-      "inputs": [],
-      "limits": {
-        "requiredKeys": [
-          "Strategic",
-          "Commodity",
-          "Rule"
-        ],
-        "minWordsPerKey": 2,
-        "singleTokenKeys": []
-      },
-      "references": [
-        {
-          "id": "capability.operation.technology.framework",
-          "kind": "framework",
-          "meaning": "Which technology is strategic and which is commodity, and the rule for telling them apart.",
-          "good": [
-            "Strategic: the rule engine and offline diary sync",
-            "Commodity: hosting, email delivery, card billing",
-            "Rule: if a clinic would notice it failing during a session, it is strategic"
-          ],
-          "bad": [
-            "Strategic: AI",
-            "Commodity: other stuff",
-            "Rule: use the latest tech"
-          ],
-          "whyBad": "A buzzword is not a strategic choice and the rule cannot be applied."
         }
       ],
       "checkSuiteId": "director.cell.v1",
@@ -2005,7 +1933,6 @@
       "inputs": [],
       "limits": {
         "requiredKeys": [
-          "Shape",
           "Decides",
           "Rhythm"
         ],
@@ -2018,12 +1945,10 @@
           "kind": "framework",
           "meaning": "How the team is shaped, who decides what, and the rhythm it runs on.",
           "good": [
-            "Shape: one product team of 4",
             "Decides: the clinic specialist has the final say on note forms; engineers on architecture",
             "Rhythm: two-week cycles with a clinic review on the last Friday"
           ],
           "bad": [
-            "Shape: flat",
             "Decides: everyone",
             "Rhythm: agile"
           ],
@@ -2235,9 +2160,7 @@
       ],
       "limits": {
         "requiredKeys": [
-          "Release",
-          "Audience",
-          "Channel"
+          "Release"
         ],
         "minWordsPerKey": 2,
         "singleTokenKeys": []
@@ -2248,16 +2171,12 @@
           "kind": "framework",
           "meaning": "What we release next, to whom, and through which channel.",
           "good": [
-            "Release: claim export for the 6 clearing-house insurers",
-            "Audience: trial clinics in the two launch regions",
-            "Channel: association newsletter and an in-app notice"
+            "Release: claim export for the 6 clearing-house insurers"
           ],
           "bad": [
-            "Release: new features",
-            "Audience: users",
-            "Channel: everywhere"
+            "Release: TBD"
           ],
-          "whyBad": "No release, no audience and no channel to plan against."
+          "whyBad": "A placeholder names no release to plan against."
         }
       ],
       "checkSuiteId": "director.cell.v1",
