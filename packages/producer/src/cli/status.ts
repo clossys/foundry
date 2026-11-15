@@ -15,16 +15,18 @@ import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 
-export const STATUS_USAGE = "Usage: clossys status [--agent director|designer|writer|publisher] [--queue open|all] [--ledger <n>] [--json] [--root <dir>]\n"
+export const STATUS_USAGE = "Usage: clossys status [--agent director|designer|writer|publisher] [--queue open|all] [--ledger <n>] [--detail] [--json] [--root <dir>]\n"
   + "  the workspace read model (clossys.status/1): slots per agent and state, open queue items, recent ledger runs,\n"
-  + "  releases, gaps and short option slots, with stateSha256 to poll cheaply. Read-only.";
+  + "  releases, with stateSha256 to poll cheaply; --agent scopes the queue (and the detail). --detail adds per-slot rows,\n"
+  + "  gaps and short option slots (fields outside clossys.status/1). Read-only.";
 
 export async function runStatusCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): Promise<CliResult> {
-  let agent: string | undefined, root: string | undefined, queue: string | undefined, ledger: string | undefined;
+  let agent: string | undefined, root: string | undefined, queue: string | undefined, ledger: string | undefined, detail = false;
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     if (arg === "--help") return { exitCode: 0, message: STATUS_USAGE };
     if (arg === "--json") continue;
+    if (arg === "--detail") { detail = true; continue; }
     if (arg === "--agent" || arg === "--root" || arg === "--queue" || arg === "--ledger") {
       const value = argv[++index];
       if (value === undefined || value.startsWith("--")) throw new CliUsageError(`${arg} requires a value\n${STATUS_USAGE}`);
@@ -41,11 +43,12 @@ export async function runStatusCli(argv: readonly string[], cwd: string, steps: 
     ...(agent ? { agent: agent as SlotAgent } : {}),
     ...(queue ? { queue: queue as "open" | "all" } : {}),
     ...(ledger !== undefined ? { ledger: Number(ledger) } : {}),
+    detail,
     gaps: (at, only) => gapsOf(at, { steps, packageRoot, ...(only ? { agent: only } : {}) }),
     options: consumer => { const { slots } = checkSlotOptions(consumer); return { classes: classCounts(slots), slots }; },
   });
   const lines = Object.entries(view.agents).map(([id, row]) =>
-    `${id.padEnd(9)} ${String(row.slots).padStart(4)} slot(s)  ${row.error ?? SLOT_STATES.map(state => `${state} ${row.byState[state]}`).join(", ")}`);
-  lines.push(`queue ${view.queue.length} open, ledger ${view.ledger.length} run(s), releases ${view.releases.length}; state ${view.stateSha256.slice(0, 12)}`);
+    `${id.padEnd(9)} ${String(row.slots).padStart(4)} slot(s)  ${SLOT_STATES.map(state => `${state} ${row.byState[state]}`).join(", ")}`);
+  lines.push(`queue ${view.queue.length} open, ledger ${view.ledger.length} run(s), releases ${view.releases.length}; state ${(view.stateSha256 ?? "").slice(0, 12)}`);
   return { exitCode: 0, root: workspace, output: view, message: lines.join("\n") };
 }

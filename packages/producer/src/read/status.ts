@@ -4,14 +4,14 @@
  * agents and imports nothing under src/server or src/studio. MECHANICAL: the same files give the
  * same bytes (no clock: `at` is the newest timestamp the files record). It writes nothing.
  *
- * The output type is declared here from the spec shape (system.md 12.2) until the canonical
- * records/types.ts and schemas/status-1.json land (foundry-build-0001); `gaps` and `options` are
- * the folded int2 verbs (14.5), added fields only.
+ * The output is records/types.ts `StatusView` and validates against schemas/status.json; the
+ * folded int2 `gaps` and `options` verbs (14.5) and per-slot rows come only under `--detail`.
  */
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import { listCandidateNames, modelPresence, readCandidate, readIa, readPin, readSlot } from "../records/slots.js";
+import type { AgentCensus as AgentCensusCounts, AgentId, StatusView } from "../records/types.js";
 import {
   SLOT_AGENTS, pinFile, pinStatus, slotDir, slotFile, slotPositions, validateCandidate, validateSlotDoc,
   type PinBasis, type PinDoc, type PinStatus, type SlotAgent, type SlotDoc, type SlotPosition,
@@ -20,32 +20,26 @@ import {
 export const STATUS_SCHEMA = "clossys.status/1" as const;
 export const SLOT_STATES = ["pinned", "confirm", "sample", "unresolved", "failing", "needsRefresh"] as const;
 export type SlotState = typeof SLOT_STATES[number];
-export type ByState = Record<SlotState, number>;
-type Iso = string;
+export type ByState = AgentCensusCounts["byState"];
+/** Every agent the status lists (schemas/status.json requires all five). */
+export const STATUS_AGENTS: readonly AgentId[] = [...SLOT_AGENTS, "producer"];
 
-export type QueueKind = "queue.pick" | "queue.approve" | "queue.clarify" | "queue.fix";
-export interface StatusQueueItem { id: string; queue: QueueKind; decider: string; subject: string; ask: string; default: string | null; raisedAt: Iso; status: "open" | "answered" | "withdrawn" }
-export interface StatusLedgerItem { id: string; loop: string; status: string; outcome: string; at: Iso }
-export interface StatusRelease { publication: string; pinned: string | null; stale: boolean; reason?: string }
 export interface StatusGap { kind: string; agent: string; code: string; item: string; decider: string; from?: string; held?: string }
 export interface StatusOptionShort { agent: SlotAgent; slot: string; options: number; distinct: number; missing: readonly string[] }
+type QueueItem = StatusView["queue"][number] & { status: "open" | "answered" | "withdrawn" };
 
-/** `clossys.status/1` (system.md 12.2), plus `stateSha256` (14.9) and the folded `slots`, `gaps`, `options` fields. */
-export interface StatusView {
-  schema: typeof STATUS_SCHEMA;
-  at: Iso;
-  workspace: string;
-  /** Digest of every pin (agent, slot, candidate, sha256, basis) and every open queue id; ignores the filters. */
-  stateSha256: string;
-  agents: Partial<Record<SlotAgent, { slots: number; byState: ByState; error?: string }>>;
-  /** One row per IA slot: its state (the census row reduced to one word). */
+/**
+ * `--detail` only: added fields outside `clossys.status/1` (schemas/status.json has no slot for
+ * them yet): one row per slot, the folded int2 `gaps` and `options` listings (14.5), and a census
+ * that could not load.
+ */
+export interface StatusDetail {
   slots: { ref: string; state: SlotState; candidates: number; pinned: string | null }[];
-  queue: StatusQueueItem[];
-  ledger: StatusLedgerItem[];
-  releases: StatusRelease[];
+  errors: { agent: AgentId; message: string }[];
   gaps?: { counts: Record<string, number>; items: StatusGap[] } | { error: string };
   options?: { classes: unknown; short: StatusOptionShort[] } | { error: string };
 }
+export type StatusWithDetail = StatusView & { detail?: StatusDetail };
 
 /** The census row: lifted unchanged from the Studio server slot census, so both agree row for row. */
 export interface CensusRow {
@@ -163,10 +157,10 @@ export function slotState(row: CensusRow, pin: PinDoc | undefined, check: Return
   return hasDefault ? "sample" : "unresolved";
 }
 
-const QUEUES: readonly QueueKind[] = ["queue.pick", "queue.approve", "queue.clarify", "queue.fix"];
-function readQueue(consumer: string): StatusQueueItem[] {
+const QUEUES: readonly string[] = ["queue.pick", "queue.approve", "queue.clarify", "queue.fix"];
+function readQueue(consumer: string): QueueItem[] {
   const producer = join(consumer, "agents", "producer");
-  const items: StatusQueueItem[] = [];
+  const items: QueueItem[] = [];
   for (const folder of list(producer).filter(name => name.startsWith("queue."))) {
     const entries = join(producer, folder, "entries");
     if (!isDir(entries)) continue;
@@ -174,10 +168,10 @@ function readQueue(consumer: string): StatusQueueItem[] {
       const doc = readJson(join(entries, file));
       if (!doc) continue;
       const events = Array.isArray(doc.events) ? doc.events as Record<string, unknown>[] : [];
-      const queue = (QUEUES as readonly string[]).includes(str(doc.queue) ?? "") ? doc.queue as QueueKind : folder as QueueKind;
+      const queue = (QUEUES.includes(str(doc.queue) ?? "") ? doc.queue : folder) as QueueItem["queue"];
       const status = str(doc.status) === "answered" || str(doc.status) === "withdrawn" ? doc.status as "answered" | "withdrawn" : "open";
       items.push({
-        id: str(doc.id) ?? basename(file, ".json"), queue, decider: str(doc.decider) ?? "owner",
+        id: str(doc.id) ?? basename(file, ".json"), queue, decider: (str(doc.decider) ?? "owner") as QueueItem["decider"],
         subject: str(doc.subject) ?? "", ask: str(doc.ask) ?? "", default: str(doc.default) ?? null,
         raisedAt: str(events.find(event => event?.op === "raised")?.at) ?? str(doc.createdAt) ?? "", status,
       });
@@ -186,9 +180,9 @@ function readQueue(consumer: string): StatusQueueItem[] {
   return items.sort((a, b) => a.raisedAt.localeCompare(b.raisedAt) || a.id.localeCompare(b.id));
 }
 
-function readLedger(consumer: string): StatusLedgerItem[] {
+function readLedger(consumer: string): StatusView["ledger"] {
   const producer = join(consumer, "agents", "producer");
-  const items: StatusLedgerItem[] = [];
+  const items: StatusView["ledger"] = [];
   for (const folder of list(producer).filter(name => name.startsWith("ledger."))) {
     const entries = join(producer, folder, "entries");
     if (!isDir(entries)) continue;
@@ -197,7 +191,7 @@ function readLedger(consumer: string): StatusLedgerItem[] {
       if (!doc) continue;
       items.push({
         id: str(doc.id) ?? basename(file, ".json"), loop: str(doc.loop) ?? `loop.${folder.slice("ledger.".length)}`,
-        status: str(doc.status) ?? "done", outcome: str(doc.outcome) ?? "", at: str(doc.updatedAt) ?? str(doc.createdAt) ?? str(doc.at) ?? "",
+        status: (str(doc.status) ?? "done") as StatusView["ledger"][number]["status"], outcome: str(doc.outcome) ?? "", at: str(doc.updatedAt) ?? str(doc.createdAt) ?? str(doc.at) ?? "",
       });
     }
   }
@@ -205,80 +199,115 @@ function readLedger(consumer: string): StatusLedgerItem[] {
 }
 
 export interface StatusOptions {
+  /** Scopes `queue` and the detail to one agent's subjects; `agents` always lists all five. */
   agent?: SlotAgent;
   queue?: "open" | "all";
   ledger?: number;
   /** Whether a package default resolves for a slot (system.md 8 step 2); int2 ships none. */
-  hasDefault?: (agent: SlotAgent, id: string) => boolean;
-  /** The folded `gaps` and `options` fields (14.5); each is skipped when absent. */
+  hasDefault?: (agent: AgentId, id: string) => boolean;
+  /** Adds `detail` (StatusDetail); the folded `gaps` and `options` run only with it. */
+  detail?: boolean;
   gaps?: (root: string, agent?: SlotAgent) => { readonly counts: Readonly<Record<string, number>>; readonly gaps: readonly Readonly<StatusGap>[] };
   options?: (consumer: string) => { classes: unknown; slots: readonly { agent: SlotAgent; slot: string; options: number; distinct: number; missing: readonly string[] }[] };
 }
 
 const EPOCH = "1970-01-01T00:00:00.000Z";
+const zero = (): ByState => ({ pinned: 0, confirm: 0, sample: 0, unresolved: 0, failing: 0, needsRefresh: 0 });
+
+/**
+ * Producer slots: the `loop.*` folders of the Producer tree (int2 seats are not counted; they
+ * retire with the seats, 14.1). A loop pin is pinned when its candidate bytes match.
+ */
+function producerSlots(consumer: string): { id: string; pin?: PinDoc; drift: boolean; candidates: number }[] {
+  const dir = join(consumer, "agents", "producer");
+  return list(dir).filter(name => name.startsWith("loop.") && isDir(join(dir, name))).map(id => {
+    const candidates = list(join(dir, id, "candidates")).length;
+    const doc = readJson(join(dir, id, "pin.json"));
+    if (!doc) return { id, drift: list(join(dir, id)).includes("pin.json"), candidates };
+    const pin = { candidate: str(doc.candidate) ?? "", sha256: str(doc.sha256) ?? "", decidedBy: str(doc.decidedBy) ?? "", basis: (str(doc.basis) ?? "agent") as PinBasis, at: str(doc.at) ?? "" } as PinDoc;
+    let bytes: Buffer | undefined;
+    try { bytes = readFileSync(join(dir, id, "candidates", pin.candidate)); } catch { /* missing candidate */ }
+    return { id, pin, drift: !bytes || createHash("sha256").update(bytes).digest("hex") !== pin.sha256, candidates };
+  });
+}
 
 /** The read model for the workspace at `root` (the directory holding `clossys/`). */
-export function statusView(root: string, options: StatusOptions = {}): StatusView {
+export function statusView(root: string, options: StatusOptions = {}): StatusWithDetail {
   const consumer = join(root, "clossys");
   const hasDefault = options.hasDefault ?? (() => false);
-  const agents: StatusView["agents"] = {};
-  const slots: StatusView["slots"] = [];
-  const releases: StatusRelease[] = [];
+  const agents = {} as StatusView["agents"];
+  const slots: StatusDetail["slots"] = [];
+  const errors: StatusDetail["errors"] = [];
+  const releases: StatusView["releases"] = [];
   const digest: string[] = [];
   const times: (string | undefined)[] = [];
+  const inAgent = (agent: AgentId) => !options.agent || options.agent === agent;
   for (const agent of SLOT_AGENTS) {
     const census = agentCensus(consumer, agent);
-    const byState = Object.fromEntries(SLOT_STATES.map(state => [state, 0])) as ByState;
+    const byState = zero();
     if (census.state === "error") {
-      if (!options.agent || options.agent === agent) agents[agent] = { slots: 0, byState, error: census.message };
+      agents[agent] = { slots: 0, byState };
+      errors.push({ agent, message: census.message });
       continue;
     }
     for (const row of census.rows) {
       const pin = census.pins.get(row.id);
       if (pin) { digest.push(`pin ${agent}/${row.id} ${pin.candidate} ${pin.sha256} ${pin.basis}`); times.push(pin.at); }
-      if (options.agent && options.agent !== agent) continue;
       const state = slotState(row, pin, pin ? checkResult(root, agent, row.id, pin.candidate) : null, hasDefault(agent, row.id));
       byState[state]++;
-      slots.push({ ref: `${agent}/${row.id}`, state, candidates: row.candidates.length, pinned: pin && row.pin === "valid" ? pin.candidate : null });
+      const pinned = pin && row.pin === "valid" ? pin.candidate : null;
+      if (inAgent(agent)) slots.push({ ref: `${agent}/${row.id}`, state, candidates: row.candidates.length, pinned });
       if (agent === "publisher" && row.id.startsWith("release.")) {
-        const pinned = pin && row.pin === "valid" ? pin.candidate : null;
         const stale = state === "failing" || state === "needsRefresh";
         releases.push({ publication: row.id.slice("release.".length), pinned, stale, ...(stale ? { reason: `${agent}/${row.id} is ${state}` } : {}) });
       }
     }
-    if (!options.agent || options.agent === agent) agents[agent] = { slots: census.total, byState };
+    agents[agent] = { slots: census.total, byState };
   }
+  const producer = zero();
+  const loops = producerSlots(consumer);
+  for (const loop of loops) {
+    if (loop.pin) { digest.push(`pin producer/${loop.id} ${loop.pin.candidate} ${loop.pin.sha256} ${loop.pin.basis}`); times.push(loop.pin.at); }
+    const state: SlotState = loop.drift ? "failing" : loop.pin ? (pinStatus(loop.pin.basis) === "confirm" ? "confirm" : "pinned") : hasDefault("producer", loop.id) ? "sample" : "unresolved";
+    producer[state]++;
+    if (inAgent("producer")) slots.push({ ref: `producer/${loop.id}`, state, candidates: loop.candidates, pinned: loop.pin && !loop.drift ? loop.pin.candidate : null });
+  }
+  agents.producer = { slots: loops.length, byState: producer };
+
   const allQueue = readQueue(consumer);
   for (const item of allQueue) { times.push(item.raisedAt); if (item.status === "open") digest.push(`queue ${item.id}`); }
   const ledgerAll = readLedger(consumer);
   for (const item of ledgerAll) times.push(item.at);
-  const inScope = (subject: string) => !options.agent || subject.startsWith(`${options.agent}/`);
-  const queue = allQueue.filter(item => (options.queue === "all" || item.status === "open") && inScope(item.subject));
-  const view: StatusView = {
+  const queue = allQueue
+    .filter(item => (options.queue === "all" || item.status === "open") && (!options.agent || item.subject.startsWith(`${options.agent}/`)))
+    .map(({ status: _status, ...item }) => item);
+  const view: StatusWithDetail = {
     schema: STATUS_SCHEMA,
     at: max(times) ?? EPOCH,
     workspace: basename(root),
     stateSha256: createHash("sha256").update(digest.sort().join("\n")).digest("hex"),
-    agents, slots, queue,
+    agents, queue,
     ledger: ledgerAll.slice(0, Math.max(0, options.ledger ?? 5)),
     releases,
   };
+  if (!options.detail) return view;
+  const detail: StatusDetail = { slots, errors };
   if (options.gaps) {
     try {
       const gaps = options.gaps(root, options.agent);
-      view.gaps = { counts: { ...gaps.counts }, items: gaps.gaps.map(gap => ({
+      detail.gaps = { counts: { ...gaps.counts }, items: gaps.gaps.map(gap => ({
         kind: gap.kind, agent: gap.agent, code: gap.code, item: gap.item, decider: gap.decider,
         ...(gap.from ? { from: gap.from } : {}), ...(gap.held ? { held: gap.held } : {}),
       })) };
-    } catch { view.gaps = { error: "The gaps could not load." }; }
+    } catch { detail.gaps = { error: "The gaps could not load." }; }
   }
   if (options.options) {
     try {
       const held = options.options(consumer);
-      view.options = { classes: held.classes, short: held.slots
-        .filter(slot => slot.options > 1 && slot.distinct < slot.options && (!options.agent || slot.agent === options.agent))
+      detail.options = { classes: held.classes, short: held.slots
+        .filter(slot => slot.options > 1 && slot.distinct < slot.options && inAgent(slot.agent))
         .map(slot => ({ agent: slot.agent, slot: slot.slot, options: slot.options, distinct: slot.distinct, missing: slot.missing })) };
-    } catch { view.options = { error: "The options could not load." }; }
+    } catch { detail.options = { error: "The options could not load." }; }
   }
-  return view;
+  return { ...view, detail };
 }

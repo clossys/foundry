@@ -7,7 +7,8 @@ import { sha256Hex } from "../records/hash.js";
 import { SLOT_AGENTS, serializeFrontmatter, validateCandidate, validatePin } from "../records/slot-model/index.js";
 import { agentSlotCensus } from "../server/slot-census.js";
 import { runStatusCli } from "../cli/status.js";
-import { agentCensus, SLOT_STATES, statusView } from "./status.js";
+import { validateAgainst, type JsonSchema } from "../records/schema.js";
+import { agentCensus, SLOT_STATES, STATUS_AGENTS, statusView } from "./status.js";
 
 const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer", import.meta.url));
 const SLOT = "advantage.defensibility.moat";
@@ -46,14 +47,18 @@ function queueEntry(id: string, status: "open" | "answered", queue = "queue.appr
     createdAt: "2026-01-03T00:00:00Z", refs: [], events: [{ at: "2026-01-03T00:00:00Z", op: "raised", by: "agent:director" }],
   }));
 }
-const row = (view: ReturnType<typeof statusView>, ref: string) => view.slots.find(slot => slot.ref === ref);
+const row = (view: ReturnType<typeof statusView>, ref: string) => view.detail!.slots.find(slot => slot.ref === ref);
+const detailed = (options: Parameters<typeof statusView>[1] = {}) => statusView(root, { ...options, detail: true });
+const STATUS_SCHEMA_FILE = fileURLToPath(new URL("../../schemas/status.json", import.meta.url));
+const schemaIssues = (value: unknown) => validateAgainst(JSON.parse(readFileSync(STATUS_SCHEMA_FILE, "utf8")) as JsonSchema, value);
 
 describe("clossys status: parity with the Studio server slot census on the int2 fixture", () => {
-  it.todo("FOLD-TODO (after foundry-build-0001): output validates against schemas/status-1.json");
   it.todo("FOLD-TODO (after foundry-build-0001): golden output for test-fixtures/tallyhouse");
 
   function expectParity() {
-    const view = statusView(root);
+    const view = detailed();
+    const { detail: _detail, ...core } = view;
+    expect(schemaIssues(core)).toEqual([]);
     for (const agent of SLOT_AGENTS) {
       const server = agentSlotCensus(join(root, "clossys"), agent);
       const ours = agentCensus(join(root, "clossys"), agent);
@@ -68,7 +73,7 @@ describe("clossys status: parity with the Studio server slot census on the int2 
       expect(SLOT_STATES.reduce((sum, state) => sum + counts.byState[state], 0)).toBe(server.total);
       expect(counts.byState.pinned + counts.byState.confirm).toBe(server.rows.filter(r => r.pin === "valid").length);
       expect(counts.byState.confirm).toBe(server.rows.filter(r => r.pin === "valid" && r.status === "confirm").length);
-      const rows = view.slots.filter(slot => slot.ref.startsWith(`${agent}/`));
+      const rows = view.detail!.slots.filter(slot => slot.ref.startsWith(`${agent}/`));
       expect(rows.map(slot => slot.ref)).toEqual(server.rows.map(r => `${agent}/${r.id}`));
       expect(rows.map(slot => slot.candidates)).toEqual(server.rows.map(r => r.candidates.length));
     }
@@ -79,7 +84,8 @@ describe("clossys status: parity with the Studio server slot census on the int2 
     const view = expectParity();
     expect(view.schema).toBe("clossys.status/1");
     expect(view.workspace).toBe("fixture-consumer");
-    expect(Object.keys(view.agents)).toEqual([...SLOT_AGENTS]);
+    expect(Object.keys(view.agents)).toEqual([...STATUS_AGENTS]);
+    expect(view.agents.producer).toEqual({ slots: 0, byState: { pinned: 0, confirm: 0, sample: 0, unresolved: 0, failing: 0, needsRefresh: 0 } });
     expect(view.agents.director!.slots).toBeGreaterThan(0);
   });
 
@@ -94,9 +100,9 @@ describe("clossys status: parity with the Studio server slot census on the int2 
 
 describe("clossys status: states, queue and stateSha256", () => {
   it("reports a pinned slot as pinned, never open", () => {
-    const before = statusView(root).agents.director!.byState;
+    const before = detailed().agents.director!.byState;
     pin(1);
-    const view = statusView(root);
+    const view = detailed();
     expect(row(view, `director/${SLOT}`)).toMatchObject({ state: "pinned", pinned: "moat-v1.md" });
     expect(view.agents.director!.byState.pinned).toBe(before.pinned + 1);
     expect(view.agents.director!.byState.unresolved).toBe(before.unresolved - 1);
@@ -105,7 +111,7 @@ describe("clossys status: states, queue and stateSha256", () => {
   it("reports a pin whose candidate bytes drifted as failing", () => {
     pin(1);
     writeFileSync(slotPath("director", SLOT, "candidates", "moat-v1.md"), "changed bytes");
-    expect(row(statusView(root), `director/${SLOT}`)!.state).toBe("failing");
+    expect(row(detailed(), `director/${SLOT}`)!.state).toBe("failing");
   });
 
   it("reads check results: a failing check fails, a result for other bytes needs refresh", () => {
@@ -113,9 +119,9 @@ describe("clossys status: states, queue and stateSha256", () => {
     const checks = join(root, ".clossys", "checks", "director", SLOT);
     mkdirSync(checks, { recursive: true });
     writeFileSync(join(checks, "moat-v1.md.json"), JSON.stringify({ status: "fail", subjectSha256: doc.sha256 }));
-    expect(row(statusView(root), `director/${SLOT}`)!.state).toBe("failing");
+    expect(row(detailed(), `director/${SLOT}`)!.state).toBe("failing");
     writeFileSync(join(checks, "moat-v1.md.json"), JSON.stringify({ status: "pass", subjectSha256: "0".repeat(64) }));
-    expect(row(statusView(root), `director/${SLOT}`)!.state).toBe("needsRefresh");
+    expect(row(detailed(), `director/${SLOT}`)!.state).toBe("needsRefresh");
   });
 
   it("lists every open queue entry, and answered ones only with --queue all", () => {
@@ -124,49 +130,55 @@ describe("clossys status: states, queue and stateSha256", () => {
     const open = statusView(root);
     expect(open.queue).toEqual([{
       id: "20260103T0000Z-moat", queue: "queue.approve", decider: "owner", subject: `director/${SLOT}`,
-      ask: "Confirm the synthetic moat brief", default: "keep moat-v1.md", raisedAt: "2026-01-03T00:00:00Z", status: "open",
+      ask: "Confirm the synthetic moat brief", default: "keep moat-v1.md", raisedAt: "2026-01-03T00:00:00Z",
     }]);
-    expect(statusView(root, { queue: "all" }).queue.map(item => item.id).sort()).toEqual(["20260102T0000Z-old", "20260103T0000Z-moat"]);
-    expect(statusView(root, { agent: "writer" }).queue).toEqual([]);
+    expect(schemaIssues(open)).toEqual([]);
+    expect(detailed({ queue: "all" }).queue.map(item => item.id).sort()).toEqual(["20260102T0000Z-old", "20260103T0000Z-moat"]);
+    expect(detailed({ agent: "writer" }).queue).toEqual([]);
   });
 
   it("changes stateSha256 when a pin changes or a queue entry opens, and only then", () => {
-    const empty = statusView(root).stateSha256;
-    expect(statusView(root).stateSha256).toBe(empty);
+    const empty = detailed().stateSha256;
+    expect(detailed().stateSha256).toBe(empty);
     pin(1);
-    const one = statusView(root).stateSha256;
+    const one = detailed().stateSha256;
     expect(one).not.toBe(empty);
     pin(2);
-    const two = statusView(root).stateSha256;
+    const two = detailed().stateSha256;
     expect(two).not.toBe(one);
     queueEntry("20260103T0000Z-moat", "open");
-    expect(statusView(root).stateSha256).not.toBe(two);
+    expect(detailed().stateSha256).not.toBe(two);
     // The filters never change the digest.
-    expect(statusView(root, { agent: "writer" }).stateSha256).toBe(statusView(root).stateSha256);
+    expect(detailed({ agent: "writer" }).stateSha256).toBe(detailed().stateSha256);
   });
 
   it("orders ledger runs newest first and caps them", () => {
     const dir = join(root, "clossys", "agents", "producer", "ledger.fill", "entries");
     mkdirSync(dir, { recursive: true });
-    for (const day of [1, 2, 3]) writeFileSync(join(dir, `run-${day}.json`), JSON.stringify({ id: `run-${day}`, loop: "loop.fill", status: "done", outcome: `outcome ${day}`, createdAt: `2026-01-0${day}T00:00:00Z` }));
+    for (const day of [1, 2, 3]) writeFileSync(join(dir, `run-${day}.json`), JSON.stringify({ id: `2026010${day}T0000Z-run`, loop: "loop.fill", status: "done", outcome: `outcome ${day}`, createdAt: `2026-01-0${day}T00:00:00Z` }));
     const view = statusView(root, { ledger: 2 });
-    expect(view.ledger.map(run => run.id)).toEqual(["run-3", "run-2"]);
+    expect(view.ledger.map(run => run.id)).toEqual(["20260103T0000Z-run", "20260102T0000Z-run"]);
+    expect(schemaIssues(view)).toEqual([]);
     expect(view.at).toBe("2026-01-03T00:00:00Z");
   });
 });
 
 describe("clossys status verb", () => {
   it("prints the same read model twice, filtered by --agent, with gaps and options folded in", async () => {
-    const first = await runStatusCli(["--json", "--agent", "director"], root);
-    const second = await runStatusCli(["--json", "--agent", "director"], root);
+    const first = await runStatusCli(["--json", "--detail", "--agent", "director"], root);
+    const second = await runStatusCli(["--json", "--detail", "--agent", "director"], root);
     expect(first.exitCode).toBe(0);
     expect(JSON.stringify(first.output)).toBe(JSON.stringify(second.output));
     const view = first.output as ReturnType<typeof statusView>;
-    expect(Object.keys(view.agents)).toEqual(["director"]);
-    expect(view.slots.every(slot => slot.ref.startsWith("director/"))).toBe(true);
-    expect(view.gaps).toHaveProperty("counts");
-    expect(view.options).toHaveProperty("short");
-    expect((view.options as { short: { agent: string }[] }).short.every(slot => slot.agent === "director")).toBe(true);
+    expect(Object.keys(view.agents)).toEqual([...STATUS_AGENTS]);
+    expect(view.detail!.slots.length).toBeGreaterThan(0);
+    expect(view.detail!.slots.every(slot => slot.ref.startsWith("director/"))).toBe(true);
+    expect(view.detail!.gaps).toHaveProperty("counts");
+    expect(view.detail!.options).toHaveProperty("short");
+    expect((view.detail!.options as { short: { agent: string }[] }).short.every(slot => slot.agent === "director")).toBe(true);
+    const plain = await runStatusCli(["--json"], root);
+    expect(plain.output).not.toHaveProperty("detail");
+    expect(schemaIssues(plain.output)).toEqual([]);
   }, 120_000);
 
   it("refuses an unknown agent or flag", async () => {
