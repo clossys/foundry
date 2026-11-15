@@ -12,12 +12,13 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { consumerRootAt } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const { resolveIaSource } = await import(pathToFileURL(join(here, "..", "dist", "records", "slot-model", "ia-source.js")).href);
 const args = process.argv.slice(2);
 const at = args.indexOf("--root");
-const root = resolve(at >= 0 ? args[at + 1] : process.cwd());
+const root = at >= 0 ? resolve(args[at + 1]) : consumerRootAt();
 const agents = join(root, "clossys", "agents");
 if (!existsSync(agents)) { console.error(`check-ia-source: no clossys/agents under ${root}`); process.exit(2); }
 

@@ -36,6 +36,7 @@ import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scopeFiles } from "./check-no-selection-store.mjs";
+import { consumerRoot } from "../packages/producer/scripts/consumer-root.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SELF = "scripts/check-flat-slots.mjs";
@@ -118,8 +119,10 @@ function main(args) {
   if (at >= 0 && !args[at + 1]) { console.error("check-flat-slots: --root needs a directory"); return 2; }
   for (const [index, arg] of args.entries()) if (arg.startsWith("--") && arg !== "--root" && arg !== "--json" || (!arg.startsWith("--") && index !== at + 1)) { console.error(`check-flat-slots: unknown argument ${arg}`); return 2; }
   const root = at >= 0 ? resolve(args[at + 1]) : resolve(here, "..");
-  if (!isDir(join(root, "clossys"))) { console.error(`check-flat-slots: no clossys/ under ${root}`); return 2; }
-  const findings = [...storeFindings(root), ...codeFindings(root)];
+  // The store is the named root's, else the configured consumer's; the code scan stays on this checkout.
+  const store = at >= 0 ? root : consumerRoot();
+  if (!isDir(join(store, "clossys"))) { console.error(`check-flat-slots: no clossys/ under ${store}`); return 2; }
+  const findings = [...storeFindings(store), ...codeFindings(root)];
   if (args.includes("--json")) console.log(JSON.stringify({ findings }, null, 2));
   else {
     console.log(`check-flat-slots: ${findings.length} finding(s)`);

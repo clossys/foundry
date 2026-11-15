@@ -1,9 +1,0 @@
-{
-  "schema": "clossys.retire/1",
-  "slot": "narratives.release-notes",
-  "candidate": "studio-v1.md",
-  "sha256": "d88fc09d54a128ddf380be0e181dd25031fcd8f5903d77118cb0c05bd85de015",
-  "by": "agent:writer.reissue",
-  "reason": "edited-in-place: reissued as release-notes-v6.md",
-  "at": "2026-11-14T15:48:09.815Z"
-}

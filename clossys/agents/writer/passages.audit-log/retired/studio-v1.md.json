@@ -1,9 +1,0 @@
-{
-  "schema": "clossys.retire/1",
-  "slot": "passages.audit-log",
-  "candidate": "studio-v1.md",
-  "sha256": "1b3c8cc7d706752fdb122fa30a38e570d5fdef7f26e7d39fa5058ec1b086766c",
-  "by": "agent:writer.reissue",
-  "reason": "edited-in-place: reissued as audit-log-v5.md",
-  "at": "2026-11-14T15:48:12.859Z"
-}

@@ -53,6 +53,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { consumerPath } from '../packages/producer/scripts/consumer-root.mjs';
 
 export const PIN_BASES = Object.freeze(['picked', 'bulk', 'planner', 'agent']);
 const SLOT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
@@ -227,7 +228,7 @@ if (isMain) {
   const at = args.indexOf('--repo');
   if (at >= 0 && (!args[at + 1] || args[at + 1].startsWith('--'))) { console.error('check-git-cms: --repo requires a value'); process.exit(2); }
   const repo = resolve(at >= 0 ? args[at + 1] : join(dirname(fileURLToPath(import.meta.url)), '..'));
-  const consumer = join(repo, 'clossys');
+  const consumer = at >= 0 ? join(repo, 'clossys') : consumerPath();
   if (!isDir(join(consumer, 'agents'))) { console.error(`check-git-cms: no clossys/agents under ${repo}`); process.exit(2); }
   const { findings, summary } = checkGitCms(consumer);
   if (args.includes('--json')) console.log(JSON.stringify({ ok: findings.length === 0, summary, findings }, null, 2));

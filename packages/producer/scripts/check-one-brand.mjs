@@ -18,13 +18,14 @@
 import { existsSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { consumerPath } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const at = args.indexOf('--root');
 if (at >= 0 && !args[at + 1]) { console.error('check-one-brand: --root needs a directory'); process.exit(2); }
 const root = at >= 0 ? realpathSync(resolve(args[at + 1])) : resolve(here, '../../..');
-const library = join(root, 'clossys');
+const library = at >= 0 ? join(root, 'clossys') : consumerPath();
 if (!existsSync(join(library, 'agents'))) { console.error(`check-one-brand: no clossys/agents under ${root}`); process.exit(2); }
 
 let studioTheme, pinnedBrand, pinnedAssetTokens, readSlotState;

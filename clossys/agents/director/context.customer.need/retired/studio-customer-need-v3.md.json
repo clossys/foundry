@@ -1,9 +1,0 @@
-{
-  "schema": "clossys.retire/1",
-  "slot": "context.customer.need",
-  "candidate": "studio-customer-need-v3.md",
-  "sha256": "d3c677e9caaa041404849d6bfdfa69cb3ccd173000e84efb2de2aae8f1a0c14d",
-  "by": "agent:director.reissue",
-  "reason": "edited-in-place: reissued as need-v9.md",
-  "at": "2026-11-14T15:48:05.568Z"
-}

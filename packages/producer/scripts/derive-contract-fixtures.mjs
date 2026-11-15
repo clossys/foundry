@@ -14,6 +14,7 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { consumerUnder } from "./consumer-root.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -30,7 +31,7 @@ if (!dryRun) usage("only --dry-run: this tool writes no agent data (a slot.json 
 const built = join(root, "packages/producer/dist/specimen/contract-fixture-derive.js");
 if (!existsSync(built)) usage(`the Producer is not built (${built})`);
 const { deriveContractFixtures } = await import(pathToFileURL(built).href);
-const report = deriveContractFixtures(join(root, "clossys"));
+const report = deriveContractFixtures(consumerUnder(root, resolve(here, "../../..")));
 if (json) { process.stdout.write(`${JSON.stringify(report, null, 2)}\n`); process.exit(0); }
 
 const { noSource, candidates } = report;

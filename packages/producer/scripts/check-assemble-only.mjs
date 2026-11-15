@@ -26,6 +26,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { consumerUnder } from './consumer-root.mjs';
 
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
@@ -191,7 +192,7 @@ function pinnedPages(publisherRoot) {
 /** (d) no explorer; (f) page-header first in every record. */
 function checkRecords(repositoryRoot, studioRoot) {
   const findings = [];
-  const publisherRoot = path.join(repositoryRoot, 'clossys', 'agents', 'publisher');
+  const publisherRoot = consumerUnder(repositoryRoot, REPOSITORY_ROOT, 'agents', 'publisher');
   const pages = pinnedPages(publisherRoot);
   if (!pages.length) findings.push({ rule: 'page-header', file: 'clossys/agents/publisher', detail: 'no pinned page records' });
   for (const page of pages) {
@@ -219,7 +220,7 @@ function checkTabs(studioRoot, repositoryRoot) {
   // The Publisher's projected tabs name their record: a web content map holds three levels, so under a
   // system group (Content > Designer > record) a record's tabs sit beside it with `record` naming it.
   const tabOf = new Map(projected.map(tab => [tab.id, tab.record]));
-  const hasIa = id => fs.existsSync(path.join(repositoryRoot, 'clossys', 'agents', id, 'ia.json'));
+  const hasIa = id => fs.existsSync(consumerUnder(repositoryRoot, REPOSITORY_ROOT, 'agents', id, 'ia.json'));
   for (const entry of map.entries.filter(entry => entry.kind === 'group' && AGENTS.includes(entry.id) && !hasIa(entry.id))) {
     findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: `${entry.id}: an agent group with no clossys/agents/${entry.id}/ia.json to project its tabs from` });
   }

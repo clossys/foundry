@@ -1,9 +1,0 @@
-{
-  "schema": "clossys.retire/1",
-  "slot": "context.competition.alternative",
-  "candidate": "studio-alternative-v4.md",
-  "sha256": "cf98cf0991ab9e269e163905d4dbc63486d0929aeb19d62d9ba0ecd774364b01",
-  "by": "agent:director.reissue",
-  "reason": "edited-in-place: reissued as alternative-v7.md",
-  "at": "2026-11-14T15:48:04.569Z"
-}

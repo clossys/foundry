@@ -48,6 +48,7 @@ import ts from 'typescript';
 import { listSlots, readIa } from '../dist/records/slots.js';
 import { iaNameKey, pinnedNames, slotNameKey } from '../dist/records/slot-labels.js';
 import { WRITER_KEY, writerCopy } from '../dist/records/writer-copy.js';
+import { consumerPath } from './consumer-root.mjs';
 
 const here = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const flag = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : undefined; };
@@ -182,7 +183,7 @@ const publisherKeys = [];
   }
 }
 
-const consumer = join(repo, 'clossys');
+const consumer = flag('--root') || rev ? join(repo, 'clossys') : consumerPath();
 const AGENTS = ['director', 'designer', 'writer', 'publisher', 'producer'];
 
 /* names */

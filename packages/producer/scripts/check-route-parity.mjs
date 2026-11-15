@@ -38,6 +38,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { publishNext } from '../dist/publish/install-next.js';
 import { installSiteTemplate, isRouteSource, SITE_TEMPLATE, walk as walkSite } from './site-template-install.mjs';
+import { consumerPath } from './consumer-root.mjs';
 
 const PRODUCER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPOSITORY_ROOT = path.resolve(PRODUCER_ROOT, '../..');
@@ -57,7 +58,7 @@ function walk(directory, root = directory) {
 }
 
 /** Reinstall into a temporary app directory and compare it with `appDir`. */
-export async function checkRouteParity({ appDir = path.join(REPOSITORY_ROOT, 'packages/producer/studio/app'), clossysRoot = path.join(REPOSITORY_ROOT, 'clossys') } = {}) {
+export async function checkRouteParity({ appDir = path.join(REPOSITORY_ROOT, 'packages/producer/studio/app'), clossysRoot = consumerPath() } = {}) {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'route-parity-'));
   try {
     const fresh = path.join(scratch, 'app');

@@ -30,6 +30,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { pinned } from './check-generated-derived.mjs';
 import { computedElementDeps } from './derive-element-deps.mjs';
+import { consumerPath } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -173,7 +174,7 @@ async function main(argv) {
   if (!slot || slot.startsWith('--')) { console.error('usage: derive-ds-only.mjs <slot> --model <id> [--lineage a,b] [--frame-markers] [--by <unit>] [--write] [--root <repo>]'); return 2; }
   const flag = name => { const at = argv.indexOf(name); return at >= 0 ? argv[at + 1] : undefined; };
   const root = resolve(flag('--root') ?? join(here, '..', '..', '..'));
-  const clossys = join(root, 'clossys'), references = join(root, 'packages/designer/references');
+  const clossys = flag('--root') ? join(root, 'clossys') : consumerPath(), references = join(root, 'packages/designer/references');
   const entry = pinned(clossys, 'designer', slot);
   if (!entry?.item) { console.error(`derive-ds-only: ${slot} has no intact pin`); return 2; }
   const { next, drops } = nextItem({ ...entry.item, __candidate: entry.candidate }, {

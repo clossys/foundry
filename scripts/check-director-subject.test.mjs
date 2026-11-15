@@ -11,9 +11,10 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { directorCli, directorSubjectArgs } from "./check-director-subject.mjs";
+import { consumerPath } from "../packages/producer/scripts/consumer-root.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const evidenceDir = join(repoRoot, "clossys", "evidence", "director");
+const evidenceDir = consumerPath("evidence", "director");
 const CLAIM = "This is the only way to release a package.\n";
 
 // A fixture repository root with the real findings subject and a docs/ tree.

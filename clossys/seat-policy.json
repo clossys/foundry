@@ -1,8 +1,0 @@
-{
-  "schema": "clossys.seat-policy/1",
-  "models": {
-    "mid": "claude-opus-5-5",
-    "high": "claude-opus-5-5"
-  },
-  "humanOnly": false
-}

@@ -40,6 +40,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 // The Designer's flavor generator: one writer for every components.json (Node builtins only).
 import { shadcnComponentsJsonText } from '../../designer/scripts/ref-verbatim/flavor.mjs';
+import { consumerPath, consumerUnder } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const producer = resolve(here, '..');
@@ -537,7 +538,7 @@ export function staticFindings(root = repo) {
 // ---------------------------------------------------------------------------------------------
 
 /** Regenerate all five products into a temp dir and compare with the committed data. */
-export function checkGeneratedDerived({ root = repo, clossysRoot = join(root, 'clossys') } = {}) {
+export function checkGeneratedDerived({ root = repo, clossysRoot = consumerUnder(root, repo) } = {}) {
   const findings = [];
   const generated = join(root, 'packages', 'producer', 'studio', 'generated');
   const temp = mkdtempSync(join(tmpdir(), 'generated-derived-'));
@@ -595,9 +596,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const args = process.argv.slice(2);
   // Run from the repository root of whatever tree holds this script (head or a base export).
   if (args.includes('--write')) {
-    const changed = writeUses(join(repo, 'clossys'));
-    const flavor = writeFlavor(join(repo, 'clossys'));
-    console.log(`check-generated-derived: wrote computed uses into ${changed} slot.json file(s); clossys/components.json ${flavor ? 'written' : 'unchanged'}`);
+    // The build writes the configured consumer only, never the synthetic fixture.
+    if (!process.env.CLOSSYS_ROOT) console.log('check-generated-derived: no $CLOSSYS_ROOT consumer; wrote nothing');
+    else {
+      const changed = writeUses(consumerPath());
+      const flavor = writeFlavor(consumerPath());
+      console.log(`check-generated-derived: wrote computed uses into ${changed} slot.json file(s); clossys/components.json ${flavor ? 'written' : 'unchanged'}`);
+    }
   } else {
     // --root <checkout> checks another tree's clossys/ and generated Studio data (a fixture).
     const at = args.indexOf('--root');

@@ -6,7 +6,7 @@
  *   consumer-tree  no tracked file under packages/** sits in a `clossys/agents/` folder, except the
  *                  synthetic fixture consumers (test-fixtures/, __fixtures__/).
  *   consumer-reach no tracked package file climbs out of its package into a `clossys` folder
- *                  (`../../clossys`): a package reads its consumer from configuration, never by path.
+ *                  (`..` segments up to a clossys folder): a package reads its consumer from configuration, never by path.
  *   pinned-text    no tracked package file outside the fixtures has the bytes of a consumer's pinned
  *                  candidate, or of a file a pinned Designer candidate carries inline. The consumer is
  *                  `--consumer <root>`, else `$CLOSSYS_ROOT` (a root holding clossys/), else the

@@ -17,6 +17,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { consumerRoot } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -48,7 +49,7 @@ function main() {
   const args = process.argv.slice(2);
   const at = args.indexOf('--root');
   if (at >= 0 && !args[at + 1]) { console.error('check-cli-verbs: --root needs a directory'); process.exit(2); }
-  const root = at >= 0 ? realpathSync(resolve(args[at + 1])) : resolve(here, '../../..');
+  const root = realpathSync(at >= 0 ? resolve(args[at + 1]) : consumerRoot());
   const cli = join(here, '../dist/cli/index.js');
   if (!existsSync(cli)) { console.error('check-cli-verbs: build @clossys/producer first (dist/cli/index.js)'); process.exit(2); }
   if (!existsSync(join(root, 'clossys', 'agents'))) { console.error(`check-cli-verbs: no clossys/agents under ${root}`); process.exit(2); }

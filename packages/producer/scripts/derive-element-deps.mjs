@@ -22,6 +22,7 @@ import { join, resolve } from 'node:path';
 import { dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { importsOf, pinned, slotIds } from './check-generated-derived.mjs';
+import { consumerPath } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoDefault = resolve(here, '..', '..', '..');
@@ -78,7 +79,7 @@ async function main(argv) {
   const write = argv.includes('--write'), asJson = argv.includes('--json');
   const rootAt = argv.indexOf('--root');
   const root = rootAt >= 0 ? resolve(argv[rootAt + 1]) : repoDefault;
-  const clossysRoot = join(root, 'clossys');
+  const clossysRoot = rootAt >= 0 ? join(root, 'clossys') : consumerPath();
   const findings = elementDepFindings(clossysRoot);
   const written = [];
   if (write && findings.length) {

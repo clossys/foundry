@@ -34,13 +34,14 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pickRepin, repinFinding } from './compile-pure-repin.mjs';
+import { consumerPath } from './consumer-root.mjs';
 
 // --root <dir>: check another checkout laid out like this one (<dir>/packages/producer and <dir>/clossys).
 const rootAt = process.argv.indexOf('--root');
 if (rootAt >= 0 && !process.argv[rootAt + 1]) { console.error('check-compile-pure: --root needs a directory'); process.exit(2); }
 const repo = rootAt >= 0 ? realpathSync(resolve(process.argv[rootAt + 1])) : resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const producer = join(repo, 'packages', 'producer');
-const clossys = join(repo, 'clossys');
+const clossys = rootAt >= 0 ? join(repo, 'clossys') : consumerPath();
 const inputsFile = join(producer, 'decision-inputs.json');
 const cliEntry = join(producer, 'dist', 'cli', 'index.js');
 const findings = [];

@@ -1,7 +1,0 @@
-{
-  "candidate": "icon-versions-v1.json",
-  "sha256": "84efb02251e83a56707aaff81c457fc217ada96aa99ca92c6ed7becc8acefa59",
-  "decidedBy": "planner:W2-G Studio icon dependency; AUTO-DECIDED planner, lucide 1.65.0 ISC, sibling icon library",
-  "basis": "planner",
-  "at": "2026-11-14T09:28:33.064Z"
-}

@@ -65,6 +65,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "n
 import { tmpdir } from "node:os";
 import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { consumerPath } from "./consumer-root.mjs";
 
 const PKG = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO = resolve(PKG, "../..");
@@ -482,7 +483,7 @@ if (lib) for (const step of defined) {
   if (holder.id === lib.roster.UNASSIGNED) open.push({ step: step.id, field: "holder (no seat file, and its kind and actor name no roster entry)" });
   else if (!lib.roster.isRostered(holder.id)) fail("lane.unrostered", `step ${JSON.stringify(step.id)}: its holder ${holder.id} (${holder.source === "file" ? `${seatReports[step.id]?.path} by` : "derived from its actor"}) is not a roster entry (${lib.roster.ROSTER.join(", ")})`);
 }
-const seatDir = join(REPO, "clossys", "agents", "producer");
+const seatDir = consumerPath("agents", "producer");
 /** A seat is the Producer slot `seat.<step-id>` (D5); the step id is the rest of the slot id. */
 const seatStep = id => (typeof id === "string" && id.startsWith("seat.") ? id.slice("seat.".length) : undefined);
 if (existsSync(seatDir)) for (const name of readdirSync(seatDir)) {

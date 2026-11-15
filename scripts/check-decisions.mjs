@@ -28,6 +28,7 @@ import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PIN_BASES } from './check-git-cms.mjs';
+import { consumerPath } from '../packages/producer/scripts/consumer-root.mjs';
 
 // The one pin schema (planner R9), mirrored rule for rule and message for message from
 // packages/director/src/format/pin.ts (pinIssues) so this check needs no build; the conformance test
@@ -130,7 +131,7 @@ if (isMain) {
   const at = args.indexOf('--repo');
   if (at >= 0 && (!args[at + 1] || args[at + 1].startsWith('--'))) { console.error('check-decisions: --repo requires a value'); process.exit(2); }
   const repo = resolve(at >= 0 ? args[at + 1] : join(dirname(fileURLToPath(import.meta.url)), '..'));
-  const consumer = join(repo, 'clossys');
+  const consumer = at >= 0 ? join(repo, 'clossys') : consumerPath();
   if (!existsSync(join(consumer, 'agents'))) { console.error(`check-decisions: no clossys/agents under ${repo}`); process.exit(2); }
   const agentAt = args.indexOf('--agent');
   const agent = agentAt >= 0 ? args[agentAt + 1] : undefined;

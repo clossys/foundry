@@ -1,9 +1,0 @@
-{
-  "schema": "clossys.retire/1",
-  "slot": "context.company.strength",
-  "candidate": "studio-strength-v1.md",
-  "sha256": "5326295addd30810f5fc4318abd9ef2f5dfb48ee4b257c2115192ff0815dce6c",
-  "by": "agent:director.reissue",
-  "reason": "edited-in-place: reissued as strength-v7.md",
-  "at": "2026-11-14T15:48:03.398Z"
-}

@@ -1,9 +1,0 @@
-{
-  "schema": "clossys.retire/1",
-  "slot": "passages.testimonials",
-  "candidate": "studio-v1.md",
-  "sha256": "9a8be7aef84d96267ee685fcd1a2f8fe8e380f4c22fca200149d163ae3851b43",
-  "by": "agent:writer.reissue",
-  "reason": "superseded: reissued as testimonials-v3.md",
-  "at": "2026-11-14T15:48:21.774Z"
-}

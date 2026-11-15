@@ -14,12 +14,13 @@ import { writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { consumerPath } from "./consumer-root.mjs";
 
 const producerDir = fileURLToPath(new URL("../", import.meta.url));
 const repoRoot = resolve(producerDir, "../..");
 
 export function parseArgs(argv) {
-  const options = { root: resolve(repoRoot, "clossys"), slots: [], concurrency: 4, json: undefined, refVerbatim: true };
+  const options = { root: consumerPath(), slots: [], concurrency: 4, json: undefined, refVerbatim: true };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     const value = () => { const next = argv[++index]; if (next === undefined) throw new Error(`${arg} needs a value`); return next; };

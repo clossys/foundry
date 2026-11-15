@@ -14,13 +14,14 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { consumerPath } from './consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const flag = name => { const at = args.indexOf(name); return at < 0 ? undefined : args[at + 1]; };
 const repo = resolve(flag('--repo') ?? join(here, '../../..'));
 const json = args.includes('--json');
-const consumer = join(repo, 'clossys');
+const consumer = flag('--repo') ? join(repo, 'clossys') : consumerPath();
 if (!existsSync(join(consumer, 'agents'))) { console.error(`check-slot-state: no clossys/agents under ${repo}`); process.exit(2); }
 
 let rejectedSlots;

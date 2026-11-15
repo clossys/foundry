@@ -11,6 +11,7 @@
 import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { consumerPath } from "../packages/producer/scripts/consumer-root.mjs";
 
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 export const directorCli = join(repoRoot, "packages/producer/dist/cli/index.js");
@@ -44,14 +45,15 @@ const otherRootMarkdown = [
 // public-safety gates still scan every changelog.
 const excludeGlobs = ["contracts/**", "changelogs/**", ...otherRootMarkdown];
 
-// The `clossys director check` argv this gate runs, relative to `cwd` (the repository
-// root in real use; a fixture root in scripts/check-director-subject.test.mjs).
-export function directorSubjectArgs(cli = directorCli) {
-  return [cli, "director", "check", strategyRoot, scanRoot, "--extensions", ".md", ...excludeGlobs.flatMap((glob) => ["--exclude", glob])];
+// The `clossys director check` argv this gate runs. The store root is relative to `cwd` (a
+// fixture root in scripts/check-director-subject.test.mjs) unless given; in real use it is the
+// configured consumer's (`$CLOSSYS_ROOT`, else the fixture): this checkout has no clossys/.
+export function directorSubjectArgs(cli = directorCli, root = strategyRoot) {
+  return [cli, "director", "check", root, scanRoot, "--extensions", ".md", ...excludeGlobs.flatMap((glob) => ["--exclude", glob])];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const result = spawnSync(process.execPath, directorSubjectArgs(), { cwd: repoRoot, encoding: "utf8" });
+  const result = spawnSync(process.execPath, directorSubjectArgs(directorCli, consumerPath("agents", "director")), { cwd: repoRoot, encoding: "utf8" });
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
   process.stdout.write(output);
   if (result.error) throw result.error;
