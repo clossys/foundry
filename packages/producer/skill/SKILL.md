@@ -25,9 +25,9 @@ that is the first gap to report.
   decide:judgment), decider and last run state.
 - After a pin or pick, run `clossys run --dry` again: the steps that read the changed record show
   as stale, and `clossys run` re-runs them.
-- Publisher's page records are judged by two Producer actions: `publisher.check` runs the Publisher
+- Publisher's page records are judged by two Producer actions: `publisher.check` (`clossys publisher check`) runs the Publisher
   page checks (catalog, instance key, inline copy) over every page candidate and exits 1 on any
-  finding; `publisher.release <publication>` refuses the release while the publication's pinned
+  finding; `publisher.release` (`clossys publisher release <publication>`) refuses the release while the publication's pinned
   pages fail that check, and only then runs `clossys release` (default `--gates`).
 
 ## Run a loop

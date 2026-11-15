@@ -78,7 +78,7 @@ A page option places one section per layout role:
   retired or unknown section, a role or kind the layout does not allow, a missing
   required role, literal text and style keys. The package tests run it on the
   starter defaults; the Producer `publisher.check` action runs it on your page
-  candidates (`node dist/actions/publisher.js check --root <consumer>`).
+  candidates (`clossys publisher check`, from anywhere inside the consumer).
 
 The loop below is today's `clossys` path, which still takes the `clossys.page/1`
 record; the starter defaults are the target page option above.

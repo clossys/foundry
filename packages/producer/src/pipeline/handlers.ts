@@ -1,3 +1,4 @@
+import { runPublisherCli } from "../actions/publisher.js";
 import type { CliArgs } from "../cli/args.js";
 import { runCheck } from "../cli/check.js";
 import { runCompileCli } from "../cli/compile.js";
@@ -65,6 +66,7 @@ export const HANDLERS: Readonly<Record<string, Handler>> = {
   "src/cli/critique.ts#runCritiqueCli": async context => runCritiqueCli(context.argv, context.cwd),
   "src/cli/migrate.ts#runMigrateCli": async context => runMigrateCli(context.argv, context.cwd),
   "src/cli/pipeline.ts#runPipelineCli": async context => runPipelineCli(context.argv, context.cwd),
+  "src/actions/publisher.ts#runPublisherCli": async context => runPublisherCli(context.argv, context.cwd),
   "src/cli/director.ts#runDirectorVerb": async context => runDirectorVerb(context.argv),
   "src/cli/next.ts#runNextSubmitCli": async context => runNextSubmitCli(context.argv, context.cwd, context.step),
   "src/cli/owner.ts#runIaCli": async context => runIaCli(context.argv, context.cwd),

@@ -6,12 +6,13 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadActions } from "../pipeline/actions.js";
 import { BINDINGS } from "../pipeline/steps/bindings.js";
 import { PRODUCER_ROOT, installedPackageRoot } from "../package-path.js";
-import { checkPublisherPages, loadPublisherCheckApi, releasePublisher, runPublisherAction, type ReleaseRunner } from "./publisher.js";
+import { checkPublisherPages, loadPublisherCheckApi, releasePublisher, runPublisherAction, type PublisherCheckApi, type ReleaseRunner } from "./publisher.js";
 
 const PUBLISHER = installedPackageRoot("publisher")!;
 const DEFAULTS = join(PUBLISHER, "defaults");
 const STARTER_PAGES = readdirSync(DEFAULTS).filter(name => name.startsWith("page.")).sort();
-const ENTRY = join(PRODUCER_ROOT, "dist", "actions", "publisher.js");
+/** The built `clossys` bin: every declared run starts with `clossys`, so a consumer runs it through this bin. */
+const CLI = join(PRODUCER_ROOT, "dist", "cli", "index.js");
 
 const roots: string[] = [];
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
@@ -126,7 +127,7 @@ describe("publisher.release refuses when publisher.check fails", () => {
 });
 
 describe("the action entry (what the publisher.check / publisher.release runs execute)", () => {
-  const run = (...argv: string[]) => spawnSync(process.execPath, [ENTRY, ...argv], { encoding: "utf8" });
+  const run = (...argv: string[]) => spawnSync(process.execPath, [CLI, "publisher", ...argv], { encoding: "utf8", cwd: tmpdir() });
 
   it("exits 1 on each bad consumer page and 0 on the clean starter pages", () => {
     for (const edit of [duplicateKey, retiredSection, literalCopy]) {
@@ -135,7 +136,7 @@ describe("the action entry (what the publisher.check / publisher.release runs ex
     }
     const clean = run("check", "--root", consumer(), "--json");
     expect(clean.status, clean.stderr).toBe(0);
-    expect((JSON.parse(clean.stdout) as { output: { checked: unknown[] } }).output.checked).toHaveLength(STARTER_PAGES.length);
+    expect((JSON.parse(clean.stdout) as { checked: unknown[] }).checked).toHaveLength(STARTER_PAGES.length);
   });
 
   it("release exits 1 and runs no release step when the check fails; usage errors exit 2", () => {
@@ -143,7 +144,7 @@ describe("the action entry (what the publisher.check / publisher.release runs ex
     expect(refused.status).toBe(1);
     expect(refused.stderr).toMatch(/publisher\.release: refused/);
     expect(run("release", "--root", consumer(["page.home"])).status).toBe(2);
-    expect(run("nonsense").status).toBe(2);
+    expect(run("nonsense", "--root", consumer(["page.home"])).status).toBe(2);
   });
 
   it("in-process and spawned entries agree", async () => {
@@ -153,13 +154,119 @@ describe("the action entry (what the publisher.check / publisher.release runs ex
 });
 
 describe("registered actions", () => {
-  it("publisher.check and publisher.release are in the actions snapshot, run the action entry and are bound to it", () => {
+  it("publisher.check and publisher.release are in the actions snapshot, run the clossys publisher verb and are bound to it", () => {
     const actions = new Map(loadActions().map(action => [action.contract.id, action.contract]));
     for (const [id, mode] of [["publisher.check", "check"], ["publisher.release", "release"]] as const) {
       const action = actions.get(id);
       expect(action, id).toBeDefined();
-      expect(action!.run).toMatch(new RegExp(`^clossys pipeline trace ${id.replace(".", "\\.")} -- node dist/actions/publisher\\.js ${mode}\\b`));
-      expect(BINDINGS[id]).toEqual({ script: "dist/actions/publisher.js" });
+      expect(action!.run).toMatch(new RegExp(`^clossys publisher ${mode}\\b`));
+      expect(BINDINGS[id]).toEqual({ entry: "src/actions/publisher.ts#runPublisherCli", parser: "src/actions/publisher.ts" });
     }
+  });
+
+  // P1-2 (review r1): the declared run string itself, run from inside a consumer, not an absolute built path.
+  const declared = (id: string, cwd: string) => {
+    const action = JSON.parse(readFileSync(join(PRODUCER_ROOT, "actions", id, "action.json"), "utf8")) as { run: string };
+    // The snapshot the pipeline reads carries the same declared run.
+    expect(loadActions().find(candidate => candidate.contract.id === id)?.contract.run).toBe(action.run);
+    const words = action.run.trim().split(/\s+/).map(word => word === "<publication>" ? "site" : word);
+    expect(words[0]).toBe("clossys");
+    return spawnSync(process.execPath, [CLI, ...words.slice(1)], { encoding: "utf8", cwd });
+  };
+
+  it("the declared publisher.check run resolves inside a consumer: 1 on a bad page, 0 on clean starters", () => {
+    const bad = declared("publisher.check", homeWith(literalCopy));
+    expect(bad.status, `${bad.stdout}${bad.stderr}`).toBe(1);
+    expect(bad.stderr).toMatch(/page\.no-inline-copy/);
+    const clean = declared("publisher.check", consumer());
+    expect(clean.status, `${clean.stdout}${clean.stderr}`).toBe(0);
+    expect(clean.stdout).toMatch(new RegExp(`publisher\\.check: ${STARTER_PAGES.length} page records, 0 findings`));
+  });
+
+  it("the declared publisher.release run resolves inside a consumer and refuses a bad pinned page", () => {
+    const refused = declared("publisher.release", homeWith(literalCopy));
+    expect(refused.status, `${refused.stdout}${refused.stderr}`).toBe(1);
+    expect(refused.stderr).toMatch(/publisher\.release: refused/);
+  });
+});
+
+describe("the consumer root is discovered the way clossys release discovers it (review r1 P1-1)", () => {
+  const spy = () => {
+    const calls: (readonly string[])[] = [];
+    const release: ReleaseRunner = async argv => { calls.push(argv); return { exitCode: 0, message: "spy release ran" }; };
+    return { calls, release };
+  };
+  const nested = () => {
+    const root = homeWith(literalCopy);
+    mkdirSync(join(root, "apps", "site"), { recursive: true });
+    return root;
+  };
+
+  for (const [name, at] of [
+    ["from <consumer>/clossys", (root: string) => ({ cwd: join(root, "clossys"), argv: [] as string[] })],
+    ["from <consumer>/apps/site", (root: string) => ({ cwd: join(root, "apps", "site"), argv: [] as string[] })],
+    ["with --root <consumer>/clossys", (root: string) => ({ cwd: "/", argv: ["--root", join(root, "clossys")] })],
+  ] as const) {
+    it(`check exits 1 and release refuses ${name}; release is never called`, async () => {
+      const root = nested();
+      const { cwd, argv } = at(root);
+      const check = await runPublisherAction(["check", ...argv], cwd);
+      expect(check.exit, check.text).toBe(1);
+      expect(check.text).toMatch(/publisher\.check: 1 page record, \d+ finding/);
+      const { calls, release } = spy();
+      const released = await runPublisherAction(["release", "site", ...argv], cwd, { release });
+      expect(released.exit, released.text).toBe(1);
+      expect(released.text).toMatch(/^publisher\.release: refused/);
+      expect(calls).toEqual([]);
+    });
+  }
+
+  it("the library calls discover the root too, and a clean release hands on the discovered root", async () => {
+    const root = nested();
+    expect((await checkPublisherPages(join(root, "apps", "site"))).exit).toBe(1);
+    const { calls, release } = spy();
+    expect((await releasePublisher(join(root, "clossys"), "site", [], { release })).exit).toBe(1);
+    expect(calls).toEqual([]);
+    const clean = consumer(["page.home"]);
+    mkdirSync(join(clean, "apps", "site"), { recursive: true });
+    const ok = spy();
+    expect((await releasePublisher(join(clean, "apps", "site"), "site", [], { release: ok.release })).exit).toBe(0);
+    expect(ok.calls).toEqual([["site", "--gates", "--root", clean]]);
+  });
+
+  it("a folder with no consumer root exits 2 (could not run), never 0 with no records", async () => {
+    const empty = mkdtempSync(join(tmpdir(), "publisher-noroot-"));
+    roots.push(empty);
+    const check = await runPublisherAction(["check"], empty);
+    expect(check.exit).toBe(2);
+    expect(check.text).toMatch(/Root not found/);
+    expect((await checkPublisherPages(empty)).exit).toBe(2);
+    const { calls, release } = spy();
+    const released = await runPublisherAction(["release", "site", "--root", empty], "/", { release });
+    expect(released.exit).toBe(2);
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("environment errors exit 2 with a message (review r1 P2)", () => {
+  it("a missing Designer catalog exits 2, not a thrown stack, and release refuses", async () => {
+    const real = await loadPublisherCheckApi();
+    const api: PublisherCheckApi = { ...real, loadDesignerCatalog: () => { throw new Error("Cannot find package '@clossys/designer'"); } };
+    const root = consumer(["page.home"]);
+    const check = await checkPublisherPages(root, { api });
+    expect(check.exit).toBe(2);
+    expect(check.message).toMatch(/publisher\.check: could not load the Designer catalog: Cannot find package '@clossys\/designer'/);
+    let called = false;
+    const released = await releasePublisher(root, "site", [], { api, release: async () => { called = true; return { exitCode: 0, message: "" }; } });
+    expect(released.exit).toBe(2);
+    expect(called).toBe(false);
+  });
+
+  it("a Publisher with no dist/check names the tarball a consumer needs, not a build step", async () => {
+    const bare = mkdtempSync(join(tmpdir(), "publisher-nocheck-"));
+    roots.push(bare);
+    const error = await loadPublisherCheckApi(bare).then(() => undefined, (caught: unknown) => caught as Error);
+    expect(error?.message).toMatch(/has no dist\/check\/index\.js; install a @clossys\/publisher tarball that ships dist\/check/);
+    expect(error?.message).not.toMatch(/build @clossys\/publisher first/);
   });
 });

@@ -3239,7 +3239,7 @@
         "kind": "plumb",
         "stage": "publish.check",
         "summary": "Publisher page checks (catalog, instance key, inline copy) over every consumer page candidate; any finding exits 1.",
-        "run": "clossys pipeline trace publisher.check -- node dist/actions/publisher.js check",
+        "run": "clossys publisher check",
         "inputs": [
           {
             "glob": "consumer:agents/publisher/*/pin.json",
@@ -3408,7 +3408,7 @@
         "kind": "plumb",
         "stage": "publish.publish",
         "summary": "Release gate: a publication's pinned pages must pass publisher.check, else the release is refused; a clean check runs clossys release.",
-        "run": "clossys pipeline trace publisher.release -- node dist/actions/publisher.js release <publication> --gates",
+        "run": "clossys publisher release <publication> --gates",
         "chain": {
           "skip": "publisher.release runs one caller-named publication; loop.release and the owner name it"
         },

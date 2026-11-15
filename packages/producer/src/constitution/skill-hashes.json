@@ -154,10 +154,12 @@
       "38a5b5389c5a05d60bd0caaa094e34ef152edf287fe464489f3af72021433364"
     ],
     "packages/producer/actions/publisher.check/action.json": [
-      "37232a78ca22fd2b2aa553132f9d94978f0121d227b1e727ce20badc473c11a4"
+      "37232a78ca22fd2b2aa553132f9d94978f0121d227b1e727ce20badc473c11a4",
+      "fc28557e30ca5acb95f345188a818d276ecc6aa82bb47442b82a7b78a82a4080"
     ],
     "packages/producer/actions/publisher.release/action.json": [
-      "5e2dae090463375997006437e0facb568ebb52a8ae0b2a73dde36cd4baf030ea"
+      "5e2dae090463375997006437e0facb568ebb52a8ae0b2a73dde36cd4baf030ea",
+      "f62da2f0694eb1765055b021a13a07ccc6d05a276e900b81f2c90b6cbe4ff602"
     ],
     "packages/producer/actions/render/action.json": [
       "7e43e30b8302633c74a484ed3889444fbdb06ae7ece06f3ecc568c6c7baf5a15",

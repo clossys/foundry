@@ -5,7 +5,7 @@
   "kind": "plumb",
   "stage": "publish.check",
   "summary": "Publisher page checks (catalog, instance key, inline copy) over every consumer page candidate; any finding exits 1.",
-  "run": "clossys pipeline trace publisher.check -- node dist/actions/publisher.js check",
+  "run": "clossys publisher check",
   "inputs": [
     {
       "glob": "consumer:agents/publisher/*/pin.json",

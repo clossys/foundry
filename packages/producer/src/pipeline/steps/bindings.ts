@@ -60,6 +60,10 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "critic": { entry: "src/cli/critique.ts#runCritiqueCli", parser: "src/cli/critique.ts" },
   "migrate": { entry: "src/cli/migrate.ts#runMigrateCli", parser: "src/cli/migrate.ts" },
   "pipeline": { entry: "src/cli/pipeline.ts#runPipelineCli", parser: "src/cli/pipeline.ts" },
+  // The Publisher page checks over consumer page records, and the release gate on them (foundry-build-0028):
+  // `clossys publisher check|release`, so a consumer runs them through the clossys bin.
+  "publisher.check": { entry: "src/actions/publisher.ts#runPublisherCli", parser: "src/actions/publisher.ts" },
+  "publisher.release": { entry: "src/actions/publisher.ts#runPublisherCli", parser: "src/actions/publisher.ts" },
   // Traced script steps: `clossys pipeline trace <id> -- <command>` records their run.
   "derive.uses": { script: "scripts/check-generated-derived.mjs" },
   "studio.map": { script: "scripts/generate-studio-map.mjs" },
@@ -68,7 +72,5 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "studio.compose": { script: "scripts/compose-studio.mjs" },
   "studio.checks": { script: "studio/checks/p0-studio-check.cjs" },
   "capture": { script: "scripts/capture-studio.mjs" },
-  // The Publisher page checks over consumer page records, and the release gate on them (foundry-build-0028).
-  "publisher.check": { script: "dist/actions/publisher.js" },
-  "publisher.release": { script: "dist/actions/publisher.js" },
+
 };
