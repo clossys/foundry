@@ -37,6 +37,7 @@
     "README.md",
     "LICENSE",
     "skill",
+    "views",
     "fit-signals.json",
     "!dist/**/__fixtures__/**",
     "!dist/**/__tests__/**",
