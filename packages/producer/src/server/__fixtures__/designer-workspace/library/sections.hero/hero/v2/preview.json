@@ -1,5 +1,5 @@
 {
-  "schema": "clossys.preview/1",
+  "schema": "clossys.element-preview/1",
   "fixtures": {
     "eyebrow": {
       "$copy": "hero.eyebrow"

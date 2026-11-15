@@ -19,7 +19,7 @@ const cardItem = () => JSON.parse(readFileSync(join(candidatesDir(card().dir), "
 const WRITER_COPY = { "card.action": "Open report", "card.body": "Review the numbers from the last seven days before they go out to the team.", "card.title": "Weekly report ready" };
 /** The card slot's contract fixture: the props every card candidate is certified with. */
 const CONTRACT_FIXTURE = {
-  schema: "clossys.preview/1",
+  schema: "clossys.element-preview/1",
   fixtures: { file: "registry/blocks/sample-card.tsx", export: "SampleCard", props: { title: { $copy: "card.title" }, body: { $copy: "card.body" }, action: { $copy: "card.action" } } },
   inputs: { copy: ["card.action", "card.body", "card.title"] },
   container: "canvas", theme: "light", width: 480,
@@ -104,7 +104,7 @@ describe("candidate certification against the slot contract fixture", () => {
     const needsMore = { ...item, meta: { ...item.meta, preview: { ...item.meta.preview, fixtures: { ...item.meta.preview.fixtures, footer: "Sent weekly", badge: "New" } } } };
     expect(certify(2, writeCandidate(2, needsMore))).toEqual({ certified: false, mounts: true, reasons: ["the candidate needs props the contract fixture does not supply: badge, footer"] });
     // The { file, export, props } form of an own preview is read the same way.
-    const nested = { ...item, meta: { ...item.meta, preview: { schema: "clossys.preview/1", fixtures: { file: CONTRACT_FIXTURE.fixtures.file, export: "SampleCard", props: { title: "x", subtitle: "y" } } } } };
+    const nested = { ...item, meta: { ...item.meta, preview: { schema: "clossys.element-preview/1", fixtures: { file: CONTRACT_FIXTURE.fixtures.file, export: "SampleCard", props: { title: "x", subtitle: "y" } } } } };
     expect(certify(3, writeCandidate(3, nested)).reasons).toEqual(["the candidate needs props the contract fixture does not supply: subtitle"]);
   });
 

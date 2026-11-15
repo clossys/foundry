@@ -1,6 +1,6 @@
 {
   "candidate": "sample-button-v1.json",
-  "sha256": "daa671a6c864a1a18186420e9f1f319cfe06615670f3b9bc9c9e7f50ff678eca",
+  "sha256": "9f922b74c01019abd4932c5690c280e61ac5ee34ae191e9dd9879d2f3fc30806",
   "decidedBy": "migration:SLOT-MODEL",
   "basis": "bulk",
   "at": "2026-10-31T00:00:00Z"

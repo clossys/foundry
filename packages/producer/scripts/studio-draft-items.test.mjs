@@ -31,7 +31,7 @@ export default function Example() { return null; }
   const source_ = { kind: 'derived', ref: ['{"registry":"fixture","item":"card","version":"1"}'], license: 'MIT' };
   const meta = { slot, source: source_, element: { id: element, license: { spdx: 'MIT' }, creator: { agent: 'designer', model: 'fixture' },
     checks: [{ id: 'ref-verbatim', suite: 'strict-reference', type: 'fixed', status: 'fail', detail: 'REF-FILE-UNMAPPED fixture evidence', at }] },
-    preview: { schema: 'clossys.preview/1', fixtures: {}, copy: {}, container: 'section-in-frame', theme: 'light', width: 1280 } };
+    preview: { schema: 'clossys.element-preview/1', fixtures: {}, copy: {}, container: 'section-in-frame', theme: 'light', width: 1280 } };
   const input = { name: element, type: 'registry:block', meta, files: [
     { path: 'index.tsx', type: 'registry:component', content: source },
     { path: 'stock.provenance.json', type: 'registry:file', content: provenance },

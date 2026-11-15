@@ -39,7 +39,7 @@ const H = (c: string): Hash => {
 const AT = (minute: number) => `2026-10-30T10:${String(minute).padStart(2, "0")}:00Z`;
 
 const preview: PreviewRecord = {
-  schema: "clossys.preview/1",
+  schema: "clossys.element-preview/1",
   fixtures: { links: { primary: "#" } },
   copy: { "home.hero.header.heading": "Sample heading" },
   container: "section-in-frame",

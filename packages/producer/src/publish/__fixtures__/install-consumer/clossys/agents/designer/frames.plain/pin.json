@@ -1,6 +1,6 @@
 {
   "candidate": "plain-frame-v3.json",
-  "sha256": "58da3c0d9bc80e881388aad56e161fe81a1c312ccc11cd2dac34feadf3693c87",
+  "sha256": "2e97061f073d33582e30c49e23af5528b2867ea238d12ce64f14fb04cc5a8545",
   "decidedBy": "planner:COPY-SLOT-CONTRACT",
   "basis": "planner",
   "at": "2026-11-05T18:26:59Z"

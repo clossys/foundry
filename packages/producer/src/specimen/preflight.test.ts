@@ -26,7 +26,7 @@ let uncontracted: PreflightResult;
 
 /** The card slot's contract fixture: the props every card candidate mounts and is certified with. */
 const CONTRACT_FIXTURE = {
-  schema: "clossys.preview/1",
+  schema: "clossys.element-preview/1",
   fixtures: { file: "registry/blocks/sample-card.tsx", export: "SampleCard", props: { title: { $copy: "card.title" }, body: { $copy: "card.body" }, action: { $copy: "card.action" } } },
   inputs: { copy: ["card.action", "card.body", "card.title"] },
   container: "canvas", theme: "light", width: 480,
@@ -52,8 +52,8 @@ beforeAll(async () => {
   const preview = JSON.parse(readFileSync(join(candidatesDir(listSlots(root, "designer").find(entry => entry.id === "components.card")!.dir), "sample-card-v1.json"), "utf8")).meta.preview;
   card(2, NEEDS_ITEMS, null);                                         // needs props, no fixture of its own
   card(3, NEEDS_TITLE, null);                                         // needs props the slot fixture supplies
-  card(4, COMMON_JS, { schema: "clossys.preview/1", container: "canvas", width: 480 });
-  card(5, PLAIN, { schema: "clossys.preview/1", container: "canvas", width: 480, entry: "registry/blocks/missing-card.tsx" });
+  card(4, COMMON_JS, { schema: "clossys.element-preview/1", container: "canvas", width: 480 });
+  card(5, PLAIN, { schema: "clossys.element-preview/1", container: "canvas", width: 480, entry: "registry/blocks/missing-card.tsx" });
   expect(preview).toBeDefined();
   uncontracted = await specimenPreflight({ root, workspace, registryBase, slots: ["components.card"], refVerbatim: false, concurrency: 2 });
   const slot = slotFile(listSlots(root, "designer").find(entry => entry.id === "components.card")!.dir);
