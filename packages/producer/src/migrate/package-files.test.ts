@@ -1,7 +1,7 @@
 /**
  * What the agent package tarballs ship for a migrated consumer to read: the view prompts (`views/*.md`) of the
  * Director, Designer, Writer and Publisher, the Writer `defaults/` and `facts.schema.json`, the Publisher
- * `defaults/` and `starters/`; and the Producer resolver reads the Writer defaults from the package's `defaults/`.
+ * `defaults/` and `starters/`; and the Producer resolver reads the Writer and Publisher defaults from the package's `defaults/`.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
@@ -43,8 +43,9 @@ describe("agent package tarballs", () => {
 });
 
 describe("package default resolver", () => {
-  it("reads the Writer defaults from the package's defaults/, every other agent from src/catalog/defaults/", () => {
+  it("reads the Writer and Publisher defaults from the package's defaults/, every other agent from src/catalog/defaults/", () => {
     expect(packageDefaultsRel("writer")).toBe("defaults");
+    expect(packageDefaultsRel("publisher")).toBe("defaults");
     expect(packageDefaultsRel("director")).toBe("src/catalog/defaults");
     const writer = packageDefaultDir(REPO, "writer", "lexicon.energy");
     expect(writer).toBe(join(REPO, "packages", "writer", "defaults", "lexicon.energy"));
@@ -53,5 +54,9 @@ describe("package default resolver", () => {
     const listed = packageDefaults({ packageRoot: agent => join(PACKAGES, agent) }, "writer", "lexicon.energy").map(candidate => candidate.name);
     expect(listed).toEqual(readdirSync(writer).filter(name => /-v\d+\.json$/.test(name)).sort());
     expect(listed.length).toBeGreaterThan(0);
+    const [publisherSlot] = readdirSync(join(PACKAGES, "publisher", "defaults")).filter(name => !name.startsWith(".")).sort();
+    const publisher = packageDefaultDir(REPO, "publisher", publisherSlot!);
+    expect(publisher).toBe(join(REPO, "packages", "publisher", "defaults", publisherSlot!));
+    expect(existsSync(publisher)).toBe(true);
   });
 });

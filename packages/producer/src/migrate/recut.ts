@@ -24,10 +24,10 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { CANDIDATE_NAME, buildCandidateHeader, parseCandidateName, serializeCandidate, targetSchema } from "../records/candidate.js";
-import { appendMigrationEvents, fileState, type FileState } from "../records/migrations.js";
+import { fileState, type FileState } from "../records/migrations.js";
 import { parseYamlSubset, validateAgainst } from "../records/schema.js";
 import { agentPackageRoot, packageVersion, writeSlot, SLOT_V1_SCHEMA } from "../records/slot.js";
-import { RETIRE_SCHEMA, type RewrittenFile } from "../records/slot-write.js";
+import { RETIRE_SCHEMA, appendMigrationEvents, type RewrittenFile } from "../records/slot-write.js";
 import { studioDesignerSlots } from "../records/slot-model/foundry-ia.js";
 import type { AgentId, CandidateHeader, Iso } from "../records/types.js";
 import { planIaSync } from "../cli/ia-sync.js";

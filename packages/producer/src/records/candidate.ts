@@ -60,11 +60,11 @@ export function candidatePath(root: string, agent: AgentId, slotId: SlotId, name
 }
 
 /**
- * Where a package ships its default candidates, relative to the package root: the Writer under `defaults/`
- * (the folder its package.json `files` ships), every other agent under `src/catalog/defaults/`.
+ * Where a package ships its default candidates, relative to the package root: the Writer and the Publisher
+ * under `defaults/` (the folder their package.json `files` ships), every other agent under `src/catalog/defaults/`.
  */
 export function packageDefaultsRel(agent: AgentId): string {
-  return agent === "writer" ? "defaults" : "src/catalog/defaults";
+  return agent === "writer" || agent === "publisher" ? "defaults" : "src/catalog/defaults";
 }
 
 /**
