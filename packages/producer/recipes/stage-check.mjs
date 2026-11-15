@@ -24,7 +24,7 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { checkBriefWith, checkDivergeWith, checkDraftWith, isRecord, issue, readJson, runStageCli, words } from "./stage-core.mjs";
+import { PACKAGES, checkBriefWith, checkDivergeWith, checkDraftWith, isRecord, issue, readJson, runStageCli, words } from "./stage-core.mjs";
 
 const AGENT = "producer";
 
@@ -112,7 +112,7 @@ function draftExtra(root, world, draft) {
   if (isRecord(seat.llm)) {
     const { model, tier, promptFile } = seat.llm;
     if (policy.humanOnly) out.push(issue("R20", "the seat runs an llm while clossys/seat-policy.json is human only", "set llm to null"));
-    if (typeof promptFile === "string" && PROMPT.test(promptFile) && !existsSync(join(root, promptFile))) out.push(issue("R07", `promptFile ${promptFile} does not exist`, "point at an existing skill file, or request the skill from its agent first"));
+    if (typeof promptFile === "string" && PROMPT.test(promptFile) && !existsSync(join(PACKAGES, promptFile.slice("packages/".length)))) out.push(issue("R07", `promptFile ${promptFile} does not exist`, "point at an existing skill file, or request the skill from its agent first"));
     const mapped = typeof tier === "string" ? policy.models[tier] : undefined;
     if (typeof mapped === "string" && model !== mapped) out.push(issue("R20", `llm model ${JSON.stringify(model)} is not the seat policy's ${mapped} for tier ${tier}`, `set model to ${mapped}, or change the seat policy with clossys seat --policy first`));
   }

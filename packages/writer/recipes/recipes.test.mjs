@@ -22,6 +22,8 @@ import { pinOf, slotWorld, tasteWindow } from "./stage-core.mjs";
 const AGENT = "writer";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..", "..", "..");
+const CONSUMER_ROOT = process.env.CLOSSYS_ROOT ? resolve(process.env.CLOSSYS_ROOT) : join(ROOT, "packages/producer/test-fixtures/consumer");
+const CONSUMER = join(CONSUMER_ROOT, "clossys");
 const dist = path => import(pathToFileURL(join(ROOT, "packages", "producer", "dist", path)).href);
 const { loadRecipes, produceIssues, recipesFor } = await dist("records/recipes.js");
 const { loadStandards } = await dist("records/standards.js");
@@ -39,30 +41,30 @@ const RECIPE_IDS = ["create.copy", "create.headline", "create.lexicon"];
 const STANDARD_COUNT = 9;
 
 function pinned(slot) {
-  const pin = readJson(join(ROOT, "clossys", "agents", AGENT, slot, "pin.json"));
-  return { name: pin.candidate, text: readFileSync(join(ROOT, "clossys", "agents", AGENT, slot, "candidates", pin.candidate), "utf8") };
+  const pin = readJson(join(CONSUMER, "agents", AGENT, slot, "pin.json"));
+  return { name: pin.candidate, text: readFileSync(join(CONSUMER, "agents", AGENT, slot, "candidates", pin.candidate), "utf8") };
 }
 const asDraft = ({ name, text }) => { let json; if (name.endsWith(".json")) { try { json = JSON.parse(text); } catch { json = undefined; } } return { name, text, json }; };
 async function judge(slot, candidate) {
-  const slotDoc = readJson(join(ROOT, "clossys", "agents", AGENT, slot, "slot.json"));
+  const slotDoc = readJson(join(CONSUMER, "agents", AGENT, slot, "slot.json"));
   const standard = readJson(join(ROOT, "packages", AGENT, "standards", slotDoc.standard, "requirements.json"));
   const verdict = await requirementsVerdict({ candidate: { name: candidate.name, bytes: candidate.text }, kind: slotDoc.kind, standard: { id: standard.id, sha256: "0".repeat(64), requirements: standard.requirements.map(item => ({ check: item.check, params: item.params ?? {} })) }, contract: slotDoc.contract, pinSet: "0".repeat(64) });
   return Object.fromEntries(verdict.results.map(result => [result.check, result.pass]));
 }
 async function failsBoth(slot, candidate, check) {
-  const found = checkDraft(ROOT, slot, asDraft(candidate)).issues.filter(item => item.check === check);
+  const found = checkDraft(CONSUMER_ROOT, slot, asDraft(candidate)).issues.filter(item => item.check === check);
   assert.ok(found.length > 0, `stage-check draft flags ${check}`);
   assert.ok(found.every(item => item.rule === "R15.3" && item.fix), `${check} prints the rule and a fix`);
   assert.equal((await judge(slot, candidate))[check], false, `the judge fails ${check} too`);
 }
 const edit = (candidate, from, to) => { assert.ok(candidate.text.includes(from), `fixture holds ${JSON.stringify(from)}`); return { name: candidate.name, text: candidate.text.replace(from, to) }; };
 const briefFor = (slot, recipe, text) => {
-  const world = slotWorld(ROOT, AGENT, slot);
+  const world = slotWorld(CONSUMER_ROOT, AGENT, slot);
   const ids = [...new Set([...world.inputs, VOICE_SLOT])];
   return {
     recipe, standard: world.standardId, requirements: [...world.requirements],
-    inputs: ids.map(id => ({ slot: id, candidate: pinOf(ROOT, id).candidate, sha256: pinOf(ROOT, id).sha256 })),
-    tasteLog: tasteWindow(ROOT, AGENT, world.standardId), brief: text,
+    inputs: ids.map(id => ({ slot: id, candidate: pinOf(CONSUMER_ROOT, id).candidate, sha256: pinOf(CONSUMER_ROOT, id).sha256 })),
+    tasteLog: tasteWindow(CONSUMER_ROOT, AGENT, world.standardId), brief: text,
   };
 };
 
@@ -133,34 +135,34 @@ describe("stage-check brief and diverge: each stage checks its own output", () =
   };
 
   it("passes a brief from the pinned voice and three distinct voice-derived directions", () => {
-    assert.deepEqual(checkBrief(ROOT, slot, brief), []);
-    assert.deepEqual(checkDiverge(ROOT, slot, directions), []);
+    assert.deepEqual(checkBrief(CONSUMER_ROOT, slot, brief), []);
+    assert.deepEqual(checkDiverge(CONSUMER_ROOT, slot, directions), []);
   });
 
   it("fails a brief without the pinned voice, a stale sha, a path, a Designer input, the wrong recipe (mutation)", () => {
     const noVoice = clone(brief); noVoice.inputs = noVoice.inputs.filter(item => item.slot !== VOICE_SLOT);
-    assert.ok(checkBrief(ROOT, slot, noVoice).some(item => item.rule === "R15.7" && item.what.includes(VOICE_SLOT)));
+    assert.ok(checkBrief(CONSUMER_ROOT, slot, noVoice).some(item => item.rule === "R15.7" && item.what.includes(VOICE_SLOT)));
     const noReq = clone(brief); noReq.requirements = noReq.requirements.slice(1);
-    assert.ok(rules(checkBrief(ROOT, slot, noReq)).includes("R15.3"));
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, noReq)).includes("R15.3"));
     const stale = clone(brief); stale.inputs[0].sha256 = "f".repeat(64);
-    assert.ok(rules(checkBrief(ROOT, slot, stale)).includes("R12"));
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, stale)).includes("R12"));
     const path = clone(brief); path.inputs.push({ slot: "clossys/agents/director/identity.verbal.voice/pin.json", candidate: "x", sha256: "0".repeat(64) });
-    assert.ok(rules(checkBrief(ROOT, slot, path)).includes("R06.7"));
-    const designer = clone(brief); const pin = pinOf(ROOT, "frames.studio-shell"); designer.inputs.push({ slot: "frames.studio-shell", candidate: pin.candidate, sha256: pin.sha256 });
-    assert.ok(rules(checkBrief(ROOT, slot, designer)).includes("R20"), "Writer copy derives from Director and Writer pins only");
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, path)).includes("R06.7"));
+    const designer = clone(brief); const pin = pinOf(CONSUMER_ROOT, "frames.studio-shell"); designer.inputs.push({ slot: "frames.studio-shell", candidate: pin.candidate, sha256: pin.sha256 });
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, designer)).includes("R20"), "Writer copy derives from Director and Writer pins only");
     const wrongRecipe = clone(brief); wrongRecipe.recipe = "create.lexicon";
-    assert.ok(rules(checkBrief(ROOT, slot, wrongRecipe)).includes("R15.5"));
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, wrongRecipe)).includes("R15.5"));
   });
 
   it("fails a direction that does not cite the voice, cosmetic variants and off-axis values (mutation)", () => {
     const noVoice = clone(directions); noVoice.directions[1].traits = ["identity.naming.name"];
-    assert.ok(checkDiverge(ROOT, slot, noVoice).some(item => item.rule === "R20" && item.what.includes(VOICE_SLOT)));
+    assert.ok(checkDiverge(CONSUMER_ROOT, slot, noVoice).some(item => item.rule === "R20" && item.what.includes(VOICE_SLOT)));
     const designer = clone(directions); designer.directions[0].traits.push("frames.studio-shell");
-    assert.ok(rules(checkDiverge(ROOT, slot, designer)).includes("R20"));
+    assert.ok(rules(checkDiverge(CONSUMER_ROOT, slot, designer)).includes("R20"));
     const cosmetic = clone(directions); cosmetic.directions[2].axes.register = "Plain";
-    assert.ok(checkDiverge(ROOT, slot, cosmetic).some(item => item.rule === "R15.7" && /axis register/.test(item.what)));
+    assert.ok(checkDiverge(CONSUMER_ROOT, slot, cosmetic).some(item => item.rule === "R15.7" && /axis register/.test(item.what)));
     const offAxis = clone(directions); offAxis.directions[0].axes.length = "short";
-    assert.ok(checkDiverge(ROOT, slot, offAxis).some(item => /axis length/.test(item.what)));
+    assert.ok(checkDiverge(CONSUMER_ROOT, slot, offAxis).some(item => /axis length/.test(item.what)));
   });
 
   it("the stages a craft.md records satisfy R15.7's order and axis rule; a third refine does not", () => {
@@ -176,7 +178,7 @@ describe("stage-check draft: the maker's preflight agrees with the judge", () =>
 
   it("passes the pinned string, headline, pattern, lexicon and narrative candidates, and the judge passes every requirement", async () => {
     for (const slot of SLOTS) {
-      const { issues, judgeOnly } = checkDraft(ROOT, slot, asDraft(fixture[slot]));
+      const { issues, judgeOnly } = checkDraft(CONSUMER_ROOT, slot, asDraft(fixture[slot]));
       assert.deepEqual(issues, [], slot);
       assert.deepEqual(judgeOnly, [], `${slot}: every requirement is checked by the maker`);
       assert.ok(Object.values(await judge(slot, fixture[slot])).every(Boolean), `${slot} passes the judge`);
@@ -189,7 +191,7 @@ describe("stage-check draft: the maker's preflight agrees with the judge", () =>
 
   it("a source ref that is a URL fails; an unpinned upstream slot fails the maker (worklist)", async () => {
     await failsBoth("strings.actions", edit(fixture["strings.actions"], '"ref":["director:identity.verbal.voice"]', '"ref":["director:identity.verbal.voice","https://example.com/voice"]'), "copy.derived-upstream");
-    const unpinned = checkDraft(ROOT, "strings.actions", asDraft(edit(fixture["strings.actions"], '"ref":["director:identity.verbal.voice"]', '"ref":["director:identity.verbal.voice","writer:strings.no-such-slot"]'))).issues;
+    const unpinned = checkDraft(CONSUMER_ROOT, "strings.actions", asDraft(edit(fixture["strings.actions"], '"ref":["director:identity.verbal.voice"]', '"ref":["director:identity.verbal.voice","writer:strings.no-such-slot"]'))).issues;
     assert.ok(unpinned.some(item => item.check === "copy.derived-upstream" && /not a pinned writer slot/.test(item.what)));
   });
 

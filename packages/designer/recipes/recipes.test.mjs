@@ -19,7 +19,8 @@ import { generate, generateBytes } from "./create.tokens/generate.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..", "..", "..");
-const CONSUMER = process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : join(ROOT, "packages/producer/test-fixtures/consumer/clossys");
+const CONSUMER_ROOT = process.env.CLOSSYS_ROOT ? resolve(process.env.CLOSSYS_ROOT) : join(ROOT, "packages/producer/test-fixtures/consumer");
+const CONSUMER = join(CONSUMER_ROOT, "clossys");
 const dist = path => import(pathToFileURL(join(ROOT, "packages", "producer", "dist", path)).href);
 const { generatorIssues, loadRecipes, produceIssues, recipesFor } = await dist("records/recipes.js");
 const { loadStandards } = await dist("records/standards.js");
@@ -100,15 +101,15 @@ describe("create.tokens generator: deterministic plumbing that meets the standar
   });
 
   it("gives identical bytes for the same spec, whatever the spec's key order", () => {
-    const first = generateBytes(spec, ROOT);
-    assert.equal(generateBytes(clone(spec), ROOT), first);
+    const first = generateBytes(spec, CONSUMER_ROOT);
+    assert.equal(generateBytes(clone(spec), CONSUMER_ROOT), first);
     const reordered = Object.fromEntries(Object.entries(spec).reverse());
     reordered.members = { default: { dark: spec.members.default.dark, light: spec.members.default.light } };
-    assert.equal(generateBytes(reordered, ROOT), first);
+    assert.equal(generateBytes(reordered, CONSUMER_ROOT), first);
   });
 
   it("meets every requirement of token.color on a real slot contract", () => {
-    const json = JSON.parse(generateBytes(spec, ROOT));
+    const json = JSON.parse(generateBytes(spec, CONSUMER_ROOT));
     const subject = { kind: "element/token", text: JSON.stringify(json), json };
     for (const requirement of standard.requirements) {
       const criterion = DESIGNER_STANDARD_CRITERIA[requirement.check];
@@ -138,14 +139,14 @@ describe("create.tokens generator: deterministic plumbing that meets the standar
 
 describe("stage-check: each stage checks its own output", () => {
   const slot = "themes.background";
-  const world = stageWorld(ROOT, slot);
+  const world = stageWorld(CONSUMER_ROOT, slot);
   const needed = [...new Set([...world.inputs, ...world.required, ...world.traits])];
   const brief = {
     recipe: "create.tokens",
     standard: "token.color",
     requirements: [...world.requirements],
-    inputs: needed.map(id => ({ slot: id, candidate: pinOf(ROOT, id).candidate, sha256: pinOf(ROOT, id).sha256 })),
-    tasteLog: tasteWindow(ROOT, "token.color"),
+    inputs: needed.map(id => ({ slot: id, candidate: pinOf(CONSUMER_ROOT, id).candidate, sha256: pinOf(CONSUMER_ROOT, id).sha256 })),
+    tasteLog: tasteWindow(CONSUMER_ROOT, "token.color"),
     brief: "Background for a quiet, exact studio: restrained neutral surfaces from the pinned visual style and a calm personality.",
   };
   const directions = {
@@ -158,34 +159,34 @@ describe("stage-check: each stage checks its own output", () => {
   };
 
   it("passes a brief listing every requirement id and every pinned input, and three distinct directions", () => {
-    assert.deepEqual(checkBrief(ROOT, slot, brief), []);
-    assert.deepEqual(checkDiverge(ROOT, slot, directions), []);
+    assert.deepEqual(checkBrief(CONSUMER_ROOT, slot, brief), []);
+    assert.deepEqual(checkDiverge(CONSUMER_ROOT, slot, directions), []);
   });
 
   it("fails a brief missing a requirement, a pinned input, or listing a stale sha (mutation)", () => {
     const noReq = clone(brief); noReq.requirements = noReq.requirements.slice(1);
-    assert.ok(rules(checkBrief(ROOT, slot, noReq)).includes("R15.3"));
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, noReq)).includes("R15.3"));
     const noInput = clone(brief); noInput.inputs = noInput.inputs.filter(item => item.slot !== "identity.visual.style");
-    assert.ok(rules(checkBrief(ROOT, slot, noInput)).includes("R15.7"));
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, noInput)).includes("R15.7"));
     const stale = clone(brief); stale.inputs[0].sha256 = "f".repeat(64);
-    assert.ok(rules(checkBrief(ROOT, slot, stale)).includes("R12"));
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, stale)).includes("R12"));
     const path = clone(brief); path.inputs.push({ slot: "clossys/agents/director/identity.visual.style/pin.json", candidate: "x", sha256: "0".repeat(64) });
-    assert.ok(rules(checkBrief(ROOT, slot, path)).includes("R06.7"));
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, path)).includes("R06.7"));
     const wrongRecipe = clone(brief); wrongRecipe.recipe = "create.mark";
-    assert.ok(rules(checkBrief(ROOT, slot, wrongRecipe)).includes("R15.5"));
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, wrongRecipe)).includes("R15.5"));
   });
 
   it("fails cosmetic variants, a direction with no Director trait and a default kept without a reason (mutation)", () => {
     const cosmetic = clone(directions); cosmetic.directions[2].axes.temperament = " Cool ";
-    assert.ok(checkDiverge(ROOT, slot, cosmetic).some(item => item.rule === "R15.7" && /axis temperament/.test(item.what)));
+    assert.ok(checkDiverge(CONSUMER_ROOT, slot, cosmetic).some(item => item.rule === "R15.7" && /axis temperament/.test(item.what)));
     const noTrait = clone(directions); noTrait.directions[1].traits = [];
-    assert.ok(rules(checkDiverge(ROOT, slot, noTrait)).includes("R20"));
+    assert.ok(rules(checkDiverge(CONSUMER_ROOT, slot, noTrait)).includes("R20"));
     const bareKeep = clone(directions); bareKeep.directions[0].keeps = [{ ref: "shadcn/neutral", because: "it is the default" }];
-    assert.ok(rules(checkDiverge(ROOT, slot, bareKeep)).includes("R20"));
+    assert.ok(rules(checkDiverge(CONSUMER_ROOT, slot, bareKeep)).includes("R20"));
     const two = clone(directions); two.directions = two.directions.slice(0, 2);
-    assert.ok(checkDiverge(ROOT, slot, two).some(item => /2 directions/.test(item.what)));
+    assert.ok(checkDiverge(CONSUMER_ROOT, slot, two).some(item => /2 directions/.test(item.what)));
     const offAxis = clone(directions); offAxis.directions[0].axes.mood = "x";
-    assert.ok(checkDiverge(ROOT, slot, offAxis).some(item => /axis mood/.test(item.what)));
+    assert.ok(checkDiverge(CONSUMER_ROOT, slot, offAxis).some(item => /axis mood/.test(item.what)));
   });
 
   it("requires identity.visual.imagery on every create.mark direction (assets derive from imagery)", () => {
@@ -197,10 +198,10 @@ describe("stage-check: each stage checks its own output", () => {
         { id: "space", idea: "Negative-space check", axes: { construction: "negative-space", reduction: "single-stroke", metaphor: "calm" }, traits: ["identity.brand.essence"] },
       ],
     };
-    const found = checkDiverge(ROOT, "assets.mark", mark);
+    const found = checkDiverge(CONSUMER_ROOT, "assets.mark", mark);
     assert.deepEqual(found.map(item => item.what), ["direction 3 does not cite required trait identity.visual.imagery"]);
     mark.directions[2].traits.push("identity.visual.imagery");
-    assert.deepEqual(checkDiverge(ROOT, "assets.mark", mark), []);
+    assert.deepEqual(checkDiverge(CONSUMER_ROOT, "assets.mark", mark), []);
   });
 
   it("the stages a craft.md records satisfy R15.7's order and axis rule; a third refine does not", () => {

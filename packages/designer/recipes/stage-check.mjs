@@ -20,8 +20,14 @@
  * Nothing under the judge (src/constitution, certifiers, guards) imports this file (R16.1).
  */
 import { existsSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+/**
+ * Two roots: `root` (every function's first argument, the CLI's --root, else the working directory)
+ * is the consumer, the folder holding clossys/; the standards and recipes are this package's own.
+ */
+const PACKAGE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const SLOT_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
@@ -60,7 +66,7 @@ export function stageWorld(root, slot) {
   const slotDoc = readJson(slotPath);
   const standardId = typeof slotDoc.standard === "string" ? slotDoc.standard : undefined;
   if (!standardId) throw new Error(`designer/${slot} names no standard (R15.1): run the 3S unit first`);
-  const reqPath = join(root, "packages", "designer", "standards", standardId, "requirements.json");
+  const reqPath = join(PACKAGE, "standards", standardId, "requirements.json");
   if (!existsSync(reqPath)) throw new Error(`standard ${standardId} has no requirements.json under packages/designer/standards/`);
   const standard = readJson(reqPath);
   const requirements = (standard.requirements ?? []).map(item => item.check);
@@ -77,7 +83,7 @@ function recipeIssues(root, recipeId, world, out) {
     out.push(issue("R15.5", "the stage file names no recipe", "set \"recipe\" to the recipe id (packages/designer/recipes/<id>/)"));
     return undefined;
   }
-  const path = join(root, "packages", "designer", "recipes", recipeId, "recipe.json");
+  const path = join(PACKAGE, "recipes", recipeId, "recipe.json");
   if (!existsSync(path)) { out.push(issue("R15.5", `recipe ${recipeId} does not exist`, "name a recipe folder under packages/designer/recipes/")); return undefined; }
   const recipe = readJson(path);
   if (!Array.isArray(recipe.produces) || !recipe.produces.includes(world.standardId)) {

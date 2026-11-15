@@ -21,7 +21,8 @@ import { pinOf, slotWorld, tasteWindow } from "./stage-core.mjs";
 const AGENT = "producer";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..", "..", "..");
-const CONSUMER = process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : join(ROOT, "packages/producer/test-fixtures/consumer/clossys");
+const CONSUMER_ROOT = process.env.CLOSSYS_ROOT ? resolve(process.env.CLOSSYS_ROOT) : join(ROOT, "packages/producer/test-fixtures/consumer");
+const CONSUMER = join(CONSUMER_ROOT, "clossys");
 const dist = path => import(pathToFileURL(join(ROOT, "packages", "producer", "dist", path)).href);
 const { loadRecipes, produceIssues, recipesFor } = await dist("records/recipes.js");
 const { loadStandards } = await dist("records/standards.js");
@@ -51,23 +52,23 @@ async function judge(slot, candidate) {
   return Object.fromEntries(verdict.results.map(result => [result.check, result.pass]));
 }
 async function failsBoth(slot, candidate, check) {
-  const found = checkDraft(ROOT, slot, asDraft(candidate)).issues.filter(item => item.check === check);
+  const found = checkDraft(CONSUMER_ROOT, slot, asDraft(candidate)).issues.filter(item => item.check === check);
   assert.ok(found.length > 0, `stage-check draft flags ${check}`);
   assert.ok(found.every(item => item.rule === "R15.3" && item.fix), `${check} prints the rule and a fix`);
   assert.equal((await judge(slot, candidate))[check], false, `the judge fails ${check} too`);
 }
 /** A maker-only fault: the draft check flags it under `rule`; the judge's shape checks still pass. */
 async function makerOnly(slot, candidate, rule, pattern) {
-  const found = checkDraft(ROOT, slot, asDraft(candidate)).issues.filter(item => item.rule === rule && !item.check);
+  const found = checkDraft(CONSUMER_ROOT, slot, asDraft(candidate)).issues.filter(item => item.rule === rule && !item.check);
   assert.ok(found.some(item => pattern.test(item.what) && item.fix), `stage-check draft flags ${rule} ${pattern}`);
   assert.ok(Object.values(await judge(slot, candidate)).every(Boolean), "the judge's shape checks pass: the maker is stricter");
 }
 const briefFor = (slot, text) => {
-  const world = slotWorld(ROOT, AGENT, slot);
+  const world = slotWorld(CONSUMER_ROOT, AGENT, slot);
   return {
     recipe: "seat.configure", standard: world.standardId, requirements: [...world.requirements],
-    inputs: world.inputs.map(id => ({ slot: id, candidate: pinOf(ROOT, id).candidate, sha256: pinOf(ROOT, id).sha256 })),
-    step: world.slotDoc.contract.step, tasteLog: tasteWindow(ROOT, AGENT, world.standardId), brief: text,
+    inputs: world.inputs.map(id => ({ slot: id, candidate: pinOf(CONSUMER_ROOT, id).candidate, sha256: pinOf(CONSUMER_ROOT, id).sha256 })),
+    step: world.slotDoc.contract.step, tasteLog: tasteWindow(CONSUMER_ROOT, AGENT, world.standardId), brief: text,
   };
 };
 
@@ -138,21 +139,21 @@ describe("stage-check brief and diverge: each stage checks its own output", () =
   };
 
   it("passes a seat brief naming the contract's step, and three feasible seats", () => {
-    assert.deepEqual(checkBrief(ROOT, slot, brief), []);
-    assert.deepEqual(checkDiverge(ROOT, slot, directions), []);
+    assert.deepEqual(checkBrief(CONSUMER_ROOT, slot, brief), []);
+    assert.deepEqual(checkDiverge(CONSUMER_ROOT, slot, directions), []);
   });
 
   it("fails a brief that names another step, the wrong standard, or no taste log (mutation)", () => {
     const step = clone(brief); step.step = "designer.candidates";
-    assert.ok(checkBrief(ROOT, slot, step).some(item => item.rule === "R15.7" && /writer\.candidates/.test(item.what) && item.fix));
+    assert.ok(checkBrief(CONSUMER_ROOT, slot, step).some(item => item.rule === "R15.7" && /writer\.candidates/.test(item.what) && item.fix));
     const standard = clone(brief); standard.standard = "statement";
-    assert.ok(rules(checkBrief(ROOT, slot, standard)).includes("R15.1"));
+    assert.ok(rules(checkBrief(CONSUMER_ROOT, slot, standard)).includes("R15.1"));
     const taste = clone(brief); delete taste.tasteLog;
-    assert.notDeepEqual(checkBrief(ROOT, slot, taste), []);
+    assert.notDeepEqual(checkBrief(CONSUMER_ROOT, slot, taste), []);
   });
 
   it("fails an infeasible seat: an owner with an llm only, an unmapped tier, a human hand with a tier, a bad holder (mutation)", () => {
-    const at = (change) => { const file = clone(directions); change(file.directions); return checkDiverge(ROOT, slot, file); };
+    const at = (change) => { const file = clone(directions); change(file.directions); return checkDiverge(CONSUMER_ROOT, slot, file); };
     assert.ok(at(d => { d[2].axes.hand = "llm"; d[2].axes.tier = "mid"; d[0].axes.tier = "high"; d[1].axes.holder = "agent:producer"; }).some(item => item.rule === "R15.7" && /owner seat with no human hand/.test(item.what)));
     assert.ok(at(d => { d[0].axes.tier = "low"; }).some(item => item.rule === "R15.7" && /tier "low" has no model/.test(item.what)));
     assert.ok(at(d => { d[2].axes.tier = "mid"; d[0].axes.tier = "high"; d[1].axes.tier = "none"; d[1].axes.hand = "human"; }).some(item => item.rule === "R15.7" && /human only but sets tier/.test(item.what)));
@@ -173,7 +174,7 @@ describe("stage-check draft: the maker's preflight agrees with the judge", () =>
   const seat = pinned(slot);
 
   it("passes the pinned Writer seat, and the judge passes every requirement", async () => {
-    const { issues, judgeOnly } = checkDraft(ROOT, slot, asDraft(seat));
+    const { issues, judgeOnly } = checkDraft(CONSUMER_ROOT, slot, asDraft(seat));
     assert.deepEqual(issues, []);
     assert.deepEqual(judgeOnly, [], "every requirement is checked by the maker");
     assert.ok(Object.values(await judge(slot, seat)).every(Boolean));

@@ -13,12 +13,17 @@
  *          axis (cosmetic variants fail here, not at R15.7), each citing pinned upstream by id.
  * draft:   the agent's stage-check.mjs adds a draft check of the candidate it is about to render.
  *
+ * Two roots: `root` (every function's first argument, the CLI's --root, else the working directory)
+ * is the consumer, the folder holding clossys/ (slots, pins, findings, taste logs); the standards and
+ * recipes are read from the installed agent packages next to this one (PACKAGES).
+ *
  * Mechanical only: it reads files, never the clock, the network or randomness, and runs no model.
  * Nothing under the judge (src/constitution, certifiers, guards) imports this file (R16.1).
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const SLOT_ID = /^[a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*){1,3}$/;
 export const FINDING_REF = /^(?:finding|evidence):([a-z0-9][a-z0-9.-]*)$/;
@@ -30,6 +35,11 @@ export const TASTE_LOG_WINDOW = 20;
 export const DIRECTIONS = Object.freeze({ min: 3, max: 4 });
 const IDEA_MAX = 160;
 const BRIEF_MAX = 1200;
+
+/** The folder holding the agent packages: Foundry's packages/, or a consumer's node_modules/@clossys/. */
+export const PACKAGES = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+/** An agent package's own folder (its standards/ and recipes/). */
+export const packageDir = agent => join(PACKAGES, agent);
 
 export const isRecord = value => value !== null && typeof value === "object" && !Array.isArray(value);
 export const readJson = path => JSON.parse(readFileSync(path, "utf8"));
@@ -94,7 +104,7 @@ export function slotWorld(root, agent, slot) {
   const slotDoc = readJson(slotPath);
   const standardId = typeof slotDoc.standard === "string" ? slotDoc.standard : undefined;
   if (!standardId) throw new Error(`${agent}/${slot} names no standard (R15.1): run the 3S unit first`);
-  const reqPath = join(root, "packages", agent, "standards", standardId, "requirements.json");
+  const reqPath = join(packageDir(agent), "standards", standardId, "requirements.json");
   if (!existsSync(reqPath)) throw new Error(`standard ${standardId} has no requirements.json under packages/${agent}/standards/`);
   const standard = readJson(reqPath);
   const inputs = strings(slotDoc.inputs);
@@ -108,7 +118,7 @@ export function recipeOf(root, world, recipeId, out) {
     out.push(issue("R15.5", "the stage file names no recipe", `set "recipe" to the recipe id (${base}/<id>/)`));
     return undefined;
   }
-  const path = join(root, base, recipeId, "recipe.json");
+  const path = join(packageDir(world.agent), "recipes", recipeId, "recipe.json");
   if (!existsSync(path)) { out.push(issue("R15.5", `recipe ${recipeId} does not exist`, `name a recipe folder under ${base}/`)); return undefined; }
   const recipe = readJson(path);
   if (!Array.isArray(recipe.produces) || !recipe.produces.includes(world.standardId)) {

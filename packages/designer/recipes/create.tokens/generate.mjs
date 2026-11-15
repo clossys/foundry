@@ -17,7 +17,7 @@
  * variable each member emits.
  */
 import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const isRecord = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -115,7 +115,7 @@ export function generate(spec, contract) {
   return item;
 }
 
-/** The candidate bytes for `spec` read against the slot's contract under `root`. */
+/** The candidate bytes for `spec` read against the slot's contract in the consumer at `root` (the folder holding clossys/). */
 export function generateBytes(spec, root) {
   const slotDoc = JSON.parse(readFileSync(join(root, "clossys", "agents", "designer", spec.slot, "slot.json"), "utf8"));
   return `${JSON.stringify(generate(spec, slotDoc.contract), null, 2)}\n`;
@@ -124,7 +124,7 @@ export function generateBytes(spec, root) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const at = args.indexOf("--root");
-  const root = at >= 0 ? resolve(args[at + 1] ?? ".") : resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+  const root = resolve(at >= 0 ? args[at + 1] ?? "." : ".");
   if (at >= 0) args.splice(at, 2);
   if (args.length !== 1) { process.stderr.write("Usage: node generate.mjs <spec.json> [--root <dir>]\n"); process.exitCode = 2; }
   else {
