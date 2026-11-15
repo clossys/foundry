@@ -30,6 +30,7 @@ export const VERBS = [
   [['decisions'], [0]],
   [['options', '--classes', '--check'], [0]],
   [['check'], [0]],
+  [['slot', 'designer/components.button'], [0]],
 ];
 
 /** The findings of one verb from its two runs (`{ status, stdout, stderr }` each). */
