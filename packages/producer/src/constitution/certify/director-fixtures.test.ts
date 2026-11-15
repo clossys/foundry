@@ -1,5 +1,5 @@
 /**
- * DIR-CERT (foundry-audit-0011): the 57 Director brief contracts carry a contract fixture, and the
+ * DIR-CERT (foundry-audit-0011): the 55 Director brief contracts carry a contract fixture, and the
  * certifier both passes and fails against it for every Director standard, on the real records.
  */
 import { fileURLToPath } from "node:url";
@@ -20,7 +20,7 @@ describe("Director contract fixtures (R05 for agent director)", () => {
   const standardOf = (slot: (typeof slots)[number]) => String(slotDocOf(slot).doc.standard ?? "");
 
   it("every live Director slot declares the brief fixture headings", () => {
-    expect(slots).toHaveLength(57);
+    expect(slots).toHaveLength(55);
     for (const slot of slots) expect((slotDocOf(slot).contract.fixture as { headings?: unknown })?.headings, slot.id).toEqual(HEADINGS);
     expect([...new Set(slots.map(standardOf))].sort()).toEqual(STANDARDS);
   });
