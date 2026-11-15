@@ -1,0 +1,13 @@
+{
+  "schema": "clossys.check-result/1", "subject": "designer/themes.primary/primary-v2.json",
+  "subjectSha256": "b27b9711f060855c30347291e6df43fa04ec9fa87bf8c17818f694ae462fac52",
+  "briefSha256": "1cf145781e4052840d84a8a1c16956a3c895a376c9b3eeb9f696680c8a1f9c17",
+  "standard": "token.color", "ranAt": "2026-11-16T10:59:00Z", "by": { "actor": "code", "cli": "clossys check", "version": "1.0.0" },
+  "status": "pass",
+  "results": [
+    { "check": "contrast.pair", "status": "pass", "field": "light", "detail": "6.1:1 against oklch(0.985 0 0)" },
+    { "check": "contrast.pair", "status": "pass", "field": "dark", "detail": "8.4:1 against oklch(0.205 0 0)" },
+    { "check": "token.format", "status": "pass", "detail": "oklch, both modes" },
+    { "check": "owner.look", "status": "skip", "detail": "owner confirms in queue.approve" }
+  ]
+}

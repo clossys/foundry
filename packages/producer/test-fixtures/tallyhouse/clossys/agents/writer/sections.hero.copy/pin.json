@@ -1,0 +1,21 @@
+{
+  "schema": "clossys.pin-map/1",
+  "id": "writer/sections.hero.copy/pin",
+  "agent": "writer",
+  "kind": "pin-map",
+  "status": "pinned",
+  "createdBy": { "actor": "code", "cli": "clossys pin", "version": "1.0.0" },
+  "createdAt": "2026-11-16T14:20:00Z",
+  "updatedAt": "2026-11-18T10:06:31Z",
+  "refs": [ { "to": "producer/queue.approve", "record": "20261118T1004Z-home-hero-copy", "rel": "answers" } ],
+  "records": {
+    "home.hero": {
+      "candidate": "home.hero-v3.json",
+      "sha256": "9ac6a62e571641d7071bae79ca067f995dbc00d8296f54d77bb7c8611a7bac48",
+      "decidedBy": "agent:writer",
+      "basis": "agent",
+      "at": "2026-11-18T10:04:12Z",
+      "confirmed": { "by": "owner", "ref": "queue.approve#20261118T1004Z-home-hero-copy", "at": "2026-11-18T10:06:31Z" }
+    }
+  }
+}

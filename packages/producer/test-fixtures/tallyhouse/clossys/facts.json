@@ -1,0 +1,16 @@
+{
+  "schema": "clossys.facts/1",
+  "id": "facts",
+  "status": "live",
+  "createdBy": { "actor": "owner", "ref": "cli:clossys facts 2026-11-17T15:02:00Z" },
+  "createdAt": "2026-11-17T15:02:00Z",
+  "updatedAt": "2026-11-17T15:02:00Z",
+  "facts": {
+    "effective.date": "2026-11-30",
+    "data.collected": ["contact details", "company details", "bank and card statements", "payroll records"],
+    "processors": ["cloud accounting platform", "payment processor", "email provider"],
+    "retention.years": 7,
+    "contact.privacy": "privacy@tallyhouse.example",
+    "governing.law": "Ontario, Canada"
+  }
+}

@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clossys.loop-version/1",
+  "title": "Loop version",
+  "description": "The content of a producer loop candidate (the object under content), package or consumer (system.md 6.5, 14.1). A step decider's agent may be the placeholder <owner of slot>.",
+  "type": "object",
+  "required": [
+    "trigger",
+    "steps",
+    "exit",
+    "repeat",
+    "maxRounds"
+  ],
+  "properties": {
+    "trigger": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^T[0-9]+$"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "does",
+          "decider",
+          "cli",
+          "reads",
+          "writes",
+          "checks"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "does": {
+            "type": "string",
+            "minLength": 1
+          },
+          "decider": {
+            "$ref": "#/$defs/loopDecider"
+          },
+          "cli": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reads": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "writes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "when": {
+            "type": "object",
+            "required": [],
+            "properties": {
+              "ia": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "slots": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "onFail": {
+            "type": "object",
+            "required": [
+              "raise",
+              "then"
+            ],
+            "properties": {
+              "raise": {
+                "enum": [
+                  "queue.fix",
+                  "queue.clarify"
+                ]
+              },
+              "then": {
+                "type": "string",
+                "pattern": "^(retry|loop\\.[a-z][a-z0-9-]*)$"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "exit": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repeat": {
+      "type": "string",
+      "minLength": 1
+    },
+    "maxRounds": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "agentId": {
+      "enum": [
+        "director",
+        "designer",
+        "writer",
+        "publisher",
+        "producer"
+      ]
+    },
+    "tier": {
+      "enum": [
+        "low",
+        "mid",
+        "high"
+      ]
+    },
+    "loopDecider": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "by"
+          ],
+          "properties": {
+            "by": {
+              "const": "code"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "by",
+            "agent",
+            "verb",
+            "tier"
+          ],
+          "properties": {
+            "by": {
+              "const": "agent"
+            },
+            "agent": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/agentId"
+                },
+                {
+                  "const": "<owner of slot>"
+                }
+              ]
+            },
+            "verb": {
+              "enum": [
+                "refine-brief",
+                "create-candidates",
+                "check",
+                "pin",
+                "pick"
+              ]
+            },
+            "tier": {
+              "$ref": "#/$defs/tier"
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "skill": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "by",
+            "who",
+            "raise"
+          ],
+          "properties": {
+            "by": {
+              "const": "human"
+            },
+            "who": {
+              "const": "owner"
+            },
+            "raise": {
+              "enum": [
+                "queue.pick",
+                "queue.approve",
+                "queue.clarify"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

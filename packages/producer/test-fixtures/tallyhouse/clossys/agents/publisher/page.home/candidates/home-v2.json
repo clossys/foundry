@@ -1,0 +1,35 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.home/home-v2.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.home",
+    "briefSha256": "846804dc4f247312170c2b12b9ae369ce7d75b7a8b6b5c903796831fde0f364f",
+    "createdBy": { "actor": "agent", "agent": "publisher", "skill": "packages/publisher/actions/publisher.candidates/skill.md", "skillSha256": "c7955d7e07102bccf6860925038918962595efccf7ea756098fb34157d2ea5a9", "model": "claude-opus-5-5", "tier": "low" },
+    "createdAt": "2026-11-16T14:30:00Z",
+    "refs": [
+      { "to": "publisher/layout.marketing-home", "sha256": "922d3a29a743c69939977d33fd5526b3e9c0c059e6e243628eb2a9a7a79580a6", "rel": "input" },
+      { "to": "designer/sections.hero", "sha256": "4141ceb8a1ac294c63684b61861ec1d4a98ecefa6e01541fcbfe4c827d949e65", "rel": "places" }
+    ],
+    "source": { "kind": "derived", "ref": ["publisher/page.home/home-v1.json"] },
+    "rationale": [ { "purpose": "proof", "why": "The layout pin makes proof required; stats shows the close-by-the-5th number.", "sources": [ { "to": "publisher/layout.marketing-home", "rel": "cites" } ] } ]
+  },
+  "content": {
+    "path": "/",
+    "layout": "publisher/layout.marketing-home",
+    "sections": [
+      { "role": "hero", "use": "designer/sections.hero",
+        "variant": { "layout": "editorial", "size": "display", "ground": "base", "backdrop": "none" },
+        "copy": "writer/sections.hero.copy#home.hero",
+        "links": { "actions.primary": "publisher/page.pricing", "actions.secondary": "publisher/page.home#how" } },
+      { "role": "proof",   "use": "designer/sections.stats",          "copy": "writer/sections.stats.copy#home.proof" },
+      { "role": "value",   "use": "designer/sections.features",       "copy": "writer/sections.features.copy#home.value" },
+      { "role": "how",     "use": "designer/sections.steps",          "copy": "writer/sections.steps.copy#home.how" },
+      { "role": "closing", "use": "designer/sections.call-to-action", "copy": "writer/sections.call-to-action.copy#home.closing",
+        "links": { "actions.primary": "publisher/page.contact" } }
+    ],
+    "meta": { "copy": "writer/page.home.meta#home.meta", "indexing": "index", "shareImage": "designer/assets.lockup" }
+  }
+}

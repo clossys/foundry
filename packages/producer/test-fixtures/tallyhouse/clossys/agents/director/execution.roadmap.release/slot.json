@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "execution.roadmap.release",
+  "agent": "director",
+  "kind": "brief",
+  "status": "live",
+  "ia": { "l0": "roadmap", "l1": "roadmap/timeline", "l2": "roadmap/timeline/schedule", "order": 2 },
+  "createdBy": { "actor": "package", "package": "@clossys/director", "version": "1.0.0" },
+  "createdAt": "2026-11-16T08:00:00Z",
+  "updatedAt": "2026-11-16T10:12:44Z",
+  "refs": [
+    { "to": "director/focus.offer.included", "rel": "input" },
+    { "to": "director/focus.reach.geography", "key": "Language", "rel": "input" },
+    { "to": "publisher/release.site", "rel": "consumedBy" }
+  ],
+  "base": { "package": "@clossys/director", "version": "1.0.0", "path": "src/catalog/slots/execution.roadmap.release/slot.json", "sha256": "07345d6898657de00b1e6ce59ce332c146f961d52e57a8a8da8cbc0bc57ffab9" },
+  "standard": "brief.list",
+  "brief": {
+    "purpose": "Say what the next release is, by when, and what it holds, so Release gates know what ready means.",
+    "mustDo": ["Give one target date", "List scope as publications and pages", "Name at least one thing not in scope"],
+    "inputs": [ { "to": "director/focus.offer.included", "rel": "input" }, { "to": "director/focus.reach.geography", "key": "Language", "rel": "input" } ],
+    "acceptance": [ { "check": "brief.must-contain", "decider": "code" }, { "check": "brief.date-future", "decider": "code" }, { "check": "director-boundary", "decider": "code" } ]
+  },
+  "contract": {
+    "question": "What is the next release, by when, and what is in and out?",
+    "mustContain": [
+      { "key": "Release", "hint": "a short name" },
+      { "key": "Target date", "hint": "ISO date" },
+      { "key": "Scope", "hint": "publications and pages" },
+      { "key": "Not in scope", "hint": "what waits for a later release" }
+    ],
+    "forbid": ["hosts, channels or deploy targets (Distribution is parked)"]
+  },
+  "tighten": [],
+  "options": 1
+}

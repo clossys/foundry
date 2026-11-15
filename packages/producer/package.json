@@ -13,13 +13,19 @@
     "./records/slots": {
       "types": "./dist/records/slots.d.ts",
       "import": "./dist/records/slots.js"
-    }
+    },
+    "./records/types": {
+      "types": "./dist/records/types.d.ts",
+      "import": "./dist/records/types.js"
+    },
+    "./schemas/*": "./schemas/*"
   },
   "bin": {
     "clossys": "dist/cli/index.js"
   },
   "files": [
     "dist",
+    "schemas",
     "src",
     "standards",
     "recipes",

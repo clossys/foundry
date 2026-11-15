@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "capability.team.structure",
+  "agent": "director",
+  "kind": "brief",
+  "status": "live",
+  "ia": { "l0": "execution", "l1": "execution/plan", "l2": "execution/plan/operation", "order": 2 },
+  "createdBy": { "actor": "package", "package": "@clossys/director", "version": "1.0.0" },
+  "createdAt": "2026-11-16T08:00:00Z",
+  "updatedAt": "2026-11-16T10:40:19Z",
+  "refs": [
+    { "to": "director/capability.team.role", "rel": "input" },
+    { "to": "writer/narratives.legal-document", "key": "Decides", "rel": "consumedBy" }
+  ],
+  "base": { "package": "@clossys/director", "version": "1.0.0", "path": "src/catalog/slots/capability.team.structure/slot.json", "sha256": "a6a8afc99e9737a753e8c6d93b172ed4bf8f121925b556a2950e3b8e662e8868" },
+  "standard": "brief.profile",
+  "brief": {
+    "purpose": "Say who decides what and how often strategy is reviewed, so legal pages and agents name a real person.",
+    "mustDo": ["One row per decision area with a named role and person", "A review rhythm with a cadence"],
+    "inputs": [ { "to": "director/capability.team.role", "rel": "input" } ],
+    "acceptance": [ { "check": "brief.must-contain", "decider": "code" }, { "check": "director-boundary", "decider": "code" } ]
+  },
+  "contract": {
+    "question": "Who decides what, and how often is strategy reviewed?",
+    "mustContain": [ { "key": "Decides", "hint": "area: role (person)" }, { "key": "Rhythm", "hint": "what is reviewed, how often" } ],
+    "forbid": ["agent step order", "model or seat names (Producer owns loop deciders)"]
+  },
+  "tighten": [],
+  "options": 1
+}
