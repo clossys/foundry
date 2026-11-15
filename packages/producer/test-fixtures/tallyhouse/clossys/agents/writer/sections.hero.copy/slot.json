@@ -9,9 +9,9 @@
   "createdAt": "2026-11-16T08:00:00Z",
   "updatedAt": "2026-11-18T10:06:31Z",
   "refs": [
-    { "to": "designer/sections.hero", "sha256": "4141ceb8a1ac294c63684b61861ec1d4a98ecefa6e01541fcbfe4c827d949e65", "rel": "input" },
+    { "to": "designer/sections.hero", "sha256": "068c611dea44105c951e4562dc224996e64eee28fca7100a2a6689f8c25f6ca1", "rel": "input" },
     { "to": "writer/lexicon.sentence-length", "sha256": "89c7de5937f6c1484ab97c444cbf066041ad5e7e0a10163a32dbac411b390500", "rel": "input" },
-    { "to": "director/identity.naming.name", "key": "Name", "sha256": "52a54f8ef96785c965c565e26ebcead5b0de2dedf279fccc5ce6adf6b81acb6b", "rel": "input" },
+    { "to": "director/identity.naming.name", "key": "Name", "sha256": "d293343db334ff7a7ef6dd47264fbac2bbacc6ab7542c9cfa9ea59bb68f66702", "rel": "input" },
     { "to": "director/advantage.proposition.promise", "key": "Promise", "sha256": "5c21dc8ac05a9a28cea5e897a57a2af7aa9573e2bdeeff691f65577a5d2f3564", "rel": "input" },
     { "to": "director/advantage.proposition.proof", "key": "Metrics", "sha256": "5a1ad941565ac010203094208cd461518c286151f336f65193937d78c2c79a5b", "rel": "input" },
     { "to": "director/focus.reach.geography", "key": "Language", "sha256": "57a3f7ed1d8380b9f18c14d84ffec26a0644d359466cf6bbd638174469ba9d1b", "rel": "input" },

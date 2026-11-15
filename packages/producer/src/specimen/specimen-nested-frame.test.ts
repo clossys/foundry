@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { build as bundle } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import { installedSpecimenRoutes } from './installed-specimens.js';
-import { sandboxSpecimenFrames, specimenHostCsp } from './publication.js';
+import { sandboxSpecimenFrames, specimenHostCsp } from '../server/publication.js';
 import { consumerPath } from '../consumer-root.js';
 
 // A specimen that frames another specimen (components.studio.block-viewer-iframe frames

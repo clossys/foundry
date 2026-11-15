@@ -9,7 +9,7 @@
   "updatedAt": "2026-11-16T09:31:02Z",
   "refs": [ { "to": "producer/queue.pick", "record": "20261116T0930Z-name", "rel": "answers" } ],
   "candidate": "name-v1.md",
-  "sha256": "52a54f8ef96785c965c565e26ebcead5b0de2dedf279fccc5ce6adf6b81acb6b",
+  "sha256": "d293343db334ff7a7ef6dd47264fbac2bbacc6ab7542c9cfa9ea59bb68f66702",
   "decidedBy": "owner:queue.pick#20261116T0930Z-name",
   "basis": "picked",
   "at": "2026-11-16T09:31:02Z"
