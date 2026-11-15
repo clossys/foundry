@@ -1,0 +1,64 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "writer/lexicon.capitalization/package:capitalization-v2.json",
+    "agent": "writer",
+    "kind": "candidate",
+    "status": "submitted",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/writer",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Do"
+      },
+      {
+        "to": "director/identity.naming.name",
+        "rel": "input",
+        "key": "Casing"
+      }
+    ],
+    "slot": "writer/lexicon.capitalization",
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "ia-target/writer.md#2-voice"
+      ]
+    },
+    "rationale": [
+      {
+        "purpose": "package default",
+        "why": "Re-certified as a measurable shape: neutral package starting values a consumer's Writer run replaces.",
+        "sources": [
+          {
+            "to": "director/identity.verbal.voice",
+            "rel": "input",
+            "key": "Do"
+          },
+          {
+            "to": "director/identity.naming.name",
+            "rel": "input",
+            "key": "Casing"
+          }
+        ]
+      }
+    ]
+  },
+  "content": {
+    "byRole": {
+      "eyebrow": "sentence",
+      "heading": "sentence",
+      "lead": "sentence",
+      "body": "sentence",
+      "action": "sentence",
+      "label": "sentence",
+      "alt": "sentence"
+    },
+    "exceptionsFrom": "director/identity.naming.name#Casing"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "writer/lexicon.preferred-terms/package:preferred-terms-v2.json",
+    "agent": "writer",
+    "kind": "candidate",
+    "status": "submitted",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/writer",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Do"
+      },
+      {
+        "to": "director/identity.naming.name",
+        "rel": "input",
+        "key": "Name"
+      },
+      {
+        "to": "director/identity.naming.architecture",
+        "rel": "input",
+        "key": "Rule"
+      }
+    ],
+    "slot": "writer/lexicon.preferred-terms",
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "ia-target/writer.md#2-voice"
+      ]
+    },
+    "rationale": [
+      {
+        "purpose": "package default",
+        "why": "Re-certified as a measurable shape: neutral package starting values a consumer's Writer run replaces.",
+        "sources": [
+          {
+            "to": "director/identity.verbal.voice",
+            "rel": "input",
+            "key": "Do"
+          },
+          {
+            "to": "director/identity.naming.name",
+            "rel": "input",
+            "key": "Name"
+          },
+          {
+            "to": "director/identity.naming.architecture",
+            "rel": "input",
+            "key": "Rule"
+          }
+        ]
+      }
+    ]
+  },
+  "content": {
+    "terms": [
+      {
+        "use": "sign in",
+        "avoid": [
+          "log in",
+          "login"
+        ]
+      }
+    ]
+  }
+}

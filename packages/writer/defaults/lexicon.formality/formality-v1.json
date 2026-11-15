@@ -1,0 +1,65 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "writer/lexicon.formality/package:formality-v1.json",
+    "agent": "writer",
+    "kind": "candidate",
+    "status": "retired",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/writer",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Sound"
+      },
+      {
+        "to": "director/identity.brand.personality",
+        "rel": "input",
+        "key": "Traits"
+      },
+      {
+        "to": "director/focus.reach.geography",
+        "rel": "input",
+        "key": "Language"
+      }
+    ],
+    "slot": "writer/lexicon.formality",
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "packages/writer/src/slot-contracts/contracts/lexicon.json"
+      ]
+    },
+    "rationale": [
+      {
+        "purpose": "package default",
+        "why": "Transcribes the old categorical-prose exemplar; kept unedited and retired because it is not a measurable shape (foundry-audit-0017).",
+        "sources": [
+          {
+            "to": "director/identity.verbal.voice",
+            "rel": "input",
+            "key": "Sound"
+          },
+          {
+            "to": "director/identity.brand.personality",
+            "rel": "input",
+            "key": "Traits"
+          },
+          {
+            "to": "director/focus.reach.geography",
+            "rel": "input",
+            "key": "Language"
+          }
+        ]
+      }
+    ]
+  },
+  "content": {
+    "rule": "Plain and conversational: contractions are fine, slang and in-jokes are not."
+  }
+}
