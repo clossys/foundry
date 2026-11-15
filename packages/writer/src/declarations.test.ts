@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { writerText, type WriterInput } from "../../producer/src/publish/site-plan.js";
+import { writerText, type WriterInput } from "../../publisher/src/build/site-plan.js";
 import { parseWriterSlotBody, type WriterSlotBodyRecord } from "./slot-body.js";
 import { parseWriterDeclarations, projectWriterDeclarations, serializeWriterDeclarations, writeWriterDeclarations, WriterDeclarationsParseError, WRITER_DECLARATIONS_SCHEMA } from "./declarations.js";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync as readText, rmSync, symlinkSync, writeFileSync } from "node:fs";

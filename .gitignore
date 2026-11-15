@@ -1,6 +1,8 @@
 node_modules/
 dist/
 build/
+# Package source build code (system.md 14.2) is source, not output.
+!packages/*/src/build/
 coverage/
 *.tsbuildinfo
 *.tgz
