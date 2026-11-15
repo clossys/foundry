@@ -211,6 +211,13 @@
     "strings.admin.ia.writer.passages.respond": "st.m7gtk6hcw8",
     "strings.admin.ia.writer.passages.respond-states": "st.31tdz2e8k4",
     "strings.admin.ia.writer.passages.respond-messages": "st.ceegez6aff",
+    "strings.admin.ia.writer.passages.sections": "st.ata62btvcq",
+    "strings.admin.ia.writer.passages.sections-parts": "st.etn3efp58r",
+    "strings.admin.ia.writer.passages.sections-story": "st.9pmvtzag90",
+    "strings.admin.ia.writer.passages.sections-reading": "st.m3ms0vxwzm",
+    "strings.admin.ia.writer.passages.sections-records": "st.q484s9bz3w",
+    "strings.admin.ia.writer.passages.sections-forms": "st.8phn9m6kk3",
+    "strings.admin.ia.writer.passages.sections-states": "st.31tdz2e8k4",
     "strings.admin.ia.writer.narratives.web": "st.97hj290sjq",
     "strings.admin.ia.writer.narratives.web-site-and-demo": "st.0ge0cy6ekd",
     "strings.admin.ia.writer.narratives.web-app-and-admin": "st.qasyg0z8yf",
@@ -1368,6 +1375,14 @@
       "status": "draft",
       "origin": "authored",
       "text": "Communications"
+    },
+    {
+      "id": "st.9pmvtzag90",
+      "leaf": "strings.navigation",
+      "context": "strings.admin.ia.writer.passages.sections-story",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Story"
     },
     {
       "id": "st.kx1a2bkxzg",
@@ -2668,6 +2683,48 @@
       "kind": "CopyRef"
     },
     {
+      "cellId": "strings.admin.ia.writer.passages.sections",
+      "recordId": "st.ata62btvcq",
+      "target": "sections.section-header.heading",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.ia.writer.passages.sections-parts",
+      "recordId": "st.etn3efp58r",
+      "target": "sections.data-table.header",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.ia.writer.passages.sections-story",
+      "recordId": "st.9pmvtzag90",
+      "target": "sections.data-table.header",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.ia.writer.passages.sections-reading",
+      "recordId": "st.m3ms0vxwzm",
+      "target": "sections.data-table.header",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.ia.writer.passages.sections-records",
+      "recordId": "st.q484s9bz3w",
+      "target": "sections.data-table.header",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.ia.writer.passages.sections-forms",
+      "recordId": "st.8phn9m6kk3",
+      "target": "sections.data-table.header",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.ia.writer.passages.sections-states",
+      "recordId": "st.31tdz2e8k4",
+      "target": "sections.data-table.header",
+      "kind": "CopyRef"
+    },
+    {
       "cellId": "strings.admin.ia.writer.narratives.web",
       "recordId": "st.97hj290sjq",
       "target": "sections.section-header.heading",
@@ -3571,7 +3628,7 @@
   "coverage": {
     "kind": "proposed D1/P1b bindings",
     "productionBound": 0,
-    "proposedBindings": 354
+    "proposedBindings": 361
   },
   "externalRecords": [
     {
