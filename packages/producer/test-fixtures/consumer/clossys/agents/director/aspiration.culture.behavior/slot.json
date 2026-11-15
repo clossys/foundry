@@ -3,7 +3,7 @@
   "id": "aspiration.culture.behavior",
   "agent": "director",
   "ia": {
-    "l0": "situation",
+    "l0": "strategy",
     "l1": "aspiration",
     "l2": "aspiration.culture",
     "order": 11

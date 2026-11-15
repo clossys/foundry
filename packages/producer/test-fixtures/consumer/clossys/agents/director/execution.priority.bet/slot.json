@@ -3,10 +3,10 @@
   "id": "execution.priority.bet",
   "agent": "director",
   "ia": {
-    "l0": "plan",
-    "l1": "execution",
-    "l2": "execution.priority",
-    "order": 49
+    "l0": "roadmap",
+    "l1": "timeline",
+    "l2": "timeline.priority",
+    "order": 40
   },
   "kind": "brief",
   "contract": {

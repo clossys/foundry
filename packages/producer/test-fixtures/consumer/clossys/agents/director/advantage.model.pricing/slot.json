@@ -5,8 +5,8 @@
   "ia": {
     "l0": "strategy",
     "l1": "advantage",
-    "l2": "advantage.model",
-    "order": 28
+    "l2": "advantage.economics",
+    "order": 26
   },
   "kind": "brief",
   "contract": {
@@ -37,7 +37,5 @@
     "advantage.defensibility.differentiator"
   ],
   "uses": [],
-  "options": 3,
-  "varyOn": "angle",
   "standard": "brief.measure"
 }

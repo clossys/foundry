@@ -11,9 +11,9 @@
     "links are the C1 required citations: the downstream cell's Because must cite the active version of each listed upstream cell, when both cells are in scope."
   ],
   "counts": {
-    "l1": 7,
-    "l2": 28,
-    "l3": 57,
+    "l1": 9,
+    "l2": 27,
+    "l3": 55,
     "core": {
       "default": 24,
       "product-saas": 27,
@@ -40,7 +40,7 @@
       "label": "Product / SaaS",
       "extras": [
         "focus.lifecycle.retention",
-        "capability.operation.technology",
+        "capability.sourcing.build",
         "execution.measure.driver"
       ]
     },
@@ -124,14 +124,6 @@
             "aspiration.culture.belief",
             "aspiration.culture.behavior"
           ]
-        },
-        {
-          "id": "aspiration.goal",
-          "name": "Goal",
-          "cells": [
-            "aspiration.goal.long-term",
-            "aspiration.goal.annual"
-          ]
         }
       ]
     },
@@ -168,8 +160,8 @@
           "id": "focus.reach",
           "name": "Reach",
           "cells": [
-            "focus.reach.geography",
-            "focus.reach.channel"
+            "focus.reach.channel",
+            "focus.reach.geography"
           ]
         },
         {
@@ -204,8 +196,8 @@
           ]
         },
         {
-          "id": "advantage.model",
-          "name": "Model",
+          "id": "advantage.economics",
+          "name": "Economics",
           "cells": [
             "advantage.model.pricing",
             "advantage.model.margin"
@@ -253,60 +245,35 @@
       ]
     },
     {
-      "id": "capability",
-      "name": "Capability",
-      "question": "What must we be able to do, and with what resources?",
+      "id": "targets",
+      "name": "Targets",
+      "question": "Which dated numeric targets do we aim for?",
       "children": [
         {
-          "id": "capability.competency",
-          "name": "Competency",
+          "id": "targets.goal",
+          "name": "Goal",
           "cells": [
-            "capability.competency.critical",
-            "capability.competency.gap"
+            "aspiration.goal.long-term",
+            "aspiration.goal.annual"
           ]
         },
         {
-          "id": "capability.sourcing",
-          "name": "Sourcing",
+          "id": "targets.measure",
+          "name": "Measure",
           "cells": [
-            "capability.sourcing.build",
-            "capability.sourcing.partner",
-            "capability.sourcing.acquire"
-          ]
-        },
-        {
-          "id": "capability.operation",
-          "name": "Operation",
-          "cells": [
-            "capability.operation.delivery",
-            "capability.operation.technology"
-          ]
-        },
-        {
-          "id": "capability.team",
-          "name": "Team",
-          "cells": [
-            "capability.team.role",
-            "capability.team.structure"
-          ]
-        },
-        {
-          "id": "capability.resource",
-          "name": "Resource",
-          "cells": [
-            "capability.resource.funding",
-            "capability.resource.allocation"
+            "execution.measure.north-star",
+            "execution.measure.driver"
           ]
         }
       ]
     },
     {
-      "id": "execution",
-      "name": "Execution",
-      "question": "What do we do now, how do we measure it, and what could stop us?",
+      "id": "timeline",
+      "name": "Timeline",
+      "question": "What is the bet now, what is parked, and which milestones lead to the next release?",
       "children": [
         {
-          "id": "execution.priority",
+          "id": "timeline.priority",
           "name": "Priority",
           "cells": [
             "execution.priority.bet",
@@ -314,23 +281,62 @@
           ]
         },
         {
-          "id": "execution.roadmap",
-          "name": "Roadmap",
+          "id": "timeline.schedule",
+          "name": "Schedule",
           "cells": [
             "execution.roadmap.milestone",
             "execution.roadmap.release"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "id": "task-force",
+      "name": "Task force",
+      "question": "Who is on the team, with which capabilities, and what do we own or rent?",
+      "children": [
         {
-          "id": "execution.measure",
-          "name": "Measure",
+          "id": "task-force.team",
+          "name": "Team",
           "cells": [
-            "execution.measure.north-star",
-            "execution.measure.driver"
+            "capability.team.role",
+            "capability.competency.critical",
+            "capability.competency.gap"
           ]
         },
         {
-          "id": "execution.risk",
+          "id": "task-force.sourcing",
+          "name": "Sourcing",
+          "cells": [
+            "capability.sourcing.build",
+            "capability.sourcing.partner"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "name": "Plan",
+      "question": "With what money, operating model, governance and risk do we run?",
+      "children": [
+        {
+          "id": "plan.resource",
+          "name": "Resource",
+          "cells": [
+            "capability.resource.funding",
+            "capability.resource.allocation"
+          ]
+        },
+        {
+          "id": "plan.operation",
+          "name": "Operation",
+          "cells": [
+            "capability.operation.delivery",
+            "capability.team.structure"
+          ]
+        },
+        {
+          "id": "plan.risk",
           "name": "Risk",
           "cells": [
             "execution.risk.threat",
@@ -346,8 +352,8 @@
       "names": {
         "l1": "Context",
         "l2": "Market",
-        "l3": "Size",
-        "display": "Context / Market / Size"
+        "l3": "Market size",
+        "display": "Context / Market / Market size"
       },
       "question": "How big is the reachable market, counted in a unit you can check?",
       "mustContain": [
@@ -560,8 +566,8 @@
       "names": {
         "l1": "Context",
         "l2": "Competition",
-        "l3": "Gap",
-        "display": "Context / Competition / Gap"
+        "l3": "Open gap",
+        "display": "Context / Competition / Open gap"
       },
       "question": "What do current alternatives leave unsolved, and why is it still open?",
       "mustContain": [
@@ -754,8 +760,8 @@
       "names": {
         "l1": "Aspiration",
         "l2": "Culture",
-        "l3": "Belief",
-        "display": "Aspiration / Culture / Belief"
+        "l3": "Values",
+        "display": "Aspiration / Culture / Values"
       },
       "question": "Which beliefs guide us even when they cost something?",
       "mustContain": [
@@ -792,8 +798,8 @@
       "names": {
         "l1": "Aspiration",
         "l2": "Culture",
-        "l3": "Behavior",
-        "display": "Aspiration / Culture / Behavior"
+        "l3": "Behaviors",
+        "display": "Aspiration / Culture / Behaviors"
       },
       "question": "Which behaviors do we expect, and which do we refuse?",
       "mustContain": [
@@ -826,92 +832,12 @@
       }
     },
     {
-      "id": "aspiration.goal.long-term",
-      "names": {
-        "l1": "Aspiration",
-        "l2": "Goal",
-        "l3": "Long-term",
-        "display": "Aspiration / Goal / Long-term"
-      },
-      "question": "What measurable position do we aim to hold, and by when?",
-      "mustContain": [
-        {
-          "key": "Target",
-          "hint": "the position, with a number"
-        },
-        {
-          "key": "Date",
-          "hint": "the date it is due"
-        },
-        {
-          "key": "Scope",
-          "hint": "what the target covers and excludes"
-        }
-      ],
-      "functions": [
-        "finance",
-        "corp-dev",
-        "product"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [
-        "execution.measure.north-star"
-      ],
-      "storyline": false,
-      "core": {
-        "default": true,
-        "product-saas": true,
-        "services": true,
-        "marketplace": true
-      }
-    },
-    {
-      "id": "aspiration.goal.annual",
-      "names": {
-        "l1": "Aspiration",
-        "l2": "Goal",
-        "l3": "Annual",
-        "display": "Aspiration / Goal / Annual"
-      },
-      "question": "What must be true at the end of this year to stay on the long-term path?",
-      "mustContain": [
-        {
-          "key": "Target",
-          "hint": "the year-end target, with a number"
-        },
-        {
-          "key": "Date",
-          "hint": "the year-end date"
-        },
-        {
-          "key": "Path",
-          "hint": "how it steps toward the long-term target"
-        }
-      ],
-      "functions": [
-        "finance",
-        "ops",
-        "product"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
       "id": "focus.category.definition",
       "names": {
         "l1": "Focus",
         "l2": "Category",
-        "l3": "Definition",
-        "display": "Focus / Category / Definition"
+        "l3": "Category",
+        "display": "Focus / Category / Category"
       },
       "question": "Which category do we tell buyers we belong to?",
       "mustContain": [
@@ -987,8 +913,8 @@
       "names": {
         "l1": "Focus",
         "l2": "Segment",
-        "l3": "Core",
-        "display": "Focus / Segment / Core"
+        "l3": "Core segment",
+        "display": "Focus / Segment / Core segment"
       },
       "question": "Who exactly do we serve first, and who do we turn away?",
       "mustContain": [
@@ -1036,8 +962,8 @@
       "names": {
         "l1": "Focus",
         "l2": "Segment",
-        "l3": "Next",
-        "display": "Focus / Segment / Next"
+        "l3": "Next segment",
+        "display": "Focus / Segment / Next segment"
       },
       "question": "Which segment comes next, and what triggers the move?",
       "mustContain": [
@@ -1152,44 +1078,6 @@
       }
     },
     {
-      "id": "focus.reach.geography",
-      "names": {
-        "l1": "Focus",
-        "l2": "Reach",
-        "l3": "Geography",
-        "display": "Focus / Reach / Geography"
-      },
-      "question": "Where do we sell first, and where not yet?",
-      "mustContain": [
-        {
-          "key": "Where",
-          "hint": "the first markets"
-        },
-        {
-          "key": "Not-yet",
-          "hint": "places we do not serve yet"
-        },
-        {
-          "key": "Why",
-          "hint": "why this order"
-        }
-      ],
-      "functions": [
-        "gtm",
-        "ops"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
       "id": "focus.reach.channel",
       "names": {
         "l1": "Focus",
@@ -1236,6 +1124,48 @@
         "product-saas": true,
         "services": true,
         "marketplace": true
+      }
+    },
+    {
+      "id": "focus.reach.geography",
+      "names": {
+        "l1": "Focus",
+        "l2": "Reach",
+        "l3": "Geography",
+        "display": "Focus / Reach / Geography"
+      },
+      "question": "Where do we sell first, and where not yet?",
+      "mustContain": [
+        {
+          "key": "Where",
+          "hint": "the first markets"
+        },
+        {
+          "key": "Not-yet",
+          "hint": "places we do not serve yet"
+        },
+        {
+          "key": "Why",
+          "hint": "why this order"
+        },
+        {
+          "key": "Language",
+          "hint": "the locale list and the register per locale"
+        }
+      ],
+      "functions": [
+        "gtm",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
       }
     },
     {
@@ -1394,6 +1324,18 @@
         {
           "key": "Never-claim",
           "hint": "claims we must never make, quoted"
+        },
+        {
+          "key": "Metrics",
+          "hint": "metric claims we can back"
+        },
+        {
+          "key": "Comparisons",
+          "hint": "comparison claims we can back"
+        },
+        {
+          "key": "Compliance",
+          "hint": "compliance statements we can make"
         }
       ],
       "functions": [
@@ -1505,9 +1447,9 @@
       "id": "advantage.model.pricing",
       "names": {
         "l1": "Advantage",
-        "l2": "Model",
+        "l2": "Economics",
         "l3": "Pricing",
-        "display": "Advantage / Model / Pricing"
+        "display": "Advantage / Economics / Pricing"
       },
       "question": "What do we charge for, how much, and against which anchor?",
       "mustContain": [
@@ -1548,9 +1490,9 @@
       "id": "advantage.model.margin",
       "names": {
         "l1": "Advantage",
-        "l2": "Model",
+        "l2": "Economics",
         "l3": "Margin",
-        "display": "Advantage / Model / Margin"
+        "display": "Advantage / Economics / Margin"
       },
       "question": "What does one unit earn, and which lever moves it?",
       "mustContain": [
@@ -1677,19 +1619,23 @@
         "l3": "Name",
         "display": "Identity / Naming / Name"
       },
-      "question": "What are we called, how is it written, and what does it mean?",
+      "question": "What is the name, how is it written and said, and what does it mean?",
       "mustContain": [
         {
           "key": "Name",
-          "hint": "the public name"
+          "hint": "the name as customers see it"
         },
         {
           "key": "Casing",
-          "hint": "exact casing and forms"
+          "hint": "every allowed written form and where"
         },
         {
           "key": "Meaning",
-          "hint": "what the name means or stands for"
+          "hint": "one plain sentence"
+        },
+        {
+          "key": "Pronunciation",
+          "hint": "respelled, stressed syllable in capitals"
         }
       ],
       "functions": [
@@ -1711,8 +1657,8 @@
       "names": {
         "l1": "Identity",
         "l2": "Naming",
-        "l3": "Architecture",
-        "display": "Identity / Naming / Architecture"
+        "l3": "Brand architecture",
+        "display": "Identity / Naming / Brand architecture"
       },
       "question": "How are products, plans and features named against the master name?",
       "mustContain": [
@@ -1807,7 +1753,7 @@
         },
         {
           "key": "Never",
-          "hint": "words and moves we never use, quoted"
+          "hint": "behaviours we never show (word lists belong to Writer)"
         }
       ],
       "functions": [
@@ -1841,8 +1787,8 @@
       "names": {
         "l1": "Identity",
         "l2": "Visual",
-        "l3": "Style",
-        "display": "Identity / Visual / Style"
+        "l3": "Visual style",
+        "display": "Identity / Visual / Visual style"
       },
       "question": "What should our look feel like, what is its signature, and what do we avoid?",
       "mustContain": [
@@ -1931,596 +1877,76 @@
       }
     },
     {
-      "id": "capability.competency.critical",
+      "id": "aspiration.goal.long-term",
       "names": {
-        "l1": "Capability",
-        "l2": "Competency",
-        "l3": "Critical",
-        "display": "Capability / Competency / Critical"
+        "l1": "Targets",
+        "l2": "Goal",
+        "l3": "Long-term goal",
+        "display": "Targets / Goal / Long-term goal"
       },
-      "question": "Which capabilities must be world class for the strategy to work?",
-      "mustContain": [
-        {
-          "key": "Capability",
-          "hint": "the capability"
-        },
-        {
-          "key": "Why",
-          "hint": "which choice depends on it"
-        },
-        {
-          "key": "Bar",
-          "hint": "the bar it must clear, testable"
-        }
-      ],
-      "functions": [
-        "people",
-        "ops",
-        "tech"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": true,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "capability.competency.gap",
-      "names": {
-        "l1": "Capability",
-        "l2": "Competency",
-        "l3": "Gap",
-        "display": "Capability / Competency / Gap"
-      },
-      "question": "Which critical capability is missing, how big is the gap, and when do we close it?",
-      "mustContain": [
-        {
-          "key": "Gap",
-          "hint": "the missing capability"
-        },
-        {
-          "key": "Size",
-          "hint": "how far we are from the bar"
-        },
-        {
-          "key": "Close-by",
-          "hint": "the date and route to close it"
-        }
-      ],
-      "functions": [
-        "people",
-        "ops"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "capability.sourcing.build",
-      "names": {
-        "l1": "Capability",
-        "l2": "Sourcing",
-        "l3": "Build",
-        "display": "Capability / Sourcing / Build"
-      },
-      "question": "What do we build ourselves, and why?",
-      "mustContain": [
-        {
-          "key": "Build",
-          "hint": "what we build"
-        },
-        {
-          "key": "Why",
-          "hint": "why we build it rather than buy it"
-        },
-        {
-          "key": "Cost",
-          "hint": "what building costs"
-        }
-      ],
-      "functions": [
-        "tech",
-        "ops",
-        "finance"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "capability.sourcing.partner",
-      "names": {
-        "l1": "Capability",
-        "l2": "Sourcing",
-        "l3": "Partner",
-        "display": "Capability / Sourcing / Partner"
-      },
-      "question": "Who do we rely on, what do they give us, and what is the risk?",
-      "mustContain": [
-        {
-          "key": "Partner",
-          "hint": "the partner or supplier"
-        },
-        {
-          "key": "Gives",
-          "hint": "what they give us"
-        },
-        {
-          "key": "Risk",
-          "hint": "what happens if they change terms"
-        }
-      ],
-      "functions": [
-        "ops",
-        "corp-dev",
-        "tech"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "capability.sourcing.acquire",
-      "names": {
-        "l1": "Capability",
-        "l2": "Sourcing",
-        "l3": "Acquire",
-        "display": "Capability / Sourcing / Acquire"
-      },
-      "question": "Would we buy a capability, what would trigger it, and what is the limit?",
+      "question": "What measurable position do we aim to hold, and by when?",
       "mustContain": [
         {
           "key": "Target",
-          "hint": "what we would buy"
+          "hint": "the position, with a number"
         },
         {
-          "key": "Trigger",
-          "hint": "the condition that starts it"
+          "key": "Date",
+          "hint": "the date it is due"
         },
         {
-          "key": "Limit",
-          "hint": "the price or scope limit"
+          "key": "Scope",
+          "hint": "what the target covers and excludes"
         }
       ],
       "functions": [
+        "finance",
         "corp-dev",
-        "finance"
+        "product"
       ],
       "feeds": [],
       "links": [],
-      "linkedBy": [],
+      "linkedBy": [
+        "execution.measure.north-star"
+      ],
       "storyline": false,
       "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
       }
     },
     {
-      "id": "capability.operation.delivery",
+      "id": "aspiration.goal.annual",
       "names": {
-        "l1": "Capability",
-        "l2": "Operation",
-        "l3": "Delivery",
-        "display": "Capability / Operation / Delivery"
+        "l1": "Targets",
+        "l2": "Goal",
+        "l3": "Annual goal",
+        "display": "Targets / Goal / Annual goal"
       },
-      "question": "How do we deliver the offer, to what standard, and who owns it?",
+      "question": "What must be true at the end of this year to stay on the long-term path?",
       "mustContain": [
         {
-          "key": "Steps",
-          "hint": "the delivery steps"
+          "key": "Target",
+          "hint": "the year-end target, with a number"
         },
         {
-          "key": "Standard",
-          "hint": "the quality bar, testable"
+          "key": "Date",
+          "hint": "the year-end date"
         },
         {
-          "key": "Owner",
-          "hint": "who owns delivery"
+          "key": "Path",
+          "hint": "how it steps toward the long-term target"
         }
       ],
       "functions": [
+        "finance",
         "ops",
         "product"
       ],
       "feeds": [],
       "links": [],
-      "linkedBy": [],
-      "storyline": true,
-      "core": {
-        "default": true,
-        "product-saas": true,
-        "services": true,
-        "marketplace": true
-      }
-    },
-    {
-      "id": "capability.operation.technology",
-      "names": {
-        "l1": "Capability",
-        "l2": "Operation",
-        "l3": "Technology",
-        "display": "Capability / Operation / Technology"
-      },
-      "question": "Which technology is strategic, and which is commodity?",
-      "mustContain": [
-        {
-          "key": "Strategic",
-          "hint": "technology we own and invest in"
-        },
-        {
-          "key": "Commodity",
-          "hint": "technology we rent"
-        },
-        {
-          "key": "Rule",
-          "hint": "how we decide between them"
-        }
-      ],
-      "functions": [
-        "tech",
-        "ops"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": true,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "capability.team.role",
-      "names": {
-        "l1": "Capability",
-        "l2": "Team",
-        "l3": "Role",
-        "display": "Capability / Team / Role"
-      },
-      "question": "Which roles exist, who holds them, and who do we hire next?",
-      "mustContain": [
-        {
-          "key": "Roles",
-          "hint": "the roles"
-        },
-        {
-          "key": "Who",
-          "hint": "who holds each role"
-        },
-        {
-          "key": "Next-hire",
-          "hint": "the next role to fill, and when"
-        }
-      ],
-      "functions": [
-        "people"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": true,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "capability.team.structure",
-      "names": {
-        "l1": "Capability",
-        "l2": "Team",
-        "l3": "Structure",
-        "display": "Capability / Team / Structure"
-      },
-      "question": "How is the team shaped, who decides what, and on what rhythm?",
-      "mustContain": [
-        {
-          "key": "Shape",
-          "hint": "the team shape"
-        },
-        {
-          "key": "Decides",
-          "hint": "who decides what"
-        },
-        {
-          "key": "Rhythm",
-          "hint": "the operating cadence"
-        }
-      ],
-      "functions": [
-        "people",
-        "ops"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "capability.resource.funding",
-      "names": {
-        "l1": "Capability",
-        "l2": "Resource",
-        "l3": "Funding",
-        "display": "Capability / Resource / Funding"
-      },
-      "question": "How is the company funded, how long does it last, and what comes next?",
-      "mustContain": [
-        {
-          "key": "Source",
-          "hint": "where the money comes from"
-        },
-        {
-          "key": "Runway",
-          "hint": "months of runway"
-        },
-        {
-          "key": "Next",
-          "hint": "the next funding step and its trigger"
-        }
-      ],
-      "functions": [
-        "finance",
-        "corp-dev"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "capability.resource.allocation",
-      "names": {
-        "l1": "Capability",
-        "l2": "Resource",
-        "l3": "Allocation",
-        "display": "Capability / Resource / Allocation"
-      },
-      "question": "How do we split time and money across the bets?",
-      "mustContain": [
-        {
-          "key": "Split",
-          "hint": "the split, in percentages"
-        },
-        {
-          "key": "Rule",
-          "hint": "the rule that sets it"
-        },
-        {
-          "key": "Reserve",
-          "hint": "what is held back"
-        }
-      ],
-      "functions": [
-        "finance",
-        "ops"
-      ],
-      "feeds": [],
-      "links": [
-        {
-          "cites": "execution.priority.bet",
-          "label": "Bet-Allocation"
-        }
-      ],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "execution.priority.bet",
-      "names": {
-        "l1": "Execution",
-        "l2": "Priority",
-        "l3": "Bet",
-        "display": "Execution / Priority / Bet"
-      },
-      "question": "What is the one bet we are making now, what should it produce, and when do we kill it?",
-      "mustContain": [
-        {
-          "key": "Bet",
-          "hint": "the bet"
-        },
-        {
-          "key": "Outcome",
-          "hint": "the outcome it must produce"
-        },
-        {
-          "key": "Kill",
-          "hint": "the condition that ends it"
-        }
-      ],
-      "functions": [
-        "product",
-        "ops",
-        "finance"
-      ],
-      "feeds": [
-        {
-          "contract": "planner.priorities",
-          "need": "required"
-        }
-      ],
-      "links": [],
-      "linkedBy": [
-        "capability.resource.allocation"
-      ],
-      "storyline": true,
-      "core": {
-        "default": true,
-        "product-saas": true,
-        "services": true,
-        "marketplace": true
-      }
-    },
-    {
-      "id": "execution.priority.parked",
-      "names": {
-        "l1": "Execution",
-        "l2": "Priority",
-        "l3": "Parked",
-        "display": "Execution / Priority / Parked"
-      },
-      "question": "What are we deliberately not doing now, and when do we look again?",
-      "mustContain": [
-        {
-          "key": "Parked",
-          "hint": "what is parked"
-        },
-        {
-          "key": "Why",
-          "hint": "why it waits"
-        },
-        {
-          "key": "Revisit",
-          "hint": "when or on what signal we look again"
-        }
-      ],
-      "functions": [
-        "product",
-        "ops"
-      ],
-      "feeds": [
-        {
-          "contract": "planner.priorities",
-          "need": "optional"
-        }
-      ],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "execution.roadmap.milestone",
-      "names": {
-        "l1": "Execution",
-        "l2": "Roadmap",
-        "l3": "Milestone",
-        "display": "Execution / Roadmap / Milestone"
-      },
-      "question": "Which milestones mark progress, by when, and with what evidence?",
-      "mustContain": [
-        {
-          "key": "Milestone",
-          "hint": "the milestone"
-        },
-        {
-          "key": "Date",
-          "hint": "the due date"
-        },
-        {
-          "key": "Evidence",
-          "hint": "what proves it is reached"
-        }
-      ],
-      "functions": [
-        "product",
-        "ops"
-      ],
-      "feeds": [],
-      "links": [],
-      "linkedBy": [],
-      "storyline": false,
-      "core": {
-        "default": false,
-        "product-saas": false,
-        "services": false,
-        "marketplace": false
-      }
-    },
-    {
-      "id": "execution.roadmap.release",
-      "names": {
-        "l1": "Execution",
-        "l2": "Roadmap",
-        "l3": "Release",
-        "display": "Execution / Roadmap / Release"
-      },
-      "question": "What do we release next, to whom, and through which channel?",
-      "mustContain": [
-        {
-          "key": "Release",
-          "hint": "what ships"
-        },
-        {
-          "key": "Audience",
-          "hint": "who gets it"
-        },
-        {
-          "key": "Channel",
-          "hint": "where it is released"
-        }
-      ],
-      "functions": [
-        "product",
-        "gtm"
-      ],
-      "feeds": [
-        {
-          "contract": "publisher.launch",
-          "need": "optional"
-        }
-      ],
-      "links": [
-        {
-          "cites": "focus.lifecycle.acquisition",
-          "label": "Acquisition-Release"
-        }
-      ],
       "linkedBy": [],
       "storyline": false,
       "core": {
@@ -2533,10 +1959,10 @@
     {
       "id": "execution.measure.north-star",
       "names": {
-        "l1": "Execution",
+        "l1": "Targets",
         "l2": "Measure",
         "l3": "North star",
-        "display": "Execution / Measure / North star"
+        "display": "Targets / Measure / North star"
       },
       "question": "Which one number shows we deliver value, and what is the target?",
       "mustContain": [
@@ -2581,10 +2007,10 @@
     {
       "id": "execution.measure.driver",
       "names": {
-        "l1": "Execution",
+        "l1": "Targets",
         "l2": "Measure",
-        "l3": "Driver",
-        "display": "Execution / Measure / Driver"
+        "l3": "Drivers",
+        "display": "Targets / Measure / Drivers"
       },
       "question": "Which inputs move the north star, with which targets and owners?",
       "mustContain": [
@@ -2623,12 +2049,536 @@
       }
     },
     {
+      "id": "execution.priority.bet",
+      "names": {
+        "l1": "Timeline",
+        "l2": "Priority",
+        "l3": "Bet",
+        "display": "Timeline / Priority / Bet"
+      },
+      "question": "What is the one bet we are making now, what should it produce, and when do we kill it?",
+      "mustContain": [
+        {
+          "key": "Bet",
+          "hint": "the bet"
+        },
+        {
+          "key": "Outcome",
+          "hint": "the outcome it must produce"
+        },
+        {
+          "key": "Kill",
+          "hint": "the condition that ends it"
+        }
+      ],
+      "functions": [
+        "product",
+        "ops",
+        "finance"
+      ],
+      "feeds": [
+        {
+          "contract": "planner.priorities",
+          "need": "required"
+        }
+      ],
+      "links": [],
+      "linkedBy": [
+        "capability.resource.allocation"
+      ],
+      "storyline": true,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "execution.priority.parked",
+      "names": {
+        "l1": "Timeline",
+        "l2": "Priority",
+        "l3": "Parked",
+        "display": "Timeline / Priority / Parked"
+      },
+      "question": "What are we deliberately not doing now, and when do we look again?",
+      "mustContain": [
+        {
+          "key": "Parked",
+          "hint": "what is parked"
+        },
+        {
+          "key": "Why",
+          "hint": "why it waits"
+        },
+        {
+          "key": "Revisit",
+          "hint": "when or on what signal we look again"
+        }
+      ],
+      "functions": [
+        "product",
+        "ops"
+      ],
+      "feeds": [
+        {
+          "contract": "planner.priorities",
+          "need": "optional"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "execution.roadmap.milestone",
+      "names": {
+        "l1": "Timeline",
+        "l2": "Schedule",
+        "l3": "Milestones",
+        "display": "Timeline / Schedule / Milestones"
+      },
+      "question": "Which milestones mark progress, by when, and with what evidence?",
+      "mustContain": [
+        {
+          "key": "Milestone",
+          "hint": "the milestone"
+        },
+        {
+          "key": "Date",
+          "hint": "the due date"
+        },
+        {
+          "key": "Evidence",
+          "hint": "what proves it is reached"
+        }
+      ],
+      "functions": [
+        "product",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "execution.roadmap.release",
+      "names": {
+        "l1": "Timeline",
+        "l2": "Schedule",
+        "l3": "Next release",
+        "display": "Timeline / Schedule / Next release"
+      },
+      "question": "What is the next release, by when, and what is in and out?",
+      "mustContain": [
+        {
+          "key": "Release",
+          "hint": "a short name"
+        },
+        {
+          "key": "Target date",
+          "hint": "ISO date"
+        },
+        {
+          "key": "Scope",
+          "hint": "publications and pages"
+        },
+        {
+          "key": "Not in scope",
+          "hint": "what waits for a later release"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm"
+      ],
+      "feeds": [
+        {
+          "contract": "publisher.launch",
+          "need": "optional"
+        }
+      ],
+      "links": [
+        {
+          "cites": "focus.lifecycle.acquisition",
+          "label": "Acquisition-Release"
+        }
+      ],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.team.role",
+      "names": {
+        "l1": "Task force",
+        "l2": "Team",
+        "l3": "Roles",
+        "display": "Task force / Team / Roles"
+      },
+      "question": "Which roles exist, who holds them, and who do we hire next?",
+      "mustContain": [
+        {
+          "key": "Roles",
+          "hint": "the roles"
+        },
+        {
+          "key": "Who",
+          "hint": "who holds each role"
+        },
+        {
+          "key": "Next-hire",
+          "hint": "the next role to fill, and when"
+        }
+      ],
+      "functions": [
+        "people"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": true,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.competency.critical",
+      "names": {
+        "l1": "Task force",
+        "l2": "Team",
+        "l3": "Critical capabilities",
+        "display": "Task force / Team / Critical capabilities"
+      },
+      "question": "Which capabilities must be world class for the strategy to work?",
+      "mustContain": [
+        {
+          "key": "Capability",
+          "hint": "the capability"
+        },
+        {
+          "key": "Why",
+          "hint": "which choice depends on it"
+        },
+        {
+          "key": "Bar",
+          "hint": "the bar it must clear, testable"
+        }
+      ],
+      "functions": [
+        "people",
+        "ops",
+        "tech"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": true,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.competency.gap",
+      "names": {
+        "l1": "Task force",
+        "l2": "Team",
+        "l3": "Capability gap",
+        "display": "Task force / Team / Capability gap"
+      },
+      "question": "Which critical capability is missing, how big is the gap, and when do we close it?",
+      "mustContain": [
+        {
+          "key": "Gap",
+          "hint": "the missing capability"
+        },
+        {
+          "key": "Size",
+          "hint": "how far we are from the bar"
+        },
+        {
+          "key": "Close-by",
+          "hint": "the date and route to close it"
+        }
+      ],
+      "functions": [
+        "people",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.sourcing.build",
+      "names": {
+        "l1": "Task force",
+        "l2": "Sourcing",
+        "l3": "Own",
+        "display": "Task force / Sourcing / Own"
+      },
+      "question": "What do we build ourselves, and why?",
+      "mustContain": [
+        {
+          "key": "Build",
+          "hint": "what we build"
+        },
+        {
+          "key": "Why",
+          "hint": "why we build it rather than buy it"
+        },
+        {
+          "key": "Cost",
+          "hint": "what building costs"
+        }
+      ],
+      "functions": [
+        "tech",
+        "ops",
+        "finance"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.sourcing.partner",
+      "names": {
+        "l1": "Task force",
+        "l2": "Sourcing",
+        "l3": "Partners",
+        "display": "Task force / Sourcing / Partners"
+      },
+      "question": "Who do we rely on, what do they give us, and what is the risk?",
+      "mustContain": [
+        {
+          "key": "Partner",
+          "hint": "the partner or supplier"
+        },
+        {
+          "key": "Gives",
+          "hint": "what they give us"
+        },
+        {
+          "key": "Risk",
+          "hint": "what happens if they change terms"
+        }
+      ],
+      "functions": [
+        "ops",
+        "corp-dev",
+        "tech"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.resource.funding",
+      "names": {
+        "l1": "Plan",
+        "l2": "Resource",
+        "l3": "Funding",
+        "display": "Plan / Resource / Funding"
+      },
+      "question": "How is the company funded, how long does it last, and what comes next?",
+      "mustContain": [
+        {
+          "key": "Source",
+          "hint": "where the money comes from"
+        },
+        {
+          "key": "Runway",
+          "hint": "months of runway"
+        },
+        {
+          "key": "Next",
+          "hint": "the next funding step and its trigger"
+        }
+      ],
+      "functions": [
+        "finance",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.resource.allocation",
+      "names": {
+        "l1": "Plan",
+        "l2": "Resource",
+        "l3": "Allocation",
+        "display": "Plan / Resource / Allocation"
+      },
+      "question": "How do we split time and money across the bets?",
+      "mustContain": [
+        {
+          "key": "Split",
+          "hint": "the split, in percentages"
+        },
+        {
+          "key": "Rule",
+          "hint": "the rule that sets it"
+        },
+        {
+          "key": "Reserve",
+          "hint": "what is held back"
+        }
+      ],
+      "functions": [
+        "finance",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [
+        {
+          "cites": "execution.priority.bet",
+          "label": "Bet-Allocation"
+        }
+      ],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.operation.delivery",
+      "names": {
+        "l1": "Plan",
+        "l2": "Operation",
+        "l3": "Delivery model",
+        "display": "Plan / Operation / Delivery model"
+      },
+      "question": "How do we deliver the offer, to what standard, and who owns it?",
+      "mustContain": [
+        {
+          "key": "Steps",
+          "hint": "the delivery steps"
+        },
+        {
+          "key": "Standard",
+          "hint": "the quality bar, testable"
+        },
+        {
+          "key": "Owner",
+          "hint": "who owns delivery"
+        }
+      ],
+      "functions": [
+        "ops",
+        "product"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": true,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "capability.team.structure",
+      "names": {
+        "l1": "Plan",
+        "l2": "Operation",
+        "l3": "Governance",
+        "display": "Plan / Operation / Governance"
+      },
+      "question": "Who decides what, and how often is strategy reviewed?",
+      "mustContain": [
+        {
+          "key": "Decides",
+          "hint": "area: role (person)"
+        },
+        {
+          "key": "Rhythm",
+          "hint": "what is reviewed, how often"
+        }
+      ],
+      "functions": [
+        "people",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
       "id": "execution.risk.threat",
       "names": {
-        "l1": "Execution",
+        "l1": "Plan",
         "l2": "Risk",
-        "l3": "Threat",
-        "display": "Execution / Risk / Threat"
+        "l3": "Threats",
+        "display": "Plan / Risk / Threats"
       },
       "question": "What could kill the strategy, how likely is it, and how bad would it be?",
       "mustContain": [
@@ -2664,10 +2614,10 @@
     {
       "id": "execution.risk.mitigation",
       "names": {
-        "l1": "Execution",
+        "l1": "Plan",
         "l2": "Risk",
-        "l3": "Mitigation",
-        "display": "Execution / Risk / Mitigation"
+        "l3": "Mitigations",
+        "display": "Plan / Risk / Mitigations"
       },
       "question": "What do we do about each top threat, and who owns it?",
       "mustContain": [

@@ -12,6 +12,9 @@ import { dirname, join, resolve } from "node:path";
 import { parseCandidateName } from "../records/candidate.js";
 import { cliActor, ownerAnswerRef, toIsoZ } from "../records/pin.js";
 import { writeTargetPin } from "../records/pin-map.js";
+import { publicationOf } from "../release/paths.js";
+import { isReleaseSlot } from "../release/pins.js";
+import { readyFindings } from "../release/ready.js";
 import type { AgentId, PinRecord } from "../records/types.js";
 import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AGENTS, type PinBasis, type PinConfirmation, type SlotAgent } from "../records/slot-model/index.js";
 import { listSlots, readSlotEntry } from "../records/slots.js";
@@ -204,6 +207,11 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   const answer = ownerAnswerRef(by);
   if (answer && !existsSync(join(root, "clossys", "agents", answer.to, "entries", `${answer.record}.json`))) {
     return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} is not a queue entry` };
+  }
+  if (agent === "publisher" && isReleaseSlot(agent, slotId) && record === undefined) {
+    // A release pin marks a version ready (flows.md F8): refused unless release.ready would pass for it.
+    const findings = readyFindings(root, publicationOf(root, slotId), { candidate, decidedBy: by, basis, at: toIsoZ(at)! });
+    if (findings.length) return { exitCode: 1, message: `pin refused: ${agent}/${slotId} ${candidate} is not ready:\n${findings.map(row => `  ${row.check ?? "release.ready"}  ${row.subject}  ${row.detail}`).join("\n")}`, output: { findings } };
   }
   try {
     const doc = writeTargetPin(root, {

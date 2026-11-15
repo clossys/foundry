@@ -1,0 +1,45 @@
+{
+  "layer": "loops",
+  "nodes": [
+    {
+      "id": "build",
+      "label": "Build",
+      "children": [
+        {
+          "id": "build-fill",
+          "label": "Fill",
+          "leaves": [
+            "loop.fill"
+          ]
+        },
+        {
+          "id": "build-refine",
+          "label": "Refine",
+          "leaves": [
+            "loop.refine"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "assure",
+      "label": "Assure",
+      "children": [
+        {
+          "id": "assure-ready",
+          "label": "Ready",
+          "leaves": [
+            "loop.release"
+          ]
+        },
+        {
+          "id": "assure-inspect",
+          "label": "Inspect",
+          "leaves": [
+            "loop.audit"
+          ]
+        }
+      ]
+    }
+  ]
+}

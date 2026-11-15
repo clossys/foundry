@@ -3,26 +3,22 @@
   "id": "capability.team.structure",
   "agent": "director",
   "ia": {
-    "l0": "plan",
-    "l1": "capability",
-    "l2": "capability.team",
-    "order": 46
+    "l0": "execution",
+    "l1": "plan",
+    "l2": "plan.operation",
+    "order": 52
   },
   "kind": "brief",
   "contract": {
-    "question": "How is the team shaped, who decides what, and on what rhythm?",
+    "question": "Who decides what, and how often is strategy reviewed?",
     "mustContain": [
       {
-        "key": "Shape",
-        "hint": "the team shape"
-      },
-      {
         "key": "Decides",
-        "hint": "who decides what"
+        "hint": "area: role (person)"
       },
       {
         "key": "Rhythm",
-        "hint": "the operating cadence"
+        "hint": "what is reviewed, how often"
       }
     ],
     "fixture": {
