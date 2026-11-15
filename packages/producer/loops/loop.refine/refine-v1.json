@@ -95,8 +95,35 @@
         }
       },
       {
+        "id": "owner-pick",
+        "does": "owner picks among the passing candidates in chat (Director slots and legal prose); the pin is the owner's, and the agent pick does not run for these slots",
+        "decider": {
+          "by": "human",
+          "who": "owner",
+          "raise": "queue.pick"
+        },
+        "cli": "clossys answer <entry> <candidate> --by owner --via chat --quote <words>",
+        "reads": [],
+        "writes": [
+          "<slot>/pin.json"
+        ],
+        "checks": [
+          "answer.quote-required",
+          "pins.resolve"
+        ],
+        "when": {
+          "ia": [
+            "director"
+          ],
+          "slots": [
+            "writer/passages.legal-prose",
+            "writer/narratives.legal-document"
+          ]
+        }
+      },
+      {
         "id": "pick",
-        "does": "judge the passing candidates and pin one (status confirm when an owner step follows)",
+        "does": "judge the passing candidates and pin one (status confirm when an owner step follows); skipped for a slot the owner picks",
         "decider": {
           "by": "agent",
           "agent": "<owner of slot>",
@@ -114,32 +141,6 @@
         "checks": [
           "pins.resolve"
         ]
-      },
-      {
-        "id": "owner-pick",
-        "does": "owner picks among the passing candidates in chat (Director slots and legal prose)",
-        "decider": {
-          "by": "human",
-          "who": "owner",
-          "raise": "queue.pick"
-        },
-        "cli": "clossys answer <entry> <candidate> --by owner --via chat --quote <words>",
-        "reads": [],
-        "writes": [
-          "<slot>/pin.json"
-        ],
-        "checks": [
-          "answer.quote-required"
-        ],
-        "when": {
-          "ia": [
-            "director"
-          ],
-          "slots": [
-            "writer/passages.legal-prose",
-            "writer/narratives.legal-document"
-          ]
-        }
       },
       {
         "id": "confirm",
@@ -161,7 +162,7 @@
           "ia": [
             "designer/themes",
             "designer/assets",
-            "writer/lexicon/voice"
+            "writer/lexicon/lexicon.voice"
           ]
         }
       },

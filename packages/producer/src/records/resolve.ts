@@ -4,7 +4,7 @@
  * 1. The consumer `pin.json` (or the pin map record) when present, valid, and its `sha256` matches the
  *    candidate file bytes.
  * 2. The package default `<name>-v1.<ext>` under the installed package (`src/catalog/defaults/<slot-id>/`,
- *    Producer loops under `src/loops/<slot-id>/`), basis `package-default`, shown as "sample".
+ *    Producer loops under `loops/<slot-id>/`), basis `package-default`, shown as "sample".
  * 3. Otherwise unresolved (`pins.resolve` fails).
  *
  * A pin that is present but broken (bad schema, missing candidate, digest mismatch) never resolves; resolution

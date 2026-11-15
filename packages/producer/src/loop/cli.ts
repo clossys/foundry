@@ -5,7 +5,7 @@
  *   clossys run loop.refine [--slot <ref>] [--from <entry>] [--trigger T3|T5|T6|T7]
  *   clossys run loop.release --publication <id>
  *   clossys run loop.audit
- *   clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--wrote <file>]...]
+ *   clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...]
  *   common: [--root <dir>] [--json]
  *
  * An agent step prints its packet and waits: the agent runs its skill, then the run resumes with the step's exit, the
@@ -13,18 +13,19 @@
  * A human step raises its queue entry and waits; `--resume` after `clossys answer` goes on.
  * Exit 0: the run ended done or pinned-ready, or waits. 1: it stopped on a failure. 2: it could not run.
  */
-import { resolve } from "node:path";
-import { checkRefsDangling } from "../check/refs-dangling.js";
-import { loopReachable } from "../check/loop-reachable.js";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { REFS_DANGLING, checkRefsDangling } from "../check/refs-dangling.js";
+import { LOOP_REACHABLE, loopReachable } from "../check/loop-reachable.js";
 import { TREE_CHECKS, runIaSyncCli } from "../cli/ia-sync.js";
 import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
-import { isLoopName, LOOP_NAMES, type LoopName } from "./names.js";
+import { isLoopName, LOOP_NAMES, RUN_ID, type LoopName } from "./names.js";
 import type { Finding } from "./route.js";
 import { fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
 
 export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|release|audit> [--slot <agent>/<slot-id>] [--from <entry>] [--publication <id>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
-  + "       clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--wrote <file>]...] [--root <dir>] [--json]\n"
+  + "       clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--step <id>] [--wrote <file>]...] [--root <dir>] [--json]\n"
   + "  Runs the loop version the consumer pins (else the package v1) one step at a time and writes one ledger entry per run.\n"
   + "  An agent step prints its packet and waits for --resume with its exit, files and serving model; a human step waits on its queue entry.\n"
   + "  loop.fill with no --slot fills the next slot still on a package default, in chain order, until none is left or a run waits.";
@@ -33,7 +34,7 @@ class LoopUsage extends Error {}
 
 interface LoopFlags {
   loop: LoopName; slot?: string; from?: string; publication?: string; trigger?: string; init: boolean;
-  resume: boolean; run?: string; stepExit?: Exit; model?: string; wrote: string[]; root?: string; json: boolean; help: boolean;
+  resume: boolean; run?: string; stepExit?: Exit; model?: string; step?: string; wrote: string[]; root?: string; json: boolean; help: boolean;
 }
 
 function parse(argv: readonly string[]): LoopFlags {
@@ -57,6 +58,7 @@ function parse(argv: readonly string[]): LoopFlags {
     else if (arg === "--trigger") flags.trigger = value(++index, arg);
     else if (arg === "--run") flags.run = value(++index, arg);
     else if (arg === "--model") flags.model = value(++index, arg);
+    else if (arg === "--step") flags.step = value(++index, arg);
     else if (arg === "--wrote") flags.wrote.push(value(++index, arg));
     else if (arg === "--root") flags.root = value(++index, arg);
     else if (arg === "--step-exit") {
@@ -65,11 +67,22 @@ function parse(argv: readonly string[]): LoopFlags {
       flags.stepExit = exit;
     } else throw new LoopUsage(`Unknown argument: ${arg}`);
   }
-  if (!flags.resume && (flags.run || flags.stepExit !== undefined || flags.model || flags.wrote.length)) throw new LoopUsage("--run, --step-exit, --model and --wrote go with --resume");
+  if (!flags.resume && (flags.run || flags.stepExit !== undefined || flags.model || flags.step || flags.wrote.length)) throw new LoopUsage("--run, --step-exit, --model, --step and --wrote go with --resume");
+  if ((flags.step || flags.wrote.length) && flags.stepExit === undefined) throw new LoopUsage("--step and --wrote go with --step-exit");
+  // B8: the run id names a file under .clossys/runs/loops/, and --wrote files are read under clossys/agents/.
+  if (flags.run !== undefined && !RUN_ID.test(flags.run)) throw new LoopUsage(`--run ${JSON.stringify(flags.run)} is not a run id (<yyyymmdd>T<hhmm>Z-<slug>)`);
+  for (const file of flags.wrote) {
+    if (!SAFE_WROTE.test(file) || file.split("/").some(part => part === ".." || part === ".")) throw new LoopUsage(`--wrote ${JSON.stringify(file)} is not a path inside clossys/agents/ (relative, no .. or .)`);
+  }
   if (flags.stepExit !== undefined && !flags.model) throw new LoopUsage("--step-exit records an agent step: name the model that served it with --model");
   if (flags.init && flags.loop !== "loop.fill") throw new LoopUsage("--init starts loop.fill only (flows.md F1)");
   return flags;
 }
+
+const SAFE_WROTE = /^(?:\.clossys\/)?[A-Za-z0-9_][A-Za-z0-9_.@+-]*(?:\/[A-Za-z0-9_.@+-]+)*$/;
+
+/** The checks `clossys check --strict` runs inside a loop (B7): a step check outside this list is recorded as not run. */
+export const STRICT_RAN: readonly string[] = [...Object.keys(TREE_CHECKS), LOOP_REACHABLE, REFS_DANGLING];
 
 /** Tree-wide findings for `clossys check --strict` inside a loop: the slot/2 tree checks, loop.reachable and refs.dangling. */
 export function strictFindings(root: string): Finding[] {
@@ -81,34 +94,67 @@ export function strictFindings(root: string): Finding[] {
   return findings;
 }
 
+/** Every file under `clossys/agents/` with what changes when it is written (size, mtime, inode). */
+export function agentsSnapshot(root: string): Map<string, string> {
+  const out = new Map<string, string>();
+  const base = join(root, "clossys", "agents");
+  const walk = (dir: string, rel: string): void => {
+    if (!existsSync(dir)) return;
+    for (const name of readdirSync(dir).sort()) {
+      if (name.endsWith(".tmp")) continue;
+      const path = join(dir, name);
+      const stat = statSync(path);
+      const at = rel ? `${rel}/${name}` : name;
+      if (stat.isDirectory()) walk(path, at);
+      else if (stat.isFile()) out.set(at, `${stat.size}:${stat.mtimeMs}:${stat.ino}`);
+    }
+  };
+  walk(base, "");
+  return out;
+}
+
+/** The files a verb wrote: new or changed under `clossys/agents/` between two snapshots (B4). */
+export function wroteBetween(before: ReadonlyMap<string, string>, after: ReadonlyMap<string, string>): string[] {
+  return [...after].filter(([file, mark]) => before.get(file) !== mark).map(([file]) => file).sort();
+}
+
+/** The answer `--resume --step-exit` gives: bound to the run and the step it waits on (B9). */
+export interface StepAnswer { readonly runId: string; readonly step: string; readonly exit: Exit; readonly model: string; readonly wrote: readonly string[] }
+
 /** The hooks the CLI runs with: agents wait (or take --resume's answer), code steps run their verb in-process. */
-export function cliHooks(root: string, answer?: { exit: Exit; model: string; wrote: string[] }, run: (argv: readonly string[], cwd: string) => Promise<CliResult> = defaultRun): RunHooks {
+export function cliHooks(root: string, answer?: StepAnswer, run: (argv: readonly string[], cwd: string) => Promise<CliResult> = defaultRun): RunHooks {
   let pending = answer;
   return {
-    agent(_packet: AgentPacket): AgentOutcome {
-      if (!pending) return "wait";
-      const outcome = { exit: pending.exit, model: pending.model, wrote: pending.wrote };
+    agent(packet: AgentPacket): AgentOutcome {
+      // The answer is for the step the run waited on; any other agent step waits for its own answer.
+      if (!pending || pending.runId !== packet.runId || pending.step !== packet.step) return "wait";
+      const outcome = { exit: pending.exit, model: pending.model, wrote: [...pending.wrote] };
       pending = undefined;
       return outcome;
     },
     async code(call: CodeCall): Promise<CodeOutcome> {
-      if (call.cli === "clossys ia sync") {
-        const result = await runIaSyncCli(["sync", "--root", root], root);
-        return { exit: result.exitCode, detail: result.message };
-      }
-      if (call.cli === "clossys check --strict") {
-        const findings = strictFindings(root);
-        return { exit: findings.length ? 1 : 0, findings };
-      }
-      const argv = call.argv[0] === "clossys" ? call.argv.slice(1) : call.argv;
-      try {
-        const result = await run([...argv, "--root", root], root);
-        return { exit: result.exitCode, detail: result.message };
-      } catch (error) {
-        return { exit: 2, detail: error instanceof Error ? error.message : String(error) };
-      }
+      const before = agentsSnapshot(root);
+      const outcome = await runCode(call);
+      return { ...outcome, wrote: wroteBetween(before, agentsSnapshot(root)) };
     },
   };
+  async function runCode(call: CodeCall): Promise<CodeOutcome> {
+    if (call.cli === "clossys ia sync") {
+      const result = await runIaSyncCli(["sync", "--root", root], root);
+      return { exit: result.exitCode, detail: result.message };
+    }
+    if (call.cli === "clossys check --strict") {
+      const findings = strictFindings(root);
+      return { exit: findings.length ? 1 : 0, findings, ran: STRICT_RAN };
+    }
+    const argv = call.argv[0] === "clossys" ? call.argv.slice(1) : call.argv;
+    try {
+      const result = await run([...argv, "--root", root], root);
+      return { exit: result.exitCode, detail: result.message };
+    } catch (error) {
+      return { exit: 2, detail: error instanceof Error ? error.message : String(error) };
+    }
+  }
 }
 
 async function defaultRun(argv: readonly string[], cwd: string): Promise<CliResult> {
@@ -149,7 +195,8 @@ export async function runLoopCli(argv: readonly string[], cwd: string, options: 
       }
       const state = readRunState(root, runId);
       if (flags.stepExit !== undefined && state?.waiting?.on !== "agent") return { exitCode: 2, root, message: `run: ${runId} waits on ${state?.waiting?.on === "entry" ? state.waiting.entry : "nothing"}, not an agent step; --step-exit answers an agent step` };
-      const answer = flags.stepExit !== undefined ? { exit: flags.stepExit, model: flags.model!, wrote: flags.wrote } : undefined;
+      if (flags.step !== undefined && flags.step !== state?.waiting?.step) return { exitCode: 2, root, message: `run: ${runId} waits on step ${state?.waiting?.step ?? "none"}, not ${flags.step}` };
+      const answer = flags.stepExit !== undefined && state?.waiting ? { runId, step: state.waiting.step, exit: flags.stepExit, model: flags.model!, wrote: flags.wrote } : undefined;
       const hooks = cliHooks(root, answer, options.run);
       const result = await resumeRun(root, runId, hooks, runOptions);
       results.push(result);

@@ -8,6 +8,10 @@ import { PACKAGE_LOOPS_DIR, readPackageLoop } from "../loop/files.js";
 import { LOOP_NAMES, type LoopName } from "../loop/names.js";
 import { PRODUCER_LEAVES, producerIaIssues, producerSlotPositions, readProducerIa } from "../loop/producer-ia.js";
 import { judgeLoopFile, loadLoopVersion } from "../loop/version.js";
+import { packagePlaces } from "../loop/known-slots.js";
+import { runCli } from "../cli/main.js";
+import { validateAgainst, type JsonSchema } from "../records/schema.js";
+import { recordSchema } from "../records/slot.js";
 import { LOOP_REACHABLE, loopReachableIssues, runLoopReachable } from "./loop-reachable.js";
 
 type Content = { trigger: string[]; steps: Record<string, any>[]; maxRounds: number } & Record<string, unknown>;
@@ -28,11 +32,16 @@ function consumer(): string {
   writeFileSync(join(root, "clossys", "clossys.config.ts"), "export default {};\n");
   return root;
 }
-function pin(root: string, loop: LoopName, content: unknown): void {
+/** Pins a consumer loop version; by default the owner's pick (basis picked, answers ref), the only pin a loop runs. */
+function pin(root: string, loop: LoopName, content: unknown, by: "owner" | "planner" | "agent" = "owner"): void {
   const name = `${loop.slice(5)}-v2.json`;
   const header = buildCandidateHeader({ agent: "producer", slotId: loop, name, createdBy: { actor: "planner", ref: "test" }, createdAt: "2026-11-20T07:00:00Z", source: { kind: "original", ref: [] } });
   const sha256 = writeCandidateFile(candidatePath(root, "producer", loop, name), serializeCandidate(name, header, content));
-  writePinDoc(pinPath(root, "producer", loop), buildPin({ agent: "producer", slotId: loop, record: { candidate: name, sha256, decidedBy: "planner", basis: "planner", at: "2026-11-20T07:00:00Z" }, createdBy: cliActor("clossys pin") }));
+  const id = `20261120T0700Z-${loop.replace(".", "-")}`;
+  const record = by === "owner" ? { decidedBy: `owner:queue.pick#${id}`, basis: "picked" as const }
+    : by === "agent" ? { decidedBy: "agent:producer", basis: "agent" as const } : { decidedBy: "planner", basis: "planner" as const };
+  const refs = by === "owner" ? [{ to: "producer/queue.pick" as never, record: id, rel: "answers" as const }] : [];
+  writePinDoc(pinPath(root, "producer", loop), buildPin({ agent: "producer", slotId: loop, record: { candidate: name, sha256, at: "2026-11-20T07:00:00Z", ...record }, refs, createdBy: cliActor("clossys pin") }));
 }
 
 describe(LOOP_REACHABLE, () => {
@@ -127,5 +136,80 @@ describe("Producer IA tree (producer.md 1)", () => {
     expect(producerIaIssues(layers)).toEqual(["producer IA loops: loop.refine is not placed", "producer IA loops: loop.ship is not a loops slot"]);
     layers[1].nodes[0].children[0].leaves.push("loop.fill");
     expect(producerIaIssues(layers)).toEqual(["producer IA: loop.fill is placed twice"]);
+  });
+});
+
+describe("review rulings (foundry-build-0013 fix r1)", () => {
+  const issues = (loop: LoopName, change: (content: Content) => void): string[] => { const content = packaged(loop); change(content); return loopReachableIssues(loop, content); };
+
+  it("B2: kills a when that names no known slot or IA path", () => {
+    expect(issues("loop.fill", c => { step(c, "confirm").when = { ia: ["writer/lexicon/voice"] }; })).toContain("loop.fill: step confirm can never run: its when names ia writer/lexicon/voice, which no known slot matches");
+    expect(issues("loop.fill", c => { step(c, "owner-pick").when = { slots: ["writer/passages.legal"] }; })).toContain("loop.fill: step owner-pick can never run: its when names slots writer/passages.legal, which no known slot matches");
+    // The package positions as ia sync writes them reach: the shipped when values all match a real slot.
+    expect(issues("loop.fill", () => {})).toEqual([]);
+  });
+
+  it("B2: kills a fill that pins before it creates candidates", () => {
+    expect(issues("loop.fill", c => { const at = c.steps.findIndex(s => s.id === "pick"); const [pick] = c.steps.splice(at, 1); c.steps.splice(1, 0, pick!); }))
+      .toContain("loop.fill: no create-candidates step for every slot runs before the first pinning step (pick)");
+    expect(issues("loop.fill", c => { step(c, "create").when = { ia: ["designer"] }; })).toContain("loop.fill: no create-candidates step for every slot runs before the first pinning step (owner-pick)");
+  });
+
+  it("B1/B2: the owner's pick comes before the agent pick and checks pins.resolve", () => {
+    expect(issues("loop.fill", c => { const at = c.steps.findIndex(s => s.id === "owner-pick"); const [owner] = c.steps.splice(at, 1); c.steps.splice(c.steps.findIndex(s => s.id === "pick") + 1, 0, owner!); }))
+      .toContain("loop.fill: step pick pins before the owner's pick (owner-pick); the owner picks those slots directly");
+    expect(issues("loop.refine", c => { step(c, "owner-pick").checks = ["answer.quote-required"]; }))
+      .toContain("loop.refine: the exit can be reached without pins.resolve for the slots owner-pick picks: the owner's pick step must check it");
+  });
+
+  it("B2: kills a release whose gates, compile or build run after the sign-off, or whose ready-pin an agent decides", () => {
+    const move = (id: string) => (c: Content) => { const at = c.steps.findIndex(s => s.id === id); const [moved] = c.steps.splice(at, 1); c.steps.splice(c.steps.findIndex(s => s.id === "signoff") + 1, 0, moved!); };
+    expect(issues("loop.release", move("gates")).join("\n")).toMatch(/loop\.release: gates \(.*\) does not run for every publication before the owner's sign-off/);
+    expect(issues("loop.release", move("compile")).join("\n")).toMatch(/loop\.release: compile \(.*\) does not run for every publication before the owner's sign-off/);
+    expect(issues("loop.release", move("build")).join("\n")).toMatch(/loop\.release: build \(.*\) does not run for every publication before the owner's sign-off/);
+    expect(issues("loop.release", c => { step(c, "gates").when = { ia: ["designer"] }; }).join("\n")).toMatch(/loop\.release: gates \(.*\) does not run for every publication/);
+    expect(issues("loop.release", c => { step(c, "pin").decider = { by: "agent", agent: "publisher", verb: "pick", tier: "mid", skill: "x" }; }))
+      .toContain("loop.release: the ready-pin (pin) is decided by agent; code writes it from the owner's sign-off");
+  });
+
+  it("B2: only the owner's pin runs a consumer loop version", () => {
+    for (const by of ["planner", "agent"] as const) {
+      const root = consumer();
+      pin(root, "loop.fill", packaged("loop.fill"), by);
+      const load = loadLoopVersion(root, "loop.fill");
+      expect(load.ok, by).toBe(false);
+      expect(!load.ok && load.reason, by).toMatch(/only the owner pins a loop version/);
+    }
+    const owned = consumer();
+    pin(owned, "loop.fill", packaged("loop.fill"));
+    const load = loadLoopVersion(owned, "loop.fill");
+    expect(load.ok && load.loaded.source).toBe("pin");
+  });
+
+  it("B2: clossys check reports loop.reachable and fails on it", async () => {
+    const root = consumer();
+    const clean = await runCli(["check", "--root", root]);
+    expect(clean.message).toContain("loop.reachable: pass");
+    pin(root, "loop.fill", packaged("loop.fill"), "planner");
+    const failed = await runCli(["check", "--root", root]);
+    expect(failed.exitCode).toBeGreaterThanOrEqual(1);
+    expect(failed.message).toMatch(/loop\.reachable: fail \(1\)\n  producer\/loop\.fill: loop\.fill: the consumer pin is decided by planner/);
+    expect((failed as { checks?: Record<string, unknown> }).checks).toHaveProperty("loop.reachable");
+  });
+
+  it("B12: every package slot position, Director l2 ids with dots included, is a valid slot/2 ia", () => {
+    const slotIa = (recordSchema("slot.json") as { properties: { ia: JsonSchema } }).properties.ia;
+    const viewIa = (recordSchema("slot-view.json") as { properties: { slot: { properties: { ia: JsonSchema } } } }).properties.slot.properties.ia;
+    const places = packagePlaces();
+    const market = places.find(place => place.agent === "director" && place.slotId === "context.market.size");
+    expect(market?.ia).toEqual({ l0: "strategy", l1: "context", l2: "context.market" });
+    expect(places.filter(place => place.ia.l2.includes(".")).length).toBeGreaterThan(0);
+    for (const place of places) {
+      const ia = { ...place.ia, order: 0 };
+      expect(validateAgainst(slotIa, ia), `${place.agent}/${place.slotId}`).toEqual([]);
+      expect(validateAgainst(viewIa, { l0: ia.l0, l1: ia.l1, l2: ia.l2 }), `${place.agent}/${place.slotId} view`).toEqual([]);
+    }
+    expect(validateAgainst(slotIa, { l0: "strategy", l1: "context", l2: "context..market", order: 0 })).not.toEqual([]);
+    expect(validateAgainst(slotIa, { l0: "strategy", l1: "context", l2: ".market", order: 0 })).not.toEqual([]);
   });
 });

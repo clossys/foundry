@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { readCandidateFile } from "../records/candidate.js";
 import { PRODUCER_ROOT } from "../package-path.js";
 import { resolveSlot } from "../records/resolve.js";
-import { pinPath } from "../records/pin.js";
+import { OWNER_BASES, pinPath } from "../records/pin.js";
 import type { CandidateName, Sha256 } from "../records/types.js";
 import { loopStem, type LoopName } from "./names.js";
 
@@ -48,13 +48,20 @@ export function readPackageLoop(loop: LoopName): LoopFileRead {
   return readVersionFile(packageLoopFile(loop), loop, "package");
 }
 
-/** The consumer's pinned version; undefined when the consumer pins none (package v1 runs). A broken pin is an error, never a silent fallback. */
+/**
+ * The consumer's pinned version; undefined when the consumer pins none (package v1 runs). A broken pin is an error,
+ * never a silent fallback, and so is a pin that is not the owner's: which loop version runs is the owner's decision
+ * (basis picked or bulk, decidedBy owner, with the answers ref pin.ts requires), never an agent's or the planner's.
+ */
 export function readConsumerLoop(root: string, loop: LoopName): LoopFileRead | undefined {
   if (!existsSync(pinPath(root, "producer", loop))) return undefined;
   const resolved = resolveSlot(root, "producer", loop);
   if (resolved.state !== "pinned") {
     const reason = resolved.pinIssue ?? (resolved.state === "unresolved" ? resolved.reason : "the pin does not resolve");
     return { ok: false, reason: `${loop}: the consumer pin does not resolve: ${reason}` };
+  }
+  if (!OWNER_BASES.includes(resolved.pin.basis) || !/^owner(:|$)/.test(resolved.pin.decidedBy)) {
+    return { ok: false, reason: `${loop}: the consumer pin is decided by ${resolved.pin.decidedBy} (basis ${resolved.pin.basis}); only the owner pins a loop version` };
   }
   return readVersionFile(resolved.file, loop, "pin");
 }

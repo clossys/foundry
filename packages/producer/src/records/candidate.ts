@@ -61,10 +61,10 @@ export function candidatePath(root: string, agent: AgentId, slotId: SlotId, name
 
 /**
  * The installed package folder that holds the package default candidates of one slot: Producer loop
- * versions under `src/loops/<slot-id>/` (system.md 2.1), every other agent under `src/catalog/defaults/<slot-id>/`.
+ * versions under `loops/<slot-id>/` (where the package ships them), every other agent under `src/catalog/defaults/<slot-id>/`.
  */
 export function packageDefaultDir(root: string, agent: AgentId, slotId: SlotId): string {
-  const rel = agent === "producer" ? `packages/producer/src/loops/${slotId}` : `packages/${agent}/src/catalog/defaults/${slotId}`;
+  const rel = agent === "producer" ? `packages/producer/loops/${slotId}` : `packages/${agent}/src/catalog/defaults/${slotId}`;
   return packagePath(root, rel);
 }
 

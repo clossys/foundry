@@ -83,15 +83,15 @@
       "properties": {
         "l0": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*$"
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*(/[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*)*$"
         },
         "l1": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*$"
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*(/[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*)*$"
         },
         "l2": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*$"
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*(/[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)*)*$"
         },
         "order": {
           "type": "integer",

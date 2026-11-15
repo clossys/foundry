@@ -62,3 +62,33 @@ export const OWNER_OF_SLOT = "<owner of slot>";
 
 /** flows.md N3: chain order. Director first, then Designer and Writer, then Publisher (Producer last). */
 export const CHAIN_ORDER: Readonly<Record<AgentId, number>> = { director: 0, designer: 1, writer: 1, publisher: 2, producer: 3 };
+
+/**
+ * The owner picks some slots directly (flows.md F2: Director slots and legal prose). A human `queue.pick` step is the
+ * pinning step for every slot its `when` matches: it comes before the agent `pick` step, checks `pins.resolve`
+ * itself, and the agent `pick` step does not run for those slots, so no agent pin is written before the owner's pick.
+ */
+export const OWNER_PICK_RAISE = "queue.pick";
+export const AGENT_PICK_VERB = "pick";
+
+/**
+ * Checks `clossys run` computes itself instead of taking a step's exit for them: `pins.resolve` (the slot's pin, or
+ * every consumer pin for a run with no slot, resolves to its candidate bytes) and `release.ready` (the publication's
+ * pin is the owner's and names the manifest this run wrote). An agent's `--step-exit 0` never passes them.
+ */
+export const VERIFIED_CHECKS: readonly string[] = ["pins.resolve", RELEASE_READY];
+
+/** The release steps that must run, for every publication, before the owner's sign-off (cli prefix match). */
+export const RELEASE_BEFORE_SIGNOFF: readonly { readonly id: string; readonly cli: RegExp }[] = [
+  { id: "compile", cli: /^clossys compile(\s|$)/ },
+  { id: "build", cli: /^clossys release <pub> --build(\s|$)/ },
+  { id: "gates", cli: /^clossys release <pub> --gates(\s|$)/ },
+];
+
+/** Ids a run takes from its caller, checked before any is used in a path or an argv (B8). */
+export const RUN_ID = /^[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$/;
+export const PUBLICATION_ID = /^[a-z][a-z0-9-]*$/;
+export const SLOT_REF = /^(director|designer|writer|publisher|producer)\/[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/;
+export const ENTRY_NAME = /^queue\.(pick|approve|clarify|fix)#[0-9]{8}T[0-9]{4}Z-[a-z0-9][a-z0-9-]*$/;
+export const CANDIDATE_NAME = /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.(md|json|svg)$/;
+export const TRIGGER_CODE = /^T[1-8]$/;
