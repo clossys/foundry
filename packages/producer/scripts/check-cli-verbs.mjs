@@ -33,6 +33,8 @@ export const VERBS = [
   [['status'], [0]],
   [['slot', 'designer/components.button'], [0]],
 ];
+// `clossys feedback` and `clossys answer` write a queue entry, so they are not run here; src/queue/queue.test.ts
+// and the answer.* and ledger.append-only checks cover them.
 
 /** The findings of one verb from its two runs (`{ status, stdout, stderr }` each). */
 export function verbFindings(argv, allowed, first, second) {
