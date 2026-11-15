@@ -3,10 +3,10 @@
   "id": "capability.sourcing.partner",
   "agent": "director",
   "ia": {
-    "l0": "plan",
-    "l1": "capability",
-    "l2": "capability.sourcing",
-    "order": 41
+    "l0": "execution",
+    "l1": "task-force",
+    "l2": "task-force.sourcing",
+    "order": 48
   },
   "kind": "brief",
   "contract": {

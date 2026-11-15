@@ -1,7 +1,9 @@
 /**
  * Strategy v1 catalog: loadCatalog reads the six shipped JSON files and returns
  * fresh mutable data. validateCatalog accepts unknown data and reports CAT1–CAT7
- * findings with paths. The raw JSON lives under src/catalog in the npm package;
+ * findings with paths. Leaf ids are permanent, so a leaf's id prefix need not match the
+ * L1/L2 group it sits in (the 3 L0 recut moved goal, measure, priority and capability
+ * leaves); a group id must still sit under its L1. The raw JSON lives under src/catalog in the npm package;
  * this location works from both source and the compiled dist/catalog.js entry.
  */
 import { readFileSync } from "node:fs";
@@ -76,7 +78,7 @@ export function validateCatalog(value: unknown): CatalogValidationResult {
     seenCells.add(cell.id);
     for (const [key, text] of Object.entries(cell.names)) name(text, `${path}.names.${key}`);
     const keys = cell.mustContain.map(item => item.key);
-    if (keys.length < 2 || keys.length > 4 || new Set(keys).size !== keys.length || keys.some(key => key.trim() === "")) add("CAT4", `${path}.mustContain`, "Expected 2–4 unique nonempty keys");
+    if (keys.length < 2 || keys.length > 6 || new Set(keys).size !== keys.length || keys.some(key => key.trim() === "")) add("CAT4", `${path}.mustContain`, "Expected 2–6 unique nonempty keys");
     cell.links.forEach((link, j) => resolves(link.cites, `${path}.links[${j}].cites`));
   }
   const nodeIds = new Set<string>();
@@ -93,7 +95,7 @@ export function validateCatalog(value: unknown): CatalogValidationResult {
       for (const [k, id] of child.leaves.entries()) {
         const leafPath = `${childPath}.leaves[${k}]`;
         placements.set(id, (placements.get(id) ?? 0) + 1);
-        if (!ids.has(id) || id.split(".").slice(0, 2).join(".") !== child.id || child.id.split(".")[0] !== node.id) add("CAT2", leafPath, "Leaf must resolve and match its parent prefixes");
+        if (!ids.has(id) || !child.id.startsWith(`${node.id}.`)) add("CAT2", leafPath, "Leaf must resolve and its group must sit under its L1");
       }
     }
   }

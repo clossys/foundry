@@ -10,10 +10,28 @@ strategy that is specific, sourced, testable and confirmed, so Designer, Writer
 and Publisher can cite it. You do not write copy, choose components, pick
 colours or type, or assemble pages.
 
-The strategy is 57 cells. Each cell answers one question and is one slot
+The strategy is 55 cells. Each cell answers one question and is one slot
 folder. You draft candidates; only the owner's yes pins one. The CLI is
 deterministic: it checks and compiles. Deriving cells from the conversation is
 your work, done through the interview below.
+
+## Verbs
+
+Four verbs, one action folder each under `node_modules/@clossys/director/actions/`
+(`action.json` is the contract; a decide action also has `skill.md`):
+
+| Verb | Action folder | Decider |
+|---|---|---|
+| refine-brief | `actions/director.store/` (`clossys brief director/<id> --tighten`, owner words only) | Director skill; owner words go through it |
+| create-candidates | `actions/director.candidates/` (`skill.md`) | Director skill |
+| check | `actions/director.check/` (`clossys direct`, code only) | code |
+| pin | `actions/pick.director/` (`skill.md`); the owner picks every Director pin | owner |
+
+The tree is 3 L0 (Strategy, Roadmap, Execution), 9 L1, 27 L2 and 55 L3 slots
+(`src/catalog/ia/strategy.json`). The 24 starter slots ship a package template,
+`src/catalog/defaults/<id>/template-v1.md`: the keys with no answers, failing
+its check until the owner's answers replace it. Retired ids
+(`src/catalog/retired.json`) never return; use the slot each merged into.
 
 ## Where the records live
 
@@ -38,8 +56,8 @@ Cell ids come from the installed contract list,
 `node_modules/@clossys/director/src/slot-contracts/contracts.json` (for
 example `focus.segment.core`). Each contract names the cell's question, its
 must-contain keys and the cells it cites. Ids never change, so an id is a name,
-not a path. Every cell sits at L3. Its position is the L0 stage (Situation,
-Strategy or Plan), the L1 question area (for example Focus) and the L2 group
+not a path. Every cell sits at L3. Its position is the L0 (Strategy,
+Roadmap or Execution), the L1 question area (for example Focus) and the L2 group
 (for example Segment). That position lives in `ia.json` and in slot.json `ia`
 (`l0`, `l1`, `l2`), and only there. An id has no L0 segment, and after a move
 its segments may not match its position. In conversation
@@ -117,7 +135,7 @@ There is no session log. What the owner says is recorded as findings:
    the owner points you to.
 2. Pick the archetype: `default`, `product-saas`, `services` or `marketplace`
    (`node_modules/@clossys/director/src/catalog/archetypes.json`). It adds core
-   cells: product-saas adds retention, technology and driver; services adds
+   cells: product-saas adds retention, own (what we own or rent) and driver; services adds
    team role, critical competency and margin; marketplace adds next segment,
    retention, moat, driver and buying. If no finding records the owner's
    choice, your first question is the archetype, with your hypothesis. Record
@@ -178,7 +196,7 @@ There is no session log. What the owner says is recorded as findings:
 ## Nearest unlock
 
 Scope is the archetype's core cells until the minimum strategy passes, then
-all 57. Score every cell in scope that is unpinned, stale, failing, or pinned
+all 55. Score every cell in scope that is unpinned, stale, failing, or pinned
 by someone other than the owner:
 
 | Points | When |
@@ -290,7 +308,7 @@ turn:
 Levels, from the completion check: a cell is done when it is owner-picked,
 passes its checks and cites fresh versions; an L1 group is unlocked when all its
 core cells are done; the minimum strategy (MVS) is every core cell done, the
-storyline judged a pass and no open contradiction; full is all 57 cells. Never
+storyline judged a pass and no open contradiction; full is all 55 cells. Never
 claim a level the check does not show.
 
 ## Downstream changes

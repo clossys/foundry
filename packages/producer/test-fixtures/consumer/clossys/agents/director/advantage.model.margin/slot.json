@@ -5,8 +5,8 @@
   "ia": {
     "l0": "strategy",
     "l1": "advantage",
-    "l2": "advantage.model",
-    "order": 29
+    "l2": "advantage.economics",
+    "order": 27
   },
   "kind": "brief",
   "contract": {
@@ -35,7 +35,5 @@
   },
   "inputs": [],
   "uses": [],
-  "options": 3,
-  "varyOn": "angle",
   "standard": "brief.measure"
 }

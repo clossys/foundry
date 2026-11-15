@@ -3,10 +3,10 @@
   "id": "execution.risk.mitigation",
   "agent": "director",
   "ia": {
-    "l0": "plan",
-    "l1": "execution",
-    "l2": "execution.risk",
-    "order": 56
+    "l0": "execution",
+    "l1": "plan",
+    "l2": "plan.risk",
+    "order": 54
   },
   "kind": "brief",
   "contract": {
