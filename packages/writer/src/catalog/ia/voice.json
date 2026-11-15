@@ -1,0 +1,311 @@
+{
+  "schema": "clossys.writer-ia/1",
+  "group": "voice",
+  "label": "Voice",
+  "nodes": [
+    {
+      "id": "voice/tone",
+      "label": "Tone",
+      "children": [
+        {
+          "id": "voice/tone/attitude",
+          "label": "Attitude",
+          "leaves": [
+            "lexicon.formality",
+            "lexicon.warmth",
+            "lexicon.energy"
+          ]
+        },
+        {
+          "id": "voice/tone/address",
+          "label": "Address",
+          "leaves": [
+            "lexicon.person",
+            "lexicon.mood"
+          ]
+        },
+        {
+          "id": "voice/tone/rhythm",
+          "label": "Rhythm",
+          "leaves": [
+            "lexicon.sentence-length",
+            "lexicon.reading-level"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "voice/wording",
+      "label": "Wording",
+      "children": [
+        {
+          "id": "voice/wording/mechanics",
+          "label": "Mechanics",
+          "leaves": [
+            "lexicon.capitalization",
+            "lexicon.punctuation"
+          ]
+        },
+        {
+          "id": "voice/wording/terms",
+          "label": "Terms",
+          "leaves": [
+            "lexicon.preferred-terms",
+            "lexicon.avoid-terms",
+            "lexicon.avoid-patterns"
+          ]
+        }
+      ]
+    }
+  ],
+  "slots": [
+    {
+      "id": "lexicon.formality",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Sound"
+        },
+        {
+          "to": "director/identity.brand.personality",
+          "key": "Traits"
+        },
+        {
+          "to": "director/focus.reach.geography",
+          "key": "Language"
+        }
+      ],
+      "contract": {
+        "shape": "voice.formality",
+        "value": "register enum per locale + address form",
+        "check": "address deterministic; register owner rubric",
+        "defaults": "defaults/lexicon.formality/"
+      }
+    },
+    {
+      "id": "lexicon.warmth",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Sound"
+        },
+        {
+          "to": "director/identity.brand.personality",
+          "key": "Traits"
+        }
+      ],
+      "contract": {
+        "shape": "voice.warmth",
+        "value": "1-5 anchored scale",
+        "check": "owner rubric",
+        "defaults": "defaults/lexicon.warmth/"
+      }
+    },
+    {
+      "id": "lexicon.energy",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Sound"
+        },
+        {
+          "to": "director/identity.brand.personality",
+          "key": "Traits"
+        }
+      ],
+      "contract": {
+        "shape": "voice.energy",
+        "value": "1-5 scale + max ! per 1k words",
+        "check": "proxy deterministic",
+        "defaults": "defaults/lexicon.energy/"
+      }
+    },
+    {
+      "id": "lexicon.person",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Do"
+        }
+      ],
+      "contract": {
+        "shape": "voice.person",
+        "value": "we-you, you-only or third",
+        "check": "pronoun scan",
+        "defaults": "defaults/lexicon.person/"
+      }
+    },
+    {
+      "id": "lexicon.mood",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Do"
+        }
+      ],
+      "contract": {
+        "shape": "voice.mood",
+        "value": "per field role: imperative, declarative or question",
+        "check": "deterministic",
+        "defaults": "defaults/lexicon.mood/"
+      }
+    },
+    {
+      "id": "lexicon.sentence-length",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Do"
+        },
+        {
+          "to": "director/focus.reach.geography",
+          "key": "Language"
+        }
+      ],
+      "contract": {
+        "shape": "voice.sentence-length",
+        "value": "max and mean words per sentence, per locale and role",
+        "check": "deterministic",
+        "defaults": "defaults/lexicon.sentence-length/"
+      }
+    },
+    {
+      "id": "lexicon.reading-level",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Do"
+        },
+        {
+          "to": "director/focus.reach.geography",
+          "key": "Language"
+        }
+      ],
+      "contract": {
+        "shape": "voice.reading-level",
+        "value": "max grade per locale",
+        "check": "deterministic where a formula exists",
+        "defaults": "defaults/lexicon.reading-level/"
+      }
+    },
+    {
+      "id": "lexicon.capitalization",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Do"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Casing"
+        }
+      ],
+      "contract": {
+        "shape": "voice.capitalization",
+        "value": "case per role; exceptions from Director naming.name:Casing",
+        "check": "deterministic",
+        "defaults": "defaults/lexicon.capitalization/"
+      }
+    },
+    {
+      "id": "lexicon.punctuation",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Do"
+        },
+        {
+          "to": "director/focus.reach.geography",
+          "key": "Language"
+        }
+      ],
+      "contract": {
+        "shape": "voice.punctuation",
+        "value": "rule set per locale",
+        "check": "deterministic",
+        "defaults": "defaults/lexicon.punctuation/"
+      }
+    },
+    {
+      "id": "lexicon.preferred-terms",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Do"
+        },
+        {
+          "to": "director/identity.naming.name",
+          "key": "Name"
+        },
+        {
+          "to": "director/identity.naming.architecture",
+          "key": "Rule"
+        }
+      ],
+      "contract": {
+        "shape": "voice.preferred-terms",
+        "value": "map avoid to use",
+        "check": "deterministic",
+        "defaults": "defaults/lexicon.preferred-terms/"
+      }
+    },
+    {
+      "id": "lexicon.avoid-terms",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Never"
+        },
+        {
+          "to": "director/identity.brand.personality",
+          "key": "Not"
+        }
+      ],
+      "contract": {
+        "shape": "voice.avoid-terms",
+        "value": "term list (absorbs the quoted words from Director voice Never)",
+        "check": "deterministic",
+        "defaults": "defaults/lexicon.avoid-terms/"
+      }
+    },
+    {
+      "id": "lexicon.avoid-patterns",
+      "kind": "voice",
+      "mark": "starter",
+      "inputs": [
+        {
+          "to": "director/identity.verbal.voice",
+          "key": "Never"
+        }
+      ],
+      "contract": {
+        "shape": "voice.avoid-patterns",
+        "value": "regex list",
+        "check": "deterministic",
+        "defaults": "defaults/lexicon.avoid-patterns/"
+      }
+    }
+  ]
+}

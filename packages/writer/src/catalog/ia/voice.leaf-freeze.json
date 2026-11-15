@@ -1,0 +1,21 @@
+{
+  "schema": "clossys.leaf-freeze/2",
+  "group": "voice",
+  "basis": "ia-target writer.md 8 Q6 default (foundry-build-0019); owner signature pending",
+  "signed": null,
+  "leafIds": [
+    "lexicon.formality",
+    "lexicon.warmth",
+    "lexicon.energy",
+    "lexicon.person",
+    "lexicon.mood",
+    "lexicon.sentence-length",
+    "lexicon.reading-level",
+    "lexicon.capitalization",
+    "lexicon.punctuation",
+    "lexicon.preferred-terms",
+    "lexicon.avoid-terms",
+    "lexicon.avoid-patterns"
+  ],
+  "amendments": []
+}

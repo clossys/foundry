@@ -1,0 +1,88 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "writer/lexicon.sentence-length/package:sentence-length-v2.json",
+    "agent": "writer",
+    "kind": "candidate",
+    "status": "submitted",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/writer",
+      "version": "0.6.0"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [
+      {
+        "to": "director/identity.verbal.voice",
+        "rel": "input",
+        "key": "Do"
+      },
+      {
+        "to": "director/focus.reach.geography",
+        "rel": "input",
+        "key": "Language"
+      }
+    ],
+    "slot": "writer/lexicon.sentence-length",
+    "source": {
+      "kind": "package-default",
+      "ref": [
+        "ia-target/writer.md#2-voice"
+      ]
+    },
+    "rationale": [
+      {
+        "purpose": "package default",
+        "why": "Re-certified as a measurable shape: neutral package starting values a consumer's Writer run replaces.",
+        "sources": [
+          {
+            "to": "director/identity.verbal.voice",
+            "rel": "input",
+            "key": "Do"
+          },
+          {
+            "to": "director/focus.reach.geography",
+            "rel": "input",
+            "key": "Language"
+          }
+        ]
+      }
+    ]
+  },
+  "content": {
+    "byLocale": {
+      "en": {
+        "byRole": {
+          "eyebrow": {
+            "max": 9,
+            "mean": 5
+          },
+          "heading": {
+            "max": 12,
+            "mean": 8
+          },
+          "lead": {
+            "max": 25,
+            "mean": 16
+          },
+          "body": {
+            "max": 25,
+            "mean": 15
+          },
+          "action": {
+            "max": 4,
+            "mean": 2
+          },
+          "label": {
+            "max": 14,
+            "mean": 6
+          },
+          "alt": {
+            "max": 25,
+            "mean": 14
+          }
+        }
+      }
+    }
+  }
+}
