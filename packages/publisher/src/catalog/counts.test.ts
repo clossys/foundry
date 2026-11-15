@@ -2,6 +2,8 @@
  * Publisher slot tree recut (foundry-build-0020): three L0s, Composition, Directory and Release, with three starter
  * publications (site, docs, app). Target counts from ia-target/publisher.md section 2: 6 / 5 L1, 11 / 3 L2, 43 / 3 L3
  * (live / parked); every live L3 is a starter leaf with a package default, except releases (their manifest is computed).
+ * foundry-build-0027 unparks Slides: Directory Decks and Release Slides go live, with layout.deck, page.deck and
+ * release.slides and a fourth starter, slides: 8 / 3 L1, 14 / 3 L2, 46 / 3 L3.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -20,27 +22,28 @@ const unit = (ref: string) => ref.replace(/^designer\//, "");
 describe("Publisher tree counts (publisher.md section 2)", () => {
   const counts = countTree();
 
-  it("has 3 L0 and 6/5 L1, 11/3 L2, 43/3 L3 (live / parked)", () => {
+  it("has 3 L0 and 8/3 L1, 14/3 L2, 46/3 L3 (live / parked): Slides adds 2 L1, 3 L2 and 3 L3", () => {
     expect(counts.l0).toBe(3);
-    expect(counts.total).toEqual({ l1: { live: 6, parked: 5 }, l2: { live: 11, parked: 3 }, l3: { live: 43, parked: 3 } });
+    expect(counts.total).toEqual({ l1: { live: 8, parked: 3 }, l2: { live: 14, parked: 3 }, l3: { live: 46, parked: 3 } });
   });
 
   it("counts per L0 in owner order: Composition, Directory, Release", () => {
     expect(PUBLISHER_TREES.map(t => t.l0)).toEqual(["composition", "directory", "release"]);
     expect(counts.byL0).toEqual({
-      composition: { l1: { live: 2, parked: 0 }, l2: { live: 5, parked: 1 }, l3: { live: 20, parked: 1 } },
-      directory: { l1: { live: 3, parked: 2 }, l2: { live: 3, parked: 1 }, l3: { live: 20, parked: 1 } },
-      release: { l1: { live: 1, parked: 3 }, l2: { live: 3, parked: 1 }, l3: { live: 3, parked: 1 } },
+      composition: { l1: { live: 2, parked: 0 }, l2: { live: 6, parked: 1 }, l3: { live: 21, parked: 1 } },
+      directory: { l1: { live: 4, parked: 1 }, l2: { live: 4, parked: 1 }, l3: { live: 21, parked: 1 } },
+      release: { l1: { live: 2, parked: 2 }, l2: { live: 4, parked: 1 }, l3: { live: 4, parked: 1 } },
     });
   });
 
-  it("has 15 layouts plus 5 chrome, 20 pages and 3 releases live", () => {
+  it("has 16 layouts plus 5 chrome, 21 pages and 4 releases live", () => {
     const live = starterLeaves();
-    expect(live).toHaveLength(43);
-    expect(live.filter(id => id.startsWith("layout.")).length).toBe(15);
+    expect(live).toHaveLength(46);
+    expect(live.filter(id => id.startsWith("layout.")).length).toBe(16);
     expect(live.filter(id => id.startsWith("chrome.")).length).toBe(5);
-    expect(live.filter(id => id.startsWith("page.")).length).toBe(20);
-    expect(live.filter(id => id.startsWith("release.")).length).toBe(3);
+    expect(live.filter(id => id.startsWith("page.")).length).toBe(21);
+    expect(live.filter(id => id.startsWith("release.")).length).toBe(4);
+    for (const id of ["layout.deck", "page.deck", "release.slides"]) expect(live, id).toContain(id);
   });
 
   it("parks the one-pager across all three L0s", () => {
@@ -126,8 +129,8 @@ describe("starters resolve against the live Designer catalog", () => {
   });
 
   it("mutation: a layout on a frame Designer does not have fails", () => {
-    const layout = { ...(slotContract("layout.about") as LayoutSlot), frame: "designer/frames.deck" };
-    expect(checkLayoutUnits("layout.about", layout, designer)).toEqual(["layout.about: frame designer/frames.deck is not in the Designer catalog"]);
+    const layout = { ...(slotContract("layout.about") as LayoutSlot), frame: "designer/frames.poster" };
+    expect(checkLayoutUnits("layout.about", layout, designer)).toEqual(["layout.about: frame designer/frames.poster is not in the Designer catalog"]);
   });
 });
 
@@ -159,7 +162,7 @@ describe("starter publications and package defaults", () => {
     const slotsWithDefault = new Set([...defaults.keys()].map(key => key.slice(0, key.indexOf("/"))));
     const missing = starterLeaves().filter(id => !id.startsWith("release.") && !slotsWithDefault.has(id));
     expect(missing).toEqual([]);
-    expect(defaults.size).toBe(40);
+    expect(defaults.size).toBe(42);
     for (const [key, file] of defaults) {
       expect(file.clossys.source.kind, key).toBe("package-default");
       expect(file.clossys.id, key).toBe(`publisher/${key.slice(0, key.indexOf("/"))}/package:${key.slice(key.indexOf("/") + 1)}`);

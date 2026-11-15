@@ -66,8 +66,16 @@
     {
       "id": "directory/decks",
       "label": "Decks",
-      "parked": true,
-      "children": []
+      "children": [
+        {
+          "id": "directory/decks/slides",
+          "label": "slides",
+          "publication": "slides",
+          "leaves": [
+            "page.deck"
+          ]
+        }
+      ]
     },
     {
       "id": "directory/documents",
@@ -328,6 +336,19 @@
       "records": {
         "pattern": "app-not-found.<role>",
         "meta": "writer/page.app-not-found.meta#app-not-found.meta"
+      }
+    },
+    "page.deck": {
+      "kind": "page",
+      "publication": "slides",
+      "path": "/slides/<deck>/<n>",
+      "collection": "deck",
+      "layouts": [
+        "publisher/layout.deck"
+      ],
+      "records": {
+        "pattern": "deck.<role>",
+        "meta": "writer/page.deck.meta#deck.meta"
       }
     },
     "page.company-one-pager": {

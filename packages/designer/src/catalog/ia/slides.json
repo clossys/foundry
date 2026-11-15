@@ -1,0 +1,114 @@
+{
+  "schema": "clossys.designer-ia-extension/1",
+  "id": "slides",
+  "owns": "The Slides medium (foundry-build-0027): one deck frame and six slide sections. Each slide section is one construct in two media, a 16:9 slide and a web section, picked by the `medium` axis. Additive to the five layer files: tree.ts merges each family under its L1. Engine slot registration (src/catalog/slots) follows in a later unit.",
+  "families": [
+    {
+      "layer": "frames",
+      "l1": "frames",
+      "node": { "id": "frames-deck", "label": "Deck", "leaves": ["frames.deck"] },
+      "starter": ["frames.deck"]
+    },
+    {
+      "layer": "sections",
+      "l1": "sections",
+      "node": {
+        "id": "sections-slides",
+        "label": "Slides",
+        "leaves": [
+          "sections.slide-title",
+          "sections.slide-agenda",
+          "sections.slide-statement",
+          "sections.slide-two-column",
+          "sections.slide-quote",
+          "sections.slide-closing"
+        ]
+      },
+      "starter": [
+        "sections.slide-title",
+        "sections.slide-agenda",
+        "sections.slide-statement",
+        "sections.slide-two-column",
+        "sections.slide-quote",
+        "sections.slide-closing"
+      ]
+    }
+  ],
+  "slots": {
+    "frames.deck": {
+      "kind": "frame",
+      "root": "main",
+      "canvas": { "aspect": "16:9", "width": 1920, "height": 1080 },
+      "chrome": [],
+      "slots": [{ "id": "slide", "accepts": "sections.slide-*", "required": true, "max": 1 }],
+      "variants": { "aspect": ["16:9"] },
+      "surface": "deck"
+    },
+    "sections.slide-title": {
+      "kind": "section",
+      "root": "section",
+      "media": ["slide", "web"],
+      "variants": { "medium": ["web", "slide"] },
+      "copy": { "fields": [
+        { "key": "heading", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 60 } },
+        { "key": "subheading", "kind": "plain", "role": "subheading", "required": false, "maxLength": { "en": 120 } },
+        { "key": "eyebrow", "kind": "plain", "role": "eyebrow", "required": false, "maxLength": { "en": 40 } }
+      ] }
+    },
+    "sections.slide-agenda": {
+      "kind": "section",
+      "root": "section",
+      "media": ["slide", "web"],
+      "variants": { "medium": ["web", "slide"] },
+      "copy": { "fields": [
+        { "key": "heading", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 60 } },
+        { "key": "items", "kind": "list", "role": "item", "required": true, "max": 6, "maxLength": { "en": 80 } }
+      ] }
+    },
+    "sections.slide-statement": {
+      "kind": "section",
+      "root": "section",
+      "media": ["slide", "web"],
+      "variants": { "medium": ["web", "slide"] },
+      "copy": { "fields": [
+        { "key": "statement", "kind": "plain", "role": "statement", "required": true, "maxLength": { "en": 140 } },
+        { "key": "support", "kind": "plain", "role": "body", "required": false, "maxLength": { "en": 200 } }
+      ] }
+    },
+    "sections.slide-two-column": {
+      "kind": "section",
+      "root": "section",
+      "media": ["slide", "web"],
+      "variants": { "medium": ["web", "slide"] },
+      "copy": { "fields": [
+        { "key": "heading", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 60 } },
+        { "key": "left.heading", "kind": "plain", "role": "heading", "required": false, "maxLength": { "en": 40 } },
+        { "key": "left.body", "kind": "plain", "role": "body", "required": true, "maxLength": { "en": 280 } },
+        { "key": "right.heading", "kind": "plain", "role": "heading", "required": false, "maxLength": { "en": 40 } },
+        { "key": "right.body", "kind": "plain", "role": "body", "required": true, "maxLength": { "en": 280 } }
+      ] }
+    },
+    "sections.slide-quote": {
+      "kind": "section",
+      "root": "figure",
+      "media": ["slide", "web"],
+      "variants": { "medium": ["web", "slide"] },
+      "copy": { "fields": [
+        { "key": "quote", "kind": "plain", "role": "quote", "required": true, "maxLength": { "en": 240 } },
+        { "key": "attribution", "kind": "plain", "role": "attribution", "required": true, "maxLength": { "en": 60 } },
+        { "key": "title", "kind": "plain", "role": "caption", "required": false, "maxLength": { "en": 60 } }
+      ] }
+    },
+    "sections.slide-closing": {
+      "kind": "section",
+      "root": "section",
+      "media": ["slide", "web"],
+      "variants": { "medium": ["web", "slide"] },
+      "copy": { "fields": [
+        { "key": "heading", "kind": "plain", "role": "heading", "required": true, "maxLength": { "en": 60 } },
+        { "key": "body", "kind": "plain", "role": "body", "required": false, "maxLength": { "en": 160 } },
+        { "key": "contact", "kind": "plain", "role": "caption", "required": false, "maxLength": { "en": 80 } }
+      ] }
+    }
+  }
+}

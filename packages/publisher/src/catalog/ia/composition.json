@@ -42,6 +42,13 @@
           ]
         },
         {
+          "id": "composition/layouts/deck",
+          "label": "Deck layouts",
+          "leaves": [
+            "layout.deck"
+          ]
+        },
+        {
           "id": "composition/layouts/document",
           "label": "Document layouts",
           "parked": true,
@@ -498,6 +505,50 @@
         "state": {
           "kinds": [
             "designer/sections.error-state"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.deck": {
+      "kind": "layout",
+      "purpose": "One deck: a 16:9 canvas with one slide per role, in order, and no chrome.",
+      "frame": "designer/frames.deck",
+      "chrome": [],
+      "roles": {
+        "title": {
+          "kinds": [
+            "designer/sections.slide-title"
+          ],
+          "required": true
+        },
+        "agenda": {
+          "kinds": [
+            "designer/sections.slide-agenda"
+          ],
+          "required": false
+        },
+        "statement": {
+          "kinds": [
+            "designer/sections.slide-statement"
+          ],
+          "required": false
+        },
+        "two-column": {
+          "kinds": [
+            "designer/sections.slide-two-column"
+          ],
+          "required": false
+        },
+        "quote": {
+          "kinds": [
+            "designer/sections.slide-quote"
+          ],
+          "required": false
+        },
+        "closing": {
+          "kinds": [
+            "designer/sections.slide-closing"
           ],
           "required": true
         }

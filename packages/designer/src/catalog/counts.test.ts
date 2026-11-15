@@ -10,17 +10,22 @@
  *   AppNavigation fill still renders NavigationTree, so the frame truthfully composes both until that render moves
  *   (Interface 112, not 109).
  */
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import frameSlots from "./slots/frames.json" with { type: "json" };
 import {
-  DESIGNER_RETIRED, DESIGNER_TREES, STUDIO_KILLED, checkTree, countTree, placedLeaves, retiredFrameReferences, starterLeaves,
-  type LayerTree, type RetiredEntry,
+  DESIGNER_RETIRED, DESIGNER_SLIDES, DESIGNER_TREES, STUDIO_KILLED, checkTree, countTree, extensionDefaultFindings, extendTrees,
+  literalCopyFindings, placedLeaves, retiredFrameReferences, starterLeaves,
+  type DefaultFile, type IAExtension, type LayerTree, type RetiredEntry,
 } from "./ia/tree.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
+/** Package defaults outside src (build-0027): `defaults/<slot-id>/<name>-v1.json`, keyed by slot id. */
+const defaultsDir = join(here, "..", "..", "defaults");
+const packageDefaults = new Map<string, DefaultFile[]>(readdirSync(defaultsDir).sort().map(id => [id,
+  readdirSync(join(defaultsDir, id)).filter(name => name.endsWith(".json")).sort().map(name => JSON.parse(readFileSync(join(defaultsDir, id, name), "utf8")) as DefaultFile)]));
 const clone = <T>(value: T): T => structuredClone(value);
 const tree = (trees: LayerTree[], layer: string) => trees.find(candidate => candidate.layer === layer)!;
 
@@ -33,28 +38,28 @@ const STUDIO_IDS = [
 describe("Designer tree counts (3 L0)", () => {
   const counts = countTree(DESIGNER_TREES, DESIGNER_RETIRED);
 
-  it("has 3 L0, 10 L1, 37 L2 and 203 live L3 (designer.md 3/10/38/208 less the self-amended gap)", () => {
-    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 203 });
+  it("has 3 L0, 10 L1, 39 L2 and 210 live L3 (203 + Slides: frames.deck and six sections.slide-*, build-0027)", () => {
+    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 39, l3: 210 });
   });
 
   it("counts per L0 in owner order: Theme, Art, Interface", () => {
     expect(counts.byL0).toEqual({
       theme: { l1: 4, l2: 11, l3: 42 },
       art: { l1: 3, l2: 10, l3: 49 },
-      interface: { l1: 3, l2: 16, l3: 112 },
+      interface: { l1: 3, l2: 18, l3: 119 },
     });
-    expect(counts.byLayer).toEqual({ themes: 42, assets: 49, components: 59, sections: 45, frames: 8 });
+    expect(counts.byLayer).toEqual({ themes: 42, assets: 49, components: 59, sections: 51, frames: 9 });
   });
 
-  it("keeps every one of the 246 placed ids; 43 retire in place", () => {
-    expect(counts.placed).toBe(246);
-    expect(new Set(placedLeaves(DESIGNER_TREES)).size).toBe(246);
+  it("keeps every one of the 253 placed ids; 43 retire in place", () => {
+    expect(counts.placed).toBe(253);
+    expect(new Set(placedLeaves(DESIGNER_TREES)).size).toBe(253);
     expect(counts.retired).toBe(43);
     expect(counts.placed - counts.retired).toBe(counts.l3);
   });
 
-  it("has no single-leaf L2 outside the three Theme families waiting on NEW leaves", () => {
-    expect(counts.singleLeafL2).toEqual(["themes/colors/colors-status", "themes/typography/typography-sizes", "themes/layout/layout-space"]);
+  it("has no single-leaf L2 outside the three Theme families waiting on NEW leaves and the one deck frame", () => {
+    expect(counts.singleLeafL2).toEqual(["themes/colors/colors-status", "themes/typography/typography-sizes", "themes/layout/layout-space", "frames/frames/frames-deck"]);
   });
 
   it("labels the L1s by the target tree", () => {
@@ -116,10 +121,13 @@ describe("Designer tree soundness", () => {
 });
 
 describe("starter leaves resolve to a package default", () => {
-  const fills = new Set(readdirSync(join(here, "fills")).flatMap(source => readdirSync(join(here, "fills", source)).filter(name => name.endsWith(".json")).map(name => name.slice(0, -5))));
+  const fills = new Set([
+    ...readdirSync(join(here, "fills")).flatMap(source => readdirSync(join(here, "fills", source)).filter(name => name.endsWith(".json")).map(name => name.slice(0, -5))),
+    ...packageDefaults.keys(),
+  ]);
 
-  it("lists 131 starter leaves (themes 35, assets 29, components 35, sections 25, frames 7)", () => {
-    expect(DESIGNER_TREES.map(layer => [layer.layer, layer.starter?.length ?? 0])).toEqual([["themes", 35], ["assets", 29], ["components", 35], ["sections", 25], ["frames", 7]]);
+  it("lists 138 starter leaves (themes 35, assets 29, components 35, sections 31, frames 8)", () => {
+    expect(DESIGNER_TREES.map(layer => [layer.layer, layer.starter?.length ?? 0])).toEqual([["themes", 35], ["assets", 29], ["components", 35], ["sections", 31], ["frames", 8]]);
   });
 
   it("every starter leaf, including steps, pricing, table-of-contents and consent, has a default fill", () => {
@@ -161,5 +169,58 @@ describe("frames never point at a retired component", () => {
     expect(shell.slots.find(slot => slot.id === "consent")?.accepts).toBe("sections.consent");
     expect(shell.slots.some(slot => slot.accepts === "sections.*")).toBe(false);
     expect(shell.landmarks.find(landmark => landmark.slot === "consent")).toMatchObject({ role: "region", nameRequired: true });
+  });
+});
+
+describe("Slides: frames.deck and six slide sections (build-0027)", () => {
+  const SLIDE_SECTIONS = ["title", "agenda", "statement", "two-column", "quote", "closing"].map(kind => `sections.slide-${kind}`);
+
+  it("merges the deck family under Frames and the Slides family under Sections, starter leaves included", () => {
+    const frames = tree(DESIGNER_TREES as LayerTree[], "frames");
+    const sections = tree(DESIGNER_TREES as LayerTree[], "sections");
+    expect((frames.nodes[0] as { children: { id: string; leaves: string[] }[] }).children.find(node => node.id === "frames-deck")?.leaves).toEqual(["frames.deck"]);
+    expect((sections.nodes[0] as { children: { id: string; leaves: string[] }[] }).children.find(node => node.id === "sections-slides")?.leaves).toEqual(SLIDE_SECTIONS);
+    for (const id of ["frames.deck", ...SLIDE_SECTIONS]) expect(starterLeaves(DESIGNER_TREES), id).toContain(id);
+  });
+
+  it("frames.deck is a 16:9 canvas with no chrome; every slide section is one construct in two media", () => {
+    const deck = DESIGNER_SLIDES.slots["frames.deck"]!;
+    expect(deck).toMatchObject({ kind: "frame", canvas: { aspect: "16:9" }, chrome: [], variants: { aspect: ["16:9"] } });
+    for (const id of SLIDE_SECTIONS) expect(DESIGNER_SLIDES.slots[id], id).toMatchObject({ kind: "section", media: ["slide", "web"], variants: { medium: ["web", "slide"] } });
+  });
+
+  it("every Slides leaf and every variant it declares has a package default", () => {
+    expect(extensionDefaultFindings(DESIGNER_SLIDES, packageDefaults)).toEqual([]);
+    for (const id of ["frames.deck", ...SLIDE_SECTIONS]) expect(packageDefaults.get(id)?.[0]?.clossys.source.kind, id).toBe("package-default");
+  });
+
+  it("defaults hold no literal copy: words come from Writer through the copy prop", () => {
+    for (const [id, files] of packageDefaults) for (const file of files) expect(literalCopyFindings(file), id).toEqual([]);
+  });
+
+  it("mutation: a second deck frame variant without a default fails", () => {
+    const slides = clone(DESIGNER_SLIDES) as IAExtension;
+    (slides.slots["frames.deck"]!.variants as Record<string, string[]>).aspect!.push("4-3");
+    expect(extensionDefaultFindings(slides, packageDefaults)).toEqual(["frames.deck: variant aspect=4-3 has no package default"]);
+  });
+
+  it("mutation: a second deck frame leaf without a default fails", () => {
+    const slides = clone(DESIGNER_SLIDES) as IAExtension;
+    (slides.families[0]!.node.leaves as string[]).push("frames.deck-portrait");
+    slides.slots["frames.deck-portrait"] = clone(slides.slots["frames.deck"]!);
+    expect(extensionDefaultFindings(slides, packageDefaults)).toContain("frames.deck-portrait: no package default");
+  });
+
+  it("mutation: literal copy in a slide default fails", () => {
+    const file = clone(packageDefaults.get("sections.slide-title")![0]!);
+    const item = file.content as { files: { content: string }[] };
+    item.files[0]!.content = item.files[0]!.content.replace("{copy.heading}", "Welcome to our company");
+    expect(literalCopyFindings(file)).toEqual(["sections.slide-title: literal text \"Welcome to our company\" in files[0]; words come from the copy prop"]);
+  });
+
+  it("mutation: an extension family under an L1 the layer does not have fails", () => {
+    const slides = clone(DESIGNER_SLIDES) as IAExtension;
+    slides.families[1]!.l1 = "sections-missing";
+    expect(() => extendTrees(DESIGNER_TREES, slides)).toThrow("slides: sections L1 sections-missing not found");
   });
 });

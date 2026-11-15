@@ -32,7 +32,7 @@ export interface PageSlot {
   kind: "page"; publication: string; parked?: boolean; path?: string; status?: number; collection?: string;
   layouts: readonly string[]; records?: { pattern: string; meta: string };
 }
-export interface ReleaseSlot { kind: "release"; publication: string; parked?: boolean; exports?: readonly { kind: string; pages?: readonly string[] }[]; gates?: readonly string[]; signoff?: { by: string; raise: string } }
+export interface ReleaseSlot { kind: "release"; publication: string; parked?: boolean; exports?: readonly { kind: string; pages?: readonly string[]; per?: string }[]; gates?: readonly string[]; signoff?: { by: string; raise: string } }
 export type SlotContract = LayoutSlot | ChromeSlot | PageSlot | ReleaseSlot;
 
 export interface L0Tree {
@@ -145,7 +145,7 @@ export function checkTree(trees: readonly L0Tree[] = PUBLISHER_TREES, retired: r
 
 /** The package root: three directories above this file, from src/catalog/ia/ and dist/catalog/ia/ alike. */
 export const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-export const STARTER_IDS = ["site", "docs", "app"] as const;
+export const STARTER_IDS = ["site", "docs", "app", "slides"] as const;
 export type StarterId = (typeof STARTER_IDS)[number];
 
 export interface CandidateFile<C = Record<string, unknown>> { clossys: Record<string, unknown> & { id: string; slot: string; source: { kind: string } }; content: C }
@@ -155,6 +155,8 @@ export interface LayoutOption { frame: string; chrome: string[]; order: string[]
 export interface StarterPublication {
   schema: string; id: StarterId; node: string; root: string; pages: string[]; layouts: string[]; chrome: string[];
   release: string; redirects: unknown[]; defaults: string[];
+  /** Slides only: the deck names, one route per slide at `<root>/<deck>/<n>`. */
+  decks?: string[];
 }
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, "utf8")) as T;
@@ -176,7 +178,8 @@ export function loadStarter(id: StarterId, root: string = PACKAGE_ROOT): Starter
 
 // ---------- The live Designer catalog ----------
 
-export interface DesignerCatalog { placed: ReadonlySet<string>; retired: ReadonlySet<string>; live: ReadonlySet<string> }
+/** `withDefault`: slot ids with a Designer package default, a fill (`src/catalog/fills/<source>/<id>.json`) or a `defaults/<id>/` file. */
+export interface DesignerCatalog { placed: ReadonlySet<string>; retired: ReadonlySet<string>; live: ReadonlySet<string>; withDefault: ReadonlySet<string> }
 
 /** The installed `@clossys/designer` package directory, found the way Node finds a dependency. */
 export function designerPackageDir(from: string = PACKAGE_ROOT): string {
@@ -209,7 +212,10 @@ export function writerCopySlot(ref: string): string | undefined {
   return /^writer\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+)#[a-z0-9][a-z0-9.-]*$/.exec(ref)?.[1];
 }
 
-/** Designer's placed, retired and live slot ids, read from its shipped `src/catalog` tree (the live catalog). */
+/**
+ * Designer's placed, retired and live slot ids, read from its shipped `src/catalog` tree (the live catalog), with the
+ * families of its additive IA extension (`ia/slides.json`) merged in, and the ids that ship a package default.
+ */
 export function loadDesignerCatalog(dir: string = designerPackageDir()): DesignerCatalog {
   const catalog = join(dir, "src", "catalog");
   const leavesOf = (nodes: readonly TreeNode[]): string[] => nodes.flatMap(node => node.leaves ? [...node.leaves] : leavesOf(node.children ?? []));
@@ -217,6 +223,13 @@ export function loadDesignerCatalog(dir: string = designerPackageDir()): Designe
   for (const layer of ["themes", "assets", "components", "sections", "frames"]) {
     for (const id of leavesOf(readJson<{ nodes: TreeNode[] }>(join(catalog, "ia", `${layer}.json`)).nodes)) placed.add(id);
   }
+  const extension = join(catalog, "ia", "slides.json");
+  if (existsSync(extension)) for (const family of readJson<{ families: { node: TreeNode }[] }>(extension).families) for (const id of leavesOf([family.node])) placed.add(id);
   const retired = new Set(readJson<RetiredEntry[]>(join(catalog, "retired.json")).map(entry => entry.id));
-  return { placed, retired, live: new Set([...placed].filter(id => !retired.has(id))) };
+  const withDefault = new Set<string>();
+  const fills = join(catalog, "fills");
+  if (existsSync(fills)) for (const source of readdirSync(fills)) for (const name of readdirSync(join(fills, source))) if (name.endsWith(".json")) withDefault.add(name.slice(0, -5));
+  const defaults = join(dir, "defaults");
+  if (existsSync(defaults)) for (const id of readdirSync(defaults)) if (readdirSync(join(defaults, id)).some(name => name.endsWith(".json"))) withDefault.add(id);
+  return { placed, retired, live: new Set([...placed].filter(id => !retired.has(id))), withDefault };
 }
