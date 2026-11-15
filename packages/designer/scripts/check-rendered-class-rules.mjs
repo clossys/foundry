@@ -23,7 +23,7 @@ import * as cssTree from "css-tree";
 import { parse as parseHtml } from "parse5";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const sourceDirs = ["components", "blocks", "shell", "frames", "runtime", "studio"];
+const sourceDirs = ["components", "blocks", "shell", "frames", "runtime", "studio", "specimen"];
 const classHelpers = new Set(["cn", "cx", "clsx", "classnames", "twMerge"]);
 const classProperty = /^(?:class|className|[a-zA-Z]+ClassName)$/;
 const skippedFile = /\.(?:test|spec|check|stories)\.[cm]?tsx?$|\.d\.ts$/;

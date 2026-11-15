@@ -1,6 +1,6 @@
 /**
- * @clossys/designer/specimen: the engine specimen renderers. Registered `components.specimen-*` leaves, the
- * generated `sections.specimen-*` candidates and the specimen host parts import from here, never from the Studio.
+ * @clossys/designer/specimen: the engine specimen renderers. Registered specimen component leaves, the
+ * generated specimen section candidates and the specimen host parts import from here, never from the Studio.
  */
 import { version as reactVersion } from "react";
 import reactAriaComponentsPackageJson from "react-aria-components/package.json" with { type: "json" };
