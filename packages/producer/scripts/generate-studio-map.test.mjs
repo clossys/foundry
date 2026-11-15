@@ -121,9 +121,13 @@ async function writerCallerFixture(t) {
   // page titles resolve through them); this caller places only strings.common, the slot under test.
   const previewItems = await pinnedBindings(options.clossysRoot, STUDIO_SLOTS);
   assert.equal(previewItems.length, STUDIO_SLOTS.length);
-  // Draft binds what the slot model pins: options v8 (stock re-adoption, planner:R2F-03) and specimen v13
-  // (every shown status cites its check, planner:WS-HON).
-  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 8], ['sections.studio.specimen', 13]]);
+  // Draft binds what the consumer's slot model pins: each slot's version is the one its pin.json names,
+  // read from the consumer, never a version hard-coded in the package (consumer pins move on their own).
+  const pinnedVersion = async slot => {
+    const pin = JSON.parse(await readFile(join(options.clossysRoot, 'agents/designer', slot, 'pin.json'), 'utf8'));
+    return Number(/-v([1-9][0-9]*)\.json$/.exec(pin.candidate)?.[1]);
+  };
+  for (const row of previewItems) assert.equal(row.version, await pinnedVersion(row.slot), `${row.slot} binds its pinned version`);
   async function candidate(text, version, pin = false) {
     const name = `studio-v${version}.md`;
     const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### studio.greeting\n<!-- {"id":"studio.greeting","bindings":["test"]} -->\n${text}\n`;
