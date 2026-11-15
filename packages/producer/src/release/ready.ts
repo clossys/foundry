@@ -2,9 +2,14 @@
  * The ready-pin and `release.ready` (flows.md F8 step 6, publisher.md 9.4.3). A release version is ready when its
  * slot `publisher/release.<pub>` pins the manifest (pin/2) and every one of these holds, now:
  *
- * - the pin is the owner's answer: `decidedBy owner:queue.approve#<id>`, basis `picked`, the entry answered
- *   `ready` by the owner, about `publisher/release.<pub>`, raised and answered after the manifest was written;
+ * - the release slot's slot.json is a readable `clossys.slot/2` slot (a legacy or unparseable one fails closed);
+ * - the pin is the owner's answer: `decidedBy owner:queue.approve#<id>`, basis `picked`, the entry a queue.approve
+ *   answered `ready` by the owner, about `publisher/release.<pub>`, raised and answered after the manifest was
+ *   written, and bound to this one manifest: its `ready` option names the candidate and a ref names
+ *   `publisher/release.<pub>/<candidate>` with the manifest file's sha256 (an entry that names none fails closed);
  * - the pin's sha256 is the manifest file's sha256 and the manifest's header is a code-written candidate;
+ * - nothing the manifest says is trusted: `build.{path,routes,locales,exports}` equal the build stamp, `previous` is
+ *   an older manifest (or the ready version the pin replaces) and `diff` is recomputed from it;
  * - the manifest recorded every release gate, all `pass`, and every gate passes again now;
  * - the manifest's pins are exactly the pins as they resolve now (a later pin change voids the ready-pin);
  * - the build the manifest names is on disk, digests to its id and read the same pins.
@@ -15,13 +20,15 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
-import { slotDir } from "../records/candidate.js";
+import { parseCandidateName, slotDir } from "../records/candidate.js";
+import { resolveSlot } from "../records/resolve.js";
+import { canonical } from "../records/slot-model/layout.js";
 import { OWNER_QUEUE_ANSWER, PIN_FILE } from "../records/pin.js";
 import type { PinRecord, QueueEntry } from "../records/types.js";
 import type { Finding } from "../loop/route.js";
 import { buildIssue, buildPath, readBuildStamp } from "./build.js";
 import { releaseGates, runGates } from "./gates.js";
-import { readManifest } from "./manifest.js";
+import { readManifest, type ManifestContent, type ManifestFile } from "./manifest.js";
 import { currentPins, pinDiff } from "./pins.js";
 import { RELEASE_SLOT, publicationOf, releaseSlotId } from "./paths.js";
 
@@ -31,7 +38,8 @@ export type ReadyPin = Pick<PinRecord, "candidate" | "decidedBy" | "basis" | "at
 
 const time = (iso: string | undefined): number => (iso ? Date.parse(iso) : Number.NaN);
 
-function answerIssues(root: string, slotRef: string, pin: ReadyPin, manifestAt: string | undefined): string[] {
+function answerIssues(root: string, slotRef: string, pin: ReadyPin, manifest: Pick<ManifestFile, "sha256" | "header">): string[] {
+  const manifestAt = manifest.header?.createdAt;
   const match = OWNER_QUEUE_ANSWER.exec(pin.decidedBy);
   if (!match || match[1] !== "queue.approve") return [`decidedBy ${pin.decidedBy} is not an owner answer to queue.approve (owner:queue.approve#<id>)`];
   const found = findQueueEntry(root, `${match[1]}#${match[2]}`);
@@ -54,13 +62,61 @@ function answerIssues(root: string, slotRef: string, pin: ReadyPin, manifestAt: 
   for (const option of entry.options ?? []) {
     if (option.candidate !== undefined && option.id === answered?.answer && option.candidate !== pin.candidate) issues.push(`${name} answered ${option.id} for ${option.candidate}, not ${pin.candidate}`);
   }
+  // The owner's answer is bound to one manifest: its name and its bytes, as the sign-off showed them (fail closed).
+  const want = `${pin.candidate}${manifest.sha256 ? `@${manifest.sha256.slice(0, 12)}` : ""}`;
+  if (!(entry.options ?? []).some(option => option.id === "ready" && option.candidate === pin.candidate)) issues.push(`${name} has no ready option for ${pin.candidate}: the sign-off does not name the manifest`);
+  let bound = false;
   for (const ref of entry.refs ?? []) {
     const parts = ref.to.split("/");
     if (`${parts[0]}/${parts[1]}` !== slotRef || parts.length < 3) continue;
-    if (parts.slice(2).join("/") !== pin.candidate || (ref.sha256 !== undefined && pin.sha256 !== undefined && ref.sha256 !== pin.sha256)) {
-      issues.push(`${name} names ${parts.slice(2).join("/")}${ref.sha256 ? `@${ref.sha256.slice(0, 12)}` : ""}, not ${pin.candidate}${pin.sha256 ? `@${pin.sha256.slice(0, 12)}` : ""}`);
-    }
+    const named = parts.slice(2).join("/");
+    if (named === pin.candidate && ref.sha256 !== undefined && manifest.sha256 !== "" && ref.sha256 === manifest.sha256) { bound = true; continue; }
+    issues.push(`${name} names ${named}${ref.sha256 ? `@${ref.sha256.slice(0, 12)}` : " with no sha256"}, not ${want}`);
   }
+  if (!bound) issues.push(`${name} does not name ${slotRef}/${want}: the owner's answer is not bound to this manifest`);
+  return issues;
+}
+
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(canonical(a ?? null)) === JSON.stringify(canonical(b ?? null));
+
+/** Why the release slot's slot.json is not a readable clossys.slot/2 slot, or undefined. */
+function releaseSlotIssue(root: string, slotId: string): string | undefined {
+  let doc: unknown;
+  try { doc = JSON.parse(readFileSync(join(slotDir(root, "publisher", slotId), "slot.json"), "utf8")); } catch (error) {
+    return `publisher/${slotId}/slot.json is not readable (${(error as Error).message}): a release slot is a clossys.slot/2 slot`;
+  }
+  const schema = typeof doc === "object" && doc !== null ? (doc as { schema?: unknown }).schema : undefined;
+  return schema === "clossys.slot/2" ? undefined : `publisher/${slotId}/slot.json is ${String(schema)}, not clossys.slot/2: a legacy release slot takes no ready-pin`;
+}
+
+/**
+ * `previous` and `diff`, recomputed (manifest.ts writeManifest): `previous` is the release slot's ready version when
+ * the pin replaces one, else an older manifest of the publication, or null; `diff` is the pin diff from it; the
+ * header source agrees. A manifest that says otherwise was edited.
+ */
+function lineageIssues(root: string, publication: string, slotId: string, name: string, manifest: ManifestFile, content: ManifestContent): string[] {
+  const issues: string[] = [];
+  const version = parseCandidateName(name)?.version ?? 0;
+  const resolved = resolveSlot(root, "publisher", slotId);
+  if (resolved.state === "pinned" && resolved.candidate !== name) {
+    // The pin replaces a ready version: the manifest follows it, as writeManifest computed it.
+    const expected = readManifest(root, publication, resolved.candidate).content ? resolved.candidate : null;
+    if (content.previous !== expected) issues.push(`manifest ${name} follows ${String(content.previous)}, but the ready version it replaces is ${String(expected)}`);
+  } else if (resolved.state !== "pinned" && content.previous !== null) {
+    issues.push(`manifest ${name} follows ${content.previous}, but ${publication} has no ready version`);
+  }
+  let from: ManifestContent["pins"] = {};
+  if (content.previous !== null) {
+    const earlier = parseCandidateName(content.previous);
+    const previous = readManifest(root, publication, content.previous);
+    if (!earlier || earlier.version >= version) issues.push(`manifest ${name} follows ${content.previous}, which is not an older manifest`);
+    if (!previous.content) issues.push(`manifest ${name} follows ${content.previous}, which does not read as a manifest`);
+    else from = previous.content.pins;
+  }
+  if (!same(content.diff, pinDiff(from, content.pins))) issues.push(`manifest ${name} diff does not match its pins against ${content.previous ?? "no previous version"}`);
+  const source = manifest.header?.source;
+  const wantSource = content.previous ? { kind: "derived", ref: [`publisher/${slotId}/${content.previous}`] } : { kind: "original", ref: [] };
+  if (!same(source, wantSource)) issues.push(`manifest ${name} header source ${JSON.stringify(source)} does not match previous ${String(content.previous)}`);
   return issues;
 }
 
@@ -71,9 +127,11 @@ export function readyFindings(root: string, publication: string, pin: ReadyPin):
   const out = (detail: string): Finding => ({ check: RELEASE_READY, subject, detail });
   const findings: Finding[] = [];
   if (pin.basis !== "picked") findings.push(out(`basis ${pin.basis}: a ready-pin is the owner's pick (picked)`));
+  const slotIssue = releaseSlotIssue(root, slotId);
+  if (slotIssue) findings.push(out(slotIssue));
   const manifest = readManifest(root, publication, pin.candidate);
   for (const issue of manifest.issues) findings.push(out(`manifest ${pin.candidate}: ${issue}`));
-  findings.push(...answerIssues(root, subject, pin, manifest.header?.createdAt).map(out));
+  findings.push(...answerIssues(root, subject, pin, manifest).map(out));
   if (pin.sha256 !== undefined && manifest.sha256 && pin.sha256 !== manifest.sha256) findings.push(out(`the pin's sha256 ${pin.sha256.slice(0, 12)} is not the manifest's ${manifest.sha256.slice(0, 12)}`));
   const content = manifest.content;
   if (!content) return findings;
@@ -97,7 +155,11 @@ export function readyFindings(root: string, publication: string, pin: ReadyPin):
   else {
     if (stamp.publication !== publication) findings.push(out(`build ${content.build.id.slice(0, 12)} is a build of ${stamp.publication}`));
     for (const row of pinDiff(stamp.pins, content.pins)) findings.push(out(`build ${content.build.id.slice(0, 12)} read ${row.ref} as ${row.from ?? "absent"}, the manifest lists ${row.to ?? "absent"}`));
+    for (const field of ["path", "routes", "locales", "exports"] as const) {
+      if (!same(content.build[field], stamp[field])) findings.push(out(`manifest ${pin.candidate} build.${field} is ${JSON.stringify(content.build[field])}, the build stamp says ${JSON.stringify(stamp[field])}`));
+    }
   }
+  findings.push(...lineageIssues(root, publication, slotId, pin.candidate, manifest, content).map(out));
   const gates = runGates(root, publication, stamp);
   for (const [gate, status] of Object.entries(gates.checks)) if (status !== "pass") findings.push(out(`gate ${gate} fails now`));
   for (const finding of gates.findings) findings.push({ ...finding });

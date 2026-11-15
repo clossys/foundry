@@ -30,7 +30,8 @@ import { recordSchema, writeSlot } from "../records/slot.js";
 import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVersion, QueueEntry, Ref, Tier } from "../records/types.js";
 import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, routeFindings, type Finding } from "./route.js";
 import { dependantsOf, fillNames, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, whenMatches, type SlotSubject } from "./slots.js";
-import { LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, TRIGGER_KINDS, ledgerOf, loopStem, type LoopName } from "./names.js";
+import { LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, RELEASE_READY, TRIGGER_KINDS, ledgerOf, loopStem, type LoopName } from "./names.js";
+import { checkReleaseReady } from "../release/ready.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
 
 export type Exit = 0 | 1 | 2;
@@ -279,7 +280,10 @@ function recordStep(ctx: Context, step: LoopStep, decider: Decider, cli: string,
   for (const check of step.checks) {
     const filled = fillNames(check, vars);
     if (filled.unfilled.length) continue;
-    ctx.state.checks[filled.text] = exit === 0 ? "pass" : "fail";
+    // release.ready is the check itself, run on the tree now, never the step's exit code (flows.md F8 step 6).
+    ctx.state.checks[filled.text] = filled.text === RELEASE_READY
+      ? (ctx.state.publication ? checkReleaseReady(ctx.root, ctx.state.publication).status : "fail")
+      : exit === 0 ? "pass" : "fail";
   }
 }
 
@@ -461,6 +465,7 @@ async function humanStep(ctx: Context, step: LoopStep, subject: SlotSubject | un
   const to = subject ? refOf(subject) : state.publication ? `publisher/release.${state.publication}` : undefined;
   if (!to) return stop(ctx, `step ${step.id} needs a slot or a publication to ask about`, 2);
   let options: QueueEntry["options"];
+  let refs: Ref[] | undefined;
   let fallback: string | null = null;
   if (decider.raise === "queue.pick") {
     const names = subject ? slotCandidates(root, subject) : [];
@@ -468,14 +473,18 @@ async function humanStep(ctx: Context, step: LoopStep, subject: SlotSubject | un
     options = names.map(name => ({ id: name, candidate: name, summary: `${to}/${name}` }));
   } else if (decider.raise === "queue.approve") {
     const release = state.loop === "loop.release";
+    // The sign-off names the one manifest it approves, by name and sha256 (release/ready.ts answerIssues).
+    const manifest = release ? state.vars.manifest : undefined;
+    const file = manifest ? join(root, "clossys", "agents", to, "candidates", manifest) : undefined;
+    if (manifest && file && existsSync(file)) refs = [{ to: `${to}/${manifest}` as Ref["to"], sha256: sha256Hex(readFileSync(file)) as Ref["sha256"], rel: "input" }];
     options = release
-      ? [{ id: "ready", summary: `mark ${state.vars.manifest ?? "the manifest"} ready` }, { id: "not-ready", summary: "keep the current ready pin" }]
+      ? [{ id: "ready", ...(manifest ? { candidate: manifest as NonNullable<QueueEntry["options"]>[number]["candidate"] } : {}), summary: `mark ${manifest ?? "the manifest"} ready` }, { id: "not-ready", summary: "keep the current ready pin" }]
       : [{ id: "approve", summary: `confirm the agent's pick for ${to}` }, { id: "reject", summary: "keep looking" }];
     fallback = release ? "not-ready" : null;
   }
   const { entry } = raiseEntry(root, {
     queue: decider.raise, subject: { to: to as Ref["to"], rel: "input" }, decider: "owner", ask: `${step.does} (${to})`,
-    slug: to.split("/")[1]!, default: fallback, ...(options ? { options } : {}),
+    slug: to.split("/")[1]!, default: fallback, ...(options ? { options } : {}), ...(refs ? { refs } : {}),
   }, at, false);
   state.raised.push(entryName(entry));
   state.status = "waiting"; state.waiting = { step: step.id, on: "entry", entry: entryName(entry), then: "continue" };

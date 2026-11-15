@@ -347,7 +347,9 @@ describe("F8 new release: loop.release (T8)", () => {
     },
   });
 
-  it("ends at the owner-signed ready-pin with status pinned-ready", async () => {
+  // The stub pin step writes no ready-pin, so release.ready (the check itself, not the exit code) fails and the run is not
+  // pinned-ready. The real path to pinned-ready runs in release/ready-binding.test.ts (probe A) and release/release.test.ts.
+  it("runs the six steps to the owner-signed pin step and records release.ready from the check, not the stub pin's exit", async () => {
     const w = world([]);
     const now = clock();
     const hooks = release(w.root, { exit: 0 });
@@ -358,9 +360,9 @@ describe("F8 new release: loop.release (T8)", () => {
     const done = await resumeRun(w.root, run.state!.runId, hooks, { now });
     expect(done.exitCode).toBe(0);
     const ledger = w.ledger("loop.release")[0]!;
-    expect(ledger).toMatchObject({ status: "pinned-ready", outcome: "site site-v1.json pinned ready", trigger: { kind: "new-release" } });
+    expect(ledger).toMatchObject({ status: "done", outcome: "loop.release done", trigger: { kind: "new-release" } });
     expect(stepLine(ledger)).toEqual(["compile:code:0", "build:code:0", "manifest:code:0", "gates:code:0", "signoff:human:0", "pin:code:0"]);
-    expect(ledger.checks["release.ready"]).toBe("pass");
+    expect(ledger.checks["release.ready"]).toBe("fail");
     expect(hooks.code_.at(-1)!.cli).toBe(`clossys pin publisher/release.site site-v1.json --by owner:${run.entry}`);
   });
 
