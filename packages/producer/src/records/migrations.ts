@@ -18,7 +18,7 @@ export const MIGRATIONS_SCHEMA = "clossys.migrations/1";
 /** The manifest's path under the consumer folder. */
 export const MIGRATIONS_FILE = "evidence/migrations.json";
 /** Format-only codemods whose recorded rewrites R08.2 accepts. Never a content change. */
-export const FORMAT_MIGRATIONS = ["citations-to-slots"] as const;
+export const FORMAT_MIGRATIONS = ["citations-to-slots", "recut"] as const;
 export type FormatMigration = (typeof FORMAT_MIGRATIONS)[number];
 
 export interface FileState {

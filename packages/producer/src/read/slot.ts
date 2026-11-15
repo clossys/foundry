@@ -21,6 +21,7 @@ import { installedPackageRoot } from "../package-path.js";
 import { inspectSlot, readCandidate, readLedger, readSlotEntry, slotIndex, usedByPlaced } from "../records/slots.js";
 import { canonical, MODEL_AGENTS, parseFrontmatter, pinStatus, validateCandidate, type ModelAgent, type PinBasis } from "../records/slot-model/index.js";
 import { readRecordHeader } from "../records/schema.js";
+import { packageDefaultsRel } from "../records/candidate.js";
 import type { Actor, AgentId, Brief, Iso, Ref, SlotState, SlotView } from "../records/types.js";
 import { parseJson } from "../errors.js";
 import { formatRef, parseRef, REF_CANDIDATE, SLOT_ID } from "./ref.js";
@@ -304,11 +305,11 @@ const byVersion = (a: string, b: string) => {
   return an === bn ? Number(av) - Number(bv) : an < bn ? -1 : an > bn ? 1 : 0;
 };
 
-/** The package default candidates of a slot: `<package>/src/catalog/defaults/<slot-id>/<name>-v<n>.<ext>`. */
+/** The package default candidates of a slot: `<package>/<packageDefaultsRel>/<slot-id>/<name>-v<n>.<ext>` (Writer `defaults/`). */
 export function packageDefaults(options: SlotViewOptions, agent: AgentId, slot: string): FileCandidate[] {
   const root = rootOf(options, agent);
   if (!root) return [];
-  const dir = join(root, "src", "catalog", "defaults", slot);
+  const dir = join(root, ...packageDefaultsRel(agent).split("/"), slot);
   if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory()) return [];
   return readdirSync(dir).filter(name => REF_CANDIDATE.test(name)).sort(byVersion).map(name => {
     const path = join(dir, name), bytes = readFileSync(path, "utf8");

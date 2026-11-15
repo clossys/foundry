@@ -60,11 +60,20 @@ export function candidatePath(root: string, agent: AgentId, slotId: SlotId, name
 }
 
 /**
+ * Where a package ships its default candidates, relative to the package root: the Writer under `defaults/`
+ * (the folder its package.json `files` ships), every other agent under `src/catalog/defaults/`.
+ */
+export function packageDefaultsRel(agent: AgentId): string {
+  return agent === "writer" ? "defaults" : "src/catalog/defaults";
+}
+
+/**
  * The installed package folder that holds the package default candidates of one slot: Producer loop
- * versions under `loops/<slot-id>/` (where the package ships them), every other agent under `src/catalog/defaults/<slot-id>/`.
+ * versions under `loops/<slot-id>/` (where the package ships them), every other agent under
+ * `<packageDefaultsRel>/<slot-id>/`.
  */
 export function packageDefaultDir(root: string, agent: AgentId, slotId: SlotId): string {
-  const rel = agent === "producer" ? `packages/producer/loops/${slotId}` : `packages/${agent}/src/catalog/defaults/${slotId}`;
+  const rel = agent === "producer" ? `packages/producer/loops/${slotId}` : `packages/${agent}/${packageDefaultsRel(agent)}/${slotId}`;
   return packagePath(root, rel);
 }
 
