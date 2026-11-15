@@ -97,7 +97,7 @@ export interface RenderCliResult { exitCode: 0 | 1 | 2; message: string; output?
 
 function indexLines(index: RenderIndex): string[] {
   const rows = index.specimens.map(row => `  ${row.candidate}  ${row.specimen}${row.locale ? `  ${row.locale}` : ""}${row.width ? `  ${row.width}` : ""}  ${row.png ?? row.html}`);
-  return [`render  ${index.ref}${index.compare ? `  --compare ${index.compare}` : ""}`, ...rows, ...(index.compareHtml ? [`  side-by-side  ${index.compareHtml}`] : []), JSON.stringify(index)];
+  return [`render  ${index.ref}${index.compare ? `  --compare ${index.compare}` : ""}`, ...rows, JSON.stringify(index)];
 }
 
 export async function runRenderCli(argv: readonly string[], cwd = process.cwd(), snapshot?: Snapshot): Promise<RenderCliResult> {

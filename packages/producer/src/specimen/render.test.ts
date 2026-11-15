@@ -6,12 +6,16 @@ import * as publisher from "@clossys/publisher/specimen";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runRenderCli } from "../cli/render.js";
 import { FIXTURE_CONSUMER } from "../consumer-root.js";
+import { validateAgainst, type JsonSchema } from "../records/schema.js";
 import { canonicalLibrary } from "./__fixtures__/canonical-library.js";
-import { RENDERS_DIR, renderRef, type RenderIndex } from "./render.js";
+import { COMPARE_SPECIMEN, RENDERS_DIR, renderRef, type RenderIndex } from "./render.js";
 import { snapshotSpecimen, type SnapshotOptions, type SnapshotResult } from "./thumbnails.js";
 
 const chrome = publisher.findChrome();
 const workspace = fileURLToPath(new URL("../../../../", import.meta.url));
+const PACKAGE = fileURLToPath(new URL("../../", import.meta.url));
+const TALLYHOUSE = join(PACKAGE, "test-fixtures", "tallyhouse");
+const RENDER_SCHEMA = JSON.parse(readFileSync(join(PACKAGE, "schemas", "render.json"), "utf8")) as JsonSchema;
 const temps: string[] = [];
 afterAll(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }); });
 
@@ -31,12 +35,11 @@ function fakeHarness(root: string) {
 }
 
 const writeJson = (path: string, value: unknown) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`); };
-const slotDoc = (agent: string, id: string, ia: Record<string, unknown>, kind: string) => ({ schema: "clossys.slot/1", id, agent, ia, kind, contract: {}, inputs: [], uses: [] });
 
 /**
  * A consumer with candidates for all five agents: the canonical Designer and Writer library, and
  * Director and Producer slots copied from the int2 fixture consumer (test-fixtures/consumer) with
- * one candidate added each, and one Publisher page slot (the int2 Publisher IA is empty).
+ * one candidate added each, and one Publisher page slot folder (text specimens read the folder; the int2 Publisher IA is empty).
  */
 async function allAgentConsumer(): Promise<string> {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "producer-render-all-")));
@@ -48,15 +51,16 @@ async function allAgentConsumer(): Promise<string> {
     "---\nslot: \"aspiration.purpose.vision\"\n---\n\n## Direction\n\nEvery small team closes its books in a day by 2030.\n\n## Because\n\nMonth-end still takes a week.\n");
   mkdirSync(join(consumer, "agents", "producer", "seat.critic", "candidates"), { recursive: true });
   writeFileSync(join(consumer, "agents", "producer", "seat.critic", "candidates", "critic-v1.md"), "---\nstep: \"critic\"\n---\n\nThe blind critic reads the packet and records one critique.\n");
-  writeJson(join(consumer, "agents", "publisher", "ia.json"), { schema: "clossys.ia/1", source: "test", extensions: [], nodes: [{ id: "pages", label: "Pages", children: [{ id: "pages.site", label: "Site", slots: ["pages.home"] }] }] });
-  writeJson(join(consumer, "agents", "publisher", "pages.home", "slot.json"), slotDoc("publisher", "pages.home", { l1: "pages", l2: "pages.site", order: 0 }, "page"));
+  // The CLI discovers the root by its config file; the config is never executed.
+  writeFileSync(join(consumer, "clossys.config.ts"), "throw new Error('Config must not execute');\n");
   writeJson(join(consumer, "agents", "publisher", "pages.home", "candidates", "home-v1.json"), { route: "/", frame: "designer/frames.site-shell", sections: ["designer/sections.hero"] });
   writeJson(join(consumer, "agents", "publisher", "pages.home", "candidates", "home-v2.json"), { route: "/", frame: "designer/frames.site-shell", sections: ["designer/sections.hero", "designer/sections.faq"] });
   return root;
 }
 
-/** The `clossys.render/1` shape (system.md 12.4); schema validation folds in with schemas/render-1.json. */
+/** The result validates against schemas/render.json (`clossys.render/1`, system.md 12.4). */
 function expectRenderIndex(index: RenderIndex) {
+  expect(validateAgainst(RENDER_SCHEMA, index)).toEqual([]);
   expect(index.schema).toBe("clossys.render/1");
   expect(index.inputsSha256).toMatch(/^[0-9a-f]{64}$/);
   expect(Number.isNaN(Date.parse(index.renderedAt))).toBe(false);
@@ -112,23 +116,33 @@ describe("clossys render <agent>/<slot>[/<candidate>]", () => {
     expectRenderIndex(index);
     expect(index.compare).toBe("publisher/pages.home/home-v1.json");
     const dir = `${RENDERS_DIR}/compare/home-v2--home-v1`;
-    expect(index.specimens.map(row => [row.candidate, row.html])).toEqual([
-      ["home-v2.json", `${dir}/home-v2-page.html`],
-      ["home-v1.json", `${dir}/home-v1-page.html`],
+    expect(index.specimens.map(row => [row.candidate, row.specimen, row.html])).toEqual([
+      ["home-v2.json", "page", `${dir}/home-v2-page.html`],
+      ["home-v1.json", "page", `${dir}/home-v1-page.html`],
+      ["home-v2.json", COMPARE_SPECIMEN, `${dir}/compare.html`],
     ]);
-    expect(index.compareHtml).toBe(`${dir}/compare.html`);
-    const combined = readFileSync(join(root, index.compareHtml!), "utf8");
+    const combined = readFileSync(join(root, index.specimens[2]!.html!), "utf8");
     expect(combined).toContain('src="home-v2-page.html"');
     expect(combined).toContain('src="home-v1-page.html"');
     for (const row of index.specimens) expect(existsSync(join(root, row.html!))).toBe(true);
-    // Designer compare: images side by side.
-    const harness = fakeHarness(root);
-    const designer = await renderRef({ root, ref: "designer/components.card/sample-card-v1.json", compare: "designer/components.button/sample-button-v1.json", snapshot: harness.snapshot });
-    expect(designer.specimens.map(row => row.png)).toEqual([
-      `${RENDERS_DIR}/compare/sample-card-v1--sample-button-v1/sample-card-v1-480.png`,
-      `${RENDERS_DIR}/compare/sample-card-v1--sample-button-v1/sample-button-v1-480.png`,
-    ]);
-    expect(readFileSync(join(root, designer.compareHtml!), "utf8")).toContain('<img src="sample-card-v1-480.png"');
+    // Designer compare: two candidates of one slot, images side by side.
+    const cards = join(root, "clossys", "agents", "designer", "components.card", "candidates");
+    const v1 = JSON.parse(readFileSync(join(cards, "sample-card-v1.json"), "utf8")) as { meta?: Record<string, unknown> };
+    writeFileSync(join(cards, "sample-card-v2.json"), `${JSON.stringify({ ...v1, meta: { ...v1.meta, direction: "compare" } }, null, 2)}\n`);
+    try {
+      const harness = fakeHarness(root);
+      const designer = await renderRef({ root, ref: "designer/components.card/sample-card-v2.json", compare: "designer/components.card/sample-card-v1.json", snapshot: harness.snapshot });
+      expectRenderIndex(designer);
+      const designerDir = `${RENDERS_DIR}/compare/sample-card-v2--sample-card-v1`;
+      expect(designer.specimens.map(row => row.png ?? row.html)).toEqual([
+        `${designerDir}/sample-card-v2-480.png`,
+        `${designerDir}/sample-card-v1-480.png`,
+        `${designerDir}/compare.html`,
+      ]);
+      const page = readFileSync(join(root, `${designerDir}/compare.html`), "utf8");
+      expect(page).toContain('<img src="sample-card-v2-480.png"');
+      expect(page).toContain('<img src="sample-card-v1-480.png"');
+    } finally { rmSync(join(cards, "sample-card-v2.json")); }
   });
 
   it("a candidate whose bytes change is a new key, never a cache hit", async () => {
@@ -174,6 +188,29 @@ describe("clossys render <agent>/<slot>[/<candidate>]", () => {
     expect((await runRenderCli(["publisher/no.such.slot"], root)).exitCode).toBe(2);
     expect((await runRenderCli(["publisher/pages.home/home-v1.json", "--compare", "publisher/pages.home"], root)).exitCode).toBe(2);
     expect((await runRenderCli(["components.card", "--compare", "publisher/pages.home/home-v1.json"], root)).exitCode).toBe(2);
+  });
+});
+
+describe("clossys render on the Tallyhouse fixture (system.md 14.7)", () => {
+  it("renders one candidate per text agent and each result validates", async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "producer-render-tallyhouse-")));
+    temps.push(root);
+    cpSync(TALLYHOUSE, root, { recursive: true });
+    const refs = [
+      "director/identity.naming.name/name-v1.md",
+      "writer/sections.hero.copy/home.hero-v3.json",
+      "writer/narratives.legal-document/privacy-v2.md",
+      "publisher/page.home/home-v2.json",
+      "producer/loop.refine/refine-v2.json",
+    ];
+    for (const ref of refs) {
+      const index = await renderRef({ root, ref });
+      expectRenderIndex(index);
+      expect(index.ref).toBe(ref);
+      for (const row of index.specimens) expect(readFileSync(join(root, row.html!), "utf8")).toMatch(/^<!doctype html>/);
+    }
+    const tree = (dir: string) => readdirSync(dir, { recursive: true }).map(String).sort();
+    expect(tree(join(root, "clossys"))).toEqual(tree(join(TALLYHOUSE, "clossys"))); // renders never write the records
   });
 });
 

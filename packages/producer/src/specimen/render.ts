@@ -16,7 +16,7 @@
  * Until each agent's `src/specimens.ts` exists (after the landing bar), the specimen kinds live here.
  */
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { copyFile, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,6 +24,7 @@ import { pinSetHash, type PinSetEntry } from "../constitution/rules/r12.js";
 import { readCandidate, readSlot, readSlotEntry, slotIndex, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, MODEL_AGENTS, parseFrontmatter, type ModelAgent } from "../records/slot-model/index.js";
 import { nextVersion, withDraftOverlay } from "../records/slot-write.js";
+import type { RenderIndex } from "../records/types.js";
 import { snapshotSpecimen, type SnapshotOptions, type SnapshotResult } from "./thumbnails.js";
 
 /** A refusal of the caller's input (exit 2 at the CLI). */
@@ -38,29 +39,11 @@ export const RENDER_CACHE_VERSION = "clossys.render/1";
 /** Where every render is written, under the consumer root (system.md 12.4). */
 export const RENDERS_DIR = join(".clossys", "renders");
 
-// ---------------------------------------------------------------------------------------------
-// clossys.render/1 (system.md 12.4). Defined here until schemas/render-1.json and records/types.ts land.
-
-export interface RenderSpecimenRow {
-  readonly candidate: string;
-  readonly specimen: string;
-  readonly locale?: string;
-  readonly width?: number;
-  readonly png?: string;
-  readonly html?: string;
-}
-export interface RenderIndex {
-  readonly schema: "clossys.render/1";
-  readonly ref: string;
-  readonly compare?: string;
-  /** Digest of every input read; the same inputs give the same files. */
-  readonly inputsSha256: string;
-  readonly renderedAt: string;
-  readonly by: { readonly actor: "code"; readonly cli: "clossys render"; readonly version: string };
-  readonly specimens: readonly RenderSpecimenRow[];
-  /** A compare's side-by-side file (`compare.html`). */
-  readonly compareHtml?: string;
-}
+// clossys.render/1 (system.md 12.4): the 0001 record type and schemas/render.json.
+export type { RenderIndex } from "../records/types.js";
+export type RenderSpecimenRow = RenderIndex["specimens"][number];
+/** The specimen name of a compare's side-by-side file (`compare.html`), one row of the result. */
+export const COMPARE_SPECIMEN = "compare";
 
 const PRODUCER_VERSION = (() => {
   try { return (JSON.parse(readFileSync(fileURLToPath(new URL("../../package.json", import.meta.url)), "utf8")) as { version?: string }).version ?? "0.0.0"; } catch { return "0.0.0"; }
@@ -298,15 +281,13 @@ export interface RenderRefOptions {
 }
 interface RenderedCandidate { readonly agent: ModelAgent; readonly slot: string; readonly candidate: string; readonly inputs: readonly string[]; readonly rows: RenderSpecimenRow[]; readonly files: string[] }
 
-const indexOf = (options: { ref: string; compare?: string; inputs: readonly string[]; specimens: RenderSpecimenRow[]; now: () => Date; compareHtml?: string }): RenderIndex => ({
+const indexOf = (options: { ref: string; compare?: string; inputs: readonly string[]; specimens: RenderSpecimenRow[]; now: () => Date }): RenderIndex => ({
   schema: "clossys.render/1", ref: options.ref, ...(options.compare ? { compare: options.compare } : {}),
   inputsSha256: sha256([...options.inputs].sort().join("\n")), renderedAt: options.now().toISOString(),
   by: { actor: "code", cli: "clossys render", version: PRODUCER_VERSION }, specimens: options.specimens,
-  ...(options.compareHtml ? { compareHtml: options.compareHtml } : {}),
 });
 
 async function renderOne(options: RenderRefOptions, ref: RenderRef, candidate: string, draft?: string): Promise<RenderedCandidate> {
-  const consumer = join(options.root, "clossys");
   const now = options.now ?? (() => new Date());
   const rows: RenderSpecimenRow[] = [], files: string[] = [];
   const outOf = async (name: string) => { const dir = join(options.root, RENDERS_DIR, ref.agent, ref.slot, stemOf(name)); await mkdir(dir, { recursive: true }); return dir; };
@@ -327,7 +308,8 @@ async function renderOne(options: RenderRefOptions, ref: RenderRef, candidate: s
       rows.push({ candidate: result.candidate, specimen: "element", width: row.width, png: posix(relative(options.root, file)) });
     }
   } else {
-    const { bytes, sha256: candidateSha } = readCandidate(consumer, ref.agent, ref.slot, candidate);
+    const bytes = readFileSync(join(textCandidatesDir(options.root, ref), candidate), "utf8");
+    const candidateSha = sha256(bytes);
     out = await outOf(candidate);
     inputs = [`${ref.slot}/${candidate}:${candidateSha}`];
     for (const specimen of textSpecimens(ref.agent, ref.slot, candidate, bytes)) {
@@ -342,16 +324,33 @@ async function renderOne(options: RenderRefOptions, ref: RenderRef, candidate: s
   return { agent: ref.agent, slot: ref.slot, candidate, inputs, rows, files };
 }
 
-/** The candidates a ref names: one, or every live candidate of the slot. */
+/**
+ * A text specimen reads only the candidate's bytes, so a Director, Writer, Publisher or Producer
+ * slot renders from its folder (`clossys/agents/<agent>/<slot-id>/candidates/`) without loading the
+ * agent's IA. Designer renders go through the slot index (the dependency pin set is part of the key).
+ */
+function textCandidatesDir(root: string, ref: RenderRef): string {
+  return join(root, "clossys", "agents", ref.agent, ref.slot, "candidates");
+}
+
+/** The candidates a ref names: one, or every candidate of the slot. */
 function candidatesOf(root: string, ref: RenderRef): string[] {
-  const entry = readSlotEntry(join(root, "clossys"), ref.agent, ref.slot);
-  if (!entry) throw new RenderUsageError(`${ref.agent}/${ref.slot} is not in ${ref.agent}'s IA`);
+  let names: readonly string[];
+  if (ref.agent === "designer") {
+    const entry = readSlotEntry(join(root, "clossys"), ref.agent, ref.slot);
+    if (!entry) throw new RenderUsageError(`${ref.agent}/${ref.slot} is not in ${ref.agent}'s IA`);
+    names = entry.candidates;
+  } else {
+    const dir = textCandidatesDir(root, ref);
+    if (!existsSync(dir)) throw new RenderUsageError(`${ref.agent}/${ref.slot} has no candidates folder`);
+    names = readdirSync(dir).filter(name => CANDIDATE_NAME.test(name)).sort();
+  }
   if (ref.candidate) {
-    if (!entry.candidates.includes(ref.candidate)) throw new RenderUsageError(`${ref.agent}/${ref.slot} has no candidate ${ref.candidate}`);
+    if (!names.includes(ref.candidate)) throw new RenderUsageError(`${ref.agent}/${ref.slot} has no candidate ${ref.candidate}`);
     return [ref.candidate];
   }
-  if (!entry.candidates.length) throw new RenderUsageError(`${ref.agent}/${ref.slot} has no candidates`);
-  return [...entry.candidates];
+  if (!names.length) throw new RenderUsageError(`${ref.agent}/${ref.slot} has no candidates`);
+  return [...names];
 }
 
 /** Render a ref (and, with `compare`, a second candidate beside it); returns the `clossys.render/1` result. */
@@ -399,7 +398,8 @@ export async function renderRef(options: RenderRefOptions & { readonly draft?: s
   await writeAtomic(combined, `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(`${basename(a.candidate)} vs ${basename(b.candidate)}`)}</title>`
     + `<style>body{font:14px/1.5 system-ui,sans-serif;margin:24px;background:#fff;color:#18181b}main{display:grid;grid-template-columns:1fr 1fr;gap:24px}img{max-width:100%;border:1px solid #e4e4e7}iframe{width:100%;height:480px;border:1px solid #e4e4e7}figure{margin:0 0 16px}</style>`
     + `</head><body><main>${columns.join("")}</main></body></html>\n`);
-  const result = indexOf({ ref: options.ref, compare: options.compare, inputs: [...a.inputs, ...b.inputs], specimens, now, compareHtml: posix(relative(options.root, combined)) });
+  specimens.push({ candidate: a.candidate, specimen: COMPARE_SPECIMEN, html: posix(relative(options.root, combined)) });
+  const result = indexOf({ ref: options.ref, compare: options.compare, inputs: [...a.inputs, ...b.inputs], specimens, now });
   await writeAtomic(join(dir, "index.json"), `${JSON.stringify(result, null, 2)}\n`);
   return result;
 }
