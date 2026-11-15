@@ -250,3 +250,383 @@ export type ReferencePackage = {
   readonly classes: { readonly base: string; readonly baseFrom: string; readonly modifiers: readonly string[]; readonly modifiersFrom: string };
   readonly slots: readonly string[];
 };
+
+// ---------------------------------------------------------------------------
+// Target record formats (release2 ia-target: system.md 4, 6.5, 12; designer.md 9.8).
+// The JSON Schemas in packages/producer/schemas/ are the wire contract; these
+// hand-written types mirror them key for key (RECORD_KEYS, checked by schema.test.ts).
+// The int2 types above are unchanged; where a target name collides with an int2
+// name the target type takes a suffix (CheckResultDoc).
+// ---------------------------------------------------------------------------
+
+export type AgentId = "director" | "designer" | "writer" | "publisher" | "producer";
+export type SlotId = string;          // /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*){1,3}$/
+export type CandidateName = string;   // /^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.(md|json|svg)$/
+export type Iso = string;             // 2026-11-18T09:12:00Z
+export type Sha256 = string;          // 64 lowercase hex
+export type Tier = "low" | "mid" | "high";
+
+export type Actor =
+  | { actor: "package"; package: `@clossys/${AgentId}`; version: string }
+  | { actor: "agent"; agent: AgentId; skill: string; skillSha256: Sha256; model: string; tier: Tier }
+  | { actor: "owner"; ref: string }        // where the owner said it (issue comment, chat log id)
+  | { actor: "planner"; ref: string }
+  | { actor: "code"; cli: string; version: string };
+
+export type RefRel = "input" | "uses" | "consumedBy" | "places" | "cites" | "raisedBy" | "answers";
+
+/** A pointer to another record. `key` names a Director must-contain key; `record` names a Writer record or an entry id. */
+export interface Ref {
+  /** A slot, a candidate (`package:` for the package default) or the owner facts file. */
+  to: `${AgentId}/${SlotId}` | `${AgentId}/${SlotId}/${CandidateName}` | `${AgentId}/${SlotId}/package:${CandidateName}` | "facts";
+  key?: string;
+  record?: string;
+  sha256?: Sha256;
+  rel: RefRel;
+}
+
+export type TargetSlotKind =
+  | "brief"                                                   // Director
+  | "element/token" | "element/asset" | "element/component" | "element/section" | "element/frame"   // Designer
+  | "voice" | "prose" | "copy"                                // Writer
+  | "layout" | "chrome" | "page" | "release"                  // Publisher
+  | "loop" | "queue" | "ledger";                              // Producer
+
+export interface Common {
+  schema: string;
+  id: string;
+  agent: AgentId;
+  kind: TargetSlotKind | "candidate" | "pin" | "pin-map" | "check-result" | "queue-entry" | "ledger-entry";
+  status: string;
+  createdBy: Actor;
+  createdAt: Iso;
+  updatedAt?: Iso;
+  refs: Ref[];
+}
+
+export interface Brief {
+  purpose: string;
+  mustDo: string[];
+  inputs: Ref[];
+  acceptance: { check: string; params?: Record<string, unknown>; decider?: "code" | "agent" | "owner" }[];
+}
+
+export type TightenOp = "max" | "min" | "require" | "add" | "remove" | "narrow";
+export interface Tighten {
+  path: string;
+  op: TightenOp;
+  value: unknown;
+  why: string;
+  by: Actor;
+  at: Iso;
+}
+
+export type SlotState = "starter" | "live" | "parked" | "retired" | "needs-refresh";
+
+export interface Slot<C = Record<string, unknown>> extends Common {
+  schema: "clossys.slot/2";
+  kind: TargetSlotKind;
+  status: SlotState;
+  ia: { l0: string; l1: string; l2: string; order: number };
+  base: { package: string; version: string; path: string; sha256: Sha256 } | null;  // null = consumer-added L3
+  standard: string;
+  brief: Brief;
+  contract: C;
+  tighten: Tighten[];
+  options?: 1 | 2 | 3;
+  varyOn?: string;
+}
+
+export interface CandidateHeader extends Common {
+  schema: "clossys.candidate/1";
+  kind: "candidate";
+  status: "draft" | "submitted" | "retired";
+  slot: `${AgentId}/${SlotId}`;
+  record?: string;
+  /** The resolved brief it was made against. Absent only on package defaults (publisher.md 9.4 header-v1.json). */
+  briefSha256?: Sha256;
+  source: { kind: "registry" | "composition" | "npm" | "derived" | "original" | "package-default"; ref: string[]; license?: string };
+  rationale: { purpose: string; field?: string; why: string; sources: Ref[] }[];
+}
+
+export interface PinRecord {
+  candidate: CandidateName;
+  sha256: Sha256;
+  decidedBy: string;                      // owner[:ref] | planner[:ref] | agent:<id> | migrated
+  basis: "picked" | "bulk" | "planner" | "agent";
+  at: Iso;
+  confirmed?: { by: "owner"; ref: string; at: Iso };
+}
+
+export interface Pin extends Common, PinRecord {
+  schema: "clossys.pin/2";
+  kind: "pin";
+  status: "pinned" | "confirm";
+}
+
+export interface PinMap extends Common {
+  schema: "clossys.pin-map/1";
+  kind: "pin-map";
+  status: "pinned" | "confirm";
+  records: Record<string, PinRecord>;
+}
+
+/** system.md 4 `CheckResult` (named CheckResultDoc here: int2 `CheckResult` above is a different shape). */
+export interface CheckResultDoc {
+  schema: "clossys.check-result/1";
+  subject: string;                        // "<agent>/<slot-id>/<candidate>"
+  subjectSha256: Sha256;
+  briefSha256: Sha256;
+  standard: string;
+  ranAt: Iso;
+  by: Extract<Actor, { actor: "code" }>;
+  status: "pass" | "fail" | "error";
+  results: { check: string; status: "pass" | "fail" | "skip"; field?: string; locale?: string; detail?: string }[];
+}
+
+export type DeciderVerb = "refine-brief" | "create-candidates" | "check" | "pin" | "pick";
+export type HumanRaise = "queue.pick" | "queue.approve" | "queue.clarify";
+
+export type Decider =
+  | { by: "code" }
+  | { by: "agent"; agent: AgentId; verb: DeciderVerb; tier: Tier; model: string; skill?: string }
+  | { by: "human"; who: "owner"; raise: HumanRaise };
+
+/** A loop step's decider: the agent may be the placeholder "<owner of slot>"; package versions carry tier only (14.6). */
+export type LoopDecider =
+  | { by: "code" }
+  | { by: "agent"; agent: AgentId | "<owner of slot>"; verb: DeciderVerb; tier: Tier; model?: string; skill?: string }
+  | { by: "human"; who: "owner"; raise: HumanRaise };
+
+export interface LoopStep {
+  id: string;
+  does: string;
+  decider: LoopDecider;
+  cli: string;
+  reads: string[];
+  writes: string[];
+  checks: string[];
+  when?: { ia?: string[]; slots?: string[] };
+  onFail?: { raise: "queue.fix" | "queue.clarify"; then: "retry" | `loop.${string}` };
+}
+
+/** Content of producer/loop.<name>/candidates/<name>-v<n>.json, under `content`. */
+export interface LoopVersion {
+  trigger: string[];
+  steps: LoopStep[];
+  exit: string;
+  repeat: string;
+  maxRounds: number;
+}
+
+export type QueueName = "queue.pick" | "queue.approve" | "queue.clarify" | "queue.fix";
+
+export interface QueueEntry extends Common {
+  schema: "clossys.queue-entry/1";
+  kind: "queue-entry";
+  status: "open" | "answered" | "withdrawn";
+  queue: QueueName;
+  ask: string;
+  subject: Ref;
+  decider: "owner" | `agent:${AgentId}`;
+  default: string | null;
+  options?: { id: string; candidate?: CandidateName; summary: string }[];
+  events: {
+    at: Iso; op: "raised" | "answered" | "withdrawn"; by: string;
+    via?: "cli" | "chat" | "app";
+    answer?: string; note?: string;
+    quote?: string;                       // required when by = owner and via = chat (checked by code, not the schema)
+  }[];
+}
+
+export interface LedgerEntry extends Common {
+  schema: "clossys.ledger-entry/1";
+  kind: "ledger-entry";
+  status: "done" | "stopped" | "pinned-ready";
+  loop: `loop.${string}`;
+  loopVersion: CandidateName;
+  trigger: { kind: string; ref?: Ref };
+  steps: { id: string; decider: Decider; cli: string; exit: 0 | 1 | 2; wrote: { file: string; sha256: Sha256 | null }[] }[];
+  checks: Record<string, "pass" | "fail">;
+  decisions: { entry: string; answer: string }[];
+  outcome: string;
+}
+
+/** Front matter `clossys` key of a view prompt (system.md 6.6). */
+export interface ViewHeader {
+  schema: "clossys.view/1";
+  id: `${AgentId}/views/${string}`;
+  agent: AgentId;
+  kind: "view";
+  status: "live";
+  createdBy: Actor;
+  createdAt: Iso;
+  updatedAt?: Iso;
+  refs?: Ref[];
+  appliesTo: string[];
+  inputs: string[];                       // each starts with clossys status|slot|render|preview
+  answers: QueueName[];
+}
+
+export interface IaPublication {
+  node: string;
+  starter: string;
+  root: string;
+  pages: SlotId[];
+  chrome: SlotId[];
+  release: SlotId;
+  redirects: { from: string; to: string }[];
+}
+
+/** clossys/agents/<agent>/ia.json. */
+export interface IaRecord extends Omit<Common, "kind"> {
+  schema: "clossys.ia/1";
+  kind: "ia";
+  status: "live";
+  publications?: Record<string, IaPublication>;
+}
+
+/** clossys/facts.json: owner facts bound in prose as {fact:<id>}. */
+export interface FactsRecord {
+  schema: "clossys.facts/1";
+  id: "facts";
+  status: "live";
+  createdBy: Actor;
+  createdAt: Iso;
+  updatedAt?: Iso;
+  facts: Record<string, string | number | boolean | string[]>;
+}
+
+// Read models (system.md 12.2-12.5): CLI stdout, never committed.
+
+export interface AgentCensus {
+  slots: number;
+  byState: { pinned: number; confirm: number; sample: number; unresolved: number; failing: number; needsRefresh: number };
+  records?: number;
+}
+
+export interface StatusView {
+  schema: "clossys.status/1";
+  at: Iso;
+  workspace: string;
+  stateSha256?: Sha256;                   // system.md 14.9
+  agents: Record<AgentId, AgentCensus>;
+  queue: { id: string; queue: QueueName; decider: QueueEntry["decider"]; subject: string; ask: string; default: string | null; raisedAt: Iso }[];
+  ledger: { id: string; loop: string; status: LedgerEntry["status"]; outcome: string; at: Iso }[];
+  releases: { publication: string; pinned: CandidateName | null; stale: boolean; reason?: string }[];
+}
+
+export interface SlotView {
+  schema: "clossys.slot-view/1";
+  ref: string;
+  slot: { id: SlotId; agent: AgentId; kind: string; status: SlotState; ia: { l0: string; l1: string; l2: string };
+          brief: Brief; briefSha256: Sha256; tightenCount: number; contract: unknown };
+  candidates: {
+    name: CandidateName; record?: string; sha256: Sha256; createdBy: Actor; createdAt: Iso;
+    briefCurrent: boolean;
+    check: { status: "pass" | "fail" | "error" | "none"; failed: string[] };
+    rationale: { purpose: string; field?: string; why: string }[];
+    renders: string[];
+  }[];
+  pin: { record?: string; candidate: CandidateName; sha256: Sha256; decidedBy: string; basis: string; at: Iso;
+         state: "pinned" | "confirm" | "sample" }[];
+  consumedBy: string[];
+  queue: string[];
+  ledger: string[];
+}
+
+export interface RenderIndex {
+  schema: "clossys.render/1";
+  ref: string;
+  compare?: string;
+  inputsSha256: Sha256;
+  renderedAt: Iso;
+  by: Extract<Actor, { actor: "code" }>;
+  specimens: { candidate: CandidateName; specimen: string; locale?: string; width?: number; png?: string; html?: string }[];
+}
+
+/** system.md 12.5. Not the int2 PreviewRecord, which uses the same schema id (see schemas.ts RECORD_SCHEMA_IDS.preview). */
+export interface PreviewView {
+  schema: "clossys.preview/1";
+  publication: string;
+  buildId: string;                        // "preview-<12 hex>"
+  url: string;
+  routes: { path: string; page: string; locales: string[] }[];
+  overrides: { ref: string; sha256: Sha256 }[];
+  sample: string[];
+}
+
+export type ThemeMode = "light" | "dark";
+export type ShadcnVar =
+  | "--background" | "--foreground" | "--primary" | "--primary-foreground" | "--secondary" | "--secondary-foreground"
+  | "--muted" | "--muted-foreground" | "--accent" | "--accent-foreground" | "--destructive" | "--border" | "--input"
+  | "--ring" | "--radius" | "--font-sans" | "--font-heading";
+
+export interface ThemeSource { slot: string; candidate: CandidateName; sha256: Sha256; sample: boolean }
+
+/** designer.md 9.8: .clossys/generated/designer/theme.json. */
+export interface ThemeProjection {
+  schema: "clossys.theme/1";
+  vars: Record<ThemeMode, Partial<Record<ShadcnVar | `--${string}`, string>>>;
+  sources: Record<string, ThemeSource>;
+  inputsSha256: Sha256;
+}
+
+/** Exactly the keys of T: a missing or extra key fails the build. */
+const keysOf = <T>() => (keys: { [K in keyof Required<T>]: true }): readonly string[] => Object.keys(keys);
+
+/** Top-level keys of each target type, by schema id; schema.test.ts compares them to the schema `properties`. */
+export const RECORD_KEYS: Readonly<Record<string, readonly string[]>> = {
+  "clossys.slot/2": keysOf<Slot>()({
+    schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
+    ia: true, base: true, standard: true, brief: true, contract: true, tighten: true, options: true, varyOn: true,
+  }),
+  "clossys.candidate/1": keysOf<CandidateHeader>()({
+    schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
+    slot: true, record: true, briefSha256: true, source: true, rationale: true,
+  }),
+  "clossys.pin/2": keysOf<Pin>()({
+    schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
+    candidate: true, sha256: true, decidedBy: true, basis: true, at: true, confirmed: true,
+  }),
+  "clossys.pin-map/1": keysOf<PinMap>()({
+    schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
+    records: true,
+  }),
+  "clossys.check-result/1": keysOf<CheckResultDoc>()({
+    schema: true, subject: true, subjectSha256: true, briefSha256: true, standard: true, ranAt: true, by: true, status: true, results: true,
+  }),
+  "clossys.queue-entry/1": keysOf<QueueEntry>()({
+    schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
+    queue: true, ask: true, subject: true, decider: true, default: true, options: true, events: true,
+  }),
+  "clossys.ledger-entry/1": keysOf<LedgerEntry>()({
+    schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
+    loop: true, loopVersion: true, trigger: true, steps: true, checks: true, decisions: true, outcome: true,
+  }),
+  "clossys.loop-version/1": keysOf<LoopVersion>()({ trigger: true, steps: true, exit: true, repeat: true, maxRounds: true }),
+  "clossys.view/1": keysOf<ViewHeader>()({
+    schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
+    appliesTo: true, inputs: true, answers: true,
+  }),
+  "clossys.ia/1": keysOf<IaRecord>()({
+    schema: true, id: true, agent: true, kind: true, status: true, createdBy: true, createdAt: true, updatedAt: true, refs: true,
+    publications: true,
+  }),
+  "clossys.facts/1": keysOf<FactsRecord>()({
+    schema: true, id: true, status: true, createdBy: true, createdAt: true, updatedAt: true, facts: true,
+  }),
+  "clossys.status/1": keysOf<StatusView>()({
+    schema: true, at: true, workspace: true, stateSha256: true, agents: true, queue: true, ledger: true, releases: true,
+  }),
+  "clossys.slot-view/1": keysOf<SlotView>()({
+    schema: true, ref: true, slot: true, candidates: true, pin: true, consumedBy: true, queue: true, ledger: true,
+  }),
+  "clossys.render/1": keysOf<RenderIndex>()({
+    schema: true, ref: true, compare: true, inputsSha256: true, renderedAt: true, by: true, specimens: true,
+  }),
+  "clossys.preview/1": keysOf<PreviewView>()({
+    schema: true, publication: true, buildId: true, url: true, routes: true, overrides: true, sample: true,
+  }),
+  "clossys.theme/1": keysOf<ThemeProjection>()({ schema: true, vars: true, sources: true, inputsSha256: true }),
+};

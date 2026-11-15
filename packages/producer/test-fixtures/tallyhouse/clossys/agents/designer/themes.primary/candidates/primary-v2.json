@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tallyhouse-primary",
+  "type": "registry:theme",
+  "cssVars": {
+    "light": { "primary": "oklch(0.45 0.09 160)" },
+    "dark": { "primary": "oklch(0.78 0.11 160)" }
+  },
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/themes.primary/primary-v2.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/themes.primary",
+    "briefSha256": "1cf145781e4052840d84a8a1c16956a3c895a376c9b3eeb9f696680c8a1f9c17",
+    "createdBy": { "actor": "agent", "agent": "designer", "skill": "packages/designer/actions/designer.candidates/skill.md", "skillSha256": "11854771bb99614d36c22946c708556502e2c3cb4a5eb819ed48261a13de34c1", "model": "claude-opus-5-5", "tier": "mid" },
+    "createdAt": "2026-11-16T10:58:00Z",
+    "refs": [ { "to": "director/identity.visual.style", "key": "Feel", "rel": "input" } ],
+    "source": { "kind": "original", "ref": [] },
+    "rationale": [ { "purpose": "express", "why": "Ledger green reads as settled money; low chroma keeps it calm.", "sources": [ { "to": "director/identity.visual.style", "key": "Feel", "rel": "cites" } ] } ]
+  }
+}
