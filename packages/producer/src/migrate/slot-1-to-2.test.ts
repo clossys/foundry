@@ -38,7 +38,7 @@ describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer", () => {
     const brief = ws.read("director", "advantage.defensibility.differentiator");
     expect(brief).toMatchObject({
       schema: "clossys.slot/2", kind: "brief", status: "starter", base: null, tighten: [], options: 3, varyOn: "angle",
-      ia: { l0: "strategy", l1: "strategy/advantage", l2: "strategy/advantage/defensibility", order: 26 },
+      ia: { l0: "strategy", l1: "strategy/advantage", l2: "strategy/advantage/defensibility", order: 24 },
       createdBy: { actor: "code", cli: "clossys migrate slot-1-to-2", version: "0.0.0-test" },
       refs: [{ to: "director/advantage.proposition.promise", rel: "input" }],
     });
