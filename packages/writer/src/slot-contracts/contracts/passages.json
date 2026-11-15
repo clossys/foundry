@@ -4211,7 +4211,7 @@
           },
           "actions.back": {
             "required": true,
-            "maxChars": 120
+            "maxChars": 28
           },
           "actions.resend": {
             "required": true,

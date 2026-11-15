@@ -55,7 +55,19 @@ describe("Writer slot contracts", () => {
         if (layer === "passages") for (const field of contract.copy.fields) {
           // An owner hold keeps a field at its earlier, looser limit until the owner decides; it must still be needed.
           const hold = OWNER_HOLDS.find(row => row.slot === id && row.field === field.key);
-          if (hold) expect(hold.maxChars, `${id}:${field.key}`).toBeGreaterThan(field.maxLength.en);
+          if (hold) {
+            const budget = field.maxLength.en;
+            const label = `stale owner hold ${id}:${field.key}`;
+            expect(hold.maxChars, label).toBeGreaterThan(budget);
+            // Still needed: some exemplar for the field must exceed the budget's headroom cap.
+            const lengths = byId.get(id)!.references.flatMap(r => r.exemplars).flatMap(ex => "fields" in ex && Object.hasOwn(ex.fields, field.key) ? [ex.fields[field.key]!].flat() : []).map(t => [...t].length);
+            const over = lengths.filter(length => length > Math.floor(budget / 1.3));
+            expect(over.length, `${label}: every exemplar fits floor(${budget} / 1.3); drop the hold`).toBeGreaterThan(0);
+            // Smallest: the tightest limit that keeps the longest such exemplar inside its headroom.
+            let smallest = Math.max(...over);
+            while (Math.floor(smallest / 1.3) < Math.max(...over)) smallest++;
+            expect(hold.maxChars, `${label}: hold is not the smallest limit that fits`).toBe(smallest);
+          }
           expect([fields[field.key]!.required, fields[field.key]!.maxChars], `${id}:${field.key}`).toEqual([field.required, hold?.maxChars ?? field.maxLength.en]);
         }
         if (layer === "lexicon") expect(byId.get(id)!.limits.recordKind).toBe(contract.recordKind);

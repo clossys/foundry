@@ -8,10 +8,12 @@
  * `.maxChars` to match, leaving every other byte of the contract file as it is
  * (the file is canonical two-space JSON). Default mode checks; --write rewrites.
  *
- * OWNER_HOLDS keeps a field at its current contract limit when authored copy
- * (records or contract exemplars) no longer fits the catalog budget. Each hold is
- * an open owner decision: copy is never rewritten here, and a hold never loosens
- * a limit beyond the value it already had.
+ * OWNER_HOLDS keeps a field above its catalog budget while authored copy
+ * (contract exemplars, or record values passed in) no longer fits that budget.
+ * Each hold is an open owner decision: copy is never rewritten here, a hold never
+ * loosens a limit beyond the value it already had, a hold must still be needed
+ * (some exemplar exceeds floor(budget / 1.3), or some record exceeds the budget)
+ * and a hold must be the smallest limit that keeps that copy inside its headroom.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -28,13 +30,43 @@ export const OWNER_HOLDS = Object.freeze([
   {
     slot: "passages.sign-in-form",
     field: "actions.back",
-    maxChars: 120,
+    maxChars: 28,
     reason: "Exemplar \"Use a different email\" (21 chars) exceeds the 24-char action budget with 1.3 translation headroom (18); owner decides the exemplar or the budget.",
   },
 ]);
 
-/** Pure: returns the synced contracts document and the changed fields. */
-export function syncPassageContractLimits(catalog, contracts, holds = OWNER_HOLDS) {
+/** Exemplar headroom rule shared with the slot-contracts test: a value fits a limit when its length <= floor(limit / 1.3). */
+export const exemplarCap = maxChars => Math.floor(maxChars / 1.3);
+
+/** Smallest limit whose exemplar cap admits a value of `length` characters. */
+export function smallestExemplarLimit(length) {
+  let maxChars = length;
+  while (exemplarCap(maxChars) < length) maxChars++;
+  return maxChars;
+}
+
+/** Every exemplar value of `key` in a passage contract slot. */
+export function exemplarValues(slot, key) {
+  return (slot.references ?? []).flatMap(reference => reference.exemplars ?? [])
+    .flatMap(exemplar => exemplar.fields && Object.hasOwn(exemplar.fields, key) ? [exemplar.fields[key]].flat() : []);
+}
+
+/**
+ * Smallest limit a hold needs, or 0 when nothing needs it: exemplars over the
+ * budget's headroom cap, and record values over the budget itself.
+ */
+export function holdNeed(slot, key, budget, recordValues = []) {
+  const length = value => [...value].length;
+  const exemplarNeed = exemplarValues(slot, key).filter(value => length(value) > exemplarCap(budget)).map(value => smallestExemplarLimit(length(value)));
+  const recordNeed = recordValues.filter(value => length(value) > budget).map(length);
+  return Math.max(0, ...exemplarNeed, ...recordNeed);
+}
+
+/**
+ * Pure: returns the synced contracts document and the changed fields.
+ * `records` optionally maps "<slot> <field>" to authored record values for that field.
+ */
+export function syncPassageContractLimits(catalog, contracts, holds = OWNER_HOLDS, records = new Map()) {
   if (!Array.isArray(catalog)) throw new Error("Catalog passages must be an array");
   if (contracts?.layer !== "passages" || !Array.isArray(contracts.slots)) throw new Error("Contracts must be the passages layer");
   const held = new Map(holds.map(hold => [`${hold.slot} ${hold.field}`, hold]));
@@ -58,8 +90,11 @@ export function syncPassageContractLimits(catalog, contracts, holds = OWNER_HOLD
       let maxChars = budget;
       if (hold) {
         used.add(`${id} ${field.key}`);
-        if (hold.maxChars < budget) throw new Error(`${id}: ${field.key} hold ${hold.maxChars} is tighter than the budget ${budget}; drop the hold`);
-        if (hold.maxChars !== limit.maxChars) throw new Error(`${id}: ${field.key} hold ${hold.maxChars} differs from the current limit ${limit.maxChars}; a hold never loosens`);
+        if (hold.maxChars <= budget) throw new Error(`${id}: ${field.key} hold ${hold.maxChars} is not looser than the budget ${budget}; drop the hold`);
+        if (hold.maxChars > limit.maxChars) throw new Error(`${id}: ${field.key} hold ${hold.maxChars} is looser than the current limit ${limit.maxChars}; a hold never loosens`);
+        const need = holdNeed(slot, field.key, budget, records.get(`${id} ${field.key}`) ?? []);
+        if (need === 0) throw new Error(`${id}: ${field.key} hold ${hold.maxChars} is no longer needed (all copy fits the budget ${budget}); drop the hold`);
+        if (hold.maxChars !== need) throw new Error(`${id}: ${field.key} hold ${hold.maxChars} is not the smallest limit that fits its copy (${need}); set the hold to ${need}`);
         maxChars = hold.maxChars;
       }
       if (limit.required !== field.required || limit.maxChars !== maxChars) {
