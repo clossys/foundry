@@ -1,0 +1,4 @@
+/* The consumer brand file by a climbing relative path instead of the consumer-root placeholder. */
+@import "tailwindcss";
+@import "@clossys/designer/theme.css";
+@import "../../clossys/designer/brand.css";

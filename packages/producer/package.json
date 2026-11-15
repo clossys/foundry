@@ -88,6 +88,7 @@
     "check:pipeline-seats": "node scripts/generate-pipeline-seats.mjs --check",
     "generate:specimen-evidence": "node ../designer/scripts/generate-specimen-surface-evidence.mjs",
     "check:specimen-evidence": "node ../designer/scripts/generate-specimen-surface-evidence.mjs --check",
+    "test:no-consumer-content": "node --test scripts/check-no-consumer-content.test.mjs",
     "test:pipeline": "node --test scripts/check-pipeline.test.mjs",
     "generate:pipeline-actions": "node scripts/generate-pipeline-actions.mjs",
     "generate:pipeline-seats": "node scripts/generate-pipeline-seats.mjs",

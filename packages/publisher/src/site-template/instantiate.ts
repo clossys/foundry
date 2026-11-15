@@ -3,6 +3,11 @@
  * exact `@clossys/*` pins. By default, root manifest workspaces cover it;
  * standalone mode leaves repository manifests and package-manager files alone.
  *
+ * A template file never names its consumer by a relative path (check:no-consumer-content,
+ * consumer-reach). It writes {@link CONSUMER_ROOT_PLACEHOLDER} instead, and the copy resolves it to
+ * the path from that file's own directory to the configured consumer root (the directory holding
+ * clossys/: `consumerRoot`, else `root`).
+ *
  * Every refusal is decided before the first write. Messages name a rule and a
  * relative path only: never a pin, the root path or any file content.
  */
@@ -37,7 +42,8 @@ export type SiteInstantiateRule =
   | "root-manifest-invalid"
   | "root-manifest-not-object"
   | "workspaces-unsupported"
-  | "template-symlink";
+  | "template-symlink"
+  | "consumer-root-unreachable";
 
 /** The run was refused: nothing was written. */
 export class SiteInstantiateRefusal extends Error {
@@ -64,6 +70,11 @@ export class SiteInstantiateUnavailable extends Error {
 export interface SiteInstantiateOptions {
   /** The consumer repository root. */
   root: string;
+  /**
+   * The consumer root the template's {@link CONSUMER_ROOT_PLACEHOLDER} resolves to: the directory
+   * holding the consumer's clossys/ folder. Defaults to `root`.
+   */
+  consumerRoot?: string;
   /** The parsed pins document: `{ "@clossys/<pkg>": "<exact semver>" }`. */
   pins: unknown;
   /** Repository-relative site directory. Defaults to `apps/site`. */
@@ -81,6 +92,12 @@ export interface SiteInstantiateResult {
   siteDir: string;
   workspacesAdded: boolean;
 }
+
+/**
+ * Written in a template file where it needs the consumer root; resolved at copy time to the
+ * `/`-joined path from that file's directory to the consumer root (`.` when they are the same).
+ */
+export const CONSUMER_ROOT_PLACEHOLDER = "{{consumer-root}}";
 
 const DEFAULT_SITE_DIR = "apps/site";
 const SKIPPED_TEMPLATE_DIRS = new Set(["node_modules", ".next"]);
@@ -294,6 +311,14 @@ function firstMissingAncestor(dir: string): string | null {
   return missing;
 }
 
+/** `text` with every placeholder resolved for a file in `fileDir`, or null when it holds none. */
+function resolvePlaceholder(text: string, fileDir: string, consumerRoot: string, file: string): string | null {
+  if (!text.includes(CONSUMER_ROOT_PLACEHOLDER)) return null;
+  const rel = relative(fileDir, consumerRoot);
+  if (isAbsolute(rel)) throw new SiteInstantiateRefusal("consumer-root-unreachable", file);
+  return text.split(CONSUMER_ROOT_PLACEHOLDER).join(rel === "" ? "." : rel.split(sep).join("/"));
+}
+
 export function instantiateSite(options: SiteInstantiateOptions): SiteInstantiateResult {
   if (options.standalone !== undefined && typeof options.standalone !== "boolean") {
     throw new SiteInstantiateRefusal("standalone-invalid", "--standalone");
@@ -311,8 +336,24 @@ export function instantiateSite(options: SiteInstantiateOptions): SiteInstantiat
       throw new SiteInstantiateUnavailable("template-unreadable");
     }
   })();
-  const manifestText = pinnedManifest(templateDir, pins, siteDir);
   const target = join(root, ...siteDir.split("/"));
+  const consumerRoot = resolve(options.consumerRoot ?? root);
+  const pinned = pinnedManifest(templateDir, pins, siteDir);
+  const manifestText = resolvePlaceholder(pinned, target, consumerRoot, `${siteDir}/package.json`) ?? pinned;
+  /** Template files that name the consumer root, with the placeholder resolved: written instead of copied. */
+  const resolved = new Map<string, string>();
+  for (const file of tree.files) {
+    if (file === "package.json") continue;
+    let bytes: Buffer;
+    try {
+      bytes = readFileSync(join(templateDir, ...file.split("/")));
+    } catch {
+      throw new SiteInstantiateUnavailable("template-unreadable");
+    }
+    const fileDir = dirname(join(target, ...file.split("/")));
+    const text = resolvePlaceholder(bytes.toString("utf8"), fileDir, consumerRoot, `${siteDir}/${file}`);
+    if (text !== null) resolved.set(file, text);
+  }
   const targetState = checkTarget(root, target, siteDir);
 
   // Everything that can be refused has been. From here on, a failure rolls back.
@@ -327,6 +368,11 @@ export function instantiateSite(options: SiteInstantiateOptions): SiteInstantiat
     for (const dir of tree.directories) mkdirSync(join(staging, ...dir.split("/")));
     for (const file of tree.files) {
       if (file === "package.json") continue;
+      const text = resolved.get(file);
+      if (text !== undefined) {
+        writeFileSync(join(staging, ...file.split("/")), text);
+        continue;
+      }
       copyFileSync(join(templateDir, ...file.split("/")), join(staging, ...file.split("/")));
     }
     writeFileSync(join(staging, "package.json"), manifestText);

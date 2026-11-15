@@ -4,13 +4,15 @@ import { resolve } from "node:path";
 import { isDirectInvocation } from "../verified-publication-rate-cli.js";
 import { SiteInstantiateRefusal, SiteInstantiateUnavailable, instantiateSite } from "./instantiate.js";
 
-const USAGE = `Usage: publisher-site-instantiate --root <repo> --pins <file.json> [--site-dir apps/site] [--standalone]
+const USAGE = `Usage: publisher-site-instantiate --root <repo> --pins <file.json> [--site-dir apps/site] [--consumer-root <dir>] [--standalone]
 
 Copies the site template into <repo>/<site-dir> with exact @clossys/* pins and makes the
 root package.json workspaces cover it. --standalone copies a standalone project without
 reading or updating the root manifest, workspace configuration or lockfiles; package-manager
 installation and lockfile qualification remain the consumer's responsibility. <file.json> is a JSON object
 { "@clossys/<pkg>": "<exact semver>" } taken from the approved plan; this command never reads a plan.
+--consumer-root names the folder holding the consumer's clossys/ (default: <repo>); the template's
+{{consumer-root}} paths resolve to it.
 Exit codes: 0 = done, 1 = refused (nothing written), 2 = could not run.`;
 
 class UsageError extends Error {}
@@ -19,6 +21,7 @@ interface Parsed {
   root: string;
   pins: string;
   siteDir: string | undefined;
+  consumerRoot: string | undefined;
   standalone: boolean;
 }
 
@@ -33,7 +36,7 @@ function parseArgs(argv: readonly string[]): Parsed {
       continue;
     }
     const value = argv[index + 1];
-    if (flag !== "--root" && flag !== "--pins" && flag !== "--site-dir") throw new UsageError("unknown-argument");
+    if (flag !== "--root" && flag !== "--pins" && flag !== "--site-dir" && flag !== "--consumer-root") throw new UsageError("unknown-argument");
     if (value === undefined || value.startsWith("--")) throw new UsageError("missing-value");
     if (values.has(flag)) throw new UsageError("repeated-argument");
     values.set(flag, value);
@@ -42,7 +45,7 @@ function parseArgs(argv: readonly string[]): Parsed {
   const root = values.get("--root");
   const pins = values.get("--pins");
   if (root === undefined || pins === undefined) throw new UsageError("missing-required-argument");
-  return { root, pins, siteDir: values.get("--site-dir"), standalone };
+  return { root, pins, siteDir: values.get("--site-dir"), consumerRoot: values.get("--consumer-root"), standalone };
 }
 
 function fail(prefix: string, rule: string): void {
@@ -77,6 +80,7 @@ export function main(argv: readonly string[], env: { templateDir?: string } = {}
       pins,
       standalone: parsed.standalone,
       ...(parsed.siteDir === undefined ? {} : { siteDir: parsed.siteDir }),
+      ...(parsed.consumerRoot === undefined ? {} : { consumerRoot: parsed.consumerRoot }),
       ...(env.templateDir === undefined ? {} : { templateDir: env.templateDir }),
     });
     console.log(`publisher-site-instantiate: done: ${result.siteDir}${result.workspacesAdded ? " (root workspaces updated)" : ""}`);

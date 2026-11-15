@@ -33,6 +33,7 @@ import { fileURLToPath } from "node:url";
 import { checkTokenPurity, scanStyleSources } from "@clossys/designer/gate";
 import { TOKENS } from "@clossys/designer/tokens";
 import { describe, expect, it } from "vitest";
+import { CONSUMER_ROOT_PLACEHOLDER } from "./site-template/instantiate.js";
 
 // ---------------------------------------------------------------- locations
 
@@ -374,7 +375,14 @@ interface CustomPropertyOptions {
 const REF_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".css", ".mjs"]);
 const REF_SKIP_DIRS = new Set(["node_modules", "dist", ".next"]);
 const REF_SKIP_FILE = /\.(test|spec|check)\.[^/\\]+$|\.d\.ts$/;
-const BRAND_FILE_SUFFIX = "clossys/designer/brand.css";
+/**
+ * The consumer repository's brand file, as the template names it: through the consumer-root
+ * placeholder publisher-site-instantiate resolves at copy time. It does not exist in this
+ * repository, and what it declares cannot be counted on here. A relative path that climbs to it
+ * instead is a consumer reach (check:no-consumer-content) and resolves nothing here, so it is a
+ * finding like any other missing import.
+ */
+const CONSUMER_BRAND_IMPORT = `${CONSUMER_ROOT_PLACEHOLDER}/clossys/designer/brand.css`;
 
 function walkFiles(dir: string, skipDirs: ReadonlySet<string>, out: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
@@ -523,13 +531,11 @@ function checkCustomProperties(options: CustomPropertyOptions): CustomPropertyRe
           else findings.push({ kind: "unresolvable-import", message: `${repoRel(file)}: ${resolved.problem}` });
           continue;
         }
+        if (spec === CONSUMER_BRAND_IMPORT) continue;
         if (spec.startsWith("./") || spec.startsWith("../")) {
           const target = resolve(dirname(file), spec);
           if (existsSync(target) && statSync(target).isFile()) {
             visit(target);
-          } else if (!isInside(templateDir, target) && toPosix(target).endsWith(`/${BRAND_FILE_SUFFIX}`)) {
-            // The consumer repository's brand file. It does not exist in this
-            // repository, and what it declares cannot be counted on here.
           } else {
             findings.push({ kind: "unresolvable-import", message: `${repoRel(file)}: @import "${spec}" does not resolve` });
           }
@@ -665,6 +671,13 @@ describe("guard 2: custom properties", () => {
     expect(messages.some((m) => m.includes("@clossys/designer/not-an-export.css"))).toBe(true);
     expect(messages.some((m) => m.includes("some-other-package/styles.css"))).toBe(true);
     expect(messages.some((m) => m.includes("brand.css"))).toBe(false);
+  });
+
+  it("reports a relative path that climbs to the consumer brand file (negative control)", () => {
+    // Only the consumer-root placeholder names the consumer; a climbing path is a missing import here.
+    const findings = findingsFor(fixtureOptions("relative-brand-import"));
+    expect(findings.map((f) => f.kind)).toEqual(["unresolvable-import"]);
+    expect(findings[0]?.message).toMatch(/@import "(?:\.\.\/)+clossys\/designer\/brand\.css" does not resolve/);
   });
 
   it("pins an undefined reference by exact file and name, and flags a pin that matches nothing", () => {

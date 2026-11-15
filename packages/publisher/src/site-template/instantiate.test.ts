@@ -10,12 +10,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkTokenPurity, scanStyleSources } from "@clossys/designer/gate";
 import { TOKENS } from "@clossys/designer/tokens";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { SiteInstantiateRefusal, instantiateSite, type SiteInstantiateRule } from "./instantiate.js";
+import { CONSUMER_ROOT_PLACEHOLDER, SiteInstantiateRefusal, instantiateSite, type SiteInstantiateRule } from "./instantiate.js";
 
 const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const TEMPLATE_DIR = join(PACKAGE_ROOT, "templates", "site");
@@ -272,7 +272,16 @@ describe.each([false, true])("instantiateSite: the copied tree (standalone=%s)",
     expect([...actual.keys()].sort()).toEqual([...expected.keys()].sort());
     for (const [path, bytes] of expected) {
       if (path === "package.json" || bytes === null) continue;
-      expect(actual.get(path)?.equals(bytes), `${path} differs from the template`).toBe(true);
+      const text = bytes.toString("utf8");
+      if (!text.includes(CONSUMER_ROOT_PLACEHOLDER)) {
+        expect(actual.get(path)?.equals(bytes), `${path} differs from the template`).toBe(true);
+        continue;
+      }
+      // Byte-for-byte but for the consumer-root placeholder, resolved from this file's directory.
+      const rel = relative(dirname(join(target, path)), root).split(sep).join("/");
+      const copiedText = actual.get(path)?.toString("utf8") ?? "";
+      expect(copiedText).not.toContain(CONSUMER_ROOT_PLACEHOLDER);
+      expect(copiedText.split(rel).join(CONSUMER_ROOT_PLACEHOLDER), `${path} differs from the template`).toBe(text);
     }
 
     const copied = JSON.parse(actual.get("package.json")?.toString("utf8") ?? "{}") as Record<string, Record<string, string>>;
@@ -287,6 +296,30 @@ describe.each([false, true])("instantiateSite: the copied tree (standalone=%s)",
     const text = actual.get("package.json")?.toString("utf8") ?? "";
     expect(text).toBe(`${JSON.stringify(copied, null, 2)}\n`);
     expect(Object.keys(copied)).toEqual(Object.keys(original));
+  });
+
+  it("resolves the template's consumer-root paths to the consumer's clossys/ files", () => {
+    // The shipped template names its consumer only through the placeholder, never by a climbing path.
+    const css = readFileSync(join(TEMPLATE_DIR, "app", "globals.css"), "utf8");
+    expect(css).toContain(`@import "${CONSUMER_ROOT_PLACEHOLDER}/clossys/designer/brand.css";`);
+    expect(css).not.toMatch(/\.\.\/(?:\.\.\/)+clossys/);
+    expect(templateManifest().scripts?.["publish:site"]).toContain(`--selection ${CONSUMER_ROOT_PLACEHOLDER}/clossys/component-selection.ts`);
+
+    const cases: { siteDir?: string; consumerRoot?: string }[] = [{}, { siteDir: "web/marketing/site" }, { consumerRoot: join(root, "config") }];
+    for (const [index, options] of cases.entries()) {
+      const caseRoot = join(work, `case-${index}`);
+      mkdirSync(caseRoot);
+      writeFileSync(join(caseRoot, "package.json"), `${JSON.stringify({ name: "example-project" }, null, 2)}\n`);
+      const consumerRoot = options.consumerRoot === undefined ? caseRoot : join(caseRoot, "config");
+      const result = instantiateSite({ root: caseRoot, standalone, pins: fullPins(), ...(options.siteDir === undefined ? {} : { siteDir: options.siteDir }), ...(options.consumerRoot === undefined ? {} : { consumerRoot }) });
+      const site = join(caseRoot, ...result.siteDir.split("/"));
+      const brand = /@import "([^"]+brand\.css)";/.exec(readFileSync(join(site, "app", "globals.css"), "utf8"))?.[1] ?? "";
+      expect(resolve(site, "app", brand)).toBe(join(consumerRoot, "clossys", "designer", "brand.css"));
+      const script = (JSON.parse(readFileSync(join(site, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts["publish:site"] ?? "";
+      const selection = /--selection (\S+)/.exec(script)?.[1] ?? "";
+      expect(resolve(site, selection)).toBe(join(consumerRoot, "clossys", "component-selection.ts"));
+      expect(script).not.toContain(CONSUMER_ROOT_PLACEHOLDER);
+    }
   });
 
   it("skips node_modules and .next in the template and never copies a symlink", () => {

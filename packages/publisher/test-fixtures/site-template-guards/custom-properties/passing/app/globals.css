@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "@clossys/designer/theme.css";
-@import "../../clossys/designer/brand.css";
+@import "{{consumer-root}}/clossys/designer/brand.css";
 
 :root {
   --fixture-local-gap: 1rem;
