@@ -3,7 +3,7 @@
   "id": "aspiration.purpose.mission",
   "agent": "director",
   "ia": {
-    "l0": "situation",
+    "l0": "strategy",
     "l1": "aspiration",
     "l2": "aspiration.purpose",
     "order": 8

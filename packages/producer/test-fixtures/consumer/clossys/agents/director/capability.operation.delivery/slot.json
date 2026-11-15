@@ -3,10 +3,10 @@
   "id": "capability.operation.delivery",
   "agent": "director",
   "ia": {
-    "l0": "plan",
-    "l1": "capability",
-    "l2": "capability.operation",
-    "order": 43
+    "l0": "execution",
+    "l1": "plan",
+    "l2": "plan.operation",
+    "order": 51
   },
   "kind": "brief",
   "contract": {

@@ -3,10 +3,10 @@
   "id": "execution.measure.north-star",
   "agent": "director",
   "ia": {
-    "l0": "plan",
-    "l1": "execution",
-    "l2": "execution.measure",
-    "order": 53
+    "l0": "roadmap",
+    "l1": "targets",
+    "l2": "targets.measure",
+    "order": 38
   },
   "kind": "brief",
   "contract": {
