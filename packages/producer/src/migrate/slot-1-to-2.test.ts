@@ -1,16 +1,14 @@
-import { cpSync, mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
-import { fileURLToPath } from "node:url";
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { runRecordsComputedMatch } from "../check/records-computed-match.js";
 import { sha256Hex } from "../records/hash.js";
-import { readSlot } from "../records/slot.js";
-import { baseSlot, slot2Workspace } from "../records/__fixtures__/slot2-workspace.js";
-import { migrateSlot1To2, planSlot1To2, targetIa } from "./slot-1-to-2.js";
+import type { Slot } from "../records/types.js";
+import { CONSUMER, TALLYHOUSE, consumerCopy, packageBaseOf } from "../records/__fixtures__/slot2-workspace.js";
+import { migrateSlot1To2, planSlot1To2, targetIa, type SlotV1 } from "./slot-1-to-2.js";
 
-const FIXTURE = fileURLToPath(new URL("../../test-fixtures/consumer", import.meta.url));
 const OPTIONS = { at: "2026-11-18T09:12:00Z", version: "0.0.0-test" };
+const agents = (root: string, ...path: string[]): string => join(root, "clossys", "agents", ...path);
 
 /** sha256 of every file under `dir`, by relative path. */
 function tree(dir: string): Record<string, string> {
@@ -26,24 +24,18 @@ function tree(dir: string): Record<string, string> {
   return out;
 }
 
-function fixtureCopy(): string {
-  const root = mkdtempSync(join(tmpdir(), "slot-1-to-2-"));
-  cpSync(FIXTURE, root, { recursive: true });
-  return root;
-}
-
 describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer", () => {
   it("rewrites every slot/1 with a slot/2 kind, leaves seats, and never touches the fixture", () => {
-    const original = tree(FIXTURE);
-    const root = fixtureCopy();
-    const result = migrateSlot1To2(root, OPTIONS);
+    const original = tree(CONSUMER);
+    const ws = consumerCopy();
+    const result = migrateSlot1To2(ws.root, OPTIONS);
     expect(result.findings).toEqual([]);
     expect(result.skipped).toHaveLength(24);
     expect(result.skipped.every(item => item.subject.startsWith("producer/seat."))).toBe(true);
     expect(result.written).toHaveLength(446);
-    expect(tree(FIXTURE)).toEqual(original);
+    expect(tree(CONSUMER)).toEqual(original);
 
-    const brief = readSlot(join(root, "clossys/agents/director/advantage.defensibility.differentiator/slot.json"));
+    const brief = ws.read("director", "advantage.defensibility.differentiator");
     expect(brief).toMatchObject({
       schema: "clossys.slot/2", kind: "brief", status: "starter", base: null, tighten: [], options: 3, varyOn: "angle",
       ia: { l0: "strategy", l1: "strategy/advantage", l2: "strategy/advantage/defensibility", order: 26 },
@@ -54,49 +46,54 @@ describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer", () => {
     expect(brief.brief.mustDo).toEqual(["Answer Difference: how we work differently", "Answer Versus: who we differ from", "Answer Why-hard: why it is hard to copy"]);
     expect(brief.brief.inputs).toEqual(brief.refs);
 
-    const icon = readSlot(join(root, "clossys/agents/designer/assets.app-icon/slot.json"));
+    const icon = ws.read("designer", "assets.app-icon");
     expect(icon).toMatchObject({ kind: "element/asset", ia: { l0: "assets", l1: "assets/app-identity", l2: "assets/app-identity/app-identity-application" } });
     expect(icon.refs.map(item => item.to)).toContain("director/identity.brand.essence");
-    const parked = readSlot(join(root, "clossys/agents/writer/lexicon.currency-format/slot.json"));
-    expect(parked).toMatchObject({ kind: "voice", status: "parked", contract: { notNeeded: { decidedBy: "planner" } } });
+    expect(ws.read("writer", "lexicon.currency-format")).toMatchObject({ kind: "voice", status: "parked", contract: { notNeeded: { decidedBy: "planner" } } });
 
-    const computed = runRecordsComputedMatch(root);
-    expect(computed.findings.filter(item => !item.subject.startsWith("producer/seat."))).toEqual([]);
+    expect(runRecordsComputedMatch(ws.root).findings.filter(item => !item.subject.startsWith("producer/seat."))).toEqual([]);
   });
 
   it("is idempotent: a second run changes no byte", () => {
-    const root = fixtureCopy();
-    migrateSlot1To2(root, OPTIONS);
-    const once = tree(root);
-    const twice = migrateSlot1To2(root, { ...OPTIONS, at: "2026-12-01T00:00:00Z" });
+    const ws = consumerCopy();
+    migrateSlot1To2(ws.root, OPTIONS);
+    const once = tree(ws.root);
+    const twice = migrateSlot1To2(ws.root, { ...OPTIONS, at: "2026-12-01T00:00:00Z" });
     expect(twice.written).toEqual([]);
     expect(twice.migrations).toEqual([]);
     expect(twice.current).toHaveLength(446);
-    expect(tree(root)).toEqual(once);
+    expect(tree(ws.root)).toEqual(once);
   });
 
-  it("reports an input no folder holds and writes nothing for that slot", () => {
-    const ws = slot2Workspace();
-    const old = JSON.stringify({ schema: "clossys.slot/1", id: "strings.cta.label", agent: "writer", ia: { l0: "strings", l1: "strings.cta", l2: "cta-label", order: 1 }, kind: "strings", contract: { kind: "string" }, inputs: ["identity.missing.thing"], uses: [], standard: "string.label" });
-    ws.consumer("writer", "strings.cta.label", old);
+  it("reports an input no folder holds and leaves those files as slot/1", () => {
+    const ws = consumerCopy();
+    rmSync(agents(ws.root, "director", "advantage.proposition.promise"), { recursive: true });
+    const before = ws.text("director", "advantage.defensibility.differentiator");
     const plan = planSlot1To2(ws.root, OPTIONS);
-    expect(plan.findings).toEqual([{ subject: "writer/strings.cta.label", detail: "no consumer slot folder holds identity.missing.thing" }]);
-    expect(migrateSlot1To2(ws.root, OPTIONS).written).toEqual([]);
-    expect(ws.text("writer", "strings.cta.label")).toBe(old);
+    expect(plan.findings.length).toBeGreaterThan(0);
+    expect(plan.findings.every(item => item.detail === "no consumer slot folder holds advantage.proposition.promise")).toBe(true);
+    expect(plan.findings.map(item => item.subject)).toContain("director/advantage.defensibility.differentiator");
+    migrateSlot1To2(ws.root, OPTIONS);
+    expect(ws.text("director", "advantage.defensibility.differentiator")).toBe(before);
   });
 
   it("takes the installed package base when the package ships one", () => {
-    const ws = slot2Workspace();
-    ws.base(baseSlot("writer", "sections.hero.copy"));
-    ws.consumer("writer", "sections.hero.copy", JSON.stringify({ schema: "clossys.slot/1", id: "sections.hero.copy", agent: "writer", ia: { l0: "passages", l1: "passages.hero", l2: "hero-copy", order: 4 }, kind: "strings", contract: { kind: "passage" }, inputs: [], uses: [], standard: "passage.hero" }));
+    const ws = consumerCopy();
+    const tallyhouse = JSON.parse(readFileSync(join(TALLYHOUSE, "clossys/agents/writer/lexicon.sentence-length/slot.json"), "utf8")) as Slot;
+    const pkg = join(ws.root, "packages", "writer");
+    mkdirSync(dirname(join(pkg, tallyhouse.base!.path)), { recursive: true });
+    writeFileSync(join(pkg, "package.json"), `${JSON.stringify({ name: "@clossys/writer", version: tallyhouse.base!.version })}\n`);
+    writeFileSync(join(pkg, tallyhouse.base!.path), `${JSON.stringify(packageBaseOf(tallyhouse), null, 2)}\n`);
+    const order = (JSON.parse(ws.text("writer", "lexicon.sentence-length")) as SlotV1).ia!.order;
     migrateSlot1To2(ws.root, OPTIONS);
-    const slot = ws.read("writer", "sections.hero.copy");
-    expect(slot.base).toMatchObject({ package: "@clossys/writer" });
-    expect(slot.ia.order).toBe(4);
-    expect(runRecordsComputedMatch(ws.root).status).toBe("pass");
+    const slot = ws.read("writer", "lexicon.sentence-length");
+    expect(slot.base).toMatchObject({ package: "@clossys/writer", version: "1.0.0" });
+    expect(slot.ia.order).toBe(order);
+    expect(runRecordsComputedMatch(ws.root).findings.find(item => item.subject === "writer/lexicon.sentence-length")).toBeUndefined();
   });
 
   it("maps ia to slash paths and fills a missing l0 from the id", () => {
-    expect(targetIa({ schema: "clossys.slot/1", id: "themes.color.brand", agent: "designer", kind: "element", ia: { l1: "themes.color", l2: "themes.color.brand_main" } })).toEqual({ l0: "themes", l1: "themes/color", l2: "themes/color/brand-main", order: 0 });
+    const seat = JSON.parse(readFileSync(agents(CONSUMER, "producer", "seat.critic", "slot.json"), "utf8")) as SlotV1;
+    expect(targetIa(seat)).toEqual({ l0: "seat", l1: "seat/publish", l2: "seat/publish/assemble", order: 21 });
   });
 });

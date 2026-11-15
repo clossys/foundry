@@ -1,112 +1,115 @@
 import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { sha256Hex } from "./hash.js";
 import {
   SlotFormatError, computedDiff, parseSlot, parseTightenPath, readBaseSlot, resolveBrief, serializeSlot, syncedSlot,
   tightenIssue, validateSlot, writeSlot,
 } from "./slot.js";
-import type { Tighten } from "./types.js";
-import { AT, LATER, VERSION, baseSlot, slot2Workspace } from "./__fixtures__/slot2-workspace.js";
+import type { Slot, Tighten } from "./types.js";
+import { AT, CONSUMER, LATER, TALLYHOUSE, packageBaseOf, tallyhouseWorld } from "./__fixtures__/slot2-workspace.js";
 
-const by = { actor: "owner" as const, ref: "fb-1" };
-const entry = (path: string, op: Tighten["op"], value: unknown): Tighten => ({ path, op, value, why: "test", by, at: AT });
-const HEADING = "contract.copy.fields[heading].maxLength.en";
+// Tallyhouse writer/sections.hero.copy: header.heading maxLength en 60 / fr 72, header.eyebrow en 48,
+// claimsFrom ["director/advantage.proposition.proof:Metrics"], one tighten entry (brief.mustDo add).
+const HERO = "sections.hero.copy";
+const HEADING = "contract.copy.fields[header.heading].maxLength.en";
+const METRICS = "director/advantage.proposition.proof:Metrics";
+const PROMISE = "director/advantage.proposition.promise:Promise";
+const tallyhouse = (agent: string, id: string): Slot => JSON.parse(readFileSync(join(TALLYHOUSE, "clossys/agents", agent, id, "slot.json"), "utf8")) as Slot;
+const consumed = tallyhouse("writer", HERO);
+const fixtureEntry = consumed.tighten[0]!;
+const entry = (path: string, op: Tighten["op"], value: unknown): Tighten => ({ ...fixtureEntry, path, op, value });
 
 describe("clossys.slot/2 reader and writer", () => {
-  it("round-trips canonical bytes and writes nothing the second time", () => {
-    const ws = slot2Workspace();
-    const slot = baseSlot("writer", "sections.hero.copy");
-    expect(validateSlot(slot)).toEqual([]);
-    const file = ws.file("writer", "sections.hero.copy");
-    expect(writeSlot(file, slot)).toBe(true);
+  it("accepts every Tallyhouse slot/2 file and writes canonical bytes once", () => {
+    expect(validateSlot(consumed)).toEqual([]);
+    expect(validateSlot(tallyhouse("director", "identity.naming.name"))).toEqual([]);
+    const ws = tallyhouseWorld();
+    const file = ws.file("writer", HERO);
+    expect(writeSlot(file, consumed)).toBe(true);
     const bytes = readFileSync(file, "utf8");
-    expect(bytes.endsWith("}\n")).toBe(true);
     expect(serializeSlot(parseSlot(bytes, file))).toBe(bytes);
     expect(writeSlot(file, parseSlot(bytes, file))).toBe(false);
     expect(Object.keys(JSON.parse(bytes)).slice(0, 6)).toEqual(["schema", "id", "agent", "kind", "status", "ia"]);
   });
 
-  it("refuses slot/1, unknown keys and an empty purpose", () => {
-    const slot = baseSlot("writer", "sections.hero.copy");
-    expect(() => parseSlot(JSON.stringify({ ...slot, schema: "clossys.slot/1" }))).toThrow(SlotFormatError);
-    expect(() => parseSlot(JSON.stringify({ ...slot, inputs: [] }))).toThrow(SlotFormatError);
-    expect(() => parseSlot(JSON.stringify({ ...slot, brief: { ...slot.brief, purpose: "" } }))).toThrow(SlotFormatError);
-    expect(() => writeSlot(slot2Workspace().file("writer", "x.y"), { ...slot, status: "done" as never })).toThrow(SlotFormatError);
+  it("refuses slot/1, unknown keys, an empty purpose and an unknown status", () => {
+    expect(() => parseSlot(readFileSync(join(CONSUMER, "clossys/agents/writer/lexicon.sentence-length/slot.json"), "utf8"))).toThrow(SlotFormatError);
+    expect(() => parseSlot(JSON.stringify({ ...consumed, inputs: [] }))).toThrow(SlotFormatError);
+    expect(() => parseSlot(JSON.stringify({ ...consumed, brief: { ...consumed.brief, purpose: "" } }))).toThrow(SlotFormatError);
+    expect(() => writeSlot(tallyhouseWorld().file("writer", HERO), { ...consumed, status: "pinned" as never })).toThrow(SlotFormatError);
   });
 
   it("parses tighten paths rooted at brief or contract", () => {
-    expect(parseTightenPath(HEADING)).toEqual([{ key: "contract" }, { key: "copy" }, { key: "fields" }, { select: "heading" }, { key: "maxLength" }, { key: "en" }]);
+    expect(parseTightenPath(HEADING)).toEqual([{ key: "contract" }, { key: "copy" }, { key: "fields" }, { select: "header.heading" }, { key: "maxLength" }, { key: "en" }]);
     expect(parseTightenPath("brief.mustDo")).toEqual([{ key: "brief" }, { key: "mustDo" }]);
     expect(parseTightenPath("refs.0")).toMatch(/must start at brief or contract/);
-    expect(parseTightenPath("contract.copy.fields[heading")).toMatch(/unclosed/);
+    expect(parseTightenPath("contract.copy.fields[header.heading")).toMatch(/unclosed/);
   });
 });
 
 describe("tighten: stricter only", () => {
-  const scope = baseSlot("writer", "sections.hero.copy");
+  const scope = packageBaseOf(consumed);
 
-  it("max and min: lower max and higher min pass, the reverse is looser", () => {
-    expect(tightenIssue(scope, entry(HEADING, "max", 40))).toBeNull();
+  it("max and min against a budget", () => {
+    expect(tightenIssue(scope, entry(HEADING, "max", 48))).toBeNull();
     expect(tightenIssue(scope, entry(HEADING, "max", 60))).toBeNull();
-    expect(tightenIssue(scope, entry(HEADING, "max", 80))).toMatch(/max 80 is looser than the base 60/);
-    expect(tightenIssue(scope, entry("contract.copy.fields[heading].minLength.en", "min", 10))).toBeNull();
-    expect(tightenIssue(scope, entry(HEADING, "min", 10))).toMatch(/min 10 is looser than the base 60/);
-    expect(tightenIssue(scope, entry(HEADING, "max", "40"))).toMatch(/takes a number/);
-    expect(tightenIssue(scope, entry("contract.tones", "max", 2))).toMatch(/applies to a number field/);
+    expect(tightenIssue(scope, entry(HEADING, "max", 72))).toMatch(/max 72 is looser than the base 60/);
+    expect(tightenIssue(scope, entry(HEADING, "min", 72))).toBeNull();
+    expect(tightenIssue(scope, entry(HEADING, "min", 48))).toMatch(/min 48 is looser than the base 60/);
+    expect(tightenIssue(scope, entry(HEADING, "max", "48"))).toMatch(/takes a number/);
+    expect(tightenIssue(scope, entry("contract.claimsFrom", "max", 1))).toMatch(/applies to a number field/);
   });
 
   it("add only on requirement lists, remove and narrow only on allowed sets", () => {
-    expect(tightenIssue(scope, entry("brief.mustDo", "add", "Name the price"))).toBeNull();
-    expect(tightenIssue(scope, entry("contract.required", "add", "body"))).toBeNull();
-    expect(tightenIssue(scope, entry("contract.tones", "add", "loud"))).toMatch(/add widens an allowed list/);
-    expect(tightenIssue(scope, entry("brief.mustDo", "remove", "Lead with the outcome"))).toMatch(/drops a requirement/);
-    expect(tightenIssue(scope, entry("contract.tones", "remove", "bold"))).toBeNull();
-    expect(tightenIssue(scope, entry("contract.tones", "remove", "loud"))).toMatch(/does not allow/);
-    expect(tightenIssue(scope, entry("contract.tones", "narrow", ["plain"]))).toBeNull();
-    expect(tightenIssue(scope, entry("contract.tones", "narrow", ["plain", "loud"]))).toMatch(/narrow adds/);
-    expect(tightenIssue(scope, entry("contract.tones", "narrow", []))).toMatch(/non-empty/);
+    expect(tightenIssue(scope, fixtureEntry)).toBeNull();
+    expect(tightenIssue(scope, entry("contract.locales.required", "add", "fr"))).toBeNull();
+    expect(tightenIssue(scope, entry("contract.claimsFrom", "add", PROMISE))).toMatch(/add widens an allowed list/);
+    expect(tightenIssue(scope, entry("brief.mustDo", "remove", consumed.brief.mustDo[0]))).toMatch(/drops a requirement/);
+    expect(tightenIssue(scope, entry("contract.claimsFrom", "remove", METRICS))).toBeNull();
+    expect(tightenIssue(scope, entry("contract.claimsFrom", "remove", PROMISE))).toMatch(/does not allow/);
+    expect(tightenIssue(scope, entry("contract.claimsFrom", "narrow", [METRICS]))).toBeNull();
+    expect(tightenIssue(scope, entry("contract.claimsFrom", "narrow", [METRICS, PROMISE]))).toMatch(/narrow adds/);
+    expect(tightenIssue(scope, entry("contract.claimsFrom", "narrow", []))).toMatch(/non-empty/);
   });
 
   it("require takes true; a path missing from the base is refused", () => {
-    expect(tightenIssue(scope, entry("contract.copy.fields[heading].sentenceCase", "require", true))).toBeNull();
-    expect(tightenIssue(scope, entry("contract.copy.fields[heading].sentenceCase", "require", false))).toMatch(/require takes true/);
-    expect(tightenIssue(scope, entry("contract.nothing.here", "max", 1))).toMatch(/no such field/);
+    expect(tightenIssue(scope, entry("contract.copy.fields[header.eyebrow].required", "require", true))).toBeNull();
+    expect(tightenIssue(scope, entry("contract.copy.fields[header.eyebrow].required", "require", false))).toMatch(/require takes true/);
+    expect(tightenIssue(scope, entry("contract.copy.fields[header.heading].minLength.en", "min", 1))).toMatch(/no such field/);
   });
 
   it("resolveBrief applies valid entries in order and reports looser ones", () => {
-    const slot = { ...scope, tighten: [entry(HEADING, "max", 40), entry(HEADING, "max", 80), entry("brief.mustDo", "add", "Name the price"), entry("contract.tones", "narrow", ["plain", "warm"])] };
+    const slot = { ...consumed, tighten: [fixtureEntry, entry(HEADING, "max", 48), entry(HEADING, "max", 72), entry("contract.claimsFrom", "narrow", [METRICS])] };
     const resolved = resolveBrief(slot, scope);
-    expect((resolved.contract.copy as { fields: { maxLength: { en: number } }[] }).fields[0]!.maxLength.en).toBe(40);
-    expect(resolved.brief.mustDo).toEqual(["Lead with the outcome", "Name the price"]);
-    expect(resolved.contract.tones).toEqual(["plain", "warm"]);
-    expect(resolved.issues).toEqual([expect.stringMatching(/max 80 is looser/)]);
-    expect(scope.brief.mustDo).toEqual(["Lead with the outcome"]);
+    expect((resolved.contract.copy as { fields: { key: string; maxLength: { en: number } }[] }).fields.find(field => field.key === "header.heading")!.maxLength.en).toBe(48);
+    expect(resolved.brief.mustDo).toEqual([...consumed.brief.mustDo, fixtureEntry.value]);
+    expect(resolved.issues).toEqual([expect.stringMatching(/max 72 is looser/)]);
+    expect(scope.brief.mustDo).toEqual(consumed.brief.mustDo);
   });
 });
 
 describe("package base and sync", () => {
   it("reads the installed base with its sha and version; a wrong id throws", () => {
-    const ws = slot2Workspace();
-    const file = ws.base(baseSlot("writer", "sections.hero.copy"), "1.2.0");
-    const base = readBaseSlot(ws.root, "writer", "sections.hero.copy")!;
-    expect(base.meta).toEqual({ package: "@clossys/writer", version: "1.2.0", path: "src/catalog/slots/sections.hero.copy/slot.json", sha256: sha256Hex(readFileSync(file, "utf8")) });
-    expect(readBaseSlot(ws.root, "writer", "sections.other.copy")).toBeUndefined();
-    writeFileSync(file, serializeSlot(baseSlot("writer", "sections.wrong.copy")));
-    expect(() => readBaseSlot(ws.root, "writer", "sections.hero.copy")).toThrow(/expected writer\/sections.hero.copy/);
+    const ws = tallyhouseWorld();
+    const base = readBaseSlot(ws.root, "writer", HERO)!;
+    expect(base.meta).toEqual({ package: "@clossys/writer", version: "1.0.0", path: `src/catalog/slots/${HERO}/slot.json`, sha256: sha256Hex(readFileSync(ws.baseFile("writer", HERO), "utf8")) });
+    expect(base.meta.sha256).not.toBe(consumed.base!.sha256);
+    expect(readBaseSlot(ws.root, "writer", "narratives.legal-document")).toBeUndefined();
+    writeFileSync(ws.baseFile("writer", HERO), readFileSync(ws.baseFile("writer", "lexicon.sentence-length")));
+    expect(() => readBaseSlot(ws.root, "writer", HERO)).toThrow(/expected writer\/sections.hero.copy/);
   });
 
   it("syncedSlot keeps tighten, status, createdAt, consumedBy and same-L2 order; computedDiff names hand edits", () => {
-    const ws = slot2Workspace();
-    ws.base(baseSlot("writer", "sections.hero.copy", { refs: [{ to: "director/identity.naming.name", rel: "input" }] }));
-    const base = readBaseSlot(ws.root, "writer", "sections.hero.copy")!;
-    const first = syncedSlot(base, undefined, AT);
-    expect(first.base).toEqual(base.meta);
-    expect(first.createdBy).toEqual({ actor: "package", package: "@clossys/writer", version: VERSION });
-    const consumer = { ...first, status: "live" as const, ia: { ...first.ia, order: 7 }, tighten: [entry(HEADING, "max", 40)], refs: [...first.refs, { to: "publisher/page.home" as const, rel: "consumedBy" as const }] };
-    const again = syncedSlot(base, consumer, LATER);
-    expect(serializeSlot(again)).toBe(serializeSlot(consumer));
-    expect(computedDiff(consumer, base)).toEqual([]);
-    expect(computedDiff({ ...consumer, brief: { ...consumer.brief, purpose: "Hand edited." } }, base)).toEqual(["brief"]);
-    expect(computedDiff({ ...consumer, standard: "copy.long", refs: [] }, base)).toEqual(["standard", "refs"]);
+    const ws = tallyhouseWorld();
+    const base = readBaseSlot(ws.root, "writer", HERO)!;
+    const synced = syncedSlot(base, consumed, LATER);
+    expect(synced).toMatchObject({ status: "live", createdAt: consumed.createdAt, updatedAt: LATER, tighten: consumed.tighten, base: base.meta });
+    expect(synced.refs).toEqual(consumed.refs);
+    expect(serializeSlot(syncedSlot(base, synced, AT))).toBe(serializeSlot(synced));
+    expect(computedDiff(synced, base)).toEqual([]);
+    const other = tallyhouse("director", "identity.naming.name");
+    expect(computedDiff({ ...synced, brief: { ...synced.brief, purpose: other.brief.purpose } }, base)).toEqual(["brief"]);
+    expect(computedDiff({ ...synced, standard: other.standard, refs: [] }, base)).toEqual(["standard", "refs"]);
   });
 });

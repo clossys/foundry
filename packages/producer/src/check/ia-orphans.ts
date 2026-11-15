@@ -4,7 +4,8 @@
  *
  * roots     = each publication's pages, chrome and release slots
  * forward   = from a reached slot: its `refs` (input, uses, places), its `brief.inputs`, and the refs of its pinned
- *             candidate (header `refs` plus every `<agent>/<slot-id>` string in a JSON candidate's content)
+ *             candidate (header `refs` plus every `<agent>/<slot-id>` string, value or key, in a JSON candidate's content;
+ *             a release manifest names its pins as keys)
  * backward  = a slot whose `consumedBy` ref names a reached slot is reached
  * orphans   = every slot folder minus reached minus Producer `loop.*` slots (exempt by design)
  *
@@ -58,7 +59,7 @@ function candidateEdges(dir: string): string[] {
   const walk = (value: unknown): void => {
     if (typeof value === "string") { const slot = slotOf(value); if (slot) out.push(slot); }
     else if (Array.isArray(value)) value.forEach(walk);
-    else if (value && typeof value === "object") Object.values(value).forEach(walk);
+    else if (value && typeof value === "object") for (const [key, item] of Object.entries(value)) { walk(key); walk(item); }
   };
   const header = (doc as { clossys?: { refs?: Ref[] } }).clossys;
   for (const ref of header?.refs ?? []) if (WALKED.has(ref.rel)) { const slot = slotOf(ref.to); if (slot) out.push(slot); }
