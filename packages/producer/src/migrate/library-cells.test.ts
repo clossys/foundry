@@ -74,10 +74,14 @@ describe("library cells", () => {
     const { root: dir, consumer } = consumerWith({ "passages.hero/hero/v1": cellFiles(), "components.chart-heatmap/heatmap/v1": cellFiles(), "nowhere.at-all/x/v1": cellFiles() });
     const plan = planRecut(dir, { at: AT });
     expect(plan.library.findings).toEqual(["library/nowhere.at-all/x/v1: slot nowhere.at-all is in no package tree and no retired.json"]);
-    applyRecut(plan);
+    // An unknown library slot is an unknown id: the plan refuses whole and nothing is written.
+    expect(plan.unknown).toContain("library/nowhere.at-all");
+    expect(() => applyRecut(plan)).toThrow(/library\/nowhere\.at-all/);
+    expect(existsSync(join(consumer, "library", "passages.hero", "hero", "v1", "cell.md"))).toBe(true);
+    rmSync(join(consumer, "library", "nowhere.at-all"), { recursive: true });
+    applyRecut(planRecut(dir, { at: AT }));
     expect(readFileSync(join(consumer, "agents", "writer", "sections.hero.copy", "candidates", "hero-v1.md"), "utf8").replace(FRONT, "")).toBe(body());
     expect(existsSync(join(consumer, "agents", "designer", "_retired", "components.chart-heatmap", "candidates", "heatmap-v1.md"))).toBe(true);
     expect(existsSync(join(consumer, "library", "passages.hero"))).toBe(false);
-    expect(existsSync(join(consumer, "library", "nowhere.at-all", "x", "v1", "preview.json"))).toBe(true);
   });
 });

@@ -4,7 +4,7 @@ import { applyCopyKeyMigration, planCopyKeyMigration } from "../migrate/copy-key
 import { applyCitationsToSlots, planCitationsToSlots } from "../migrate/citations-to-slots.js";
 import { applyInputsMigration, planInputsMigration } from "../migrate/inputs.js";
 import { applyLedgerBackfill, planLedgerBackfill } from "../migrate/ledger.js";
-import { RECUT_AGENTS, applyRecut, planFollowUp, planRecut, recutPending } from "../migrate/recut.js";
+import { RECUT_AGENTS, applyRecut, planFollowUp, planRecut, recutPending, recutProblems } from "../migrate/recut.js";
 import { nowIso } from "./ia-sync.js";
 import { SLOT_AGENTS } from "../records/slot-model/index.js";
 import type { CliResult } from "./main.js";
@@ -17,7 +17,7 @@ export const MIGRATE_USAGE = "Usage: clossys migrate copy-keys|inputs|ledger [--
   + "inputs declares Designer and Writer slot.json inputs from the read graph (the Designer brief, slot-contract theme and asset reads, pinned Writer source refs); inputs are only added.\n"
   + "citations-to-slots rewrites citations to slot ids, which resolve through the cited slot's pin: every versioned citation of a known slot (<slot>@<n>, <agent>:<slot>@<n>) in a candidate becomes <slot> or <agent>:<slot> (a line anchor <ref>@<n>#L<line> keeps a version: in the pinned candidate it moves to the version the pin's recited gave it), and every pin drops recited, its sha256 carried to the rewritten pinned bytes (the decision is kept). It is a dry run that reports counts per agent unless --apply is given; --apply records one migrated event per rewritten file in clossys/evidence/migrations.json (the provenance constitution R08.2 accepts); a second run plans nothing.\n"
   + "ledger backfills every slot and agent ledger.json from git history for records written before the ledger: a submit per candidate add, a migrate per change the migration manifest explains, a pin, pick or confirm per pin.json change, a slot event per slot.json change and an ia event per ia.json change, each naming its commit (backfill); an unexplained edit gets no event (a gap); a ledger holding any non-backfill event is kept; a second run changes nothing.\n"
-  + "recut moves an int2 consumer onto the recut slot trees of the installed packages: every Director, Designer, Writer and Publisher slot folder maps through its package tree and src/catalog/retired.json (a live id stays, a retired id with a live target moves its candidates there, any other retired id moves to agents/<agent>/_retired/<id> and leaves the agent ia.json, recorded in its retired list); every candidate gets the clossys.candidate/1 header (created by code: clossys migrate recut) with its body kept, each rewrite a migrated event in clossys/evidence/migrations.json; each clossys/library/<slot>/<name>/v<n>/ cell becomes the candidate <name>-v<n>.md in its target slot (preview.json dropped); then slot-1-to-2, pin-1-to-2 and ia sync run. A dry run with counts per agent unless --apply is given; an id in no package tree and no retired.json is named and exits 1; a second --apply changes nothing.\n"
+  + "recut moves an int2 consumer onto the recut slot trees of the installed packages: every Director, Designer, Writer and Publisher slot folder maps through its package tree and src/catalog/retired.json (a live id stays, a retired id with a live target moves its candidates there, any other retired id moves to agents/<agent>/_retired/<id> and leaves the agent ia.json, recorded in its retired list); every candidate gets the clossys.candidate/1 header (created by code: clossys migrate recut) with its body kept, each rewrite a migrated event in clossys/evidence/migrations.json; each clossys/library/<slot>/<name>/v<n>/ cell becomes the candidate <name>-v<n>.md in its target slot (preview.json dropped); then slot-1-to-2, pin-1-to-2 and ia sync run. A dry run with counts per agent unless --apply is given; an id in no package tree and no retired.json (a slot folder, an ia.json placement or a library slot) is named and exits 1; any finding exits 1 in every mode, and --apply checks the whole plan first and writes nothing unless every write fits; a second --apply changes nothing.\n"
   + "--check reports pending changes and exits 1 when any remain.";
 
 export async function runMigrateCli(argv: readonly string[], cwd: string): Promise<CliResult> {
@@ -120,7 +120,14 @@ function migrateRecut(dir: string, apply: boolean, check: boolean, at: string): 
     ...plan.unknown.map(id => `unknown: ${id} is in no package tree and no retired.json`),
     ...plan.findings.map(finding => `finding: ${finding}`),
   ];
-  if (plan.unknown.length || plan.missingRetired.length) return { exitCode: 1, message: lines.join("\n"), root: dir, check, output: { counts: plan.counts, unknown: plan.unknown, missingRetired: plan.missingRetired, findings: plan.findings, applied: false } };
+  // An unknown id, a finding or a write that would not fit leaves work the run cannot do: every mode exits 1,
+  // and --apply writes nothing (the plan applies whole or not at all).
+  const problems = recutProblems(plan);
+  const known = new Set([...plan.unknown.map(id => `unknown: ${id}`), ...plan.findings]);
+  if (plan.missingRetired.length || problems.length) {
+    lines.push(...problems.filter(problem => !known.has(problem)).map(problem => `refused: ${problem}`), apply ? "nothing written" : "--apply would write nothing");
+    return { exitCode: 1, message: lines.join("\n"), root: dir, check, output: { counts: plan.counts, unknown: plan.unknown, missingRetired: plan.missingRetired, findings: plan.findings, problems, applied: false } };
+  }
   if (apply) {
     const result = applyRecut(plan);
     lines.push(

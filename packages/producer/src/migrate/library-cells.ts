@@ -51,7 +51,11 @@ export function listLibraryCells(consumer: string): LibraryCell[] {
 
 /** Where a cell's slot goes: a slot folder of an agent, or why it has none. */
 export type CellRoute =
-  | { readonly agent: AgentId; readonly slotId: string; readonly dir: string; readonly record: boolean }
+  | {
+    readonly agent: AgentId; readonly slotId: string; readonly dir: string; readonly record: boolean;
+    /** A slot folder that moves to `dir` before the cell is written: its candidates count as already there. */
+    readonly arriving?: string;
+  }
   | { readonly finding: string };
 
 /** The candidate bytes for a cell: the body kept byte for byte, the header built from the int2 element record. */
@@ -91,7 +95,7 @@ export function planLibraryCells(consumer: string, route: (slot: string) => Cell
     const target = route(cell.slot);
     if ("finding" in target) { findings.push(`${at}: ${target.finding}`); continue; }
     const file = join(target.dir, "candidates", candidate);
-    if (existsSync(file) || planned.has(file)) { findings.push(`${at}: ${target.agent}/${target.slotId}/candidates/${candidate} already exists; left in place`); continue; }
+    if (existsSync(file) || planned.has(file) || (target.arriving !== undefined && existsSync(join(target.arriving, "candidates", candidate)))) { findings.push(`${at}: ${target.agent}/${target.slotId}/candidates/${candidate} already exists; left in place`); continue; }
     const body = readFileSync(join(cell.dir, CELL_FILE), "utf8");
     let element: unknown;
     if (cell.files.includes(ELEMENT_FILE)) {

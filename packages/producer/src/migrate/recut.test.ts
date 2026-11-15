@@ -11,7 +11,8 @@ import { sha256Hex } from "../records/hash.js";
 import { MIGRATIONS_FILE, validateMigrations } from "../records/migrations.js";
 import { readRecordHeader } from "../records/schema.js";
 import { runMigrateCli } from "../cli/migrate.js";
-import { RECUT_AGENTS, RECUT_CLI, applyRecut, packageTables, planRecut, recutPending } from "./recut.js";
+import { RECUT_AGENTS, RECUT_CLI, applyRecut, packageTables, planRecut, recutPending, recutProblems } from "./recut.js";
+import { RETIRE_REASON } from "../constitution/checks/R10-retire.js";
 
 const AT = "2026-11-15T10:00:00Z";
 const LATER = "2026-11-16T10:00:00Z";
@@ -180,8 +181,15 @@ describe("migrate recut: apply", () => {
       for (const id of tables[agent].retired.keys()) expect(placed, `${agent} still places ${id}`).not.toContain(id);
       for (const target of tables[agent].retired.values()) if (target) expect(placed).toContain(target);
     }
-    const retiredRows = (JSON.parse(readFileSync(iaFile, "utf8")) as { retired: { slot: string; by: string }[] }).retired;
+    const retiredRows = (JSON.parse(readFileSync(iaFile, "utf8")) as { retired: { slot: string; by: string; reason: string }[] }).retired;
     expect(retiredRows.map(row => row.slot)).toEqual(expect.arrayContaining(directorRetired.map(id => `director/${id}`)));
+    // The rows take the clossys.retire/1 shape for by and reason (the schema's own patterns).
+    const schema = JSON.parse(readFileSync(join(PRODUCER_ROOT, "src", "constitution", "schemas", "retire.schema.json"), "utf8")) as { properties: { by: { pattern: string }; reason: { pattern: string } } };
+    for (const row of retiredRows) {
+      expect(row.by).toMatch(new RegExp(schema.properties.by.pattern));
+      expect(row.reason).toMatch(new RegExp(schema.properties.reason.pattern));
+      expect(row.reason).toMatch(RETIRE_REASON);
+    }
     for (const id of directorRetired) expect(existsSync(w.agent("director", "_retired", id))).toBe(true);
   });
 
@@ -225,5 +233,60 @@ describe("migrate recut: CLI", () => {
     }
     expect(snapshot(w.consumer)).toEqual(before);
     expect(() => applyRecut(planRecut(w.root, { at: AT }))).toThrow(/designer\/components\.not-in-any-tree/);
+  });
+
+  it("a library cell clashing with a retired slot's candidate: the dry run names it and exits 1, --apply exits 1 and writes nothing", async () => {
+    const w = world();
+    const seeded = seed(w);
+    // The retired slot's candidate heatmap-v1.md, mirrored by an int2 library cell of the same slot.
+    w.put(join(w.consumer, "library", "components.chart-heatmap", "heatmap", "v1", "cell.md"), seeded.body);
+    const before = snapshot(w.consumer);
+    const plan = planRecut(w.root, { at: AT });
+    expect(plan.findings.some(finding => finding.includes("library/components.chart-heatmap/heatmap/v1") && finding.includes("already exists"))).toBe(true);
+    expect(plan.library.conversions.some(conversion => conversion.cell.slot === "components.chart-heatmap")).toBe(false);
+    expect(recutProblems(plan).length).toBeGreaterThan(0);
+    for (const args of [[], ["--check"], ["--apply"]]) {
+      const result = await runMigrateCli(["recut", ...args, "--at", AT, "--root", w.root], w.root);
+      expect(result.exitCode, args.join(" ") || "dry run").toBe(1);
+      expect(result.message).toContain("library/components.chart-heatmap/heatmap/v1");
+    }
+    expect(() => applyRecut(plan)).toThrow(/nothing written/);
+    expect(snapshot(w.consumer)).toEqual(before);
+  });
+
+  it("names a library slot in no tree and no retired.json, exits 1 in every mode and writes nothing", async () => {
+    const w = world();
+    const seeded = seed(w);
+    w.put(join(w.consumer, "library", "passages.not-a-slot", "x", "v1", "cell.md"), seeded.body);
+    const before = snapshot(w.consumer);
+    expect(planRecut(w.root, { at: AT }).unknown).toContain("library/passages.not-a-slot");
+    for (const args of [[], ["--apply"], ["--check"]]) {
+      const result = await runMigrateCli(["recut", ...args, "--at", AT, "--root", w.root], w.root);
+      expect(result.exitCode, args.join(" ") || "dry run").toBe(1);
+      expect(result.message).toContain("unknown: library/passages.not-a-slot is in no package tree and no retired.json");
+    }
+    expect(snapshot(w.consumer)).toEqual(before);
+  });
+
+  it("a folder that does not fully move keeps its id placed, and every mode exits 1 on the finding", async () => {
+    const w = world();
+    seed(w);
+    w.put(w.agent("writer", "passages.hero", "candidates", "notes.txt"), "stray\n");
+    const iaFile = w.agent("writer", "ia.json");
+    const ia = JSON.parse(readFileSync(iaFile, "utf8")) as { nodes: { children: { slots: string[] }[] }[] };
+    if (!placedIds(iaFile).includes("passages.hero")) {
+      ia.nodes[0]!.children[0]!.slots.push("passages.hero");
+      writeFileSync(iaFile, `${JSON.stringify(ia, null, 2)}\n`);
+    }
+    const before = snapshot(w.consumer);
+    const plan = planRecut(w.root, { at: AT });
+    expect(plan.findings.some(finding => finding.includes("writer/passages.hero: not every candidate moves"))).toBe(true);
+    const writerIa = plan.ia.find(item => item.file === iaFile);
+    const planned = writerIa ? (JSON.parse(writerIa.bytes) as { nodes: { children: { slots: string[] }[] }[] }).nodes.flatMap(node => node.children.flatMap(child => child.slots)) : placedIds(iaFile);
+    expect(planned).toContain("passages.hero");
+    for (const args of [[], ["--check"], ["--apply"]]) {
+      expect((await runMigrateCli(["recut", ...args, "--at", AT, "--root", w.root], w.root)).exitCode, args.join(" ") || "dry run").toBe(1);
+    }
+    expect(snapshot(w.consumer)).toEqual(before);
   });
 });
