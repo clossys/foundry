@@ -24,11 +24,14 @@ Four verbs; the action file is the contract and its skill is the step you run:
 | refine brief | `clossys` slot tighten (no Publisher action folder yet) | tighten a layout or page brief: fewer allowed kinds, an extra required role |
 | create candidates | `actions/publisher.candidates/` | place one allowed unit and one Writer record per role |
 | pick | `actions/pick.publisher/` | judge the passing options and pin one |
-| check | `actions/publish.page/` | read-only check of every pinned page against Designer and Writer pins |
+| check | Producer `actions/publisher.check/` | the page checks below over every consumer page candidate; any finding exits 1 |
 
-`actions/publish.install/` renders pinned pages after the owner's pins. A release is
-ready only when the owner signs it in chat (`queue.approve`); nothing here takes a
-publication live.
+`actions/publish.page/` is the read-only dry run of every pinned page against Designer
+and Writer pins; `actions/publish.install/` renders pinned pages after the owner's pins.
+Producer `actions/publisher.release/` gates a release: the publication's pinned pages
+must pass `publisher.check`, else the release is refused before `clossys release` runs.
+A release is ready only when the owner signs it in chat (`queue.approve`); nothing here
+takes a publication live.
 
 ## Slot tree and starters
 
@@ -71,9 +74,11 @@ A page option places one section per layout role:
 - `copy` is the Writer record `<page>.<role>` in the unit's copy slot
   (`<designer unit>.copy`); links name page ids, never paths.
 - No words, no styling, no versions of what it places. `src/check/page-sections-instance.ts`
-  fails a repeated or missing instance key, a retired or unknown section, a role
-  or kind the layout does not allow, a missing required role, literal text and
-  style keys.
+  (exported as `dist/check/index.js`) fails a repeated or missing instance key, a
+  retired or unknown section, a role or kind the layout does not allow, a missing
+  required role, literal text and style keys. The package tests run it on the
+  starter defaults; the Producer `publisher.check` action runs it on your page
+  candidates (`node dist/actions/publisher.js check --root <consumer>`).
 
 The loop below is today's `clossys` path, which still takes the `clossys.page/1`
 record; the starter defaults are the target page option above.

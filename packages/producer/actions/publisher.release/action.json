@@ -1,0 +1,42 @@
+{
+  "schema": "clossys.action/1",
+  "id": "publisher.release",
+  "agent": "producer",
+  "kind": "plumb",
+  "stage": "publish.publish",
+  "summary": "Release gate: a publication's pinned pages must pass publisher.check, else the release is refused; a clean check runs clossys release.",
+  "run": "clossys pipeline trace publisher.release -- node dist/actions/publisher.js release <publication> --gates",
+  "chain": {
+    "skip": "publisher.release runs one caller-named publication; loop.release and the owner name it"
+  },
+  "inputs": [
+    {
+      "glob": "consumer:agents/publisher/*/pin.json",
+      "schema": "pin"
+    },
+    {
+      "glob": "consumer:agents/publisher/*/candidates/*",
+      "schema": "candidate-publisher"
+    }
+  ],
+  "outputs": [],
+  "pass": {
+    "command": "clossys check",
+    "exit": {
+      "pass": [
+        0
+      ],
+      "fail": [
+        1
+      ],
+      "error": [
+        2
+      ]
+    }
+  },
+  "record": "clossys.pipeline-run/1",
+  "checks": [
+    "workspace"
+  ],
+  "uses": []
+}

@@ -268,7 +268,9 @@
         "build.receipt",
         "studio.checks",
         "capture",
-        "studio.produce"
+        "publisher.check",
+        "studio.produce",
+        "publisher.release"
       ],
       "verbs": [
         "check",
@@ -286,6 +288,8 @@
         "verdict"
       ],
       "commands": [
+        "node dist/actions/publisher.js check",
+        "node dist/actions/publisher.js release <publication> --gates",
         "node scripts/check-generated-derived.mjs --write",
         "node scripts/generate-page-check-receipt.mjs",
         "npm run capture:studio",
@@ -302,6 +306,7 @@
       ],
       "code": [
         "packages/designer/scripts/generate-specimen-surface-evidence.mjs",
+        "packages/producer/dist/actions/publisher.js",
         "packages/producer/scripts/capture-studio.mjs",
         "packages/producer/scripts/check-generated-derived.mjs",
         "packages/producer/scripts/compose-studio.mjs",

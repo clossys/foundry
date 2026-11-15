@@ -74,13 +74,15 @@
             "pipeline",
             "build.receipt",
             "studio.checks",
-            "capture"
+            "capture",
+            "publisher.check"
           ]
         },
         {
           "id": "publish.publish",
           "actions": [
-            "studio.produce"
+            "studio.produce",
+            "publisher.release"
           ]
         }
       ]

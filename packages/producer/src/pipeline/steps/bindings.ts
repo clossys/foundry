@@ -68,4 +68,7 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "studio.compose": { script: "scripts/compose-studio.mjs" },
   "studio.checks": { script: "studio/checks/p0-studio-check.cjs" },
   "capture": { script: "scripts/capture-studio.mjs" },
+  // The Publisher page checks over consumer page records, and the release gate on them (foundry-build-0028).
+  "publisher.check": { script: "dist/actions/publisher.js" },
+  "publisher.release": { script: "dist/actions/publisher.js" },
 };

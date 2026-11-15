@@ -16,6 +16,9 @@
     "packages/director/actions/pick.director/skill.md": [
       "ad1d034caf1dbbc7ecc7cd366ed21cc62b2451c0f100d072df9aea088fd1e881"
     ],
+    "packages/producer/actions/critic/skill.md": [
+      "6a0d22415447bfa5dc020f5058edcedb2a5a771d660cb4e81bf66f8f4f276c06"
+    ],
     "packages/producer/actions/evidence/skill.md": [
       "cf1912744442a37acda2125b5c94c919de05d9e0eb26b63fd0120434585ee2b6"
     ],
@@ -53,6 +56,12 @@
       "3819169dc48a12198ec9bca07154cddd5fe3590a2e85b716de6f5752c0012340",
       "7b9735904406ed1f7c80256e0470cd10269bd0138999d758781435848bddd68e"
     ],
+    "packages/producer/actions/standard/skill.md": [
+      "962774f4127cceb7e7ab30e5d7976e4981becc5d284a1d96438e76a9a2eb3d45"
+    ],
+    "packages/producer/actions/verdict/skill.md": [
+      "5d5fec5f8d9dbb928995a8847776ee06e4a3ba12b44223e2f3230768a6dbbc15"
+    ],
     "packages/producer/actions/workspace.config/skill.md": [
       "ea70aaab49813f5ed1c06ff703545c74027036230d8a3da836011b7bdd96822b"
     ],
@@ -78,23 +87,29 @@
   },
   "actions": {
     "packages/designer/actions/designer.brief/action.json": [
+      "4f476cd6f63394412ce298170b747e5765b2d8c706fcf7db0193820292720e7c",
       "f1f0dbd0c6989c736f90428c9d47956c7466c276b98a1b363af2cc508d1efbfd"
     ],
     "packages/designer/actions/designer.check/action.json": [
-      "226ec7b302a1f81eeb29e7c42a34d25ad014d5b9d643f2461803015d4c9d7fbb"
+      "226ec7b302a1f81eeb29e7c42a34d25ad014d5b9d643f2461803015d4c9d7fbb",
+      "32046fa23494a645d825ba262fcddf93c1e513ba0e8d031a0d32fa742f2b6026"
     ],
     "packages/designer/actions/designer.compile/action.json": [
       "1943049c7272eae008568f5dc18e6c3ccd90a9711568fc9d206ba09e3804ed9a",
+      "9084c2e535054a0221651f5d926abf143725c483088b19bddfda1fafc395782c",
       "ad8cecbf152fd589654bd914135aac48b7103fe86214235ee7547388729fb8c3"
     ],
     "packages/director/actions/director.check/action.json": [
-      "4c31b3d4c7ed84758470d2b0c6e69828addc720df8fb791a22a2b845324bde94"
+      "4c31b3d4c7ed84758470d2b0c6e69828addc720df8fb791a22a2b845324bde94",
+      "bed08c81d9a646b09733bcdb72014482692bee1c9a336051802418b1cd2ad66b"
     ],
     "packages/director/actions/director.store/action.json": [
       "fb34eef8b8e45e7a4091f22344cc9d658592f6d089c36ec33267536269aeb03d",
-      "fd980f05c18abbef830c675ea245904a32fe8cd82121c0fa2f6dd8a4588a8cb0"
+      "fd980f05c18abbef830c675ea245904a32fe8cd82121c0fa2f6dd8a4588a8cb0",
+      "ff9ab97d24039906bcfc378757b9b48b0e61fa7189bd8a6f6cf2705d861cb524"
     ],
     "packages/producer/actions/build.receipt/action.json": [
+      "7b380b233cd4bf01341f107c3bbc5375322e36628ee1cacbf5d9cecb3cf642f2",
       "ef8490492806ec3d33b890e7ad521598dc428af1f4035e7ef3627e1210c4c4b9"
     ],
     "packages/producer/actions/capture/action.json": [
@@ -102,70 +117,102 @@
       "1926c6d92f217ce8730e71d3198cee2637b0046bfb7c13ba692370e8377d17d4"
     ],
     "packages/producer/actions/compile/action.json": [
+      "181a6473b596554ff25f7f520f30473b85d68c48b9dd98d6fa13d853849ecc3f",
       "7290a53277ba604f43a11ef6208931a3bd4bfd345ee434202e03a5aee9a01c7c"
     ],
     "packages/producer/actions/constitution/action.json": [
       "313a1bf24a0dd15cd1b6096b5b782270639835e79738f50b8ea49f17f86bfb22",
+      "4bd1af988df46491b828a19217920593f9f171716664d568d0f9602528489849",
       "61e5b9da37b4fc740a8ac7544a8ea897a5e60afff5ce726512ba9a386928c918",
       "a35ded354a1f0c291ef433c87e3fdb6149aafa3c0c146a5049bd24a4d16f03f8"
     ],
+    "packages/producer/actions/critique-packet/action.json": [
+      "c03fef063b5b5eb28ddf0f6cbee2a5900f8a131b4b5844e2459ae8c70aa5c715",
+      "c38196a09207b4281d5d2950420fa771b24afa9b8ddde691a481b87dd2978083"
+    ],
     "packages/producer/actions/decisions/action.json": [
+      "880d414e3d86e10ddfeb50ae77c380eba422f35bd18e5cb23aa29b58b647f096",
       "d819fb21cd62b8f0e32d521e42c44d6b32b0be319ae9e7e18605db0de83e1151"
     ],
     "packages/producer/actions/derive.uses/action.json": [
-      "c44d7d3164654b621a58805a492d67eeaf70677e1598e5932f59c8e646ed2efb"
+      "c44d7d3164654b621a58805a492d67eeaf70677e1598e5932f59c8e646ed2efb",
+      "d657467b83082d6bf3e4fb34e6420e2ad17504532ade0cd3734692c5bf34e649"
     ],
     "packages/producer/actions/migrate/action.json": [
       "57f60856dd673edd5b2aa3127a5883526dc91bb63a28cbc39f0f9d4a54d671ab",
-      "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660"
+      "88c9c145410f1bdef6b41447c1fe5c90e3100ea72c7f49e24c2b246bbdc33660",
+      "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342",
+      "bac4fc89eca376083cee65cf0aa21550561f8a79ece9b879b348d738f113509a"
     ],
     "packages/producer/actions/options/action.json": [
+      "12514d2f9271dfecbb8578c0df12181c650615120998173e512e00aaf39e1cd7",
       "43b3eca684bdf6c22c63866d13c91a918778fae8b1725b28f616a31c6067bc04"
     ],
     "packages/producer/actions/pipeline/action.json": [
+      "0c7e71e874f25ed97baaf9115ebc53c657b79d3439ddafe694ae366333f6161c",
       "2c04eab9a0fc5930d3d325116ebdd8236c384ade8f69ae47469a3c605817a02b",
       "38a5b5389c5a05d60bd0caaa094e34ef152edf287fe464489f3af72021433364"
     ],
+    "packages/producer/actions/publisher.check/action.json": [
+      "37232a78ca22fd2b2aa553132f9d94978f0121d227b1e727ce20badc473c11a4"
+    ],
+    "packages/producer/actions/publisher.release/action.json": [
+      "5e2dae090463375997006437e0facb568ebb52a8ae0b2a73dde36cd4baf030ea"
+    ],
     "packages/producer/actions/render/action.json": [
+      "7e43e30b8302633c74a484ed3889444fbdb06ae7ece06f3ecc568c6c7baf5a15",
       "a3c0a55f445187cea2ca0b74a92dbe65b50d0a7293fb6578a800841444d0638b"
     ],
     "packages/producer/actions/specimen.evidence/action.json": [
+      "11fe1698cf629b45b17605700209619a1c514ea6bfebf135ae539d4f1d16b3a7",
       "655dc3c8902e28e0332cfef7548552792e48fa3f2ab48beeb278b198488bf330"
     ],
     "packages/producer/actions/specimen/action.json": [
       "3d0ae6918c009f37eb4f052aee144b9b47674167601773d405cf10af61db3f3b",
+      "48944ca04c9767364dd506794b6ea4a1751bae6a3c46c5e3577f70f0d37309dd",
       "6b204cded502f9ae344949c2f5077b112f0e05b838df610a1fcebd09bb03e679"
     ],
     "packages/producer/actions/studio.checks/action.json": [
       "27ae2f7a7261b600016f39cbbeedd0ed1c5cd4c449d45e897f2b348102e0ce07"
     ],
     "packages/producer/actions/studio.compose/action.json": [
+      "acdec703bc520e7b6b61ff9041391f03a0b7dd12eaba444092f51a62f26a326f",
       "b7639de9e2b90865afabf75b224b473c50e91ad1e6c9e59fe9fa8fcad925d673"
     ],
     "packages/producer/actions/studio.map/action.json": [
-      "68730f60740f07735dcdd2f975ce0057fa79890c14bc231e968df8173795188f"
+      "68730f60740f07735dcdd2f975ce0057fa79890c14bc231e968df8173795188f",
+      "a9736e95659cbde4367748b7ef16e02b5581ef17b1a9d914c8bbac5ddaf3ed73",
+      "fb385980ba406ed9a4683e0e93de74812830fff83fa39d3cae2cdaf6f6b7159b"
     ],
     "packages/producer/actions/studio.produce/action.json": [
       "48c92bd320f45a7b59df7005360c12bd5c208341f93f0303961a1a51dee8d491",
+      "87e8d1409d419e461af7d2c6652f4a4914f7add438a3ca3ec53607518da2f93c",
       "e2656c45d76be1541f4862957ff8b09aeb821f15cbb483f6445e7dfb8be7491e"
     ],
     "packages/producer/actions/workspace.check/action.json": [
+      "c8b723ea249e580e15a348f3c5d32a920e394ce4b08ba544370e6cbe7e38b668",
+      "dd4613f01aa1dbc03c85ca64da9d8bb2d08328eee4e40b5061e2c1a9b447cacd",
       "ed2a31e19dc6c784fea1e72039adb2d4adeddea1cf7bd7ee40cc4f8de44d5bd9"
     ],
     "packages/publisher/actions/publish.install/action.json": [
       "118ce953af62e3a22e186292b591d9f22b7e5e0dc17e536426d3d6c1021e26bb",
+      "55749a763312f2636d3a72c0a78ead420787c55a99891dadb393a8e4d7d55fab",
       "9a697fc9f6bc70c70cad8b19e3bbd193dea965e3d176c9d848df74276f126aab"
     ],
     "packages/publisher/actions/publish.page/action.json": [
+      "78e998591e65c76b689834f272065e485fa1b9e52b345c3397bcc974c8798f7f",
       "c1c3ad2a18acdacbc6c3540b7ec15ed33959360f909967e90a1f816ec2ff63e3"
     ],
     "packages/writer/actions/writer.brief/action.json": [
+      "ecb47dda003d5692b8fe95fd2f911be5a6770821afb7228df3b55b7939a7b073",
       "ef3e43a41659a4e6acaa4c3759e1d8dcdb4dc45b9003626d29dfce858b253b13"
     ],
     "packages/writer/actions/writer.check/action.json": [
-      "4a42121dab3de4947fa4d6981f197be7abf666926bdc47dbea6ea474c282bdb2"
+      "4a42121dab3de4947fa4d6981f197be7abf666926bdc47dbea6ea474c282bdb2",
+      "de524da57fbc8d91b3bbd95b1bcc62af380ff5aeaba96451271bc08c372f03b6"
     ],
     "packages/writer/actions/writer.compile/action.json": [
+      "27217632b4a619e8266d359a8991ca4201ffabad7566929eb332f894545c5c91",
       "87483978d2ad9c3fde2cff29a959f216cace78573d2f3af0eb97daf032a03745",
       "a9a8439c93aa34467357d94586abb91c3f24f922fa1af9831b2962a653fd6bdf"
     ]
