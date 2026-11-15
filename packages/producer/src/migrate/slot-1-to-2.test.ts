@@ -32,7 +32,7 @@ describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer", () => {
     expect(result.findings).toEqual([]);
     expect(result.skipped).toHaveLength(24);
     expect(result.skipped.every(item => item.subject.startsWith("producer/seat."))).toBe(true);
-    expect(result.written).toHaveLength(446);
+    expect(result.written).toHaveLength(444);
     expect(tree(CONSUMER)).toEqual(original);
 
     const brief = ws.read("director", "advantage.defensibility.differentiator");
@@ -61,7 +61,7 @@ describe("migrate slot-1-to-2 on a copy of test-fixtures/consumer", () => {
     const twice = migrateSlot1To2(ws.root, { ...OPTIONS, at: "2026-12-01T00:00:00Z" });
     expect(twice.written).toEqual([]);
     expect(twice.migrations).toEqual([]);
-    expect(twice.current).toHaveLength(446);
+    expect(twice.current).toHaveLength(444);
     expect(tree(ws.root)).toEqual(once);
   });
 
