@@ -1,0 +1,343 @@
+{
+  "schema": "clossys.publisher-ia/1",
+  "l0": "directory",
+  "label": "Directory",
+  "owns": "What exists, grouped and ordered: publications (L2) and their pages (L3), each page's path, layout pick and section per role.",
+  "nodes": [
+    {
+      "id": "directory/sites",
+      "label": "Sites",
+      "children": [
+        {
+          "id": "directory/sites/site",
+          "label": "site",
+          "publication": "site",
+          "leaves": [
+            "page.home",
+            "page.about",
+            "page.pricing",
+            "page.contact",
+            "page.terms",
+            "page.privacy",
+            "page.not-found",
+            "page.error"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "directory/docs",
+      "label": "Docs",
+      "children": [
+        {
+          "id": "directory/docs/docs",
+          "label": "docs",
+          "publication": "docs",
+          "leaves": [
+            "page.docs-index",
+            "page.guide",
+            "page.article",
+            "page.changelog"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "directory/apps",
+      "label": "Apps",
+      "children": [
+        {
+          "id": "directory/apps/app",
+          "label": "app",
+          "publication": "app",
+          "leaves": [
+            "page.sign-in",
+            "page.sign-out-confirm",
+            "page.not-authorized",
+            "page.service-unavailable",
+            "page.app-home",
+            "page.list",
+            "page.settings",
+            "page.app-not-found"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "directory/decks",
+      "label": "Decks",
+      "parked": true,
+      "children": []
+    },
+    {
+      "id": "directory/documents",
+      "label": "Documents",
+      "parked": true,
+      "children": [
+        {
+          "id": "directory/documents/company-one-pager",
+          "label": "company-one-pager",
+          "publication": "company-one-pager",
+          "parked": true,
+          "leaves": [
+            "page.company-one-pager"
+          ]
+        }
+      ]
+    }
+  ],
+  "slots": {
+    "page.home": {
+      "kind": "page",
+      "publication": "site",
+      "path": "/",
+      "layouts": [
+        "publisher/layout.marketing-home"
+      ],
+      "records": {
+        "pattern": "home.<role>",
+        "meta": "writer/page.home.meta#home.meta"
+      }
+    },
+    "page.about": {
+      "kind": "page",
+      "publication": "site",
+      "path": "/about",
+      "layouts": [
+        "publisher/layout.about"
+      ],
+      "records": {
+        "pattern": "about.<role>",
+        "meta": "writer/page.about.meta#about.meta"
+      }
+    },
+    "page.pricing": {
+      "kind": "page",
+      "publication": "site",
+      "path": "/pricing",
+      "layouts": [
+        "publisher/layout.pricing"
+      ],
+      "records": {
+        "pattern": "pricing.<role>",
+        "meta": "writer/page.pricing.meta#pricing.meta"
+      }
+    },
+    "page.contact": {
+      "kind": "page",
+      "publication": "site",
+      "path": "/contact",
+      "layouts": [
+        "publisher/layout.contact"
+      ],
+      "records": {
+        "pattern": "contact.<role>",
+        "meta": "writer/page.contact.meta#contact.meta"
+      }
+    },
+    "page.terms": {
+      "kind": "page",
+      "publication": "site",
+      "path": "/terms",
+      "layouts": [
+        "publisher/layout.legal"
+      ],
+      "records": {
+        "pattern": "terms.<role>",
+        "meta": "writer/page.terms.meta#terms.meta"
+      }
+    },
+    "page.privacy": {
+      "kind": "page",
+      "publication": "site",
+      "path": "/privacy",
+      "layouts": [
+        "publisher/layout.legal"
+      ],
+      "records": {
+        "pattern": "privacy.<role>",
+        "meta": "writer/page.privacy.meta#privacy.meta"
+      }
+    },
+    "page.not-found": {
+      "kind": "page",
+      "publication": "site",
+      "status": 404,
+      "layouts": [
+        "publisher/layout.site-state"
+      ],
+      "records": {
+        "pattern": "not-found.<role>",
+        "meta": "writer/page.not-found.meta#not-found.meta"
+      }
+    },
+    "page.error": {
+      "kind": "page",
+      "publication": "site",
+      "status": 500,
+      "layouts": [
+        "publisher/layout.site-state"
+      ],
+      "records": {
+        "pattern": "error.<role>",
+        "meta": "writer/page.error.meta#error.meta"
+      }
+    },
+    "page.docs-index": {
+      "kind": "page",
+      "publication": "docs",
+      "path": "/docs",
+      "layouts": [
+        "publisher/layout.docs-index"
+      ],
+      "records": {
+        "pattern": "docs-index.<role>",
+        "meta": "writer/page.docs-index.meta#docs-index.meta"
+      }
+    },
+    "page.guide": {
+      "kind": "page",
+      "publication": "docs",
+      "path": "/docs/<slug>",
+      "collection": "guide",
+      "layouts": [
+        "publisher/layout.docs-guide"
+      ],
+      "records": {
+        "pattern": "guide.<role>",
+        "meta": "writer/page.guide.meta#guide.meta"
+      }
+    },
+    "page.article": {
+      "kind": "page",
+      "publication": "docs",
+      "path": "/articles/<slug>",
+      "collection": "article",
+      "layouts": [
+        "publisher/layout.docs-article"
+      ],
+      "records": {
+        "pattern": "article.<role>",
+        "meta": "writer/page.article.meta#article.meta"
+      }
+    },
+    "page.changelog": {
+      "kind": "page",
+      "publication": "docs",
+      "path": "/changelog",
+      "layouts": [
+        "publisher/layout.changelog"
+      ],
+      "records": {
+        "pattern": "changelog.<role>",
+        "meta": "writer/page.changelog.meta#changelog.meta"
+      }
+    },
+    "page.sign-in": {
+      "kind": "page",
+      "publication": "app",
+      "path": "/sign-in",
+      "layouts": [
+        "publisher/layout.auth"
+      ],
+      "records": {
+        "pattern": "sign-in.<role>",
+        "meta": "writer/page.sign-in.meta#sign-in.meta"
+      }
+    },
+    "page.sign-out-confirm": {
+      "kind": "page",
+      "publication": "app",
+      "path": "/sign-out/confirm",
+      "layouts": [
+        "publisher/layout.auth"
+      ],
+      "records": {
+        "pattern": "sign-out-confirm.<role>",
+        "meta": "writer/page.sign-out-confirm.meta#sign-out-confirm.meta"
+      }
+    },
+    "page.not-authorized": {
+      "kind": "page",
+      "publication": "app",
+      "path": "/not-authorized",
+      "layouts": [
+        "publisher/layout.auth"
+      ],
+      "records": {
+        "pattern": "not-authorized.<role>",
+        "meta": "writer/page.not-authorized.meta#not-authorized.meta"
+      }
+    },
+    "page.service-unavailable": {
+      "kind": "page",
+      "publication": "app",
+      "path": "/service-unavailable",
+      "layouts": [
+        "publisher/layout.auth"
+      ],
+      "records": {
+        "pattern": "service-unavailable.<role>",
+        "meta": "writer/page.service-unavailable.meta#service-unavailable.meta"
+      }
+    },
+    "page.app-home": {
+      "kind": "page",
+      "publication": "app",
+      "path": "/app",
+      "layouts": [
+        "publisher/layout.app-home"
+      ],
+      "records": {
+        "pattern": "app-home.<role>",
+        "meta": "writer/page.app-home.meta#app-home.meta"
+      }
+    },
+    "page.list": {
+      "kind": "page",
+      "publication": "app",
+      "path": "/app/<collection>",
+      "collection": "records",
+      "layouts": [
+        "publisher/layout.app-list"
+      ],
+      "records": {
+        "pattern": "list.<role>",
+        "meta": "writer/page.list.meta#list.meta"
+      }
+    },
+    "page.settings": {
+      "kind": "page",
+      "publication": "app",
+      "path": "/app/settings",
+      "layouts": [
+        "publisher/layout.app-settings"
+      ],
+      "records": {
+        "pattern": "settings.<role>",
+        "meta": "writer/page.settings.meta#settings.meta"
+      }
+    },
+    "page.app-not-found": {
+      "kind": "page",
+      "publication": "app",
+      "status": 404,
+      "layouts": [
+        "publisher/layout.app-state"
+      ],
+      "records": {
+        "pattern": "app-not-found.<role>",
+        "meta": "writer/page.app-not-found.meta#app-not-found.meta"
+      }
+    },
+    "page.company-one-pager": {
+      "kind": "page",
+      "parked": true,
+      "publication": "company-one-pager",
+      "layouts": [
+        "publisher/layout.one-pager"
+      ],
+      "parkedBecause": "Documents are parked"
+    }
+  }
+}

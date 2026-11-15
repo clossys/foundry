@@ -1,0 +1,46 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.terms/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.terms",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/terms",
+    "layout": "publisher/layout.legal",
+    "sections": [
+      {
+        "role": "header",
+        "use": "designer/sections.page-header",
+        "copy": "writer/sections.page-header.copy#terms.header"
+      },
+      {
+        "role": "contents",
+        "use": "designer/sections.table-of-contents",
+        "copy": "writer/sections.table-of-contents.copy#terms.contents"
+      },
+      {
+        "role": "body",
+        "use": "designer/sections.article",
+        "copy": "writer/sections.article.copy#terms.body"
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.terms.meta#terms.meta",
+      "indexing": "index"
+    }
+  }
+}

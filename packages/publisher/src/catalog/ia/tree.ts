@@ -27,7 +27,7 @@ export interface TreeNode {
 
 export interface RoleContract { kinds: readonly string[]; required: boolean }
 export interface LayoutSlot { kind: "layout"; purpose: string; parked?: boolean; frame?: string; chrome?: readonly string[]; roles?: Readonly<Record<string, RoleContract>> }
-export interface ChromeSlot { kind: "chrome"; purpose: string; frame: string; unit: string; parts?: readonly string[]; within?: string; copy: string; publications: readonly string[] }
+export interface ChromeSlot { kind: "chrome"; purpose: string; parked?: boolean; frame: string; unit: string; parts?: readonly string[]; within?: string; copy: string; publications: readonly string[] }
 export interface PageSlot {
   kind: "page"; publication: string; parked?: boolean; path?: string; status?: number; collection?: string;
   layouts: readonly string[]; records?: { pattern: string; meta: string };
@@ -100,8 +100,10 @@ export function starterLeaves(trees: readonly L0Tree[] = PUBLISHER_TREES, retire
 }
 
 /** The contract of one slot id, from whichever L0 file holds it. */
+/** The contract of a slot, by bare id (`layout.docs`) or by ref (`publisher/layout.docs`). */
 export function slotContract(id: string, trees: readonly L0Tree[] = PUBLISHER_TREES): SlotContract | undefined {
-  for (const tree of trees) if (Object.hasOwn(tree.slots, id)) return tree.slots[id];
+  const bare = id.startsWith("publisher/") ? id.slice("publisher/".length) : id;
+  for (const tree of trees) if (Object.hasOwn(tree.slots, bare)) return tree.slots[bare];
   return undefined;
 }
 

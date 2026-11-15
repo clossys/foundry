@@ -1,0 +1,39 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.sign-out-confirm/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.sign-out-confirm",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/sign-out/confirm",
+    "layout": "publisher/layout.auth",
+    "sections": [
+      {
+        "role": "main",
+        "use": "designer/sections.empty-state",
+        "copy": "writer/sections.empty-state.copy#sign-out-confirm.main",
+        "links": {
+          "actions.primary": "publisher/page.sign-in"
+        }
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.sign-out-confirm.meta#sign-out-confirm.meta",
+      "indexing": "noindex"
+    }
+  }
+}

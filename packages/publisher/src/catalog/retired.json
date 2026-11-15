@@ -1,0 +1,140 @@
+[
+  {
+    "id": "layouts.stack",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "draft layout slot replaced by the 15 layout.* L3s of Composition (publisher recut)"
+  },
+  {
+    "id": "layouts.split",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "draft layout slot replaced by the 15 layout.* L3s of Composition (publisher recut)"
+  },
+  {
+    "id": "layouts.sidebar-content",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "draft layout slot replaced by the 15 layout.* L3s of Composition (publisher recut)"
+  },
+  {
+    "id": "layouts.bento",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "draft layout slot replaced by the 15 layout.* L3s of Composition (publisher recut)"
+  },
+  {
+    "id": "layouts.staggered-grid",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "draft layout slot replaced by the 15 layout.* L3s of Composition (publisher recut)"
+  },
+  {
+    "id": "sl_2xv4y3uo7k",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_4hiswon2mp",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_622lk7eoar",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_7pz5qp7kyz",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_asgvb7lcju",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_boyi4ashca",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_hfkj3prso2",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_ke6mhs5hmu",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_lsqwmhpf6l",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_prd6v4nkk3",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_pwsyw4hn2e",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_rkjigy5k5p",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_sjhh4tpouv",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_w7u7k6agdr",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_wl546svpom",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_wlpwozbd7y",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_wnelzobehr",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  },
+  {
+    "id": "sl_x5c5vjqxez",
+    "retiredAt": "2026-11-15",
+    "decidedBy": "owner:decision-4 2026-11-14",
+    "reason": "frozen sl_* leaf retired; the site, docs and app starters are its successor (publisher recut)"
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "schema": "clossys.starter/1",
+  "id": "docs",
+  "node": "directory/docs/docs",
+  "root": "/",
+  "pages": [
+    "page.docs-index",
+    "page.guide",
+    "page.article",
+    "page.changelog"
+  ],
+  "layouts": [
+    "layout.docs-index",
+    "layout.docs-guide",
+    "layout.docs-article",
+    "layout.changelog"
+  ],
+  "chrome": [
+    "chrome.site-header",
+    "chrome.site-footer",
+    "chrome.docs-sidebar"
+  ],
+  "release": "release.docs",
+  "redirects": [],
+  "defaults": [
+    "layout.docs-index/standard-v1.json",
+    "layout.docs-guide/standard-v1.json",
+    "layout.docs-article/standard-v1.json",
+    "layout.changelog/standard-v1.json",
+    "chrome.site-header/header-v1.json",
+    "chrome.site-footer/footer-v1.json",
+    "chrome.docs-sidebar/sidebar-v1.json",
+    "page.docs-index/starter-v1.json",
+    "page.guide/starter-v1.json",
+    "page.article/starter-v1.json",
+    "page.changelog/starter-v1.json"
+  ]
+}

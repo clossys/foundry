@@ -1,0 +1,59 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.pricing/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.pricing",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/pricing",
+    "layout": "publisher/layout.pricing",
+    "sections": [
+      {
+        "role": "header",
+        "use": "designer/sections.page-header",
+        "copy": "writer/sections.page-header.copy#pricing.header"
+      },
+      {
+        "role": "plans",
+        "use": "designer/sections.pricing",
+        "copy": "writer/sections.pricing.copy#pricing.plans"
+      },
+      {
+        "role": "compare",
+        "use": "designer/sections.comparison",
+        "copy": "writer/sections.comparison.copy#pricing.compare"
+      },
+      {
+        "role": "questions",
+        "use": "designer/sections.faq",
+        "copy": "writer/sections.faq.copy#pricing.questions"
+      },
+      {
+        "role": "closing",
+        "use": "designer/sections.call-to-action",
+        "copy": "writer/sections.call-to-action.copy#pricing.closing",
+        "links": {
+          "actions.primary": "publisher/page.contact"
+        }
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.pricing.meta#pricing.meta",
+      "indexing": "index"
+    }
+  }
+}

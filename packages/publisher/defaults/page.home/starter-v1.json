@@ -1,0 +1,68 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.home/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.home",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/",
+    "layout": "publisher/layout.marketing-home",
+    "sections": [
+      {
+        "role": "hero",
+        "use": "designer/sections.hero",
+        "copy": "writer/sections.hero.copy#home.hero",
+        "links": {
+          "actions.primary": "publisher/page.pricing",
+          "actions.secondary": "publisher/page.home#how"
+        }
+      },
+      {
+        "role": "proof",
+        "use": "designer/sections.logo-cloud",
+        "copy": "writer/sections.logo-cloud.copy#home.proof"
+      },
+      {
+        "role": "value",
+        "use": "designer/sections.features",
+        "copy": "writer/sections.features.copy#home.value"
+      },
+      {
+        "role": "how",
+        "use": "designer/sections.steps",
+        "copy": "writer/sections.steps.copy#home.how"
+      },
+      {
+        "role": "questions",
+        "use": "designer/sections.faq",
+        "copy": "writer/sections.faq.copy#home.questions"
+      },
+      {
+        "role": "closing",
+        "use": "designer/sections.call-to-action",
+        "copy": "writer/sections.call-to-action.copy#home.closing",
+        "links": {
+          "actions.primary": "publisher/page.contact"
+        }
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.home.meta#home.meta",
+      "indexing": "index"
+    }
+  }
+}

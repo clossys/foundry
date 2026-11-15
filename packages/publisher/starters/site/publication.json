@@ -1,0 +1,48 @@
+{
+  "schema": "clossys.starter/1",
+  "id": "site",
+  "node": "directory/sites/site",
+  "root": "/",
+  "pages": [
+    "page.home",
+    "page.about",
+    "page.pricing",
+    "page.contact",
+    "page.terms",
+    "page.privacy",
+    "page.not-found",
+    "page.error"
+  ],
+  "layouts": [
+    "layout.marketing-home",
+    "layout.about",
+    "layout.pricing",
+    "layout.contact",
+    "layout.legal",
+    "layout.site-state"
+  ],
+  "chrome": [
+    "chrome.site-header",
+    "chrome.site-footer"
+  ],
+  "release": "release.site",
+  "redirects": [],
+  "defaults": [
+    "layout.marketing-home/standard-v1.json",
+    "layout.about/standard-v1.json",
+    "layout.pricing/standard-v1.json",
+    "layout.contact/standard-v1.json",
+    "layout.legal/standard-v1.json",
+    "layout.site-state/standard-v1.json",
+    "chrome.site-header/header-v1.json",
+    "chrome.site-footer/footer-v1.json",
+    "page.home/starter-v1.json",
+    "page.about/starter-v1.json",
+    "page.pricing/starter-v1.json",
+    "page.contact/starter-v1.json",
+    "page.terms/starter-v1.json",
+    "page.privacy/starter-v1.json",
+    "page.not-found/starter-v1.json",
+    "page.error/starter-v1.json"
+  ]
+}
