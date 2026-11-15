@@ -12,7 +12,9 @@
  *   owner words that name the specific choice (PICKED below)  -> picked
  *   anything else (ambiguous)                        -> bulk
  *
- * Usage: node scripts/backfill-pin-basis.mjs [--repo <foundry checkout>] [--dry-run] [--json]
+ * Usage: node scripts/backfill-pin-basis.mjs --repo <consumer root> [--dry-run] [--json]
+ * --repo is required: the consumer root (the folder holding clossys/). There is no default, so a
+ * one-shot writer never lands on whatever checkout it happens to sit in. Exit 2 without it.
  * Needs `npm run build` (runs dist/cli/index.js). Exit 0 all written, 1 any refusal or drift.
  */
 import { execFileSync } from 'node:child_process';
@@ -73,7 +75,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const here = dirname(fileURLToPath(import.meta.url));
   const args = process.argv.slice(2);
   const at = args.indexOf('--repo');
-  const repo = resolve(at >= 0 ? args[at + 1] : join(here, '../../..'));
+  if (at < 0 || !args[at + 1] || args[at + 1].startsWith('--')) { console.error('backfill-pin-basis: name the consumer root: --repo <dir holding clossys/>'); process.exit(2); }
+  const repo = resolve(args[at + 1]);
   const cli = join(here, '../dist/cli/index.js');
   if (!existsSync(cli)) { console.error('backfill-pin-basis: build @clossys/producer first (dist/cli/index.js)'); process.exit(2); }
   const runPin = async pinArgs => {

@@ -8,7 +8,9 @@
  * current file when it still has one. `migrated` is used only when a pin had no pinnedBy. Each slot
  * keeps the candidate it pins, its sha256 and its original `at`.
  *
- * Usage: node scripts/migrate-pin-decided-by.mjs [--repo <foundry checkout>] [--base <commit>] [--dry-run]
+ * Usage: node scripts/migrate-pin-decided-by.mjs --repo <consumer root> [--base <commit>] [--dry-run]
+ * --repo is required: the consumer root (the folder holding clossys/). There is no default, so a
+ * one-shot writer never lands on whatever checkout it happens to sit in. Exit 2 without it.
  * Needs `npm run build` (runs dist/cli/index.js). Exit 0 all migrated, 1 any refusal or drift.
  */
 import { execFileSync } from 'node:child_process';
@@ -75,7 +77,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const here = dirname(fileURLToPath(import.meta.url));
   const args = process.argv.slice(2);
   const flag = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
-  const repo = resolve(flag('--repo') ?? join(here, '../../..'));
+  const named = flag('--repo');
+  if (!named || named.startsWith('--')) { console.error('migrate-pin-decided-by: name the consumer root: --repo <dir holding clossys/>'); process.exit(2); }
+  const repo = resolve(named);
   const base = flag('--base') ?? DEFAULT_BASE;
   const dryRun = args.includes('--dry-run');
   const cli = join(here, '../dist/cli/index.js');

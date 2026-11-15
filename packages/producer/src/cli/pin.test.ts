@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -162,6 +162,17 @@ describe("clossys decisions", () => {
     result = await runCli(["decisions"], workspace);
     expect(result.message).toMatch(/decisions: 2 slots, 1 pinned, 1 not-needed, 0 open$/);
     expect(result.message).toMatch(/^not-needed designer\/components\.other \(Unused\.\)$/m);
+  });
+});
+
+describe("one-shot migration writers name their consumer root", () => {
+  it.each(["backfill-pin-basis", "migrate-pin-decided-by", "lift-writer-keys"])("%s refuses to run without --repo, writing nothing", (name) => {
+    const script = fileURLToPath(new URL(`../../scripts/${name}.mjs`, import.meta.url));
+    for (const args of [[], ["--repo"], ["--repo", "--dry-run"]]) {
+      const result = spawnSync(process.execPath, [script, ...args], { cwd: workspace, encoding: "utf8" });
+      expect(result.status, `${name} ${args.join(" ")}`).toBe(2);
+      expect(result.stderr).toMatch(/name the consumer root: --repo/);
+    }
   });
 });
 

@@ -19,7 +19,9 @@
  * the key whose text is byte-identical. Prints the plan; `--write` writes the candidates (the
  * Producer API numbers and validates them) and pins each with `clossys pin --by planner:SEEN-COPY`.
  *
- * Usage: node scripts/lift-writer-keys.mjs [--root <repo>] [--write]
+ * Usage: node scripts/lift-writer-keys.mjs --repo <consumer root> [--write]
+ * --repo is required: the consumer root (the folder holding clossys/). There is no default, so a
+ * one-shot writer never lands on whatever checkout it happens to sit in. Exit 2 without it.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -31,7 +33,9 @@ import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const at = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
-const repo = resolve(at('--root') ?? join(here, '../../..'));
+const named = at('--repo');
+if (!named || named.startsWith('--')) { console.error('lift-writer-keys: name the consumer root: --repo <dir holding clossys/>'); process.exit(2); }
+const repo = resolve(named);
 const write = args.includes('--write');
 const consumer = join(repo, 'clossys');
 const { listSlots, readCandidate, readPin, writeCandidate } = await import('../dist/records/index.js');
