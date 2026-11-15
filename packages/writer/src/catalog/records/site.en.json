@@ -140,7 +140,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.hero",
-      "schemaDigest": "9f27c2b8001a25d497222f0eb1d4b9355a704744bbdc1c001375c0e84c3d8082",
+      "schemaDigest": "b20115b7bde0c876c8938918715c30455d4d9768ed67f36cc57f11fe4f93ba0d",
       "fields": {
         "header.heading": {
           "ref": "string",
@@ -187,7 +187,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.logo-hero",
-      "schemaDigest": "5ca531b1533debc43208a4aa3697b79f9f6830672fad7dd46b5e5c2a8aaecfe3",
+      "schemaDigest": "10c4e80128ecd99abcd4f646e1d2603878846948ff3b4418c719dfdf6dc44791",
       "fields": {
         "name": {
           "ref": "string",
@@ -226,7 +226,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.features",
-      "schemaDigest": "f84d9aaaef3b404731393f4b858e169e76e6fb432248fc725b1ac45c61ddcd9d",
+      "schemaDigest": "b1b3204b325c757d2dd023e3d8a07df31a4439a251e95c7df8ee9fcb3e64ad43",
       "fields": {
         "header.eyebrow": {
           "ref": "string",
@@ -281,7 +281,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.faq",
-      "schemaDigest": "e0b0d074bdbb298fe8466bc9d974d24e2dc1d9a6edf2b83b6b689281c0e6471b",
+      "schemaDigest": "5e15e1e72d846030f5578a7ab58a19b9b4197719c121c6ff5d01fd997c9bc82e",
       "fields": {
         "header.eyebrow": {
           "ref": "string",
@@ -344,7 +344,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.form",
-      "schemaDigest": "4c892335d3ad00e11ee23b61924ab21e1e16495626df6dcba59f318ff65edf67",
+      "schemaDigest": "225221ec425b7f257fe726a796315e999b157f39221955255bbd568a5f046474",
       "fields": {
         "header.eyebrow": {
           "ref": "string",
@@ -423,7 +423,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.page-header",
-      "schemaDigest": "d026a3b6180094b492f2bdbc8142e11882e54d4ed945aef4064dc134a7a60b18",
+      "schemaDigest": "2fce41103554f7ca598fc9cfe4ff7da019ad9e44f1e1023f274c18b16c4be3e9",
       "fields": {
         "header.eyebrow": {
           "ref": "string",
@@ -482,7 +482,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.legal-prose",
-      "schemaDigest": "f0071d678deaba92ff53ecadd819cb780b5a465469b5a8d71eab78e90566a0a8",
+      "schemaDigest": "a683c37d8bfac5fd864ec15592518be59b7021583fc71289bb6471d92970fc57",
       "fields": {
         "heading": {
           "ref": "string",
@@ -517,7 +517,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.legal-prose",
-      "schemaDigest": "f0071d678deaba92ff53ecadd819cb780b5a465469b5a8d71eab78e90566a0a8",
+      "schemaDigest": "a683c37d8bfac5fd864ec15592518be59b7021583fc71289bb6471d92970fc57",
       "fields": {
         "heading": {
           "ref": "string",
@@ -560,7 +560,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.notices",
-      "schemaDigest": "d398a2f65a95feb4bc094d3b1c9eacf0b43908ce36ad486a72c357321dfb6b2f",
+      "schemaDigest": "ba69ec9c3c4be8385d841d0830b194d6e8d8e746557b8e2c67196f8468a97559",
       "fields": {
         "header.eyebrow": {
           "ref": "string",
@@ -615,7 +615,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.boundary-message",
-      "schemaDigest": "1219b6cff4ad8bc04bf0474cd89c39608105c51fa4ff6f08bb3f4a07a7bec4e7",
+      "schemaDigest": "531ccd74190871dd86da181172069622a71043a701254042c6443fc9b1a0dd6e",
       "fields": {
         "status": {
           "ref": "string",
@@ -662,7 +662,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.boundary-message",
-      "schemaDigest": "1219b6cff4ad8bc04bf0474cd89c39608105c51fa4ff6f08bb3f4a07a7bec4e7",
+      "schemaDigest": "531ccd74190871dd86da181172069622a71043a701254042c6443fc9b1a0dd6e",
       "fields": {
         "status": {
           "ref": "string",
@@ -717,7 +717,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.boundary-message",
-      "schemaDigest": "1219b6cff4ad8bc04bf0474cd89c39608105c51fa4ff6f08bb3f4a07a7bec4e7",
+      "schemaDigest": "531ccd74190871dd86da181172069622a71043a701254042c6443fc9b1a0dd6e",
       "fields": {
         "status": {
           "ref": "string",
@@ -756,7 +756,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.error-state",
-      "schemaDigest": "5a1153ac50a43d8fb11e8a8baf922f5bff73d3c15769a28a1c0e067d38b29db3",
+      "schemaDigest": "f98d620e53b78e59631141d6ff2133c38df0f68e854e25fc8f1b7da413f14b41",
       "fields": {
         "code": {
           "ref": "string",
@@ -986,7 +986,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.error-state",
-      "schemaDigest": "5a1153ac50a43d8fb11e8a8baf922f5bff73d3c15769a28a1c0e067d38b29db3",
+      "schemaDigest": "f98d620e53b78e59631141d6ff2133c38df0f68e854e25fc8f1b7da413f14b41",
       "fields": {
         "header.heading": {
           "ref": "string",

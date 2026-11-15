@@ -6,6 +6,7 @@ import { mainWriterSlotCheck } from "./cli.js";
 import { directorVoiceFromFiles, runWriterSuite, WRITER_CHECKS, type WriterFinding } from "./checks.js";
 import { adaptSlotContract, loadWriterContracts, WRITER_SLOT_LAYERS } from "./format.js";
 import { copiedExemplar, trigramJaccard } from "./similarity.js";
+import { OWNER_HOLDS } from "../../scripts/sync-passage-contract-limits.mjs";
 
 const contracts = loadWriterContracts();
 const byId = new Map(contracts.slots.map(s => [s.id, s]));
@@ -42,6 +43,8 @@ describe("Writer slot contracts", () => {
     expect(contracts.slots).toHaveLength(137);
     const counts = Object.fromEntries(WRITER_SLOT_LAYERS.map(l => [l, contracts.slots.filter(s => s.layer === l).length]));
     expect(counts).toEqual({ lexicon: 27, strings: 22, patterns: 24, passages: 52, narratives: 12 });
+    // Open owner decisions only: each hold is listed here so a new one cannot land silently.
+    expect(OWNER_HOLDS.map(hold => `${hold.slot}:${hold.field}`)).toEqual(["passages.sign-in-form:actions.back"]);
     for (const layer of WRITER_SLOT_LAYERS) {
       const catalog = catalogSlots(layer);
       expect(contracts.slots.filter(s => s.layer === layer).map(s => s.id).sort()).toEqual(catalog.map(s => s.id).sort());
@@ -49,7 +52,12 @@ describe("Writer slot contracts", () => {
         const fields = byId.get(id)!.limits.fields;
         if (layer === "strings") expect([fields.text!.maxChars, fields.text!.maxWords]).toEqual([contract.maxChars, contract.maxWords]);
         if (layer === "patterns") for (const part of contract.parts.items) expect([fields[part.id]!.required, fields[part.id]!.maxChars]).toEqual([part.required, part.maxChars]);
-        if (layer === "passages") for (const field of contract.copy.fields) expect([fields[field.key]!.required, fields[field.key]!.maxChars]).toEqual([field.required, field.maxLength.en]);
+        if (layer === "passages") for (const field of contract.copy.fields) {
+          // An owner hold keeps a field at its earlier, looser limit until the owner decides; it must still be needed.
+          const hold = OWNER_HOLDS.find(row => row.slot === id && row.field === field.key);
+          if (hold) expect(hold.maxChars, `${id}:${field.key}`).toBeGreaterThan(field.maxLength.en);
+          expect([fields[field.key]!.required, fields[field.key]!.maxChars], `${id}:${field.key}`).toEqual([field.required, hold?.maxChars ?? field.maxLength.en]);
+        }
         if (layer === "lexicon") expect(byId.get(id)!.limits.recordKind).toBe(contract.recordKind);
       }
     }
