@@ -1,0 +1,17 @@
+{
+  "schema": "clossys.check-result/1",
+  "subject": "director/identity.naming.name/name-v1.md",
+  "subjectSha256": "52a54f8ef96785c965c565e26ebcead5b0de2dedf279fccc5ce6adf6b81acb6b",
+  "briefSha256": "4f950d273a49c142d26ed4d3815d55b1a1637f438e72a5f97003eec158d5d2b3",
+  "standard": "brief.statement",
+  "ranAt": "2026-11-16T09:25:00Z",
+  "by": { "actor": "code", "cli": "clossys check", "version": "1.0.0" },
+  "status": "pass",
+  "results": [
+    { "check": "brief.must-contain", "status": "pass", "detail": "5 of 5 keys: Name, Casing, Meaning, Pronunciation, Never" },
+    { "check": "brief.casing-forms", "status": "pass", "detail": "2 allowed forms, 4 never forms" },
+    { "check": "director-boundary", "status": "pass" },
+    { "check": "brief.template-unanswered", "status": "pass" },
+    { "check": "owner.fit", "status": "skip", "detail": "owner decides in queue.pick" }
+  ]
+}

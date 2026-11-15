@@ -1,0 +1,16 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "director/identity.naming.name/pin",
+  "agent": "director",
+  "kind": "pin",
+  "status": "pinned",
+  "createdBy": { "actor": "code", "cli": "clossys pin", "version": "1.0.0" },
+  "createdAt": "2026-11-16T09:31:02Z",
+  "updatedAt": "2026-11-16T09:31:02Z",
+  "refs": [ { "to": "producer/queue.pick", "record": "20261116T0930Z-name", "rel": "answers" } ],
+  "candidate": "name-v1.md",
+  "sha256": "52a54f8ef96785c965c565e26ebcead5b0de2dedf279fccc5ce6adf6b81acb6b",
+  "decidedBy": "owner:queue.pick#20261116T0930Z-name",
+  "basis": "picked",
+  "at": "2026-11-16T09:31:02Z"
+}

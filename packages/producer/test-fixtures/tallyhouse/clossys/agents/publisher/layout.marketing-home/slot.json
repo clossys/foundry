@@ -1,0 +1,44 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "layout.marketing-home",
+  "agent": "publisher",
+  "kind": "layout",
+  "status": "live",
+  "ia": { "l0": "composition", "l1": "composition/layouts", "l2": "composition/layouts/site", "order": 1 },
+  "createdBy": { "actor": "package", "package": "@clossys/publisher", "version": "1.0.0" },
+  "createdAt": "2026-11-16T08:00:00Z",
+  "updatedAt": "2026-11-16T13:40:00Z",
+  "refs": [
+    { "to": "designer/frames.site-shell", "rel": "uses" },
+    { "to": "publisher/chrome.site-header", "rel": "uses" },
+    { "to": "publisher/chrome.site-footer", "rel": "uses" },
+    { "to": "publisher/page.home", "rel": "consumedBy" }
+  ],
+  "base": { "package": "@clossys/publisher", "version": "1.0.0", "path": "src/catalog/slots/layout.marketing-home/slot.json", "sha256": "eb5b724eb40d1d5c1d3a8296dceff606af6e70417364c9645017a35a2697fc24" },
+  "standard": "layout",
+  "brief": {
+    "purpose": "First page a visitor sees: who, why, how, proof, next step.",
+    "mustDo": ["Open with the hero", "End with one call to action"],
+    "inputs": [ { "to": "director/advantage.proposition.proof", "key": "Metrics", "rel": "input" } ],
+    "acceptance": [ { "check": "layout.roles-from-brief" }, { "check": "layout.frame-exists" }, { "check": "layout.first-last" } ]
+  },
+  "contract": {
+    "frame": "designer/frames.site-shell",
+    "chrome": ["publisher/chrome.site-header", "publisher/chrome.site-footer"],
+    "roles": {
+      "hero":      { "kinds": ["designer/sections.hero"], "required": true },
+      "proof":     { "kinds": ["designer/sections.logo-cloud", "designer/sections.stats"], "required": false },
+      "value":     { "kinds": ["designer/sections.features"], "required": true },
+      "how":       { "kinds": ["designer/sections.steps"], "required": true },
+      "voices":    { "kinds": ["designer/sections.testimonials"], "required": false },
+      "questions": { "kinds": ["designer/sections.faq"], "required": false },
+      "closing":   { "kinds": ["designer/sections.call-to-action"], "required": true }
+    },
+    "intents": {
+      "hero":    { "goal": "a first-time visitor knows what we do and goes to pricing", "reader": "owner of a small Canadian firm" },
+      "proof":   { "goal": "believe the promise", "reader": "same" },
+      "closing": { "goal": "take the one next step", "reader": "same" }
+    }
+  },
+  "tighten": []
+}

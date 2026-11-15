@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.queue-entry/1",
+  "id": "20261118T0912Z-home-hero-copy",
+  "agent": "producer",
+  "kind": "queue-entry",
+  "status": "answered",
+  "createdBy": { "actor": "owner", "ref": "chat:clossys feedback 2026-11-18T09:12:04Z" },
+  "createdAt": "2026-11-18T09:12:04Z",
+  "refs": [
+    { "to": "writer/sections.hero.copy", "record": "home.hero", "sha256": "d49e1d30ce2b531a69f02f12dd82e8bd9c03d41d9e7b250932e7971d664762b3", "rel": "input" },
+    { "to": "producer/ledger.refine", "record": "20261118T0915Z-refine-home-hero", "rel": "raisedBy" }
+  ],
+  "queue": "queue.fix",
+  "ask": "Too vague, and we never say effortless. Say what we promise: books closed by the 5th.",
+  "subject": { "to": "writer/sections.hero.copy", "record": "home.hero", "rel": "input" },
+  "decider": "agent:writer",
+  "default": null,
+  "events": [
+    { "at": "2026-11-18T09:12:04Z", "op": "raised", "by": "owner", "via": "chat" },
+    { "at": "2026-11-18T10:06:31Z", "op": "answered", "by": "code:clossys pin", "answer": "pinned home.hero-v3.json", "note": "confirmed by owner in 20261118T1004Z-home-hero-copy" }
+  ]
+}

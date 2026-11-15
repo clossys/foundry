@@ -1,0 +1,27 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "themes.primary",
+  "agent": "designer",
+  "kind": "element/token",
+  "status": "live",
+  "ia": { "l0": "theme", "l1": "theme/color", "l2": "theme/color/emphasis", "order": 1 },
+  "createdBy": { "actor": "package", "package": "@clossys/designer", "version": "1.0.0" },
+  "createdAt": "2026-11-16T08:00:00Z",
+  "updatedAt": "2026-11-16T11:07:30Z",
+  "refs": [
+    { "to": "director/identity.visual.style", "key": "Feel", "rel": "input" },
+    { "to": "designer/themes.primary-foreground", "rel": "input" },
+    { "to": "designer/components.button", "rel": "consumedBy" },
+    { "to": "designer/sections.hero", "rel": "consumedBy" }
+  ],
+  "base": { "package": "@clossys/designer", "version": "1.0.0", "path": "src/catalog/slots/themes.primary/slot.json", "sha256": "cacc26ac23b73c6f089bf12b7022d82f1c98a1de1665f93b98ef03a9d6c34b23" },
+  "standard": "token.color",
+  "brief": {
+    "purpose": "The main action and emphasis color, one value per mode.",
+    "mustDo": ["Express the Director visual feel", "Stay readable against primary-foreground in both modes"],
+    "inputs": [ { "to": "director/identity.visual.style", "key": "Feel", "rel": "input" }, { "to": "designer/themes.primary-foreground", "rel": "input" } ],
+    "acceptance": [ { "check": "contrast.pair", "params": { "min": 4.5 }, "decider": "code" }, { "check": "token.format", "decider": "code" }, { "check": "owner.look", "decider": "owner" } ]
+  },
+  "contract": { "kind": "token", "$type": "color", "tier": "role", "emit": { "default": "--primary" }, "members": ["default"], "modes": ["light", "dark"], "pair": "designer/themes.primary-foreground", "format": "oklch" },
+  "tighten": []
+}

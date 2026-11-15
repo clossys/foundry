@@ -1,0 +1,32 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "hero",
+  "type": "registry:block",
+  "title": "Hero",
+  "description": "Page opener: eyebrow, heading, lead and up to two actions; optional media.",
+  "dependencies": [],
+  "registryDependencies": ["badge", "button"],
+  "files": [
+    { "path": "blocks/hero/hero.tsx", "type": "registry:block", "target": "components/sections/hero.tsx", "content": "import * as React from \"react\"\n\nimport { Badge } from \"@/components/ui/badge\"\nimport { Button } from \"@/components/ui/button\"\nimport { cn } from \"@/lib/utils\"\nimport type { HeroProps } from \"@generated/designer/sections.hero\"\n\nconst pad = { display: \"py-24 md:py-32\", default: \"py-16 md:py-24\", compact: \"py-10 md:py-14\" } as const\nconst heading = { display: \"text-4xl md:text-6xl\", default: \"text-3xl md:text-5xl\", compact: \"text-2xl md:text-4xl\" } as const\n\nexport function Hero({ copy, variant, actions, media }: HeroProps) {\n  const split = variant.layout === \"split\" && media\n  const bleed = variant.layout === \"full-bleed\" && media\n  return (\n    <section\n      data-slot=\"hero\"\n      data-layout={variant.layout}\n      className={cn(\n        \"relative isolate overflow-hidden\",\n        variant.ground === \"inverse\" ? \"bg-primary text-primary-foreground\" : \"bg-background text-foreground\",\n      )}\n    >\n      {bleed && media ? (\n        <img src={media.asset.src} alt={copy.media?.alt ?? \"\"} width={media.asset.width} height={media.asset.height}\n          className=\"absolute inset-0 -z-10 size-full object-cover\" />\n      ) : null}\n      {bleed && variant.backdrop !== \"none\" ? (\n        <div aria-hidden className={cn(\"absolute inset-0 -z-10 bg-background\", variant.backdrop === \"scrim.strong\" ? \"opacity-80\" : \"opacity-50\")} />\n      ) : null}\n      <div className={cn(\"mx-auto grid max-w-6xl gap-10 px-6\", pad[variant.size], split && \"md:grid-cols-2 md:items-center\")}>\n        <div className={cn(\"flex flex-col items-start gap-6\", variant.layout === \"editorial\" && \"max-w-3xl\")}>\n          {copy.header.eyebrow ? <Badge variant=\"secondary\">{copy.header.eyebrow}</Badge> : null}\n          <h1 className={cn(\"text-balance font-semibold tracking-tight\", heading[variant.size])}>{copy.header.heading}</h1>\n          {copy.header.description ? (\n            <p className=\"max-w-2xl text-pretty text-lg opacity-80\">{copy.header.description}</p>\n          ) : null}\n          <div className=\"flex flex-wrap gap-3\">\n            {copy.actions?.primary && actions?.primary ? (\n              <Button asChild size=\"lg\"><a href={actions.primary.href}>{copy.actions.primary.label}</a></Button>\n            ) : null}\n            {copy.actions?.secondary && actions?.secondary ? (\n              <Button asChild size=\"lg\" variant=\"outline\"><a href={actions.secondary.href}>{copy.actions.secondary.label}</a></Button>\n            ) : null}\n          </div>\n        </div>\n        {split && media ? (\n          <img src={media.asset.src} alt={copy.media?.alt ?? \"\"} width={media.asset.width} height={media.asset.height}\n            className=\"w-full rounded-xl border object-cover\" />\n        ) : null}\n      </div>\n    </section>\n  )\n}\n" }
+  ],
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/sections.hero/hero-v2.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/sections.hero",
+    "briefSha256": "7871f9b16d4f693bdc34ad5bdd605aa6c042941e5d02776903b456d2565ef169",
+    "createdBy": { "actor": "agent", "agent": "designer", "skill": "packages/designer/actions/designer.candidates/skill.md", "skillSha256": "11854771bb99614d36c22946c708556502e2c3cb4a5eb819ed48261a13de34c1", "model": "claude-opus-5-5", "tier": "mid" },
+    "createdAt": "2026-11-16T12:40:00Z",
+    "refs": [
+      { "to": "designer/components.button", "sha256": "cb20260a5802092c866fd9c1949fc79388528657f39316e853a6bea770c4396d", "rel": "uses" },
+      { "to": "designer/components.badge", "sha256": "281315563b4bf70c45f114c00c7722da4327ce5c4f862ef72bc8452257d3f60a", "rel": "uses" }
+    ],
+    "source": { "kind": "composition", "ref": ["shadcn@aria:button", "shadcn@aria:badge"], "license": "MIT" },
+    "rationale": [
+      { "purpose": "compose", "why": "Stock Badge and Button cover every part; no craft needed (source ladder rung 1).", "sources": [] },
+      { "purpose": "variant", "field": "layout", "why": "Editorial is the default: a text-first opener for a service firm.", "sources": [ { "to": "director/identity.visual.style", "key": "Feel", "rel": "cites" } ] }
+    ]
+  }
+}
