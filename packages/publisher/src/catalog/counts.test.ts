@@ -5,8 +5,8 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  PUBLISHER_RETIRED, PUBLISHER_TREES, STARTER_IDS, checkTree, countTree, loadDefaults, loadDesignerCatalog, loadStarter, placedLeaves,
-  slotContract, starterLeaves,
+  PUBLISHER_RETIRED, PUBLISHER_TREES, STARTER_IDS, checkTree, countTree, loadDefaults, loadDesignerCatalog, loadStarter, loadWriterCopySlots,
+  placedLeaves, slotContract, starterLeaves, writerCopySlot,
   type ChromeSlot, type L0Tree, type LayoutOption, type LayoutSlot, type PageOption, type PageSlot, type RetiredEntry,
 } from "./ia/tree.js";
 import { checkLayoutUnits } from "../check/page-sections-instance.js";
@@ -191,5 +191,30 @@ describe("starter publications and package defaults", () => {
         expect(chrome.publications, `${id} ${target}`).toContain(page!.publication);
       }
     }
+  });
+});
+
+describe("chrome copy names a live Writer Copy slot (0020 review)", () => {
+  const writerCopy = loadWriterCopySlots();
+  const chromeCopy = () => starterLeaves().filter(id => id.startsWith("chrome.")).flatMap(id => {
+    const option = [...defaults.entries()].find(([key]) => key.startsWith(`${id}/`))![1].content as { copy: string };
+    return [{ id, where: "contract", ref: (slotContract(id) as ChromeSlot).copy }, { id, where: "default", ref: option.copy }];
+  });
+  const dangling = (rows: { id: string; where: string; ref: string }[]) =>
+    rows.filter(row => !writerCopy.has(writerCopySlot(row.ref) ?? "")).map(row => `${row.id} ${row.where}: ${row.ref}`);
+
+  it("the app user menu reads the app-header copy record app.user-menu", () => {
+    expect((slotContract("chrome.app-user-menu") as ChromeSlot).copy).toBe("writer/frames.app-header.copy#app.user-menu");
+    expect((defaults.get("chrome.app-user-menu/menu-v1.json")!.content as { copy: string }).copy).toBe("writer/frames.app-header.copy#app.user-menu");
+  });
+
+  it("every chrome contract and default copy ref names a Writer Copy slot that exists", () => {
+    expect(writerCopy.has("frames.app-header.copy")).toBe(true);
+    expect(dangling(chromeCopy())).toEqual([]);
+  });
+
+  it("mutation: a chrome copy ref to a Writer slot that does not exist fails", () => {
+    const rows = chromeCopy().map(row => row.id === "chrome.app-user-menu" ? { ...row, ref: "writer/components.menu.copy#app.user-menu" } : row);
+    expect(dangling(rows)).toEqual(["chrome.app-user-menu contract: writer/components.menu.copy#app.user-menu", "chrome.app-user-menu default: writer/components.menu.copy#app.user-menu"]);
   });
 });

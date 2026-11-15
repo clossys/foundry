@@ -560,7 +560,7 @@
         "designer/components.avatar"
       ],
       "within": "designer/frames.app-header",
-      "copy": "writer/components.menu.copy#app.user-menu",
+      "copy": "writer/frames.app-header.copy#app.user-menu",
       "publications": [
         "app"
       ]

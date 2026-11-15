@@ -187,6 +187,28 @@ export function designerPackageDir(from: string = PACKAGE_ROOT): string {
   }
 }
 
+// ---------- The live Writer Copy catalog ----------
+
+/** The installed `@clossys/writer` package directory, found the way Node finds a dependency. */
+export function writerPackageDir(from: string = PACKAGE_ROOT): string {
+  for (let dir = from; ; dir = dirname(dir)) {
+    const candidate = join(dir, "node_modules", "@clossys", "writer");
+    if (existsSync(join(candidate, "package.json"))) return realpathSync(candidate);
+    if (dirname(dir) === dir) throw new Error("@clossys/writer is not installed");
+  }
+}
+
+/** Writer's Copy L0 slot ids (`<unit>.copy`), read from its shipped `src/catalog/ia/copy.json`. */
+export function loadWriterCopySlots(dir: string = writerPackageDir()): ReadonlySet<string> {
+  const leavesOf = (nodes: readonly TreeNode[]): string[] => nodes.flatMap(node => node.leaves ? [...node.leaves] : leavesOf(node.children ?? []));
+  return new Set(leavesOf(readJson<{ nodes: TreeNode[] }>(join(dir, "src", "catalog", "ia", "copy.json")).nodes));
+}
+
+/** The Writer copy slot a `writer/<slot>#<record>` ref names, or undefined when the ref is malformed. */
+export function writerCopySlot(ref: string): string | undefined {
+  return /^writer\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+)#[a-z0-9][a-z0-9.-]*$/.exec(ref)?.[1];
+}
+
 /** Designer's placed, retired and live slot ids, read from its shipped `src/catalog` tree (the live catalog). */
 export function loadDesignerCatalog(dir: string = designerPackageDir()): DesignerCatalog {
   const catalog = join(dir, "src", "catalog");
