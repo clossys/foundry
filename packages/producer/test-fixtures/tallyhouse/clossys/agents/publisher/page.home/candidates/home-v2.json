@@ -11,7 +11,7 @@
     "createdAt": "2026-11-16T14:30:00Z",
     "refs": [
       { "to": "publisher/layout.marketing-home", "sha256": "922d3a29a743c69939977d33fd5526b3e9c0c059e6e243628eb2a9a7a79580a6", "rel": "input" },
-      { "to": "designer/sections.hero", "sha256": "4141ceb8a1ac294c63684b61861ec1d4a98ecefa6e01541fcbfe4c827d949e65", "rel": "places" }
+      { "to": "designer/sections.hero", "sha256": "068c611dea44105c951e4562dc224996e64eee28fca7100a2a6689f8c25f6ca1", "rel": "places" }
     ],
     "source": { "kind": "derived", "ref": ["publisher/page.home/home-v1.json"] },
     "rationale": [ { "purpose": "proof", "why": "The layout pin makes proof required; stats shows the close-by-the-5th number.", "sources": [ { "to": "publisher/layout.marketing-home", "rel": "cites" } ] } ]
