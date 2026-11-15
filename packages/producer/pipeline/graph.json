@@ -3699,7 +3699,8 @@
       "checks": [
         "workspace",
         "slot-pins",
-        "cli-verbs"
+        "cli-verbs",
+        "no-consumer-content"
       ],
       "agent": "producer",
       "package": "producer",

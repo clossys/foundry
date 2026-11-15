@@ -71,6 +71,7 @@
     "check:slot-options": "node scripts/check-slot-options.mjs",
     "check:slot-defaults": "node scripts/check-slot-defaults.mjs",
     "check:ia-source": "node scripts/check-ia-source.mjs",
+    "check:no-consumer-content": "node scripts/check-no-consumer-content.mjs --repo ../..",
     "check:slot-state": "node scripts/check-slot-state.mjs",
     "check:slot-pins": "node scripts/check-slot-pins.mjs",
     "check:constitution": "node dist/cli/index.js check --constitution",

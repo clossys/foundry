@@ -34,6 +34,7 @@ export const CHECKS = [
   defineCheck({ id: "rules", rootNpm: ["check:rules"] }),
   defineCheck({ id: "slot-options", files: ["scripts/check-slot-options.mjs"], npm: ["check:slot-options"], rootNpm: ["check:slot-options"] }),
   defineCheck({ id: "ia-source", files: ["scripts/check-ia-source.mjs"], npm: ["check:ia-source"] }),
+  defineCheck({ id: "no-consumer-content", files: ["scripts/check-no-consumer-content.mjs"], npm: ["check:no-consumer-content"] }),
   defineCheck({ id: "slot-defaults", files: ["scripts/check-slot-defaults.mjs"], npm: ["check:slot-defaults"] }),
   defineCheck({ id: "pipeline-seats", files: ["scripts/generate-pipeline-seats.mjs"], npm: ["check:pipeline-seats", "generate:pipeline-seats"] }),
   defineCheck({ id: "slot-state", files: ["scripts/check-slot-state.mjs"], npm: ["check:slot-state"] }),

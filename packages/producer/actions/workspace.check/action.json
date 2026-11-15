@@ -64,7 +64,8 @@
   "checks": [
     "workspace",
     "slot-pins",
-    "cli-verbs"
+    "cli-verbs",
+    "no-consumer-content"
   ],
   "uses": []
 }
