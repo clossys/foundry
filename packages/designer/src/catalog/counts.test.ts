@@ -10,7 +10,8 @@
  *   AppNavigation fill still renders NavigationTree, so the frame truthfully composes both until that render moves
  *   (Interface 112, not 109).
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -22,9 +23,18 @@ import {
 } from "./ia/tree.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
-/** Package defaults outside src (build-0027): `defaults/<slot-id>/<name>-v1.json`, keyed by slot id. */
-const defaultsDir = join(here, "..", "..", "defaults");
-const packageDefaults = new Map<string, DefaultFile[]>(readdirSync(defaultsDir).sort().map(id => [id,
+/**
+ * Package defaults (build-0027, fix-0027-r1): `src/catalog/defaults/<slot-id>/<name>-v1.json`, keyed by slot id. This is
+ * the folder the package ships (`files` lists `src`) and the one Producer's resolver reads for Designer.
+ */
+const packageRoot = join(here, "..", "..");
+const defaultsDir = join(here, "defaults");
+/** The seven Slides defaults, by their path in the package. */
+const SLIDES_DEFAULT_PATHS = [
+  "src/catalog/defaults/frames.deck/canvas-v1.json",
+  ...["title", "agenda", "statement", "two-column", "quote", "closing"].map(kind => `src/catalog/defaults/sections.slide-${kind}/standard-v1.json`),
+];
+const packageDefaults = new Map<string, DefaultFile[]>((existsSync(defaultsDir) ? readdirSync(defaultsDir) : []).sort().map(id => [id,
   readdirSync(join(defaultsDir, id)).filter(name => name.endsWith(".json")).sort().map(name => JSON.parse(readFileSync(join(defaultsDir, id, name), "utf8")) as DefaultFile)]));
 const clone = <T>(value: T): T => structuredClone(value);
 const tree = (trees: LayerTree[], layer: string) => trees.find(candidate => candidate.layer === layer)!;
@@ -193,6 +203,13 @@ describe("Slides: frames.deck and six slide sections (build-0027)", () => {
     expect(extensionDefaultFindings(DESIGNER_SLIDES, packageDefaults)).toEqual([]);
     for (const id of ["frames.deck", ...SLIDE_SECTIONS]) expect(packageDefaults.get(id)?.[0]?.clossys.source.kind, id).toBe("package-default");
   });
+
+  it("the packed package ships all seven Slides defaults (npm pack --dry-run)", () => {
+    const out = execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], { cwd: packageRoot, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 * 1024 * 1024 });
+    const packed = new Set((JSON.parse(out) as { files: { path: string }[] }[])[0]!.files.map(file => file.path));
+    expect(SLIDES_DEFAULT_PATHS.filter(path => !packed.has(path))).toEqual([]);
+    expect([...packageDefaults].flatMap(([id, files]) => files.map(file => `src/catalog/defaults/${id}/${file.clossys.id.split(":").pop()}`)).sort()).toEqual([...SLIDES_DEFAULT_PATHS].sort());
+  }, 120_000);
 
   it("defaults hold no literal copy: words come from Writer through the copy prop", () => {
     for (const [id, files] of packageDefaults) for (const file of files) expect(literalCopyFindings(file), id).toEqual([]);

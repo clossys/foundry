@@ -3,10 +3,13 @@
  * sections.slide-* section on the `slide` medium. Every frame and section resolves to a live Designer slot with a
  * package default; the page option holds Writer record refs only.
  */
+import { copyFileSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { checkPageOption, type LayoutContract, type PageOptionContent } from "../../check/page-sections-instance.js";
 import { DECK_FRAME, checkDeck } from "./deck.js";
-import { loadDefaults, loadDesignerCatalog, loadStarter, slotContract, type LayoutSlot, type PageOption, type PageSlot } from "./tree.js";
+import { designerPackageDir, loadDefaults, loadDesignerCatalog, loadStarter, slotContract, type LayoutSlot, type PageOption, type PageSlot } from "./tree.js";
 
 const clone = <T>(value: T): T => structuredClone(value);
 const designer = loadDesignerCatalog();
@@ -34,6 +37,20 @@ describe("slides starter: one deck of six slides", () => {
       expect(designer.withDefault.has(id), id).toBe(true);
     }
     expect(checkDeck("page.deck", deck(), layout, designer)).toEqual([]);
+  });
+
+  it("reads Designer package defaults from src/catalog/defaults, the folder the package ships, never a top-level defaults/", () => {
+    const real = designerPackageDir();
+    const dir = mkdtempSync(join(tmpdir(), "publisher-designer-pkg-"));
+    mkdirSync(join(dir, "src", "catalog", "defaults", "frames.deck"), { recursive: true });
+    symlinkSync(join(real, "src", "catalog", "ia"), join(dir, "src", "catalog", "ia"));
+    copyFileSync(join(real, "src", "catalog", "retired.json"), join(dir, "src", "catalog", "retired.json"));
+    writeFileSync(join(dir, "src", "catalog", "defaults", "frames.deck", "canvas-v1.json"), "{}");
+    mkdirSync(join(dir, "defaults", "sections.slide-quote"), { recursive: true });
+    writeFileSync(join(dir, "defaults", "sections.slide-quote", "standard-v1.json"), "{}");
+    const shipped = loadDesignerCatalog(dir);
+    expect(shipped.withDefault.has("frames.deck")).toBe(true);
+    expect(shipped.withDefault.has("sections.slide-quote")).toBe(false);
   });
 
   it("the deck page passes every page option check", () => {

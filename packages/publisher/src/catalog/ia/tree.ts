@@ -178,7 +178,7 @@ export function loadStarter(id: StarterId, root: string = PACKAGE_ROOT): Starter
 
 // ---------- The live Designer catalog ----------
 
-/** `withDefault`: slot ids with a Designer package default, a fill (`src/catalog/fills/<source>/<id>.json`) or a `defaults/<id>/` file. */
+/** `withDefault`: slot ids with a Designer fill (`src/catalog/fills/<source>/<id>.json`) or a package default (`src/catalog/defaults/<id>/`). */
 export interface DesignerCatalog { placed: ReadonlySet<string>; retired: ReadonlySet<string>; live: ReadonlySet<string>; withDefault: ReadonlySet<string> }
 
 /** The installed `@clossys/designer` package directory, found the way Node finds a dependency. */
@@ -212,6 +212,27 @@ export function writerCopySlot(ref: string): string | undefined {
   return /^writer\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+)#[a-z0-9][a-z0-9.-]*$/.exec(ref)?.[1];
 }
 
+/** Where Designer ships its package defaults: `src/catalog/defaults/<slot-id>/<name>-v1.json` (the package `files` ship `src`). */
+export const designerDefaultsDir = (dir: string = designerPackageDir()): string => join(dir, "src", "catalog", "defaults");
+
+/** One Designer slot's package defaults, read from the folder the package ships; empty when the slot has none. */
+export function loadDesignerPackageDefaults(id: string, dir: string = designerPackageDir()): CandidateFile[] {
+  const slot = join(designerDefaultsDir(dir), id);
+  if (!existsSync(slot)) return [];
+  return readdirSync(slot).filter(name => name.endsWith(".json")).sort().map(name => readJson<CandidateFile>(join(slot, name)));
+}
+
+/** A Designer frame contract from its IA extension (`src/catalog/ia/slides.json`): root element, canvas and slots. */
+export interface DesignerFrameContract {
+  kind: "frame"; root: string; canvas: { aspect: string; width: number; height: number };
+  slots: readonly { id: string; accepts: string; required?: boolean; max?: number }[]; variants?: Readonly<Record<string, readonly string[]>>;
+}
+export function loadDesignerFrameContract(id: string, dir: string = designerPackageDir()): DesignerFrameContract {
+  const contract = readJson<{ slots: Record<string, { kind?: string }> }>(join(dir, "src", "catalog", "ia", "slides.json")).slots[id];
+  if (contract?.kind !== "frame") throw new Error(`designer: ${id} is not a frame in the Designer IA extension`);
+  return contract as DesignerFrameContract;
+}
+
 /**
  * Designer's placed, retired and live slot ids, read from its shipped `src/catalog` tree (the live catalog), with the
  * families of its additive IA extension (`ia/slides.json`) merged in, and the ids that ship a package default.
@@ -229,7 +250,7 @@ export function loadDesignerCatalog(dir: string = designerPackageDir()): Designe
   const withDefault = new Set<string>();
   const fills = join(catalog, "fills");
   if (existsSync(fills)) for (const source of readdirSync(fills)) for (const name of readdirSync(join(fills, source))) if (name.endsWith(".json")) withDefault.add(name.slice(0, -5));
-  const defaults = join(dir, "defaults");
+  const defaults = designerDefaultsDir(dir);
   if (existsSync(defaults)) for (const id of readdirSync(defaults)) if (readdirSync(join(defaults, id)).some(name => name.endsWith(".json"))) withDefault.add(id);
   return { placed, retired, live: new Set([...placed].filter(id => !retired.has(id))), withDefault };
 }

@@ -177,7 +177,7 @@ export function retiredFrameReferences(
   return findings;
 }
 
-/** A package default, `defaults/<slot-id>/<name>-v1.json`: a clossys.candidate/1 header over a shadcn registry item. */
+/** A package default, `src/catalog/defaults/<slot-id>/<name>-v1.json`: a clossys.candidate/1 header over a shadcn registry item. */
 export interface DefaultFile {
   clossys: { id: string; slot: string; source: { kind: string }; [key: string]: unknown };
   content: { variants?: Readonly<Record<string, readonly string[]>>; files?: readonly { path: string; content: string }[]; [key: string]: unknown };
