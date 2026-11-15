@@ -1,6 +1,6 @@
 {
   "schema": "clossys.check-result/1", "subject": "director/execution.roadmap.release/release-v1.md",
-  "subjectSha256": "a64509e47e752685682025ba2ecf65764dbb6bf931bb3827657ed802341e20bd",
+  "subjectSha256": "38395369d4492485cd2250e343771781f8ebd797b703eb987bfc132fbc7fdaeb",
   "briefSha256": "467d2af0c106827fc602facf9d244c47e4254415493a4a2d4c3326c9b5190982",
   "standard": "brief.list", "ranAt": "2026-11-16T10:06:10Z", "by": { "actor": "code", "cli": "clossys check", "version": "1.0.0" },
   "status": "pass",

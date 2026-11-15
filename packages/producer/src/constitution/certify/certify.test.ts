@@ -85,7 +85,7 @@ describe("certify: element (server render with the slot's contract fixture)", ()
   });
 
   it("ignores the candidate's own meta.preview: only the contract fixture mounts it", () => {
-    const preview = { schema: "clossys.preview/1", fixtures: { file: "ui/ui.button.tsx", export: "Other", props: {} } };
+    const preview = { schema: "clossys.element-preview/1", fixtures: { file: "ui/ui.button.tsx", export: "Other", props: {} } };
     const code = `${LABEL}export function Other(): never { throw new Error("own preview mounted"); }\n`;
     const ctx = ctxOf({ designer: { "ui.button": { candidates: { "button-v1.json": elementItem("ui/ui.button.tsx", code, { meta: { preview } }) } } } });
     expect(fitOf(ctx, "designer", "ui.button")).toEqual([]);

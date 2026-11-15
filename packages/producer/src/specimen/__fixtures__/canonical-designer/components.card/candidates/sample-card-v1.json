@@ -50,7 +50,7 @@
       }
     },
     "preview": {
-      "schema": "clossys.preview/1",
+      "schema": "clossys.element-preview/1",
       "fixtures": {
         "title": {
           "$copy": "card.title"

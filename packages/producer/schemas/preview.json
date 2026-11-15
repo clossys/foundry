@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "clossys.preview/1",
   "title": "Preview view",
-  "description": "Output of clossys preview <publication> (system.md 12.5). Not the int2 element preview record of the same id.",
+  "description": "Output of clossys preview <publication> (system.md 12.5). The int2 element preview record is clossys.element-preview/1.",
   "type": "object",
   "required": [
     "schema",

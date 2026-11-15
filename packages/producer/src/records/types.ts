@@ -117,7 +117,7 @@ export type ElementRecord = {
 export type ElementCopyKey = string | { readonly slot: string; readonly prop: string; readonly previewKey: string };
 
 export type PreviewRecord = {
-  readonly schema: "clossys.preview/1";
+  readonly schema: "clossys.element-preview/1";
   readonly fixtures: Readonly<Record<string, unknown>>;
   readonly copy: Readonly<Record<string, string>>;
   readonly container: "canvas" | "section-in-frame" | "page";
@@ -545,7 +545,7 @@ export interface RenderIndex {
   specimens: { candidate: CandidateName; specimen: string; locale?: string; width?: number; png?: string; html?: string }[];
 }
 
-/** system.md 12.5. Not the int2 PreviewRecord, which uses the same schema id (see schemas.ts RECORD_SCHEMA_IDS.preview). */
+/** system.md 12.5: the output of `clossys preview <publication>`. The int2 element preview is PreviewRecord (`clossys.element-preview/1`). */
 export interface PreviewView {
   schema: "clossys.preview/1";
   publication: string;

@@ -110,7 +110,7 @@
       }
     },
     "preview": {
-      "schema": "clossys.preview/1",
+      "schema": "clossys.element-preview/1",
       "fixtures": {},
       "copy": {},
       "container": "page",

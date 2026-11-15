@@ -27,7 +27,7 @@ const NPM_REF = "^npm/(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*@[0-9]+\\.[
 
 export const RECORD_SCHEMA_IDS = {
   element: "clossys.element/1",
-  preview: "clossys.preview/1",
+  preview: "clossys.element-preview/1",
   slotContract: "clossys.slot-contract/1",
   referencesManifest: "clossys.references-manifest/1",
 } as const;

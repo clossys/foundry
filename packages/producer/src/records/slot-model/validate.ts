@@ -163,7 +163,7 @@ export function seatContractIssues(contract: unknown, id: string, path = "slot.j
 }
 
 /**
- * The fixture a contract carries (R01.3), by kind. element: a `clossys.preview/1` preview with
+ * The fixture a contract carries (R01.3), by kind. element: a `clossys.element-preview/1` preview with
  * `fixtures {file, export, props}` (contract-fixture.ts); brief: the required `headings`; strings:
  * the required `keys` and `locales`; page and publication: a sample `route` entry `{path}`; seat:
  * the `step` id only (the sample seat is package data). Empty when the fixture has the kind's shape.
