@@ -1,0 +1,179 @@
+/**
+ * `clossys run loop.<name>`: the loop mode of `clossys run` (cli/run.ts keeps the int2 chain mode for every other argv).
+ *
+ *   clossys run loop.fill [--slot <ref>] [--from <entry>] [--init]
+ *   clossys run loop.refine [--slot <ref>] [--from <entry>] [--trigger T3|T5|T6|T7]
+ *   clossys run loop.release --publication <id>
+ *   clossys run loop.audit
+ *   clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--wrote <file>]...]
+ *   common: [--root <dir>] [--json]
+ *
+ * An agent step prints its packet and waits: the agent runs its skill, then the run resumes with the step's exit, the
+ * files it wrote and the model that served it (the ledger names the model; the loop version names only the tier).
+ * A human step raises its queue entry and waits; `--resume` after `clossys answer` goes on.
+ * Exit 0: the run ended done or pinned-ready, or waits. 1: it stopped on a failure. 2: it could not run.
+ */
+import { resolve } from "node:path";
+import { checkRefsDangling } from "../check/refs-dangling.js";
+import { loopReachable } from "../check/loop-reachable.js";
+import { TREE_CHECKS, runIaSyncCli } from "../cli/ia-sync.js";
+import type { CliResult } from "../cli/main.js";
+import { discoverRoot } from "../cli/root.js";
+import { isLoopName, LOOP_NAMES, type LoopName } from "./names.js";
+import type { Finding } from "./route.js";
+import { fillAll, readRunState, resumeRun, runInit, startRun, waitingRuns, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks, type RunResult } from "./runner.js";
+
+export const LOOP_RUN_USAGE = "Usage: clossys run loop.<fill|refine|release|audit> [--slot <agent>/<slot-id>] [--from <entry>] [--publication <id>] [--trigger <Tn>] [--init] [--root <dir>] [--json]\n"
+  + "       clossys run loop.<name> --resume [--run <runId>] [--step-exit 0|1|2 --model <model> [--wrote <file>]...] [--root <dir>] [--json]\n"
+  + "  Runs the loop version the consumer pins (else the package v1) one step at a time and writes one ledger entry per run.\n"
+  + "  An agent step prints its packet and waits for --resume with its exit, files and serving model; a human step waits on its queue entry.\n"
+  + "  loop.fill with no --slot fills the next slot still on a package default, in chain order, until none is left or a run waits.";
+
+class LoopUsage extends Error {}
+
+interface LoopFlags {
+  loop: LoopName; slot?: string; from?: string; publication?: string; trigger?: string; init: boolean;
+  resume: boolean; run?: string; stepExit?: Exit; model?: string; wrote: string[]; root?: string; json: boolean; help: boolean;
+}
+
+function parse(argv: readonly string[]): LoopFlags {
+  const name = argv[0]!;
+  if (!isLoopName(name)) throw new LoopUsage(`${name} is not a loop (${LOOP_NAMES.join(", ")})`);
+  const flags: LoopFlags = { loop: name, init: false, resume: false, wrote: [], json: false, help: false };
+  const value = (index: number, flag: string): string => {
+    const next = argv[index];
+    if (next === undefined || next.startsWith("--")) throw new LoopUsage(`${flag} requires a value`);
+    return next;
+  };
+  for (let index = 1; index < argv.length; index++) {
+    const arg = argv[index]!;
+    if (arg === "--json") flags.json = true;
+    else if (arg === "--help") flags.help = true;
+    else if (arg === "--init") flags.init = true;
+    else if (arg === "--resume") flags.resume = true;
+    else if (arg === "--slot") flags.slot = value(++index, arg);
+    else if (arg === "--from") flags.from = value(++index, arg);
+    else if (arg === "--publication") flags.publication = value(++index, arg);
+    else if (arg === "--trigger") flags.trigger = value(++index, arg);
+    else if (arg === "--run") flags.run = value(++index, arg);
+    else if (arg === "--model") flags.model = value(++index, arg);
+    else if (arg === "--wrote") flags.wrote.push(value(++index, arg));
+    else if (arg === "--root") flags.root = value(++index, arg);
+    else if (arg === "--step-exit") {
+      const exit = Number(value(++index, arg));
+      if (exit !== 0 && exit !== 1 && exit !== 2) throw new LoopUsage(`--step-exit takes 0, 1 or 2`);
+      flags.stepExit = exit;
+    } else throw new LoopUsage(`Unknown argument: ${arg}`);
+  }
+  if (!flags.resume && (flags.run || flags.stepExit !== undefined || flags.model || flags.wrote.length)) throw new LoopUsage("--run, --step-exit, --model and --wrote go with --resume");
+  if (flags.stepExit !== undefined && !flags.model) throw new LoopUsage("--step-exit records an agent step: name the model that served it with --model");
+  if (flags.init && flags.loop !== "loop.fill") throw new LoopUsage("--init starts loop.fill only (flows.md F1)");
+  return flags;
+}
+
+/** Tree-wide findings for `clossys check --strict` inside a loop: the slot/2 tree checks, loop.reachable and refs.dangling. */
+export function strictFindings(root: string): Finding[] {
+  const findings: Finding[] = [];
+  for (const check of [...Object.values(TREE_CHECKS), loopReachable]) {
+    for (const finding of check.run(root).findings) findings.push({ check: check.id, subject: finding.subject, detail: finding.detail });
+  }
+  for (const finding of checkRefsDangling(root).findings) findings.push({ check: finding.check, subject: finding.subject, detail: finding.detail });
+  return findings;
+}
+
+/** The hooks the CLI runs with: agents wait (or take --resume's answer), code steps run their verb in-process. */
+export function cliHooks(root: string, answer?: { exit: Exit; model: string; wrote: string[] }, run: (argv: readonly string[], cwd: string) => Promise<CliResult> = defaultRun): RunHooks {
+  let pending = answer;
+  return {
+    agent(_packet: AgentPacket): AgentOutcome {
+      if (!pending) return "wait";
+      const outcome = { exit: pending.exit, model: pending.model, wrote: pending.wrote };
+      pending = undefined;
+      return outcome;
+    },
+    async code(call: CodeCall): Promise<CodeOutcome> {
+      if (call.cli === "clossys ia sync") {
+        const result = await runIaSyncCli(["sync", "--root", root], root);
+        return { exit: result.exitCode, detail: result.message };
+      }
+      if (call.cli === "clossys check --strict") {
+        const findings = strictFindings(root);
+        return { exit: findings.length ? 1 : 0, findings };
+      }
+      const argv = call.argv[0] === "clossys" ? call.argv.slice(1) : call.argv;
+      try {
+        const result = await run([...argv, "--root", root], root);
+        return { exit: result.exitCode, detail: result.message };
+      } catch (error) {
+        return { exit: 2, detail: error instanceof Error ? error.message : String(error) };
+      }
+    },
+  };
+}
+
+async function defaultRun(argv: readonly string[], cwd: string): Promise<CliResult> {
+  return (await import("../cli/main.js")).runCli(argv, cwd);
+}
+
+function describe(result: RunResult): string {
+  const lines = [result.message];
+  if (result.state) lines.unshift(`${result.state.loop}@${result.state.version.candidate}${result.state.version.source === "package" ? " (package default)" : ""}  run ${result.state.runId}`);
+  if (result.packet) {
+    const packet = result.packet;
+    lines.push(`  agent ${packet.agent}  verb ${packet.verb}  tier ${packet.tier}${packet.skill ? `  skill ${packet.skill}` : ""}`);
+    lines.push(`  do: ${packet.cli}`);
+    lines.push(`  then: clossys run ${result.state!.loop} --resume --run ${packet.runId} --step-exit <0|1|2> --model <model> [--wrote <file>]...`);
+  }
+  if (result.entry) lines.push(`  answer it with clossys answer ${result.entry} ..., then clossys run ${result.state!.loop} --resume --run ${result.state!.runId}`);
+  if (result.state?.ledger) lines.push(`  ledger ${result.state.ledger}`);
+  return lines.join("\n");
+}
+
+export async function runLoopCli(argv: readonly string[], cwd: string, options: { now?: () => Date; run?: (argv: readonly string[], cwd: string) => Promise<CliResult> } = {}): Promise<CliResult> {
+  let flags: LoopFlags;
+  try { flags = parse(argv); } catch (error) {
+    if (error instanceof LoopUsage) return { exitCode: 2, message: `${error.message}\n${LOOP_RUN_USAGE}` };
+    throw error;
+  }
+  if (flags.help) return { exitCode: 0, message: LOOP_RUN_USAGE };
+  const root = discoverRoot(resolve(cwd, flags.root ?? "."));
+  const runOptions = options.now ? { now: options.now } : {};
+  const results: RunResult[] = [];
+  try {
+    if (flags.resume) {
+      let runId = flags.run;
+      if (!runId) {
+        const waiting = waitingRuns(root).filter(state => state.loop === flags.loop);
+        if (waiting.length !== 1) return { exitCode: 2, root, message: `run: ${waiting.length} ${flags.loop} runs wait${waiting.length ? ` (${waiting.map(state => state.runId).join(", ")}); name one with --run` : ""}` };
+        runId = waiting[0]!.runId;
+      }
+      const state = readRunState(root, runId);
+      if (flags.stepExit !== undefined && state?.waiting?.on !== "agent") return { exitCode: 2, root, message: `run: ${runId} waits on ${state?.waiting?.on === "entry" ? state.waiting.entry : "nothing"}, not an agent step; --step-exit answers an agent step` };
+      const answer = flags.stepExit !== undefined ? { exit: flags.stepExit, model: flags.model!, wrote: flags.wrote } : undefined;
+      const hooks = cliHooks(root, answer, options.run);
+      const result = await resumeRun(root, runId, hooks, runOptions);
+      results.push(result);
+      if (flags.loop === "loop.fill" && !flags.slot && result.exitCode === 0 && result.state?.status === "done" && !result.state.from) results.push(...await fillAll(root, hooks, runOptions));
+    } else {
+      const hooks = cliHooks(root, undefined, options.run);
+      if (flags.init) {
+        const init = await runInit(root, hooks, runOptions);
+        results.push(init);
+        if (init.exitCode === 0) results.push(...await fillAll(root, hooks, runOptions));
+      } else if (flags.loop === "loop.fill" && !flags.slot && !flags.from) {
+        results.push(...await fillAll(root, hooks, runOptions));
+        if (!results.length) return { exitCode: 0, root, message: "run: loop.fill has nothing to fill (no consumed slot is on a package default)" };
+      } else {
+        results.push(await startRun(root, {
+          loop: flags.loop,
+          ...(flags.slot ? { slot: flags.slot } : {}), ...(flags.from ? { from: flags.from } : {}),
+          ...(flags.publication ? { publication: flags.publication } : {}), ...(flags.trigger ? { trigger: flags.trigger } : {}),
+        }, hooks, runOptions));
+      }
+    }
+  } catch (error) {
+    return { exitCode: 2, root, message: `run: ${error instanceof Error ? error.message : String(error)}` };
+  }
+  const last = results[results.length - 1]!;
+  return { exitCode: last.exitCode, root, output: results.map(result => ({ exitCode: result.exitCode, message: result.message, state: result.state, packet: result.packet, entry: result.entry })), message: results.map(describe).join("\n") };
+}
