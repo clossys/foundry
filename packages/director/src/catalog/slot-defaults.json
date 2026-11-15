@@ -48,17 +48,11 @@
     "capability.operation.delivery": {
       "standard": "brief.list"
     },
-    "capability.operation.technology": {
-      "standard": "brief.list"
-    },
     "capability.resource.allocation": {
       "standard": "brief.list"
     },
     "capability.resource.funding": {
       "standard": "brief.measure"
-    },
-    "capability.sourcing.acquire": {
-      "standard": "brief.list"
     },
     "capability.sourcing.build": {
       "standard": "brief.list"
