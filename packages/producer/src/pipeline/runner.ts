@@ -137,6 +137,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     if (head === "craft") return await (await import("../cli/craft.js")).runCraftCli(argv.slice(1), cwd, steps);
     // The gap finder reads only; the interview (next --owner) asks what it finds.
     if (head === "gaps") return await (await import("../cli/gaps.js")).runGapsCli(argv.slice(1), cwd, steps);
+    // The workspace read model (system.md 12.2) reads only, like gaps.
+    if (head === "status") return await (await import("../cli/status.js")).runStatusCli(argv.slice(1), cwd, steps);
     // A verb with its own parser (specimen, migrate, pipeline) gets its argv untouched.
     // A verb with a target per step (`clossys pin <agent>/<slot>`) runs the step whose agent the argument names.
     const owners = steps.filter(step => step.command.cli?.parser !== undefined && step.command.cli.verb === head);
