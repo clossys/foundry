@@ -138,7 +138,7 @@ export function writePinDoc(file: string, doc: Pin | PinMap): void {
 
 /** Normalizes a timestamp to the target `...Z` form; undefined when it is not a date. */
 export function toIsoZ(value: string): Iso | undefined {
-  if (ISO.test(value)) return value;
+  if (ISO.test(value) && !/\.0+Z$/.test(value)) return value;
   const ms = Date.parse(value);
   if (!/^\d{4}-\d{2}-\d{2}T/.test(value) || Number.isNaN(ms)) return undefined;
   return new Date(ms).toISOString().replace(/\.000Z$/, "Z");

@@ -96,13 +96,15 @@ describe("clossys.pin/2 rules", () => {
     expect(ownerAnswerRef(`owner:queue.pick#${QUEUE_ID}`)).toEqual(answers);
     expect(ownerAnswerRef("owner")).toBeUndefined();
     expect(ownerAnswerRef("owner:product#12")).toBeUndefined();
-    expect(toIsoZ("2026-11-14T12:00:00.000Z")).toBe("2026-11-14T12:00:00.000Z");
+    expect(toIsoZ("2026-11-14T12:00:00.000Z")).toBe("2026-11-14T12:00:00Z");
+    expect(toIsoZ("2026-11-14T12:00:00.250Z")).toBe("2026-11-14T12:00:00.250Z");
     expect(toIsoZ("2026-11-14T13:00:00+01:00")).toBe("2026-11-14T12:00:00Z");
     expect(toIsoZ("yesterday")).toBeUndefined();
   });
 
   it("the pin verb writes pin/2 for a clossys.slot/2 slot, and never invents an owner basis", async () => {
     const w = world();
+    mkdirSync(join(w.root, "clossys"), { recursive: true });
     writeFileSync(join(w.root, "clossys", "clossys.config.ts"), "export default {};\n");
     w.slot("designer", "sections.hero");
     const sha = w.candidate("designer", "sections.hero", "hero-v1.json");
