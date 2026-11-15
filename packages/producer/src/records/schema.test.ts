@@ -7,6 +7,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { sha256Hex } from "./hash.js";
 import { readRecordHeader, validateAgainst, type JsonSchema } from "./schema.js";
 import { RECORD_KEYS } from "./types.js";
 
@@ -127,12 +128,12 @@ const READ_SAMPLES: Record<string, Record<string, unknown>> = {
       ia: { l0: "copy", l1: "copy/section-copy", l2: "copy/section-copy/story" },
       brief: { purpose: "Words for each hero placed on a page.", mustDo: [], inputs: [], acceptance: [{ check: "copy.required" }] },
       briefSha256: "3c1fd2aaac5a520c46b0cc9c4c04b4260662a49b817a435a004e8fcf4d8a2b7d", tightenCount: 1, contract: { unit: "designer/sections.hero" } },
-    candidates: [{ name: "home.hero-v3.json", record: "home.hero", sha256: "9ac6a62e571641d7071bae79ca067f995dbc00d8296f54d77bb7c8611a7bac48",
+    candidates: [{ name: "home.hero-v3.json", record: "home.hero", sha256: "f5fc89108726e8260bb2c0447e7c633a4d9e2c257c06b593da60a0cd2fc7b801",
       createdBy: { actor: "agent", agent: "writer", skill: "packages/writer/actions/writer.candidates/skill.md",
         skillSha256: "1fd773f9039d79a0d6fda2cd1498a7aa84a28fd52b9fa0ff7090d0e4f3c6cb87", model: "claude-opus-5-5", tier: "mid" },
       createdAt: "2026-11-18T09:48:20Z", briefCurrent: true, check: { status: "pass", failed: [] },
       rationale: [{ purpose: "orient", field: "header.heading", why: "States the promise itself." }], renders: [] }],
-    pin: [{ record: "home.hero", candidate: "home.hero-v3.json", sha256: "9ac6a62e571641d7071bae79ca067f995dbc00d8296f54d77bb7c8611a7bac48",
+    pin: [{ record: "home.hero", candidate: "home.hero-v3.json", sha256: "f5fc89108726e8260bb2c0447e7c633a4d9e2c257c06b593da60a0cd2fc7b801",
       decidedBy: "agent:writer", basis: "agent", at: "2026-11-18T10:04:12Z", state: "confirm" }],
     consumedBy: ["publisher/page.home"], queue: ["20261118T1004Z-home-hero-copy"], ledger: ["20261116T1420Z-fill-copy"],
   },
@@ -146,7 +147,7 @@ const READ_SAMPLES: Record<string, Record<string, unknown>> = {
   "clossys.preview/1": {
     schema: "clossys.preview/1", publication: "site", buildId: "preview-4be1f07a93c2", url: "http://localhost:4600/",
     routes: [{ path: "/", page: "home", locales: ["en", "fr"] }],
-    overrides: [{ ref: "writer/sections.hero.copy/home.hero-v3.json", sha256: "9ac6a62e571641d7071bae79ca067f995dbc00d8296f54d77bb7c8611a7bac48" }],
+    overrides: [{ ref: "writer/sections.hero.copy/home.hero-v3.json", sha256: "f5fc89108726e8260bb2c0447e7c633a4d9e2c257c06b593da60a0cd2fc7b801" }],
     sample: [],
   },
   "clossys.theme/1": {
@@ -196,6 +197,23 @@ describe("Tallyhouse fixture", () => {
       expect(covered.has(id), id).toBe(true);
     }
     expect(all.some((fixture) => loopContent(fixture) !== undefined)).toBe(true);
+  });
+
+  it("pins every candidate by the sha256 of its bytes (pin/2 and each pin-map/1 record)", () => {
+    const pins = all.filter((fixture) => fixture.file.endsWith("/pin.json"));
+    expect(pins.length).toBeGreaterThan(0);
+    const drift: { pin: string; candidate: string; pinned: unknown; actual: string }[] = [];
+    for (const fixture of pins) {
+      const dir = fixture.file.slice(0, -"pin.json".length);
+      const entries = fixture.header.schema === "clossys.pin-map/1"
+        ? Object.values(fixture.header.records as Record<string, { candidate: string; sha256: string }>)
+        : [fixture.header as { candidate: string; sha256: string }];
+      for (const { candidate, sha256 } of entries) {
+        const actual = sha256Hex(readFileSync(join(FIXTURE, dir, "candidates", candidate)));
+        if (actual !== sha256) drift.push({ pin: fixture.file, candidate, pinned: sha256, actual });
+      }
+    }
+    expect(drift).toEqual([]);
   });
 
   it.each(Object.keys(READ_SAMPLES).map((id) => [id]))("%s spec example validates", (id) => {

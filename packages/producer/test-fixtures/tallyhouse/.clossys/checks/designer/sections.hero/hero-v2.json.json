@@ -1,7 +1,7 @@
 {
   "schema": "clossys.check-result/1",
   "subject": "designer/sections.hero/hero-v2.json",
-  "subjectSha256": "4141ceb8a1ac294c63684b61861ec1d4a98ecefa6e01541fcbfe4c827d949e65",
+  "subjectSha256": "068c611dea44105c951e4562dc224996e64eee28fca7100a2a6689f8c25f6ca1",
   "briefSha256": "7871f9b16d4f693bdc34ad5bdd605aa6c042941e5d02776903b456d2565ef169",
   "standard": "section.site",
   "ranAt": "2026-11-16T12:44:00Z",

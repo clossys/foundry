@@ -8,7 +8,7 @@
   "createdAt": "2026-11-18T11:31:02Z",
   "refs": [
     { "to": "producer/ledger.release", "record": "20261118T1120Z-release-site", "rel": "raisedBy" },
-    { "to": "publisher/release.site/site-v3.json", "sha256": "0fe6681084ddded4692f1136c5715f82d957e69735c013588a2123d60f4ebee7", "rel": "input" }
+    { "to": "publisher/release.site/site-v3.json", "sha256": "5f0f77ea4ed165a6f7b2011329ed7707e30e07c9bb8e6c00b93f180901c1f764", "rel": "input" }
   ],
   "queue": "queue.approve",
   "ask": "Sign off release.site site-v3.json as ready (one change since site-v2: home.hero copy v2 to v3)",

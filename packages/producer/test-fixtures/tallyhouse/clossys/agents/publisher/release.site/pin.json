@@ -9,7 +9,7 @@
   "updatedAt": "2026-11-18T11:40:05Z",
   "refs": [ { "to": "producer/queue.approve", "record": "20261118T1131Z-release-site", "rel": "answers" } ],
   "candidate": "site-v3.json",
-  "sha256": "0fe6681084ddded4692f1136c5715f82d957e69735c013588a2123d60f4ebee7",
+  "sha256": "5f0f77ea4ed165a6f7b2011329ed7707e30e07c9bb8e6c00b93f180901c1f764",
   "decidedBy": "owner:queue.approve#20261118T1131Z-release-site",
   "basis": "picked",
   "at": "2026-11-18T11:40:05Z"
