@@ -1,0 +1,12 @@
+{
+  "schema": "clossys.check-result/1", "subject": "director/execution.roadmap.release/release-v1.md",
+  "subjectSha256": "a64509e47e752685682025ba2ecf65764dbb6bf931bb3827657ed802341e20bd",
+  "briefSha256": "467d2af0c106827fc602facf9d244c47e4254415493a4a2d4c3326c9b5190982",
+  "standard": "brief.list", "ranAt": "2026-11-16T10:06:10Z", "by": { "actor": "code", "cli": "clossys check", "version": "1.0.0" },
+  "status": "pass",
+  "results": [
+    { "check": "brief.must-contain", "status": "pass", "detail": "4 of 4 keys" },
+    { "check": "brief.date-future", "status": "pass", "detail": "2026-11-30" },
+    { "check": "director-boundary", "status": "pass" }
+  ]
+}

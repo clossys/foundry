@@ -1,0 +1,25 @@
+{
+  "schema": "clossys.check-result/1",
+  "subject": "writer/sections.hero.copy/home.hero-v3.json",
+  "subjectSha256": "9ac6a62e571641d7071bae79ca067f995dbc00d8296f54d77bb7c8611a7bac48",
+  "briefSha256": "3c1fd2aaac5a520c46b0cc9c4c04b4260662a49b817a435a004e8fcf4d8a2b7d",
+  "standard": "passage",
+  "ranAt": "2026-11-18T09:52:05Z",
+  "by": { "actor": "code", "cli": "clossys check", "version": "1.0.0" },
+  "status": "pass",
+  "results": [
+    { "check": "copy.required", "status": "pass", "detail": "header.heading present in en, fr" },
+    { "check": "copy.length", "status": "pass", "field": "header.heading", "locale": "en", "detail": "42/60" },
+    { "check": "copy.length", "status": "pass", "field": "header.heading", "locale": "fr", "detail": "40/72" },
+    { "check": "copy.length", "status": "pass", "field": "header.description", "locale": "en", "detail": "110/200 after {brand}" },
+    { "check": "copy.length", "status": "pass", "field": "header.description", "locale": "fr", "detail": "114/240 after {brand}" },
+    { "check": "copy.locales", "status": "pass", "detail": "en, fr for 5 of 5 used fields" },
+    { "check": "copy.claims", "status": "pass", "detail": "1 claim, cited to proof:Metrics" },
+    { "check": "copy.rationale", "status": "pass", "detail": "purposes orient, motivate, act, defer each have a rationale" },
+    { "check": "copy.fields-digest", "status": "pass", "detail": "f331abd3 matches designer/sections.hero" },
+    { "check": "copy.sources-current", "status": "pass", "detail": "6 input pins unchanged since brief" },
+    { "check": "copy.brief-must-do", "status": "pass", "field": "header.heading", "detail": "states Promise" },
+    { "check": "voice.sentence-length", "status": "pass", "detail": "heading 8/10 words en, 8/12 fr" },
+    { "check": "voice.avoid-terms", "status": "pass", "detail": "0 hits (effortless is listed)" }
+  ]
+}

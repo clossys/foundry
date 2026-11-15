@@ -1,0 +1,499 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clossys.slot-view/1",
+  "title": "Slot view",
+  "description": "Output of clossys slot <ref> --json (system.md 12.3).",
+  "type": "object",
+  "required": [
+    "schema",
+    "ref",
+    "slot",
+    "candidates",
+    "pin",
+    "consumedBy",
+    "queue",
+    "ledger"
+  ],
+  "properties": {
+    "schema": {
+      "const": "clossys.slot-view/1"
+    },
+    "ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "slot": {
+      "type": "object",
+      "required": [
+        "id",
+        "agent",
+        "kind",
+        "status",
+        "ia",
+        "brief",
+        "briefSha256",
+        "tightenCount",
+        "contract"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/slotId"
+        },
+        "agent": {
+          "$ref": "#/$defs/agentId"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "starter",
+            "live",
+            "parked",
+            "retired",
+            "needs-refresh"
+          ]
+        },
+        "ia": {
+          "type": "object",
+          "required": [
+            "l0",
+            "l1",
+            "l2"
+          ],
+          "properties": {
+            "l0": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*$"
+            },
+            "l1": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*$"
+            },
+            "l2": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "brief": {
+          "type": "object",
+          "required": [
+            "purpose",
+            "mustDo",
+            "inputs",
+            "acceptance"
+          ],
+          "properties": {
+            "purpose": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mustDo": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "inputs": {
+              "$ref": "#/$defs/refs"
+            },
+            "acceptance": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "check"
+                ],
+                "properties": {
+                  "check": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "params": {
+                    "type": "object"
+                  },
+                  "decider": {
+                    "enum": [
+                      "code",
+                      "agent",
+                      "owner"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "briefSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "tightenCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contract": {}
+      },
+      "additionalProperties": false
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "sha256",
+          "createdBy",
+          "createdAt",
+          "briefCurrent",
+          "check",
+          "rationale",
+          "renders"
+        ],
+        "properties": {
+          "name": {
+            "$ref": "#/$defs/candidateName"
+          },
+          "record": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "createdBy": {
+            "$ref": "#/$defs/actor"
+          },
+          "createdAt": {
+            "$ref": "#/$defs/iso"
+          },
+          "briefCurrent": {
+            "type": "boolean"
+          },
+          "check": {
+            "type": "object",
+            "required": [
+              "status",
+              "failed"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "error",
+                  "none"
+                ]
+              },
+              "failed": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "rationale": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "purpose",
+                "why"
+              ],
+              "properties": {
+                "purpose": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "field": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "renders": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "pin": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "candidate",
+          "sha256",
+          "decidedBy",
+          "basis",
+          "at",
+          "state"
+        ],
+        "properties": {
+          "record": {
+            "type": "string",
+            "minLength": 1
+          },
+          "candidate": {
+            "$ref": "#/$defs/candidateName"
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "decidedBy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "basis": {
+            "type": "string",
+            "minLength": 1
+          },
+          "at": {
+            "$ref": "#/$defs/iso"
+          },
+          "state": {
+            "enum": [
+              "pinned",
+              "confirm",
+              "sample"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "consumedBy": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "queue": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "ledger": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "agentId": {
+      "enum": [
+        "director",
+        "designer",
+        "writer",
+        "publisher",
+        "producer"
+      ]
+    },
+    "slotId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}$"
+    },
+    "candidateName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\\.(md|json|svg)$"
+    },
+    "iso": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "tier": {
+      "enum": [
+        "low",
+        "mid",
+        "high"
+      ]
+    },
+    "actor": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "package",
+            "version"
+          ],
+          "properties": {
+            "actor": {
+              "const": "package"
+            },
+            "package": {
+              "type": "string",
+              "pattern": "^@clossys/(director|designer|writer|publisher|producer)$"
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "agent",
+            "skill",
+            "skillSha256",
+            "model",
+            "tier"
+          ],
+          "properties": {
+            "actor": {
+              "const": "agent"
+            },
+            "agent": {
+              "$ref": "#/$defs/agentId"
+            },
+            "skill": {
+              "type": "string",
+              "minLength": 1
+            },
+            "skillSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tier": {
+              "$ref": "#/$defs/tier"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "ref"
+          ],
+          "properties": {
+            "actor": {
+              "const": "owner"
+            },
+            "ref": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "ref"
+          ],
+          "properties": {
+            "actor": {
+              "const": "planner"
+            },
+            "ref": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "cli",
+            "version"
+          ],
+          "properties": {
+            "actor": {
+              "const": "code"
+            },
+            "cli": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ref": {
+      "type": "object",
+      "required": [
+        "to",
+        "rel"
+      ],
+      "properties": {
+        "to": {
+          "type": "string",
+          "pattern": "^(facts|(director|designer|writer|publisher|producer)/[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}(/(package:)?[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\\.(md|json|svg))?)$"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "rel": {
+          "enum": [
+            "input",
+            "uses",
+            "consumedBy",
+            "places",
+            "cites",
+            "raisedBy",
+            "answers"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ref"
+      }
+    }
+  }
+}

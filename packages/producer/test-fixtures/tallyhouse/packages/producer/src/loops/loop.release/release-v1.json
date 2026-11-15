@@ -1,0 +1,38 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "producer/loop.release/package:release-v1.json",
+    "agent": "producer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "producer/loop.release",
+    "briefSha256": "3751dcba7b5494b6233c4ca34eed6a0225e57c3046a02e144f856669677a87b3",
+    "createdBy": { "actor": "package", "package": "@clossys/producer", "version": "1.0.0" },
+    "createdAt": "2026-11-10T00:00:00Z",
+    "refs": [],
+    "source": { "kind": "package-default", "ref": [] },
+    "rationale": []
+  },
+  "content": {
+    "trigger": ["T8"],
+    "steps": [
+      { "id": "compile", "does": "generated types and resolved data", "decider": { "by": "code" }, "cli": "clossys compile",
+        "reads": ["clossys/agents/*/pin.json"], "writes": [".clossys/generated/"], "checks": ["types.compile"] },
+      { "id": "build", "does": "React static build and exports", "decider": { "by": "code" }, "cli": "clossys release <pub> --build",
+        "reads": [".clossys/generated/"], "writes": [".clossys/builds/<buildId>/"], "checks": ["page.no-inline-copy"] },
+      { "id": "manifest", "does": "write the release candidate", "decider": { "by": "code" }, "cli": "clossys release <pub> --manifest",
+        "reads": [".clossys/builds/<buildId>/"], "writes": ["publisher/release.<pub>/candidates/<pub>-v<n>.json"], "checks": ["candidate.immutable"] },
+      { "id": "gates", "does": "release gates", "decider": { "by": "code" }, "cli": "clossys release <pub> --gates",
+        "reads": ["publisher/release.<pub>/candidates/<pub>-v<n>.json"], "writes": [".clossys/checks/publisher/release.<pub>/*"],
+        "checks": ["copy.sample-remaining", "pins.resolve", "constitution.strict", "release.locales"],
+        "onFail": { "raise": "queue.fix", "then": "loop.refine" } },
+      { "id": "signoff", "does": "owner looks at the preview and the manifest diff in chat", "decider": { "by": "human", "who": "owner", "raise": "queue.approve" },
+        "cli": "clossys answer <entry> ready --by owner --via chat --quote <words>", "reads": [], "writes": [], "checks": ["answer.owner-quoted"] },
+      { "id": "pin", "does": "pin the version as ready", "decider": { "by": "code" }, "cli": "clossys pin publisher/release.<pub> <pub>-v<n>.json --by owner:<entry>",
+        "reads": [], "writes": ["publisher/release.<pub>/pin.json"], "checks": ["release.ready"] }
+    ],
+    "exit": "release version pinned = ready",
+    "repeat": "none inside a run: a failed gate stops it, and the refine run it starts raises T8 again",
+    "maxRounds": 1
+  }
+}

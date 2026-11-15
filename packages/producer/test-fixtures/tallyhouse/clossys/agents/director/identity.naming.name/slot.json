@@ -1,0 +1,61 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "identity.naming.name",
+  "agent": "director",
+  "kind": "brief",
+  "status": "live",
+  "ia": { "l0": "strategy", "l1": "strategy/identity", "l2": "strategy/identity/naming", "order": 1 },
+  "createdBy": { "actor": "package", "package": "@clossys/director", "version": "1.0.0" },
+  "createdAt": "2026-11-16T08:00:00Z",
+  "updatedAt": "2026-11-16T09:31:02Z",
+  "refs": [
+    { "to": "director/focus.category.definition", "rel": "input" },
+    { "to": "director/identity.brand.essence", "rel": "input" },
+    { "to": "designer/assets.lockup", "key": "Name", "rel": "consumedBy" },
+    { "to": "writer/lexicon.capitalization", "key": "Casing", "rel": "consumedBy" },
+    { "to": "writer/sections.hero.copy", "key": "Name", "rel": "consumedBy" },
+    { "to": "writer/narratives.legal-document", "key": "Name", "rel": "consumedBy" }
+  ],
+  "base": { "package": "@clossys/director", "version": "1.0.0", "path": "src/catalog/slots/identity.naming.name/slot.json", "sha256": "11f2057abbf4576dd6246c592920c897ed334116a6f77a911195e9c0a6fa71e9" },
+  "standard": "brief.statement",
+  "brief": {
+    "purpose": "Fix the name, how it is written and said, and what it means, so every agent spells it one way.",
+    "mustDo": [
+      "Answer every mustContain key in its own section",
+      "List every allowed written form under Casing, including where lower case is allowed",
+      "Give Meaning in one sentence a customer would understand"
+    ],
+    "inputs": [
+      { "to": "director/focus.category.definition", "rel": "input" },
+      { "to": "director/identity.brand.essence", "rel": "input" }
+    ],
+    "acceptance": [
+      { "check": "brief.must-contain", "decider": "code" },
+      { "check": "brief.casing-forms", "decider": "code" },
+      { "check": "director-boundary", "decider": "code" },
+      { "check": "owner.fit", "decider": "owner" }
+    ]
+  },
+  "contract": {
+    "question": "What is the name, how is it written and said, and what does it mean?",
+    "mustContain": [
+      { "key": "Name", "hint": "the name as customers see it" },
+      { "key": "Casing", "hint": "every allowed written form and where" },
+      { "key": "Meaning", "hint": "one plain sentence" },
+      { "key": "Pronunciation", "hint": "respelled, stressed syllable in capitals" }
+    ],
+    "forbid": ["style values (sizes, colors, word lists)", "agent step order", "model or seat names"]
+  },
+  "tighten": [
+    {
+      "path": "contract.mustContain",
+      "op": "add",
+      "value": { "key": "Never", "hint": "forms we never write" },
+      "why": "owner: drafts keep writing TallyHouse",
+      "by": { "actor": "owner", "ref": "cli:clossys brief 2026-11-16T09:18:40Z" },
+      "at": "2026-11-16T09:18:40Z"
+    }
+  ],
+  "options": 3,
+  "varyOn": "angle"
+}

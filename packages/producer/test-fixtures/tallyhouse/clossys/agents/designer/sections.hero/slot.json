@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.slot/2",
+  "id": "sections.hero",
+  "agent": "designer",
+  "kind": "element/section",
+  "status": "live",
+  "ia": { "l0": "interface", "l1": "interface/sections", "l2": "interface/sections/story", "order": 1 },
+  "createdBy": { "actor": "package", "package": "@clossys/designer", "version": "1.0.0" },
+  "createdAt": "2026-11-16T08:00:00Z",
+  "updatedAt": "2026-11-16T13:02:40Z",
+  "refs": [
+    { "to": "designer/components.button", "rel": "uses" },
+    { "to": "designer/components.badge", "rel": "uses" },
+    { "to": "designer/themes.primary", "rel": "input" },
+    { "to": "writer/sections.hero.copy", "rel": "consumedBy" },
+    { "to": "publisher/layout.marketing-home", "rel": "consumedBy" },
+    { "to": "publisher/page.home", "rel": "consumedBy" }
+  ],
+  "base": { "package": "@clossys/designer", "version": "1.0.0", "path": "src/catalog/slots/sections.hero/slot.json", "sha256": "36ba3d0aac04382cc90f9576ba694eff2a0a70ce24c6440451a3a6a8af0011c1" },
+  "standard": "section.site",
+  "brief": {
+    "purpose": "Open a page: who this is for, what it does, and the one next step.",
+    "mustDo": ["Render every copy field from props, never literal text", "Compose only stock shadcn parts", "Use theme variables only"],
+    "inputs": [ { "to": "designer/themes.primary", "rel": "input" } ],
+    "acceptance": [
+      { "check": "section.compose-layers", "decider": "code" },
+      { "check": "section.source-ref", "decider": "code" },
+      { "check": "section.tokens-only", "decider": "code" },
+      { "check": "section.copy-fields-rendered", "decider": "code" },
+      { "check": "section.no-inline-copy", "decider": "code" },
+      { "check": "render.variants", "decider": "code" },
+      { "check": "types.compile", "decider": "code" }
+    ]
+  },
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "surface": "site",
+    "anatomy": ["header", "actions", "media"],
+    "slots": [
+      { "name": "header", "type": "group", "required": true, "max": 1 },
+      { "name": "actions", "type": "group", "required": false, "max": 2 },
+      { "name": "media", "type": "asset", "required": false, "max": 1 }
+    ],
+    "variant": {
+      "layout": ["editorial", "split", "full-bleed"],
+      "size": ["default", "display", "compact"],
+      "ground": ["base", "inverse"],
+      "backdrop": ["none", "scrim.light", "scrim.strong"]
+    },
+    "allowedComposes": ["designer/components.button", "designer/components.badge"],
+    "allowedReads": { "themes": ["themes.*"], "assets": ["assets.image"] },
+    "links": ["actions.primary", "actions.secondary"],
+    "data": "host-injected",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        { "key": "header.eyebrow", "role": "eyebrow", "kind": "plain", "required": false, "maxLength": { "en": 48, "fr": 58 }, "dir": "auto" },
+        { "key": "header.heading", "role": "heading", "kind": "plain", "required": true, "maxLength": { "en": 60, "fr": 72 }, "dir": "auto" },
+        { "key": "header.description", "role": "lead", "kind": "plain", "required": false, "maxLength": { "en": 200, "fr": 240 }, "dir": "auto" },
+        { "key": "actions.primary.label", "role": "action", "kind": "plain", "required": false, "maxLength": { "en": 24, "fr": 29 }, "dir": "auto" },
+        { "key": "actions.secondary.label", "role": "action", "kind": "plain", "required": false, "maxLength": { "en": 24, "fr": 29 }, "dir": "auto" },
+        { "key": "media.alt", "role": "alt", "kind": "plain", "required": false, "maxLength": { "en": 140, "fr": 168 }, "dir": "auto" }
+      ]
+    }
+  },
+  "tighten": []
+}
