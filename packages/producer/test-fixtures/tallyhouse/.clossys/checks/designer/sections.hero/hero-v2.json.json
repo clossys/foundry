@@ -1,0 +1,19 @@
+{
+  "schema": "clossys.check-result/1",
+  "subject": "designer/sections.hero/hero-v2.json",
+  "subjectSha256": "4141ceb8a1ac294c63684b61861ec1d4a98ecefa6e01541fcbfe4c827d949e65",
+  "briefSha256": "7871f9b16d4f693bdc34ad5bdd605aa6c042941e5d02776903b456d2565ef169",
+  "standard": "section.site",
+  "ranAt": "2026-11-16T12:44:00Z",
+  "by": { "actor": "code", "cli": "clossys check", "version": "1.0.0" },
+  "status": "pass",
+  "results": [
+    { "check": "section.compose-layers", "status": "pass", "detail": "imports components.badge, components.button only" },
+    { "check": "section.source-ref", "status": "pass", "detail": "shadcn@aria, MIT" },
+    { "check": "section.tokens-only", "status": "pass", "detail": "0 raw color or size values" },
+    { "check": "section.copy-fields-rendered", "status": "pass", "detail": "6 of 6 fields read from props.copy" },
+    { "check": "section.no-inline-copy", "status": "pass", "detail": "0 JSX text literals" },
+    { "check": "render.variants", "status": "pass", "detail": "54 of 54 combinations render (3 x 3 x 2 x 3)" },
+    { "check": "types.compile", "status": "pass", "detail": "tsc against sections.hero.ts" }
+  ]
+}

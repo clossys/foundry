@@ -1,0 +1,19 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1", "id": "writer/lexicon.sentence-length/sentence-length-v2.json", "agent": "writer",
+    "kind": "candidate", "status": "submitted", "slot": "writer/lexicon.sentence-length",
+    "briefSha256": "8b076ecbaac92d3000d17a1a9673f3298e269b186ba5dc475f0680d78441da18",
+    "createdBy": { "actor": "agent", "agent": "writer", "skill": "packages/writer/actions/writer.candidates/skill.md", "skillSha256": "1fd773f9039d79a0d6fda2cd1498a7aa84a28fd52b9fa0ff7090d0e4f3c6cb87", "model": "claude-opus-5-5", "tier": "mid" },
+    "createdAt": "2026-11-16T13:50:00Z",
+    "refs": [ { "to": "director/identity.verbal.voice", "key": "Sound", "sha256": "2f13dc6ac8a3308dab6269d09e238754070e8b5b8e7f9f33ca0cdbeb8af0e7f5", "rel": "input" } ],
+    "source": { "kind": "derived", "ref": ["writer/lexicon.sentence-length/package:sentence-length-v1.json"] },
+    "rationale": [ { "purpose": "rhythm", "why": "Voice Sound is 'plain and brief, like a good accountant's note': headings shorter than the package default.", "sources": [ { "to": "director/identity.verbal.voice", "key": "Sound", "rel": "cites" } ] } ]
+  },
+  "content": {
+    "unit": "words",
+    "byRole": {
+      "en": { "eyebrow": { "max": 7 }, "heading": { "max": 10 }, "lead": { "max": 24, "mean": 16 }, "body": { "max": 28, "mean": 17 }, "action": { "max": 3 }, "label": { "max": 4 }, "alt": { "max": 20 } },
+      "fr": { "eyebrow": { "max": 8 }, "heading": { "max": 12 }, "lead": { "max": 28, "mean": 19 }, "body": { "max": 33, "mean": 20 }, "action": { "max": 4 }, "label": { "max": 5 }, "alt": { "max": 24 } }
+    }
+  }
+}

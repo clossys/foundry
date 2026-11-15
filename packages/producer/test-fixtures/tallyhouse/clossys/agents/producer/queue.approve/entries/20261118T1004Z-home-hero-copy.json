@@ -1,0 +1,26 @@
+{
+  "schema": "clossys.queue-entry/1",
+  "id": "20261118T1004Z-home-hero-copy",
+  "agent": "producer",
+  "kind": "queue-entry",
+  "status": "answered",
+  "createdBy": { "actor": "code", "cli": "clossys pick", "version": "1.0.0" },
+  "createdAt": "2026-11-18T10:04:12Z",
+  "refs": [
+    { "to": "producer/ledger.refine", "record": "20261118T0915Z-refine-home-hero", "rel": "raisedBy" },
+    { "to": "producer/queue.fix", "record": "20261118T0912Z-home-hero-copy", "rel": "input" }
+  ],
+  "queue": "queue.approve",
+  "ask": "Confirm the new home hero copy (v3) picked by Writer",
+  "subject": { "to": "writer/sections.hero.copy", "record": "home.hero", "rel": "input" },
+  "decider": "owner",
+  "default": "keep home.hero-v2.json",
+  "options": [
+    { "id": "approve", "candidate": "home.hero-v3.json", "summary": "Your books closed by the 5th, every month." },
+    { "id": "reject", "candidate": "home.hero-v2.json", "summary": "Keep: Effortless bookkeeping for growing teams" }
+  ],
+  "events": [
+    { "at": "2026-11-18T10:04:12Z", "op": "raised", "by": "code:clossys pick" },
+    { "at": "2026-11-18T10:06:31Z", "op": "answered", "by": "owner", "via": "chat", "answer": "approve", "quote": "Yes, v3. That's the promise, said plainly." }
+  ]
+}

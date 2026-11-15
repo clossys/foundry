@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.ia/1",
+  "id": "publisher/ia",
+  "agent": "publisher",
+  "kind": "ia",
+  "status": "live",
+  "createdBy": { "actor": "code", "cli": "clossys init --starters site", "version": "1.0.0" },
+  "createdAt": "2026-11-16T08:00:00Z",
+  "updatedAt": "2026-11-16T08:00:00Z",
+  "refs": [],
+  "publications": {
+    "site": {
+      "node": "directory/sites/site",
+      "starter": "site",
+      "root": "/",
+      "pages": ["page.home", "page.about", "page.pricing", "page.contact", "page.terms", "page.privacy", "page.not-found", "page.error"],
+      "chrome": ["chrome.site-header", "chrome.site-footer"],
+      "release": "release.site",
+      "redirects": []
+    }
+  }
+}

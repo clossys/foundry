@@ -1,0 +1,439 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clossys.slot/2",
+  "title": "Slot (brief)",
+  "description": "A consumer slot.json: COMMON, the package base, the brief, the STRUCTURED contract and the consumer tighten list (system.md 4, 6.1).",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "agent",
+    "kind",
+    "status",
+    "createdBy",
+    "createdAt",
+    "refs",
+    "ia",
+    "base",
+    "standard",
+    "brief",
+    "contract",
+    "tighten"
+  ],
+  "properties": {
+    "schema": {
+      "const": "clossys.slot/2"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}$"
+    },
+    "agent": {
+      "$ref": "#/$defs/agentId"
+    },
+    "kind": {
+      "enum": [
+        "brief",
+        "element/token",
+        "element/asset",
+        "element/component",
+        "element/section",
+        "element/frame",
+        "voice",
+        "prose",
+        "copy",
+        "layout",
+        "chrome",
+        "page",
+        "release",
+        "loop",
+        "queue",
+        "ledger"
+      ]
+    },
+    "status": {
+      "enum": [
+        "starter",
+        "live",
+        "parked",
+        "retired",
+        "needs-refresh"
+      ]
+    },
+    "createdBy": {
+      "$ref": "#/$defs/actor"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/iso"
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/iso"
+    },
+    "refs": {
+      "$ref": "#/$defs/refs"
+    },
+    "ia": {
+      "type": "object",
+      "required": [
+        "l0",
+        "l1",
+        "l2",
+        "order"
+      ],
+      "properties": {
+        "l0": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*$"
+        },
+        "l1": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*$"
+        },
+        "l2": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*$"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "base": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "package",
+        "version",
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "package": {
+          "type": "string",
+          "pattern": "^@clossys/(director|designer|writer|publisher|producer)$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "standard": {
+      "type": "string",
+      "minLength": 1
+    },
+    "brief": {
+      "type": "object",
+      "required": [
+        "purpose",
+        "mustDo",
+        "inputs",
+        "acceptance"
+      ],
+      "properties": {
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mustDo": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "inputs": {
+          "$ref": "#/$defs/refs"
+        },
+        "acceptance": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "check"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "minLength": 1
+              },
+              "params": {
+                "type": "object"
+              },
+              "decider": {
+                "enum": [
+                  "code",
+                  "agent",
+                  "owner"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "contract": {
+      "type": "object"
+    },
+    "tighten": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "op",
+          "value",
+          "why",
+          "by",
+          "at"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "op": {
+            "enum": [
+              "max",
+              "min",
+              "require",
+              "add",
+              "remove",
+              "narrow"
+            ]
+          },
+          "value": {},
+          "why": {
+            "type": "string",
+            "minLength": 1
+          },
+          "by": {
+            "$ref": "#/$defs/actor"
+          },
+          "at": {
+            "$ref": "#/$defs/iso"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "options": {
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "varyOn": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "agentId": {
+      "enum": [
+        "director",
+        "designer",
+        "writer",
+        "publisher",
+        "producer"
+      ]
+    },
+    "slotId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}$"
+    },
+    "candidateName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\\.(md|json|svg)$"
+    },
+    "iso": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "tier": {
+      "enum": [
+        "low",
+        "mid",
+        "high"
+      ]
+    },
+    "actor": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "package",
+            "version"
+          ],
+          "properties": {
+            "actor": {
+              "const": "package"
+            },
+            "package": {
+              "type": "string",
+              "pattern": "^@clossys/(director|designer|writer|publisher|producer)$"
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "agent",
+            "skill",
+            "skillSha256",
+            "model",
+            "tier"
+          ],
+          "properties": {
+            "actor": {
+              "const": "agent"
+            },
+            "agent": {
+              "$ref": "#/$defs/agentId"
+            },
+            "skill": {
+              "type": "string",
+              "minLength": 1
+            },
+            "skillSha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tier": {
+              "$ref": "#/$defs/tier"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "ref"
+          ],
+          "properties": {
+            "actor": {
+              "const": "owner"
+            },
+            "ref": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "ref"
+          ],
+          "properties": {
+            "actor": {
+              "const": "planner"
+            },
+            "ref": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "actor",
+            "cli",
+            "version"
+          ],
+          "properties": {
+            "actor": {
+              "const": "code"
+            },
+            "cli": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ref": {
+      "type": "object",
+      "required": [
+        "to",
+        "rel"
+      ],
+      "properties": {
+        "to": {
+          "type": "string",
+          "pattern": "^(facts|(director|designer|writer|publisher|producer)/[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*){1,3}(/(package:)?[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\\.(md|json|svg))?)$"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "rel": {
+          "enum": [
+            "input",
+            "uses",
+            "consumedBy",
+            "places",
+            "cites",
+            "raisedBy",
+            "answers"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ref"
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "clossys.queue-entry/1",
+  "id": "20261118T1131Z-release-site",
+  "agent": "producer",
+  "kind": "queue-entry",
+  "status": "answered",
+  "createdBy": { "actor": "code", "cli": "clossys run", "version": "1.0.0" },
+  "createdAt": "2026-11-18T11:31:02Z",
+  "refs": [
+    { "to": "producer/ledger.release", "record": "20261118T1120Z-release-site", "rel": "raisedBy" },
+    { "to": "publisher/release.site/site-v3.json", "sha256": "0fe6681084ddded4692f1136c5715f82d957e69735c013588a2123d60f4ebee7", "rel": "input" }
+  ],
+  "queue": "queue.approve",
+  "ask": "Sign off release.site site-v3.json as ready (one change since site-v2: home.hero copy v2 to v3)",
+  "subject": { "to": "publisher/release.site", "rel": "input" },
+  "decider": "owner",
+  "default": "not ready",
+  "options": [
+    { "id": "ready", "candidate": "site-v3.json", "summary": "Pin site-v3.json as ready; site-v2.json stays on disk" },
+    { "id": "not-ready", "summary": "Leave site-v2.json pinned; say what to change" }
+  ],
+  "events": [
+    { "at": "2026-11-18T11:31:02Z", "op": "raised", "by": "code:clossys run" },
+    { "at": "2026-11-18T11:40:05Z", "op": "answered", "by": "owner", "via": "chat", "answer": "ready", "quote": "Looks right. Mark it ready." }
+  ]
+}

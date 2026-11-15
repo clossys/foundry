@@ -1,0 +1,22 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/layout.marketing-home/proof-first-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/layout.marketing-home",
+    "briefSha256": "de113d68000e58bf2b9a8418f937aefbf0a61c7bbc91d799f4d78f17d807eea0",
+    "createdBy": { "actor": "agent", "agent": "publisher", "skill": "packages/publisher/actions/publisher.candidates/skill.md", "skillSha256": "c7955d7e07102bccf6860925038918962595efccf7ea756098fb34157d2ea5a9", "model": "claude-opus-5-5", "tier": "low" },
+    "createdAt": "2026-11-16T13:30:00Z",
+    "refs": [ { "to": "director/advantage.proposition.proof", "key": "Metrics", "sha256": "5a1ad941565ac010203094208cd461518c286151f336f65193937d78c2c79a5b", "rel": "input" } ],
+    "source": { "kind": "derived", "ref": ["publisher/layout.marketing-home/package:standard-v1.json"] },
+    "rationale": [ { "purpose": "order", "why": "Proof has hard numbers (books closed by the 5th), so it goes straight after the hero and is required.", "sources": [ { "to": "director/advantage.proposition.proof", "key": "Metrics", "rel": "cites" } ] } ]
+  },
+  "content": {
+    "frame": "designer/frames.site-shell",
+    "chrome": ["publisher/chrome.site-header", "publisher/chrome.site-footer"],
+    "order": ["hero", "proof", "value", "how", "voices", "questions", "closing"],
+    "required": ["hero", "proof", "value", "closing"]
+  }
+}

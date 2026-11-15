@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clossys.render/1",
+  "title": "Render index",
+  "description": "Output of clossys render (the index.json content) (system.md 12.4).",
+  "type": "object",
+  "required": [
+    "schema",
+    "ref",
+    "inputsSha256",
+    "renderedAt",
+    "by",
+    "specimens"
+  ],
+  "properties": {
+    "schema": {
+      "const": "clossys.render/1"
+    },
+    "ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "compare": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inputsSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "renderedAt": {
+      "$ref": "#/$defs/iso"
+    },
+    "by": {
+      "$ref": "#/$defs/codeActor"
+    },
+    "specimens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "candidate",
+          "specimen"
+        ],
+        "properties": {
+          "candidate": {
+            "$ref": "#/$defs/candidateName"
+          },
+          "specimen": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "png": {
+            "type": "string",
+            "minLength": 1
+          },
+          "html": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "candidateName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\\.(md|json|svg)$"
+    },
+    "iso": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "codeActor": {
+      "type": "object",
+      "required": [
+        "actor",
+        "cli",
+        "version"
+      ],
+      "properties": {
+        "actor": {
+          "const": "code"
+        },
+        "cli": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

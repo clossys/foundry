@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.ledger-entry/1",
+  "id": "20261118T0915Z-refine-home-hero",
+  "agent": "producer",
+  "kind": "ledger-entry",
+  "status": "done",
+  "createdBy": { "actor": "code", "cli": "clossys run", "version": "1.0.0" },
+  "createdAt": "2026-11-18T10:06:40Z",
+  "refs": [
+    { "to": "producer/queue.fix", "record": "20261118T0912Z-home-hero-copy", "rel": "answers" },
+    { "to": "producer/queue.approve", "record": "20261118T1004Z-home-hero-copy", "rel": "answers" }
+  ],
+  "loop": "loop.refine",
+  "loopVersion": "refine-v2.json",
+  "trigger": { "kind": "owner-feedback", "ref": { "to": "producer/queue.fix", "record": "20261118T0912Z-home-hero-copy", "rel": "raisedBy" } },
+  "steps": [
+    { "id": "refine-brief", "decider": { "by": "agent", "agent": "writer", "verb": "refine-brief", "tier": "mid", "model": "claude-opus-5-5" },
+      "cli": "clossys brief writer/sections.hero.copy --tighten brief.mustDo add ...", "exit": 0,
+      "wrote": [ { "file": "writer/sections.hero.copy/slot.json", "sha256": null } ] },
+    { "id": "create", "decider": { "by": "agent", "agent": "writer", "verb": "create-candidates", "tier": "mid", "model": "claude-opus-5-5" },
+      "cli": "clossys next writer/sections.hero.copy#home.hero --submit home.hero-v3.json ...", "exit": 0,
+      "wrote": [ { "file": "writer/sections.hero.copy/candidates/home.hero-v3.json", "sha256": "9ac6a62e571641d7071bae79ca067f995dbc00d8296f54d77bb7c8611a7bac48" } ] },
+    { "id": "check", "decider": { "by": "code" }, "cli": "clossys check writer/sections.hero.copy#home.hero", "exit": 0, "wrote": [] },
+    { "id": "pick", "decider": { "by": "agent", "agent": "writer", "verb": "pick", "tier": "mid", "model": "claude-opus-5-5" },
+      "cli": "clossys pick writer/sections.hero.copy#home.hero home.hero-v3.json --by agent:writer", "exit": 0,
+      "wrote": [ { "file": "writer/sections.hero.copy/pin.json", "sha256": null } ] },
+    { "id": "confirm", "decider": { "by": "human", "who": "owner", "raise": "queue.approve" },
+      "cli": "clossys answer 20261118T1004Z-home-hero-copy approve --by owner --via chat", "exit": 0,
+      "wrote": [ { "file": "writer/sections.hero.copy/pin.json", "sha256": null } ] },
+    { "id": "cascade", "decider": { "by": "code" }, "cli": "clossys check publisher/page.home", "exit": 0,
+      "wrote": [ { "file": "publisher/page.home/slot.json", "sha256": null } ] }
+  ],
+  "checks": { "brief.tighten-only": "pass", "copy.length": "pass", "copy.claims": "pass", "copy.locales": "pass", "page.role-allowed": "pass" },
+  "decisions": [ { "entry": "queue.approve#20261118T1004Z-home-hero-copy", "answer": "approve" } ],
+  "outcome": "home.hero pinned to home.hero-v3.json; release.site stale"
+}
