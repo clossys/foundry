@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/sections.slide-two-column/package:standard-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/sections.slide-two-column",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/designer"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+    "name": "slide-two-column",
+    "type": "registry:block",
+    "export": "SlideTwoColumn",
+    "variants": {
+      "medium": [
+        "web",
+        "slide"
+      ]
+    },
+    "dependencies": [],
+    "registryDependencies": [
+      "utils"
+    ],
+    "files": [
+      {
+        "path": "registry/default/blocks/slide-two-column.tsx",
+        "type": "registry:block",
+        "content": "import { cn } from \"@/lib/utils\"\n\ntype Medium = \"web\" | \"slide\"\ntype Column = { heading?: string; body: string }\ntype SlideTwoColumnCopy = { heading: string; left: Column; right: Column }\n\nfunction SlideColumn({ part, slide }: { part: Column; slide: boolean }) {\n  return (\n    <div className=\"flex flex-col gap-4 rounded-lg border border-border bg-card p-8 text-card-foreground\">\n      {part.heading ? <h3 className={cn(\"font-heading font-semibold\", slide ? \"text-4xl\" : \"text-xl\")}>{part.heading}</h3> : null}\n      <p className={cn(\"text-muted-foreground\", slide ? \"text-2xl\" : \"text-base\")}>{part.body}</p>\n    </div>\n  )\n}\n\nexport function SlideTwoColumn({ copy, medium = \"web\" }: { copy: SlideTwoColumnCopy; medium?: Medium }) {\n  const slide = medium === \"slide\"\n  return (\n    <section data-slot=\"slide-two-column\" data-medium={medium} className={cn(\"flex flex-col justify-center gap-8 bg-background text-foreground\", slide ? \"aspect-video w-full overflow-hidden px-24 py-20\" : \"px-6 py-20 md:px-12\")}>\n      <h2 className={cn(\"font-heading font-semibold tracking-tight\", slide ? \"text-6xl\" : \"text-3xl\")}>{copy.heading}</h2>\n      <div className={cn(\"grid gap-8\", slide ? \"grid-cols-2\" : \"md:grid-cols-2\")}>\n        <SlideColumn part={copy.left} slide={slide} />\n        <SlideColumn part={copy.right} slide={slide} />\n      </div>\n    </section>\n  )\n}\n"
+      }
+    ]
+  }
+}

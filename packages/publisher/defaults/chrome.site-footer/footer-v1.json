@@ -1,0 +1,32 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/chrome.site-footer/package:footer-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/chrome.site-footer",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "unit": "designer/frames.site-footer",
+    "copy": "writer/frames.site-footer.copy#site.footer",
+    "links": {
+      "company.0": "publisher/page.about",
+      "company.1": "publisher/page.contact",
+      "legal.0": "publisher/page.terms",
+      "legal.1": "publisher/page.privacy"
+    },
+    "brand": "designer/assets.lockup"
+  }
+}

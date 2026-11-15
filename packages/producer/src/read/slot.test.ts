@@ -270,7 +270,7 @@ describe("Tallyhouse golden (target clossys.slot/2 records)", () => {
       ia: { l0: "chrome", l1: "chrome/site", l2: "chrome/site/header" }, brief: { purpose: "Synthetic test slot.", mustDo: [], inputs: [], acceptance: [] }, refs: [] }));
     const view = slotView(root, "publisher/chrome.site-header", packages);
     expectSlotViewShape(view);
-    const bytes = readFileSync(join(TALLYHOUSE, "packages/publisher/src/catalog/defaults/chrome.site-header/header-v1.json"), "utf8");
+    const bytes = readFileSync(join(TALLYHOUSE, "packages/publisher/defaults/chrome.site-header/header-v1.json"), "utf8");
     expect(view.candidates.map(row => [row.name, row.sha256])).toEqual([["header-v1.json", sha(bytes)]]);
     expect(view.pin).toEqual([expect.objectContaining({ candidate: "header-v1.json", sha256: sha(bytes), basis: "package-default", state: "sample" })]);
   });

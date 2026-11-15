@@ -1,0 +1,31 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/layout.auth/package:standard-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/layout.auth",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "frame": "designer/frames.auth-shell",
+    "chrome": [],
+    "order": [
+      "main"
+    ],
+    "required": [
+      "main"
+    ]
+  }
+}

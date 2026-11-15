@@ -15,6 +15,69 @@ The CLI is deterministic: it validates, installs, binds and renders. Choosing
 the frame, the sections and the copy map is your work, done through this loop.
 You write candidates only; the owner pins.
 
+## Verbs
+
+Four verbs; the action file is the contract and its skill is the step you run:
+
+| Verb | Action | What it does |
+|---|---|---|
+| refine brief | `clossys` slot tighten (no Publisher action folder yet) | tighten a layout or page brief: fewer allowed kinds, an extra required role |
+| create candidates | `actions/publisher.candidates/` | place one allowed unit and one Writer record per role |
+| pick | `actions/pick.publisher/` | judge the passing options and pin one |
+| check | `actions/publish.page/` | read-only check of every pinned page against Designer and Writer pins |
+
+`actions/publish.install/` renders pinned pages after the owner's pins. A release is
+ready only when the owner signs it in chat (`queue.approve`); nothing here takes a
+publication live.
+
+## Slot tree and starters
+
+The tree has three L0s, one file each under `src/catalog/ia/`:
+
+| L0 | Slots | Owns |
+|---|---|---|
+| Composition | `layout.*` (15), `chrome.*` (5) | a layout's frame and roles with the Designer section kinds each role allows; chrome link targets and its Writer record |
+| Directory | `page.*` (20), grouped by publication (`site`, `docs`, `app`) | each page's path, its allowed layout and the section per role |
+| Release | `release.*` (3) | one publication's exports, locales, gates and the owner's ready sign-off |
+
+Parked (`parked: true`): the one-pager layout, page and release; Decks, Slides and
+Video. Retired ids (`src/catalog/retired.json`: the five draft `layouts.*` slots and
+the 18 frozen `sl_*` leaves) are never placed or reused.
+
+Three starter publications ship as package data: `starters/{site,docs,app}/publication.json`
+lists each one's pages, layouts, chrome and release. Every layout, chrome and page
+slot has one package default under `defaults/<slot-id>/` (`standard-v1.json`,
+`header-v1.json`, `starter-v1.json`, ...); a consumer's first file of the same name
+is `v2`. A release has no default: its manifest is written by code.
+
+A page option places one section per layout role:
+
+```json
+{
+  "path": "/",
+  "layout": "publisher/layout.marketing-home",
+  "sections": [
+    { "role": "hero", "use": "designer/sections.hero", "copy": "writer/sections.hero.copy#home.hero",
+      "links": { "actions.primary": "publisher/page.pricing" } },
+    { "role": "closing", "use": "designer/sections.call-to-action", "copy": "writer/sections.call-to-action.copy#home.closing" }
+  ],
+  "meta": { "copy": "writer/page.home.meta#home.meta", "indexing": "index" }
+}
+```
+
+- `role` is the section's instance key: unique on the page, so one section kind
+  may appear twice under two roles. The role must be one the layout lists, and
+  `use` one of the kinds that role allows, a live Designer section.
+- `copy` is the Writer record `<page>.<role>` in the unit's copy slot
+  (`<designer unit>.copy`); links name page ids, never paths.
+- No words, no styling, no versions of what it places. `src/check/page-sections-instance.ts`
+  fails a repeated or missing instance key, a retired or unknown section, a role
+  or kind the layout does not allow, a missing required role, literal text and
+  style keys.
+
+The loop below is today's `clossys` path, which still takes the `clossys.page/1`
+record; the starter defaults are the target page option above.
+
 ## Where the records live
 
 These are consumer files in the consumer repository; they do not ship in this package.

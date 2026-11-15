@@ -1,0 +1,33 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/chrome.app-user-menu/package:menu-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/chrome.app-user-menu",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "unit": "designer/components.menu",
+    "parts": [
+      "designer/components.avatar"
+    ],
+    "within": "designer/frames.app-header",
+    "copy": "writer/frames.app-header.copy#app.user-menu",
+    "links": {
+      "items.0": "publisher/page.settings",
+      "items.1": "publisher/page.sign-out-confirm"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.app-home/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.app-home",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/app",
+    "layout": "publisher/layout.app-home",
+    "sections": [
+      {
+        "role": "header",
+        "use": "designer/sections.page-header",
+        "copy": "writer/sections.page-header.copy#app-home.header"
+      },
+      {
+        "role": "notices",
+        "use": "designer/sections.notices",
+        "copy": "writer/sections.notices.copy#app-home.notices"
+      },
+      {
+        "role": "first-run",
+        "use": "designer/sections.empty-state",
+        "copy": "writer/sections.empty-state.copy#app-home.first-run"
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.app-home.meta#app-home.meta",
+      "indexing": "noindex"
+    }
+  }
+}

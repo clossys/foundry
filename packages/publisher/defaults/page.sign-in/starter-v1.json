@@ -1,0 +1,36 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.sign-in/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.sign-in",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/sign-in",
+    "layout": "publisher/layout.auth",
+    "sections": [
+      {
+        "role": "main",
+        "use": "designer/sections.sign-in-form",
+        "copy": "writer/sections.sign-in-form.copy#sign-in.main"
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.sign-in.meta#sign-in.meta",
+      "indexing": "noindex"
+    }
+  }
+}

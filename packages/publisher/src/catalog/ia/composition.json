@@ -1,0 +1,620 @@
+{
+  "schema": "clossys.publisher-ia/1",
+  "l0": "composition",
+  "label": "Composition",
+  "owns": "Reusable layouts (frame plus roles) and chrome config: links to page ids, grouping, which call to action and its target.",
+  "nodes": [
+    {
+      "id": "composition/layouts",
+      "label": "Layouts",
+      "children": [
+        {
+          "id": "composition/layouts/site",
+          "label": "Site layouts",
+          "leaves": [
+            "layout.marketing-home",
+            "layout.about",
+            "layout.pricing",
+            "layout.contact",
+            "layout.legal",
+            "layout.site-state"
+          ]
+        },
+        {
+          "id": "composition/layouts/docs",
+          "label": "Docs layouts",
+          "leaves": [
+            "layout.docs-index",
+            "layout.docs-guide",
+            "layout.docs-article",
+            "layout.changelog"
+          ]
+        },
+        {
+          "id": "composition/layouts/app",
+          "label": "App layouts",
+          "leaves": [
+            "layout.auth",
+            "layout.app-home",
+            "layout.app-list",
+            "layout.app-settings",
+            "layout.app-state"
+          ]
+        },
+        {
+          "id": "composition/layouts/deck",
+          "label": "Deck layouts",
+          "leaves": [
+            "layout.deck"
+          ]
+        },
+        {
+          "id": "composition/layouts/document",
+          "label": "Document layouts",
+          "parked": true,
+          "leaves": [
+            "layout.one-pager"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "composition/chrome",
+      "label": "Chrome",
+      "children": [
+        {
+          "id": "composition/chrome/header-footer",
+          "label": "Header and footer",
+          "leaves": [
+            "chrome.site-header",
+            "chrome.site-footer"
+          ]
+        },
+        {
+          "id": "composition/chrome/sidebars-menus",
+          "label": "Sidebars and menus",
+          "leaves": [
+            "chrome.docs-sidebar",
+            "chrome.app-sidebar",
+            "chrome.app-user-menu"
+          ]
+        }
+      ]
+    }
+  ],
+  "slots": {
+    "layout.marketing-home": {
+      "kind": "layout",
+      "purpose": "First page a visitor sees: who, why, how, proof, next step.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer"
+      ],
+      "roles": {
+        "hero": {
+          "kinds": [
+            "designer/sections.hero"
+          ],
+          "required": true
+        },
+        "proof": {
+          "kinds": [
+            "designer/sections.logo-cloud",
+            "designer/sections.stats"
+          ],
+          "required": false
+        },
+        "value": {
+          "kinds": [
+            "designer/sections.features"
+          ],
+          "required": true
+        },
+        "how": {
+          "kinds": [
+            "designer/sections.steps"
+          ],
+          "required": true
+        },
+        "voices": {
+          "kinds": [
+            "designer/sections.testimonials"
+          ],
+          "required": false
+        },
+        "questions": {
+          "kinds": [
+            "designer/sections.faq"
+          ],
+          "required": false
+        },
+        "closing": {
+          "kinds": [
+            "designer/sections.call-to-action"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.about": {
+      "kind": "layout",
+      "purpose": "Who the company is: its story and its people.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "story": {
+          "kinds": [
+            "designer/sections.content"
+          ],
+          "required": true
+        },
+        "team": {
+          "kinds": [
+            "designer/sections.people"
+          ],
+          "required": true
+        },
+        "closing": {
+          "kinds": [
+            "designer/sections.call-to-action"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.pricing": {
+      "kind": "layout",
+      "purpose": "What it costs and what each plan includes.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "plans": {
+          "kinds": [
+            "designer/sections.pricing"
+          ],
+          "required": true
+        },
+        "compare": {
+          "kinds": [
+            "designer/sections.comparison"
+          ],
+          "required": false
+        },
+        "questions": {
+          "kinds": [
+            "designer/sections.faq"
+          ],
+          "required": true
+        },
+        "closing": {
+          "kinds": [
+            "designer/sections.call-to-action"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.contact": {
+      "kind": "layout",
+      "purpose": "One way to reach the company.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "form": {
+          "kinds": [
+            "designer/sections.form"
+          ],
+          "required": true
+        },
+        "questions": {
+          "kinds": [
+            "designer/sections.faq"
+          ],
+          "required": false
+        }
+      }
+    },
+    "layout.legal": {
+      "kind": "layout",
+      "purpose": "A legal document a visitor can read in full.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "contents": {
+          "kinds": [
+            "designer/sections.table-of-contents"
+          ],
+          "required": false
+        },
+        "body": {
+          "kinds": [
+            "designer/sections.article"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.site-state": {
+      "kind": "layout",
+      "purpose": "A site page that could not be served, and the way back.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer"
+      ],
+      "roles": {
+        "state": {
+          "kinds": [
+            "designer/sections.error-state"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.docs-index": {
+      "kind": "layout",
+      "purpose": "The way into the docs: every entry in one index.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer",
+        "publisher/chrome.docs-sidebar"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "entries": {
+          "kinds": [
+            "designer/sections.link-index"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.docs-guide": {
+      "kind": "layout",
+      "purpose": "One guide, read in order, with the next step.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer",
+        "publisher/chrome.docs-sidebar"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "contents": {
+          "kinds": [
+            "designer/sections.table-of-contents"
+          ],
+          "required": false
+        },
+        "body": {
+          "kinds": [
+            "designer/sections.article"
+          ],
+          "required": true
+        },
+        "next": {
+          "kinds": [
+            "designer/sections.pagination"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.docs-article": {
+      "kind": "layout",
+      "purpose": "One article with related reading.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer",
+        "publisher/chrome.docs-sidebar"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "body": {
+          "kinds": [
+            "designer/sections.article"
+          ],
+          "required": true
+        },
+        "related": {
+          "kinds": [
+            "designer/sections.link-index"
+          ],
+          "required": false
+        }
+      }
+    },
+    "layout.changelog": {
+      "kind": "layout",
+      "purpose": "What changed, newest first.",
+      "frame": "designer/frames.site-shell",
+      "chrome": [
+        "publisher/chrome.site-header",
+        "publisher/chrome.site-footer",
+        "publisher/chrome.docs-sidebar"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "releases": {
+          "kinds": [
+            "designer/sections.timeline"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.auth": {
+      "kind": "layout",
+      "purpose": "A single account step outside the app.",
+      "frame": "designer/frames.auth-shell",
+      "chrome": [],
+      "roles": {
+        "main": {
+          "kinds": [
+            "designer/sections.sign-in-form",
+            "designer/sections.empty-state",
+            "designer/sections.error-state"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.app-home": {
+      "kind": "layout",
+      "purpose": "The first screen after sign-in.",
+      "frame": "designer/frames.app-shell",
+      "chrome": [
+        "publisher/chrome.app-sidebar",
+        "publisher/chrome.app-user-menu"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "notices": {
+          "kinds": [
+            "designer/sections.notices"
+          ],
+          "required": false
+        },
+        "first-run": {
+          "kinds": [
+            "designer/sections.empty-state"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.app-list": {
+      "kind": "layout",
+      "purpose": "One collection of records as a table.",
+      "frame": "designer/frames.app-shell",
+      "chrome": [
+        "publisher/chrome.app-sidebar",
+        "publisher/chrome.app-user-menu"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "records": {
+          "kinds": [
+            "designer/sections.data-table"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.app-settings": {
+      "kind": "layout",
+      "purpose": "The settings a signed-in person can change.",
+      "frame": "designer/frames.app-shell",
+      "chrome": [
+        "publisher/chrome.app-sidebar",
+        "publisher/chrome.app-user-menu"
+      ],
+      "roles": {
+        "header": {
+          "kinds": [
+            "designer/sections.page-header"
+          ],
+          "required": true
+        },
+        "form": {
+          "kinds": [
+            "designer/sections.settings"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.app-state": {
+      "kind": "layout",
+      "purpose": "An app page that could not be served, and the way back.",
+      "frame": "designer/frames.app-shell",
+      "chrome": [
+        "publisher/chrome.app-sidebar",
+        "publisher/chrome.app-user-menu"
+      ],
+      "roles": {
+        "state": {
+          "kinds": [
+            "designer/sections.error-state"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.deck": {
+      "kind": "layout",
+      "purpose": "One deck: a 16:9 canvas with one slide per role, in order, and no chrome.",
+      "frame": "designer/frames.deck",
+      "chrome": [],
+      "roles": {
+        "title": {
+          "kinds": [
+            "designer/sections.slide-title"
+          ],
+          "required": true
+        },
+        "agenda": {
+          "kinds": [
+            "designer/sections.slide-agenda"
+          ],
+          "required": false
+        },
+        "statement": {
+          "kinds": [
+            "designer/sections.slide-statement"
+          ],
+          "required": false
+        },
+        "two-column": {
+          "kinds": [
+            "designer/sections.slide-two-column"
+          ],
+          "required": false
+        },
+        "quote": {
+          "kinds": [
+            "designer/sections.slide-quote"
+          ],
+          "required": false
+        },
+        "closing": {
+          "kinds": [
+            "designer/sections.slide-closing"
+          ],
+          "required": true
+        }
+      }
+    },
+    "layout.one-pager": {
+      "kind": "layout",
+      "parked": true,
+      "purpose": "A one-page company document.",
+      "parkedBecause": "no Designer document frame is consumed yet"
+    },
+    "chrome.site-header": {
+      "kind": "chrome",
+      "purpose": "Header links to page ids, one call to action and its target.",
+      "frame": "designer/frames.site-shell",
+      "unit": "designer/frames.site-header",
+      "copy": "writer/frames.site-header.copy#site.header",
+      "publications": [
+        "site",
+        "docs"
+      ]
+    },
+    "chrome.site-footer": {
+      "kind": "chrome",
+      "purpose": "Footer links to page ids, grouped.",
+      "frame": "designer/frames.site-shell",
+      "unit": "designer/frames.site-footer",
+      "copy": "writer/frames.site-footer.copy#site.footer",
+      "publications": [
+        "site",
+        "docs"
+      ]
+    },
+    "chrome.docs-sidebar": {
+      "kind": "chrome",
+      "purpose": "Docs navigation: entries as page ids, grouped and ordered.",
+      "frame": "designer/frames.site-shell",
+      "unit": "designer/components.sidebar",
+      "copy": "writer/components.sidebar.copy#docs.sidebar",
+      "publications": [
+        "docs"
+      ]
+    },
+    "chrome.app-sidebar": {
+      "kind": "chrome",
+      "purpose": "App navigation: page ids, grouped and ordered.",
+      "frame": "designer/frames.app-shell",
+      "unit": "designer/frames.app-sidebar",
+      "copy": "writer/frames.app-sidebar.copy#app.sidebar",
+      "publications": [
+        "app"
+      ]
+    },
+    "chrome.app-user-menu": {
+      "kind": "chrome",
+      "purpose": "The signed-in person's menu: settings and sign out.",
+      "frame": "designer/frames.app-shell",
+      "unit": "designer/components.menu",
+      "parts": [
+        "designer/components.avatar"
+      ],
+      "within": "designer/frames.app-header",
+      "copy": "writer/frames.app-header.copy#app.user-menu",
+      "publications": [
+        "app"
+      ]
+    }
+  }
+}

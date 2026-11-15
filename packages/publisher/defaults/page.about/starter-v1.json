@@ -1,0 +1,54 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.about/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.about",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/about",
+    "layout": "publisher/layout.about",
+    "sections": [
+      {
+        "role": "header",
+        "use": "designer/sections.page-header",
+        "copy": "writer/sections.page-header.copy#about.header"
+      },
+      {
+        "role": "story",
+        "use": "designer/sections.content",
+        "copy": "writer/sections.content.copy#about.story"
+      },
+      {
+        "role": "team",
+        "use": "designer/sections.people",
+        "copy": "writer/sections.people.copy#about.team"
+      },
+      {
+        "role": "closing",
+        "use": "designer/sections.call-to-action",
+        "copy": "writer/sections.call-to-action.copy#about.closing",
+        "links": {
+          "actions.primary": "publisher/page.contact"
+        }
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.about.meta#about.meta",
+      "indexing": "index"
+    }
+  }
+}

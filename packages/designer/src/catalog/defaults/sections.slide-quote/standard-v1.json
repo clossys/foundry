@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/sections.slide-quote/package:standard-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/sections.slide-quote",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/designer"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+    "name": "slide-quote",
+    "type": "registry:block",
+    "export": "SlideQuote",
+    "variants": {
+      "medium": [
+        "web",
+        "slide"
+      ]
+    },
+    "dependencies": [],
+    "registryDependencies": [
+      "utils"
+    ],
+    "files": [
+      {
+        "path": "registry/default/blocks/slide-quote.tsx",
+        "type": "registry:block",
+        "content": "import { cn } from \"@/lib/utils\"\n\ntype Medium = \"web\" | \"slide\"\ntype SlideQuoteCopy = { quote: string; attribution: string; title?: string }\n\nexport function SlideQuote({ copy, medium = \"web\" }: { copy: SlideQuoteCopy; medium?: Medium }) {\n  const slide = medium === \"slide\"\n  return (\n    <figure data-slot=\"slide-quote\" data-medium={medium} className={cn(\"flex flex-col justify-center gap-10 bg-muted text-foreground\", slide ? \"aspect-video w-full overflow-hidden px-32 py-20\" : \"px-6 py-20 md:px-12\")}>\n      <blockquote className={cn(\"max-w-5xl border-l-4 border-primary pl-10 font-heading font-medium tracking-tight\", slide ? \"text-6xl\" : \"text-2xl md:text-3xl\")}>{copy.quote}</blockquote>\n      <figcaption className={cn(\"flex flex-col gap-1 pl-10\", slide ? \"text-2xl\" : \"text-base\")}>\n        <span className=\"font-semibold\">{copy.attribution}</span>\n        {copy.title ? <span className=\"text-muted-foreground\">{copy.title}</span> : null}\n      </figcaption>\n    </figure>\n  )\n}\n"
+      }
+    ]
+  }
+}

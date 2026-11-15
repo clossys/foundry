@@ -371,6 +371,7 @@
     "TOKENS.md",
     "LICENSE",
     "skill",
+    "views",
     "scripts/check-section-tokens.mjs",
     "scripts/check-page-overflow.mjs",
     "scripts/check-provenance.mjs",

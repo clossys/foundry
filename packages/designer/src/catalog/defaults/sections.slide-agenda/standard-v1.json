@@ -1,0 +1,44 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/sections.slide-agenda/package:standard-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/sections.slide-agenda",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/designer"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+    "name": "slide-agenda",
+    "type": "registry:block",
+    "export": "SlideAgenda",
+    "variants": {
+      "medium": [
+        "web",
+        "slide"
+      ]
+    },
+    "dependencies": [],
+    "registryDependencies": [
+      "utils"
+    ],
+    "files": [
+      {
+        "path": "registry/default/blocks/slide-agenda.tsx",
+        "type": "registry:block",
+        "content": "import { cn } from \"@/lib/utils\"\n\ntype Medium = \"web\" | \"slide\"\ntype SlideAgendaCopy = { heading: string; items: readonly string[] }\n\nexport function SlideAgenda({ copy, medium = \"web\" }: { copy: SlideAgendaCopy; medium?: Medium }) {\n  const slide = medium === \"slide\"\n  return (\n    <section data-slot=\"slide-agenda\" data-medium={medium} className={cn(\"flex flex-col justify-center gap-8 bg-background text-foreground\", slide ? \"aspect-video w-full overflow-hidden px-24 py-20\" : \"px-6 py-20 md:px-12\")}>\n      <h2 className={cn(\"font-heading font-semibold tracking-tight\", slide ? \"text-6xl\" : \"text-3xl\")}>{copy.heading}</h2>\n      <ol className={cn(\"grid gap-4 border-l border-border pl-8\", slide ? \"text-3xl\" : \"text-lg\")}>\n        {copy.items.map((item, index) => (\n          <li key={index} className=\"marker:text-muted-foreground\">{item}</li>\n        ))}\n      </ol>\n    </section>\n  )\n}\n"
+      }
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.error/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.error",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "status": 500,
+    "layout": "publisher/layout.site-state",
+    "sections": [
+      {
+        "role": "state",
+        "use": "designer/sections.error-state",
+        "copy": "writer/sections.error-state.copy#error.state",
+        "links": {
+          "actions.primary": "publisher/page.home"
+        }
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.error.meta#error.meta",
+      "indexing": "noindex"
+    }
+  }
+}

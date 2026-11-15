@@ -1,0 +1,184 @@
+{
+  "schema": "clossys.publisher-ia/1",
+  "l0": "release",
+  "label": "Release",
+  "owns": "Readiness of one publication: exports, locales, gates, owner ready sign-off; versions over time. Never going live.",
+  "nodes": [
+    {
+      "id": "release/web",
+      "label": "Web",
+      "children": [
+        {
+          "id": "release/web/site",
+          "label": "Site releases",
+          "leaves": [
+            "release.site"
+          ]
+        },
+        {
+          "id": "release/web/docs",
+          "label": "Docs releases",
+          "leaves": [
+            "release.docs"
+          ]
+        },
+        {
+          "id": "release/web/app",
+          "label": "App releases",
+          "leaves": [
+            "release.app"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "release/slides",
+      "label": "Slides",
+      "children": [
+        {
+          "id": "release/slides/slides",
+          "label": "Slide releases",
+          "leaves": [
+            "release.slides"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "release/documents",
+      "label": "Documents",
+      "parked": true,
+      "children": [
+        {
+          "id": "release/documents/document",
+          "label": "Document releases",
+          "parked": true,
+          "leaves": [
+            "release.company-one-pager"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "release/video",
+      "label": "Video",
+      "parked": true,
+      "children": []
+    }
+  ],
+  "slots": {
+    "release.site": {
+      "kind": "release",
+      "publication": "site",
+      "exports": [
+        {
+          "kind": "react-static"
+        },
+        {
+          "kind": "pdf",
+          "pages": [
+            "publisher/page.terms",
+            "publisher/page.privacy"
+          ]
+        }
+      ],
+      "locales": {
+        "from": "director/focus.reach.geography:Language"
+      },
+      "gates": [
+        "copy.sample-remaining",
+        "pins.resolve",
+        "constitution.strict",
+        "copy.locales",
+        "release.locales"
+      ],
+      "signoff": {
+        "by": "owner",
+        "raise": "queue.approve"
+      },
+      "readyMeans": "pinned; not live (Distribution parked)"
+    },
+    "release.docs": {
+      "kind": "release",
+      "publication": "docs",
+      "exports": [
+        {
+          "kind": "react-static"
+        }
+      ],
+      "locales": {
+        "from": "director/focus.reach.geography:Language"
+      },
+      "gates": [
+        "copy.sample-remaining",
+        "pins.resolve",
+        "constitution.strict",
+        "copy.locales",
+        "release.locales"
+      ],
+      "signoff": {
+        "by": "owner",
+        "raise": "queue.approve"
+      },
+      "readyMeans": "pinned; not live (Distribution parked)"
+    },
+    "release.app": {
+      "kind": "release",
+      "publication": "app",
+      "exports": [
+        {
+          "kind": "react-static"
+        }
+      ],
+      "locales": {
+        "from": "director/focus.reach.geography:Language"
+      },
+      "gates": [
+        "copy.sample-remaining",
+        "pins.resolve",
+        "constitution.strict",
+        "copy.locales",
+        "release.locales"
+      ],
+      "signoff": {
+        "by": "owner",
+        "raise": "queue.approve"
+      },
+      "readyMeans": "pinned; not live (Distribution parked)"
+    },
+    "release.slides": {
+      "kind": "release",
+      "publication": "slides",
+      "exports": [
+        {
+          "kind": "static-html",
+          "per": "slide"
+        },
+        {
+          "kind": "print-css"
+        }
+      ],
+      "locales": {
+        "from": "director/focus.reach.geography:Language"
+      },
+      "gates": [
+        "copy.sample-remaining",
+        "pins.resolve",
+        "constitution.strict",
+        "copy.locales",
+        "release.locales"
+      ],
+      "signoff": {
+        "by": "owner",
+        "raise": "queue.approve"
+      },
+      "readyMeans": "pinned; not live (Distribution parked)"
+    },
+    "release.company-one-pager": {
+      "kind": "release",
+      "parked": true,
+      "publication": "company-one-pager",
+      "parkedBecause": "Documents are parked"
+    }
+  }
+}

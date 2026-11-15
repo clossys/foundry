@@ -1,0 +1,46 @@
+{
+  "schema": "clossys.starter/1",
+  "id": "app",
+  "node": "directory/apps/app",
+  "root": "/",
+  "pages": [
+    "page.sign-in",
+    "page.sign-out-confirm",
+    "page.not-authorized",
+    "page.service-unavailable",
+    "page.app-home",
+    "page.list",
+    "page.settings",
+    "page.app-not-found"
+  ],
+  "layouts": [
+    "layout.auth",
+    "layout.app-home",
+    "layout.app-list",
+    "layout.app-settings",
+    "layout.app-state"
+  ],
+  "chrome": [
+    "chrome.app-sidebar",
+    "chrome.app-user-menu"
+  ],
+  "release": "release.app",
+  "redirects": [],
+  "defaults": [
+    "layout.auth/standard-v1.json",
+    "layout.app-home/standard-v1.json",
+    "layout.app-list/standard-v1.json",
+    "layout.app-settings/standard-v1.json",
+    "layout.app-state/standard-v1.json",
+    "chrome.app-sidebar/sidebar-v1.json",
+    "chrome.app-user-menu/menu-v1.json",
+    "page.sign-in/starter-v1.json",
+    "page.sign-out-confirm/starter-v1.json",
+    "page.not-authorized/starter-v1.json",
+    "page.service-unavailable/starter-v1.json",
+    "page.app-home/starter-v1.json",
+    "page.list/starter-v1.json",
+    "page.settings/starter-v1.json",
+    "page.app-not-found/starter-v1.json"
+  ]
+}
