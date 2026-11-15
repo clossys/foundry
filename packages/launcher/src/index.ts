@@ -89,7 +89,7 @@ export { detectLinkedHosts, parseHostRecord, serializeHostRecord, HOSTS_REL } fr
 export type { DiscoveredHost, HostRecord } from "./hosts.js";
 export { readChangeSetMarker, renderPullRequest } from "./pull-request-body.js";
 export type { PullRequestRefusal, PullRequestRefusalReason, PullRequestText, RenderPullRequestInput } from "./pull-request-body.js";
-export { parsePreferences, readHostModelProfile, resolveModelForTier } from "./model-profile.js";
+export { MODEL_PLACEHOLDER, parsePreferences, readHostModelProfile, resolveModelForTier } from "./model-profile.js";
 export type {
   BudgetPreference,
   HostModelProfile,
