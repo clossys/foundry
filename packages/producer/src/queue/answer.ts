@@ -3,7 +3,8 @@
  *
  * 1. Loads the entry; it must be `open` (`answer.open-only`).
  * 2. `--by` must be the entry's decider (`answer.decider-match`). `code:<cli>` may close only a queue.fix or
- *    queue.clarify, with `via: cli` and an `answers` ref to the pin or the answered queue.approve that finished it.
+ *    queue.clarify that an agent decides (never an owner entry), with `via: cli` and an `answers` ref to the pin or
+ *    the answered queue.approve that finished it; that pin, or that approval's subject, is the entry's own subject.
  * 3. The answer is one of `options[].id` or the `default`; clarify (and a fix with no options) takes free text
  *    (`answer.option-valid`).
  * 4. An owner answer records the owner's words verbatim in `quote`, whatever the channel (`answer.quote-required`);
@@ -118,7 +119,7 @@ export function answerQueueEntry(root: string, input: AnswerInput, now: Date = n
     const schema = entrySchemaIssues(next);
     if (schema.length) throw new AnswerRefused(ANSWER_OPEN_ONLY, `the answered entry would not be valid: ${schema.join("; ")}`);
     for (const rule of ANSWER_RULES) {
-      const issues = rule.issues(next);
+      const issues = rule.issues(next, root);
       if (issues.length) throw new AnswerRefused(rule.check, `${queue}#${id}: ${issues.join("; ")}`);
     }
     const rewritten = queueEntryChangeIssues(entry, next);
