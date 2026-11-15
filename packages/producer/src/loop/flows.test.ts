@@ -240,7 +240,7 @@ describe("F2 starter fill: loop.fill (T2)", () => {
     expect(ledger[1]!.steps[1]!.decider).toEqual({ by: "agent", agent: "designer", verb: "create-candidates", tier: "mid", model: MODEL, skill: "packages/designer/actions/designer.candidates/skill.md" });
     expect(ledger[0]!.decisions).toEqual([{ entry: pick, answer: "placeholder-v1.json" }]);
     expect(ledger[0]!.refs).toContainEqual({ to: "producer/queue.pick", record: pick.split("#")[1], rel: "answers" });
-    expect(ledger[1]!.steps[1]!.wrote).toEqual([{ file: "designer/components.button/candidates/placeholder-v1.json", sha256: expect.stringMatching(/^[0-9a-f]{64}$/) }]);
+    expect(ledger[1]!.steps[1]!.wrote).toEqual([{ file: "designer/components.button/candidates/placeholder-v1.json", sha256: expect.stringMatching(/[0-9a-f]{64}$/) }]);
     // The owner's pick reached the pin through `clossys pin ... --by owner:queue.pick#<id>`.
     expect(hooks.code_.find(call => call.argv[0] === "pin")!.cli).toBe(`clossys pin director/context.market.size placeholder-v1.json --by owner:${pick}`);
   });
@@ -395,6 +395,11 @@ describe("F8 new release: loop.release (T8)", () => {
     expect(run.entry, run.message).toMatch(/^queue\.approve#/);
     const found = findQueueEntry(w.root, run.entry!);
     expect(found.ok && readQueueEntry(found.at)).toMatchObject({ ok: true, entry: { default: "not-ready", subject: { to: "publisher/release.site" } } });
+    // 0016 R1: the sign-off names the one manifest it approves, by option candidate and by a sha256 ref.
+    const signoff = found.ok ? readQueueEntry(found.at) : undefined;
+    const signed = signoff?.ok ? signoff.entry : undefined;
+    expect(signed?.options?.find(option => option.id === "ready")?.candidate).toBe("site-v1.json");
+    expect(signed?.refs).toEqual(expect.arrayContaining([expect.objectContaining({ to: "publisher/release.site/site-v1.json", rel: "input", sha256: expect.stringMatching(/[0-9a-f]{64}$/) })]));
     ownerAnswer(w.root, run.entry!, "ready", now);
     const done = await resumeRun(w.root, run.state!.runId, hooks, { now });
     expect(done.exitCode, done.message).toBe(0);

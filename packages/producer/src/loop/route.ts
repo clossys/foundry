@@ -30,6 +30,8 @@ export interface Raise {
   readonly slug: string;
   readonly default?: string | null;
   readonly options?: QueueEntry["options"];
+  /** Refs beyond the subject, such as the candidate a sign-off names with its sha256. */
+  readonly refs?: readonly Ref[];
 }
 
 /** `queue.fix#<id>` */
@@ -64,7 +66,7 @@ export function raiseEntry(root: string, raise: Raise, at: Iso, dedupe = true): 
     status: "open",
     createdBy: { actor: "code", cli: RUN_CLI, version: producerVersion() },
     createdAt: at,
-    refs: [raise.subject],
+    refs: [raise.subject, ...(raise.refs ?? [])],
     queue: raise.queue,
     ask: raise.ask,
     subject: raise.subject,

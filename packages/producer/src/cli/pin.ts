@@ -121,6 +121,8 @@ export async function runPinCli(argv: readonly string[], cwd: string, guard: Wri
   if (!(SLOT_AGENTS as readonly string[]).includes(agent)) return { exitCode: 1, message: `pin refused: unknown agent ${agent} (expected ${SLOT_AGENTS.join(", ")})` };
   const workspace = dirname(consumerOf(cwd, flags.root));
   if (isTargetSlot(workspace, agent, id.split("#")[0]!)) return runTargetPin(workspace, agent, id, candidateId, flags);
+  // A release pin is a ready-pin (flows.md F8): only a clossys.slot/2 release slot takes one, through release.ready.
+  if (isReleaseSlot(agent, id.split("#")[0]!)) return { exitCode: 1, message: `pin refused: ${agent}/${id} is a release slot whose slot.json is not a readable clossys.slot/2 slot: a ready-pin needs release.ready` };
   if (id.includes("#")) throw new CliUsageError(`a #record target is only for a clossys.slot/2 record slot, got ${target}\n${PIN_USAGE}`);
   if (flags.notNeeded === (candidateId !== undefined)) {
     throw new CliUsageError(`pin takes either <candidate-id> or --not-needed --reason <text>\n${PIN_USAGE}`);
@@ -209,7 +211,8 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
     return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} is not a queue entry` };
   }
   if (agent === "publisher" && isReleaseSlot(agent, slotId) && record === undefined) {
-    // A release pin marks a version ready (flows.md F8): refused unless release.ready would pass for it.
+    // A release pin marks a version ready (flows.md F8): refused unless release.ready would pass for it. The
+    // owner's entry must name this candidate with the sha256 of its bytes now (ready.ts answerIssues).
     const findings = readyFindings(root, publicationOf(root, slotId), { candidate, decidedBy: by, basis, at: toIsoZ(at)! });
     if (findings.length) return { exitCode: 1, message: `pin refused: ${agent}/${slotId} ${candidate} is not ready:\n${findings.map(row => `  ${row.check ?? "release.ready"}  ${row.subject}  ${row.detail}`).join("\n")}`, output: { findings } };
   }

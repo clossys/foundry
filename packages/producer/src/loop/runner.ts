@@ -683,6 +683,7 @@ async function humanStep(ctx: Context, step: LoopStep, subject: SlotSubject | un
   const to = subject ? refOf(subject) : state.publication ? `publisher/release.${state.publication}` : undefined;
   if (!to) return stop(ctx, `step ${step.id} needs a slot or a publication to ask about`, 2);
   let options: QueueEntry["options"];
+  let refs: Ref[] | undefined;
   let fallback: string | null = null;
   if (decider.raise === "queue.pick") {
     const names = subject ? slotCandidates(root, subject) : [];
@@ -690,14 +691,18 @@ async function humanStep(ctx: Context, step: LoopStep, subject: SlotSubject | un
     options = names.map(name => ({ id: name, candidate: name, summary: `${to}/${name}` }));
   } else if (decider.raise === "queue.approve") {
     const release = state.loop === "loop.release";
+    // The sign-off names the one manifest it approves, by name and sha256 (release/ready.ts answerIssues).
+    const manifest = release ? state.vars.manifest : undefined;
+    const file = manifest ? join(root, "clossys", "agents", to, "candidates", manifest) : undefined;
+    if (manifest && file && existsSync(file)) refs = [{ to: `${to}/${manifest}` as Ref["to"], sha256: sha256Hex(readFileSync(file)) as Ref["sha256"], rel: "input" }];
     options = release
-      ? [{ id: "ready", summary: `mark ${state.vars.manifest ?? "the manifest"} ready` }, { id: "not-ready", summary: "keep the current ready pin" }]
+      ? [{ id: "ready", ...(manifest ? { candidate: manifest as NonNullable<QueueEntry["options"]>[number]["candidate"] } : {}), summary: `mark ${manifest ?? "the manifest"} ready` }, { id: "not-ready", summary: "keep the current ready pin" }]
       : [{ id: "approve", summary: `confirm the agent's pick for ${to}` }, { id: "reject", summary: "keep looking" }];
     fallback = release ? "not-ready" : null;
   }
   const entry = raiseOnce(ctx, step.id, {
     queue: decider.raise, subject: { to: to as Ref["to"], rel: "input" }, decider: "owner", ask: `${step.does} (${to})`,
-    slug: to.split("/")[1]!, default: fallback, ...(options ? { options } : {}),
+    slug: to.split("/")[1]!, default: fallback, ...(options ? { options } : {}), ...(refs ? { refs } : {}),
   });
   if (!state.raised.includes(entryName(entry))) state.raised.push(entryName(entry));
   state.status = "waiting"; state.waiting = { step: step.id, on: "entry", entry: entryName(entry), then: "continue" };
