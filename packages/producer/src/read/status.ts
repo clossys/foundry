@@ -27,7 +27,7 @@ export type QueueKind = "queue.pick" | "queue.approve" | "queue.clarify" | "queu
 export interface StatusQueueItem { id: string; queue: QueueKind; decider: string; subject: string; ask: string; default: string | null; raisedAt: Iso; status: "open" | "answered" | "withdrawn" }
 export interface StatusLedgerItem { id: string; loop: string; status: string; outcome: string; at: Iso }
 export interface StatusRelease { publication: string; pinned: string | null; stale: boolean; reason?: string }
-export interface StatusGap { kind: string; agent: string; code: string; item: string; decider: string; from?: string; held?: boolean }
+export interface StatusGap { kind: string; agent: string; code: string; item: string; decider: string; from?: string; held?: string }
 export interface StatusOptionShort { agent: SlotAgent; slot: string; options: number; distinct: number; missing: readonly string[] }
 
 /** `clossys.status/1` (system.md 12.2), plus `stateSha256` (14.9) and the folded `slots`, `gaps`, `options` fields. */
@@ -211,7 +211,7 @@ export interface StatusOptions {
   /** Whether a package default resolves for a slot (system.md 8 step 2); int2 ships none. */
   hasDefault?: (agent: SlotAgent, id: string) => boolean;
   /** The folded `gaps` and `options` fields (14.5); each is skipped when absent. */
-  gaps?: (root: string, agent?: SlotAgent) => { counts: Record<string, number>; gaps: readonly StatusGap[] };
+  gaps?: (root: string, agent?: SlotAgent) => { readonly counts: Readonly<Record<string, number>>; readonly gaps: readonly Readonly<StatusGap>[] };
   options?: (consumer: string) => { classes: unknown; slots: readonly { agent: SlotAgent; slot: string; options: number; distinct: number; missing: readonly string[] }[] };
 }
 
@@ -268,7 +268,7 @@ export function statusView(root: string, options: StatusOptions = {}): StatusVie
       const gaps = options.gaps(root, options.agent);
       view.gaps = { counts: { ...gaps.counts }, items: gaps.gaps.map(gap => ({
         kind: gap.kind, agent: gap.agent, code: gap.code, item: gap.item, decider: gap.decider,
-        ...(gap.from ? { from: gap.from } : {}), ...(gap.held ? { held: true } : {}),
+        ...(gap.from ? { from: gap.from } : {}), ...(gap.held ? { held: gap.held } : {}),
       })) };
     } catch { view.gaps = { error: "The gaps could not load." }; }
   }
