@@ -145,6 +145,9 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     // The queue write path (system.md 12.6, flows.md F5): feedback opens a queue.fix entry, answer closes one entry.
     if (head === "feedback") return await (await import("../cli/feedback.js")).runFeedbackCli(argv.slice(1), cwd);
     if (head === "answer") return await (await import("../cli/answer.js")).runAnswerCli(argv.slice(1), cwd);
+    // View discovery for chat agents (system.md 14.9) reads only; init adds the views pointer to AGENTS.md once.
+    if (head === "views") return await (await import("../cli/views.js")).runViewsCli(argv.slice(1), cwd);
+    if (head === "init") return await (await import("../cli/init.js")).runInitCli(argv.slice(1), cwd);
     // A verb with its own parser (specimen, migrate, pipeline) gets its argv untouched.
     // A verb with a target per step (`clossys pin <agent>/<slot>`) runs the step whose agent the argument names.
     const owners = steps.filter(step => step.command.cli?.parser !== undefined && step.command.cli.verb === head);
