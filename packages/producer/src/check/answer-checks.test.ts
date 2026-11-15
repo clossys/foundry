@@ -22,8 +22,13 @@ const raised: Event = { at: AT, op: "raised", by: "code:clossys test" };
 const ownerAnswer = (answer: string, extra: Partial<Event> = {}): Event => ({ at: LATER, op: "answered", by: "owner", via: "chat", answer, quote: "test quote", ...extra });
 const OPTIONS = { options: [{ id: "a", summary: "option a" }, { id: "b", summary: "option b" }], default: "a" };
 
-/** A throwaway workspace holding one minimal entry. */
-function withEntry(queue: QueueName, extra: Partial<QueueEntry>): string {
+const put = (root: string, rel: string, doc: unknown): void => {
+  mkdirSync(dirname(join(root, rel)), { recursive: true });
+  writeFileSync(join(root, rel), JSON.stringify(doc));
+};
+
+/** A throwaway workspace holding one minimal entry, plus any other files (by path under the root) a test needs. */
+function withEntry(queue: QueueName, extra: Partial<QueueEntry>, files: Record<string, unknown> = {}): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "answer-checks-")));
   roots.push(root);
   const entry = {
@@ -31,11 +36,28 @@ function withEntry(queue: QueueName, extra: Partial<QueueEntry>): string {
     createdBy: { actor: "code", cli: "clossys test", version: "0.0.0" }, createdAt: AT, refs: [],
     queue, ask: "test ask", subject: { to: "writer/sections.hero.copy", rel: "input" }, decider: "owner", default: null, events: [raised], ...extra,
   };
-  const file = join(root, "clossys/agents/producer", queue, "entries", `${ID}.json`);
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, JSON.stringify(entry));
+  put(root, `clossys/agents/producer/${queue}/entries/${ID}.json`, entry);
+  for (const [rel, doc] of Object.entries(files)) put(root, rel, doc);
   return root;
 }
+
+/** A Writer slot folder (so a pin ref into it resolves). */
+const slotFile = (slotId: string): Record<string, unknown> => ({
+  [`clossys/agents/writer/${slotId}/slot.json`]: { schema: "clossys.slot/2", id: `writer/${slotId}`, agent: "writer", kind: "copy", status: "open" },
+});
+/** A queue.approve entry about `subject` (answered by the owner unless `status` says otherwise). */
+const APPROVAL = "20261120T0759Z-approval";
+const approvalFile = (subject: string, status: "answered" | "open" = "answered"): Record<string, unknown> => ({
+  [`clossys/agents/producer/queue.approve/entries/${APPROVAL}.json`]: {
+    schema: "clossys.queue-entry/1", id: APPROVAL, agent: "producer", kind: "queue-entry", status,
+    createdBy: { actor: "code", cli: "clossys test", version: "0.0.0" }, createdAt: AT, refs: [],
+    queue: "queue.approve", ask: "test ask", subject: { to: subject, rel: "input" }, decider: "owner", ...OPTIONS,
+    events: status === "answered" ? [raised, ownerAnswer("a")] : [raised],
+  },
+});
+const codeAnswer = (extra: Partial<Event> = {}): Event => ({ at: LATER, op: "answered", by: "code:clossys pin", via: "cli", answer: "pinned", ...extra });
+const answersApproval = { to: "producer/queue.approve", record: APPROVAL, rel: "answers" } as unknown as QueueEntry["refs"][number];
+const answersPin = (to: string): QueueEntry["refs"][number] => ({ to, rel: "answers" } as unknown as QueueEntry["refs"][number]);
 
 const details = (run: { findings: readonly { detail: string }[] }): string => run.findings.map(finding => finding.detail).join("; ");
 
@@ -85,8 +107,55 @@ describe("answer.* checks", () => {
     expect(details(run)).toContain("code may close only queue.fix or queue.clarify");
   });
 
-  it.each([["queue.fix"], ["queue.clarify"]] as const)("answer.decider-match lets code close a %s", queue => {
-    expect(checkAnswerDeciderMatch(withEntry(queue, { decider: "agent:writer", events: [raised, { at: LATER, op: "answered", by: "code:clossys pin", via: "cli", answer: "pinned" }] })).status).toBe("pass");
+  it.each([["queue.fix"], ["queue.clarify"]] as const)("answer.decider-match lets code close a %s via cli with an answers ref to its own subject", queue => {
+    const byApproval = withEntry(queue, { decider: "agent:writer", refs: [answersApproval], events: [raised, codeAnswer()] }, approvalFile("writer/sections.hero.copy"));
+    expect(checkAnswerDeciderMatch(byApproval)).toMatchObject({ status: "pass", findings: [] });
+    const byPin = withEntry(queue, { decider: "agent:writer", refs: [answersPin("writer/sections.hero.copy")], events: [raised, codeAnswer()] }, slotFile("sections.hero.copy"));
+    expect(checkAnswerDeciderMatch(byPin)).toMatchObject({ status: "pass", findings: [] });
+  });
+
+  // Mutation: a hand-written code close the CLI would refuse.
+  it.each([
+    ["an owner-decided fix closed by code", { decider: "owner" as const, refs: [answersApproval] }, approvalFile("writer/sections.hero.copy"), "the owner decides this entry"],
+    ["a code close with no via", { refs: [answersApproval], events: [raised, codeAnswer({ via: undefined })] }, approvalFile("writer/sections.hero.copy"), "a code close is via cli"],
+    ["a code close via chat", { refs: [answersApproval], events: [raised, codeAnswer({ via: "chat" })] }, approvalFile("writer/sections.hero.copy"), "a code close is via cli"],
+    ["a code close with no answers ref", { refs: [] }, approvalFile("writer/sections.hero.copy"), "carries an answers ref"],
+    ["a code close answering an approval of another subject", { refs: [answersApproval] }, approvalFile("writer/sections.footer.copy"), "approves writer/sections.footer.copy, not this entry's subject"],
+    ["a code close answering an approval that is still open", { refs: [answersApproval] }, approvalFile("writer/sections.hero.copy", "open"), "not answered"],
+    ["a code close answering an approval that does not exist", { refs: [answersApproval] }, {}, "no such entry"],
+    ["a code close answering a pin in another slot", { refs: [answersPin("writer/sections.footer.copy")] }, slotFile("sections.footer.copy"), "is not this entry's subject"],
+    ["a code close answering a pin that dangles", { refs: [answersPin("writer/sections.hero.copy")] }, {}, "no such slot folder"],
+  ] as const)("answer.decider-match fails %s", (_name, extra, files, detail) => {
+    const run = checkAnswerDeciderMatch(withEntry("queue.fix", { decider: "agent:writer", events: [raised, codeAnswer()], ...extra }, files));
+    expect(run.status).toBe("fail");
+    expect(run.findings[0]!.check).toBe("answer.decider-match");
+    expect(details(run)).toContain(detail);
+  });
+
+  it("answer.decider-match fails a code close whose subject names a record the answers ref does not", () => {
+    const subject = { to: "writer/sections.hero.copy", record: "home.hero", rel: "input" } as QueueEntry["subject"];
+    const run = checkAnswerDeciderMatch(withEntry("queue.fix", { decider: "agent:writer", subject, refs: [answersApproval], events: [raised, codeAnswer()] }, approvalFile("writer/sections.hero.copy")));
+    expect(details(run)).toContain("not this entry's subject writer/sections.hero.copy#home.hero");
+  });
+
+  // Mutation: an agent answer through a chat or app channel.
+  it.each([["chat"], ["app"]] as const)("answer.decider-match fails an agent answer via %s", via => {
+    const run = checkAnswerDeciderMatch(withEntry("queue.fix", { decider: "agent:writer", events: [raised, { at: LATER, op: "answered", by: "agent:writer", via, answer: "done" }] }));
+    expect(run.status).toBe("fail");
+    expect(details(run)).toContain(`an agent answers through the CLI only (via cli), not ${via}`);
+    expect(checkAnswerDeciderMatch(withEntry("queue.fix", { decider: "agent:writer", events: [raised, { at: LATER, op: "answered", by: "agent:writer", via: "cli", answer: "done" }] })).status).toBe("pass");
+  });
+
+  // Mutation: a quote on an answer that is not the owner's, and an owner answer that names no channel.
+  it.each([
+    ["an agent answer", { at: LATER, op: "answered", by: "agent:writer", via: "cli", answer: "done", quote: "test quote" }, "carries a quote"],
+    ["a code answer", { at: LATER, op: "answered", by: "code:clossys pin", via: "cli", answer: "done", quote: "test quote" }, "carries a quote"],
+    ["an owner answer with no via", { at: LATER, op: "answered", by: "owner", answer: "done", quote: "test quote" }, "names no channel"],
+  ] as const)("answer.quote-required fails %s", (_name, event, detail) => {
+    const run = checkAnswerQuoteRequired(withEntry("queue.fix", { decider: "agent:writer", events: [raised, event as Event] }));
+    expect(run.status).toBe("fail");
+    expect(run.findings[0]!.check).toBe("answer.quote-required");
+    expect(details(run)).toContain(detail);
   });
 
   // Mutation: an answer by a decider other than the one the entry names.

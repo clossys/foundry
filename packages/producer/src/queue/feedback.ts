@@ -11,7 +11,7 @@ import { danglingReason } from "../check/refs-dangling.js";
 import { parseRefString, resolveSlot } from "../records/resolve.js";
 import type { QueueEntry, Ref } from "../records/types.js";
 import type { Via } from "./answer.js";
-import { createQueueEntry, entryStamp, slugOf } from "./entry.js";
+import { createQueueEntry, entryStamp, FeedbackRefused, slugOf } from "./entry.js";
 import { ANSWER_RULES, entrySchemaIssues } from "./rules.js";
 
 export interface FeedbackInput {
@@ -25,12 +25,7 @@ export interface FeedbackInput {
   readonly where?: string;
 }
 
-export class FeedbackRefused extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "FeedbackRefused";
-  }
-}
+export { FeedbackRefused };
 
 const isoSeconds = (now: Date): string => now.toISOString().replace(/\.\d{3}Z$/, "Z");
 const blank = (value: string | undefined): boolean => value === undefined || value.trim() === "";
@@ -73,7 +68,7 @@ export function raiseFeedback(root: string, input: FeedbackInput, now: Date = ne
     default: null,
     events: [{ at, op: "raised", by: "owner", via: input.via, ...(input.quote !== undefined ? { quote: input.quote } : {}) }],
   };
-  const issues = [...entrySchemaIssues(entry), ...ANSWER_RULES.flatMap(rule => rule.issues(entry))];
+  const issues = [...entrySchemaIssues(entry), ...ANSWER_RULES.flatMap(rule => rule.issues(entry, root))];
   if (issues.length) throw new FeedbackRefused(`the entry would not be valid: ${issues.join("; ")}`);
   return createQueueEntry(root, entry);
 }

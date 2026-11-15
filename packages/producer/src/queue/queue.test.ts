@@ -129,7 +129,7 @@ describe("clossys answer", () => {
     expect(after.events).toEqual([...raised.events, { at: "2026-11-20T08:30:15Z", op: "answered", by: "owner", via: "chat", answer: "b", quote: "test quote" }]);
     expect(queueEntryChangeIssues(raised, after)).toEqual([]);
     expect(entrySchemaIssues(after)).toEqual([]);
-    for (const rule of ANSWER_RULES) expect(rule.issues(after)).toEqual([]);
+    for (const rule of ANSWER_RULES) expect(rule.issues(after, w.root)).toEqual([]);
     expect(existsSync(queueLockPath(w.root, "queue.approve", APPROVE))).toBe(false);
   });
 
@@ -207,7 +207,44 @@ describe("clossys answer", () => {
     expect(w.bytes(queue, id)).toBe(before);
   });
 
-  it("lets code close a fix only via cli with an answers ref to an answered approval, and appends that ref", () => {
+  const answeredApproval = (subject: QueueEntry["subject"]): Partial<QueueEntry> => ({
+    ...OPTIONS, subject, status: "answered",
+    events: [{ at: CREATED, op: "raised", by: "code:clossys test" }, { at: CREATED, op: "answered", by: "owner", via: "chat", answer: "a", quote: "test quote" }],
+  });
+
+  // Mutation: a code close with an approval that is not about the entry's subject.
+  it("refuses code closing a fix with an answers ref to an approval or pin about another subject, and writes nothing", async () => {
+    const w = world();
+    w.entry("queue.fix", FIX, { decider: "agent:writer" });
+    w.entry("queue.approve", APPROVE, answeredApproval({ to: "writer/sections.footer.copy", rel: "input" }));
+    mkdirSync(join(w.root, "clossys/agents/writer/sections.footer.copy"), { recursive: true });
+    writeFileSync(join(w.root, "clossys/agents/writer/sections.footer.copy/slot.json"), JSON.stringify({ schema: "clossys.slot/2", id: "writer/sections.footer.copy", agent: "writer", kind: "copy", status: "open" }));
+    const before = w.bytes("queue.fix", FIX);
+    const unrelated = refusal(() => answerQueueEntry(w.root, { entry: FIX, answer: "pinned", by: "code:clossys pin", answers: `producer/queue.approve#${APPROVE}` }, NOW));
+    expect(unrelated.check).toBe("answer.decider-match");
+    expect(unrelated.message).toContain("approves writer/sections.footer.copy, not this entry's subject writer/sections.hero.copy");
+    const otherPin = refusal(() => answerQueueEntry(w.root, { entry: FIX, answer: "pinned", by: "code:clossys pin", answers: "writer/sections.footer.copy" }, NOW));
+    expect(otherPin.message).toContain("is not this entry's subject");
+    const viaCli = await runAnswerCli([FIX, "pinned", "--by", "code:clossys pin", "--answers", `producer/queue.approve#${APPROVE}`], w.root, NOW);
+    expect(viaCli).toMatchObject({ exitCode: 1, message: expect.stringContaining("answer.decider-match") as unknown as string });
+    expect(w.bytes("queue.fix", FIX)).toBe(before);
+  });
+
+  // Mutation: code closing an entry the owner decides.
+  it.each([["queue.fix", FIX], ["queue.clarify", CLARIFY]] as const)("refuses code closing an owner-decided %s even with an approval of its subject, and writes nothing", async (queue, id) => {
+    const w = world();
+    w.entry(queue, id, { decider: "owner" });
+    w.entry("queue.approve", APPROVE, answeredApproval({ to: "writer/sections.hero.copy", rel: "input" }));
+    const before = w.bytes(queue, id);
+    const refused = refusal(() => answerQueueEntry(w.root, { entry: id, answer: "pinned", by: "code:clossys pin", answers: `producer/queue.approve#${APPROVE}` }, NOW));
+    expect(refused.check).toBe("answer.decider-match");
+    expect(refused.message).toContain("the owner decides this entry");
+    expect(refusal(() => answerQueueEntry(w.root, { entry: id, answer: "pinned", by: "code:clossys pin", answers: "writer/sections.hero.copy" }, NOW)).message).toContain("the owner decides this entry");
+    expect(await runAnswerCli([id, "pinned", "--by", "code:clossys pin", "--answers", "writer/sections.hero.copy"], w.root, NOW)).toMatchObject({ exitCode: 1 });
+    expect(w.bytes(queue, id)).toBe(before);
+  });
+
+  it("lets code close an agent fix only via cli with an answers ref to an answered approval of its subject, and appends that ref", () => {
     const w = world();
     w.entry("queue.fix", FIX, { decider: "agent:writer" });
     w.entry("queue.approve", APPROVE, OPTIONS);
@@ -218,6 +255,14 @@ describe("clossys answer", () => {
     const done = answerQueueEntry(w.root, { entry: FIX, answer: "pinned", by: "code:clossys pin", answers: `producer/queue.approve#${APPROVE}` }, NOW);
     expect(done.event).toMatchObject({ by: "code:clossys pin", via: "cli" });
     expect(done.entry.refs).toEqual([{ to: "producer/queue.approve", record: APPROVE, rel: "answers" }]);
+    for (const rule of ANSWER_RULES) expect(rule.issues(w.read("queue.fix", FIX), w.root)).toEqual([]);
+  });
+
+  it("lets code close an agent clarify with an answers ref to a pin of its own subject", () => {
+    const w = world();
+    w.entry("queue.clarify", CLARIFY, { decider: "agent:writer" });
+    const done = answerQueueEntry(w.root, { entry: CLARIFY, answer: "pinned", by: "code:clossys pin", answers: "writer/sections.hero.copy" }, NOW);
+    expect(done.entry.refs).toEqual([{ to: "writer/sections.hero.copy", rel: "answers" }]);
   });
 
   // Mutation: two answers to one entry.
@@ -319,6 +364,17 @@ describe("clossys feedback", () => {
     expect(() => raiseFeedback(w.root, { ref: "producer/queue.fix", words: "test words", via: "chat" }, NOW)).toThrow(FeedbackRefused);
     expect(existsSync(join(w.root, "clossys/agents/producer/queue.fix"))).toBe(false);
     await expect(runFeedbackCli(["writer/sections.hero.copy", "test words"], w.root, NOW)).rejects.toThrow("--via");
+  });
+
+  // Mutation: id exhaustion thrown as a plain Error (the CLI would crash instead of exiting 1).
+  it("refuses, with exit 1, when the id and every suffix are taken; nothing is written", async () => {
+    const w = world();
+    const id = "20261120T0830Z-hero";
+    for (const taken of [id, ...[2, 3, 4, 5, 6, 7, 8, 9].map(n => `${id}-${n}`)]) w.entry("queue.fix", taken);
+    expect(() => raiseFeedback(w.root, { ref: "writer/sections.hero.copy", words: "test words", via: "cli", slug: "hero" }, NOW)).toThrow(FeedbackRefused);
+    const result = await runFeedbackCli(["writer/sections.hero.copy", "test words", "--via", "cli", "--slug", "hero"], w.root, NOW);
+    expect(result).toMatchObject({ exitCode: 1, message: expect.stringContaining("are all taken") as unknown as string });
+    expect(existsSync(queueEntryPath(w.root, "queue.fix", `${id}-10`))).toBe(false);
   });
 
   it("records an app quote on the raised event", () => {
