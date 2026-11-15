@@ -159,7 +159,7 @@ test("one verified stock file exporting a part family is one source; a modified 
   const install = (runtimeBytes, proofKey = `tsx:${sha}`) => {
     write(`${runtime}/${entry}`, runtimeBytes);
     write(`${runtime}/components/control/index.ts`, adapter);
-    write("packages/designer/src/studio/default-component-preview-profile.json", { files: [{ path: entry, content: stock }] });
+    write("packages/designer/src/specimen/default-component-preview-profile.json", { files: [{ path: entry, content: stock }] });
     write("packages/designer/src/catalog-core/component-source-proofs.json", { proofs: { [proofKey]: { functions: [], exports: [], namespaces: {}, reads: [] } } });
     write("packages/designer/src/catalog/fills/shadcn@aria/components.example.json", fill);
     write("packages/designer/src/components.tsx", `export { Control } from "./components/preview-runtime/${entry.replace(/\.tsx$/, ".js")}";\n`);

@@ -8,7 +8,7 @@ import { emitSurfaces } from "../catalog-core/surface-emit.js";
 import { specimenSectionSourceCatalog, SPECIMEN_SECTION_EXPORTS } from "./specimen-sections.js";
 import { prepareSpecimenSurfaceSources } from "../library-cli/specimen-surface-sources.js";
 import { foundrySurfaceCatalog } from "../library-cli/surface-catalog.js";
-import { studioSpecimenLeaves } from "../studio/specimen-registry.js";
+import { studioSpecimenLeaves } from "../specimen/specimen-registry.js";
 
 function input(): CompositeEngineInput {
   return { catalog: { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: [] }, surfaces: foundrySurfaceCatalog() }, library: { source: { id: "specimen-native-consumer", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-30", values: { fills: [] }, components: { fills: [], files: [] }, surfaces: { version: 1, fills: [], files: [] } }, surfaceOptions: { packages: [], measurements: [] } };
@@ -38,7 +38,7 @@ it("registers all14 real section contracts, IA placements, native source candida
     const compiled = ts.transpileModule(file.content, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });
     const module = { exports: {} };
     new Function("require", "module", "exports", compiled.outputText)(
-      (specifier: string) => specifier === "@clossys/designer/studio" ? { [candidate.impl.export]: actual.render, studioSpecimenLeaves } : {}, module, module.exports,
+      (specifier: string) => specifier === "@clossys/designer/specimen" ? { [candidate.impl.export]: actual.render, studioSpecimenLeaves } : {}, module, module.exports,
     );
     const native = (module.exports as { SpecimenLeaf(): typeof actual }).SpecimenLeaf();
     expect(native).toMatchObject({ ...actual, render: expect.any(Function) });

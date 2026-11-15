@@ -3,7 +3,7 @@
  * with a duplicate check. Each group keeps its own table shape; this file is the only place they meet.
  */
 import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";
-import type { SpecimenDataset } from "../../studio/specimen-dataset.js";
+import type { SpecimenDataset } from "../../specimen/specimen-dataset.js";
 import { mergeRendererGroups, type SurfaceRendererEntry, type SurfaceRendererGroup, type SurfaceRuntimeLeaf, type SurfaceRuntimeRenderer } from "../contract.js";
 import { GROUP_A_SECTION_RENDERERS } from "./group-a.js";
 import { GROUP_A_CONTENT, GROUP_A_LEAVES, type GroupALeaf } from "./group-a-dataset.js";

@@ -39,8 +39,8 @@ import { listSlots, readCandidate, readSlot } from "../records/slots.js";
 import { checkSlotModel } from "../records/slot-check.js";
 import { CANDIDATE_NAME } from "../records/slot-model/index.js";
 import { validateFile } from "../pipeline/schema.js";
-import { commonJsEntry } from "../server/installed-specimens.js";
-import { pinnedWriterCopy } from "../server/specimen-tree.js";
+import { commonJsEntry } from "./installed-specimens.js";
+import { pinnedWriterCopy } from "./specimen-tree.js";
 import { certifyCandidate, libraryRecordSource } from "./library-source.js";
 import { reasonClass } from "./contract-fixture-derive.js";
 

@@ -714,7 +714,7 @@ export function defaultServers(cpus = availableParallelism()) {
   return Math.max(1, Math.min(3, Math.floor((cpus - 2) / 2)));
 }
 
-/** The specimen cache `clossys produce --root <root>` uses under `base` (src/server/specimen-substrate.ts). */
+/** The specimen cache `clossys produce --root <root>` uses under `base` (src/specimen/specimen-substrate.ts). */
 export function specimenCache(root, base = tmpdir()) {
   return join(base, "clossys-studio-specimens", createHash("sha256").update(root).update("\0").digest("hex").slice(0, 12));
 }

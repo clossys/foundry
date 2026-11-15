@@ -363,7 +363,7 @@ test("--servers and CAPTURE_STUDIO_SERVERS pick the server count; the default le
 });
 
 test("a shard starts from the serial run's specimen cache, never cold", async () => {
-  const { specimenSubstrate } = await import("../dist/server/specimen-substrate.js");
+  const { specimenSubstrate } = await import("../dist/specimen/specimen-substrate.js");
   assert.equal(specimenCache("/some/root"), dirname(specimenSubstrate("/some/root")), "the cache the producer reads for that root");
   const base = mkdtempSync(join(tmpdir(), "seed-shard-"));
   const source = join(base, "serial"), target = join(base, "run", "shard-1", "cache");

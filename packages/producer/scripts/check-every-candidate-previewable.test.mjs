@@ -86,7 +86,7 @@ export async function checkEveryCandidatePreviewable(repo) {
   const { listSlots } = await load(repo, "packages/producer/dist/records/slots.js");
   const { slotInstallInputs } = await load(repo, "packages/producer/dist/specimen/slot-install-inputs.js");
   const { certifyCandidate } = await load(repo, "packages/producer/dist/specimen/library-source.js");
-  const { pinnedWriterCopy } = await load(repo, "packages/producer/dist/server/specimen-tree.js");
+  const { pinnedWriterCopy } = await load(repo, "packages/producer/dist/specimen/specimen-tree.js");
   let writer;
   const writerSource = typeof pinnedWriterCopy === "function" ? () => writer ??= pinnedWriterCopy(consumer) : undefined;
   const { readCandidate, listSeats } = await load(repo, "packages/producer/dist/records/slots.js");

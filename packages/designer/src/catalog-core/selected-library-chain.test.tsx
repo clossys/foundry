@@ -12,7 +12,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { packageBarrelExports, readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
-import { specimenDataset } from "../studio/specimen-dataset.js";
+import { specimenDataset } from "../specimen/specimen-dataset.js";
 import { shellCopyFixtureResolver } from "../frames/__fixtures__/shell-copy-resolver.js";
 import { completedCatalogLibrary } from "./__fixtures__/completed-catalog-library.js";
 import { componentAdoptions, installedSourceImportExports, selectedComponentClosure, selectedComponentFills } from "./__fixtures__/surface-engine/selected-package-closure.js";

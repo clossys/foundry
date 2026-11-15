@@ -6,7 +6,7 @@ import { compile } from "tailwindcss";
 import { listSlots, readAgentFile, readCandidate } from "../records/slots.js";
 import { agentRoot } from "./cells.js";
 import { pinnedBrand, type ConsumerBrand } from "./consumer-brand.js";
-import { specimenSubstrate } from "./specimen-substrate.js";
+import { specimenSubstrate } from "../specimen/specimen-substrate.js";
 import { isAbsent, isModuleAbsent } from "../errors.js";
 import { studioTheme } from "./theme.js";
 

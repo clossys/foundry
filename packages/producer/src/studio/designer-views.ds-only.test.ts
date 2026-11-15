@@ -368,7 +368,9 @@ export function emitterViolations(file: string, base = PRODUCER): string[] {
   visit(source);
   return out;
 }
-const SERVER_FILES = sourceFilesDeep(join(PRODUCER, 'src/server')).map(file => relative(PRODUCER, file)).sort();
+// Server emitters moved out of the Studio server (system.md 14.4), plus the specimen modules its deleted stubs re-exported, stay in this scan.
+const MOVED_SERVER_FILES = ['src/preview/publication.ts', 'src/preview/publisher-preview-render.ts', 'src/read/cells.ts', 'src/read/library-selection.ts', 'src/specimen/copy-ref.ts', 'src/specimen/installed-specimens.ts', 'src/specimen/specimen-frame.ts'];
+const SERVER_FILES = [...sourceFilesDeep(join(PRODUCER, 'src/server')).map(file => relative(PRODUCER, file)), ...MOVED_SERVER_FILES].sort();
 const RENDERER_FILES = RENDERER_DIRS.flatMap(dir => sourceFilesDeep(join(STUDIO, dir))).map(file => relative(STUDIO, file)).sort();
 const APP_FILES = sourceFilesDeep(join(STUDIO, APP_DIR)).map(file => relative(STUDIO, file)).sort();
 const UI_FRAMES = sourceFilesDeep(join(UI_SRC, UI_FOUNDRY)).map(file => relative(UI_SRC, file)).sort();
@@ -496,7 +498,7 @@ describe('Studio sections are ds-only', () => {
     // The App Router tree: the root layout and every installed route; nothing under app/ but its stylesheet escapes the scan.
     expect(APP_FILES).toContain('app/layout.tsx');
     expect(filesUnder(join(STUDIO, APP_DIR)).map(file => relative(STUDIO, file)).filter(file => file !== 'app/globals.css').sort()).toEqual(APP_FILES);
-    expect(SERVER_FILES).toEqual(expect.arrayContaining(['src/server/installed-specimens.ts', 'src/server/publication.ts', 'src/server/specimen-frame.ts']));
+    expect(SERVER_FILES).toEqual(expect.arrayContaining(['src/specimen/installed-specimens.ts', 'src/preview/publication.ts', 'src/specimen/specimen-frame.ts']));
   });
 
   it.each(APP_FILES)('app file %s renders only Designer components', file => {

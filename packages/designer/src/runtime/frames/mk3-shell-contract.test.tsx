@@ -11,7 +11,7 @@ import { SiteFrame } from "../../frames/site-frame/SiteFrame.js";
 import { resolveShell } from "../../frames/site-frame/internal/resolveShell.js";
 import { siteShellFor } from "../../frames/site-frame/surface.js";
 import { siteShellProps, siteShellRuntimeRenderer } from "./site-shell.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 const icon = [["path", { d: "M4 12h16" }]];
 const header: RuntimeJson = {

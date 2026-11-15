@@ -1,7 +1,7 @@
 import { AuditLog, type AuditLogEntry } from "../../blocks/AuditLog.js";
 import { ActionPart, FieldRegion, type ActionContent, type FieldRegionContent } from "./group-b-parts.js";
 import { entryOf, recordsAs, stateOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 const { auditLog } = specimenDataset.sections;
 

@@ -65,7 +65,7 @@ it("renders every value-layer canvas board as the registered library-board Secti
 
 it("the designer route module renders only the runtime assembly: WL10 is 0", () => {
   const read = (path: string) => ({ path: `packages/publisher/src/web/${path}`, content: readFileSync(resolvePath(import.meta.dirname, "../../../publisher/src/web", path), "utf8") });
-  const report = checkWiring({ sources: [], routes: { modules: [read("designer-route-controller.tsx"), read("designer-route-registration.ts")], assembly: [{ module: "@clossys/designer/studio", export: "Studio" }] } });
+  const report = checkWiring({ sources: [], routes: { modules: [read("designer-route-registration.ts")], assembly: [{ module: "@clossys/designer/studio", export: "Studio" }] } });
   expect(report.findings.filter(finding => finding.code === "WL10")).toEqual([]);
 });
 

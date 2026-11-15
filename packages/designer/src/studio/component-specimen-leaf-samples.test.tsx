@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import * as components from "../components/index.js";
 import type { CompositeResolved } from "../catalog-core/index.js";
 import { glyphs } from "../components/preview-runtime/adapters/glyphs.js";
-import componentProfile from "./default-component-preview-profile.json" with { type: "json" };
+import componentProfile from "../specimen/default-component-preview-profile.json" with { type: "json" };
 import { defaultComponentPreviews } from "./default-component-previews.js";
 import { componentSpecimenPreview } from "./component-specimens.js";
 import { SPECIMEN_SHOW_ALL_COPY, componentSpecimenLeafSamples } from "./component-specimen-leaf-samples.js";

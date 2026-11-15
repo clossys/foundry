@@ -474,11 +474,11 @@ export async function checkSurfaceSourceIdentity(repository) {
   try {
     const importer = path.join(root, "packages/designer/src/importers/specimen-sections.ts");
     const generated = sourceModule(importer).specimenSectionSourceCatalog();
-    const registryFile = program.getSourceFile(path.join(root, "packages/designer/src/studio/specimen-registry.ts"));
+    const registryFile = program.getSourceFile(path.join(root, "packages/designer/src/specimen/specimen-registry.ts"));
     const registryNode = registryFile.statements.filter(ts.isVariableStatement).flatMap(statement => statement.declarationList.declarations).find(node => node.name.getText() === "studioSpecimenLeaves");
     const definitions = resolver.evaluate(registryNode.initializer);
     if (!Array.isArray(definitions)) resolver.fail(registryNode, "Native specimen registry is unknown");
-    const studio = program.getSourceFile(path.join(root, "packages/designer/src/studio/index.ts"));
+    const studio = program.getSourceFile(path.join(root, "packages/designer/src/specimen/index.ts"));
     const checker = program.getTypeChecker(), studioExports = checker.getExportsOfModule(checker.getSymbolAtLocation(studio));
     for (const doc of generated.fills) {
       const meta = doc.$extensions["com.clossys.fill"], implementation = Object.values(doc.sections)[0].impl;
@@ -507,7 +507,7 @@ export async function checkSurfaceSourceIdentity(repository) {
       if (drawing.length !== 1 || !ts.isJsxSelfClosingElement(drawing[0].expression) || returns.some(node => node !== drawing[0] && !refusedBinding(node))) resolver.fail(registryNode, `Native importer has independent/unknown render path for ${meta.slot}`, "competing-implementation");
       const rootReturn = drawing[0];
       const tag = rootReturn.expression.tagName.getText();
-      const imports = ast.statements.filter(ts.isImportDeclaration).flatMap(statement => statement.moduleSpecifier.text === "@clossys/designer/studio" && statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings) ? statement.importClause.namedBindings.elements.filter(item => item.name.text === tag).map(item => (item.propertyName ?? item.name).text) : []);
+      const imports = ast.statements.filter(ts.isImportDeclaration).flatMap(statement => statement.moduleSpecifier.text === "@clossys/designer/specimen" && statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings) ? statement.importClause.namedBindings.elements.filter(item => item.name.text === tag).map(item => (item.propertyName ?? item.name).text) : []);
       if (imports.length !== 1) resolver.fail(registryNode, `Native importer render identity unknown for ${meta.slot}`);
       const publicSymbol = studioExports.find(symbol => symbol.name === imports[0]);
       const declarations = (publicSymbol?.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(publicSymbol) : publicSymbol)?.declarations?.filter(node => !ts.isFunctionDeclaration(node) || node.body) ?? [];

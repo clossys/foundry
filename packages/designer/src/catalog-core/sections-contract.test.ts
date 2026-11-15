@@ -7,7 +7,7 @@ import { isValidId } from "./ids.js";
 import { loadSectionRegistry, sectionRegistryFindings, type SectionRegistry } from "./sections-contract.js";
 import type { PlacementNode } from "./types.js";
 import { STUDIO_SPECIMEN_HOST_PARTS } from "./studio-host-parts.js";
-import { SPECIMEN_RENDER_PARTS } from "../studio/specimen-render-part-identities.js";
+import { SPECIMEN_RENDER_PARTS } from "../specimen/specimen-render-part-identities.js";
 
 // Audit inventory independent of the mutable placement and descriptor documents.
 // R2F-11: the Studio specimen sections (commit 25a8fc7b2, bound to the owner-signed components.specimen-* leaves)

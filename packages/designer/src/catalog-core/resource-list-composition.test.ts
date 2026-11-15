@@ -14,7 +14,7 @@ import { adoptedSurface } from "./__fixtures__/surface-engine/synthetic.js";
 import { resolve } from "./api.js";
 import { surfaceDescriptorHash, surfaceDocument, surfaceOf } from "./surface-library.js";
 import { STUDIO_SPECIMEN_HOST_PARTS } from "./studio-host-parts.js";
-import { SPECIMEN_RENDER_PARTS } from "../studio/specimen-render-part-identities.js";
+import { SPECIMEN_RENDER_PARTS } from "../specimen/specimen-render-part-identities.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const callers = ["activity-feed", "resource-list", "usage"];

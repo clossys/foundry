@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-import { marketingComponentSelection } from "../studio/marketing-component-selection.js";
+import { marketingComponentSelection } from "../specimen/marketing-component-selection.js";
 
 const src = join(dirname(fileURLToPath(import.meta.url)), "..");
 const COMPOSITION_DIRS = ["blocks", "frames", "sections", "shell"];

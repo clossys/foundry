@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RuntimeFrameHost, RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { DS_ATTR } from "../../catalog-core/provenance-attrs.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { surfaceRuntimeRenderers } from "../index.js";
 import { appShellProps, guardedNavigate } from "./app-shell.js";
 import { ShellCopyProvider } from "../../components/Banner.copy-context.js";

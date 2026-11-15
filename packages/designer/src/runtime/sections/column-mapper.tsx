@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ColumnMapper, type ColumnMapperSource, type ColumnMapperTarget, type ColumnMapping } from "../../blocks/ColumnMapper.js";
 import { recordsOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 /** One mapping record: which source column fills a target field, or null when it is not mapped. */
 export interface ColumnMappingRecord { readonly target: string; readonly source: string | null }

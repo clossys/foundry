@@ -41,15 +41,15 @@ type ProbeResult = { ok: true } | { ok: false; message: string };
 /**
  * Owner D3 (2026-11-11): a server-rendered graph gets its component selections from the pinned
  * selection file, the same source the Studio client and the in-process Vitest harness use
- * (studio/default-component-preview-profile.json, read through marketingComponentSelection). A
+ * (specimen/default-component-preview-profile.json, read through marketingComponentSelection). A
  * spawned server render therefore wraps its tree in that selection's provider (`Pinned`). There is
  * no implicit default: without the provider a leaf still refuses with "NEED component selection".
  * Under react-server the graph emits selected-leaf references (resolved at the client boundary),
  * so those proofs check every emitted leaf is chosen in the pinned file, then render the same
  * props with the pinned selection to prove the semantic output.
  */
-const PINNED_SELECTION_FILE = join(distDir, "studio/default-component-preview-profile.json");
-const PINNED_PROVIDER = `import {MarketingComponentProvider as Pinned} from ${JSON.stringify(join(distDir, "studio/marketing-component-selection.js"))};`;
+const PINNED_SELECTION_FILE = join(distDir, "specimen/default-component-preview-profile.json");
+const PINNED_PROVIDER = `import {MarketingComponentProvider as Pinned} from ${JSON.stringify(join(distDir, "specimen/marketing-component-selection.js"))};`;
 /** Leaf ids chosen in the pinned selection file. */
 function pinnedLeaves(): ReadonlySet<string> {
   return new Set(Object.keys((JSON.parse(readFileSync(PINNED_SELECTION_FILE, "utf8")) as { components: Record<string, unknown> }).components));
