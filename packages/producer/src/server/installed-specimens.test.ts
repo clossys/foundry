@@ -7,7 +7,7 @@ import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import { resolvePage, type BoundPage } from '@clossys/publisher/install';
 import { pageModule } from '../publish/install.js';
-import { firstComponentSource } from '../publish/component-export.js';
+import { firstComponentSource } from '@clossys/publisher/build';
 import { installedCode, resolveSampleCopy, SLOT_SPECIMEN_STATES, specimenStateOf, type SpecimenState } from './specimen-state.js';
 import { createRequire } from 'node:module';
 import { fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';

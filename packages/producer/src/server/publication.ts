@@ -5,7 +5,7 @@ import { BUNDLE_STYLES, bundledPreviewStylesheet, confinedPreviewFile, generated
 import { readIa, listSlots, readCandidate, type SlotEntry } from "../records/slots.js";
 import { readPinnedPublication, resolvePublicationTitles } from "../publish/pinned-publication.js";
 import { sendWriterText, writerText } from "./writer-text.js";
-import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
+import { INSTALL_MARKER, installOutRoot } from "@clossys/publisher/build";
 import { isInstalledRoute, NEXT_INSTALL_KIND, NEXT_INSTALL_REPORT } from "../publish/install-next.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 import { isAbsent } from "../errors.js";

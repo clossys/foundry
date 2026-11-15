@@ -1,0 +1,27 @@
+{
+  "aliases": {},
+  "contexts": {
+    "home.hero.body": "Every word here comes from a Writer key.",
+    "home.hero.heading": "Pages assembled from records",
+    "site.name": "Example Studio",
+    "site.pages": "Pages",
+    "site.publication": "Example site",
+    "site.studio.heading": "Read straight from the page cell",
+    "site.studio.name": "About Example Studio"
+  },
+  "records": {
+    "home.hero.body": "Every word here comes from a Writer key.",
+    "home.hero.heading": "Pages assembled from records",
+    "site.name": "Example Studio",
+    "site.pages": "Pages",
+    "site.publication": "Example site",
+    "site.studio.heading": "Read straight from the page cell",
+    "site.studio.name": "About Example Studio"
+  },
+  "componentExport": "item.default ?? Object.entries(item).find(([name, value]) => /^[A-Z]/.test(name) && (typeof value === \"function\" || (!!value && typeof value === \"object\" && [Symbol.for(\"react.memo\"), Symbol.for(\"react.forward_ref\"), Symbol.for(\"react.lazy\")].includes(value.$$typeof))))?.[1]",
+  "install": {
+    "marker": ".clossys-publish-install",
+    "root": "clossys-publish/bc9950bf0dd2",
+    "page": "clossys-publish/bc9950bf0dd2/install-home"
+  }
+}
