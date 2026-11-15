@@ -38,6 +38,7 @@ import {
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
+import { checkReleaseReady } from "../release/ready.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -395,8 +396,10 @@ export function verifyCheck(ctx: { readonly root: string; readonly state: RunSta
   const { root, state } = ctx;
   if (name === "pins.resolve") {
     if (!state.subject) {
-      const run = checkPinsResolve(root);
-      return run.status === "pass" ? { ok: true } : { ok: false, why: `pins.resolve: ${run.findings.map(finding => `${finding.subject} ${finding.detail}`).join("; ")}` };
+      // A release run's own slot is pinned last, by the ready-pin, and judged there by release.ready.
+      const own = state.publication ? `publisher/release.${state.publication}` : undefined;
+      const findings = checkPinsResolve(root).findings.filter(finding => finding.subject !== own);
+      return findings.length ? { ok: false, why: `pins.resolve: ${findings.map(finding => `${finding.subject} ${finding.detail}`).join("; ")}` } : { ok: true };
     }
     const { agent, slotId } = state.subject;
     const ref = `${agent}/${slotId}`;
@@ -414,6 +417,9 @@ export function verifyCheck(ctx: { readonly root: string; readonly state: RunSta
     if (resolved.state !== "pinned") return { ok: false, why: `${RELEASE_READY}: publisher/release.${pub} is not pinned${resolved.state === "unresolved" ? ` (${resolutionIssue(resolved)})` : ""}` };
     if (resolved.candidate !== manifest) return { ok: false, why: `${RELEASE_READY}: publisher/release.${pub} pins ${resolved.candidate}, not this run's manifest ${manifest}` };
     if (!OWNER_BASES.includes(resolved.pin.basis) || resolved.pin.decidedBy !== `owner:${entry}`) return { ok: false, why: `${RELEASE_READY}: publisher/release.${pub} is pinned by ${resolved.pin.decidedBy} (basis ${resolved.pin.basis}), not the owner's sign-off ${entry}` };
+    // The ready-pin rules themselves (gates green now, manifest shas, build digest, pins unchanged): release/ready.ts.
+    const ready = checkReleaseReady(root, pub);
+    if (ready.status === "fail") return { ok: false, why: `${RELEASE_READY}: ${ready.findings.map(row => `${row.subject} ${row.detail}`).join("; ")}` };
     return { ok: true };
   }
   return { ok: false, why: `${name} is not a check clossys run computes` };

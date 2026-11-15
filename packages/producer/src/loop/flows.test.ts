@@ -16,7 +16,9 @@ import { writeTargetPin, type TargetPinInput } from "../records/pin-map.js";
 import { isRecordSlot } from "../records/resolve.js";
 import { buildPin, cliActor, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
 import { readPinFile } from "../records/pin-map.js";
-import type { CliResult } from "../cli/main.js";
+import { runCli, type CliResult } from "../cli/main.js";
+import { runReleaseCli } from "../cli/release.js";
+import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
 import { sha256Hex } from "../records/hash.js";
 import { writeSlot } from "../records/slot.js";
 import type { AgentId, LedgerEntry, QueueEntry, Slot } from "../records/types.js";
@@ -357,6 +359,18 @@ describe("F6 failed check (T6)", () => {
   });
 });
 
+/** A consumer the real clossys release accepts (0016 fixture), and the verbs the loop's code steps call. */
+const realRelease = (): ReleaseWorld => { const world = releaseWorld(); roots.push(world.root); return world; };
+const releaseVerbs = (verbs: string[][], now: () => Date) => (argv: readonly string[], cwd: string): Promise<CliResult> => {
+  verbs.push([...argv]);
+  return argv[0] === "compile" ? Promise.resolve({ exitCode: 0 as const, message: "compiled (stub)" })
+    : argv[0] === "release" ? runReleaseCli(argv.slice(1), cwd, { builder: stubBuilder, now }) : runCli(argv, cwd);
+};
+const latestLedger = (root: string, loop: LoopName): LedgerEntry => {
+  const dir = ledgerDir(root, loop);
+  return JSON.parse(readFileSync(join(dir, readdirSync(dir).sort().pop()!), "utf8")) as LedgerEntry;
+};
+
 describe("F8 new release: loop.release (T8)", () => {
   const manifest = "publisher/release.site/candidates/site-v1.json";
   const release = (root: string, gates: CodeOutcome) => stub(root, {
@@ -372,20 +386,23 @@ describe("F8 new release: loop.release (T8)", () => {
   });
 
   it("ends at the owner-signed ready-pin with status pinned-ready", async () => {
-    const w = world([]);
+    // The real chain: clossys release builds, writes the manifest and runs the gates; clossys pin takes the ready-pin.
+    const w = realRelease();
     const now = clock();
-    const hooks = release(w.root, { exit: 0 });
+    const verbs: string[][] = [];
+    const hooks = cliHooks(w.root, undefined, releaseVerbs(verbs, now));
     const run = await startRun(w.root, { loop: "loop.release", publication: "site" }, hooks, { now });
-    expect(run.entry).toMatch(/^queue\.approve#/);
-    expect(w.entry(run.entry!)).toMatchObject({ default: "not-ready", subject: { to: "publisher/release.site" } });
+    expect(run.entry, run.message).toMatch(/^queue\.approve#/);
+    const found = findQueueEntry(w.root, run.entry!);
+    expect(found.ok && readQueueEntry(found.at)).toMatchObject({ ok: true, entry: { default: "not-ready", subject: { to: "publisher/release.site" } } });
     ownerAnswer(w.root, run.entry!, "ready", now);
     const done = await resumeRun(w.root, run.state!.runId, hooks, { now });
-    expect(done.exitCode).toBe(0);
-    const ledger = w.ledger("loop.release")[0]!;
+    expect(done.exitCode, done.message).toBe(0);
+    const ledger = latestLedger(w.root, "loop.release");
     expect(ledger).toMatchObject({ status: "pinned-ready", outcome: "site site-v1.json pinned ready", trigger: { kind: "new-release" } });
     expect(stepLine(ledger)).toEqual(["compile:code:0", "build:code:0", "manifest:code:0", "gates:code:0", "signoff:human:0", "pin:code:0"]);
     expect(ledger.checks["release.ready"]).toBe("pass");
-    expect(hooks.code_.at(-1)!.cli).toBe(`clossys pin publisher/release.site site-v1.json --by owner:${run.entry}`);
+    expect(verbs.at(-1)).toEqual(["pin", "publisher/release.site", "site-v1.json", "--by", `owner:${run.entry}`, "--root", w.root]);
   });
 
   it("stops the release at failing gates, raising a queue.fix per finding for loop.refine", async () => {
@@ -528,29 +545,41 @@ describe("review rulings (foundry-build-0013 fix r1)", () => {
     expect(w.ledger("loop.fill")[0]).toMatchObject({ status: "stopped", outcome: expect.stringMatching(/^the run cannot end done: pins\.resolve: designer\/components\.button does not resolve: no pin and no package default/), checks: { "pins.resolve": "fail" } });
   });
 
-  it("B4: the real CLI code hook reports the files a verb wrote, so the release manifest is the candidate it wrote", async () => {
-    const w = world([]);
+  it("B3: release.ready is recomputed from the files at finish, so a ready-pin gone stale by then never ends pinned-ready", async () => {
+    const w = realRelease();
     const now = clock();
-    const manifest = "publisher/release.site/candidates/site-v1.json";
-    const verbs: string[][] = [];
-    const run = async (argv: readonly string[]): Promise<CliResult> => {
-      verbs.push([...argv]);
-      if (argv.includes("--manifest")) { mkdirSync(dirname(join(w.root, "clossys", "agents", manifest)), { recursive: true }); writeFileSync(join(w.root, "clossys", "agents", manifest), "{}\n"); }
-      if (argv[0] === "pin") {
-        const [queue, id] = argv[4]!.slice("owner:".length).split("#") as [string, string];
-        pinAs(w.root, { agent: "publisher", slotId: "release.site", candidate: argv[2]!, decidedBy: argv[4]!, basis: "picked", at: "2026-11-20T07:59:00Z", refs: [{ to: `producer/${queue}` as never, record: id, rel: "answers" }], createdBy: cliActor("clossys pin") });
-      }
-      return { exitCode: 0, message: "" } as CliResult;
-    };
-    const started = await startRun(w.root, { loop: "loop.release", publication: "site" }, cliHooks(w.root, undefined, run), { now });
-    expect(started.entry).toMatch(/^queue\.approve#/);
-    expect(started.state!.vars.manifest).toBe("site-v1.json");
-    expect(started.state!.steps.find(step => step.id === "manifest")!.wrote).toEqual([{ file: manifest, sha256: sha256Hex("{}\n") }]);
+    const verbs = releaseVerbs([], now);
+    // The pin verb succeeds, then a copy slot is repinned to a sample-only candidate: the gates the manifest recorded are red now.
+    const hooks = cliHooks(w.root, undefined, async (argv, cwd) => {
+      const result = await verbs(argv, cwd);
+      if (argv[0] === "pin") w.repin("writer/sections.hero.copy", 2, { fields: { "header.heading": { en: "placeholder" } } });
+      return result;
+    });
+    const started = await startRun(w.root, { loop: "loop.release", publication: "site" }, hooks, { now });
     ownerAnswer(w.root, started.entry!, "ready", now);
-    const done = await resumeRun(w.root, started.state!.runId, cliHooks(w.root, undefined, run), { now });
+    const done = await resumeRun(w.root, started.state!.runId, hooks, { now });
+    expect(done.exitCode).toBe(1);
+    const ledger = latestLedger(w.root, "loop.release");
+    expect(ledger.status).not.toBe("pinned-ready");
+    expect(ledger.checks["release.ready"]).toBe("fail");
+    expect(ledger.outcome).toMatch(/release\.ready: .*fails now/);
+  });
+
+  it("B4: the real CLI code hook hands back the files every code step wrote: verb-reported and changed on disk", async () => {
+    const w = realRelease();
+    const now = clock();
+    const hooks = cliHooks(w.root, undefined, releaseVerbs([], now));
+    const started = await startRun(w.root, { loop: "loop.release", publication: "site" }, hooks, { now });
+    expect(started.entry, started.message).toMatch(/^queue\.approve#/);
+    expect(started.state!.vars.manifest).toBe("site-v1.json");
+    const wrote = (id: string) => started.state!.steps.find(step => step.id === id)!.wrote!.map(row => row.file);
+    expect(wrote("manifest")).toEqual(["publisher/release.site/candidates/site-v1.json"]);
+    expect(wrote("build").some(file => file.startsWith(".clossys/builds/"))).toBe(true);
+    ownerAnswer(w.root, started.entry!, "ready", now);
+    const done = await resumeRun(w.root, started.state!.runId, hooks, { now });
     expect(done.state!.status).toBe("pinned-ready");
-    expect(verbs.at(-1)).toEqual(["pin", "publisher/release.site", "site-v1.json", "--by", `owner:${started.entry}`, "--root", w.root]);
-    expect(w.ledger("loop.release")[0]!.steps.at(-1)!.wrote).toEqual([{ file: "publisher/release.site/pin.json", sha256: null }]);
+    // clossys pin reports no wrote; the hook still hands back the pin it changed under clossys/agents/.
+    expect(latestLedger(w.root, "loop.release").steps.at(-1)!.wrote!.map(row => row.file)).toContain("publisher/release.site/pin.json");
   });
 
   it("B5: the owner's approve writes confirmed on the agent's pin", async () => {

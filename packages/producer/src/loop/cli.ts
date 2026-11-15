@@ -135,7 +135,11 @@ export function cliHooks(root: string, answer?: StepAnswer, run: (argv: readonly
     async code(call: CodeCall): Promise<CodeOutcome> {
       const before = agentsSnapshot(root);
       const outcome = await runCode(call);
-      return { ...outcome, wrote: wroteBetween(before, agentsSnapshot(root)) };
+      // B4: a step's wrote is what the verb reports (clossys release names its build and manifest), plus every other
+      // file the step changed under clossys/agents/, so each code step hands back the files it wrote.
+      const changed = wroteBetween(before, agentsSnapshot(root));
+      const wrote = [...(outcome.wrote ?? []), ...changed.filter(file => !outcome.wrote?.includes(file))];
+      return { ...outcome, wrote };
     },
   };
   async function runCode(call: CodeCall): Promise<CodeOutcome> {
@@ -150,7 +154,12 @@ export function cliHooks(root: string, answer?: StepAnswer, run: (argv: readonly
     const argv = call.argv[0] === "clossys" ? call.argv.slice(1) : call.argv;
     try {
       const result = await run([...argv, "--root", root], root);
-      return { exit: result.exitCode, detail: result.message };
+      // A verb that reports what it wrote and found (clossys release) hands both on: the manifest step names the
+      // manifest, a failing gate routes its findings (flows.md F8).
+      const output = (typeof result.output === "object" && result.output !== null ? result.output : {}) as { wrote?: unknown; findings?: unknown };
+      const wrote = Array.isArray(output.wrote) ? output.wrote.filter((file): file is string => typeof file === "string") : undefined;
+      const findings = Array.isArray(output.findings) ? (output.findings as Finding[]).filter(row => typeof row?.subject === "string" && typeof row.detail === "string") : undefined;
+      return { exit: result.exitCode, detail: result.message, ...(wrote ? { wrote } : {}), ...(findings?.length ? { findings } : {}) };
     } catch (error) {
       return { exit: 2, detail: error instanceof Error ? error.message : String(error) };
     }
