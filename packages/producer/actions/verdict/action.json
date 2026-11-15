@@ -9,25 +9,25 @@
   "run": "clossys verdict <agent>/<slot> --record <verdict.json> --model <id> --tier <tier> --by agent:<seat>",
   "inputs": [
     {
-      "glob": "clossys/agents/*/ia.json",
+      "glob": "consumer:agents/*/ia.json",
       "schema": "ia"
     },
     {
-      "glob": "clossys/agents/*/*/slot.json",
+      "glob": "consumer:agents/*/*/slot.json",
       "schema": "slot"
     },
     {
-      "glob": "clossys/agents/*/*/pin.json",
+      "glob": "consumer:agents/*/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/*/*/ledger.json#events",
+      "glob": "consumer:agents/*/*/ledger.json#events",
       "schema": "ledger"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/*/*/ledger.json#events",
+      "glob": "consumer:agents/*/*/ledger.json#events",
       "schema": "ledger"
     }
   ],
@@ -53,12 +53,12 @@
   "decider": "agent",
   "packet": {
     "inputs": [
-      "clossys/agents/*/*/slot.json",
-      "clossys/agents/*/*/pin.json"
+      "consumer:agents/*/*/slot.json",
+      "consumer:agents/*/*/pin.json"
     ],
     "write": [
       {
-        "glob": "clossys/agents/*/*/ledger.json#events",
+        "glob": "consumer:agents/*/*/ledger.json#events",
         "schema": "ledger"
       }
     ],

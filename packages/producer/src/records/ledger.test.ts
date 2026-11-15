@@ -57,8 +57,8 @@ describe("ledger events (records/ledger.ts)", () => {
 
   it("pairs model and tier by verb (R14.3)", () => {
     expect(modelTierIssues({ verb: "verdict", model: "none", tier: "none" })).toEqual(["verb verdict runs an LLM and must name its model and tier"]);
-    expect(modelTierIssues({ verb: "pin", model: "claude-opus-5-5", tier: "high" })).toEqual(["verb pin is deterministic and records model none, tier none"]);
-    expect(modelTierIssues({ verb: "submit", model: "claude-opus-5-5", tier: "high" })).toEqual([]);
+    expect(modelTierIssues({ verb: "pin", model: "fixture-llm", tier: "high" })).toEqual(["verb pin is deterministic and records model none, tier none"]);
+    expect(modelTierIssues({ verb: "submit", model: "fixture-llm", tier: "high" })).toEqual([]);
     expect(modelTierIssues({ verb: "submit", model: "none", tier: "none" })).toEqual([]);
     expect(modelTierIssues({ verb: "submit" })).toEqual(["names no model and tier (deterministic verbs record model none, tier none)"]);
   });
@@ -93,7 +93,7 @@ describe("ledger events (records/ledger.ts)", () => {
 
 describe("the single writer appends one ledger event per write", () => {
   it("records submit, pin, confirm, options, not-needed, slot, retire and migrate, each with the bytes it wrote", () => {
-    const first = writeCandidate(consumer, "director", ID, "essence", brief("one"), { at, fields: { basis: "planner" }, provenance: { by: "agent:director", model: "claude-opus-5-5", tier: "high" } });
+    const first = writeCandidate(consumer, "director", ID, "essence", brief("one"), { at, fields: { basis: "planner" }, provenance: { by: "agent:director", model: "fixture-llm", tier: "high" } });
     expect(first).toEqual({ name: "essence-v1.md", sha256: fileSha(join(dir, "candidates", "essence-v1.md")) });
     writeCandidate(consumer, "director", ID, "essence", brief("two"), { at });
     writePin(consumer, "director", ID, "essence-v1.md", { decidedBy: "agent:director", basis: "agent", at });
@@ -112,7 +112,7 @@ describe("the single writer appends one ledger event per write", () => {
     expect(list.map(event => `${String(event.op)}/${String(event.verb)}`)).toEqual([
       "submit/submit", "submit/submit", "pick/pick", "confirm/pin", "pin/pin", "slot/options", "slot/ia", "migrate/migrate", "not-needed/pin", "retire-candidate/retire",
     ]);
-    expect(list[0]).toMatchObject({ by: "agent:director", model: "claude-opus-5-5", tier: "high", basis: "planner", name: "essence-v1.md", skill: { path: "packages/director/actions/director.candidates/skill.md" } });
+    expect(list[0]).toMatchObject({ by: "agent:director", model: "fixture-llm", tier: "high", basis: "planner", name: "essence-v1.md", skill: { path: "packages/director/actions/director.candidates/skill.md" } });
     expect(list[1]).toMatchObject({ by: "planner", model: "none", tier: "none", name: "essence-v2.md" });
     expect(list[2]).toMatchObject({ by: "agent:director", candidate: "essence-v1.md", basis: "agent", skill: { path: "packages/director/actions/pick.director/skill.md" } });
     expect(list[4]).toMatchObject({ by: "owner", candidate: "essence-v2.md", basis: "picked", skill: { path: "packages/producer/actions/pin.director/skill.md" } });

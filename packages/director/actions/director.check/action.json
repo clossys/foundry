@@ -8,11 +8,11 @@
   "run": "clossys direct",
   "inputs": [
     {
-      "glob": "clossys/agents/director/*/pin.json",
+      "glob": "consumer:agents/director/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/director/*/candidates/*",
+      "glob": "consumer:agents/director/*/candidates/*",
       "schema": "candidate-brief"
     }
   ],

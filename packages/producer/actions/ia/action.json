@@ -9,11 +9,11 @@
   "inputs": [],
   "outputs": [
     {
-      "glob": "clossys/agents/*/ia.json",
+      "glob": "consumer:agents/*/ia.json",
       "schema": "ia"
     },
     {
-      "glob": "clossys/agents/*/*/slot.json",
+      "glob": "consumer:agents/*/*/slot.json",
       "schema": "slot"
     }
   ],
@@ -45,11 +45,11 @@
     "inputs": [],
     "write": [
       {
-        "glob": "clossys/agents/*/ia.json",
+        "glob": "consumer:agents/*/ia.json",
         "schema": "ia"
       },
       {
-        "glob": "clossys/agents/*/*/slot.json",
+        "glob": "consumer:agents/*/*/slot.json",
         "schema": "slot"
       }
     ],

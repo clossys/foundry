@@ -3,11 +3,11 @@
     {
       "subject": {
         "kind": "seat",
-        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
+        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"fixture-llm\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
         "json": {
           "by": "agent:director",
           "llm": {
-            "model": "claude-opus-5-5",
+            "model": "fixture-llm",
             "tier": "mid",
             "promptFile": "packages/director/actions/director.candidates/skill.md"
           },
@@ -37,11 +37,11 @@
     {
       "subject": {
         "kind": "seat",
-        "text": "{\"by\": \"someone\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
+        "text": "{\"by\": \"someone\", \"llm\": {\"model\": \"fixture-llm\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
         "json": {
           "by": "someone",
           "llm": {
-            "model": "claude-opus-5-5",
+            "model": "fixture-llm",
             "tier": "mid",
             "promptFile": "packages/director/actions/director.candidates/skill.md"
           },
@@ -75,11 +75,11 @@
     {
       "subject": {
         "kind": "seat",
-        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"prompts/director.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
+        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"fixture-llm\", \"tier\": \"mid\", \"promptFile\": \"prompts/director.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one immutable file per option.\", \"command\": \"clossys next\"}}",
         "json": {
           "by": "agent:director",
           "llm": {
-            "model": "claude-opus-5-5",
+            "model": "fixture-llm",
             "tier": "mid",
             "promptFile": "prompts/director.md"
           },
@@ -94,11 +94,11 @@
     {
       "subject": {
         "kind": "seat",
-        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Do it.\", \"command\": \"clossys next\"}}",
+        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"fixture-llm\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Do it.\", \"command\": \"clossys next\"}}",
         "json": {
           "by": "agent:director",
           "llm": {
-            "model": "claude-opus-5-5",
+            "model": "fixture-llm",
             "tier": "mid",
             "promptFile": "packages/director/actions/director.candidates/skill.md"
           },
@@ -113,11 +113,11 @@
     {
       "subject": {
         "kind": "seat",
-        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"claude-opus-5-5\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one file per option.\", \"command\": \"npm run fill\"}}",
+        "text": "{\"by\": \"agent:director\", \"llm\": {\"model\": \"fixture-llm\", \"tier\": \"mid\", \"promptFile\": \"packages/director/actions/director.candidates/skill.md\"}, \"human\": {\"procedure\": \"Create Director candidates for the open slots, one file per option.\", \"command\": \"npm run fill\"}}",
         "json": {
           "by": "agent:director",
           "llm": {
-            "model": "claude-opus-5-5",
+            "model": "fixture-llm",
             "tier": "mid",
             "promptFile": "packages/director/actions/director.candidates/skill.md"
           },

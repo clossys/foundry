@@ -9,7 +9,7 @@
   "inputs": [],
   "outputs": [
     {
-      "glob": "clossys/owner-decisions.json",
+      "glob": "consumer:owner-decisions.json",
       "schema": "owner-decisions"
     }
   ],
@@ -39,7 +39,7 @@
     "inputs": [],
     "write": [
       {
-        "glob": "clossys/owner-decisions.json",
+        "glob": "consumer:owner-decisions.json",
         "schema": "owner-decisions"
       }
     ],

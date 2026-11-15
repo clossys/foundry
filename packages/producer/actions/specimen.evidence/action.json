@@ -8,11 +8,11 @@
   "run": "clossys pipeline trace specimen.evidence -- npm run generate:specimen-evidence",
   "inputs": [
     {
-      "glob": "clossys/agents/designer/*/pin.json",
+      "glob": "consumer:agents/designer/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/designer/*/candidates/*",
+      "glob": "consumer:agents/designer/*/candidates/*",
       "schema": "candidate-element"
     }
   ],

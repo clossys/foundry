@@ -65,8 +65,8 @@ describe("step definitions", () => {
   });
   it("gives every decide step a seat file and no plumb step one", () => {
     for (const each of STEPS) expect(Boolean(each.seat)).toBe(each.kind !== "plumb");
-    expect(step("pin.director").seat).toBe("clossys/agents/producer/seat.pin.director/pin.json");
-    expect(step("pin.publisher").seat).toBe("clossys/agents/producer/seat.pin.publisher/pin.json");
+    expect(step("pin.director").seat).toBe("consumer:agents/producer/seat.pin.director/pin.json");
+    expect(step("pin.publisher").seat).toBe("consumer:agents/producer/seat.pin.publisher/pin.json");
   });
 });
 
@@ -168,7 +168,7 @@ describe("derived graph", () => {
   });
   it("derives each step's holder from its seat file or its kind, and lists every roster entry", () => {
     const root = workspace();
-    const graph = buildGraph(root);
+    const graph = buildGraph(root, undefined, undefined, { seats: "workspace" });
     const holder = (id: string) => graph.nodes.find(node => node.id === id)!.holder;
     expect(holder("ia")).toEqual({ id: "you", kind: "you", source: "derived", tier: null });
     expect(holder("designer.candidates")).toEqual({ id: "designer", kind: "ai", source: "derived", tier: null });
@@ -180,6 +180,16 @@ describe("derived graph", () => {
       .toEqual({ id: "writer", kind: "ai", source: "file", tier: "mid" });
     expect(holderOf({ kind: "decide:judgment", actor: "owner", stage: "design.pin" }, { path: "x", state: "partial", by: "planner", llm: "open", human: "open", issues: [] }).id).toBe("planner");
     expect(laneIds([{ id: "planner", kind: null, source: "file", tier: null }])).toEqual([...ROSTER, UNASSIGNED]);
+  });
+  it("ships the package definition: seat defaults with tier placeholders and consumer-relative globs", () => {
+    const root = workspace();
+    writeSeat(realpathSync(root), "pin.director", { by: "owner", llm: { model: "consumer-model", tier: "high", promptFile: "p" }, human: { procedure: "p", command: "clossys pin" } });
+    const text = graphJson(buildGraph(realpathSync(root)));
+    expect(text).not.toContain("consumer-model");
+    expect(text).not.toContain("clossys/agents");
+    const graph = buildGraph(realpathSync(root));
+    expect(Object.values(graph.seats).every(seat => seat.llm === "open" || /^<model:(low|mid|high)>$/.test(seat.llm.model))).toBe(true);
+    expect(graph.nodes.find(node => node.id === "ia")!.outputs.map(port => port.glob)).toContain("consumer:agents/*/ia.json");
   });
   it("reads options from the verb's parser", () => {
     const flags = stepOptions(step("workspace.check"))!.map(option => option.flag);
@@ -197,7 +207,9 @@ describe("derived graph", () => {
     expect([seat.state, seat.by, seat.llm]).toEqual(["partial", "owner", "open"]);
     writeSeat(root, "pin.director", { by: "code", llm: null, human: null });
     expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");
-    expect(buildGraph(root).seats["pin.director"]!.state).toBe("invalid");
+    expect(buildGraph(root, undefined, undefined, { seats: "workspace" }).seats["pin.director"]!.state).toBe("invalid");
+    // The package definition (pipeline/graph.json) never reads the consumer's seat: it carries the package default.
+    expect(buildGraph(root).seats["pin.director"]!.state).not.toBe("invalid");
     // A pin that drifts from its candidate, a symlinked pin and a retired seat.json are invalid, never read.
     writeFileSync(join(root, "clossys", "agents", "producer", "seat.pin.director", "candidates", "pin.director-v1.json"), JSON.stringify({ by: "owner", llm: null, human: null }));
     expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");

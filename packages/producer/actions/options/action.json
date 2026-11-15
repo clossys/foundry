@@ -8,41 +8,41 @@
   "run": "clossys options --classes",
   "inputs": [
     {
-      "glob": "clossys/agents/*/ia.json",
+      "glob": "consumer:agents/*/ia.json",
       "schema": "ia"
     },
     {
-      "glob": "clossys/agents/*/*/slot.json",
+      "glob": "consumer:agents/*/*/slot.json",
       "schema": "slot"
     },
     {
-      "glob": "clossys/agents/*/*/pin.json",
+      "glob": "consumer:agents/*/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/director/*/candidates/*",
+      "glob": "consumer:agents/director/*/candidates/*",
       "schema": "candidate-brief"
     },
     {
-      "glob": "clossys/agents/designer/*/candidates/*",
+      "glob": "consumer:agents/designer/*/candidates/*",
       "schema": "candidate-element"
     },
     {
-      "glob": "clossys/agents/writer/*/candidates/*",
+      "glob": "consumer:agents/writer/*/candidates/*",
       "schema": "candidate-strings"
     },
     {
-      "glob": "clossys/agents/publisher/*/candidates/*",
+      "glob": "consumer:agents/publisher/*/candidates/*",
       "schema": "candidate-publisher"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/*/*/slot.json#options",
+      "glob": "consumer:agents/*/*/slot.json#options",
       "schema": "slot"
     },
     {
-      "glob": "clossys/agents/*/*/slot.json#varyOn",
+      "glob": "consumer:agents/*/*/slot.json#varyOn",
       "schema": "slot"
     }
   ],

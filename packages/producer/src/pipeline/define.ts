@@ -6,8 +6,8 @@
  * graph (`clossys pipeline graph --json`) and the committed `pipeline/graph.json` are built from those
  * steps; edges are derived from output/input glob overlap and options from the verb's parser.
  *
- * Globs are workspace-relative. `pkg:` is relative to this package and `arg:`
- * is a caller-chosen path (a CLI argument).
+ * Globs are workspace-relative. `pkg:` is relative to this package, `consumer:` to the consumer
+ * folder (`clossys/`, globs.ts workspaceGlob) and `arg:` is a caller-chosen path (a CLI argument).
  */
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
 
@@ -293,7 +293,7 @@ export function defineAction(contract: ActionContract, binding: Binding | undefi
 
 export const isDecide = (step: Pick<Step, "kind">): boolean => step.kind !== "plumb";
 /** A decide step's seat: the pin of its seat folder (the pinned candidate is the seat; records/slots.ts readSeatText). */
-export const seatPath = (id: string): string => `clossys/agents/producer/seat.${id}/pin.json`;
+export const seatPath = (id: string): string => `consumer:agents/producer/seat.${id}/pin.json`;
 const toPort = (value: string | Port): Port => typeof value === "string" ? { glob: value } : value;
 
 export function defineStep(input: StepInput): Step {

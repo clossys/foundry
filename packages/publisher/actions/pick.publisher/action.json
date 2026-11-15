@@ -8,17 +8,17 @@
   "run": "clossys pick publisher/<slot> <candidate-id> --by agent:<seat>",
   "inputs": [
     {
-      "glob": "clossys/agents/publisher/*/candidates/*",
+      "glob": "consumer:agents/publisher/*/candidates/*",
       "schema": "candidate-publisher"
     },
     {
-      "glob": "clossys/agents/publisher/*/slot.json",
+      "glob": "consumer:agents/publisher/*/slot.json",
       "schema": "slot"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/publisher/*/pin.json#basis",
+      "glob": "consumer:agents/publisher/*/pin.json#basis",
       "schema": "pin"
     }
   ],
@@ -45,12 +45,12 @@
   "decider": "agent",
   "packet": {
     "inputs": [
-      "clossys/agents/publisher/*/candidates/*",
-      "clossys/agents/publisher/*/slot.json"
+      "consumer:agents/publisher/*/candidates/*",
+      "consumer:agents/publisher/*/slot.json"
     ],
     "write": [
       {
-        "glob": "clossys/agents/publisher/*/pin.json#basis",
+        "glob": "consumer:agents/publisher/*/pin.json#basis",
         "schema": "pin"
       }
     ],

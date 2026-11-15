@@ -8,29 +8,29 @@
   "run": "clossys migrate copy-keys",
   "inputs": [
     {
-      "glob": "clossys/agents/director/*/candidates/*",
+      "glob": "consumer:agents/director/*/candidates/*",
       "schema": "candidate-brief"
     },
     {
-      "glob": "clossys/agents/designer/*/candidates/*",
+      "glob": "consumer:agents/designer/*/candidates/*",
       "schema": "candidate-element"
     },
     {
-      "glob": "clossys/agents/writer/*/candidates/*",
+      "glob": "consumer:agents/writer/*/candidates/*",
       "schema": "candidate-strings"
     },
     {
-      "glob": "clossys/agents/publisher/*/candidates/*",
+      "glob": "consumer:agents/publisher/*/candidates/*",
       "schema": "candidate-publisher"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/*/ledger.json",
+      "glob": "consumer:agents/*/ledger.json",
       "schema": "ledger"
     },
     {
-      "glob": "clossys/agents/*/*/ledger.json",
+      "glob": "consumer:agents/*/*/ledger.json",
       "schema": "ledger"
     }
   ],

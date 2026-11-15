@@ -8,21 +8,21 @@
   "run": "clossys next director/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
   "inputs": [
     {
-      "glob": "clossys/evidence/director/*.md",
+      "glob": "consumer:evidence/director/*.md",
       "schema": "director-evidence"
     },
     {
-      "glob": "clossys/evidence/director/findings/*.md",
+      "glob": "consumer:evidence/director/findings/*.md",
       "schema": "director-evidence"
     },
     {
-      "glob": "clossys/agents/director/*/slot.json",
+      "glob": "consumer:agents/director/*/slot.json",
       "schema": "slot"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/director/*/candidates/*",
+      "glob": "consumer:agents/director/*/candidates/*",
       "schema": "candidate-brief"
     }
   ],
@@ -51,13 +51,13 @@
   "decider": "agent",
   "packet": {
     "inputs": [
-      "clossys/evidence/director/*.md",
-      "clossys/evidence/director/findings/*.md",
-      "clossys/agents/director/*/slot.json"
+      "consumer:evidence/director/*.md",
+      "consumer:evidence/director/findings/*.md",
+      "consumer:agents/director/*/slot.json"
     ],
     "write": [
       {
-        "glob": "clossys/agents/director/*/candidates/*",
+        "glob": "consumer:agents/director/*/candidates/*",
         "schema": "candidate-brief"
       }
     ],

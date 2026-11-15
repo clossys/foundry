@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/constitution-green.schema.json",
+  "title": "Constitution green report (clossys/evidence/constitution-green.json)",
+  "description": "The consumer's last green constitution run, written only by clossys check --constitution --record-green (src/constitution/green.ts) and only to shrink; its digest covers its own content.",
+  "type": "object",
+  "required": ["schema", "workspace", "commit", "enforced", "keys", "digest"],
+  "properties": {
+    "schema": { "const": "clossys.constitution-green/1" },
+    "note": { "type": "string" },
+    "workspace": { "type": "string", "minLength": 1 },
+    "commit": { "type": "string" },
+    "enforced": { "type": "integer", "minimum": 0 },
+    "keys": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 1 } },
+    "records": {},
+    "digest": { "type": "string", "minLength": 1 }
+  }
+}

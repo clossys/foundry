@@ -2,6 +2,19 @@ import { posix } from "node:path";
 
 /** Workspace-relative globs: `*` within a segment, `**` across segments, an optional `#field` carve-out. */
 export const PACKAGE_REL = "packages/producer";
+/**
+ * A `consumer:` glob names a path in the consumer folder (`clossys/` under the workspace root), so a
+ * package's step definitions never spell the consumer's tree (SOURCE-MIGRATE step 7).
+ */
+export const CONSUMER_PREFIX = "consumer:";
+export const CONSUMER_DIR = "clossys";
+
+/** A glob's workspace-relative path: `pkg:` against the package, `consumer:` against the consumer folder. */
+export function workspaceGlob(glob: string, packageRel = PACKAGE_REL): string {
+  if (glob.startsWith("pkg:")) return posix.normalize(`${packageRel}/${glob.slice(4)}`);
+  if (glob.startsWith(CONSUMER_PREFIX)) return `${CONSUMER_DIR}/${glob.slice(CONSUMER_PREFIX.length)}`;
+  return glob;
+}
 
 export interface Glob { readonly path: string; readonly field: string | null; readonly arg: boolean }
 
@@ -10,7 +23,7 @@ export function parseGlob(glob: string, packageRel = PACKAGE_REL): Glob {
   const at = glob.indexOf("#");
   const raw = at < 0 ? glob : glob.slice(0, at);
   // A `pkg:` glob may name a sibling package (`pkg:../writer/...`): it is normalized to its workspace path.
-  return { path: raw.startsWith("pkg:") ? posix.normalize(`${packageRel}/${raw.slice(4)}`) : raw, field: at < 0 ? null : glob.slice(at + 1), arg: false };
+  return { path: workspaceGlob(raw, packageRel), field: at < 0 ? null : glob.slice(at + 1), arg: false };
 }
 
 const escape = (text: string) => text.replace(/[.+^$()|[\]\\{}?]/g, "\\$&");

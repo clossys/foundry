@@ -9,7 +9,7 @@
   "inputs": [],
   "outputs": [
     {
-      "glob": "clossys/clossys.config.ts",
+      "glob": "consumer:clossys.config.ts",
       "schema": "workspace-config"
     }
   ],
@@ -39,7 +39,7 @@
     "inputs": [],
     "write": [
       {
-        "glob": "clossys/clossys.config.ts",
+        "glob": "consumer:clossys.config.ts",
         "schema": "workspace-config"
       }
     ],

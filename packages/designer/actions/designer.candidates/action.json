@@ -8,21 +8,21 @@
   "run": "clossys next designer/<slot> --submit <file> --model <model> --tier <tier> --basis <basis> --skill <file> --rung <rung> [--seed <id>] [--reason <text>]",
   "inputs": [
     {
-      "glob": "clossys/agents/director/*/pin.json",
+      "glob": "consumer:agents/director/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/director/*/candidates/*",
+      "glob": "consumer:agents/director/*/candidates/*",
       "schema": "candidate-brief"
     },
     {
-      "glob": "clossys/agents/designer/*/slot.json",
+      "glob": "consumer:agents/designer/*/slot.json",
       "schema": "slot"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/designer/*/candidates/*",
+      "glob": "consumer:agents/designer/*/candidates/*",
       "schema": "candidate-element"
     }
   ],
@@ -55,13 +55,13 @@
   "decider": "agent",
   "packet": {
     "inputs": [
-      "clossys/agents/director/*/pin.json",
-      "clossys/agents/director/*/candidates/*",
-      "clossys/agents/designer/*/slot.json"
+      "consumer:agents/director/*/pin.json",
+      "consumer:agents/director/*/candidates/*",
+      "consumer:agents/designer/*/slot.json"
     ],
     "write": [
       {
-        "glob": "clossys/agents/designer/*/candidates/*",
+        "glob": "consumer:agents/designer/*/candidates/*",
         "schema": "candidate-element"
       }
     ],

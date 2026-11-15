@@ -8,21 +8,21 @@
   "run": "clossys pin publisher/<slot> <candidate-id>",
   "inputs": [
     {
-      "glob": "clossys/agents/publisher/*/candidates/*",
+      "glob": "consumer:agents/publisher/*/candidates/*",
       "schema": "candidate-publisher"
     },
     {
-      "glob": "clossys/agents/publisher/*/slot.json",
+      "glob": "consumer:agents/publisher/*/slot.json",
       "schema": "slot"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/publisher/*/pin.json",
+      "glob": "consumer:agents/publisher/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/publisher/*/slot.json#notNeeded",
+      "glob": "consumer:agents/publisher/*/slot.json#notNeeded",
       "schema": "slot"
     }
   ],
@@ -54,16 +54,16 @@
   "decider": "owner",
   "packet": {
     "inputs": [
-      "clossys/agents/publisher/*/candidates/*",
-      "clossys/agents/publisher/*/slot.json"
+      "consumer:agents/publisher/*/candidates/*",
+      "consumer:agents/publisher/*/slot.json"
     ],
     "write": [
       {
-        "glob": "clossys/agents/publisher/*/pin.json",
+        "glob": "consumer:agents/publisher/*/pin.json",
         "schema": "pin"
       },
       {
-        "glob": "clossys/agents/publisher/*/slot.json#notNeeded",
+        "glob": "consumer:agents/publisher/*/slot.json#notNeeded",
         "schema": "slot"
       }
     ],

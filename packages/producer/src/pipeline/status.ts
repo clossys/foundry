@@ -146,7 +146,7 @@ function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["a
 export function pipelineStatus(root: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): PipelineStatus {
   const agents = slotCounts(root);
   const seats = readSeats(root, steps);
-  const graph = buildGraph(root, steps, packageRoot);
+  const graph = buildGraph(root, steps, packageRoot, { seats: "workspace" });
   const wiring = buildWiring(root, { graph, packageRoot });
   // Step fields are read through the graph (the step standard's normalized form), never the definitions.
   const decisions = graph.nodes.flatMap(node => node.open ? [{ step: node.id, counter: node.open, count: openCount(node.open, root, agents, seats) }] : []);

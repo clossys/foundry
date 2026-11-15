@@ -8,11 +8,11 @@
   "run": "clossys decisions",
   "inputs": [
     {
-      "glob": "clossys/agents/*/*/slot.json",
+      "glob": "consumer:agents/*/*/slot.json",
       "schema": "slot"
     },
     {
-      "glob": "clossys/agents/*/*/pin.json",
+      "glob": "consumer:agents/*/*/pin.json",
       "schema": "pin"
     }
   ],

@@ -8,15 +8,15 @@
   "run": "clossys design --check",
   "inputs": [
     {
-      "glob": "clossys/agents/designer/*/pin.json",
+      "glob": "consumer:agents/designer/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/designer/*/candidates/*",
+      "glob": "consumer:agents/designer/*/candidates/*",
       "schema": "candidate-element"
     },
     {
-      "glob": "clossys/agents/director/*/pin.json",
+      "glob": "consumer:agents/director/*/pin.json",
       "schema": "pin"
     }
   ],

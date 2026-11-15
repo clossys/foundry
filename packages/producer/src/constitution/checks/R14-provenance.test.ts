@@ -171,7 +171,7 @@ describe("R14.2 a plumb action's events may cite its action.json instead of a sk
 describe("R14.3 LLM events name model and tier", () => {
   it("passes deterministic none/none events and an LLM verb with model and tier", () => {
     expect(llmNamesModel(clean())).toEqual([]);
-    const ctx = broken(spec => { spec.writer!["home.hero"]!.ledger = ledgerDoc([heroSubmit({ model: "claude-opus-5-5", tier: "high" }), ledgerEvent("verdict", "verdict", "packages/writer/actions/verdict/skill.md", { model: "gpt-5.5", tier: "mid" })]); });
+    const ctx = broken(spec => { spec.writer!["home.hero"]!.ledger = ledgerDoc([heroSubmit({ model: "fixture-llm", tier: "high" }), ledgerEvent("verdict", "verdict", "packages/writer/actions/verdict/skill.md", { model: "gpt-5.5", tier: "mid" })]); });
     expect(llmNamesModel(ctx)).toEqual([]);
   });
 
@@ -179,8 +179,8 @@ describe("R14.3 LLM events name model and tier", () => {
     const rows = expectCatches(llmNamesModel, clean(), broken(spec => {
       spec.writer!["home.hero"]!.ledger = ledgerDoc([
         ledgerEvent("verdict", "verdict", "packages/writer/actions/verdict/skill.md"),
-        { ...ledgerEvent("pin", "pin", "packages/producer/actions/pin.writer/skill.md"), model: "claude-opus-5-5", tier: "high" },
-        heroSubmit({ model: "claude-opus-5-5", tier: "none" }),
+        { ...ledgerEvent("pin", "pin", "packages/producer/actions/pin.writer/skill.md"), model: "fixture-llm", tier: "high" },
+        heroSubmit({ model: "fixture-llm", tier: "none" }),
         (({ model: _model, tier: _tier, ...rest }) => rest)(heroSubmit()),
       ]);
     }));
@@ -188,7 +188,7 @@ describe("R14.3 LLM events name model and tier", () => {
     expect(rows[0]!.reason.split(", events")).toEqual([
       "events[0] (verdict) verb verdict runs an LLM and must name its model and tier",
       "[1] (pin) verb pin is deterministic and records model none, tier none",
-      "[2] (submit) model claude-opus-5-5 with tier none is neither none/none nor a model with tier low|mid|high",
+      "[2] (submit) model fixture-llm with tier none is neither none/none nor a model with tier low|mid|high",
       "[3] (submit) names no model and tier (deterministic verbs record model none, tier none)",
     ]);
   });

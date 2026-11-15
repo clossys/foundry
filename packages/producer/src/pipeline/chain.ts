@@ -18,7 +18,7 @@ import { CANDIDATES_DIR, FOLDER_KIND, FOUNDRY_IA_AFTER, FOUNDRY_IA_AGENTS, SLOT_
 import type { SlotAgent } from "../records/slot-model/types.js";
 import { isDecide } from "./define.js";
 import type { Step } from "./define.js";
-import { globRegex } from "./globs.js";
+import { globRegex, workspaceGlob } from "./globs.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
 import type { SeatReport } from "./seats.js";
@@ -95,8 +95,9 @@ export const contextOf = (root: string, steps: readonly Step[]): Context => ({ r
 
 /** Files under root matching a workspace glob (`*` within one segment; `**` is not expanded). */
 function matches(root: string, glob: string): string[] {
-  const path = glob.split("#")[0]!;
-  if (path.startsWith("arg:") || path.startsWith("pkg:") || path.includes("**")) return [];
+  const raw = glob.split("#")[0]!;
+  if (raw.startsWith("arg:") || raw.startsWith("pkg:") || raw.includes("**")) return [];
+  const path = workspaceGlob(raw);
   let found = [""];
   for (const segment of path.split("/")) {
     const next: string[] = [];
@@ -357,7 +358,7 @@ function ownerOptions(step: Step, item: string, context: Context, packageRoot: s
 
 function outputOf(step: Step, item: string): { path: string; schema: string } {
   const port = step.packet?.write[0] ?? step.outputs[0];
-  const glob = port?.glob ?? "";
+  const glob = workspaceGlob(port?.glob ?? "");
   if (item.includes("/") && glob.startsWith("clossys/agents/")) {
     const [agent, slot] = [item.slice(0, item.indexOf("/")), item.slice(item.indexOf("/") + 1)];
     return { path: glob.replace(`clossys/agents/${agent}/*`, `clossys/agents/${agent}/${slot}`).replace("clossys/agents/*/*", `clossys/agents/${agent}/${slot}`), schema: port?.schema ?? "" };

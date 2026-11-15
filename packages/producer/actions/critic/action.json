@@ -9,21 +9,21 @@
   "run": "clossys critique <agent>/<slot> --record <critique.json> --model <id> --tier <tier>",
   "inputs": [
     {
-      "glob": "clossys/agents/*/ia.json",
+      "glob": "consumer:agents/*/ia.json",
       "schema": "ia"
     },
     {
-      "glob": "clossys/agents/*/*/slot.json",
+      "glob": "consumer:agents/*/*/slot.json",
       "schema": "slot"
     },
     {
-      "glob": "clossys/agents/*/*/pin.json",
+      "glob": "consumer:agents/*/*/pin.json",
       "schema": "pin"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/*/*/critiques/*",
+      "glob": "consumer:agents/*/*/critiques/*",
       "schema": "critique"
     }
   ],
@@ -49,11 +49,11 @@
   "decider": "agent",
   "packet": {
     "inputs": [
-      "clossys/agents/*/*/slot.json"
+      "consumer:agents/*/*/slot.json"
     ],
     "write": [
       {
-        "glob": "clossys/agents/*/*/critiques/*",
+        "glob": "consumer:agents/*/*/critiques/*",
         "schema": "critique"
       }
     ],

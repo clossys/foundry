@@ -9,33 +9,33 @@
   "run": "clossys retire <agent>/<slot> <candidate> --by <who> --reason <code>",
   "inputs": [
     {
-      "glob": "clossys/agents/*/ia.json",
+      "glob": "consumer:agents/*/ia.json",
       "schema": "ia"
     },
     {
-      "glob": "clossys/agents/*/*/slot.json",
+      "glob": "consumer:agents/*/*/slot.json",
       "schema": "slot"
     },
     {
-      "glob": "clossys/agents/*/*/pin.json",
+      "glob": "consumer:agents/*/*/pin.json",
       "schema": "pin"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/*/*/retired/*.md.json",
+      "glob": "consumer:agents/*/*/retired/*.md.json",
       "schema": "retire"
     },
     {
-      "glob": "clossys/agents/*/*/retired/*.json.json",
+      "glob": "consumer:agents/*/*/retired/*.json.json",
       "schema": "retire"
     },
     {
-      "glob": "clossys/agents/director/*/retired/*.md",
+      "glob": "consumer:agents/director/*/retired/*.md",
       "schema": "candidate-brief"
     },
     {
-      "glob": "clossys/agents/writer/*/retired/*.md",
+      "glob": "consumer:agents/writer/*/retired/*.md",
       "schema": "candidate-strings"
     }
   ],
@@ -63,25 +63,25 @@
   "decider": "owner",
   "packet": {
     "inputs": [
-      "clossys/agents/*/ia.json",
-      "clossys/agents/*/*/slot.json",
-      "clossys/agents/*/*/pin.json"
+      "consumer:agents/*/ia.json",
+      "consumer:agents/*/*/slot.json",
+      "consumer:agents/*/*/pin.json"
     ],
     "write": [
       {
-        "glob": "clossys/agents/*/*/retired/*.md.json",
+        "glob": "consumer:agents/*/*/retired/*.md.json",
         "schema": "retire"
       },
       {
-        "glob": "clossys/agents/*/*/retired/*.json.json",
+        "glob": "consumer:agents/*/*/retired/*.json.json",
         "schema": "retire"
       },
       {
-        "glob": "clossys/agents/director/*/retired/*.md",
+        "glob": "consumer:agents/director/*/retired/*.md",
         "schema": "candidate-brief"
       },
       {
-        "glob": "clossys/agents/writer/*/retired/*.md",
+        "glob": "consumer:agents/writer/*/retired/*.md",
         "schema": "candidate-strings"
       }
     ],

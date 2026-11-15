@@ -127,7 +127,7 @@ describe("clossys reissue <agent>/<slot> <candidate>", () => {
 describe("clossys reissue producer/<seat>", () => {
   // A Producer seat (kind seat, JSON candidates) reissues like any slot: R08.1 names the next version by the leaf.
   const SEAT_ID = "seat.owner.decisions";
-  const SEAT = jsonBytes({ by: "owner", llm: { model: "claude-opus-5-5", tier: "mid", promptFile: "packages/producer/actions/owner.decisions/skill.md" }, human: { procedure: "Record an owner decision through the verb.", command: "clossys owner-decision" } });
+  const SEAT = jsonBytes({ by: "owner", llm: { model: "fixture-llm", tier: "mid", promptFile: "packages/producer/actions/owner.decisions/skill.md" }, human: { procedure: "Record an owner decision through the verb.", command: "clossys owner-decision" } });
   let seatDir: string;
   beforeEach(() => {
     const producer = join(workspace, "clossys", "agents", "producer");

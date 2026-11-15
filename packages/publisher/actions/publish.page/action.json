@@ -8,19 +8,19 @@
   "run": "clossys publish",
   "inputs": [
     {
-      "glob": "clossys/agents/publisher/*/pin.json",
+      "glob": "consumer:agents/publisher/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/publisher/*/candidates/*",
+      "glob": "consumer:agents/publisher/*/candidates/*",
       "schema": "candidate-publisher"
     },
     {
-      "glob": "clossys/agents/designer/*/pin.json",
+      "glob": "consumer:agents/designer/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/writer/*/pin.json",
+      "glob": "consumer:agents/writer/*/pin.json",
       "schema": "pin"
     }
   ],

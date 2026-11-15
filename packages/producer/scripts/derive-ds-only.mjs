@@ -19,7 +19,7 @@
  * the generated `data-clossys-*` provenance props it is given. A `composition` keeps its parts, and
  * `meta.element.deps.elements` is recomputed from the current pins (derive-element-deps).
  *
- *   node scripts/derive-ds-only.mjs <slot> [--lineage ...] [--frame-markers] [--by <unit>] [--write] [--root <repo>]
+ *   node scripts/derive-ds-only.mjs <slot> --model <id> [--lineage ...] [--frame-markers] [--by <unit>] [--write] [--root <repo>]
  *
  * Without `--write` it prints the attributes it would drop. Nothing is pinned here; `clossys pin` decides.
  */
@@ -136,7 +136,8 @@ export function manifestRows(names, references) {
 }
 
 /** The next candidate item for a pinned slot. */
-export function nextItem(item, { lineage, frameMarkers, by, references, at = new Date().toISOString() }) {
+export function nextItem(item, { lineage, frameMarkers, by, model, references, at = new Date().toISOString() }) {
+  if (typeof model !== 'string' || !model.trim()) throw new Error('derive-ds-only: the creator model is the caller\'s (--model <id>); the package names none');
   const parentVersion = Number(/-v(\d+)\.json$/.exec(item.__candidate)?.[1]);
   const kept = (item.meta.source.ref ?? []).filter(ref => { try { return !!JSON.parse(ref).registry; } catch { return false; } });
   const refs = lineage ? manifestRows(lineage, references) : kept;
@@ -159,7 +160,7 @@ export function nextItem(item, { lineage, frameMarkers, by, references, at = new
     source.hash = contentHash(files);
   }
   const element = next.meta.element;
-  element.creator = { agent: 'claude', model: 'claude-opus-5-5', by };
+  element.creator = { agent: 'claude', model, by };
   element.createdAt = at;
   element.reason = `${by} (R-DS-ONLY): v${parentVersion} with the restyle attributes the ds-only rule refuses removed (${drops.length}: ${[...new Set(drops.map(drop => drop.label))].join(', ') || 'none'}); Designer components keep their variants and theme tokens only.`
     + (lineage ? ` Lineage re-derived from the trusted reference rows ${lineage.join(', ')}.` : '')
@@ -169,14 +170,14 @@ export function nextItem(item, { lineage, frameMarkers, by, references, at = new
 
 async function main(argv) {
   const slot = argv[0];
-  if (!slot || slot.startsWith('--')) { console.error('usage: derive-ds-only.mjs <slot> [--lineage a,b] [--frame-markers] [--by <unit>] [--write] [--root <repo>]'); return 2; }
+  if (!slot || slot.startsWith('--')) { console.error('usage: derive-ds-only.mjs <slot> --model <id> [--lineage a,b] [--frame-markers] [--by <unit>] [--write] [--root <repo>]'); return 2; }
   const flag = name => { const at = argv.indexOf(name); return at >= 0 ? argv[at + 1] : undefined; };
   const root = resolve(flag('--root') ?? join(here, '..', '..', '..'));
   const clossys = join(root, 'clossys'), references = join(root, 'packages/designer/references');
   const entry = pinned(clossys, 'designer', slot);
   if (!entry?.item) { console.error(`derive-ds-only: ${slot} has no intact pin`); return 2; }
   const { next, drops } = nextItem({ ...entry.item, __candidate: entry.candidate }, {
-    lineage: flag('--lineage')?.split(','), frameMarkers: argv.includes('--frame-markers'), by: flag('--by') ?? 'DS-ONLY', references,
+    lineage: flag('--lineage')?.split(','), frameMarkers: argv.includes('--frame-markers'), by: flag('--by') ?? 'DS-ONLY', model: flag('--model'), references,
   });
   // The sections it composes are re-read from the current pins, so a re-pinned dependency is declared at its new version.
   const computed = computedElementDeps(clossys, slot);

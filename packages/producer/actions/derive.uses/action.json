@@ -8,33 +8,33 @@
   "run": "clossys pipeline trace derive.uses -- node scripts/check-generated-derived.mjs --write",
   "inputs": [
     {
-      "glob": "clossys/agents/*/*/pin.json",
+      "glob": "consumer:agents/*/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/director/*/candidates/*",
+      "glob": "consumer:agents/director/*/candidates/*",
       "schema": "candidate-brief"
     },
     {
-      "glob": "clossys/agents/designer/*/candidates/*",
+      "glob": "consumer:agents/designer/*/candidates/*",
       "schema": "candidate-element"
     },
     {
-      "glob": "clossys/agents/writer/*/candidates/*",
+      "glob": "consumer:agents/writer/*/candidates/*",
       "schema": "candidate-strings"
     },
     {
-      "glob": "clossys/agents/publisher/*/candidates/*",
+      "glob": "consumer:agents/publisher/*/candidates/*",
       "schema": "candidate-publisher"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/*/*/slot.json#uses",
+      "glob": "consumer:agents/*/*/slot.json#uses",
       "schema": "slot"
     },
     {
-      "glob": "clossys/components.json",
+      "glob": "consumer:components.json",
       "schema": "components-config"
     }
   ],

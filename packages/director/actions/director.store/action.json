@@ -9,33 +9,33 @@
   "chain": "clossys director check brand",
   "inputs": [
     {
-      "glob": "clossys/agents/director/*/pin.json",
+      "glob": "consumer:agents/director/*/pin.json",
       "schema": "pin"
     },
     {
-      "glob": "clossys/agents/director/*/candidates/*",
+      "glob": "consumer:agents/director/*/candidates/*",
       "schema": "candidate-brief"
     },
     {
-      "glob": "clossys/agents/director/ia.json",
+      "glob": "consumer:agents/director/ia.json",
       "schema": "ia"
     },
     {
-      "glob": "clossys/agents/director/*/slot.json",
+      "glob": "consumer:agents/director/*/slot.json",
       "schema": "slot"
     },
     {
-      "glob": "clossys/evidence/director/*.md",
+      "glob": "consumer:evidence/director/*.md",
       "schema": "director-evidence"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/evidence/director/briefs/*.json",
+      "glob": "consumer:evidence/director/briefs/*.json",
       "schema": "director-brief"
     },
     {
-      "glob": "clossys/evidence/director/reports/*.json",
+      "glob": "consumer:evidence/director/reports/*.json",
       "schema": "director-report"
     }
   ],

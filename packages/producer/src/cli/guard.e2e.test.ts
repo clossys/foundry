@@ -89,7 +89,7 @@ const guard = (firing: (id: string) => boolean) => ({ rules: registry(firing), h
 
 const skill = STEPS.find(step => step.id === "designer.candidates")!.command.skill!;
 const run: Readonly<Record<"submit" | "pin" | "reissue", (firing: (id: string) => boolean) => ReturnType<typeof runPinCli>>> = {
-  submit: firing => runNextSubmitCli([`designer/${ID}`, "--submit", "submitted.json", "--model", "claude-opus-5-5", "--tier", "high", "--basis", "agent", "--skill", skill, "--rung", "L1", "--seed", "shadcn-aria/button"], workspace, undefined, undefined, guard(firing)),
+  submit: firing => runNextSubmitCli([`designer/${ID}`, "--submit", "submitted.json", "--model", "fixture-llm", "--tier", "high", "--basis", "agent", "--skill", skill, "--rung", "L1", "--seed", "shadcn-aria/button"], workspace, undefined, undefined, guard(firing)),
   pin: firing => runPinCli([`designer/${ID}`, "button-v1.json", "--by", "planner:guard-e2e", "--at", AT], workspace, guard(firing)),
   reissue: firing => runReissueCli([`designer/${ID}`, "button-v1.json", "--by", "agent:designer.reissue", "--at", AT], workspace, guard(firing)),
 };

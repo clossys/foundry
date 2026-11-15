@@ -22,7 +22,7 @@ export const PIPELINE_USAGE = "Usage: clossys pipeline status [--json] [--root <
   + "wiring prints what the pipeline page draws: the steps that exist and ran, the edges their runs read and wrote, the computed layout.\n"
   + "check exits 1 when a status the pipeline page shows cites no run record, a Studio section contract shows a status with no citation field,\n"
   + "  or an owner option of clossys next --owner, run on a scratch copy of the records, exits non-zero, changes no record or leaves the gaps unchanged (owner.wiring).\n"
-  + "graph prints the declared step graph {nodes, edges, untyped, layout, seats, roster, options, status}; --out writes it without live status (pipeline/graph.json).\n"
+  + "graph prints the declared step graph {nodes, edges, untyped, layout, seats, roster, options, status} with the consumer's seats; --out writes the package definition, with the package seat defaults and no live status (pipeline/graph.json).\n"
   + "trace runs a command (a script step or a check) with its file reads and writes observed and appends its run record to .clossys/runs.";
 
 type Command = "status" | "graph" | "wiring" | "check";
@@ -199,11 +199,12 @@ export async function runPipelineCli(argv: readonly string[], cwd: string): Prom
     const counts = `runs: ${status.counts.runs} records; ${status.counts.passed} passed, ${status.counts.failed} failed, ${status.counts.stale} stale, ${status.counts["never-run"]} never run`;
     return { exitCode: 0, root, message: [...lines, ...undrawn, counts, ...decisions, ...agents, `open decisions: ${status.open} (${status.openParts.slots} undecided slots + ${status.openParts.seats} open seats)`].join("\n"), output: status };
   }
-  const graph = buildGraph(root);
+  // --out writes the package definition (package seat defaults); the printed graph reads the consumer's seats.
+  const graph = buildGraph(root, undefined, undefined, { seats: "workspace" });
   if (args.out) {
     const file = resolve(cwd, args.out);
     mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, graphJson(graph));
+    writeFileSync(file, graphJson(buildGraph(root)));
   }
   const output = { ...graph, status };
   return { exitCode: 0, root, message: `pipeline graph: ${graph.nodes.length} steps, ${graph.edges.length} edges, ${graph.untyped.length} untyped ports, ${graph.layout.cycleBreaks.length} cycle breaks${args.out ? `; wrote ${args.out}` : ""}`, output };

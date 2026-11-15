@@ -43,7 +43,7 @@ export const BINDINGS: Readonly<Record<string, Binding>> = {
   "writer.compile": { entry: "src/cli/write.ts#runWrite" },
   "workspace.check": { entry: "src/cli/check.ts#runCheck" },
   // The constitution before compile (W2-G): `check --constitution --enforced`; until E2 it blocks on the delta against
-  // pipeline/constitution-green.json (constitution/green.ts), `--strict` on every enforced row. TODO(E2): --strict by default.
+  // clossys/evidence/constitution-green.json (constitution/green.ts), `--strict` on every enforced row. TODO(E2): --strict by default.
   "constitution": { entry: "src/cli/check.ts#runCheck" },
   "compile": { entry: "src/cli/compile.ts#runCompileCli", parser: "src/cli/compile.ts" },
   "options": { entry: "src/cli/options.ts#runOptionsCli", parser: "src/cli/options.ts" },

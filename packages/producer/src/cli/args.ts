@@ -53,7 +53,7 @@ export interface CliArgs {
   enforced?: boolean;
   /** check --constitution: write the last green report (a full run whose delta gate passes, or the bootstrap). */
   recordGreen?: boolean;
-  /** check --constitution: the green report file (default `<P>/pipeline/constitution-green.json`). */
+  /** check --constitution: the green report file (default `clossys/evidence/constitution-green.json` under the root). */
   green?: string;
   /** check --constitution: only these rules (R01..R16, R20); repeated --rule flags accumulate. */
   rule?: string[];

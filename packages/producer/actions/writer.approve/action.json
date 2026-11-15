@@ -8,13 +8,13 @@
   "run": "clossys approve writer/<slot> <candidate-id>",
   "inputs": [
     {
-      "glob": "clossys/agents/writer/*/candidates/*",
+      "glob": "consumer:agents/writer/*/candidates/*",
       "schema": "candidate-strings"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/writer/*/pin.json",
+      "glob": "consumer:agents/writer/*/pin.json",
       "schema": "pin"
     }
   ],
@@ -42,11 +42,11 @@
   "decider": "owner",
   "packet": {
     "inputs": [
-      "clossys/agents/writer/*/candidates/*"
+      "consumer:agents/writer/*/candidates/*"
     ],
     "write": [
       {
-        "glob": "clossys/agents/writer/*/pin.json",
+        "glob": "consumer:agents/writer/*/pin.json",
         "schema": "pin"
       }
     ],

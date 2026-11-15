@@ -1,6 +1,8 @@
 import { join } from "node:path";
 import { readSeatText } from "../records/slots.js";
+import { readPipelineSeats } from "../records/slot-model/pipeline-seats.js";
 import { isDecide } from "./define.js";
+import { workspaceGlob } from "./globs.js";
 import type { Step } from "./define.js";
 import { loadSchema, validateValue } from "./schema.js";
 import type { SchemaIssue } from "./schema.js";
@@ -30,19 +32,20 @@ const CONSUMER = "clossys";
 
 export function readSeat(root: string, step: Step): SeatReport | null {
   if (!isDecide(step) || !step.seat) return null;
+  const path = workspaceGlob(step.seat);
   let text: string | undefined;
   try { text = readSeatText(join(root, CONSUMER), step.id); }
-  catch (error) { return { path: step.seat, state: "invalid", by: null, llm: "open", human: "open", issues: [{ path: "/", message: (error as Error).message }] }; }
-  if (text === undefined) return { path: step.seat, state: "unassigned", by: null, llm: "open", human: "open", issues: [] };
+  catch (error) { return { path, state: "invalid", by: null, llm: "open", human: "open", issues: [{ path: "/", message: (error as Error).message }] }; }
+  if (text === undefined) return { path, state: "unassigned", by: null, llm: "open", human: "open", issues: [] };
   let value: unknown;
   try { value = JSON.parse(text); }
-  catch { return { path: step.seat, state: "invalid", by: null, llm: "open", human: "open", issues: [{ path: "/", message: "not JSON" }] }; }
+  catch { return { path, state: "invalid", by: null, llm: "open", human: "open", issues: [{ path: "/", message: "not JSON" }] }; }
   const issues = validateValue(value, loadSchema("seat"));
-  if (issues.length) return { path: step.seat, state: "invalid", by: null, llm: "open", human: "open", issues };
+  if (issues.length) return { path, state: "invalid", by: null, llm: "open", human: "open", issues };
   const seat = value as Seat;
   const llm = seat.llm ?? "open", human = seat.human ?? "open";
   const state: SeatState = llm !== "open" && human !== "open" ? "assigned" : llm === "open" && human === "open" ? "unassigned" : "partial";
-  return { path: step.seat, state, by: seat.by, llm, human, issues: [] };
+  return { path, state, by: seat.by, llm, human, issues: [] };
 }
 
 /**
@@ -59,5 +62,24 @@ export function llmSourceOf(stepId: string): string | null {
 export function readSeats(root: string, steps: readonly Step[]): Record<string, SeatReport> {
   const seats: Record<string, SeatReport> = {};
   for (const step of steps) { const seat = readSeat(root, step); if (seat) seats[step.id] = seat; }
+  return seats;
+}
+
+/**
+ * The seats a package ships (SOURCE-MIGRATE step 7): each decide step's package default from
+ * pipeline/seats.json, its model the `<model:tier>` placeholder. pipeline/graph.json carries these
+ * only; a consumer's seat state (its seat pins and seat-policy.json) is read live by readSeats.
+ */
+export function packageSeats(steps: readonly Step[], packageRoot?: string): Record<string, SeatReport> {
+  const defaults = readPipelineSeats(packageRoot).seats;
+  const seats: Record<string, SeatReport> = {};
+  for (const step of steps) {
+    if (!isDecide(step) || !step.seat) continue;
+    const seat = defaults[step.id];
+    if (!seat) { seats[step.id] = { path: step.seat, state: "unassigned", by: null, llm: "open", human: "open", issues: [] }; continue; }
+    const llm = seat.llm ?? "open", human = seat.human ?? "open";
+    const state: SeatState = llm !== "open" && human !== "open" ? "assigned" : llm === "open" && human === "open" ? "unassigned" : "partial";
+    seats[step.id] = { path: step.seat, state, by: seat.by, llm, human, issues: [] };
+  }
   return seats;
 }

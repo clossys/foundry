@@ -6,7 +6,7 @@ import { PACKAGE_ROOT, stepOptions } from "./options.js";
 import type { CliOption } from "./options.js";
 import { computeLayout } from "./layout.js";
 import type { NodeLayout, PipelineLayout } from "./layout.js";
-import { readSeats } from "./seats.js";
+import { packageSeats, readSeats } from "./seats.js";
 import type { SeatReport } from "./seats.js";
 import { holderOf, laneIds, laneOf, rosterOf } from "./roster.js";
 import type { Holder, RosterEntry } from "./roster.js";
@@ -76,16 +76,19 @@ export function schemaMismatches(steps: readonly Step[]): SchemaMismatch[] {
 }
 
 /**
- * The graph the canvas reads: nodes from the step definitions, derived edges, seats from the
- * workspace's seat files and options from each verb's parser. No hashes or times, so the committed
- * pipeline/graph.json only changes when a definition, parser or seat changes.
+ * The graph the canvas reads: nodes from the step definitions, derived edges, seats and options
+ * from each verb's parser. No hashes or times. `seats: "package"` (the default) is the definition
+ * the package ships as pipeline/graph.json: the package seat defaults, no consumer state, so the
+ * file only changes when a definition, parser or seat default changes. `seats: "workspace"` reads
+ * the seat pins of the consumer under `root` (the live view `clossys pipeline graph --json` prints).
  */
-export function buildGraph(root: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): PipelineGraph {
+export function buildGraph(root: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT, options: { readonly seats?: "package" | "workspace" } = {}): PipelineGraph {
   const cli: Record<string, readonly CliOption[] | null> = {};
   for (const step of steps) if (step.command.cli) cli[step.id] = stepOptions(step, packageRoot);
   const edges = deriveEdges(steps);
-  const seats = readSeats(root, steps);
-  const holders = new Map(steps.map(step => [step.id, holderOf(step, seats[step.id])]));
+  const seats = options.seats === "workspace" ? readSeats(root, steps) : packageSeats(steps, packageRoot);
+  // A holder comes from a seat file only; the package definition has none, so its holders are derived from the steps.
+  const holders = new Map(steps.map(step => [step.id, holderOf(step, options.seats === "workspace" ? seats[step.id] : undefined)]));
   const { nodes: positions, ...layout } = computeLayout(
     steps.map(step => ({ id: step.id, lane: laneOf(holders.get(step.id)!), stage: step.stage })), edges,
     { lanes: laneIds([...holders.values()]), stages: STAGES, rounds: ROUNDS.map(round => ({ id: round.id, stages: round.stages.map(stage => `${round.id}.${stage}`) })) },

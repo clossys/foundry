@@ -66,7 +66,7 @@ describe("an upstream re-pin", () => {
   it("is a plumb-step input wherever downstream derives and checks read pins", () => {
     for (const id of ["derive.uses", "compile"]) {
       const step = STEPS.find(each => each.id === id)!;
-      expect(step.inputs.map(port => port.glob), id).toContain("clossys/agents/*/*/pin.json");
+      expect(step.inputs.map(port => port.glob), id).toContain("consumer:agents/*/*/pin.json");
     }
   });
 });

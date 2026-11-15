@@ -232,7 +232,7 @@ if (lib) {
 }
 
 // ---------------------------------------------------------------- globs
-const toRepoGlob = glob => glob.startsWith("pkg:") ? posix.normalize(`${PKG_REL}/${glob.slice(4)}`) : glob;
+const toRepoGlob = glob => glob.startsWith("pkg:") ? posix.normalize(`${PKG_REL}/${glob.slice(4)}`) : glob.startsWith("consumer:") ? `clossys/${glob.slice("consumer:".length)}` : glob;
 const splitField = glob => { const at = glob.indexOf("#"); return at < 0 ? [glob, null] : [glob.slice(0, at), glob.slice(at + 1)]; };
 /** The same glob semantics edges are derived with (src/pipeline/globs.ts); a copy runs when the build is absent. */
 function fallbackGlobRegex(path) {

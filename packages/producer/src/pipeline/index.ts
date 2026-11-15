@@ -15,5 +15,5 @@ export type { Citation, CheckState, PipelineWiring, RunState, Undrawn, WiringChe
 export { readSeat, readSeats } from "./seats.js";
 export type { Seat, SeatReport } from "./seats.js";
 export { parserFlags, stepOptions, PACKAGE_ROOT } from "./options.js";
-export { globRegex, parseGlob, pathsOverlap, portsOverlap } from "./globs.js";
+export { CONSUMER_PREFIX, globRegex, parseGlob, pathsOverlap, portsOverlap, workspaceGlob } from "./globs.js";
 export { loadSchema, validateFile, validateValue } from "./schema.js";

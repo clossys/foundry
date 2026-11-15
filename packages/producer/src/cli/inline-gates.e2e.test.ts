@@ -49,7 +49,7 @@ function spec(): WorkspaceSpec {
     // A P2 slot: the latest verdict is create, so a create-rung submit is allowed (section 5).
     ledger: ledgerDoc([
       ledgerEvent("slot", "ia", "packages/producer/actions/ia/skill.md", {}, [{ file: "slot.json", sha256: sha(`${JSON.stringify(theme, null, 2)}\n`) }]),
-      ledgerEvent("verdict", "verdict", "packages/producer/actions/verdict/skill.md", { verdict: "create", model: "claude-opus-5-5", tier: "high" }),
+      ledgerEvent("verdict", "verdict", "packages/producer/actions/verdict/skill.md", { verdict: "create", model: "fixture-llm", tier: "high" }),
     ]),
   };
   // An unrelated slot that already fails R20.1: its pinned theme cites no Director slot.
@@ -73,7 +73,7 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 const moved = registeredRules().filter(rule => ["R03", "R06", "R20"].includes(rule.id));
 const submit = (value: unknown, guard: Record<string, unknown> = { rules: moved, refVerbatim: true, history: () => NO_HISTORY }, ladder = ["--rung", "L4", "--reason", "fixture: no seed realises this brand voice"], slot = THEME) => {
   writeFileSync(join(root, "made.json"), `${JSON.stringify(value, null, 2)}\n`);
-  return runNextSubmitCli([`designer/${slot}`, "--submit", "made.json", "--model", "claude-opus-5-5", "--tier", "high", "--basis", "agent", "--skill", skill, ...ladder], root, undefined, undefined, guard);
+  return runNextSubmitCli([`designer/${slot}`, "--submit", "made.json", "--model", "fixture-llm", "--tier", "high", "--basis", "agent", "--skill", skill, ...ladder], root, undefined, undefined, guard);
 };
 const candidates = (slot = THEME) => { const dir = join(consumer, "agents", "designer", slot, "candidates"); return existsSync(dir) ? readdirSync(dir).sort() : []; };
 

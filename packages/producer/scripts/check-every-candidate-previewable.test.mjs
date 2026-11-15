@@ -14,7 +14,7 @@
  * fixture (slot.json `contract.fixture`) and needs no props it does not supply; there is no borrow
  * from a sibling's preview, so a candidate with no preview of its own and no contract fixture has
  * no specimen and is uncertified. An uncertified candidate is a finding unless it is listed in the
- * shrink-only baseline (check-every-candidate-previewable.baseline.json in the checked checkout,
+ * shrink-only baseline (the consumer's clossys/evidence/check-every-candidate-previewable.baseline.json,
  * the wave-2 data workload); a baseline row that passes, or is no longer checked, is a finding too.
  * Publisher page candidates assemble only: their frame and sections name Designer slots the pinned
  * build holds (or the page is in the baseline's `unassembled` rows). Publication candidates are counted once their format validates (no candidate issues).
@@ -40,7 +40,7 @@ const REPO = resolve(process.env.CLOSSYS_CHECK_REPO ?? join(here, "../../.."));
 const AGENTS = ["director", "designer", "writer", "publisher"];
 const RENDERED = { designer: "specimen", director: "record", writer: "record" };
 /** The shrink-only lists, read from the checked checkout: `uncertified` Designer candidates and `unassembled` Publisher pages, each `{ "<slot>": ["<candidate>"] }`. */
-export const BASELINE = "packages/producer/scripts/check-every-candidate-previewable.baseline.json";
+export const BASELINE = "clossys/evidence/check-every-candidate-previewable.baseline.json";
 
 function readBaseline(repo) {
   const file = join(repo, BASELINE);

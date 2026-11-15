@@ -9,11 +9,11 @@
   "inputs": [],
   "outputs": [
     {
-      "glob": "clossys/agents/producer/*/candidates/*",
+      "glob": "consumer:agents/producer/*/candidates/*",
       "schema": "seat"
     },
     {
-      "glob": "clossys/agents/producer/*/pin.json",
+      "glob": "consumer:agents/producer/*/pin.json",
       "schema": "pin"
     }
   ],
@@ -44,11 +44,11 @@
     "inputs": [],
     "write": [
       {
-        "glob": "clossys/agents/producer/*/candidates/*",
+        "glob": "consumer:agents/producer/*/candidates/*",
         "schema": "seat"
       },
       {
-        "glob": "clossys/agents/producer/*/pin.json",
+        "glob": "consumer:agents/producer/*/pin.json",
         "schema": "pin"
       }
     ],

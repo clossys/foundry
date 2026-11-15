@@ -9,11 +9,11 @@
   "inputs": [],
   "outputs": [
     {
-      "glob": "clossys/evidence/director/*.md",
+      "glob": "consumer:evidence/director/*.md",
       "schema": "director-evidence"
     },
     {
-      "glob": "clossys/evidence/director/findings/*.md",
+      "glob": "consumer:evidence/director/findings/*.md",
       "schema": "director-evidence"
     }
   ],
@@ -44,11 +44,11 @@
     "inputs": [],
     "write": [
       {
-        "glob": "clossys/evidence/director/*.md",
+        "glob": "consumer:evidence/director/*.md",
         "schema": "director-evidence"
       },
       {
-        "glob": "clossys/evidence/director/findings/*.md",
+        "glob": "consumer:evidence/director/findings/*.md",
         "schema": "director-evidence"
       }
     ],

@@ -9,17 +9,17 @@
   "run": "clossys reissue <agent>/<slot> <candidate> --by agent:<seat>",
   "inputs": [
     {
-      "glob": "clossys/agents/*/*/slot.json",
+      "glob": "consumer:agents/*/*/slot.json",
       "schema": "slot"
     },
     {
-      "glob": "clossys/agents/*/*/pin.json",
+      "glob": "consumer:agents/*/*/pin.json",
       "schema": "pin"
     }
   ],
   "outputs": [
     {
-      "glob": "clossys/agents/*/*/pin.json#candidate",
+      "glob": "consumer:agents/*/*/pin.json#candidate",
       "schema": "pin"
     }
   ],
@@ -47,12 +47,12 @@
   "decider": "agent",
   "packet": {
     "inputs": [
-      "clossys/agents/*/*/slot.json",
-      "clossys/agents/*/*/pin.json"
+      "consumer:agents/*/*/slot.json",
+      "consumer:agents/*/*/pin.json"
     ],
     "write": [
       {
-        "glob": "clossys/agents/*/*/pin.json#candidate",
+        "glob": "consumer:agents/*/*/pin.json#candidate",
         "schema": "pin"
       }
     ],
