@@ -94,6 +94,10 @@
       "types": "./dist/theme/server.d.ts",
       "import": "./dist/theme/server.js"
     },
+    "./build/theme": {
+      "types": "./dist/build/theme/index.d.ts",
+      "import": "./dist/build/theme/index.js"
+    },
     "./gate": {
       "types": "./dist/gate-index.d.ts",
       "import": "./dist/gate-index.js"
