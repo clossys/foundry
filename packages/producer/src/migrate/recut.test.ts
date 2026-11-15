@@ -225,6 +225,9 @@ describe("migrate recut: CLI", () => {
     const w = world();
     seed(w);
     cpSync(w.agent("designer", "components.button"), w.agent("designer", "components.not-in-any-tree"), { recursive: true });
+    // The slot.json id names the slot (a copy keeping components.button's id is a duplicate, not an unknown).
+    const slotFile = w.agent("designer", "components.not-in-any-tree", "slot.json");
+    writeFileSync(slotFile, `${JSON.stringify({ ...(JSON.parse(readFileSync(slotFile, "utf8")) as object), id: "components.not-in-any-tree" }, null, 2)}\n`);
     const before = snapshot(w.consumer);
     for (const args of [[], ["--apply"], ["--check"]]) {
       const result = await runMigrateCli(["recut", ...args, "--at", AT, "--root", w.root], w.root);
