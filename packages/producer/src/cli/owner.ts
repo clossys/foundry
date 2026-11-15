@@ -55,7 +55,7 @@ import { validateAgainst } from "../constitution/schema.js";
 import { IA_KIND, slotWriteKind } from "../constitution/green.js";
 import { resolveCandidate } from "./pin.js";
 import { CliUsageError } from "./args.js";
-import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
+import { addGroup, assignGroup, dropGroup, followPositions, mergeGroups, moveSlot, packageStructureChange, planIaWrite, renameGroup, reorderGroup, setAxes, setExtension, setLayers, type Edit, type IaFile, type PositionFollow } from "./ia-regroup.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
 import { RULES_FILE } from "./rules-file.js";
@@ -266,6 +266,8 @@ function atOf(flags: Flags): string {
 function applyEdit(consumer: string, root: string, agent: ModelAgent, ia: IaFile, edit: Edit, op: string, ownerRef: string, at: string, dry: boolean): CliResult {
   if ("error" in edit) return refuse("ia", edit.error);
   if ("unchanged" in edit) return { exitCode: 0, root, message: `ia: ${edit.unchanged}; nothing written` };
+  const structure = packageStructureChange(ia, edit.ia);
+  if (structure) return refuse("ia", structure);
   const plan = planIaWrite(consumer, agent, ia, edit, { op, ownerRef, at });
   if ("error" in plan) return refuse("ia", plan.error);
   if ("unchanged" in plan) return { exitCode: 0, root, message: `ia: ${plan.unchanged}; nothing written` };

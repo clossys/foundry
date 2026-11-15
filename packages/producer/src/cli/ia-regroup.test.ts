@@ -31,8 +31,9 @@ function agentIa(agent: SlotAgent, ia: IaDoc, kind: string) {
     writeFileSync(join(agentDir(agent), id, "slot.json"), jsonBytes({ schema: "clossys.slot/1", id, agent, ia: position, kind, contract: {}, inputs: [], uses: [] }));
   }
 }
+// The regroup mechanics run on workspace-owned IAs: a package-sourced IA regroups its declared extensions only (see below).
 const designer: IaDoc = {
-  schema: "clossys.ia/1", source: "@clossys/designer#leaf-freeze:fixture", extensions: [], nodes: [
+  schema: "clossys.ia/1", source: "workspace#owner", extensions: [], nodes: [
     { id: "assets.logo", label: "Logo", children: [{ id: "logo-artwork", label: "Artwork", slots: ["assets.logo-mark", "assets.logo-word"] }] },
     { id: "assets.app-identity", label: "App identity", children: [{ id: "app-identity-browser", label: "Browser", slots: ["assets.favicon"] }, { id: "app-identity-application", label: "Application", slots: ["assets.app-icon"] }] },
     { id: "frames.extensions", label: "Consumer extensions", children: [{ id: "extensions", label: "Signed extensions", slots: ["frames.studio-shell"] }] },
@@ -40,7 +41,7 @@ const designer: IaDoc = {
   ],
 };
 const director: IaDoc = {
-  schema: "clossys.ia/1", source: "@clossys/director#leaf-freeze:fixture", extensions: [], nodes: [
+  schema: "clossys.ia/1", source: "workspace#owner", extensions: [], nodes: [
     { id: "context", label: "Context", children: [{ id: "context.market", label: "Market", slots: ["context.market.size"] }] },
     { id: "focus", label: "Focus", children: [{ id: "focus.where", label: "Where", slots: ["focus.where.segment"] }] },
     { id: "execution", label: "Execution", children: [{ id: "execution.plan", label: "Plan", slots: ["execution.plan.milestones"] }] },
@@ -447,3 +448,35 @@ it("ia --help lists the regroup operations", async () => {
   for (const flag of ["--owner-ref", "--move", "--extension", "--add", "--rename", "--merge", "--drop", "--reorder", "--assign", "--layers", "--axes", "--dry"]) expect(help.message).toContain(flag);
   expect(help.message).toBe(IA_USAGE);
 });
+
+describe("a package-sourced IA: package regroups land in the package catalog, a consumer regroups its extensions only", () => {
+  const packaged = (extensions: string[]) => {
+    const doc = { ...designer, source: "@clossys/designer#src/catalog/ia", extensions };
+    writeFileSync(join(agentDir("designer"), "ia.json"), jsonBytes(doc));
+    return doc;
+  };
+
+  it("refuses a regroup of a non-extension leaf with a consumer target, and writes nothing", async () => {
+    packaged(["frames.studio-shell"]);
+    const before = tree();
+    const result = await owned("designer/frames.workspace", "--move", "--under", "frames.page-shells/page-shells-empty");
+    expect(result).toMatchObject({ exitCode: 1, message: expect.stringMatching(/placement of a package leaf.*package catalog/) });
+    expect(tree()).toEqual(before);
+  });
+
+  it("refuses a relabel of a group that holds package leaves, and flipping a package leaf to an extension", async () => {
+    packaged([]);
+    const before = tree();
+    expect(await owned("designer", "--rename", "assets.logo/logo-artwork", "--label", "Marks")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/group that holds package leaves/) });
+    expect(await owned("designer/frames.workspace", "--extension", "true")).toMatchObject({ exitCode: 1, message: expect.stringMatching(/extension flag of frames.workspace/) });
+    expect(tree()).toEqual(before);
+  });
+
+  it("moves a declared extension", async () => {
+    packaged(["frames.studio-shell"]);
+    const result = await owned("designer/frames.studio-shell", "--move", "--under", "frames.page-shells/page-shells-empty");
+    expect(result).toMatchObject({ exitCode: 0 });
+    expect(slotOf("designer", "frames.studio-shell")).toMatchObject({ ia: { l1: "frames.page-shells", l2: "page-shells-empty" } });
+  });
+});
+

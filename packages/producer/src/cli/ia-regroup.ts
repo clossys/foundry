@@ -411,3 +411,34 @@ export function planIaWrite(consumer: string, agent: ModelAgent, before: IaFile,
   ];
   return { writes: [[iaFile, jsonBytes(next)], ...writes], lines, slotFiles: writes.length };
 }
+
+
+/**
+ * A regroup may not change the package structure of a package-sourced IA (SOURCE-MIGRATE step 9):
+ * the placement of a package leaf (every placed slot that is not a declared extension), the labels
+ * of the groups that hold one, the L0 layers and the axes come from the package catalog, which
+ * `clossys ia sync` writes. A consumer regroups its declared extensions only; a package regroup lands
+ * in the package catalog. A workspace-owned IA (`workspace#owner`) is the consumer's to regroup.
+ */
+export function packageStructureChange(before: IaFile, after: IaFile): string | undefined {
+  if (typeof before.source !== "string" || !before.source.startsWith("@clossys/")) return undefined;
+  const skeleton = (ia: IaFile, extensions: ReadonlySet<string>) => {
+    const leaves: string[] = [], labels: string[] = [];
+    for (const node of ia.nodes) for (const group of node.children) {
+      const own = group.slots.filter(slot => !extensions.has(slot));
+      if (own.length) labels.push(`${node.id}=${node.label}/${group.id}=${group.label}`);
+      for (const slot of own) leaves.push(`${node.id}/${group.id}/${slot}`);
+    }
+    return { leaves, labels };
+  };
+  const declared = new Set(before.extensions ?? []);
+  const was = skeleton(before, declared), now = skeleton(after, declared);
+  const nowExtensions = new Set(after.extensions ?? []);
+  const flipped = [...declared].filter(slot => !nowExtensions.has(slot)).concat([...nowExtensions].filter(slot => !declared.has(slot) && was.leaves.some(row => row.endsWith(`/${slot}`))));
+  const what = flipped.length ? `the extension flag of ${flipped.join(", ")}`
+    : JSON.stringify(was.leaves) !== JSON.stringify(now.leaves) ? "the placement of a package leaf"
+    : JSON.stringify(was.labels) !== JSON.stringify(now.labels) ? "a group that holds package leaves"
+    : JSON.stringify(before.layers ?? null) !== JSON.stringify(after.layers ?? null) ? "the L0 layers"
+    : JSON.stringify(before.axes ?? null) !== JSON.stringify(after.axes ?? null) ? "the axes" : undefined;
+  return what && `this regroup changes ${what}, which the package IA (${before.source}) owns: regroup package leaves in the package catalog, then clossys ia sync; a consumer regroups its declared extensions only`;
+}
