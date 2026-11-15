@@ -1,10 +1,12 @@
 /**
  * The site build's Publisher pieces (moved from `@clossys/producer` `src/publish/`, system.md 14.2).
  *
- * Parity: `__fixtures__/int2-golden.json` was captured from the producer `src/publish/` code before the
- * move, on the int2 fixture consumer (`packages/producer/test-fixtures/consumer`). The Writer input that
- * producer resolved from that consumer is `__fixtures__/int2-writer-input.json`; this package reads only
- * that resolved input, never the slot records. The rebuilt output must be byte-equal to the golden.
+ * Parity: `__fixtures__/golden.json` was captured from the int2 (base 85e74f01d) producer `src/publish/`
+ * code before the move, on producer's publish fixture consumer (`src/publish/__fixtures__/install-consumer`).
+ * The int2 fixture consumer (`test-fixtures/consumer`) has no pinned Writer locale, so producer's
+ * `readWriter` refuses it and it has no Writer copy to build. The Writer input producer resolved is
+ * `__fixtures__/writer-input.json`; this package reads only that resolved input, never the slot records.
+ * The rebuilt output must be byte-equal to the golden.
  *
  * Direction: no file in this package imports `@clossys/producer`, and `src/build/` imports only Node
  * built-ins and its own files.
@@ -56,10 +58,10 @@ function specifiers(source: string): string[] {
 }
 
 describe("publisher build", () => {
-  it("rebuilds the int2 fixture output byte-equal to the producer golden", () => {
-    const input = JSON.parse(fixture("int2-writer-input.json")) as WriterInput;
+  it("rebuilds the fixture output byte-equal to the int2 producer golden", () => {
+    const input = JSON.parse(fixture("writer-input.json")) as WriterInput;
     expect(input.records.length).toBeGreaterThan(0);
-    expect(buildOutput(input)).toBe(fixture("int2-golden.json"));
+    expect(buildOutput(input)).toBe(fixture("golden.json"));
   });
 
   it("imports nothing from @clossys/producer anywhere in the package", () => {

@@ -1,0 +1,41 @@
+{
+  "aliases": {},
+  "records": [
+    {
+      "id": "site.name",
+      "context": "site.name",
+      "text": "Example Studio"
+    },
+    {
+      "id": "home.hero.heading",
+      "context": "home.hero.heading",
+      "text": "Pages assembled from records"
+    },
+    {
+      "id": "home.hero.body",
+      "context": "home.hero.body",
+      "text": "Every word here comes from a Writer key."
+    },
+    {
+      "id": "site.studio.name",
+      "context": "site.studio.name",
+      "text": "About Example Studio"
+    },
+    {
+      "id": "site.studio.heading",
+      "context": "site.studio.heading",
+      "text": "Read straight from the page cell"
+    },
+    {
+      "id": "site.publication",
+      "context": "site.publication",
+      "text": "Example site"
+    },
+    {
+      "id": "site.pages",
+      "context": "site.pages",
+      "text": "Pages"
+    }
+  ],
+  "sections": []
+}
