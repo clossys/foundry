@@ -20,7 +20,7 @@ import { hasSlotModel } from "../records/slots.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenRoots } from "./publish.js";
 import { designerPins, ensureSubstrate, NEXT_IMAGE_VITE_DEFINE, substrateViteAlias, ensureSubstrateDependencies, npmRunner, pageRecordFromCell, renderBoundPage, selectionModule, shadcnRunner, writeSubstrateHost, writerCopy } from "./install.js";
-import { installOutRoot, INSTALL_MARKER } from "./install-out.js";
+import { installOutRoot, INSTALL_MARKER } from "@clossys/publisher/build";
 
 export interface PublishSiteOptions {
   readonly root: string;

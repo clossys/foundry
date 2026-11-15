@@ -20,7 +20,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { isBlocking, NEXT_ROUTE_MARKER, planNextRoutes, type InstallFinding, type NextShellState } from "@clossys/publisher/install";
 import { readPinnedPublication } from "./pinned-publication.js";
 import { expandPublication } from "./expand-tabs.js";
-import { INSTALL_MARKER, installOutRoot } from "./install-out.js";
+import { INSTALL_MARKER, installOutRoot } from "@clossys/publisher/build";
 import { isBindGenerated, NEXT_BIND_PAGES, planNextBind, type NextBindOptions } from "./install-next-bind.js";
 
 export const NEXT_INSTALL_REPORT = "install-report.json";

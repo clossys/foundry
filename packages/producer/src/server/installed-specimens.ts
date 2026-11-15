@@ -37,7 +37,7 @@ import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
-import { firstComponentSource } from "../publish/component-export.js";
+import { firstComponentSource } from "@clossys/publisher/build";
 import { isAbsent } from "../errors.js";
 
 /** Bumped when the generated specimen pages or the substrate they build in change shape (10: substrate without `"type": "module"`; 11: the flavor's lib/utils.ts, replaced item files dropped before any layer builds; 12: records without the slot state module, which component pages apply; 13: records without the generated parts and inputs modules, which the page module mounts; 14: the substrate Vite config builds next/image unoptimized, so images keep their own URL, and resolves `@/lib/utils` to the flavor module alone; 15: a built pass swaps placeholder-host images for the inline placeholder, specimen-images.ts; 16: section and frame pages render the `not-renderable` state for an entry that is not a component, itemSpecimenPage; 17: component pages too, leafPageFiles; 18: an option with no preview of its own mounts the slot fixture, library-source slotFixture). */
