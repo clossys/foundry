@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/2", "id": "lexicon.sentence-length", "agent": "writer", "kind": "voice", "status": "live",
+  "ia": { "l0": "voice", "l1": "voice/tone", "l2": "voice/tone/rhythm", "order": 1 },
+  "createdBy": { "actor": "package", "package": "@clossys/writer", "version": "1.0.0" },
+  "createdAt": "2026-11-16T08:00:00Z", "updatedAt": "2026-11-16T14:02:00Z",
+  "refs": [
+    { "to": "director/identity.verbal.voice", "key": "Sound", "rel": "input" },
+    { "to": "director/focus.reach.geography", "key": "Language", "rel": "input" },
+    { "to": "writer/sections.hero.copy", "rel": "consumedBy" },
+    { "to": "writer/narratives.legal-document", "rel": "consumedBy" }
+  ],
+  "base": { "package": "@clossys/writer", "version": "1.0.0", "path": "src/catalog/slots/lexicon.sentence-length/slot.json", "sha256": "96cab6a4bc7937c043f2ad16b63fa36dda60239989e0c97965537ce37b20efc1" },
+  "standard": "lexicon.voice-rule",
+  "brief": {
+    "purpose": "Keep sentences readable for each field role, in each locale.",
+    "mustDo": ["One range per copy role", "French ranges may be up to 20 percent longer than English"],
+    "inputs": [ { "to": "director/identity.verbal.voice", "key": "Sound", "rel": "input" }, { "to": "director/focus.reach.geography", "key": "Language", "rel": "input" } ],
+    "acceptance": [ { "check": "voice.ranges-complete", "decider": "code" }, { "check": "owner.sound", "decider": "owner" } ]
+  },
+  "contract": { "kind": "lexicon", "recordKind": "voice-rule", "valueType": "word-range", "roles": ["eyebrow", "heading", "lead", "body", "action", "label", "alt"] },
+  "tighten": []
+}

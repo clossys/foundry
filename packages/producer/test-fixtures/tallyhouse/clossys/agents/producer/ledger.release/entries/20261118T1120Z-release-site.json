@@ -1,0 +1,29 @@
+{
+  "schema": "clossys.ledger-entry/1",
+  "id": "20261118T1120Z-release-site",
+  "agent": "producer",
+  "kind": "ledger-entry",
+  "status": "pinned-ready",
+  "createdBy": { "actor": "code", "cli": "clossys run", "version": "1.0.0" },
+  "createdAt": "2026-11-18T11:40:12Z",
+  "refs": [
+    { "to": "publisher/release.site/site-v3.json", "sha256": "0fe6681084ddded4692f1136c5715f82d957e69735c013588a2123d60f4ebee7", "rel": "places" },
+    { "to": "producer/queue.approve", "record": "20261118T1131Z-release-site", "rel": "answers" }
+  ],
+  "loop": "loop.release",
+  "loopVersion": "release-v1.json",
+  "trigger": { "kind": "stale-release", "ref": { "to": "producer/ledger.refine", "record": "20261118T0915Z-refine-home-hero", "rel": "raisedBy" } },
+  "steps": [
+    { "id": "compile", "decider": { "by": "code" }, "cli": "clossys compile", "exit": 0, "wrote": [] },
+    { "id": "build", "decider": { "by": "code" }, "cli": "clossys release site --build", "exit": 0, "wrote": [] },
+    { "id": "manifest", "decider": { "by": "code" }, "cli": "clossys release site --manifest", "exit": 0,
+      "wrote": [ { "file": "publisher/release.site/candidates/site-v3.json", "sha256": "0fe6681084ddded4692f1136c5715f82d957e69735c013588a2123d60f4ebee7" } ] },
+    { "id": "gates", "decider": { "by": "code" }, "cli": "clossys release site --gates", "exit": 0, "wrote": [] },
+    { "id": "signoff", "decider": { "by": "human", "who": "owner", "raise": "queue.approve" }, "cli": "clossys answer 20261118T1131Z-release-site ready --by owner --via chat", "exit": 0, "wrote": [] },
+    { "id": "pin", "decider": { "by": "code" }, "cli": "clossys pin publisher/release.site site-v3.json --by owner:queue.approve#20261118T1131Z-release-site", "exit": 0,
+      "wrote": [ { "file": "publisher/release.site/pin.json", "sha256": null } ] }
+  ],
+  "checks": { "copy.sample-remaining": "pass", "pins.resolve": "pass", "constitution.strict": "pass", "release.locales": "pass" },
+  "decisions": [ { "entry": "queue.approve#20261118T1131Z-release-site", "answer": "ready" } ],
+  "outcome": "release.site site-v3.json pinned ready"
+}

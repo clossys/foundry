@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "clossys.theme/1",
+  "title": "Theme projection",
+  "description": "The ThemeProjection written by clossys compile as .clossys/generated/designer/theme.json (designer.md 9.8).",
+  "type": "object",
+  "required": [
+    "schema",
+    "vars",
+    "sources",
+    "inputsSha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "clossys.theme/1"
+    },
+    "vars": {
+      "type": "object",
+      "required": [
+        "light",
+        "dark"
+      ],
+      "properties": {
+        "light": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^--[a-z0-9-]+$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "dark": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^--[a-z0-9-]+$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^--[a-z0-9-]+$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "slot",
+          "candidate",
+          "sha256",
+          "sample"
+        ],
+        "properties": {
+          "slot": {
+            "type": "string",
+            "minLength": 1
+          },
+          "candidate": {
+            "$ref": "#/$defs/candidateName"
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "sample": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "inputsSha256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "candidateName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\\.(md|json|svg)$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

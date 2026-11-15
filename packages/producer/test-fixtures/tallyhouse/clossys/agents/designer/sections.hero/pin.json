@@ -1,0 +1,16 @@
+{
+  "schema": "clossys.pin/2",
+  "id": "designer/sections.hero/pin",
+  "agent": "designer",
+  "kind": "pin",
+  "status": "pinned",
+  "createdBy": { "actor": "code", "cli": "clossys pick", "version": "1.0.0" },
+  "createdAt": "2026-11-16T13:02:40Z",
+  "updatedAt": "2026-11-16T13:02:40Z",
+  "refs": [ { "to": "producer/ledger.fill", "record": "20261116T1240Z-fill-hero", "rel": "raisedBy" } ],
+  "candidate": "hero-v2.json",
+  "sha256": "4141ceb8a1ac294c63684b61861ec1d4a98ecefa6e01541fcbfe4c827d949e65",
+  "decidedBy": "agent:designer",
+  "basis": "agent",
+  "at": "2026-11-16T13:02:40Z"
+}
