@@ -1,0 +1,190 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "producer/loop.refine/package:refine-v1.json",
+    "agent": "producer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "producer/loop.refine",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/producer",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "trigger": [
+      "T3",
+      "T5",
+      "T6",
+      "T7"
+    ],
+    "steps": [
+      {
+        "id": "refine-brief",
+        "does": "decide whether the trigger is a rule for the whole slot (tighten the brief) or one record; often no tightening",
+        "decider": {
+          "by": "agent",
+          "agent": "<owner of slot>",
+          "verb": "refine-brief",
+          "tier": "mid",
+          "skill": "packages/<agent>/actions/<agent>.brief/skill.md"
+        },
+        "cli": "clossys brief <ref> --tighten <path> <op> <value> --why <why>",
+        "reads": [
+          "<slot>/slot.json",
+          "<inputs>"
+        ],
+        "writes": [
+          "<slot>/slot.json"
+        ],
+        "checks": [
+          "brief.tighten-only"
+        ],
+        "onFail": {
+          "raise": "queue.clarify",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "create",
+        "does": "write one to three new candidates against the current brief",
+        "decider": {
+          "by": "agent",
+          "agent": "<owner of slot>",
+          "verb": "create-candidates",
+          "tier": "mid",
+          "skill": "packages/<agent>/actions/<agent>.candidates/skill.md"
+        },
+        "cli": "clossys next <ref> --submit <file>",
+        "reads": [
+          "<slot>/slot.json",
+          "<inputs>"
+        ],
+        "writes": [
+          "<slot>/candidates/*"
+        ],
+        "checks": []
+      },
+      {
+        "id": "check",
+        "does": "run the slot's standard and acceptance checks",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys check <ref>",
+        "reads": [
+          "<slot>/candidates/*"
+        ],
+        "writes": [
+          ".clossys/checks/<agent>/<slot-id>/*"
+        ],
+        "checks": [
+          "<slot standard>"
+        ],
+        "onFail": {
+          "raise": "queue.fix",
+          "then": "retry"
+        }
+      },
+      {
+        "id": "pick",
+        "does": "judge the passing candidates and pin one (status confirm when an owner step follows)",
+        "decider": {
+          "by": "agent",
+          "agent": "<owner of slot>",
+          "verb": "pick",
+          "tier": "mid",
+          "skill": "packages/<agent>/actions/pick.<agent>/skill.md"
+        },
+        "cli": "clossys pick <ref> <candidate> --by agent:<agent>",
+        "reads": [
+          ".clossys/checks/<agent>/<slot-id>/*"
+        ],
+        "writes": [
+          "<slot>/pin.json"
+        ],
+        "checks": [
+          "pins.resolve"
+        ]
+      },
+      {
+        "id": "owner-pick",
+        "does": "owner picks among the passing candidates in chat (Director slots and legal prose)",
+        "decider": {
+          "by": "human",
+          "who": "owner",
+          "raise": "queue.pick"
+        },
+        "cli": "clossys answer <entry> <candidate> --by owner --via chat --quote <words>",
+        "reads": [],
+        "writes": [
+          "<slot>/pin.json"
+        ],
+        "checks": [
+          "answer.quote-required"
+        ],
+        "when": {
+          "ia": [
+            "director"
+          ],
+          "slots": [
+            "writer/passages.legal-prose",
+            "writer/narratives.legal-document"
+          ]
+        }
+      },
+      {
+        "id": "confirm",
+        "does": "owner reads the pick and its rationale in chat (Theme, Art and Voice)",
+        "decider": {
+          "by": "human",
+          "who": "owner",
+          "raise": "queue.approve"
+        },
+        "cli": "clossys answer <entry> approve --by owner --via chat --quote <words>",
+        "reads": [],
+        "writes": [
+          "<slot>/pin.json"
+        ],
+        "checks": [
+          "answer.quote-required"
+        ],
+        "when": {
+          "ia": [
+            "designer/themes",
+            "designer/assets",
+            "writer/lexicon/voice"
+          ]
+        }
+      },
+      {
+        "id": "cascade",
+        "does": "mark every consumedBy dependant needs-refresh and re-check it",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys check <dependants>",
+        "reads": [
+          "<slot>/slot.json"
+        ],
+        "writes": [
+          "<dependant>/slot.json"
+        ],
+        "checks": [
+          "refs.dangling"
+        ]
+      }
+    ],
+    "exit": "the triggering entry is answered and no slot it touched is needs-refresh",
+    "repeat": "per dependant marked needs-refresh, up to maxRounds",
+    "maxRounds": 3
+  }
+}

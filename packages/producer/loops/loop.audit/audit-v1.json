@@ -1,0 +1,67 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "producer/loop.audit/package:audit-v1.json",
+    "agent": "producer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "producer/loop.audit",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/producer",
+      "version": "0.1.0"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "trigger": [
+      "T6"
+    ],
+    "steps": [
+      {
+        "id": "strict",
+        "does": "run the strict checks, the orphan check and the dangling-ref check",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys check --strict",
+        "reads": [
+          "clossys/agents/"
+        ],
+        "writes": [
+          ".clossys/checks/"
+        ],
+        "checks": [
+          "constitution.strict",
+          "ia.orphans",
+          "refs.dangling"
+        ]
+      },
+      {
+        "id": "route",
+        "does": "route each finding: queue.fix to the owning agent, queue.clarify to the owner; one entry per subject",
+        "decider": {
+          "by": "code"
+        },
+        "cli": "clossys check --route",
+        "reads": [
+          ".clossys/checks/"
+        ],
+        "writes": [
+          "producer/queue.fix/entries/",
+          "producer/queue.clarify/entries/"
+        ],
+        "checks": []
+      }
+    ],
+    "exit": "a run raises no new entry",
+    "repeat": "none inside a run: each raised entry starts a loop.refine run",
+    "maxRounds": 1
+  }
+}

@@ -26,6 +26,29 @@ that is the first gap to report.
 - After a pin or pick, run `clossys run --dry` again: the steps that read the changed record show
   as stale, and `clossys run` re-runs them.
 
+## Run a loop
+
+The four Producer loops run one step at a time from the loop version the consumer pins
+(`clossys/agents/producer/loop.<name>/pin.json`), else the package v1. Each run writes one ledger entry
+(`clossys/agents/producer/ledger.<name>/entries/<run-id>.json`).
+
+- `clossys run loop.fill --init` once (T1), then `clossys run loop.fill` fills the next slot still on a
+  package default, in chain order (Director, Designer and Writer, Publisher), until none is left or a
+  run waits. `--slot <agent>/<slot-id>` fills one slot; `--from queue.fix#<id>` fills a slot added for
+  that request (T4).
+- `clossys run loop.refine --slot <ref>` (T3, or T7 for a `needs-refresh` dependant) or
+  `--from queue.fix#<id>` (T5 owner feedback, T6 a routed finding).
+- `clossys run loop.release --publication <id>` (T8) ends only at the owner-signed ready-pin.
+- `clossys run loop.audit` runs the strict checks and routes each finding: a `queue.fix` to the slot's
+  agent, a `queue.clarify` to the owner, one open entry per subject.
+- An agent step prints its packet (agent, verb, tier, skill under
+  `packages/<agent>/actions/<action-id>/skill.md`): run that skill, then
+  `clossys run loop.<name> --resume --run <run-id> --step-exit <0|1|2> --model <serving model> [--wrote <file>]...`.
+  The version names only the tier; the ledger records the model that served the step.
+- A human step raises its queue entry and the run waits: record the owner's chat words with
+  `clossys answer <entry> <answer> --by owner --via chat --quote "<words>"`, then
+  `clossys run loop.<name> --resume`. Resuming never runs a finished step again.
+
 ## Answer the open decide step
 
 - `clossys next --json` prints the packet: the compiled brief, the slot contract, the options, the

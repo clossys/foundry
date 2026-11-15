@@ -10,6 +10,10 @@
  *
  * Exit 0 when the chain ran to its end or stopped at an open decide step (printed with its packet),
  * 1 when a plumb step failed (its failed run record cited), 2 when it could not run.
+ *
+ * Loop mode (system.md 14.5): `clossys run loop.<fill|refine|release|audit> ...` runs a Producer loop version one
+ * step at a time and writes one ledger entry per run (src/loop/cli.ts). Any other argv is the chain mode above,
+ * unchanged until the stage verbs retire.
  */
 import { resolve } from "node:path";
 import { explainChain, runChain } from "../pipeline/chain.js";
@@ -26,7 +30,9 @@ export const RUN_USAGE = "Usage: clossys run [--from <step>] [--until <step>] [-
   + "  Walks every step in pipeline order: a plumb step whose last run is fresh is skipped, any other runs its command;\n"
   + "  the walk stops red at a failed plumb step and stops at the first decide step with open work (clossys next prints it).\n"
   + "  --dry: run nothing; list what would run.  --explain: the whole graph as a table (step, agent, kind, decider, chain, last run); it runs nothing.\n"
-  + "  --capture: also run the on-demand capture step (before an owner preview or a landing); without it the chain skips capture.";
+  + "  --capture: also run the on-demand capture step (before an owner preview or a landing); without it the chain skips capture.\n"
+  + "       clossys run loop.<fill|refine|release|audit> [--slot <ref>] [--from <entry>] [--publication <id>] [--resume] ...\n"
+  + "  Loop mode: runs a Producer loop version step by step, one ledger entry per run (clossys run loop.fill --help).";
 
 interface Flags { from?: string; until?: string; dry: boolean; explain: boolean; capture: boolean; json: boolean; help: boolean; root?: string }
 function parse(argv: readonly string[]): Flags {
@@ -77,6 +83,7 @@ export function formatChain(result: ChainResult): string {
 }
 
 export async function runRunCli(argv: readonly string[], cwd: string, steps: readonly Step[] = STEPS, options: { packageRoot?: string; exec?: Exec } = {}): Promise<CliResult> {
+  if (argv[0]?.startsWith("loop.")) return (await import("../loop/cli.js")).runLoopCli(argv, cwd);
   const flags = parse(argv);
   if (flags.help) return { exitCode: 0, message: RUN_USAGE };
   const root = discoverRoot(resolve(cwd, flags.root ?? "."));
