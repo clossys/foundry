@@ -4,7 +4,8 @@
  * schema is only read when the consumer has no Designer slot model.
  */
 import { join } from "node:path";
-import { hasPinFile, listSlots, readCandidate, withSlotReadScope } from "../records/slots.js";
+import { hasPinFile, listSlots, withSlotReadScope } from "../records/slots.js";
+import { pinnedDesignerItems, pinnedThemeCss } from "../read/theme-pins.js";
 import { hasAgentSlots } from "./slot-gallery.js";
 import { themeHash, type StudioTheme } from "./theme-default.js";
 
@@ -23,23 +24,7 @@ export function libraryWorkspace(root: string): string | undefined {
 }
 
 /** A pinned candidate's registry item, only while its bytes still match the pin. */
-function pinnedItems(library: string): Map<string, { item: Record<string, any>; version: number; sha256: string }> {
-  // One read scope for the whole pass: the record memo's folder check runs once, not once per pin.
-  return withSlotReadScope(() => pinnedItemsIn(library));
-}
-function pinnedItemsIn(library: string): Map<string, { item: Record<string, any>; version: number; sha256: string }> {
-  const items = new Map<string, { item: Record<string, any>; version: number; sha256: string }>();
-  for (const entry of listSlots(library, "designer")) {
-    if (!entry.pin || !entry.candidates.includes(entry.pin.candidate)) continue;
-    // A drifted candidate is not the pin; a pinned candidate that cannot be read or parsed surfaces.
-    const candidate = readCandidate(library, "designer", entry.id, entry.pin.candidate);
-    if (candidate.sha256 !== entry.pin.sha256) continue;
-    const item = JSON.parse(candidate.bytes);
-    const version = Number(/-v([1-9][0-9]*)\.json$/.exec(entry.pin.candidate)?.[1] ?? 0);
-    if (typeof item?.name === "string" && version) items.set(entry.id, { item, version, sha256: candidate.sha256 });
-  }
-  return items;
-}
+const pinnedItems = pinnedDesignerItems;
 
 /**
  * One leaf per pinned slot, provenance `consumer`, hashed from the pins it reads. A slot with a pin
@@ -57,32 +42,12 @@ function librarySelectionIn(library: string): LibrarySelection {
   return { model: "slots", hash: themeHash(JSON.stringify(resolved.sort((a, b) => a.leaf.localeCompare(b.leaf)))), leaves, gateReports: [] };
 }
 
-const CSS_NAME = /^[a-z][a-z0-9-]*$/;
-const CSS_VALUE = /^[^;{}<>]+$/;
-const declarations = (vars: unknown) => Object.entries(vars && typeof vars === "object" ? vars as Record<string, unknown> : {})
-  .filter(([name, value]) => CSS_NAME.test(name) && typeof value === "string" && CSS_VALUE.test(value))
-  .map(([name, value]) => `  --${name}: ${value};`);
-
 /**
  * The pinned `themes.*` slots composed into Studio's brand stylesheet: each `registry:theme`
  * item's shadcn variables (theme and light on `:root`, dark on `.dark`) and each
  * `registry:font` item's variable. Undefined when the consumer pins no theme slot.
  */
 export function libraryTheme(library: string): StudioTheme | undefined {
-  const themes = [...pinnedItems(library)].filter(([slot]) => slot.startsWith("themes.")).sort(([a], [b]) => a.localeCompare(b));
-  if (!themes.length) return undefined;
-  const root: string[] = [], dark: string[] = [];
-  for (const [, { item }] of themes) {
-    if (item.type === "registry:font") {
-      const font = item.font;
-      const name = String(font?.variable ?? "").replace(/^--/, "");
-      if (CSS_NAME.test(name) && typeof font?.family === "string" && CSS_VALUE.test(font.family)) root.push(`  --${name}: ${font.family};`);
-      continue;
-    }
-    root.push(...declarations(item.cssVars?.theme), ...declarations(item.cssVars?.light));
-    dark.push(...declarations(item.cssVars?.dark));
-  }
-  if (!root.length && !dark.length) return undefined;
-  const css = [`:root {\n${root.join("\n")}\n}`, `.dark {\n${dark.join("\n")}\n}`, ""].join("\n");
-  return { source: "consumer", css, hash: themeHash(css) };
+  const css = pinnedThemeCss(library);
+  return css === undefined ? undefined : { source: "consumer", css, hash: themeHash(css) };
 }

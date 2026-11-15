@@ -1,0 +1,9 @@
+:root {
+  --font-sans: "Inter", sans-serif;
+  --radius: 0.5rem;
+  --primary: oklch(0.45 0.09 160);
+  --primary-foreground: oklch(0.985 0 0);
+}
+.dark {
+  --primary: oklch(0.78 0.11 160);
+}
