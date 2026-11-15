@@ -31,7 +31,7 @@ export function checkOneLeafSource(repository, layers = allLayers) {
   const sha = text => createHash("sha256").update(text).digest("hex");
   const runtime = path.join(directory, "src/components/preview-runtime");
   const optional = file => fs.existsSync(file) ? read(file) : undefined;
-  const profileFiles = new Map((optional(path.join(directory, "src/studio/default-component-preview-profile.json"))?.files ?? []).map(file => [file.path, file.content]));
+  const profileFiles = new Map((optional(path.join(directory, "src/specimen/default-component-preview-profile.json"))?.files ?? []).map(file => [file.path, file.content]));
   const proofs = optional(path.join(directory, "src/catalog-core/component-source-proofs.json"))?.proofs ?? {};
   const stockEntries = new Map();
   const stockEntry = (meta, entry) => {

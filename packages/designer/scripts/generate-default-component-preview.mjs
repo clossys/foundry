@@ -95,6 +95,6 @@ function identity(component) {
   const { themes: _bindings, ...reads } = component.reads;
   return sha256(stableStringify({ descriptor, impl: component.impl, propMap: component.propMap, reads, origin }));
 }
-write(resolve(root, "src/studio/default-component-preview-profile.json"), JSON.stringify(profile, null, 2) + "\n");
+write(resolve(root, "src/specimen/default-component-preview-profile.json"), JSON.stringify(profile, null, 2) + "\n");
 write(resolve(target, "identities.json"), JSON.stringify({ components: Object.fromEntries(Object.entries(profile.components).map(([id, component]) => [id, identity(component)])), themes: Object.fromEntries(Object.entries(tokens).map(([id, token]) => [id, token.property])) }, null, 2) + "\n");
 console.log(`Default component profile: ${plan.decisions.length} selected leaves, ${unchosen.length} unchosen, ${modules.length} source modules; ${process.argv.includes("--check") ? "current" : "refreshed"}`);

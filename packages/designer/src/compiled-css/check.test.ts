@@ -32,6 +32,7 @@ describe("checkCompiledCssFreshness — drift detection (isolated fixture)", () 
     cpSync(join(packageRoot, "src", "frames"), join(dir, "src", "frames"), { recursive: true });
     cpSync(join(packageRoot, "src", "runtime"), join(dir, "src", "runtime"), { recursive: true });
     cpSync(join(packageRoot, "src", "studio"), join(dir, "src", "studio"), { recursive: true });
+    cpSync(join(packageRoot, "src", "specimen"), join(dir, "src", "specimen"), { recursive: true });
   });
 
   afterEach(() => {

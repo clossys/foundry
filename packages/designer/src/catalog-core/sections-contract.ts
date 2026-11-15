@@ -1,5 +1,5 @@
 import type { BodySubstrate, SectionSubstrateRenderTest } from "./body-substrate.js";
-import type { SpecimenRenderPartName } from "../studio/specimen-render-part-identities.js";
+import type { SpecimenRenderPartName } from "../specimen/specimen-render-part-identities.js";
 import type { StudioSpecimenHostPartId } from './studio-host-parts.js';
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import sectionPlacement from "../catalog/ia/sections.json" with { type: "json" };

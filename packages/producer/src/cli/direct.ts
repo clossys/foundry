@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { completion, discoverBriefContracts, openStrategy, readStrategyRoot, type Brief, type Cell, type CompletionReport, type FactsGateResult, type WontClaimResult } from "@clossys/director";
-import { agentModule } from "../server/cells.js";
+import { agentModule } from "../read/cells.js";
 import { directorRef, pinnedStrategyModel, readDirectorEvidence, readPinnedDirector } from "../records/director-pinned.js";
 import { readPinned } from "../records/pinned.js";
 import { directorStoreReader, hasSlotModel, readIa } from "../records/slots.js";

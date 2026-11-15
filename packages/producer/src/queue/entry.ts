@@ -23,6 +23,14 @@ export const producerDir = (root: string): string => join(root, "clossys", "agen
 export const queueEntriesDir = (root: string, queue: QueueName): string => join(producerDir(root), queue, "entries");
 export const queueEntryPath = (root: string, queue: QueueName, id: string): string => join(queueEntriesDir(root, queue), `${id}.json`);
 
+/** `clossys feedback` refuses: nothing is written and the CLI exits 1. Defined here so entry creation can raise it. */
+export class FeedbackRefused extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "FeedbackRefused";
+  }
+}
+
 export interface EntryFile {
   readonly queue: QueueName;
   readonly id: string;
@@ -107,7 +115,7 @@ export function createQueueEntry(root: string, entry: QueueEntry): QueueEntry {
     try { writeSync(fd, serializeEntry(doc)); } finally { closeSync(fd); }
     return doc;
   }
-  throw new Error(`${entry.queue}#${entry.id}: the id and its suffixes -2..-9 are all taken`);
+  throw new FeedbackRefused(`${entry.queue}#${entry.id}: the id and its suffixes -2..-9 are all taken; nothing was written (pass another --slug)`);
 }
 
 /** Replaces an existing entry's bytes by a temp file and a rename in the same folder. Call under its lock only. */

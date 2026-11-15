@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render as renderBare, screen } from "@testing-library/react";
 import { importFoundryFrames, importFoundrySections, loadBuildCatalog, planSurfaceDefaults } from "../../catalog-core/index.js";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsInput } from "../../catalog-core/index.js";
-import { planSurfacePreviews } from "../../studio/planned-surface-previews.js";
+import { planSurfacePreviews } from "../../specimen/planned-surface-previews.js";
 import { hostedRender } from "../../frames/__fixtures__/shell-copy.js";
 
 const render = hostedRender(renderBare);

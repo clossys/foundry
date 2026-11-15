@@ -73,7 +73,7 @@ export function raiseEntry(root: string, raise: Raise, at: Iso, dedupe = true): 
     ...(raise.options ? { options: raise.options } : {}),
     events: [{ at, op: "raised", by: RUN_BY }],
   };
-  const issues = [...entrySchemaIssues(entry), ...ANSWER_RULES.flatMap(rule => rule.issues(entry))];
+  const issues = [...entrySchemaIssues(entry), ...ANSWER_RULES.flatMap(rule => rule.issues(entry, root))];
   if (issues.length) throw new Error(`clossys run: the ${raise.queue} entry would not be valid: ${issues.join("; ")}`);
   return { entry: createQueueEntry(root, entry), raised: true };
 }

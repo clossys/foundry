@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { scanProvenance } from "../../catalog-core/provenance-scan.js";
 import { runtimeHash, type RuntimeContentRef, type RuntimeJson } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { plainJson } from "./dataset-json.js";
 import { groupASectionInput, type GroupAFillDocument, type GroupALeaf } from "./group-a-dataset.js";
 import { GROUP_A_SECTION_RENDERERS } from "./group-a.js";

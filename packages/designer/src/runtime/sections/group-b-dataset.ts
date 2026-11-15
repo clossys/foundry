@@ -1,5 +1,5 @@
 import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { plainJson } from "./dataset-json.js";
 
 /**

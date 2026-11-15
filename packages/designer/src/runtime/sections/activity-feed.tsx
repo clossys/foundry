@@ -2,7 +2,7 @@ import { ActivityFeed, type ActivityFeedGroup } from "../../blocks/ActivityFeed.
 import type { EventRecord } from "../../blocks/EventItem.js";
 import { LinkRegion, type LinkRegionContent } from "./group-b-parts.js";
 import { entryOf, recordsAs, recordsOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 const { activityFeed } = specimenDataset.sections;
 

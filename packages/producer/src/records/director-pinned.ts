@@ -6,7 +6,7 @@
 import { readdirSync, readFileSync, lstatSync } from "node:fs";
 import { join } from "node:path";
 import type { Cell, Finding, StrategyModel } from "@clossys/director";
-import { agentModule } from "../server/cells.js";
+import { agentModule } from "../read/cells.js";
 import { readPinned, type PinnedCandidate, type PinnedSet } from "./pinned.js";
 
 export interface PinnedDirector {

@@ -3,12 +3,17 @@
  * (`src/check/answer-*.ts`) run them over every committed entry, and `clossys answer` runs the same functions on the
  * entry it is about to write, so the CLI and the checks cannot disagree.
  *
+ * A rule takes the workspace root as well, so a rule that reads another file (a code close's `answers` ref) resolves it
+ * the same way for the CLI and the checks.
+ *
  * Check ids follow the ticket; system.md 12.6 calls two of them `answer.in-options` and `answer.owner-quoted`
  * (ANSWER_CHECK_ALIASES maps those names).
  */
+import { danglingReason } from "../check/refs-dangling.js";
 import { targetSchema } from "../records/candidate.js";
 import { validateAgainst } from "../records/schema.js";
-import type { QueueEntry } from "../records/types.js";
+import type { QueueEntry, Ref } from "../records/types.js";
+import { findQueueEntry, readQueueEntry } from "./entry.js";
 
 export const ANSWER_OPEN_ONLY = "answer.open-only";
 export const ANSWER_DECIDER_MATCH = "answer.decider-match";
@@ -61,12 +66,53 @@ export function openOnlyIssues(entry: QueueEntry): string[] {
   return out;
 }
 
+/** The `<agent>/<slot-id>` a ref points into (its `to` without a candidate). */
+const slotOf = (to: string): string => to.split("/").slice(0, 2).join("/");
+
+/**
+ * A ref is about the entry's subject when it points into the same slot and, when the subject names a record, names
+ * that record too.
+ */
+const aboutSubject = (ref: Pick<Ref, "to" | "record"> | undefined, subject: Ref | undefined): boolean =>
+  typeof ref?.to === "string" && typeof subject?.to === "string" && slotOf(ref.to) === slotOf(subject.to)
+  && (subject.record === undefined || ref.record === subject.record);
+
+const refLabel = (ref: Pick<Ref, "to" | "record"> | undefined): string => `${ref?.to}${ref?.record !== undefined ? `#${ref.record}` : ""}`;
+
+/**
+ * Why one `answers` ref does not finish the entry's subject, or undefined when it does: it is either a pin ref (a
+ * slot, candidate or record that exists) about the entry's subject, or an answered queue.approve whose subject is
+ * the entry's subject.
+ */
+export function answersRefIssue(root: string, entry: QueueEntry, ref: Ref): string | undefined {
+  const label = refLabel(ref);
+  if (ref.to === ("producer/queue.approve" as Ref["to"])) {
+    if (typeof ref.record !== "string") return `${label} names no queue.approve entry`;
+    const found = findQueueEntry(root, `producer/queue.approve#${ref.record}`);
+    if (!found.ok) return `${label}: ${found.reason}`;
+    const read = readQueueEntry(found.at);
+    if (!read.ok) return `${label}: ${read.reason}`;
+    if (read.entry.status !== "answered") return `${label}: that entry is ${read.entry.status}, not answered`;
+    if (!aboutSubject(read.entry.subject, entry.subject)) return `${label} approves ${refLabel(read.entry.subject)}, not this entry's subject ${refLabel(entry.subject)}`;
+    return undefined;
+  }
+  if (typeof ref.to !== "string" || ref.to === "facts" || ref.to.startsWith("producer/queue.") || ref.to.startsWith("producer/ledger.")) {
+    return `${label} is not a pin ref or a queue.approve entry`;
+  }
+  const dangling = danglingReason(root, ref);
+  if (dangling) return `${label}: ${dangling}`;
+  if (!aboutSubject(ref, entry.subject)) return `${label} is not this entry's subject ${refLabel(entry.subject)}`;
+  return undefined;
+}
+
 /**
  * `answer.decider-match`: an answer comes from the decider the entry names. `owner` answers only an owner entry,
- * `agent:<id>` only an entry whose decider is that agent. One exception: `code:<cli>` may close a queue.fix or
- * queue.clarify (never a pick or an approve).
+ * `agent:<id>` only an entry whose decider is that agent, and only through the CLI (`via` absent or `cli`). One
+ * exception: `code:<cli>` may close a queue.fix or queue.clarify that an agent decides (never a pick, an approve or
+ * an owner entry), with `via: cli` and an `answers` ref to the pin or the answered queue.approve that finished the
+ * entry's own subject.
  */
-export function deciderMatchIssues(entry: QueueEntry): string[] {
+export function deciderMatchIssues(entry: QueueEntry, root: string): string[] {
   const out: string[] = [];
   for (const [event, index] of answered(entry)) {
     const by = typeof event.by === "string" ? event.by : "";
@@ -74,8 +120,15 @@ export function deciderMatchIssues(entry: QueueEntry): string[] {
     if (!ANSWER_BY.test(by)) { out.push(`${where}: by is not owner, agent:<id> or code:<cli>`); continue; }
     if (by.startsWith("code:")) {
       if (!CODE_CLOSABLE.includes(entry.queue)) out.push(`${where}: code may close only queue.fix or queue.clarify, not ${entry.queue}`);
+      if (entry.decider === "owner") out.push(`${where}: the owner decides this entry; code may not close it`);
+      if (event.via !== "cli") out.push(`${where}: a code close is via cli, not ${JSON.stringify(event.via ?? null)}`);
+      const answers = (Array.isArray(entry.refs) ? entry.refs : []).filter(ref => ref?.rel === "answers");
+      if (answers.length === 0) { out.push(`${where}: a code close carries an answers ref to the pin or queue.approve that finished it`); continue; }
+      const issues = answers.map(ref => answersRefIssue(root, entry, ref));
+      if (issues.every(issue => issue !== undefined)) out.push(`${where}: no answers ref finishes this entry's subject (${issues.join("; ")})`);
       continue;
     }
+    if (by !== "owner" && event.via !== undefined && event.via !== "cli") out.push(`${where}: an agent answers through the CLI only (via cli), not ${event.via}`);
     if (by !== entry.decider) out.push(`${where}: the entry's decider is ${entry.decider}`);
   }
   return out;
@@ -103,16 +156,26 @@ export function optionValidIssues(entry: QueueEntry): string[] {
   return out;
 }
 
-/** `answer.quote-required`: an owner answer records the owner's own words (`quote`), whatever the channel. */
+/**
+ * `answer.quote-required`: an owner answer names its channel (`via`) and records the owner's own words (`quote`),
+ * whatever the channel; only an owner answer takes a quote.
+ */
 export function quoteRequiredIssues(entry: QueueEntry): string[] {
   const out: string[] = [];
   for (const [event, index] of answered(entry)) {
-    if (event.by === "owner" && blank(event.quote)) out.push(`events[${index}] is an owner answer with no quote of the owner's words`);
+    if (event.by === "owner") {
+      if (event.via === undefined) out.push(`events[${index}] is an owner answer that names no channel (via cli|chat|app)`);
+      if (blank(event.quote)) out.push(`events[${index}] is an owner answer with no quote of the owner's words`);
+    } else if (event.quote !== undefined) {
+      out.push(`events[${index}] answered by ${JSON.stringify(event.by)} carries a quote; only an owner answer takes one`);
+    }
   }
   return out;
 }
 
-export const ANSWER_RULES: readonly { readonly check: string; readonly issues: (entry: QueueEntry) => string[] }[] = [
+export type AnswerRule = (entry: QueueEntry, root: string) => string[];
+
+export const ANSWER_RULES: readonly { readonly check: string; readonly issues: AnswerRule }[] = [
   { check: ANSWER_OPEN_ONLY, issues: openOnlyIssues },
   { check: ANSWER_DECIDER_MATCH, issues: deciderMatchIssues },
   { check: ANSWER_OPTION_VALID, issues: optionValidIssues },

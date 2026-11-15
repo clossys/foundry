@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { writerKindSpecimen, writerSpecimenKind } from "./writer-specimen-kinds.js";
+import { writerKindSpecimen, writerSpecimenKind } from "../specimen/writer-specimen-kinds.js";
 
 const rule = (id: string, ruleName: string, value: string) => ({ id, context: `brand.voice.${ruleName}`, kind: "voice-rule", rule: ruleName, value, status: "draft" });
 const term = (id: string, value: string, termStatus: string, extra: Record<string, unknown> = {}) => ({ id, context: `brand.x.${id}`, kind: "term", term: value, forms: [], termStatus, ...extra });

@@ -4,7 +4,7 @@
  * no `text` and so need their own kind. Each kind reads only the cell's parsed records. Its words
  * (table labels, columns, summaries, empty cells) are Writer copy references; record values stay data.
  */
-import { copyRef, type CopyText } from "../server/copy-ref.js";
+import { copyRef, type CopyText } from "./copy-ref.js";
 
 export type WriterSpecimenKind = "strings" | "voice" | "claims" | "naming";
 export interface SpecimenRef { readonly label: string; readonly agent?: string; readonly slug?: string }

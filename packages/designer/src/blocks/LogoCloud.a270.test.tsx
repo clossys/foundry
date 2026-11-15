@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import selected from "../studio/default-component-preview-profile.json" with { type: "json" };
+import selected from "../specimen/default-component-preview-profile.json" with { type: "json" };
 import * as components from "../components/index.js";
 import * as itemModule from "../components/item/item.js";
 import { importShadcnAriaRail } from "../importers/shadcn-aria-rail.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
-import { packageSurfacePreview } from "../studio/planned-surface-previews.js";
-import { specimenDataset } from "../studio/specimen-dataset.js";
+import { packageSurfacePreview } from "../specimen/planned-surface-previews.js";
+import { specimenDataset } from "../specimen/specimen-dataset.js";
 import { componentDescriptorHash, type ResolvedComponents } from "../catalog-core/resolve-components.js";
 import { ConsumerComponentProvider, type ConsumerComponentSelection } from "../runtime/component-leaf.client.js";
 import { LogoCloud } from "./LogoCloud.js";

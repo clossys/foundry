@@ -16,24 +16,24 @@ import { buildSurfaceConsumption } from '../dist/catalog-core/surface-consumptio
 import { surfaceManifest, surfaceOf } from '../dist/catalog-core/surface-library.js';
 import { specimenSectionSourceCatalog } from '../dist/importers/specimen-sections.js';
 import { STUDIO_SPECIMEN_HOST_PARTS } from '../dist/catalog-core/studio-host-parts.js';
-import { agentModule } from '../../producer/dist/server/cells.js';
+import { agentModule } from '../../producer/dist/read/cells.js';
 import { studioComponentProviderSource } from '../../producer/dist/server/selection-component-provider.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const sha256 = text => createHash('sha256').update(text).digest('hex');
 const reportArgument = process.argv.slice(2);
 if (reportArgument.length && (reportArgument.length !== 2 || reportArgument[0] !== '--report')) throw new Error('Usage: check-specimen-token-host-parts.mjs [--report FILE]');
-const canonicalPath = 'packages/designer/src/studio/specimen-token-assets.tsx';
-const hostPath = 'packages/designer/src/studio/specimen-token-host-parts.tsx';
+const canonicalPath = 'packages/designer/src/specimen/specimen-token-assets.tsx';
+const hostPath = 'packages/designer/src/specimen/specimen-token-host-parts.tsx';
 const canonical = await readFile(join(root, canonicalPath), 'utf8'), host = await readFile(join(root, hostPath), 'utf8');
 const configPath = join(root, 'packages/designer/tsconfig.json');
 const config = ts.readConfigFile(configPath, ts.sys.readFile);
 const options = ts.parseJsonConfigFileContent(config.config, ts.sys, dirname(configPath)).options;
-const program = ts.createProgram([join(root, canonicalPath), join(root, hostPath), join(root, 'packages/designer/src/studio/index.ts')], options);
+const program = ts.createProgram([join(root, canonicalPath), join(root, hostPath), join(root, 'packages/designer/src/specimen/index.ts')], options);
 const checker = program.getTypeChecker();
 const ast = program.getSourceFile(join(root, canonicalPath)), hostAst = program.getSourceFile(join(root, hostPath));
 const sourceInputs = [];
-for (const name of [canonicalPath, hostPath, 'packages/designer/src/studio/specimen-token-reference.ts', 'packages/designer/src/catalog-core/studio-host-parts.ts']) {
+for (const name of [canonicalPath, hostPath, 'packages/designer/src/specimen/specimen-token-reference.ts', 'packages/designer/src/catalog-core/studio-host-parts.ts']) {
   const file = program.getSourceFile(join(root, name));
   if (!file) throw new Error(`Actual source unavailable: ${name}`);
   let emitted;
@@ -48,7 +48,7 @@ const tokenRegistryInstalled = await readFile(join(root, tokenRegistryPath.repla
 if (JSON.stringify(JSON.parse(tokenRegistrySource)) !== JSON.stringify(JSON.parse(tokenRegistryInstalled))) throw new Error('The current registered token/member emit mappings differ from the installed build');
 sourceInputs.push({ path: tokenRegistryPath, sha256: sha256(tokenRegistrySource), compiledSha256: sha256(tokenRegistryInstalled), proof: 'current source JSON data equals actual installed registry' });
 const unalias = symbol => symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-const exports = checker.getExportsOfModule(checker.getSymbolAtLocation(program.getSourceFile(join(root, 'packages/designer/src/studio/index.ts'))));
+const exports = checker.getExportsOfModule(checker.getSymbolAtLocation(program.getSourceFile(join(root, 'packages/designer/src/specimen/index.ts'))));
 const constructorImport = hostAst.statements.filter(ts.isImportDeclaration).flatMap(statement => statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings) ? statement.importClause.namedBindings.elements : []).find(element => element.name.text === 'studioSpecimenTokenStyle');
 if (!constructorImport || unalias(checker.getSymbolAtLocation(constructorImport.name)) !== unalias(exports.find(symbol => symbol.name === 'studioSpecimenTokenStyle'))) throw new Error('The actual constructor and public export are different source symbols');
 for (const part of Object.values(STUDIO_SPECIMEN_HOST_PARTS)) {
@@ -57,7 +57,7 @@ for (const part of Object.values(STUDIO_SPECIMEN_HOST_PARTS)) {
 }
 
 const directory = await mkdtemp(join(tmpdir(), 'studio-token-host-proof-'));
-const compiler = spawnSync(process.execPath, ['dist/library-cli/surface-evidence-compiler.js'], { cwd: join(root, 'packages/designer'), input: JSON.stringify({ modules: ['react', '@clossys/designer/components', '@clossys/designer/studio', '@clossys/designer/catalog'] }), encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+const compiler = spawnSync(process.execPath, ['dist/library-cli/surface-evidence-compiler.js'], { cwd: join(root, 'packages/designer'), input: JSON.stringify({ modules: ['react', '@clossys/designer/components', '@clossys/designer/specimen', '@clossys/designer/catalog'] }), encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 await writeFile(join(directory, 'dependency-compiler.stdout.json'), compiler.stdout);
 await writeFile(join(directory, 'dependency-compiler.stderr.txt'), compiler.stderr);
 if (compiler.status !== 0) throw new Error(`Actual dependency compiler failed: ${compiler.stderr}`);
@@ -77,8 +77,8 @@ for (const [name, content] of reader.libraryFiles(catalog, library, [], componen
 }
 const profile = resolveProfile({ catalog, library: await reader.readLibrary(join(directory, 'projection'), catalog), componentOptions });
 const providerSource = await studioComponentProviderSource(profile, new Map());
-const canonicalDist = join(root, 'packages/designer/dist/studio/specimen-token-assets.js');
-const source = `${providerSource}\nexport { Swatch } from ${JSON.stringify(canonicalDist)};\nexport { renderSpecimenSwatchHostPart, renderSpecimenContrastHostPart, studioSpecimenTokenStyle, specimenTokenReference, componentSpecimenPreview } from "@clossys/designer/studio";\n`;
+const canonicalDist = join(root, 'packages/designer/dist/specimen/specimen-token-assets.js');
+const source = `${providerSource}\nexport { Swatch } from ${JSON.stringify(canonicalDist)};\nexport { renderSpecimenSwatchHostPart, renderSpecimenContrastHostPart, studioSpecimenTokenStyle, specimenTokenReference, componentSpecimenPreview } from "@clossys/designer/specimen";\n`;
 const bundled = await build({ stdin: { contents: source, resolveDir: root, loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'browser', target: 'es2022', metafile: true, external: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'], banner: { js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' }, logLevel: 'silent', plugins: [{ name: 'actual-private-swatch-export', setup(context) { context.onLoad({ filter: /specimen-token-assets\.js$/ }, async args => args.path === canonicalDist ? { loader: 'js', contents: await readFile(args.path, 'utf8') + '\nexport { Swatch };\n' } : undefined); } }] });
 if (Object.keys(bundled.metafile.inputs).some(file => /typescript|surface-evidence-compiler|measure-specimen-surfaces/.test(file))) throw new Error('Build-only code reached the real host module');
 await symlink(join(root, 'node_modules'), join(directory, 'node_modules'), 'dir');
@@ -104,12 +104,12 @@ const selected = executable.componentSpecimenPreview({ modules: context.modules 
 if ('refusal' in selected) throw new Error(selected.refusal.detail);
 const nativeFindings = [], cases = [];
 const swatch = ast.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'Swatch');
-const sources = [{ name: 'Swatch', text: 'export ' + swatch.getText(ast), imports: 'import type { ResolvedMember } from "@clossys/designer/catalog";\nimport type { DesignerSpecimenContext, SpecimenLeafProps } from "@clossys/designer/studio";\n', sourcePath: canonicalPath }];
+const sources = [{ name: 'Swatch', text: 'export ' + swatch.getText(ast), imports: 'import type { ResolvedMember } from "@clossys/designer/catalog";\nimport type { DesignerSpecimenContext, SpecimenLeafProps } from "@clossys/designer/specimen";\n', sourcePath: canonicalPath }];
 for (const [id, part] of Object.entries(STUDIO_SPECIMEN_HOST_PARTS)) {
   const node = hostAst.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === part.export);
   const request = id === 'studio.specimen-swatch' ? { memberId, mode: 'light' } : { backgroundMemberId: memberId, colorMemberId: pairMemberId, pairMemberId, mode: 'light' };
   try { if (executable[part.export](context, request).type !== selected.binding.Component) throw new Error('The actual host returned a different selected component'); } catch (error) { runtimeFindings.push({ code: 'S5', evidence: error.message }); }
-  sources.push({ name: part.export, text: node.getText(hostAst).replace('  const Content = selectedContent(context);\n', ''), imports: 'import type { ReactNode } from "react";\nimport { studioSpecimenTokenStyle, specimenTokenReference, type DesignerSpecimenContext, type SpecimenSwatchHostRequest, type SpecimenContrastHostRequest } from "@clossys/designer/studio";\n', sourcePath: hostPath });
+  sources.push({ name: part.export, text: node.getText(hostAst).replace('  const Content = selectedContent(context);\n', ''), imports: 'import type { ReactNode } from "react";\nimport { studioSpecimenTokenStyle, specimenTokenReference, type DesignerSpecimenContext, type SpecimenSwatchHostRequest, type SpecimenContrastHostRequest } from "@clossys/designer/specimen";\n', sourcePath: hostPath });
 }
 for (const source of sources) {
   const entry = `sections/specimen-swatch/${source.name}.tsx`;

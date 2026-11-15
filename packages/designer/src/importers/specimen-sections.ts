@@ -3,7 +3,7 @@ import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { surfaceDigest, surfaceManifest, surfaceFault } from "../catalog-core/surface-library.js";
 import type { SurfaceCandidateDocument, SurfaceFile, SurfaceSectionEntry, SurfaceTransform, SurfacePackageEvidence, SurfaceDependency } from "../catalog-core/surface-types.js";
-import { SPECIMEN_RENDER_PARTS } from "../studio/specimen-render-part-identities.js";
+import { SPECIMEN_RENDER_PARTS } from "../specimen/specimen-render-part-identities.js";
 
 export const SPECIMEN_SECTION_EXPORTS = [
   {
@@ -207,7 +207,7 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
     if (registration.id === "sections.specimen-swatch" || registration.id === "sections.specimen-color-ramp") parts.push("studio.specimen-swatch", "studio.specimen-contrast");
     const code = [
       '"use client";',
-      'import { bindNativeSpecimenContext, studioSpecimenLeaves, type SpecimenLeafProps } from "@clossys/designer/studio";',
+      'import { bindNativeSpecimenContext, studioSpecimenLeaves, type SpecimenLeafProps } from "@clossys/designer/specimen";',
       ...ports.map(port => `import { ${port.name === port.local ? port.name : `${port.name} as ${port.local}`} } from "../../components/${port.id.slice(11)}/index.js";`),
       `export function ${registration.name}(props: SpecimenLeafProps) {`,
       `  const context = bindNativeSpecimenContext(props.context, { ${ports.map(port => port.name === port.local ? port.name : `${port.name}: ${port.local}`).join(", ")} });`,
@@ -223,7 +223,7 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
     ].join("\n");
     const own = [{ path: entry, content: code }, { path: "LICENSE", content: notice }];
     const pin = { kind: "local-tree" as const, tree: sha256(stableStringify(surfaceManifest(own))).slice(0,40), files: surfaceManifest(own) };
-    const dependencies = [{ module: "@clossys/designer/studio", version: packages.find(pkg => pkg.module === "@clossys/designer/studio")?.version ?? "0.12.0", license: "MIT" }, ...selectedDependencies.filter(dependency => dependency.module !== "@clossys/designer/studio")];
+    const dependencies = [{ module: "@clossys/designer/specimen", version: packages.find(pkg => pkg.module === "@clossys/designer/specimen")?.version ?? "0.12.0", license: "MIT" }, ...selectedDependencies.filter(dependency => dependency.module !== "@clossys/designer/specimen")];
     const candidate: SurfaceSectionEntry = {
       kind: "section", slot: registration.id, source: "foundry", impl: { kind: "source", entry, export: registration.name },
       rendering: "client", members: [], states: ["default"], reads: { themes: ["themes.spacing"], assets: [] },

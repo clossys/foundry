@@ -6,7 +6,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { isModuleAbsent } from "../errors.js";
-import { pinnedWriterCopy } from "../server/specimen-tree.js";
+import { pinnedWriterCopy } from "../specimen/specimen-tree.js";
 
 export interface SiteServerOptions {
   /** Canonical consumer roots; when present /__specimen is mounted. */

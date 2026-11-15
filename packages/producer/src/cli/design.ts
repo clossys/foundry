@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import type { Cell, Bullet } from "@clossys/director";
-import { agentModule } from "../server/cells.js";
-import { libraryTheme } from "../server/library-selection.js";
+import { agentModule } from "../read/cells.js";
+import { libraryTheme } from "../read/library-selection.js";
 import { directorLineRef, directorRef, readPinnedDirector } from "../records/director-pinned.js";
 import { readPinned, type PinnedSet } from "../records/pinned.js";
 import { candidateReason, directorTraceProblem, owesDirectorTrace } from "../records/director-trace.js";

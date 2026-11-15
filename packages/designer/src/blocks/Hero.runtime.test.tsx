@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import { renderHeroSection } from "../runtime/sections/hero.js";
 import type { SectionRenderInput } from "../runtime/sections/group-a-content.js";
 import type { HeroBackdrop } from "./hero/hero-backdrop.js";
-import { heroSpecimenInput } from "../studio/hero-specimen.js";
+import { heroSpecimenInput } from "../specimen/hero-specimen.js";
 const art={slot:'backdrop',purpose:'decorative',alt:'',width:1600,height:900,aspect:'16:9',fit:'cover',loading:'lazy',bytes:100_000,backgroundToken:'--color-surface-base',source:{format:'webp',src:'/art/runtime.webp'}};
 // The registered runtime input: full fill/selection/content rows and the Hero host's resolved
 // Writer copy port (E5), with this test's backdrop art in the backdrop cell.
