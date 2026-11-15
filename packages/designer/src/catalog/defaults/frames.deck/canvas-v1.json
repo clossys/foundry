@@ -1,0 +1,43 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "designer/frames.deck/package:canvas-v1.json",
+    "agent": "designer",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "designer/frames.deck",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/designer"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+    "name": "deck",
+    "type": "registry:block",
+    "export": "DeckFrame",
+    "variants": {
+      "aspect": [
+        "16:9"
+      ]
+    },
+    "dependencies": [],
+    "registryDependencies": [
+      "utils"
+    ],
+    "files": [
+      {
+        "path": "registry/default/blocks/deck.tsx",
+        "type": "registry:block",
+        "content": "import type * as React from \"react\"\n\nimport { cn } from \"@/lib/utils\"\n\nexport function DeckFrame({ children, className }: { children: React.ReactNode; className?: string }) {\n  return (\n    <main data-slot=\"deck-frame\" data-aspect=\"16:9\" className={cn(\"mx-auto aspect-video w-full overflow-hidden bg-background text-foreground\", className)}>\n      {children}\n    </main>\n  )\n}\n"
+      }
+    ]
+  }
+}

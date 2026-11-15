@@ -1,5 +1,5 @@
 // Generated from sections.sign-in-form by src/generated/props/generate.ts; do not edit.
-export const signInFormContractSha256 = "0bdeae194f7236069539f27c52c36562a3105410aadbe23195013ec80d706d1b";
+export const signInFormContractSha256 = "0d9b9f4bd44f58f717f57197df617f22a32c413d74dfe5de900c5bdb304a5efd";
 
 export type SignInFormCopy = {
   header: {
@@ -26,7 +26,7 @@ export type SignInFormCopy = {
     pending: string; // action
     back: string; // action
     resend: string; // action
-    divider: string; // action
+    divider: string; // label
   };
   error?: {
     message?: string; // body

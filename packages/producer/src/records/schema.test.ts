@@ -65,7 +65,7 @@ const LITERAL_FILES = [
   "packages/designer/views/slot-compare.md",
   "packages/producer/src/loops/loop.release/release-v1.json",
   "packages/producer/views/queue-inbox.md",
-  "packages/publisher/src/catalog/defaults/chrome.site-header/header-v1.json",
+  "packages/publisher/defaults/chrome.site-header/header-v1.json",
 ] as const;
 
 function loadSchemas(): Map<string, JsonSchema> {

@@ -108,8 +108,9 @@ describe("S2-1 bounded section composition reconciliation", () => {
       } },
     } : slot).sort((a, b) => a.id.localeCompare(b.id));
     expect(additions.map(slot => slot.id)).toEqual(waveOneIds.filter(slotId => slotId !== id("error-message")));
+    // foundry-build-0018 fix r1: sign-in-form actions.divider is a label (budget 160), not an action.
     expect(createHash("sha256").update(JSON.stringify(additions)).digest("hex"))
-      .toBe("5d8a6377a73535bb43ed5f6c6c914aafbf81380bceea6d8af4b1878c5574aee2");
+      .toBe("e431609cdec2064100fbdd38a08b2f67cefd6f0076aa0874e23415bfc750a6a9");
   });
 });
 

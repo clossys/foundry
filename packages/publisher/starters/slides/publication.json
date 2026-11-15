@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.starter/1",
+  "id": "slides",
+  "node": "directory/decks/slides",
+  "root": "/slides",
+  "pages": [
+    "page.deck"
+  ],
+  "layouts": [
+    "layout.deck"
+  ],
+  "chrome": [],
+  "release": "release.slides",
+  "redirects": [],
+  "decks": [
+    "starter"
+  ],
+  "defaults": [
+    "layout.deck/standard-v1.json",
+    "page.deck/starter-v1.json"
+  ]
+}

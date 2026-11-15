@@ -130,8 +130,8 @@ describe("component build IA registry", () => {
     expect(build.fills.every(fill => !fill.$extensions["com.clossys.fill"].slot.startsWith("components."))).toBe(true);
     expect(build.placements.filter(row => row.layer === "themes" || row.layer === "assets")).toEqual(runtime.placements);
     expect(build.retired).toEqual(retired);
-    // planner:C5-DREC: owner D2/LAD-1/LAD-2 retirements, plus foundry-build-0018 (22 studio-killed and 8 recut); retired-leaves.test.ts pins the ids.
-    expect(retired).toHaveLength(43);
+    // planner:C5-DREC: owner D2/LAD-1/LAD-2 retirements, plus foundry-build-0018 (22 studio-killed and 6 recut; frames.sheet and frames.command stay live, review r1 P1); retired-leaves.test.ts pins the ids.
+    expect(retired).toHaveLength(41);
     const component = build.slots.find(slot => slot.layer === "components")!;
     component.id = "components.changed";
     expect(loadBuildCatalog().slots.some(slot => slot.id === "components.changed")).toBe(false);

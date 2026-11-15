@@ -28,7 +28,7 @@ describe("retired leaves (owner D2 / LAD-1 / LAD-2 2026-11-11)", () => {
       .toEqual([expect.stringContaining("is itself retired")]);
   });
 
-  it("the committed registry is valid against the build IA and records the owner's 13 retirements, then foundry-build-0018's 30", () => {
+  it("the committed registry is valid against the build IA and records the owner's 13 retirements, then foundry-build-0018's 28", () => {
     const build = loadBuildCatalog();
     expect(checkRetiredLeaves(build.retired, build.placements)).toEqual([]);
     expect(build.retired).toEqual(retired);
@@ -42,7 +42,7 @@ describe("retired leaves (owner D2 / LAD-1 / LAD-2 2026-11-11)", () => {
       "components.dropdown-menu": "components.menu",
       "components.canvas-zoom": null, "components.canvas-map": null,
       "sections.logo-hero": "sections.hero", "sections.cards": "sections.link-index",
-      "frames.document": null, "frames.sheet": null, "frames.command": null,
+      "frames.document": null,
       // The 22 Studio specimen leaves, retired in place.
       ...Object.fromEntries(["swatch", "ladder", "player", "grid", "matrix", "viewport", "passage", "copy-in-context"].map(leaf => [`components.specimen-${leaf}`, null])),
       ...Object.fromEntries(["swatch", "color-ramp", "type-ladder", "spacing-ladder", "radius-ladder", "motion-player", "asset-grid", "icon-grid", "variant-matrix", "section-viewports", "frame-viewports", "rich-passage", "copy-in-context", "page-viewports"].map(leaf => [`sections.specimen-${leaf}`, null])),

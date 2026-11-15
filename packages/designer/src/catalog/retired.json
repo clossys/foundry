@@ -248,17 +248,5 @@
     "retiredAt": "2026-11-15",
     "decidedBy": "planner:foundry-build-0018",
     "reason": "off tree: render plumbing, not a slot (ia-target designer.md section 7)"
-  },
-  {
-    "id": "frames.sheet",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "retired by merge into components.sheet (cross-layer, so no replacedBy)"
-  },
-  {
-    "id": "frames.command",
-    "retiredAt": "2026-11-15",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "retired by merge into components.command (cross-layer, so no replacedBy)"
   }
 ]

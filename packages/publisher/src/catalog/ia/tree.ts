@@ -32,7 +32,7 @@ export interface PageSlot {
   kind: "page"; publication: string; parked?: boolean; path?: string; status?: number; collection?: string;
   layouts: readonly string[]; records?: { pattern: string; meta: string };
 }
-export interface ReleaseSlot { kind: "release"; publication: string; parked?: boolean; exports?: readonly { kind: string; pages?: readonly string[] }[]; gates?: readonly string[]; signoff?: { by: string; raise: string } }
+export interface ReleaseSlot { kind: "release"; publication: string; parked?: boolean; exports?: readonly { kind: string; pages?: readonly string[]; per?: string }[]; gates?: readonly string[]; signoff?: { by: string; raise: string } }
 export type SlotContract = LayoutSlot | ChromeSlot | PageSlot | ReleaseSlot;
 
 export interface L0Tree {
@@ -145,7 +145,7 @@ export function checkTree(trees: readonly L0Tree[] = PUBLISHER_TREES, retired: r
 
 /** The package root: three directories above this file, from src/catalog/ia/ and dist/catalog/ia/ alike. */
 export const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-export const STARTER_IDS = ["site", "docs", "app"] as const;
+export const STARTER_IDS = ["site", "docs", "app", "slides"] as const;
 export type StarterId = (typeof STARTER_IDS)[number];
 
 export interface CandidateFile<C = Record<string, unknown>> { clossys: Record<string, unknown> & { id: string; slot: string; source: { kind: string } }; content: C }
@@ -155,6 +155,8 @@ export interface LayoutOption { frame: string; chrome: string[]; order: string[]
 export interface StarterPublication {
   schema: string; id: StarterId; node: string; root: string; pages: string[]; layouts: string[]; chrome: string[];
   release: string; redirects: unknown[]; defaults: string[];
+  /** Slides only: the deck names, one route per slide at `<root>/<deck>/<n>`. */
+  decks?: string[];
 }
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, "utf8")) as T;
@@ -176,7 +178,8 @@ export function loadStarter(id: StarterId, root: string = PACKAGE_ROOT): Starter
 
 // ---------- The live Designer catalog ----------
 
-export interface DesignerCatalog { placed: ReadonlySet<string>; retired: ReadonlySet<string>; live: ReadonlySet<string> }
+/** `withDefault`: slot ids with a Designer fill (`src/catalog/fills/<source>/<id>.json`) or a package default (`src/catalog/defaults/<id>/`). */
+export interface DesignerCatalog { placed: ReadonlySet<string>; retired: ReadonlySet<string>; live: ReadonlySet<string>; withDefault: ReadonlySet<string> }
 
 /** The installed `@clossys/designer` package directory, found the way Node finds a dependency. */
 export function designerPackageDir(from: string = PACKAGE_ROOT): string {
@@ -187,7 +190,53 @@ export function designerPackageDir(from: string = PACKAGE_ROOT): string {
   }
 }
 
-/** Designer's placed, retired and live slot ids, read from its shipped `src/catalog` tree (the live catalog). */
+// ---------- The live Writer Copy catalog ----------
+
+/** The installed `@clossys/writer` package directory, found the way Node finds a dependency. */
+export function writerPackageDir(from: string = PACKAGE_ROOT): string {
+  for (let dir = from; ; dir = dirname(dir)) {
+    const candidate = join(dir, "node_modules", "@clossys", "writer");
+    if (existsSync(join(candidate, "package.json"))) return realpathSync(candidate);
+    if (dirname(dir) === dir) throw new Error("@clossys/writer is not installed");
+  }
+}
+
+/** Writer's Copy L0 slot ids (`<unit>.copy`), read from its shipped `src/catalog/ia/copy.json`. */
+export function loadWriterCopySlots(dir: string = writerPackageDir()): ReadonlySet<string> {
+  const leavesOf = (nodes: readonly TreeNode[]): string[] => nodes.flatMap(node => node.leaves ? [...node.leaves] : leavesOf(node.children ?? []));
+  return new Set(leavesOf(readJson<{ nodes: TreeNode[] }>(join(dir, "src", "catalog", "ia", "copy.json")).nodes));
+}
+
+/** The Writer copy slot a `writer/<slot>#<record>` ref names, or undefined when the ref is malformed. */
+export function writerCopySlot(ref: string): string | undefined {
+  return /^writer\/([a-z][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)+)#[a-z0-9][a-z0-9.-]*$/.exec(ref)?.[1];
+}
+
+/** Where Designer ships its package defaults: `src/catalog/defaults/<slot-id>/<name>-v1.json` (the package `files` ship `src`). */
+export const designerDefaultsDir = (dir: string = designerPackageDir()): string => join(dir, "src", "catalog", "defaults");
+
+/** One Designer slot's package defaults, read from the folder the package ships; empty when the slot has none. */
+export function loadDesignerPackageDefaults(id: string, dir: string = designerPackageDir()): CandidateFile[] {
+  const slot = join(designerDefaultsDir(dir), id);
+  if (!existsSync(slot)) return [];
+  return readdirSync(slot).filter(name => name.endsWith(".json")).sort().map(name => readJson<CandidateFile>(join(slot, name)));
+}
+
+/** A Designer frame contract from its IA extension (`src/catalog/ia/slides.json`): root element, canvas and slots. */
+export interface DesignerFrameContract {
+  kind: "frame"; root: string; canvas: { aspect: string; width: number; height: number };
+  slots: readonly { id: string; accepts: string; required?: boolean; max?: number }[]; variants?: Readonly<Record<string, readonly string[]>>;
+}
+export function loadDesignerFrameContract(id: string, dir: string = designerPackageDir()): DesignerFrameContract {
+  const contract = readJson<{ slots: Record<string, { kind?: string }> }>(join(dir, "src", "catalog", "ia", "slides.json")).slots[id];
+  if (contract?.kind !== "frame") throw new Error(`designer: ${id} is not a frame in the Designer IA extension`);
+  return contract as DesignerFrameContract;
+}
+
+/**
+ * Designer's placed, retired and live slot ids, read from its shipped `src/catalog` tree (the live catalog), with the
+ * families of its additive IA extension (`ia/slides.json`) merged in, and the ids that ship a package default.
+ */
 export function loadDesignerCatalog(dir: string = designerPackageDir()): DesignerCatalog {
   const catalog = join(dir, "src", "catalog");
   const leavesOf = (nodes: readonly TreeNode[]): string[] => nodes.flatMap(node => node.leaves ? [...node.leaves] : leavesOf(node.children ?? []));
@@ -195,6 +244,13 @@ export function loadDesignerCatalog(dir: string = designerPackageDir()): Designe
   for (const layer of ["themes", "assets", "components", "sections", "frames"]) {
     for (const id of leavesOf(readJson<{ nodes: TreeNode[] }>(join(catalog, "ia", `${layer}.json`)).nodes)) placed.add(id);
   }
+  const extension = join(catalog, "ia", "slides.json");
+  if (existsSync(extension)) for (const family of readJson<{ families: { node: TreeNode }[] }>(extension).families) for (const id of leavesOf([family.node])) placed.add(id);
   const retired = new Set(readJson<RetiredEntry[]>(join(catalog, "retired.json")).map(entry => entry.id));
-  return { placed, retired, live: new Set([...placed].filter(id => !retired.has(id))) };
+  const withDefault = new Set<string>();
+  const fills = join(catalog, "fills");
+  if (existsSync(fills)) for (const source of readdirSync(fills)) for (const name of readdirSync(join(fills, source))) if (name.endsWith(".json")) withDefault.add(name.slice(0, -5));
+  const defaults = designerDefaultsDir(dir);
+  if (existsSync(defaults)) for (const id of readdirSync(defaults)) if (readdirSync(join(defaults, id)).some(name => name.endsWith(".json"))) withDefault.add(id);
+  return { placed, retired, live: new Set([...placed].filter(id => !retired.has(id))), withDefault };
 }

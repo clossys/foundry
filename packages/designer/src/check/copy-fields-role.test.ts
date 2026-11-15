@@ -29,6 +29,12 @@ describe("copy fields carry a role, a role budget and a binding kind", () => {
     expect(hero.some(entry => entry.role === "heading")).toBe(true);
   });
 
+  it("sign-in form's actions.divider is a label, not an action: the 'or continue with' divider is not a control and its translations outrun the 24-char action budget", () => {
+    const divider = field(clone(), "sections.sign-in-form", "actions.divider");
+    expect(divider.role).toBe("label");
+    expect((divider.maxLength as Record<string, number>).en).toBe(ROLE_BUDGET.label);
+  });
+
   it("mutation: a field with no role fails", () => {
     const all = clone();
     delete field(all, "sections.hero", "header.heading").role;

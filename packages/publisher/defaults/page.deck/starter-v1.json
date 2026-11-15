@@ -1,0 +1,80 @@
+{
+  "clossys": {
+    "schema": "clossys.candidate/1",
+    "id": "publisher/page.deck/package:starter-v1.json",
+    "agent": "publisher",
+    "kind": "candidate",
+    "status": "submitted",
+    "slot": "publisher/page.deck",
+    "createdBy": {
+      "actor": "package",
+      "package": "@clossys/publisher"
+    },
+    "createdAt": "2026-11-15T00:00:00Z",
+    "refs": [],
+    "source": {
+      "kind": "package-default",
+      "ref": []
+    },
+    "rationale": []
+  },
+  "content": {
+    "path": "/slides/<deck>/<n>",
+    "collection": "deck",
+    "layout": "publisher/layout.deck",
+    "sections": [
+      {
+        "role": "title",
+        "use": "designer/sections.slide-title",
+        "variant": {
+          "medium": "slide"
+        },
+        "copy": "writer/sections.slide-title.copy#deck.title"
+      },
+      {
+        "role": "agenda",
+        "use": "designer/sections.slide-agenda",
+        "variant": {
+          "medium": "slide"
+        },
+        "copy": "writer/sections.slide-agenda.copy#deck.agenda"
+      },
+      {
+        "role": "statement",
+        "use": "designer/sections.slide-statement",
+        "variant": {
+          "medium": "slide"
+        },
+        "copy": "writer/sections.slide-statement.copy#deck.statement"
+      },
+      {
+        "role": "two-column",
+        "use": "designer/sections.slide-two-column",
+        "variant": {
+          "medium": "slide"
+        },
+        "copy": "writer/sections.slide-two-column.copy#deck.two-column"
+      },
+      {
+        "role": "quote",
+        "use": "designer/sections.slide-quote",
+        "variant": {
+          "medium": "slide"
+        },
+        "copy": "writer/sections.slide-quote.copy#deck.quote"
+      },
+      {
+        "role": "closing",
+        "use": "designer/sections.slide-closing",
+        "variant": {
+          "medium": "slide"
+        },
+        "copy": "writer/sections.slide-closing.copy#deck.closing"
+      }
+    ],
+    "meta": {
+      "copy": "writer/page.deck.meta#deck.meta",
+      "indexing": "noindex"
+    }
+  }
+}

@@ -3,6 +3,7 @@ import assets from "./assets.json" with { type: "json" };
 import components from "./components.json" with { type: "json" };
 import sections from "./sections.json" with { type: "json" };
 import frames from "./frames.json" with { type: "json" };
+import slides from "./slides.json" with { type: "json" };
 import retiredList from "../retired.json" with { type: "json" };
 
 /**
@@ -33,7 +34,31 @@ export interface RetiredEntry { id: string; retiredAt: string; replacedBy?: stri
 export const STUDIO_SPECIMEN = /^(?:components|sections)\.specimen-[a-z0-9-]+$/;
 export const STUDIO_KILLED = "studio-killed";
 
-export const DESIGNER_TREES: readonly LayerTree[] = [themes, assets, components, sections, frames] as unknown as readonly LayerTree[];
+/**
+ * An additive IA extension (`ia/slides.json`, foundry-build-0027): families merged under an existing L1 of one layer,
+ * with their starter leaves and slot contracts. The five layer files stay untouched, so the engine's registered slots
+ * (src/catalog/slots) are unchanged until a later unit registers the new leaves there.
+ */
+export interface IAFamily { layer: DesignerLayer; l1: string; node: { id: string; label: string; leaves: readonly string[] }; starter?: readonly string[] }
+export interface ExtensionSlot { kind: "frame" | "section"; variants?: Readonly<Record<string, readonly string[]>>; [key: string]: unknown }
+export interface IAExtension { schema: string; id: string; owns: string; families: readonly IAFamily[]; slots: Record<string, ExtensionSlot> }
+
+/** The layer trees with each extension family appended under its L1 and its starter leaves added. */
+export function extendTrees(trees: readonly LayerTree[], extension: IAExtension): LayerTree[] {
+  return trees.map(tree => {
+    const families = extension.families.filter(family => family.layer === tree.layer);
+    if (!families.length) return tree;
+    const nodes = tree.nodes.map(node => {
+      const here = families.filter(family => family.l1 === node.id);
+      return here.length && !("leaves" in node) ? { ...node, children: [...node.children, ...here.map(family => family.node)] } : node;
+    });
+    for (const family of families) if (!tree.nodes.some(node => node.id === family.l1)) throw new Error(`${extension.id}: ${tree.layer} L1 ${family.l1} not found`);
+    return { ...tree, nodes, starter: [...(tree.starter ?? []), ...families.flatMap(family => family.starter ?? [])] };
+  });
+}
+
+export const DESIGNER_SLIDES: IAExtension = slides as unknown as IAExtension;
+export const DESIGNER_TREES: readonly LayerTree[] = extendTrees([themes, assets, components, sections, frames] as unknown as readonly LayerTree[], DESIGNER_SLIDES);
 export const DESIGNER_RETIRED: readonly RetiredEntry[] = retiredList as readonly RetiredEntry[];
 
 const leavesOf = (nodes: readonly TreeNode[]): string[] => nodes.flatMap(node => "leaves" in node ? [...node.leaves] : leavesOf(node.children));
@@ -138,7 +163,8 @@ export function checkTree(trees: readonly LayerTree[], retired: readonly Retired
 /** Live starter leaves, per layer. */
 export const starterLeaves = (trees: readonly LayerTree[]): string[] => trees.flatMap(tree => [...(tree.starter ?? [])]);
 
-/** Ids a frame contract names (composes and slot accepts) that are retired component leaves. */
+/** Ids a frame contract names (composes and slot accepts) that are retired leaves of any layer (review r1 P1: a retired frame
+ * composed by a live frame is the same defect as a retired component). */
 export function retiredFrameReferences(
   frameSlots: readonly { id: string; contract: { composes?: readonly string[]; slots?: readonly { id: string; accepts: string }[] } }[],
   retired: readonly RetiredEntry[],
@@ -146,8 +172,43 @@ export function retiredFrameReferences(
   const retiredIds = new Set(retired.map(entry => entry.id));
   const findings: string[] = [];
   for (const frame of frameSlots) {
-    for (const id of frame.contract.composes ?? []) if (id.startsWith("components.") && retiredIds.has(id)) findings.push(`${frame.id}: composes retired ${id}`);
-    for (const slot of frame.contract.slots ?? []) if (slot.accepts.startsWith("components.") && retiredIds.has(slot.accepts)) findings.push(`${frame.id}: slot ${slot.id} accepts retired ${slot.accepts}`);
+    for (const id of frame.contract.composes ?? []) if (retiredIds.has(id)) findings.push(`${frame.id}: composes retired ${id}`);
+    for (const slot of frame.contract.slots ?? []) if (retiredIds.has(slot.accepts)) findings.push(`${frame.id}: slot ${slot.id} accepts retired ${slot.accepts}`);
   }
+  return findings;
+}
+
+/** A package default, `src/catalog/defaults/<slot-id>/<name>-v1.json`: a clossys.candidate/1 header over a shadcn registry item. */
+export interface DefaultFile {
+  clossys: { id: string; slot: string; source: { kind: string }; [key: string]: unknown };
+  content: { variants?: Readonly<Record<string, readonly string[]>>; files?: readonly { path: string; content: string }[]; [key: string]: unknown };
+}
+
+/** Every extension leaf has a slot contract and a package default; every variant value its contract declares is covered by one. */
+export function extensionDefaultFindings(extension: IAExtension, defaults: ReadonlyMap<string, readonly DefaultFile[]>): string[] {
+  const findings: string[] = [];
+  for (const id of extension.families.flatMap(family => family.node.leaves)) {
+    const contract = extension.slots[id];
+    if (!contract) findings.push(`${id}: placed with no slot contract`);
+    const files = defaults.get(id) ?? [];
+    if (!files.length) { findings.push(`${id}: no package default`); continue; }
+    for (const file of files) if (file.clossys.slot !== `designer/${id}` || file.clossys.source.kind !== "package-default") findings.push(`${file.clossys.id}: not a package default of designer/${id}`);
+    for (const [axis, values] of Object.entries(contract?.variants ?? {})) for (const value of values) {
+      if (!files.some(file => file.content.variants?.[axis]?.includes(value))) findings.push(`${id}: variant ${axis}=${value} has no package default`);
+    }
+  }
+  return findings;
+}
+
+/** JSX text in a default's source: words come from Writer through the `copy` prop, never from the default. */
+export function literalCopyFindings(file: DefaultFile): string[] {
+  const findings: string[] = [];
+  const slot = file.clossys.slot.replace(/^designer\//, "");
+  (file.content.files ?? []).forEach((source, index) => {
+    for (const match of source.content.matchAll(/>([^<>{}]*[A-Za-z][^<>{}]*)</g)) {
+      const text = match[1]!.trim();
+      if (text) findings.push(`${slot}: literal text "${text}" in files[${index}]; words come from the copy prop`);
+    }
+  });
   return findings;
 }
