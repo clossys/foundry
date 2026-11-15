@@ -32,7 +32,7 @@ it.each(["themes", "assets", "components", "sections", "frames"] as const)("carr
     }
   }
   if (layer === "themes") {
-    expect(tree.map(node => node.id)).toEqual(["colors", "shape", "typography", "space", "depth", "motion"].map(id => `themes/${id}`));
+    expect(tree.map(node => node.id)).toEqual(["colors", "typography", "layout", "motion"].map(id => `themes/${id}`));
     const tiers = loaded.slots.flatMap(slot => slot.contract.kind === "token" ? [slot.contract.tier] : []);
     expect(new Set(tiers)).toEqual(new Set(["scale", "role"]));
     expect(tree.some(node => node.id === "themes/scale" || node.id === "themes/role")).toBe(false);

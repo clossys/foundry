@@ -28,17 +28,16 @@ function bindingFindings(input: readonly Slot[], properties: readonly string[]):
   return findings.sort(compare);
 }
 const fixtureSlot = (id: string, emit: Record<string, `--${string}`>): Slot => ({ id, layer: "themes", status: "draft", requires: [], contract: { kind: "token", tier: "scale", $type: "number", members: { mode: "closed", names: Object.keys(emit) }, modes: ["light"], emit } });
+// foundry-build-0018 recut (designer.md Theme): four ordered domains; leaf order follows the committed tree.
 const domains: Record<string, readonly string[]> = {
   colors: [
     "background", "foreground", "card", "card-foreground", "popover", "popover-foreground", "primary", "primary-foreground",
     "secondary", "secondary-foreground", "accent", "accent-foreground", "destructive", "muted", "muted-foreground", "border",
-    "input", "ring", "chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "sidebar", "sidebar-foreground", "sidebar-primary",
-    "sidebar-primary-foreground", "sidebar-accent", "sidebar-accent-foreground", "sidebar-border", "sidebar-ring",
+    "input", "ring", "sidebar", "sidebar-foreground", "sidebar-primary", "sidebar-primary-foreground", "sidebar-accent",
+    "sidebar-accent-foreground", "sidebar-border", "sidebar-ring", "chart-1", "chart-2", "chart-3", "chart-4", "chart-5",
   ],
-  shape: ["radius"],
   typography: ["font-sans", "font-heading", "font-mono", "font-serif", "tracking-tight"],
-  space: ["spacing"],
-  depth: ["shadow"],
+  layout: ["spacing", "radius", "shadow"],
   motion: ["animate-marquee", "animate-marquee-vertical", "animate-shiny-text"],
 };
 const colorIds = new Set(domains.colors!.map(id => "themes." + id));
@@ -85,7 +84,7 @@ describe("catalog theme bindings", () => {
       expect(slot.contract.modes).toEqual(color ? ["light", "dark"] : ["light"]);
     }
   });
-  it("places all 42 slots exactly once under six ordered domains without facet branches", () => {
+  it("places all 42 slots exactly once under four ordered domains without facet branches", () => {
     const tree = themePlacement as unknown as Placement;
     expect(tree.layer).toBe("themes");
     expect(tree.nodes.map(node => node.id)).toEqual(Object.keys(domains));

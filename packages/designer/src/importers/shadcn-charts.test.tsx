@@ -19,7 +19,8 @@ const find = (nodes: readonly IaNode[], id: string): IaNode | undefined => {
   for (const node of nodes) { if (node.id === id) return node; const hit = node.children && find(node.children, id); if (hit) return hit; }
   return undefined;
 };
-const coreLeaves = find((ia as unknown as { nodes: IaNode[] }).nodes, "charts-core")!.leaves!;
+// foundry-build-0018: the recut files the three core charts under Components > Collections, beside the retired analytic charts.
+const coreLeaves = ["components.chart-bar", "components.chart-line", "components.chart-area"].filter(id => find((ia as unknown as { nodes: IaNode[] }).nodes, "components-collections")!.leaves!.includes(id));
 const slotById = new Map((slots as unknown as ComponentSlot[]).map(slot => [slot.id, slot]));
 
 if (process.env.UPDATE_SHADCN_CHART_FILLS === "1") {

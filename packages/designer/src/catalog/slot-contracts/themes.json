@@ -1406,7 +1406,7 @@
     "slot": "themes.tracking-tight",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Number token emitted as --tracking-tight (scale tier; light mode), under Typography / Scale.",
+    "purpose": "Number token emitted as --tracking-tight (scale tier; light mode), under Typography / Type sizes.",
     "inputs": [
       {
         "name": "default",

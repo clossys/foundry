@@ -28,7 +28,7 @@ describe("retired leaves (owner D2 / LAD-1 / LAD-2 2026-11-11)", () => {
       .toEqual([expect.stringContaining("is itself retired")]);
   });
 
-  it("the committed registry is valid against the build IA and records the owner's 13 retirements", () => {
+  it("the committed registry is valid against the build IA and records the owner's 13 retirements, then foundry-build-0018's 30", () => {
     const build = loadBuildCatalog();
     expect(checkRetiredLeaves(build.retired, build.placements)).toEqual([]);
     expect(build.retired).toEqual(retired);
@@ -38,7 +38,17 @@ describe("retired leaves (owner D2 / LAD-1 / LAD-2 2026-11-11)", () => {
       "components.native-action": "components.button", "components.number-field": null,
       "sections.boundary-message": null, "sections.legal-prose": null, "sections.logo-mark": null,
       "sections.newsletter": null, "sections.record-detail": null,
+      // foundry-build-0018 (designer.md section 7 and audit 0022): merges and withdrawals.
+      "components.dropdown-menu": "components.menu",
+      "components.canvas-zoom": null, "components.canvas-map": null,
+      "sections.logo-hero": "sections.hero", "sections.cards": "sections.link-index",
+      "frames.document": null, "frames.sheet": null, "frames.command": null,
+      // The 22 Studio specimen leaves, retired in place.
+      ...Object.fromEntries(["swatch", "ladder", "player", "grid", "matrix", "viewport", "passage", "copy-in-context"].map(leaf => [`components.specimen-${leaf}`, null])),
+      ...Object.fromEntries(["swatch", "color-ramp", "type-ladder", "spacing-ladder", "radius-ladder", "motion-player", "asset-grid", "icon-grid", "variant-matrix", "section-viewports", "frame-viewports", "rich-passage", "copy-in-context", "page-viewports"].map(leaf => [`sections.specimen-${leaf}`, null])),
     });
+    expect((retired as Array<Retired & { reason?: string }>).filter(entry => /\.specimen-/.test(entry.id)).every(entry => entry.reason === "studio-killed")).toBe(true);
+    expect((retired as Retired[]).filter(entry => /\.specimen-/.test(entry.id))).toHaveLength(22);
   });
 });
 

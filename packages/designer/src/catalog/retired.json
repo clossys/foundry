@@ -86,13 +86,6 @@
     "reason": "withdrawn: merged into components.menu (ia-target designer.md section 7)"
   },
   {
-    "id": "components.navigation-tree",
-    "retiredAt": "2026-11-15",
-    "replacedBy": "components.sidebar",
-    "decidedBy": "planner:foundry-build-0018",
-    "reason": "retired by merge into components.sidebar; frames.app-sidebar repointed (foundry-audit-0022)"
-  },
-  {
     "id": "components.canvas-zoom",
     "retiredAt": "2026-11-15",
     "decidedBy": "planner:foundry-build-0018",

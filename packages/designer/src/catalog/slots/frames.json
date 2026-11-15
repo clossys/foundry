@@ -805,6 +805,7 @@
         ]
       },
       "composes": [
+        "components.navigation-tree",
         "components.sidebar",
         "components.link",
         "components.button",

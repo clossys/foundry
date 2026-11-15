@@ -21,9 +21,10 @@ it("registers the whole resolved document once in the existing reading placement
     data: "host-injected", surface: "site",
     passageSchema: "passages.sectioned-document", copy: { sourceLocale: "en", fields: [] },
   });
-  const explain = registry.placement.nodes.find(node => node.id === "explain");
-  if (!explain || !("children" in explain)) throw new Error("existing explain placement required");
-  expect(explain.children.find(node => node.id === "explain-reading")).toMatchObject({ leaves: expect.arrayContaining([slot]) });
+  // foundry-build-0018: the recut places the document under Sections > Reading.
+  const root = registry.placement.nodes.find(node => node.id === "sections");
+  if (!root || !("children" in root)) throw new Error("existing sections placement required");
+  expect(root.children.find(node => node.id === "sections-reading")).toMatchObject({ leaves: expect.arrayContaining([slot]) });
 });
 
 it("emits the authentic public Publisher package re-export using actual installed artifact evidence", async () => {

@@ -171,14 +171,14 @@ describe('coverage, scorecard and real asset files',()=>{
  it('rejects non-PNG and incorrectly sized rasterizer results',async()=>{const profile=resolve({catalog,library:identity()});await expect(emitWebIcons(profile,{name:'Example',rasterize:async()=>new Uint8Array([1,2,3])})).rejects.toThrow(/PNG/);const png=await sharp({create:{width:8,height:8,channels:4,background:'#ffffff'}}).png().toBuffer();await expect(emitWebIcons(profile,{name:'Example',rasterize:async()=>png})).rejects.toThrow(/wrong size/);});
 });
 describe('Media resources and patterns',()=>{
- it('registers image, video and pattern under Media with the signed contracts and families',()=>{
+ it('registers image, video and pattern under Imagery with the signed contracts and the recut families (foundry-build-0018)',()=>{
   const slot=(id:string)=>catalog.slots.find(s=>s.id===id)!;
   expect(slot('assets.image').contract).toEqual({kind:'asset',valueKind:'rules',members:{mode:'open',pattern:'^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$'},modes:['light']});
   expect(slot('assets.video').contract).toEqual({kind:'asset',valueKind:'rules',members:{mode:'open',pattern:'^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$'},modes:['light']});
   expect(slot('assets.pattern').contract).toEqual({kind:'asset',valueKind:'rules',members:{mode:'closed',names:['dots','lines','grid','grain','noise','topo']},modes:['light']});
   const media=catalog.placements.find(p=>p.layer==='assets')!.nodes.find(n=>n.id==='imagery') as {label:string;children:{id:string;label:string;leaves:string[]}[]};
-  expect(media.label).toBe('Media');
-  expect(media.children.map(f=>[f.id,f.label,f.leaves])).toEqual([['imagery-framing','Framing',['assets.image-ratio']],['imagery-resources','Resources',['assets.image','assets.video']],['imagery-patterns','Patterns',['assets.pattern']]]);
+  expect(media.label).toBe('Imagery');
+  expect(media.children.map(f=>[f.id,f.label,f.leaves])).toEqual([['imagery-media','Media',['assets.image','assets.video']],['imagery-treatments','Treatments',['assets.image-ratio','assets.pattern']]]);
  });
  it('stores the Foundry pattern fill exactly as its importer builds it from the shared recipes, tokens only',()=>{
   const [fill]=importPatterns();

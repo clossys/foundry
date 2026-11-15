@@ -3,37 +3,16 @@ import retired from "../catalog/retired.json" with { type: "json" };
 import { componentRegistryFindings, loadBuildCatalog, loadCatalog, loadComponentRegistry, isValidId, type ComponentComposedOrigin, type ComposeOperation, type PlacementNode, type Source } from "./index.js";
 
 // Independent audit inventory: permanent ids are separate from the editable IA view.
+// foundry-build-0018 recut (designer.md Interface > Components): one L1, eight L2 families, 78 permanent ids.
 const families: Record<string, readonly string[]> = {
-  "actions-buttons": ["button", "native-action", "toggle-button"],
-  "actions-menus": ["menu", "command", "dropdown-menu"],
-  "actions-toolbars": ["toolbar"],
-  "inputs-form": ["field", "form"],
-  "inputs-text": ["text-field", "search-field"],
-  "inputs-choice": ["checkbox", "radio-group", "switch", "select", "combo-box", "toggle-group"],
-  "inputs-tags": ["tag-group"],
-  "inputs-number": ["number-field", "slider"],
-  "inputs-date": ["date-field", "date-picker", "calendar"],
-  "inputs-color": ["color-picker"],
-  "inputs-files": ["file-trigger"],
-  "display-data": ["table", "grid-list", "tree", "meter"],
-  "display-labels": ["badge", "keyboard"],
-  "display-content": ["semantic-content", "rich-text", "item"],
-  "display-specimens": ["specimen-swatch", "specimen-ladder", "specimen-player", "specimen-grid", "specimen-matrix", "specimen-viewport", "specimen-passage", "specimen-copy-in-context"],
-  "display-media": ["avatar", "media-player"],
-  "display-assets": ["icon", "logo"],
-  "charts-core": ["chart-bar", "chart-line", "chart-area"],
-  "charts-compact": ["chart-sparkline", "chart-status-strip"],
-  "charts-analytic": ["chart-scatter", "chart-heatmap", "chart-range", "chart-waterfall"],
-  "feedback-messages": ["banner", "toast", "empty"],
-  "feedback-indicators": ["status-mark"],
-  "feedback-progress": ["progress-bar", "spinner", "skeleton"],
-  "navigation-links": ["link", "breadcrumbs"],
-  "navigation-panels": ["tabs"],
-  "navigation-trees": ["navigation-tree", "sidebar"],
-  // planner:C5-DREC (owner LAD-3, 2026-11-11): CanvasZoom and CanvasMap gain leaves; 28 -> 29 L2, 76 -> 78 slots.
-  "navigation-canvas": ["canvas-zoom", "canvas-map"],
-  "containment-structure": ["card", "separator", "disclosure", "resize-handle", "scroll-area"],
-  "containment-overlays": ["dialog", "popover", "tooltip", "sheet"],
+  "components-actions": ["button", "toggle-button", "toggle-group", "toolbar", "menu", "command", "native-action", "dropdown-menu"],
+  "components-inputs": ["field", "form", "text-field", "search-field", "checkbox", "radio-group", "switch", "slider", "select", "combo-box", "tag-group", "file-trigger", "color-picker", "date-field", "date-picker", "calendar", "number-field"],
+  "components-collections": ["table", "grid-list", "item", "tree", "chart-bar", "chart-line", "chart-area", "chart-sparkline", "chart-status-strip", "chart-scatter", "chart-heatmap", "chart-range", "chart-waterfall"],
+  "components-navigation": ["link", "breadcrumbs", "tabs", "sidebar", "navigation-tree", "canvas-zoom", "canvas-map"],
+  "components-feedback": ["banner", "toast", "progress-bar", "meter", "spinner", "skeleton", "empty"],
+  "components-text-and-media": ["semantic-content", "rich-text", "badge", "status-mark", "keyboard", "avatar", "media-player", "icon", "logo", "specimen-swatch", "specimen-ladder", "specimen-player", "specimen-grid", "specimen-matrix", "specimen-viewport", "specimen-passage", "specimen-copy-in-context"],
+  "components-structure": ["card", "disclosure", "scroll-area", "separator", "resize-handle"],
+  "components-overlays": ["dialog", "sheet", "popover", "tooltip"],
 };
 const roots: Record<string, string> = {
   command: "Autocomplete", sheet: "Dialog+Modal+ModalOverlay", "dropdown-menu": "Menu",
@@ -81,10 +60,10 @@ describe("component build IA registry", () => {
     expect(componentRegistryFindings(registry)).toEqual([]);
   });
 
-  it("places every id once under six L1 groups and twenty-nine L2 families", () => {
+  it("places every id once under the one Components group and its eight recut families", () => {
     const registry = loadComponentRegistry();
-    expect(registry.placement.nodes.map(node => node.id)).toEqual(["actions", "inputs", "display", "feedback", "navigation", "containment"]);
-    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(29);
+    expect(registry.placement.nodes.map(node => node.id)).toEqual(["components"]);
+    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(8);
     const nodes = leafNodes(registry.placement.nodes);
     expect(Object.fromEntries(nodes.map(node => [node.id, "leaves" in node ? node.leaves : []]))).toEqual(Object.fromEntries(Object.entries(families).map(([id, leaves]) => [id, leaves.map(fullId)])));
     expect(nodes.flatMap(node => "leaves" in node ? node.leaves : []).sort()).toEqual(inventory);
@@ -151,8 +130,8 @@ describe("component build IA registry", () => {
     expect(build.fills.every(fill => !fill.$extensions["com.clossys.fill"].slot.startsWith("components."))).toBe(true);
     expect(build.placements.filter(row => row.layer === "themes" || row.layer === "assets")).toEqual(runtime.placements);
     expect(build.retired).toEqual(retired);
-    // planner:C5-DREC: owner D2/LAD-1/LAD-2 retirements (retired-leaves.test.ts pins the ids).
-    expect(retired).toHaveLength(13);
+    // planner:C5-DREC: owner D2/LAD-1/LAD-2 retirements, plus foundry-build-0018 (22 studio-killed and 8 recut); retired-leaves.test.ts pins the ids.
+    expect(retired).toHaveLength(43);
     const component = build.slots.find(slot => slot.layer === "components")!;
     component.id = "components.changed";
     expect(loadBuildCatalog().slots.some(slot => slot.id === "components.changed")).toBe(false);

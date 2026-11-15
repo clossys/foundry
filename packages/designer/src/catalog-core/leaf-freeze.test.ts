@@ -210,7 +210,7 @@ describe("explicit local component amendment", () => {
       }
     }
     if (changeIA) for (const node of value.ia.nodes) if ("children" in node) for (const family of node.children) if ("leaves" in family) {
-      if (mutation.endsWith("addition")) { if (family.id === "display-content") family.leaves = [...family.leaves, "components.unspecified"]; }
+      if (mutation.endsWith("addition")) { if (family.id === "components-text-and-media") family.leaves = [...family.leaves, "components.unspecified"]; }
       else family.leaves = mutation === "missing-amendment" ? family.leaves.filter(id => id !== amendedId) : family.leaves.map(id => id === amendedId ? "components.renamed-amendment" : id);
     }
     const findings = checkFrozenLeafSets([value.ia], value.slots, ["components"]);

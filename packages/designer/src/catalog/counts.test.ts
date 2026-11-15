@@ -1,11 +1,14 @@
 /**
  * Designer slot tree recut (foundry-build-0018): three L0s (Theme, Art, Interface) over the five layer files.
- * Target from ia-target/designer.md section 2 is 3 / 10 / 38 / 208. This unit reaches 3 / 10 / 37 / 202 live; the gap is
+ * Target from ia-target/designer.md section 2 is 3 / 10 / 38 / 208. This unit reaches 3 / 10 / 37 / 203 live; the gap is
  * recorded as SELF-AMENDs in the build-0018 receipt:
  * - the 8 NEW themes leaves (success, warning, info, font-size, breakpoint, container, ease, duration) need slot
  *   registrations outside this unit, so Theme has 42 leaves, 11 L2 (Motion > Timing has no leaf yet);
  * - components.icon and components.logo stay live: every frame composes them, so their merge into Art needs a frame
- *   repoint first (Interface 111, not 109).
+ *   repoint first;
+ * - components.navigation-tree stays live: frames.app-sidebar's tree slot now accepts components.sidebar, but the
+ *   AppNavigation fill still renders NavigationTree, so the frame truthfully composes both until that render moves
+ *   (Interface 112, not 109).
  */
 import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -30,28 +33,28 @@ const STUDIO_IDS = [
 describe("Designer tree counts (3 L0)", () => {
   const counts = countTree(DESIGNER_TREES, DESIGNER_RETIRED);
 
-  it("has 3 L0, 10 L1, 37 L2 and 202 live L3 (designer.md 3/10/38/208 less the self-amended gap)", () => {
-    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 202 });
+  it("has 3 L0, 10 L1, 37 L2 and 203 live L3 (designer.md 3/10/38/208 less the self-amended gap)", () => {
+    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 203 });
   });
 
   it("counts per L0 in owner order: Theme, Art, Interface", () => {
     expect(counts.byL0).toEqual({
       theme: { l1: 4, l2: 11, l3: 42 },
       art: { l1: 3, l2: 10, l3: 49 },
-      interface: { l1: 3, l2: 16, l3: 111 },
+      interface: { l1: 3, l2: 16, l3: 112 },
     });
-    expect(counts.byLayer).toEqual({ themes: 42, assets: 49, components: 58, sections: 45, frames: 8 });
+    expect(counts.byLayer).toEqual({ themes: 42, assets: 49, components: 59, sections: 45, frames: 8 });
   });
 
-  it("keeps every one of the 246 placed ids; 44 retire in place", () => {
+  it("keeps every one of the 246 placed ids; 43 retire in place", () => {
     expect(counts.placed).toBe(246);
     expect(new Set(placedLeaves(DESIGNER_TREES)).size).toBe(246);
-    expect(counts.retired).toBe(44);
+    expect(counts.retired).toBe(43);
     expect(counts.placed - counts.retired).toBe(counts.l3);
   });
 
   it("has no single-leaf L2 outside the three Theme families waiting on NEW leaves", () => {
-    expect(counts.singleLeafL2).toEqual(["themes/colors/colors-status", "themes/typography/typography-scale", "themes/layout/layout-space"]);
+    expect(counts.singleLeafL2).toEqual(["themes/colors/colors-status", "themes/typography/typography-sizes", "themes/layout/layout-space"]);
   });
 
   it("labels the L1s by the target tree", () => {
@@ -132,17 +135,23 @@ describe("starter leaves resolve to a package default", () => {
 });
 
 describe("frames never point at a retired component", () => {
-  it("app-sidebar composes components.sidebar, not components.navigation-tree", () => {
-    const sidebar = frameSlots.find(slot => slot.id === "frames.app-sidebar")!;
-    expect(sidebar.contract.composes).toContain("components.sidebar");
-    expect(JSON.stringify(sidebar.contract)).not.toContain("components.navigation-tree");
+  it("app-sidebar's tree slot accepts components.sidebar and the frame composes it", () => {
+    const sidebar = frameSlots.find(slot => slot.id === "frames.app-sidebar")!.contract as unknown as { composes: string[]; slots: { id: string; accepts: string }[] };
+    expect(sidebar.composes).toContain("components.sidebar");
+    expect(sidebar.slots.find(slot => slot.id === "tree")?.accepts).toBe("components.sidebar");
     expect(retiredFrameReferences(frameSlots as never, DESIGNER_RETIRED)).toEqual([]);
   });
 
   it("mutation: a frame composing a retired component fails", () => {
     const frames = clone(frameSlots) as { id: string; contract: { composes?: string[] } }[];
-    frames.find(slot => slot.id === "frames.app-sidebar")!.contract.composes!.push("components.navigation-tree");
-    expect(retiredFrameReferences(frames as never, DESIGNER_RETIRED)).toEqual(["frames.app-sidebar: composes retired components.navigation-tree"]);
+    frames.find(slot => slot.id === "frames.app-sidebar")!.contract.composes!.push("components.dropdown-menu");
+    expect(retiredFrameReferences(frames as never, DESIGNER_RETIRED)).toEqual(["frames.app-sidebar: composes retired components.dropdown-menu"]);
+  });
+
+  it("mutation: a frame slot accepting a retired component fails", () => {
+    const frames = clone(frameSlots) as { id: string; contract: { slots?: { id: string; accepts: string }[] } }[];
+    frames.find(slot => slot.id === "frames.app-sidebar")!.contract.slots!.find(slot => slot.id === "tree")!.accepts = "components.canvas-map";
+    expect(retiredFrameReferences(frames as never, DESIGNER_RETIRED)).toEqual(["frames.app-sidebar: slot tree accepts retired components.canvas-map"]);
   });
 
   it("site-shell consent slot accepts sections.consent only, in a named region landmark", () => {

@@ -20,7 +20,8 @@ const BUILD_SLOTS = loadBuildCatalog().slots.map(slot => slot.id);
 // Group/family/leaf counts of the committed IA trees (components and sections re-measured in GATES-RED round 4;
 // both were already 68 and 7/24/66 at 35c58c51f, so the old literals failed there too). Components
 // re-measured at d42a35110: the owner-signed display-specimens family holds the eight specimen leaves.
-const counts = { themes: [6, 11, 42], assets: [4, 10, 49], components: [6, 28, 76], sections: [7, 24, 66], frames: [3, 9, 11] };
+// foundry-build-0018 recut (designer.md): each layer is one L1 under the Theme/Art/Interface L0; retired leaves stay placed.
+const counts = { themes: [4, 11, 42], assets: [3, 10, 49], components: [1, 8, 78], sections: [1, 6, 66], frames: [1, 2, 11] };
 const leafIds = (tree: Placement): string[] => tree.nodes.flatMap(group => "children" in group ? group.children.flatMap(family => "leaves" in family ? family.leaves : []) : []);
 
 describe("IA1 exact three levels and IA2 unmixed nodes", () => {
@@ -72,10 +73,10 @@ describe("IA1 exact three levels and IA2 unmixed nodes", () => {
     });
   }
 
-  it("places consent under Respond > Messages", () => {
-    const respond = sections.nodes.find(node => node.id === "respond")!;
-    const messages = respond.children.find(node => node.id === "respond-messages")!;
-    expect(messages.leaves).toEqual(["sections.notices", "sections.consent"]);
+  it("places consent under Sections > States beside notices", () => {
+    const root = sections.nodes.find(node => node.id === "sections")!;
+    const states = root.children.find(node => node.id === "sections-states")!;
+    expect(states.leaves).toEqual(["sections.empty-state", "sections.error-state", "sections.notices", "sections.consent", "sections.boundary-message"]);
   });
 
   it("rejects deeper nesting, missing trees, empty families and facet branches", () => {
@@ -98,13 +99,11 @@ describe("owner-signed IA moves (ledger #44, 2026-10-26)", () => {
     expect(family(tokens as Placement, "motion-animations")).toEqual(["themes.animate-marquee", "themes.animate-marquee-vertical", "themes.animate-shiny-text"]);
     for (const id of ["themes.animate-marquee", "themes.animate-marquee-vertical", "themes.animate-shiny-text"]) expect(homes(tokens as Placement, id)).toHaveLength(1);
   });
-  it("moves tag-group, icon, logo and status-mark within the component tree and splits charts", () => {
+  it("keeps tag-group, icon, logo, status-mark and the charts each in one recut component family", () => {
     const tree = components as Placement;
-    for (const [id, home] of [["components.tag-group", "inputs-tags"], ["components.icon", "display-assets"], ["components.logo", "display-assets"], ["components.status-mark", "feedback-indicators"]] as const) expect(homes(tree, id)).toEqual([home]);
-    expect(family(tree, "charts-core")).toEqual(["components.chart-bar", "components.chart-line", "components.chart-area"]);
-    expect(family(tree, "charts-compact")).toEqual(["components.chart-sparkline", "components.chart-status-strip"]);
-    expect(family(tree, "charts-analytic")).toEqual(["components.chart-scatter", "components.chart-heatmap", "components.chart-range", "components.chart-waterfall"]);
-    expect(() => family(tree, "display-charts")).toThrow("missing family");
+    for (const [id, home] of [["components.tag-group", "components-inputs"], ["components.icon", "components-text-and-media"], ["components.logo", "components-text-and-media"], ["components.status-mark", "components-text-and-media"]] as const) expect(homes(tree, id)).toEqual([home]);
+    for (const id of ["components.chart-bar", "components.chart-sparkline", "components.chart-scatter", "components.chart-waterfall"]) expect(homes(tree, id)).toEqual(["components-collections"]);
+    for (const old of ["charts-core", "charts-compact", "charts-analytic", "display-charts"]) expect(() => family(tree, old)).toThrow("missing family");
   });
   it("refuses a moved id placed as a leaf in a second layer", () => {
     const { placements, slots } = build();

@@ -94,10 +94,10 @@ describe("draft frame registry", () => {
     }
   });
 
-  it("places each leaf once under three groups and nine families", () => {
+  it("places each leaf once under the one Frames group and its Site and App families (foundry-build-0018)", () => {
     expect(placement.layer).toBe("frames");
-    expect(placement.nodes.map(node => node.id)).toEqual(["page-shells", "regions", "overlay-shells"]);
-    expect(placementData.nodes[1]?.children?.map(node => node.id)).toEqual(["headers", "navigation", "panels", "footers"]);
+    expect(placement.nodes.map(node => node.id)).toEqual(["frames"]);
+    expect(placementData.nodes[0]?.children?.map(node => node.id)).toEqual(["frames-site", "frames-app"]);
     expect(placementFindings(placement, slots.map(slot => slot.id))).toEqual([]);
   });
 
@@ -105,8 +105,9 @@ describe("draft frame registry", () => {
     const original = slots.filter(slot => slot.id !== "frames.auth-shell" && slot.id !== "frames.document");
     expect(original).toHaveLength(9);
     // SCROLL-1 A158/A159: exact app-shell page-module/state/progress ports and app-header actions changed; unrelated rows remain pinned.
+    // foundry-build-0018 (audits 0021, 0022): site-shell consent accepts sections.consent in a named region; app-sidebar tree is components.sidebar.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("6a93677b1f84f5d1068ac4a72893a53f9a9c3551c54a3ba6fe9a0bebfff8600c");
+      .toBe("0dd31b3b64a5032211a738081310b6c8007a06c24c794a28531d4a6c143f9139");
     expect(slots.find(slot => slot.id === "frames.auth-shell")).toEqual({
       id: "frames.auth-shell", layer: "frames", requires: [], status: "draft",
       contract: {
@@ -118,9 +119,7 @@ describe("draft frame registry", () => {
         composes: [], skipTarget: "main-content",
       },
     });
-    expect(placementData.nodes[0]?.children?.find(node => node.id === "page-shells-authentication")).toEqual({
-      id: "page-shells-authentication", label: "Authentication", leaves: ["frames.auth-shell"],
-    });
+    expect(placementData.nodes[0]?.children?.find(node => node.id === "frames-site")?.leaves).toContain("frames.auth-shell");
   });
 
   it("pins the scroll frame regions and bounded navigation state", () => {
@@ -155,9 +154,9 @@ describe("draft frame registry", () => {
         expect(target).toMatch(/^(components|frames)\./);
       }
       expect(new Set(contract.slots.map(slot => slot.id)).size).toBe(contract.slots.length);
-      for (const slot of contract.slots) expect(slot.accepts).toMatch(/^(view|host-node|components\.[a-z][a-z0-9-]*|sections\.\*)$/);
+      for (const slot of contract.slots) expect(slot.accepts).toMatch(/^(view|host-node|components\.[a-z][a-z0-9-]*|sections\.\*|sections\.[a-z][a-z0-9-]*)$/);
     }
-    expect(byId("site-shell").slots.find(slot => slot.id === "consent")?.accepts).toBe("sections.*");
+    expect(byId("site-shell").slots.find(slot => slot.id === "consent")?.accepts).toBe("sections.consent");
     expect(byId("app-header").slots.slice(0, 2).map(slot => slot.id)).toEqual(["context", "trail"]);
     expect(byId("app-header").slots.some(slot => slot.id === "brand")).toBe(false);
     expect(byId("app-header").composes).not.toContain("components.logo");
@@ -175,7 +174,8 @@ describe("draft frame registry", () => {
   it("records roots, server boundaries and ordered shell landmarks", () => {
     expect(slots.map(slot => slot.contract.root)).toEqual(["html", "div", "div", "div", "header", "header", "nav", "aside", "footer", "dialog", "dialog"]);
     expect(slots.filter(slot => slot.contract.rendering === "server").map(slot => slot.id)).toEqual(["frames.document", "frames.site-shell", "frames.auth-shell", "frames.site-header", "frames.site-footer"]);
-    expect(byId("site-shell").landmarks.map(item => item.role)).toEqual(["banner", "main", "contentinfo", "region"]);
+    expect(byId("site-shell").landmarks.map(item => item.role)).toEqual(["region", "banner", "main", "contentinfo", "region"]);
+    expect(byId("site-shell").landmarks[0]).toEqual({ slot: "consent", role: "region", topLevel: true, nameRequired: true });
     expect(byId("app-shell").landmarks.map(item => item.role)).toEqual(["banner", "navigation", "main", "complementary", "region"]);
     for (const { contract } of slots) for (const landmark of contract.landmarks) {
       expect(contract.slots.some(slot => slot.id === landmark.slot)).toBe(true);

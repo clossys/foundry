@@ -13,12 +13,12 @@ describe("document frame catalog registration", () => {
     expect(loadBuildCatalog().retiredByLayer.frames?.some(frame => frame.id === id)).toBe(false);
   });
 
-  it("places the document beside site-shell under Page shells > Documents exactly once", () => {
+  it("places the document once under Frames > Site and retires it in place (foundry-build-0018, designer.md section 7)", () => {
     const homes = placement.nodes.flatMap(group => group.children.flatMap(family =>
       family.leaves.includes(id) ? [{ group: group.id, label: group.label, family: family.id, familyLabel: family.label }] : []));
-    expect(homes).toEqual([{ group: "page-shells", label: "Page shells", family: "page-shells-documents", familyLabel: "Documents" }]);
-    const documents = placement.nodes.find(group => group.id === "page-shells")?.children.find(family => family.id === "page-shells-documents");
-    expect(documents?.leaves).toEqual(["frames.site-shell", id]);
+    expect(homes).toEqual([{ group: "frames", label: "Frames", family: "frames-site", familyLabel: "Site" }]);
+    expect(placement.retired).toContain(id);
+    expect(loadBuildCatalog().retired.some(entry => entry.id === id)).toBe(true);
     expect(placement.nodes.flatMap(group => group.children.flatMap(family => family.leaves)).filter(leaf => leaf === id)).toHaveLength(1);
   });
 

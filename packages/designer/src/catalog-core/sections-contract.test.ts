@@ -96,8 +96,9 @@ describe("S2-1 bounded section composition reconciliation", () => {
     const original = slots.filter(slot => !isWaveOne(slot) && !isLater(slot));
     expect(original).toHaveLength(46);
     // SCROLL-1 A158/A159/A161 updates only section-header, table-of-contents and data-table; all 46 rows remain pinned, with no field projected out.
+    // foundry-build-0018 (audit 0014): every copy field gains its role and role budget; re-pinned from the data.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("93c62811dd98d7ab04e47d48eb7493d233c4c8534319095fd255912ca8a4dba5");
+      .toBe("5e9dc00bb9c25f9ebd92757c9453a49a70f3f159f50ffed6913e245d7656506a");
     // Preserve the original contracts while allowing the three copy-only sign-in
     // configurations covered by sections/sign-in-copy.test.tsx.
     const signInConfigs = ["sign-in.password", "sign-in.provider", "sign-in.verify"];
@@ -108,7 +109,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
     } : slot).sort((a, b) => a.id.localeCompare(b.id));
     expect(additions.map(slot => slot.id)).toEqual(waveOneIds.filter(slotId => slotId !== id("error-message")));
     expect(createHash("sha256").update(JSON.stringify(additions)).digest("hex"))
-      .toBe("96e54f757534d960050d05ddba46bc191318595cca09ce27274beaab9a6eb09a");
+      .toBe("5d8a6377a73535bb43ed5f6c6c914aafbf81380bceea6d8af4b1878c5574aee2");
   });
 });
 
@@ -182,13 +183,14 @@ describe("section build IA registry", () => {
     }
   });
 
-  it("places each leaf once under the six function roots, including shared Parts", () => {
+  it("places each leaf once under the one Sections root, with the locked parts in its Parts family (foundry-build-0018)", () => {
     const registry = loadSectionRegistry();
     expect(registry.placement.layer).toBe("sections");
-    expect(registry.placement.nodes.map(node => node.id)).toEqual(Object.keys(families));
-    for (const node of registry.placement.nodes) {
-      expect("children" in node && leaves(node.children).sort()).toEqual(families[node.id]?.map(id).sort());
-    }
+    expect(registry.placement.nodes.map(node => node.id)).toEqual(["sections"]);
+    const root = registry.placement.nodes[0]!;
+    expect("children" in root && root.children.map(node => node.id)).toEqual(["sections-parts", "sections-story", "sections-reading", "sections-records", "sections-forms", "sections-states"]);
+    const parts = "children" in root ? root.children.find(node => node.id === "sections-parts") : undefined;
+    expect(parts && "leaves" in parts ? parts.leaves : []).toEqual(expect.arrayContaining(families.parts!.map(id)));
     expect(leaves(registry.placement.nodes).sort()).toEqual(inventory);
   });
 

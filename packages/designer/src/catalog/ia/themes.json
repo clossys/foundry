@@ -83,13 +83,13 @@
           "label": "Families",
           "leaves": [
             "themes.font-sans",
-            "themes.font-serif",
+            "themes.font-heading",
             "themes.font-mono",
-            "themes.font-heading"
+            "themes.font-serif"
           ]
         },
         {
-          "id": "typography-scale",
+          "id": "typography-sizes",
           "label": "Type sizes",
           "leaves": [
             "themes.tracking-tight"

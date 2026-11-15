@@ -30,6 +30,12 @@ function canvasFixture() {
   return { input, captured: () => captured };
 }
 
+// foundry-build-0018 (audit 0021): site-shell consent accepts sections.consent only. The SYNTHETIC ordering cases below
+// bind another section there, so they open that one port to sections.* explicitly; the named-port refusal is pinned separately.
+const withOpenConsent = <T extends { contracts: { slots: readonly { contract: { kind: string; slots?: readonly { id: string; accepts: string }[] } }[] } }>(input: T): T => ({
+  ...input, contracts: { ...input.contracts, slots: input.contracts.slots.map(slot => slot.contract.kind === "frame" && slot.contract.slots ? { ...slot, contract: { ...slot.contract, slots: slot.contract.slots.map(port => port.id === "consent" ? { ...port, accepts: "sections.*" } : port) } } : slot) },
+});
+
 describe("canonical runtime Stage/body seam (synthetic metadata only)", () => {
   it("canvas needs no dummy Layout and renders every canonical ref once", () => {
     const f = canvasFixture(), result = prepareRuntimeAssembly(f.input);
@@ -49,7 +55,7 @@ describe("canonical runtime Stage/body seam (synthetic metadata only)", () => {
     expect(prepareRuntimeAssembly({ ...input, stage: { ...input.stage, module } }).status).toBe("refused");
   });
   it("canonical refs retain declared frame-module order outside the Stage body", () => {
-    const f = canvasFixture(), original = f.input, moduleFill = original.binding.sections.body![1]!;
+    const f = canvasFixture(), original = withOpenConsent(f.input), moduleFill = original.binding.sections.body![1]!;
     const input = { ...original, binding: { ...original.binding, frameSlots: { consent: [moduleFill] } },
       ports: { ...original.ports, manifest: { ...original.ports.manifest, fills: original.ports.manifest.fills.map(fill => fill.kind === "frame" ? { ...fill, slots: [...fill.slots, "consent"] } : fill) }, frameOrder: ({ layout, slots }: { layout: readonly string[]; slots: Readonly<Record<string, readonly string[]>> }) => [...slots.consent!, ...layout] },
     };
@@ -134,8 +140,16 @@ describe("SYNTHETIC runtime assembly unit corpus (not full-library proof)", () =
     const result = prepareRuntimeAssembly({ ...input, ports, binding: { ...input.binding, sections: { body: [selected, input.binding.sections.body![1]!] } } });
     expect(result.status).toBe("ready"); if (result.status === "ready") result.assembly.render(result.assembly.snapshot.cells[0]!);
   });
-  it("requires frame slot order and binds every frame section path", () => {
+  it("refuses a section other than sections.consent in the named consent port", () => {
     const input = fixture(); const frame = input.ports.manifest.fills[0]!;
+    const binding = { ...input.binding, frameSlots: { consent: [input.binding.sections.body![1]!] } };
+    const ports = { ...input.ports, manifest: { ...input.ports.manifest, fills: input.ports.manifest.fills.map(fill => fill === frame ? { ...fill, slots: [...fill.slots, "consent"] } : fill) }, frameOrder: (order: { layout: readonly string[]; slots: Readonly<Record<string, readonly string[]>> }) => [...order.layout, ...order.slots.consent!] };
+    const result = prepareRuntimeAssembly({ ...input, ports, binding });
+    expect(result.status).toBe("refused");
+    expect(JSON.stringify(result)).toContain("frameSlots.consent.0: section not accepted");
+  });
+  it("requires frame slot order and binds every frame section path", () => {
+    const input = withOpenConsent(fixture()); const frame = input.ports.manifest.fills[0]!;
     const binding = { ...input.binding, frameSlots: { consent: [input.binding.sections.body![1]!] } };
     const ports = { ...input.ports, manifest: { ...input.ports.manifest, fills: input.ports.manifest.fills.map(fill => fill === frame ? { ...fill, slots: [...fill.slots, "consent"] } : fill) } };
     expect(prepareRuntimeAssembly({ ...input, ports, binding }).status).toBe("pending");

@@ -41,9 +41,10 @@ describe("combined five-layer build IA", () => {
 
   it("keeps frame migration evidence owned and separate from global retirements", () => {
     const build = loadBuildCatalog();
-    // planner:C5-DREC: 13 owner retirements (D2/LAD-1/LAD-2); frames and sections migration stay separate.
-    expect(build.retired).toHaveLength(13);
-    expect(build.retired.filter(entry => entry.id.startsWith("frames."))).toEqual([]);
+    // planner:C5-DREC: 13 owner retirements (D2/LAD-1/LAD-2); foundry-build-0018 adds 22 studio-killed and 8 recut ids.
+    // Frames and sections migration aliases stay separate from this global registry.
+    expect(build.retired).toHaveLength(43);
+    expect(build.retired.filter(entry => entry.id.startsWith("frames.")).map(entry => entry.id)).toEqual(["frames.document", "frames.sheet", "frames.command"]);
     expect(build.retiredByLayer.frames).toEqual(frameRetired);
     expect(build.retiredByLayer.frames).toHaveLength(4);
     expect(build.retiredByLayer.sections).toEqual(loadSectionRegistry().retired);
@@ -69,6 +70,6 @@ describe("combined five-layer build IA", () => {
         expect(forbidden.has(node.label.toLowerCase()), `${placement.layer}.${node.label}`).toBe(false);
       }
     }
-    expect(build.placements.find(placement => placement.layer === "frames")!.nodes.map(node => node.id)).toEqual(["page-shells", "regions", "overlay-shells"]);
+    expect(build.placements.find(placement => placement.layer === "frames")!.nodes.map(node => node.id)).toEqual(["frames"]);
   });
 });

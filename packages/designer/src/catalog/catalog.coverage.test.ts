@@ -448,7 +448,8 @@ describe("component catalog coverage", () => {
   // planner:r2f-53: the six deleted zero-caller charts are gaps, so "the charts" are the built (non-gap) chart leaves.
   it("parks exactly the charts", () => {
     for (const entry of COMPONENT_ENTRIES) {
-      const builtChart = (entry.l2?.startsWith("charts-") ?? false) && entry.status !== "gap";
+      // foundry-build-0018: the recut files charts under Components > Collections, so a chart is a leaf built from src/charts.
+      const builtChart = entry.files.some(file => file.startsWith("src/charts/")) && entry.status !== "gap";
       expect(entry.status === "parked", entry.id).toBe(builtChart);
       expect(entry.disposition === "park", entry.id).toBe(builtChart);
     }
