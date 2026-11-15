@@ -34,7 +34,7 @@ it("the real candidate writer refuses ownerless create before publishing a versi
   const dir = root();
   expect(() => writeElementVersion(join(dir, "library"), {
     element: { ...element, schema: "clossys.element/1", layer: "sections", kind: "registry:block", lineage: { mode: "customized", source: candidates[0]! }, license: { spdx: "MIT" }, reason: "fixture option", createdAt: "2026-10-30T00:00:00Z", checks: [], deps: { npm: {}, elements: [] }, reads: { copyKeys: [], themeVars: [] } },
-    preview: { schema: "clossys.preview/1", fixtures: {}, copy: {}, container: "canvas", theme: "light", width: 1280 },
+    preview: { schema: "clossys.element-preview/1", fixtures: {}, copy: {}, container: "canvas", theme: "light", width: 1280 },
     files: { "hero.tsx": "export const Hero = () => null" }, designerFlow: { path: "create", candidates },
   })).toThrow(DesignerNeedError);
   expect(existsSync(join(dir, "library/sections.hero/hero/v1"))).toBe(false);

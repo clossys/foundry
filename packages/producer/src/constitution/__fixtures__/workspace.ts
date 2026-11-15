@@ -102,7 +102,7 @@ export function validPin(candidate: string, text: string): Record<string, unknow
 export function contractOf(agent: Agent, id: string): Record<string, unknown> {
   switch (KIND[agent]) {
     case "brief": return { summary: `brief ${id}`, fixture: { headings: ["Voice"] } };
-    case "element": return { summary: `element ${id}`, props: ["label"], fixture: { schema: "clossys.preview/1", fixtures: { file: `ui/${id}.tsx`, export: "Example", props: { label: "Label" } } } };
+    case "element": return { summary: `element ${id}`, props: ["label"], fixture: { schema: "clossys.element-preview/1", fixtures: { file: `ui/${id}.tsx`, export: "Example", props: { label: "Label" } } } };
     case "strings": return { summary: `strings ${id}`, fixture: { keys: ["title"], locales: ["en"] } };
     case "seat": { const step = id.slice("seat.".length); return { step, fixture: { step } }; }
     default: return { summary: `page ${id}`, fixture: { route: { path: "/" } } };
