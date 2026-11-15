@@ -1,9 +1,9 @@
 /**
  * The slot contract's preview fixture (`contract.fixture` in slot.json, planner decision D1,
  * 2026-11-13). The fixture belongs to the slot, not to one candidate: it is the props every
- * candidate of the slot is certified with. Its shape is a candidate preview (`clossys.preview/1`):
+ * candidate of the slot is certified with. Its shape is a candidate preview (`clossys.element-preview/1`):
  *
- *   { "schema": "clossys.preview/1",
+ *   { "schema": "clossys.element-preview/1",
  *     "fixtures": { "file": "<file a candidate ships>", "export": "<component it exports>", "props": { ... } },
  *     "inputs"?: { "copy"?: [<Writer key>], "slots"?: [<Designer slot>] },
  *     "container"?: "canvas" | ..., "theme"?: "light" | "dark", "width"?: <px> }
@@ -14,7 +14,7 @@
  */
 import type { SlotModelIssue } from "./validate.js";
 
-export const CONTRACT_FIXTURE_SCHEMA = "clossys.preview/1";
+export const CONTRACT_FIXTURE_SCHEMA = "clossys.element-preview/1";
 
 export interface ContractFixture {
   readonly schema: typeof CONTRACT_FIXTURE_SCHEMA;

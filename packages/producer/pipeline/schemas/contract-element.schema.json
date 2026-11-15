@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clossys.com/schemas/producer/contract-element.schema.json",
   "title": "Element slot contract (contract in clossys/agents/designer/<slot>/slot.json)",
-  "description": "Derived from src/records/slot-model/contract-fixture.ts contractFixtureIssues. The contract is otherwise free-form until W2-I's standards; R01.3 requires the fixture, this schema gives its shape: a clossys.preview/1 preview whose fixtures.props are declared in contract.props.",
+  "description": "Derived from src/records/slot-model/contract-fixture.ts contractFixtureIssues. The contract is otherwise free-form until W2-I's standards; R01.3 requires the fixture, this schema gives its shape: a clossys.element-preview/1 preview whose fixtures.props are declared in contract.props.",
   "type": "object",
   "properties": {
     "fixture": {
@@ -14,7 +14,7 @@
       "additionalProperties": false,
       "properties": {
         "schema": {
-          "const": "clossys.preview/1"
+          "const": "clossys.element-preview/1"
         },
         "fixtures": {
           "type": "object",
