@@ -20,6 +20,16 @@
  *
  * Slot/1 `inputs` and `uses` naming a moved id are repointed to its target; a retired id is dropped from them.
  * A second `--apply` changes no byte.
+ *
+ * Nested layouts (foundry-build-0030): a slot folder is found by its slot.json at any depth below
+ * `agents/<agent>/` and named by the slot.json `id`, not by its folder name. Folders above it are groups, not
+ * ids. The plan first flattens each such folder to `agents/<agent>/<id>/` (the flat layout; grouping lives in
+ * ia.json) and plans the rest on the flat paths, so a nested `--apply` writes what a flat one writes. A group
+ * folder is removed once it is empty and never while it holds anything. A duplicate id at two places, a flat
+ * place that exists, or a group folder holding anything but slot folders refuses the whole plan.
+ *
+ * A Publisher candidate that is a `clossys.page/1` record (the page record today's install and slot check
+ * read) is passed through untouched: it already is the record, and the publisher ships no migration from it.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
@@ -29,6 +39,7 @@ import { parseYamlSubset, validateAgainst } from "../records/schema.js";
 import { agentPackageRoot, packageVersion, writeSlot, SLOT_V1_SCHEMA } from "../records/slot.js";
 import { RETIRE_SCHEMA, appendMigrationEvents, type RewrittenFile } from "../records/slot-write.js";
 import { studioDesignerSlots } from "../records/slot-model/foundry-ia.js";
+import { PAGE_SCHEMA } from "../records/slot-model/types.js";
 import type { AgentId, CandidateHeader, Iso } from "../records/types.js";
 import { planIaSync } from "../cli/ia-sync.js";
 import { migratePins } from "./pin-1-to-2.js";
@@ -57,7 +68,7 @@ export interface PackageTable {
 }
 
 export interface RecutRow { readonly agent: RecutAgent; readonly id: string; readonly fate: RecutFate; readonly target?: string }
-export interface RecutCounts { live: number; moved: number; retired: number; unknown: number; headers: number; carried: number; cells: number; refs: number }
+export interface RecutCounts { live: number; moved: number; retired: number; unknown: number; headers: number; carried: number; cells: number; refs: number; flattened: number }
 export interface CandidateChange {
   readonly agent: RecutAgent;
   readonly from: string;
@@ -69,6 +80,8 @@ export interface CandidateChange {
 }
 export interface FileWrite { readonly file: string; readonly bytes: string }
 export interface FolderMove { readonly agent: RecutAgent; readonly id: string; readonly from: string; readonly to: string }
+/** A slot folder found below a group folder (or under another name) and its flat place `agents/<agent>/<id>`. */
+export interface FlattenMove { readonly agent: RecutAgent; readonly id: string; readonly from: string; readonly to: string }
 
 export interface RecutPlan {
   readonly dir: string;
@@ -78,6 +91,10 @@ export interface RecutPlan {
   readonly rows: RecutRow[];
   /** `<agent>/<id>` of every unknown id: the run refuses while any remains. */
   readonly unknown: string[];
+  /** Slot folders that move to their flat place before every other write; the rest of the plan names flat paths. */
+  readonly flatten: FlattenMove[];
+  /** `<agent>/<id>: duplicate slot id at <places>`: an id whose slot.json sits in two folders (refused). */
+  readonly duplicates: string[];
   /** Packages that ship no retired.json although the consumer holds an id their tree does not place (a STOP). */
   readonly missingRetired: string[];
   readonly candidates: CandidateChange[];
@@ -223,6 +240,8 @@ export function recutCandidateBytes(name: string, text: string, context: HeaderC
       if (current(doc.clossys)) return text;
       return serializeCandidate(name, readdressed(doc.clossys), doc.content);
     }
+    // A Publisher page record (clossys.page/1) is the record today's install and slot check read: kept as is.
+    if (context.agent === "publisher" && object(doc) && doc.schema === PAGE_SCHEMA) return text;
     if (object(doc) && typeof doc.schema === "string") throw new Error(`${name}: a top-level schema key (${doc.schema}) is a record, not an int2 candidate`);
     let content: unknown = doc;
     let source: unknown = int2?.source;
@@ -257,6 +276,65 @@ function slotFolders(consumer: string, agent: string): string[] {
   return readdirSync(dir).filter(id => !NOT_A_SLOT.test(id) && isDir(join(dir, id))).sort();
 }
 
+const SLOT_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const hasSlotFile = (dir: string) => existsSync(join(dir, "slot.json"));
+/** True when a slot.json sits in this folder or any folder below it. */
+const holdsSlot = (dir: string): boolean => hasSlotFile(dir) || readdirSync(dir).some(name => isDir(join(dir, name)) && holdsSlot(join(dir, name)));
+
+function slotJsonId(dir: string): string | undefined {
+  try {
+    const doc = JSON.parse(readFileSync(join(dir, "slot.json"), "utf8")) as unknown;
+    return object(doc) && typeof doc.id === "string" && SLOT_ID.test(doc.id) && !NOT_A_SLOT.test(doc.id) ? doc.id : undefined;
+  } catch { return undefined; }
+}
+
+export interface SlotDiscovery {
+  /** Slot id to every folder holding its slot.json (one, unless duplicated), sorted. */
+  readonly places: Map<string, string[]>;
+  readonly findings: string[];
+}
+
+/**
+ * The slot folders of one agent, at any depth: a folder holding slot.json is a slot folder named by its slot.json
+ * id; a folder above one is a group (not an id) and must hold only slot folders and groups. A depth-1 folder with
+ * no slot.json at or below it is the int2 slot its name gives (the flat layout before slot.json).
+ */
+export function discoverSlots(consumer: string, agent: string): SlotDiscovery {
+  const root = join(consumer, "agents", agent);
+  const places = new Map<string, string[]>();
+  const findings: string[] = [];
+  if (!isDir(root)) return { places, findings };
+  const add = (id: string, dir: string) => places.set(id, [...(places.get(id) ?? []), dir]);
+  const slot = (dir: string, fallback?: string) => {
+    const id = slotJsonId(dir) ?? fallback;
+    if (id === undefined) findings.push(`${posix(consumer, join(dir, "slot.json"))}: no slot id (an id of letters, digits, '.', '_' or '-'); not recut`);
+    else add(id, dir);
+  };
+  const group = (dir: string) => {
+    for (const name of readdirSync(dir).sort()) {
+      const path = join(dir, name);
+      if (!isDir(path)) findings.push(`${posix(consumer, path)}: a group folder holds a file, not a slot folder; not flattened`);
+      else if (hasSlotFile(path)) slot(path);
+      else if (holdsSlot(path)) group(path);
+      else findings.push(`${posix(consumer, path)}: a group folder holds a folder with no slot.json at or below it; not flattened`);
+    }
+  };
+  for (const name of readdirSync(root).filter(entry => !NOT_A_SLOT.test(entry) && isDir(join(root, entry))).sort()) {
+    const dir = join(root, name);
+    if (hasSlotFile(dir)) slot(dir, name);
+    else if (holdsSlot(dir)) group(dir);
+    else add(name, dir);
+  }
+  for (const [id, dirs] of places) places.set(id, dirs.sort());
+  return { places, findings };
+}
+
+/** A flat path of the plan to where it sits before the flatten moves run. */
+export function placeOf(flatten: readonly FlattenMove[], path: string): string {
+  for (const move of flatten) if (path === move.to || path.startsWith(move.to + sep)) return move.from + path.slice(move.to.length);
+  return path;
+}
+
 function candidateFiles(slotDir: string): string[] {
   const dir = join(slotDir, "candidates");
   if (!isDir(dir)) return [];
@@ -272,9 +350,9 @@ function nextFreeName(name: string, taken: (candidate: string) => boolean): stri
 }
 
 /** One agent ia.json without the moved and retired ids, with each move's target placed where it was, and a `retired` row per retired folder. */
-function recutIa(file: string, agent: RecutAgent, table: PackageTable, folders: readonly FolderMove[], at: Iso, unknown: string[]): FileWrite | undefined {
+function recutIa(file: string, agent: RecutAgent, table: PackageTable, folders: readonly FolderMove[], at: Iso, unknown: string[], present: ReadonlySet<string>, real: (path: string) => string): FileWrite | undefined {
   // A moved or retired id stays placed while its folder stays (not every record of it moves).
-  const stays = (id: string) => isDir(join(dirname(file), id)) && !folders.some(folder => folder.agent === agent && folder.id === id);
+  const stays = (id: string) => present.has(id) && !folders.some(folder => folder.agent === agent && folder.id === id);
   if (!existsSync(file)) return undefined;
   const text = readFileSync(file, "utf8");
   const doc = JSON.parse(text) as Record<string, unknown>;
@@ -299,7 +377,7 @@ function recutIa(file: string, agent: RecutAgent, table: PackageTable, folders: 
   const history = Array.isArray(next.retired) ? next.retired as unknown[] : [];
   const recorded = new Set(history.flatMap(row => (object(row) && typeof row.slot === "string" ? [row.slot] : [])));
   const rows = folders.filter(folder => folder.agent === agent && !recorded.has(`${agent}/${folder.id}`)).map(folder => {
-    const slotFile = join(folder.from, "slot.json");
+    const slotFile = real(join(folder.from, "slot.json"));
     const { target } = fateOf(table, folder.id);
     return {
       schema: RETIRE_SCHEMA, slot: `${agent}/${folder.id}`, sha256: existsSync(slotFile) ? fileState(readFileSync(slotFile)).sha256 : null, by: RECUT_RETIRE_BY,
@@ -311,7 +389,7 @@ function recutIa(file: string, agent: RecutAgent, table: PackageTable, folders: 
   return bytes === text ? undefined : { file, bytes };
 }
 
-const emptyCounts = (): RecutCounts => ({ live: 0, moved: 0, retired: 0, unknown: 0, headers: 0, carried: 0, cells: 0, refs: 0 });
+const emptyCounts = (): RecutCounts => ({ live: 0, moved: 0, retired: 0, unknown: 0, headers: 0, carried: 0, cells: 0, refs: 0, flattened: 0 });
 
 /** What the recut would do under `dir` (the directory holding `clossys/`), without writing. */
 export function planRecut(dir: string, options: { readonly at: Iso; readonly version?: string }): RecutPlan {
@@ -320,15 +398,33 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
   const tables = packageTables(dir);
   const counts = Object.fromEntries(RECUT_AGENTS.map(agent => [agent, emptyCounts()])) as Record<RecutAgent, RecutCounts>;
   const plan: RecutPlan = {
-    dir, consumer, at: options.at, version, rows: [], unknown: [], missingRetired: [], candidates: [], slotRefs: [], folders: [], ia: [],
+    dir, consumer, at: options.at, version, rows: [], unknown: [], flatten: [], duplicates: [], missingRetired: [], candidates: [], slotRefs: [], folders: [], ia: [],
     library: { conversions: [], findings: [] }, findings: [], skipped: slotFolders(consumer, "producer").map(id => `producer/${id}`), counts,
   };
   const planned = new Set<string>();
   const context = (agent: RecutAgent, slotId: string, sourceRef: string): HeaderContext => ({ agent, slotId, at: options.at, version, sourceRef });
 
+  // Every slot folder, at any depth; a nested one (or one under another name) flattens to agents/<agent>/<id>.
+  const ids = {} as Record<RecutAgent, string[]>;
+  const present = {} as Record<RecutAgent, Set<string>>;
+  for (const agent of RECUT_AGENTS) {
+    const found = discoverSlots(consumer, agent);
+    plan.findings.push(...found.findings);
+    present[agent] = new Set(found.places.keys());
+    ids[agent] = [];
+    for (const id of [...found.places.keys()].sort()) {
+      const places = found.places.get(id)!;
+      if (places.length > 1) { plan.duplicates.push(`${agent}/${id}: duplicate slot id at ${places.map(place => posix(consumer, place)).join(", ")}`); continue; }
+      ids[agent].push(id);
+      const to = join(consumer, "agents", agent, id);
+      if (places[0] !== to) { plan.flatten.push({ agent, id, from: places[0]!, to }); counts[agent].flattened++; }
+    }
+  }
+  const real = (path: string) => placeOf(plan.flatten, path);
+
   for (const agent of RECUT_AGENTS) {
     const table = tables[agent];
-    for (const id of slotFolders(consumer, agent)) {
+    for (const id of ids[agent]) {
       const { fate, target } = fateOf(table, id);
       plan.rows.push({ agent, id, fate, ...(target ? { target } : {}) });
       const from = join(consumer, "agents", agent, id);
@@ -349,11 +445,11 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
       const slotDir = join(consumer, "agents", agent, slotId);
       if (fate === "move") counts[agent].moved++; else counts[agent].live++;
       let ok = true;
-      for (const name of candidateFiles(from)) {
+      for (const name of candidateFiles(real(from))) {
         const file = join(from, "candidates", name);
         const sourceRef = posix(consumer, file);
         if (!CANDIDATE_NAME.test(name)) { plan.findings.push(`${sourceRef}: not a candidate file name; left in place`); ok = false; continue; }
-        const original = readFileSync(file, "utf8");
+        const original = readFileSync(real(file), "utf8");
         let targetName = name;
         let bytes: string;
         try { bytes = recutCandidateBytes(name, original, context(agent, slotId, sourceRef)); }
@@ -365,14 +461,14 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
           continue;
         }
         const at = (candidate: string) => join(slotDir, "candidates", candidate);
-        const holds = (candidate: string, wanted: string) => existsSync(at(candidate)) && readFileSync(at(candidate), "utf8") === wanted;
+        const holds = (candidate: string, wanted: string) => existsSync(real(at(candidate))) && readFileSync(real(at(candidate)), "utf8") === wanted;
         if (holds(name, bytes)) {
           counts[agent].carried++;
           plan.candidates.push({ agent, from: file, to: at(name), bytes: undefined, fromState: fileState(original), toState: fileState(bytes) });
           continue;
         }
-        if (existsSync(at(name)) || planned.has(at(name))) {
-          targetName = nextFreeName(name, candidate => existsSync(at(candidate)) || planned.has(at(candidate)));
+        if (existsSync(real(at(name))) || planned.has(at(name))) {
+          targetName = nextFreeName(name, candidate => existsSync(real(at(candidate))) || planned.has(at(candidate)));
           bytes = recutCandidateBytes(targetName, original, context(agent, slotId, sourceRef));
         }
         planned.add(at(targetName));
@@ -401,8 +497,8 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
   for (const row of plan.rows) {
     if (row.fate !== "live") continue;
     const file = join(consumer, "agents", row.agent, row.id, "slot.json");
-    if (!existsSync(file)) continue;
-    const text = readFileSync(file, "utf8");
+    if (!existsSync(real(file))) continue;
+    const text = readFileSync(real(file), "utf8");
     let doc: Record<string, unknown>;
     try { doc = JSON.parse(text) as Record<string, unknown>; } catch { continue; }
     if (doc.schema !== SLOT_V1_SCHEMA) continue;
@@ -434,7 +530,7 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
     if (fate === "retire") {
       // The slot folder moves to _retired/<slot> before the cell lands there: its candidates are the clash set.
       const moving = plan.folders.find(folder => folder.agent === agent && folder.id === slot);
-      return { agent, slotId: slot, dir: join(consumer, "agents", agent, RETIRED_SLOTS, slot), record: false, ...(moving ? { arriving: moving.from } : {}) };
+      return { agent, slotId: slot, dir: join(consumer, "agents", agent, RETIRED_SLOTS, slot), record: false, ...(moving ? { arriving: real(moving.from) } : {}) };
     }
     const slotId = fate === "move" ? target! : slot;
     return { agent, slotId, dir: join(consumer, "agents", agent, slotId), record: true };
@@ -451,7 +547,7 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
   plan.findings.push(...library.findings);
 
   for (const agent of RECUT_AGENTS) {
-    const write = recutIa(join(consumer, "agents", agent, "ia.json"), agent, tables[agent], plan.folders, options.at, plan.unknown);
+    const write = recutIa(join(consumer, "agents", agent, "ia.json"), agent, tables[agent], plan.folders, options.at, plan.unknown, present[agent], real);
     if (write) plan.ia.push(write);
   }
   plan.unknown.splice(0, plan.unknown.length, ...[...new Set(plan.unknown)].sort());
@@ -460,7 +556,7 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
 
 /** The recut writes a plan holds (0 when the consumer is on the recut trees). */
 export function recutPending(plan: RecutPlan): number {
-  return plan.candidates.length + plan.slotRefs.length + plan.folders.length + plan.ia.length + plan.library.conversions.length;
+  return plan.flatten.length + plan.candidates.length + plan.slotRefs.length + plan.folders.length + plan.ia.length + plan.library.conversions.length;
 }
 
 export interface FollowUp { slot1To2: number; slot1To2Findings: string[]; pins: number; pinRefused: string[]; iaSync: number; iaSyncFindings: string[] }
@@ -487,11 +583,16 @@ const dropEmpty = (dir: string) => { if (isDir(dir) && readdirSync(dir).length =
  * against the tree as it stands after every earlier step, folder moves included). Empty when every write fits.
  */
 export function recutProblems(plan: RecutPlan): string[] {
-  const problems = [...plan.unknown.map(id => `unknown: ${id}`), ...plan.findings];
+  const problems = [...plan.unknown.map(id => `unknown: ${id}`), ...plan.findings, ...plan.duplicates];
+  const real = (path: string) => placeOf(plan.flatten, path);
+  for (const move of plan.flatten) {
+    if (!isDir(move.from)) problems.push(`${posix(plan.consumer, move.from)}: the folder to flatten is gone`);
+    if (existsSync(move.to)) problems.push(`${posix(plan.consumer, move.to)}: the flatten move would land on one that exists with other bytes`);
+  }
   const targets = new Set<string>();
   const after = (file: string): boolean => {
-    if (existsSync(file) || targets.has(file)) return true;
-    for (const folder of plan.folders) if (file.startsWith(folder.to + sep) && existsSync(join(folder.from, file.slice(folder.to.length + 1)))) return true;
+    if (existsSync(real(file)) || targets.has(file)) return true;
+    for (const folder of plan.folders) if (file.startsWith(folder.to + sep) && existsSync(join(real(folder.from), file.slice(folder.to.length + 1)))) return true;
     return false;
   };
   const claim = (file: string) => {
@@ -500,7 +601,7 @@ export function recutProblems(plan: RecutPlan): string[] {
   };
   for (const change of plan.candidates) if (change.from !== change.to && change.bytes !== undefined) claim(change.to);
   for (const folder of plan.folders) {
-    if (!isDir(folder.from)) problems.push(`${posix(plan.consumer, folder.from)}: the folder to move is gone`);
+    if (!isDir(real(folder.from))) problems.push(`${posix(plan.consumer, folder.from)}: the folder to move is gone`);
     if (existsSync(folder.to)) problems.push(`${posix(plan.consumer, folder.to)}: the folder move would land on one that exists`);
   }
   for (const conversion of plan.library.conversions) claim(conversion.file);
@@ -517,9 +618,18 @@ export function applyRecut(plan: RecutPlan): RecutResult {
   const problems = recutProblems(plan);
   if (problems.length) throw new Error(`the recut does not apply whole; nothing written: ${problems.join("; ")}`);
   let written = 0;
+  // Flatten first: every later write names the flat path. A group folder left empty is removed, up to the agent folder.
+  for (const move of plan.flatten) {
+    renameSync(move.from, move.to);
+    written++;
+    const top = join(plan.consumer, "agents", move.agent);
+    for (let dir = dirname(move.from); dir.startsWith(top + sep) && isDir(dir) && readdirSync(dir).length === 0; dir = dirname(dir)) rmdirSync(dir);
+  }
   const events: RewrittenFile[] = [];
   const record = (to: string, from: FileState, toState: FileState) => {
     const file = posix(plan.consumer, to);
+    // A record kept byte for byte (a page record moved as is) is no rewrite: no migrated event.
+    if (from.sha256 === toState.sha256) return;
     if (/^agents\/[a-z]+\/[^/_][^/]*\/candidates\/[^/]+$/.test(file)) events.push({ file, from, to: toState });
   };
   for (const change of plan.candidates) {
