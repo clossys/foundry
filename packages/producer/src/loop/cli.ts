@@ -103,7 +103,12 @@ export function cliHooks(root: string, answer?: { exit: Exit; model: string; wro
       const argv = call.argv[0] === "clossys" ? call.argv.slice(1) : call.argv;
       try {
         const result = await run([...argv, "--root", root], root);
-        return { exit: result.exitCode, detail: result.message };
+        // A verb that reports what it wrote and found (clossys release) hands both on: the manifest step names the
+        // manifest, a failing gate routes its findings (flows.md F8).
+        const output = (typeof result.output === "object" && result.output !== null ? result.output : {}) as { wrote?: unknown; findings?: unknown };
+        const wrote = Array.isArray(output.wrote) ? output.wrote.filter((file): file is string => typeof file === "string") : undefined;
+        const findings = Array.isArray(output.findings) ? (output.findings as Finding[]).filter(row => typeof row?.subject === "string" && typeof row.detail === "string") : undefined;
+        return { exit: result.exitCode, detail: result.message, ...(wrote ? { wrote } : {}), ...(findings?.length ? { findings } : {}) };
       } catch (error) {
         return { exit: 2, detail: error instanceof Error ? error.message : String(error) };
       }
