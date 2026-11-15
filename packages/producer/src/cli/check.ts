@@ -1,4 +1,5 @@
 import { runSlotResolve, slotResolveSummary, type SlotResolveReport } from "../check/slot-resolve.js";
+import { runLoopReachable } from "../check/loop-reachable.js";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -124,13 +125,16 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
   const referenceReport = reference ? { schemaVersion: 1 as const, root, strict: true, exitCode: reference.exitCode ?? 0, suites: [reference] } : undefined;
   // Strict readiness: every blocked slot is a finding and fails the check.
   const readiness = args.readiness && args.strict ? readinessFindings(slots) : undefined;
-  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0, reference?.exitCode ?? 0, readiness?.length ? 1 : 0) as 0 | 1 | 2;
+  // loop.reachable (producer loops): every package v1 and the version each loop runs for this consumer can reach its exit.
+  const loops = runLoopReachable(dirname(consumer));
+  const loopsSummary = loops.status === "pass" ? "loop.reachable: pass" : [`loop.reachable: fail (${loops.findings.length})`, ...loops.findings.map(finding => `  ${finding.subject}: ${finding.detail}`)].join("\n");
+  const exitCode = Math.max(slots.exitCode, page?.exitCode ?? 0, suites?.exitCode ?? 0, reference?.exitCode ?? 0, readiness?.length ? 1 : 0, loops.status === "fail" ? 1 : 0) as 0 | 1 | 2;
   return {
     ...(page ?? { verb: "check" as const, root, check: true }),
     exitCode,
-    message: [slotResolveSummary(slots, args.readiness), readiness && readinessSummary(readiness), page?.message, suites && recordSuitesSummary(suites), referenceReport && recordSuitesSummary(referenceReport)].filter(Boolean).join("\n"),
+    message: [slotResolveSummary(slots, args.readiness), readiness && readinessSummary(readiness), loopsSummary, page?.message, suites && recordSuitesSummary(suites), referenceReport && recordSuitesSummary(referenceReport)].filter(Boolean).join("\n"),
     slots,
-    ...(readiness ? { checks: { readiness: { strict: true, blocked: readiness.length, findings: readiness } } } : {}),
+    ...(readiness || loops.status === "fail" ? { checks: { ...(loops.status === "fail" ? { "loop.reachable": loops } : {}), ...(readiness ? { readiness: { strict: true, blocked: readiness.length, findings: readiness } } : {}) } } : {}),
     ...(suites || referenceReport ? { suites: suites ?? referenceReport } : {}),
   };
 }

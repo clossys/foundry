@@ -85,6 +85,16 @@ export function fillNames(text: string, vars: Readonly<Record<string, string>>):
   return { text: out, unfilled };
 }
 
+/**
+ * A step's argv (B8): the cli is split into tokens before any name is filled, so a filled value (an owner's quote, a
+ * path, a candidate name) stays one argument and can never add a flag or an argument of its own.
+ */
+export function stepArgv(template: string, vars: Readonly<Record<string, string>>): { argv: string[]; text: string; unfilled: string[] } {
+  const tokens = template.match(/(?:<[a-z][a-z0-9 -]*>|\S)+/g) ?? [];
+  const filled = fillNames(template, vars);
+  return { argv: tokens.map(token => fillNames(token, vars).text), text: filled.text, unfilled: filled.unfilled };
+}
+
 /** The per-slot names (producer.md 10.4.1: `<owner of slot>`, `<ref>` and the other angle-bracket names). */
 export function slotVars(subject: SlotSubject): Record<string, string> {
   const ref = refOf(subject);

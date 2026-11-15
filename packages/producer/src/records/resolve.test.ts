@@ -73,7 +73,7 @@ describe("resolution order: consumer pin, then package default", () => {
     expect(resolveSlot(w.root, "publisher", "chrome.site-header")).not.toHaveProperty("pinIssue");
   });
 
-  it("reads Producer loop defaults from src/loops/<slot-id>/", () => {
+  it("reads Producer loop defaults from loops/<slot-id>/", () => {
     const w = world();
     w.slot("producer", "loop.release", { kind: "loop" });
     w.packageDefault("producer", "loop.release", "release-v1.json");

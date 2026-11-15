@@ -3,22 +3,30 @@
  * holds structure only: slot ids from the real package IA trees, placeholder candidates, no names, brands or prices.
  * The stub stands in for every agent skill and for the CLI verbs a code step runs; no model is called.
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runRunCli } from "../cli/run.js";
 import { answerQueueEntry } from "../queue/answer.js";
-import { findQueueEntry, readQueueEntry } from "../queue/entry.js";
+import { findQueueEntry, listQueueEntryFiles, readQueueEntry } from "../queue/entry.js";
 import { raiseFeedback } from "../queue/feedback.js";
-import { buildCandidateHeader, candidateCreatedBy, candidatePath, serializeCandidate, writeCandidateFile } from "../records/candidate.js";
-import { buildPin, cliActor, pinPath, writePinDoc } from "../records/pin.js";
+import { buildCandidateHeader, candidateCreatedBy, candidatePath, parseCandidateName, serializeCandidate, writeCandidateFile } from "../records/candidate.js";
+import { writeTargetPin, type TargetPinInput } from "../records/pin-map.js";
+import { isRecordSlot } from "../records/resolve.js";
+import { buildPin, cliActor, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
+import { readPinFile } from "../records/pin-map.js";
+import { runCli, type CliResult } from "../cli/main.js";
+import { runReleaseCli } from "../cli/release.js";
+import { releaseWorld, stubBuilder, type ReleaseWorld } from "../release/__fixtures__/world.js";
 import { sha256Hex } from "../records/hash.js";
 import { writeSlot } from "../records/slot.js";
 import type { AgentId, LedgerEntry, QueueEntry, Slot } from "../records/types.js";
 import { readPackageLoop } from "./files.js";
 import { raiseEntry } from "./route.js";
-import { fillAll, ledgerDir, readRunState, resumeRun, runInit, startRun, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks } from "./runner.js";
+import { cliHooks } from "./cli.js";
+import { stepArgv } from "./slots.js";
+import { fillAll, ledgerDir, readRunState, resumeRun, runInit, runStatePath, runsDir, startRun, type AgentOutcome, type AgentPacket, type CodeCall, type CodeOutcome, type Exit, type RunHooks } from "./runner.js";
 import type { LoopName } from "./names.js";
 
 const MODEL = "stub-model";
@@ -32,14 +40,14 @@ function clock(start = "2026-11-20T08:00:00Z"): () => Date {
 }
 
 type Ia = Slot["ia"];
-/** Real IA positions (packages/<agent>/src/catalog/ia/*.json); Director's l2 ids carry a dot, which slot/2 ia refuses, so it is written with a dash. */
+/** Real IA positions, as `clossys ia sync` writes them (the package IA ids as they are, dots included: B12). */
 const SLOTS: Record<string, { agent: AgentId; kind: Slot["kind"]; ia: Ia }> = {
-  "director/context.market.size": { agent: "director", kind: "brief", ia: { l0: "strategy", l1: "context", l2: "context-market", order: 0 } },
-  "designer/themes.background": { agent: "designer", kind: "element/token", ia: { l0: "themes", l1: "colors", l2: "colors-surfaces", order: 0 } },
-  "designer/components.button": { agent: "designer", kind: "element/component", ia: { l0: "components", l1: "actions", l2: "actions-buttons", order: 0 } },
-  "designer/sections.features": { agent: "designer", kind: "element/section", ia: { l0: "sections", l1: "explain", l2: "explain-promotion", order: 0 } },
-  "writer/lexicon.formality": { agent: "writer", kind: "voice", ia: { l0: "lexicon", l1: "voice", l2: "voice-tone", order: 0 } },
-  "writer/passages.legal-prose": { agent: "writer", kind: "prose", ia: { l0: "passages", l1: "explain", l2: "explain-reading", order: 3 } },
+  "director/context.market.size": { agent: "director", kind: "brief", ia: { l0: "strategy", l1: "context", l2: "context.market", order: 0 } },
+  "designer/themes.background": { agent: "designer", kind: "element/token", ia: { l0: "themes", l1: "themes.colors", l2: "colors-surfaces", order: 0 } },
+  "designer/components.button": { agent: "designer", kind: "element/component", ia: { l0: "components", l1: "components.actions", l2: "actions-buttons", order: 0 } },
+  "designer/sections.features": { agent: "designer", kind: "element/section", ia: { l0: "sections", l1: "sections.explain", l2: "explain-promotion", order: 0 } },
+  "writer/lexicon.formality": { agent: "writer", kind: "voice", ia: { l0: "lexicon", l1: "lexicon.voice", l2: "voice-tone", order: 0 } },
+  "writer/passages.legal-prose": { agent: "writer", kind: "prose", ia: { l0: "passages", l1: "passages.explain", l2: "explain-reading", order: 3 } },
 };
 
 const SKILLS = (agent: AgentId): string[] => [`packages/${agent}/actions/${agent}.brief/skill.md`, `packages/${agent}/actions/${agent}.candidates/skill.md`, `packages/${agent}/actions/pick.${agent}/skill.md`];
@@ -93,17 +101,20 @@ interface Stub extends RunHooks {
  * the newest candidate (basis agent). Code: `clossys check <ref>` passes unless `checkExits` says otherwise; an owner
  * pick's `clossys pin` writes the owner pin; release steps write a placeholder manifest.
  */
-function stub(root: string, options: { checkExits?: Exit[]; waitOnce?: string[]; codeFor?: (call: CodeCall) => CodeOutcome | undefined } = {}): Stub {
+function stub(root: string, options: { checkExits?: Exit[]; waitOnce?: string[]; codeFor?: (call: CodeCall) => CodeOutcome | undefined; agentFor?: (packet: AgentPacket) => AgentOutcome | undefined } = {}): Stub {
   const calls: Stub["calls"] = [];
   const code_: CodeCall[] = [];
   const checkExits = [...(options.checkExits ?? [])];
   const waitOnce = new Set(options.waitOnce ?? []);
-  const at = "2026-11-20T09:00:00Z";
+  // Before the run clock (08:00): the owner's confirm on a pin is never dated before the pin.
+  const at = "2026-11-20T07:59:00Z";
   return {
     calls, code_,
     agent(packet: AgentPacket): AgentOutcome {
       if (waitOnce.delete(packet.step)) { calls.push({ step: packet.step, kind: "agent", wait: true }); return "wait"; }
       calls.push({ step: packet.step, kind: "agent" });
+      const custom = options.agentFor?.(packet);
+      if (custom) return custom;
       const [agent, slotId] = packet.ref!.split("/") as [AgentId, string];
       if (packet.verb === "create-candidates") {
         const dir = join(root, "clossys", "agents", packet.ref!, "candidates");
@@ -117,8 +128,7 @@ function stub(root: string, options: { checkExits?: Exit[]; waitOnce?: string[];
       if (packet.verb === "pick") {
         const dir = join(root, "clossys", "agents", packet.ref!, "candidates");
         const name = readdirSync(dir).sort().pop()!;
-        const sha256 = fileSha(candidatePath(root, agent, slotId, name));
-        writePinDoc(pinPath(root, agent, slotId), buildPin({ agent, slotId, record: { candidate: name, sha256, decidedBy: `agent:${agent}`, basis: "agent", at }, createdBy: cliActor("clossys pick") }));
+        pinAs(root, { agent, slotId, candidate: name, decidedBy: `agent:${agent}`, basis: "agent", at, createdBy: cliActor("clossys pick") });
         return { exit: 0, model: MODEL, wrote: [`${packet.ref}/pin.json`], cli: `clossys pick ${packet.ref} ${name} --by agent:${agent}` };
       }
       return { exit: 0, model: MODEL };
@@ -128,19 +138,35 @@ function stub(root: string, options: { checkExits?: Exit[]; waitOnce?: string[];
       code_.push(call);
       const custom = options.codeFor?.(call);
       if (custom) return custom;
-      if (call.argv[0] === "pin" && call.ref) {
-        const [agent, slotId] = call.ref.split("/") as [AgentId, string];
-        const name = call.argv[2]!;
-        const by = call.argv[4]!;
+      const args = call.argv[0] === "clossys" ? call.argv.slice(1) : call.argv;
+      if (args[0] === "pin") {
+        const ref = args[1]!;
+        const [agent, slotId] = ref.split("/") as [AgentId, string];
+        const name = args[2]!;
+        const by = args[4]!;
         const [queue, id] = by.slice("owner:".length).split("#") as [string, string];
-        const sha256 = fileSha(candidatePath(root, agent, slotId, name));
-        writePinDoc(pinPath(root, agent, slotId), buildPin({ agent, slotId, record: { candidate: name, sha256, decidedBy: by, basis: "picked", at }, refs: [{ to: `producer/${queue}` as never, record: id, rel: "answers" }], createdBy: cliActor("clossys pin") }));
-        return { exit: 0, wrote: [`${call.ref}/pin.json`] };
+        pinAs(root, { agent, slotId, candidate: name, decidedBy: by, basis: "picked", at, refs: [{ to: `producer/${queue}` as never, record: id, rel: "answers" }], createdBy: cliActor("clossys pin") });
+        return { exit: 0, wrote: [`${ref}/pin.json`] };
       }
       if (call.argv[1] === "check" && call.ref) return { exit: checkExits.length ? checkExits.shift()! : 0 };
       return { exit: 0 };
     },
   };
+}
+
+/**
+ * Pins as `clossys pin` / `clossys pick` do: writeTargetPin for a consumer slot (a pin map record for a Writer prose
+ * or copy slot), a plain pin/2 for a slot with no slot.json (the release slot).
+ */
+function pinAs(root: string, input: Omit<TargetPinInput, "record">): void {
+  const { agent, slotId } = input;
+  if (!existsSync(join(root, "clossys", "agents", agent, slotId, "slot.json"))) {
+    const sha256 = fileSha(candidatePath(root, agent, slotId, input.candidate));
+    writePinDoc(pinPath(root, agent, slotId), buildPin({ agent, slotId, record: { candidate: input.candidate, sha256, decidedBy: input.decidedBy, basis: input.basis, at: input.at }, refs: [...(input.refs ?? [])], createdBy: input.createdBy as never }));
+    return;
+  }
+  const record = isRecordSlot(root, agent, slotId) ? parseCandidateName(input.candidate)!.name : undefined;
+  writeTargetPin(root, { ...input, ...(record !== undefined ? { record } : {}) });
 }
 
 /** sha256 of the candidate bytes, as resolve.ts computes it. */
@@ -205,7 +231,7 @@ describe("F2 starter fill: loop.fill (T2)", () => {
       "designer/themes.background done; pinned placeholder-v1.json",
     ]);
     expect(ledger.map(stepLine)).toEqual([
-      ["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "owner-pick:human:0", "cascade:code:0"],
+      ["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "owner-pick:human:0", "cascade:code:0"],
       ["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "cascade:code:0"],
       ["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"],
     ]);
@@ -214,7 +240,7 @@ describe("F2 starter fill: loop.fill (T2)", () => {
     expect(ledger[1]!.steps[1]!.decider).toEqual({ by: "agent", agent: "designer", verb: "create-candidates", tier: "mid", model: MODEL, skill: "packages/designer/actions/designer.candidates/skill.md" });
     expect(ledger[0]!.decisions).toEqual([{ entry: pick, answer: "placeholder-v1.json" }]);
     expect(ledger[0]!.refs).toContainEqual({ to: "producer/queue.pick", record: pick.split("#")[1], rel: "answers" });
-    expect(ledger[1]!.steps[1]!.wrote).toEqual([{ file: "designer/components.button/candidates/placeholder-v1.json", sha256: expect.stringMatching(/^[0-9a-f]{64}$/) }]);
+    expect(ledger[1]!.steps[1]!.wrote).toEqual([{ file: "designer/components.button/candidates/placeholder-v1.json", sha256: expect.stringMatching(/[0-9a-f]{64}$/) }]);
     // The owner's pick reached the pin through `clossys pin ... --by owner:queue.pick#<id>`.
     expect(hooks.code_.find(call => call.argv[0] === "pin")!.cli).toBe(`clossys pin director/context.market.size placeholder-v1.json --by owner:${pick}`);
   });
@@ -333,6 +359,18 @@ describe("F6 failed check (T6)", () => {
   });
 });
 
+/** A consumer the real clossys release accepts (0016 fixture), and the verbs the loop's code steps call. */
+const realRelease = (): ReleaseWorld => { const world = releaseWorld(); roots.push(world.root); return world; };
+const releaseVerbs = (verbs: string[][], now: () => Date) => (argv: readonly string[], cwd: string): Promise<CliResult> => {
+  verbs.push([...argv]);
+  return argv[0] === "compile" ? Promise.resolve({ exitCode: 0 as const, message: "compiled (stub)" })
+    : argv[0] === "release" ? runReleaseCli(argv.slice(1), cwd, { builder: stubBuilder, now }) : runCli(argv, cwd);
+};
+const latestLedger = (root: string, loop: LoopName): LedgerEntry => {
+  const dir = ledgerDir(root, loop);
+  return JSON.parse(readFileSync(join(dir, readdirSync(dir).sort().pop()!), "utf8")) as LedgerEntry;
+};
+
 describe("F8 new release: loop.release (T8)", () => {
   const manifest = "publisher/release.site/candidates/site-v1.json";
   const release = (root: string, gates: CodeOutcome) => stub(root, {
@@ -347,23 +385,29 @@ describe("F8 new release: loop.release (T8)", () => {
     },
   });
 
-  // The stub pin step writes no ready-pin, so release.ready (the check itself, not the exit code) fails and the run is not
-  // pinned-ready. The real path to pinned-ready runs in release/ready-binding.test.ts (probe A) and release/release.test.ts.
-  it("runs the six steps to the owner-signed pin step and records release.ready from the check, not the stub pin's exit", async () => {
-    const w = world([]);
+  it("ends at the owner-signed ready-pin with status pinned-ready", async () => {
+    // The real chain: clossys release builds, writes the manifest and runs the gates; clossys pin takes the ready-pin.
+    const w = realRelease();
     const now = clock();
-    const hooks = release(w.root, { exit: 0 });
+    const verbs: string[][] = [];
+    const hooks = cliHooks(w.root, undefined, releaseVerbs(verbs, now));
     const run = await startRun(w.root, { loop: "loop.release", publication: "site" }, hooks, { now });
-    expect(run.entry).toMatch(/^queue\.approve#/);
-    expect(w.entry(run.entry!)).toMatchObject({ default: "not-ready", subject: { to: "publisher/release.site" } });
+    expect(run.entry, run.message).toMatch(/^queue\.approve#/);
+    const found = findQueueEntry(w.root, run.entry!);
+    expect(found.ok && readQueueEntry(found.at)).toMatchObject({ ok: true, entry: { default: "not-ready", subject: { to: "publisher/release.site" } } });
+    // 0016 R1: the sign-off names the one manifest it approves, by option candidate and by a sha256 ref.
+    const signoff = found.ok ? readQueueEntry(found.at) : undefined;
+    const signed = signoff?.ok ? signoff.entry : undefined;
+    expect(signed?.options?.find(option => option.id === "ready")?.candidate).toBe("site-v1.json");
+    expect(signed?.refs).toEqual(expect.arrayContaining([expect.objectContaining({ to: "publisher/release.site/site-v1.json", rel: "input", sha256: expect.stringMatching(/[0-9a-f]{64}$/) })]));
     ownerAnswer(w.root, run.entry!, "ready", now);
     const done = await resumeRun(w.root, run.state!.runId, hooks, { now });
-    expect(done.exitCode).toBe(0);
-    const ledger = w.ledger("loop.release")[0]!;
-    expect(ledger).toMatchObject({ status: "done", outcome: "loop.release done", trigger: { kind: "new-release" } });
+    expect(done.exitCode, done.message).toBe(0);
+    const ledger = latestLedger(w.root, "loop.release");
+    expect(ledger).toMatchObject({ status: "pinned-ready", outcome: "site site-v1.json pinned ready", trigger: { kind: "new-release" } });
     expect(stepLine(ledger)).toEqual(["compile:code:0", "build:code:0", "manifest:code:0", "gates:code:0", "signoff:human:0", "pin:code:0"]);
-    expect(ledger.checks["release.ready"]).toBe("fail");
-    expect(hooks.code_.at(-1)!.cli).toBe(`clossys pin publisher/release.site site-v1.json --by owner:${run.entry}`);
+    expect(ledger.checks["release.ready"]).toBe("pass");
+    expect(verbs.at(-1)).toEqual(["pin", "publisher/release.site", "site-v1.json", "--by", `owner:${run.entry}`, "--root", w.root]);
   });
 
   it("stops the release at failing gates, raising a queue.fix per finding for loop.refine", async () => {
@@ -461,6 +505,267 @@ describe("clossys run loop.<name> (cli/run.ts loop mode)", () => {
   });
 });
 
+const queueCount = (root: string, queue: string): number => listQueueEntryFiles(root).filter(file => file.queue === queue).length;
+const pinText = (root: string, ref: string): string | null => { const file = join(root, "clossys", "agents", ref, "pin.json"); return existsSync(file) ? readFileSync(file, "utf8") : null; };
+
+describe("review rulings (foundry-build-0013 fix r1)", () => {
+  it("B1: the owner picks Director and legal-prose slots directly; the agent pick never runs for them", async () => {
+    for (const ref of ["director/context.market.size", "writer/passages.legal-prose"]) {
+      const w = world([ref]);
+      const now = clock();
+      const hooks = stub(w.root);
+      const run = await startRun(w.root, { loop: "loop.fill", slot: ref }, hooks, { now });
+      expect(run.entry, ref).toMatch(/^queue\.pick#/);
+      expect(pinText(w.root, ref), ref).toBeNull();
+      ownerAnswer(w.root, run.entry!, "placeholder-v1.json", now);
+      expect((await resumeRun(w.root, run.state!.runId, hooks, { now })).state!.status, ref).toBe("done");
+      expect(hooks.calls.map(call => call.step), ref).toEqual(["refine-brief", "create", "check", "owner-pick"]);
+      expect(w.ledger("loop.fill")[0]!.steps.map(step => step.id), ref).toEqual(["refine-brief", "create", "check", "owner-pick", "cascade"]);
+      expect(pinText(w.root, ref), ref).toMatch(new RegExp(`"decidedBy": "owner:${run.entry!.replace(/[.#]/g, "\\$&")}"`));
+    }
+  });
+
+  it("B3: pins.resolve is computed from the files: an agent pick that says 0 but pins nothing stops the run", async () => {
+    const w = world(["designer/components.button"]);
+    const hooks = stub(w.root, { agentFor: packet => packet.step === "pick" ? { exit: 0, model: MODEL } : undefined });
+    const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, hooks, { now: clock() });
+    expect(run.exitCode).toBe(1);
+    const ledger = w.ledger("loop.fill")[0]!;
+    expect(ledger).toMatchObject({ status: "stopped", outcome: expect.stringMatching(/step pick failed: pins\.resolve: designer\/components\.button does not resolve: no pin and no package default/) });
+    expect(ledger.checks["pins.resolve"]).toBe("fail");
+    expect(stepLine(ledger).at(-1)).toBe("pick:agent/stub-model:1");
+  });
+
+  it("B3: the exit checks are verified again at finish: a pin gone after the pick step ends the run not-done", async () => {
+    const w = world(["designer/components.button"]);
+    pinConsumerLoop(w.root, "loop.fill", content => {
+      const steps = [...content.steps];
+      const check = steps.find(step => step.id === "check")!;
+      steps.splice(steps.findIndex(step => step.id === "pick") + 1, 0, { ...check, id: "post", checks: [] } as never);
+      return { ...content, steps };
+    });
+    const hooks = stub(w.root, { codeFor: call => { if (call.step !== "post") return undefined; unlinkSync(pinPath(w.root, "designer", "components.button")); return { exit: 0 }; } });
+    const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, hooks, { now: clock() });
+    expect(run.exitCode).toBe(1);
+    expect(w.ledger("loop.fill")[0]).toMatchObject({ status: "stopped", outcome: expect.stringMatching(/^the run cannot end done: pins\.resolve: designer\/components\.button does not resolve: no pin and no package default/), checks: { "pins.resolve": "fail" } });
+  });
+
+  it("B3: release.ready is recomputed from the files at finish, so a ready-pin gone stale by then never ends pinned-ready", async () => {
+    const w = realRelease();
+    const now = clock();
+    const verbs = releaseVerbs([], now);
+    // The pin verb succeeds, then a copy slot is repinned to a sample-only candidate: the gates the manifest recorded are red now.
+    const hooks = cliHooks(w.root, undefined, async (argv, cwd) => {
+      const result = await verbs(argv, cwd);
+      if (argv[0] === "pin") w.repin("writer/sections.hero.copy", 2, { fields: { "header.heading": { en: "placeholder" } } });
+      return result;
+    });
+    const started = await startRun(w.root, { loop: "loop.release", publication: "site" }, hooks, { now });
+    ownerAnswer(w.root, started.entry!, "ready", now);
+    const done = await resumeRun(w.root, started.state!.runId, hooks, { now });
+    expect(done.exitCode).toBe(1);
+    const ledger = latestLedger(w.root, "loop.release");
+    expect(ledger.status).not.toBe("pinned-ready");
+    expect(ledger.checks["release.ready"]).toBe("fail");
+    expect(ledger.outcome).toMatch(/release\.ready: .*fails now/);
+  });
+
+  it("B4: the real CLI code hook hands back the files every code step wrote: verb-reported and changed on disk", async () => {
+    const w = realRelease();
+    const now = clock();
+    const hooks = cliHooks(w.root, undefined, releaseVerbs([], now));
+    const started = await startRun(w.root, { loop: "loop.release", publication: "site" }, hooks, { now });
+    expect(started.entry, started.message).toMatch(/^queue\.approve#/);
+    expect(started.state!.vars.manifest).toBe("site-v1.json");
+    const wrote = (id: string) => started.state!.steps.find(step => step.id === id)!.wrote!.map(row => row.file);
+    expect(wrote("manifest")).toEqual(["publisher/release.site/candidates/site-v1.json"]);
+    expect(wrote("build").some(file => file.startsWith(".clossys/builds/"))).toBe(true);
+    ownerAnswer(w.root, started.entry!, "ready", now);
+    const done = await resumeRun(w.root, started.state!.runId, hooks, { now });
+    expect(done.state!.status).toBe("pinned-ready");
+    // clossys pin reports no wrote; the hook still hands back the pin it changed under clossys/agents/.
+    expect(latestLedger(w.root, "loop.release").steps.at(-1)!.wrote!.map(row => row.file)).toContain("publisher/release.site/pin.json");
+  });
+
+  it("B5: the owner's approve writes confirmed on the agent's pin", async () => {
+    const w = world(["designer/themes.background"]);
+    const now = clock();
+    const hooks = stub(w.root);
+    const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/themes.background" }, hooks, { now });
+    expect(run.entry).toMatch(/^queue\.approve#/);
+    ownerAnswer(w.root, run.entry!, "approve", now);
+    expect((await resumeRun(w.root, run.state!.runId, hooks, { now })).state!.status).toBe("done");
+    const pin = readPinFile(pinPath(w.root, "designer", "themes.background"), { agent: "designer", slotId: "themes.background" });
+    expect(pin.kind).toBe("pin");
+    if (pin.kind !== "pin") return;
+    expect(pin.issues).toEqual([]);
+    expect(pinIssues(pin.doc, { agent: "designer", slotId: "themes.background" })).toEqual([]);
+    expect(pin.doc).toMatchObject({ basis: "agent", decidedBy: "agent:designer", confirmed: { by: "owner", ref: run.entry } });
+    expect(pin.doc.refs).toContainEqual({ to: "producer/queue.approve", record: run.entry!.split("#")[1], rel: "answers" });
+  });
+
+  it("B5: the owner's reject removes the agent's pin and the run ends not-done", async () => {
+    const w = world(["designer/themes.background"]);
+    const now = clock();
+    const hooks = stub(w.root);
+    const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/themes.background" }, hooks, { now });
+    expect(pinText(w.root, "designer/themes.background")).not.toBeNull();
+    ownerAnswer(w.root, run.entry!, "reject", now);
+    const ended = await resumeRun(w.root, run.state!.runId, hooks, { now });
+    expect(ended.state!.status).toBe("stopped");
+    expect(pinText(w.root, "designer/themes.background")).toBeNull();
+    const ledger = w.ledger("loop.fill")[0]!;
+    expect(ledger).toMatchObject({ status: "stopped", outcome: `the owner answered reject on ${run.entry}` });
+    expect(ledger.steps.at(-1)).toMatchObject({ id: "confirm", exit: 1, wrote: [{ file: "designer/themes.background/pin.json", sha256: null }] });
+  });
+
+  it("B5: a reject puts back the pin the slot had when the run started", async () => {
+    const w = world(["designer/themes.background"]);
+    const now = clock();
+    const first = await startRun(w.root, { loop: "loop.fill", slot: "designer/themes.background" }, stub(w.root), { now });
+    ownerAnswer(w.root, first.entry!, "approve", now);
+    await resumeRun(w.root, first.state!.runId, stub(w.root), { now });
+    const before = pinText(w.root, "designer/themes.background");
+    const again = await startRun(w.root, { loop: "loop.refine", slot: "designer/themes.background" }, stub(w.root), { now });
+    expect(pinText(w.root, "designer/themes.background")).not.toBe(before);
+    ownerAnswer(w.root, again.entry!, "reject", now);
+    await resumeRun(w.root, again.state!.runId, stub(w.root), { now });
+    expect(pinText(w.root, "designer/themes.background")).toBe(before);
+  });
+
+  it("B6: --from must be about the --slot subject", async () => {
+    const w = world(["designer/components.button", "writer/lexicon.formality"]);
+    const fix = raiseFeedback(w.root, { ref: "writer/lexicon.formality", words: "warmer", via: "chat", quote: "warmer" }, new Date("2026-11-20T07:30:00Z"));
+    const refused = await startRun(w.root, { loop: "loop.refine", slot: "designer/components.button", from: `queue.fix#${fix.id}` }, stub(w.root), { now: clock() });
+    expect(refused.exitCode).toBe(2);
+    expect(refused.message).toBe(`run: --from queue.fix#${fix.id} is about writer/lexicon.formality, not --slot designer/components.button`);
+    expect(w.entry(`queue.fix#${fix.id}`).status).toBe("open");
+  });
+
+  it("B6: finish never code-closes an owner's clarify", async () => {
+    const w = world(["designer/components.button"]);
+    const { entry } = raiseEntry(w.root, { queue: "queue.clarify", subject: { to: "designer/components.button", rel: "input" }, decider: "owner", ask: "which button?", slug: "components-button" }, "2026-11-20T07:30:00Z");
+    const run = await startRun(w.root, { loop: "loop.refine", from: `queue.clarify#${entry.id}` }, stub(w.root), { now: clock() });
+    expect(run.state!.status).toBe("done");
+    expect(w.entry(`queue.clarify#${entry.id}`).status).toBe("open");
+    expect(w.ledger("loop.refine")[0]!.refs).not.toContainEqual({ to: "producer/queue.clarify", record: entry.id, rel: "answers" });
+  });
+
+  it("B7: constitution.strict is recorded as not run by the CLI's strict step, never as a pass", async () => {
+    const w = world(["designer/components.button"]);
+    const run = await startRun(w.root, { loop: "loop.audit" }, cliHooks(w.root, undefined, async () => ({ exitCode: 0, message: "" }) as CliResult), { now: clock() });
+    expect(run.state!.status).toBe("done");
+    const ledger = w.ledger("loop.audit")[0]!;
+    expect(ledger.checks["constitution.strict"]).toBeUndefined();
+    expect(ledger.checks).toHaveProperty("ia.orphans");
+    expect(ledger.checks).toHaveProperty("refs.dangling");
+    expect(ledger.outcome).toMatch(/; not run: constitution\.strict$/);
+  });
+
+  it("B8: --slot, --from, --publication and --run are checked against their id patterns before use", async () => {
+    const w = world(["designer/components.button"]);
+    const hooks = stub(w.root);
+    const now = clock();
+    expect((await startRun(w.root, { loop: "loop.fill", slot: "designer/../../etc" }, hooks, { now })).message).toBe('run: --slot "designer/../../etc" is not a slot ref (<agent>/<slot-id>)');
+    expect((await startRun(w.root, { loop: "loop.fill", from: "queue.fix#../../x" }, hooks, { now })).message).toBe('run: --from "queue.fix#../../x" is not a queue entry (queue.<pick|approve|clarify|fix>#<id>)');
+    expect((await startRun(w.root, { loop: "loop.release", publication: "../site" }, hooks, { now })).message).toBe('run: --publication "../site" is not a publication id');
+    expect((await resumeRun(w.root, "../../x", hooks, { now })).message).toBe('run: "../../x" is not a run id (<yyyymmdd>T<hhmm>Z-<slug>)');
+    const cli = await runRunCli(["loop.fill", "--resume", "--run", "../../x", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);
+    expect(cli.exitCode).toBe(2);
+    expect(cli.message).toMatch(/--run .*is not a run id/);
+    await runRunCli(["loop.fill", "--slot", "designer/components.button", "--root", w.root], w.root);
+    const wrote = await runRunCli(["loop.fill", "--resume", "--step-exit", "0", "--model", MODEL, "--wrote", "../../outside", "--root", w.root], w.root);
+    expect(wrote.exitCode).toBe(2);
+    expect(wrote.message).toMatch(/--wrote/);
+    expect(hooks.calls).toEqual([]);
+  });
+
+  it("B8: a code step's argv is built per template token, never split on the whitespace of a filled value", () => {
+    const filled = stepArgv("clossys brief <ref> --tighten <path> <op> <value> --why <why>", { ref: "designer/components.button", path: "mustDo", op: "add", value: "a b; rm -rf x", why: "the owner said so" });
+    expect(filled.argv).toEqual(["clossys", "brief", "designer/components.button", "--tighten", "mustDo", "add", "a b; rm -rf x", "--why", "the owner said so"]);
+    expect(filled.unfilled).toEqual([]);
+  });
+
+  it("B9: a run held by a live process is not resumed; a lock whose process is gone is taken over", async () => {
+    const w = world(["designer/components.button"]);
+    const now = clock();
+    const hooks = stub(w.root, { waitOnce: ["create"] });
+    const first = await startRun(w.root, { loop: "loop.fill", slot: "designer/components.button" }, hooks, { now });
+    const lock = join(runsDir(w.root), `${first.state!.runId}.lock`);
+    writeFileSync(lock, `${process.pid}\n`);
+    const busy = await resumeRun(w.root, first.state!.runId, hooks, { now });
+    expect(busy.exitCode).toBe(2);
+    expect(busy.message).toMatch(new RegExp(`run ${first.state!.runId} is in use by process ${process.pid}`));
+    expect(hooks.calls.filter(call => call.step === "create")).toHaveLength(1);
+    writeFileSync(lock, "2147483646\n");
+    expect((await resumeRun(w.root, first.state!.runId, hooks, { now })).state!.status).toBe("done");
+    expect(existsSync(lock)).toBe(false);
+  });
+
+  it("B9: an owner entry raised before a crash is adopted on resume, never raised twice", async () => {
+    const w = world(["designer/themes.background"]);
+    const now = clock();
+    const hooks = stub(w.root);
+    const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/themes.background" }, hooks, { now });
+    const entry = w.entry(run.entry!);
+    // The state as a crash right after the raise leaves it: the intent saved, the entry on disk, nothing after.
+    const state = readRunState(w.root, run.state!.runId)!;
+    state.status = "running"; delete state.waiting;
+    state.raised = state.raised.filter(name => name !== run.entry);
+    state.pendingRaise = { step: "confirm", queue: "queue.approve", at: entry.createdAt };
+    writeFileSync(runStatePath(w.root, state.runId), JSON.stringify(state));
+    const resumed = await resumeRun(w.root, state.runId, hooks, { now });
+    expect(resumed.entry).toBe(run.entry);
+    expect(queueCount(w.root, "queue.approve")).toBe(1);
+    expect(readRunState(w.root, state.runId)).toMatchObject({ status: "waiting", waiting: { step: "confirm", entry: run.entry }, raised: [run.entry] });
+  });
+
+  it("B9: a run whose ledger was written before its state was saved ends on resume without running a step again", async () => {
+    const w = world(["designer/themes.background"]);
+    const now = clock();
+    const hooks = stub(w.root);
+    const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/themes.background" }, hooks, { now });
+    const waiting = readFileSync(runStatePath(w.root, run.state!.runId), "utf8");
+    ownerAnswer(w.root, run.entry!, "approve", now);
+    await resumeRun(w.root, run.state!.runId, hooks, { now });
+    const pin = pinText(w.root, "designer/themes.background");
+    writeFileSync(runStatePath(w.root, run.state!.runId), waiting);
+    const calls = hooks.calls.length;
+    const again = await resumeRun(w.root, run.state!.runId, hooks, { now });
+    expect(again.exitCode).toBe(0);
+    expect(again.state).toMatchObject({ status: "done" });
+    expect(again.state!.steps.map(step => step.id)).toEqual(["refine-brief", "create", "check", "pick"]);
+    expect(hooks.calls).toHaveLength(calls);
+    expect(pinText(w.root, "designer/themes.background")).toBe(pin);
+    expect(readdirSync(ledgerDir(w.root, "loop.fill"))).toHaveLength(1);
+  });
+
+  it("B9: the human step a run waits on runs on resume even when its when no longer matches the slot", async () => {
+    const w = world(["designer/themes.background"]);
+    const now = clock();
+    const hooks = stub(w.root);
+    const run = await startRun(w.root, { loop: "loop.fill", slot: "designer/themes.background" }, hooks, { now });
+    expect(run.state!.waiting).toMatchObject({ step: "confirm" });
+    w.slot("designer/themes.background", { ia: SLOTS["designer/components.button"]!.ia });
+    ownerAnswer(w.root, run.entry!, "approve", now);
+    expect((await resumeRun(w.root, run.state!.runId, hooks, { now })).state!.status).toBe("done");
+    const ledger = w.ledger("loop.fill")[0]!;
+    expect(stepLine(ledger)).toEqual(["refine-brief:agent/stub-model:0", "create:agent/stub-model:0", "check:code:0", "pick:agent/stub-model:0", "confirm:human:0", "cascade:code:0"]);
+    expect(ledger.decisions).toEqual([{ entry: run.entry, answer: "approve" }]);
+  });
+
+  it("B9: --resume --step must name the step the run waits on", async () => {
+    const w = world(["designer/components.button"]);
+    await runRunCli(["loop.fill", "--slot", "designer/components.button", "--root", w.root], w.root);
+    const wrong = await runRunCli(["loop.fill", "--resume", "--step", "create", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);
+    expect(wrong.exitCode).toBe(2);
+    expect(wrong.message).toMatch(/waits on step refine-brief, not create/);
+    const right = await runRunCli(["loop.fill", "--resume", "--step", "refine-brief", "--step-exit", "0", "--model", MODEL, "--root", w.root], w.root);
+    expect(right.exitCode).toBe(0);
+    expect(right.message).toMatch(/step create waits for agent:designer/);
+  });
+});
+
 /** Writes `clossys/agents/producer/<loop>/candidates/<stem>-v2.json` (package v1 changed by `change`) and pins it. */
 function pinConsumerLoop(root: string, loop: LoopName, change: (content: { maxRounds: number; steps: { id: string }[] } & Record<string, unknown>) => unknown): void {
   const packaged = readPackageLoop(loop);
@@ -468,6 +773,8 @@ function pinConsumerLoop(root: string, loop: LoopName, change: (content: { maxRo
   const name = `${loop.slice(5)}-v2.json`;
   const header = buildCandidateHeader({ agent: "producer", slotId: loop, name, createdBy: { actor: "planner", ref: "test" }, createdAt: "2026-11-20T07:00:00Z", source: { kind: "original", ref: [] } });
   const sha256 = writeCandidateFile(candidatePath(root, "producer", loop, name), serializeCandidate(name, header, change(packaged.content as never)));
-  writePinDoc(pinPath(root, "producer", loop), buildPin({ agent: "producer", slotId: loop, record: { candidate: name, sha256, decidedBy: "planner", basis: "planner", at: "2026-11-20T07:00:00Z" }, createdBy: cliActor("clossys pin") }));
+  // Which loop version runs is the owner's pick (B2): basis picked, decidedBy the owner's answer to a queue.pick.
+  const id = `20261120T0700Z-${loop.replace(".", "-")}`;
+  writePinDoc(pinPath(root, "producer", loop), buildPin({ agent: "producer", slotId: loop, record: { candidate: name, sha256, decidedBy: `owner:queue.pick#${id}`, basis: "picked", at: "2026-11-20T07:00:00Z" }, refs: [{ to: "producer/queue.pick" as never, record: id, rel: "answers" }], createdBy: cliActor("clossys pin") }));
 }
 

@@ -34,6 +34,7 @@
     "LICENSE",
     "skill",
     "pipeline",
+    "loops",
     "!dist/**/__fixtures__/**",
     "!dist/**/__tests__/**",
     "!dist/**/__mocks__/**",

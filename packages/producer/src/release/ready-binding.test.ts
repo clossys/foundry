@@ -304,7 +304,10 @@ describe("R6: loop.release records release.ready from the check, not the pin ste
     await resumeRun(world.root, started.state!.runId, hooks, { now });
     const dir = ledgerDir(world.root, "loop.release");
     const ledger = JSON.parse(readFileSync(join(dir, readdirSync(dir).sort().pop()!), "utf8")) as LedgerEntry;
-    expect(ledger.steps.map(step => `${step.id}:${step.exit}`)).toContain("pin:0");
+    // Merge with foundry-build-0013 B3: the pin verb itself exits 0, but recordStep verifies release.ready from the files
+    // and records the step failed (exit 1) when the check fails, so the run stops at pin instead of ending done.
+    expect(ledger.steps.map(step => `${step.id}:${step.exit}`)).toContain("pin:1");
+    expect(ledger.status).toBe("stopped");
     expect(ledger.checks["release.ready"]).toBe("fail");
     expect(ledger.status).not.toBe("pinned-ready");
   });

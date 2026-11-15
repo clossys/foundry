@@ -8,6 +8,8 @@ import {
 } from "./candidate.js";
 import { sha256Hex } from "./hash.js";
 import { readRecordHeader } from "./schema.js";
+import { existsSync, readdirSync } from "node:fs";
+import { PRODUCER_ROOT } from "../package-path.js";
 
 function world(): string {
   const root = mkdtempSync(join(tmpdir(), "candidate-"));
@@ -77,11 +79,20 @@ describe("candidate header (clossys.candidate/1)", () => {
     expect(issues.join("\n")).toMatch(/header slot/);
   });
 
+  it("B11: the Producer package default dir is where the package ships its loops (loops/<slot-id>/)", () => {
+    const repo = join(PRODUCER_ROOT, "..", "..");
+    for (const loop of ["loop.fill", "loop.refine", "loop.release", "loop.audit"]) {
+      const dir = packageDefaultDir(repo, "producer", loop);
+      expect(existsSync(dir), dir).toBe(true);
+      expect(readdirSync(dir), loop).toContain(`${loop.slice(5)}-v1.json`);
+    }
+  });
+
   it("addresses a package default as package:<name> and requires a package actor", () => {
     const root = world();
     const dir = packageDefaultDir(root, "designer", "sections.hero");
     expect(dir).toBe(join(root, "packages/designer/src/catalog/defaults/sections.hero"));
-    expect(packageDefaultDir(root, "producer", "loop.release")).toBe(join(root, "packages/producer/src/loops/loop.release"));
+    expect(packageDefaultDir(root, "producer", "loop.release")).toBe(join(root, "packages/producer/loops/loop.release"));
     mkdirSync(dir, { recursive: true });
     const header = buildCandidateHeader({ agent: "designer", slotId: "sections.hero", name: "hero-v1.json", createdBy: candidateCreatedBy(root, { actor: "package", agent: "designer" }), createdAt: AT, source: { kind: "package-default", ref: [] }, packageDefault: true });
     expect(header.id).toBe("designer/sections.hero/package:hero-v1.json");

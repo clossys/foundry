@@ -19,20 +19,26 @@
  * Run state is kept in `.clossys/runs/loops/<runId>.json`; resuming never runs a finished step again. Every run that
  * ends (done, stopped or pinned-ready) writes one ledger entry, `clossys/agents/producer/ledger.<loop>/entries/<runId>.json`.
  */
-import { existsSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, renameSync, writeFileSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, openSync, closeSync, writeSync, readFileSync, renameSync, writeFileSync, readdirSync, unlinkSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
+import { checkPinsResolve, resolveAll } from "../check/pins-resolve.js";
 import { answerQueueEntry } from "../queue/answer.js";
-import { entryStamp, findQueueEntry, readQueueEntry, slugOf } from "../queue/entry.js";
+import { entryStamp, findQueueEntry, listQueueEntryFiles, readQueueEntry, slugOf } from "../queue/entry.js";
 import { sha256Hex } from "../records/hash.js";
-import { resolveSlot } from "../records/resolve.js";
+import { OWNER_BASES, buildPin, pinIssues, pinPath, writePinDoc } from "../records/pin.js";
+import { mergeRefs, readPinFile } from "../records/pin-map.js";
+import { isRecordSlot, resolveSlot, slotRecords, type Resolution } from "../records/resolve.js";
 import { validateAgainst } from "../records/schema.js";
 import { recordSchema, writeSlot } from "../records/slot.js";
 import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVersion, QueueEntry, Ref, Tier } from "../records/types.js";
-import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, routeFindings, type Finding } from "./route.js";
-import { dependantsOf, fillNames, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, whenMatches, type SlotSubject } from "./slots.js";
-import { LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, RELEASE_READY, TRIGGER_KINDS, ledgerOf, loopStem, type LoopName } from "./names.js";
-import { checkReleaseReady } from "../release/ready.js";
+import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, routeFindings, type Finding, type Raise } from "./route.js";
+import { dependantsOf, fillNames, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, whenMatches, type SlotSubject } from "./slots.js";
+import {
+  AGENT_PICK_VERB, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
+  SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
+} from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
+import { checkReleaseReady } from "../release/ready.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -61,7 +67,11 @@ export interface CodeCall {
   readonly ref?: string;
   readonly publication?: string;
 }
-export interface CodeOutcome { readonly exit: Exit; readonly wrote?: readonly string[]; readonly findings?: readonly Finding[]; readonly detail?: string }
+export interface CodeOutcome {
+  readonly exit: Exit; readonly wrote?: readonly string[]; readonly findings?: readonly Finding[]; readonly detail?: string;
+  /** The checks the verb actually ran; a step check not in it is recorded as not run, never as a pass (B7). Absent: all ran. */
+  readonly ran?: readonly string[];
+}
 
 export interface RunHooks {
   agent(packet: AgentPacket): AgentOutcome | Promise<AgentOutcome>;
@@ -87,6 +97,8 @@ export interface RunState {
   cursor: number;
   round: number;
   startPin: string | null;
+  /** The slot's pin.json bytes when the run started (null: none); an owner reject puts them back (B5). */
+  startPinDoc?: string | null;
   steps: LedgerStep[];
   checks: Record<string, "pass" | "fail">;
   decisions: { entry: string; answer: string }[];
@@ -95,6 +107,10 @@ export interface RunState {
   vars: Record<string, string>;
   findings: Finding[];
   waiting?: Waiting;
+  /** An owner entry about to be raised: saved before the raise, so a resume adopts the entry instead of raising it twice (B9). */
+  pendingRaise?: { step: string; queue: string; at: Iso; then?: "retry" };
+  /** Step checks the verb did not run (B7); named in the outcome. */
+  notRun?: string[];
   outcome?: string;
   ledger?: string;
 }
@@ -121,6 +137,35 @@ export interface RunOptions { readonly now?: () => Date }
 const iso = (date: Date): Iso => date.toISOString().replace(/\.\d{3}Z$/, "Z");
 export const runsDir = (root: string): string => join(root, ".clossys", "runs", "loops");
 export const runStatePath = (root: string, runId: string): string => join(runsDir(root), `${runId}.json`);
+const lockPath = (root: string, runId: string): string => join(runsDir(root), `${runId}.lock`);
+
+const alive = (pid: number): boolean => {
+  try { process.kill(pid, 0); return true; } catch (error) { return (error as NodeJS.ErrnoException).code === "EPERM"; }
+};
+
+/**
+ * Takes the run's lock (B9): one process at a time starts or resumes a run. A lock whose process is gone is stale
+ * and is taken over. Returns the release, or why the run is busy.
+ */
+function takeRunLock(root: string, runId: string): { release: () => void } | { busy: string } {
+  const file = lockPath(root, runId);
+  mkdirSync(dirname(file), { recursive: true });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let fd: number;
+    try { fd = openSync(file, "wx"); } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      let holder = NaN;
+      try { holder = Number(readFileSync(file, "utf8").trim()); } catch { /* gone meanwhile */ }
+      if (Number.isInteger(holder) && holder > 0 && alive(holder)) return { busy: `run ${runId} is in use by process ${holder} (${relative(root, file)})` };
+      try { unlinkSync(file); } catch { /* taken over meanwhile */ }
+      continue;
+    }
+    try { writeSync(fd, `${process.pid}\n`); } finally { closeSync(fd); }
+    return { release: () => { try { unlinkSync(file); } catch { /* already gone */ } } };
+  }
+  return { busy: `run ${runId}: its lock could not be taken` };
+}
+
 export const ledgerDir = (root: string, loop: LoopName): string => join(root, "clossys", "agents", "producer", ledgerOf(loop), "entries");
 const agentsDir = (root: string): string => join(root, "clossys", "agents");
 
@@ -133,6 +178,7 @@ function saveState(root: string, state: RunState): void {
 }
 
 export function readRunState(root: string, runId: string): RunState | undefined {
+  if (!RUN_ID.test(runId)) return undefined;
   const file = runStatePath(root, runId);
   return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) as RunState : undefined;
 }
@@ -171,6 +217,11 @@ function uniqueRunId(root: string, loop: LoopName, stamp: string, slug: string):
   throw new Error(`clossys run: run ids ${base}..-99 are all taken`);
 }
 
+const pinDocText = (root: string, subject: { agent: AgentId; slotId: string }): string | null => {
+  const file = pinPath(root, subject.agent, subject.slotId);
+  return existsSync(file) ? readFileSync(file, "utf8") : null;
+};
+
 const pinSha = (root: string, subject: { agent: AgentId; slotId: string } | undefined): string | null => {
   if (!subject) return null;
   const resolved = resolveSlot(root, subject.agent, subject.slotId);
@@ -202,6 +253,11 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
   if (!load.ok) return { ok: false, reason: load.reason };
   const version = load.loaded.content;
   const needs = LOOP_SUBJECT[input.loop];
+  // B8: every id the caller hands in is checked before it reaches a path or an argv.
+  if (input.slot !== undefined && !SLOT_REF.test(input.slot)) return { ok: false, reason: `--slot ${JSON.stringify(input.slot)} is not a slot ref (<agent>/<slot-id>)` };
+  if (input.from !== undefined && !ENTRY_NAME.test(input.from)) return { ok: false, reason: `--from ${JSON.stringify(input.from)} is not a queue entry (queue.<pick|approve|clarify|fix>#<id>)` };
+  if (input.publication !== undefined && !PUBLICATION_ID.test(input.publication)) return { ok: false, reason: `--publication ${JSON.stringify(input.publication)} is not a publication id` };
+  if (input.trigger !== undefined && !TRIGGER_CODE.test(input.trigger)) return { ok: false, reason: `--trigger ${JSON.stringify(input.trigger)} is not a trigger (T1-T8)` };
   let from: QueueEntry | undefined;
   if (input.from !== undefined) {
     from = readEntry(root, input.from);
@@ -210,14 +266,23 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
   }
   let subject: SlotSubject | undefined;
   if (needs === "slot") {
-    const ref = input.slot ?? (from ? from.subject.to.split("/").slice(0, 2).join("/") : undefined);
+    const fromRef = from ? from.subject.to.split("/").slice(0, 2).join("/") : undefined;
+    // B6: an entry the run starts from (and closes when done) must be about the slot the run is for.
+    if (input.slot !== undefined && fromRef !== undefined && fromRef !== input.slot) return { ok: false, reason: `--from ${entryName(from!)} is about ${fromRef}, not --slot ${input.slot}` };
+    const ref = input.slot ?? fromRef;
     if (!ref) return { ok: false, reason: `${input.loop} runs for one slot: --slot <agent>/<slot-id> or --from <entry>` };
+    if (!SLOT_REF.test(ref)) return { ok: false, reason: `${ref} (from ${entryName(from!)}) is not a slot ref` };
     const [agent, slotId] = ref.split("/") as [AgentId, string];
     subject = slotId ? readSubject(root, agent, slotId) : undefined;
     if (!subject) return { ok: false, reason: `${ref} is not a consumer slot (clossys/agents/${ref}/slot.json, slot/2)` };
   }
   if (needs === "publication" && !input.publication) return { ok: false, reason: `${input.loop} runs for one publication: --publication <id>` };
   if (needs !== "slot" && input.slot) return { ok: false, reason: `${input.loop} takes no --slot` };
+  if (needs !== "slot" && from) {
+    const about = from.subject.to;
+    const own = input.publication ? `publisher/release.${input.publication}` : undefined;
+    if (needs === "publication" && about !== own) return { ok: false, reason: `--from ${entryName(from)} is about ${about}, not ${own ?? "a publication"}` };
+  }
   const code = triggerOf(input.loop, input, subject, from);
   if (!LOOP_TRIGGERS[input.loop].includes(code)) return { ok: false, reason: `trigger ${code} does not start ${input.loop} (it answers ${LOOP_TRIGGERS[input.loop].join(", ")})` };
   if (!version.trigger.includes(code)) return { ok: false, reason: `${load.loaded.ref} does not answer trigger ${code} (it answers ${version.trigger.join(", ")})` };
@@ -234,6 +299,7 @@ export function planRun(root: string, input: StartInput, at: Iso): StartPlan {
     ...(from ? { from: entryName(from) } : {}),
     startedAt: at, status: "running", cursor: 0, round: 1,
     startPin: pinSha(root, subject),
+    ...(subject ? { startPinDoc: pinDocText(root, subject) } : {}),
     steps: [], checks: {}, decisions: [], refs: [], raised: [], vars: {}, findings: [],
   };
   return { ok: true, state, loaded: load.loaded };
@@ -243,16 +309,31 @@ export async function startRun(root: string, input: StartInput, hooks: RunHooks,
   const now = options.now ?? (() => new Date());
   const plan = planRun(root, input, iso(now()));
   if (!plan.ok) return { exitCode: 2, message: `run: ${plan.reason}` };
-  saveState(root, plan.state);
-  return advance(root, plan.state, plan.loaded.content, hooks, now);
+  const lock = takeRunLock(root, plan.state.runId);
+  if ("busy" in lock) return { exitCode: 2, message: `run: ${lock.busy}` };
+  try {
+    if (existsSync(runStatePath(root, plan.state.runId))) return { exitCode: 2, message: `run: ${plan.state.runId} was started meanwhile; resume it` };
+    saveState(root, plan.state);
+    return await advance(root, plan.state, plan.loaded.content, hooks, now);
+  } finally { lock.release(); }
 }
 
 /** Resumes a waiting run. A finished step never runs again; the waiting step runs (or is read from its entry). */
 export async function resumeRun(root: string, runId: string, hooks: RunHooks, options: RunOptions = {}): Promise<RunResult> {
   const now = options.now ?? (() => new Date());
+  if (!RUN_ID.test(runId)) return { exitCode: 2, message: `run: ${JSON.stringify(runId)} is not a run id (<yyyymmdd>T<hhmm>Z-<slug>)` };
+  const lock = takeRunLock(root, runId);
+  if ("busy" in lock) return { exitCode: 2, message: `run: ${lock.busy}` };
+  try { return await resumeLocked(root, runId, hooks, now); } finally { lock.release(); }
+}
+
+async function resumeLocked(root: string, runId: string, hooks: RunHooks, now: () => Date): Promise<RunResult> {
   const state = readRunState(root, runId);
   if (!state) return { exitCode: 2, message: `run: no run ${runId} in .clossys/runs/loops/` };
   if (state.status !== "waiting" && state.status !== "running") return { exitCode: 2, state, message: `run: ${runId} is ${state.status}; only a waiting run resumes` };
+  // B9: a run that wrote its ledger entry but stopped before saving its state has ended: adopt the entry, run nothing.
+  const ended = adoptLedger(root, state);
+  if (ended) return ended;
   const load = loadLoopVersion(root, state.loop);
   if (!load.ok) return { exitCode: 2, state, message: `run: ${load.reason}` };
   if (load.loaded.sha256 !== state.version.sha256) {
@@ -275,20 +356,90 @@ function varsOf(ctx: Context, subject: SlotSubject | undefined): Record<string, 
   };
 }
 
-function recordStep(ctx: Context, step: LoopStep, decider: Decider, cli: string, exit: Exit, wrote: readonly string[] | undefined, vars: Record<string, string>): void {
-  ctx.state.steps.push({ id: step.id, decider, cli, exit, wrote: wroteOf(ctx.root, wrote) });
+/**
+ * Records a finished step and its checks. A check in VERIFIED_CHECKS is computed here, never taken from the step's
+ * exit (B3): a step that says 0 while its pin does not resolve is recorded as failed. A check the verb did not run
+ * (`ran`, B7) is recorded as not run, never as a pass. Returns the step's exit as recorded and why it changed.
+ */
+function recordStep(ctx: Context, step: LoopStep, decider: Decider, cli: string, exit: Exit, wrote: readonly string[] | undefined, vars: Record<string, string>, ran?: readonly string[]): { exit: Exit; why?: string } {
+  const results: [string, "pass" | "fail"][] = [];
+  let recorded = exit;
+  const why: string[] = [];
   for (const check of step.checks) {
     const filled = fillNames(check, vars);
     if (filled.unfilled.length) continue;
-    // release.ready is the check itself, run on the tree now, never the step's exit code (flows.md F8 step 6).
-    ctx.state.checks[filled.text] = filled.text === RELEASE_READY
-      ? (ctx.state.publication ? checkReleaseReady(ctx.root, ctx.state.publication).status : "fail")
-      : exit === 0 ? "pass" : "fail";
+    const name = filled.text;
+    if (ran && !ran.includes(name)) {
+      const notRun = ctx.state.notRun ?? (ctx.state.notRun = []);
+      if (!notRun.includes(name)) notRun.push(name);
+      continue;
+    }
+    if (exit === 0 && VERIFIED_CHECKS.includes(name)) {
+      const verified = verifyCheck(ctx, name);
+      results.push([name, verified.ok ? "pass" : "fail"]);
+      if (!verified.ok) { recorded = 1; why.push(verified.why); }
+      continue;
+    }
+    results.push([name, exit === 0 ? "pass" : "fail"]);
   }
+  ctx.state.steps.push({ id: step.id, decider, cli, exit: recorded, wrote: wroteOf(ctx.root, wrote) });
+  for (const [name, result] of results) ctx.state.checks[name] = result;
+  return { exit: recorded, ...(why.length ? { why: why.join("; ") } : {}) };
+}
+
+const resolutionIssue = (resolution: Resolution): string | undefined =>
+  resolution.state === "unresolved" ? [resolution.pinIssue, resolution.reason].filter(Boolean).join("; ")
+    : resolution.state === "sample" ? resolution.pinIssue : undefined;
+
+/** `pins.resolve` and `release.ready`, computed from the files (B3). */
+export function verifyCheck(ctx: { readonly root: string; readonly state: RunState }, name: string): { ok: true } | { ok: false; why: string } {
+  const { root, state } = ctx;
+  if (name === "pins.resolve") {
+    if (!state.subject) {
+      // A release run's own slot is pinned last, by the ready-pin, and judged there by release.ready.
+      const own = state.publication ? `publisher/release.${state.publication}` : undefined;
+      const findings = checkPinsResolve(root).findings.filter(finding => finding.subject !== own);
+      return findings.length ? { ok: false, why: `pins.resolve: ${findings.map(finding => `${finding.subject} ${finding.detail}`).join("; ")}` } : { ok: true };
+    }
+    const { agent, slotId } = state.subject;
+    const ref = `${agent}/${slotId}`;
+    const pin = readPinFile(pinPath(root, agent, slotId), { agent, slotId });
+    const resolutions = isRecordSlot(root, agent, slotId, pin) ? slotRecords(root, agent, slotId).map(record => resolveSlot(root, agent, slotId, record)) : [resolveSlot(root, agent, slotId)];
+    const issues = resolutions.map(resolutionIssue).filter((issue): issue is string => !!issue);
+    if (issues.length) return { ok: false, why: `pins.resolve: ${ref} does not resolve: ${issues.join("; ")}` };
+    if (!resolutions.some(resolution => resolution.state === "pinned")) return { ok: false, why: `pins.resolve: ${ref} has no pin; it still resolves to the package sample` };
+    return { ok: true };
+  }
+  if (name === RELEASE_READY) {
+    const pub = state.publication, manifest = state.vars.manifest, entry = state.vars.entry;
+    if (!pub || !manifest || !entry) return { ok: false, why: `${RELEASE_READY}: the run has no manifest or no owner sign-off` };
+    const resolved = resolveSlot(root, "publisher", `release.${pub}`);
+    if (resolved.state !== "pinned") return { ok: false, why: `${RELEASE_READY}: publisher/release.${pub} is not pinned${resolved.state === "unresolved" ? ` (${resolutionIssue(resolved)})` : ""}` };
+    if (resolved.candidate !== manifest) return { ok: false, why: `${RELEASE_READY}: publisher/release.${pub} pins ${resolved.candidate}, not this run's manifest ${manifest}` };
+    if (!OWNER_BASES.includes(resolved.pin.basis) || resolved.pin.decidedBy !== `owner:${entry}`) return { ok: false, why: `${RELEASE_READY}: publisher/release.${pub} is pinned by ${resolved.pin.decidedBy} (basis ${resolved.pin.basis}), not the owner's sign-off ${entry}` };
+    // The ready-pin rules themselves (gates green now, manifest shas, build digest, pins unchanged): release/ready.ts.
+    const ready = checkReleaseReady(root, pub);
+    if (ready.status === "fail") return { ok: false, why: `${RELEASE_READY}: ${ready.findings.map(row => `${row.subject} ${row.detail}`).join("; ")}` };
+    return { ok: true };
+  }
+  return { ok: false, why: `${name} is not a check clossys run computes` };
+}
+
+/** B1: an agent pick step does not run for a slot an owner `queue.pick` step of this version picks. */
+function ownerPicks(version: LoopVersion, step: LoopStep, subject: SlotSubject | undefined): boolean {
+  if (step.decider.by !== "agent" || step.decider.verb !== AGENT_PICK_VERB) return false;
+  return version.steps.some(other => other.decider.by === "human" && other.decider.raise === OWNER_PICK_RAISE && whenMatches(other.when, subject));
 }
 
 async function advance(root: string, state: RunState, version: LoopVersion, hooks: RunHooks, now: () => Date): Promise<RunResult> {
   const ctx: Context = { root, state, version, hooks, now };
+  const pendingRetry = state.pendingRaise?.then === "retry" ? state.pendingRaise : undefined;
+  if (pendingRetry) {
+    // The clarify a failed step asks was being raised when the run last stopped: adopt or raise it, never run the step again.
+    const step = version.steps[state.cursor];
+    if (step?.id === pendingRetry.step) return waitOnClarify(ctx, step, subjectOf(ctx));
+    delete state.pendingRaise;
+  }
   const retry = await readRetry(ctx);
   if (retry) return retry;
   state.status = "running";
@@ -296,9 +447,12 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     const step = version.steps[state.cursor]!;
     const subject = subjectOf(ctx);
     if (state.subject && !subject) return stop(ctx, `${state.subject.agent}/${state.subject.slotId} is no longer a consumer slot`, 2);
-    if (!whenMatches(step.when, subject)) { state.cursor++; continue; }
+    // B9: the step the run waits on (or was raising an entry for) runs, whatever its `when` now says.
+    const held = state.waiting?.step === step.id || state.pendingRaise?.step === step.id;
+    if (!held && !whenMatches(step.when, subject)) { state.cursor++; continue; }
+    if (!held && ownerPicks(version, step, subject)) { state.cursor++; continue; }
     const vars = varsOf(ctx, subject);
-    const filled = fillNames(step.cli, vars);
+    const filled = stepArgv(step.cli, vars);
     const decider = step.decider;
 
     if (decider.by === "human") {
@@ -308,6 +462,7 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
     }
 
     let exit: Exit; let wrote: readonly string[] | undefined; let findings: readonly Finding[] = []; let ledgerDecider: Decider; let cli = filled.text;
+    let ran: readonly string[] | undefined;
     if (decider.by === "agent") {
       const agent = decider.agent === OWNER_OF_SLOT ? subject?.agent : decider.agent;
       if (!agent) return stop(ctx, `step ${step.id} names ${OWNER_OF_SLOT}, but ${state.loop} runs for no slot`, 2);
@@ -330,19 +485,36 @@ async function advance(root: string, state: RunState, version: LoopVersion, hook
       if (builtIn) ({ exit, wrote } = builtIn);
       else if (filled.unfilled.length) { exit = 2; wrote = []; }
       else {
-        const outcome = await hooks.code({ runId: state.runId, step: step.id, cli: filled.text, argv: filled.text.split(/\s+/).filter(Boolean), ...(subject ? { ref: refOf(subject) } : {}), ...(state.publication ? { publication: state.publication } : {}) });
-        exit = outcome.exit; wrote = outcome.wrote; findings = outcome.findings ?? [];
+        const outcome = await hooks.code({ runId: state.runId, step: step.id, cli: filled.text, argv: filled.argv, ...(subject ? { ref: refOf(subject) } : {}), ...(state.publication ? { publication: state.publication } : {}) });
+        exit = outcome.exit; wrote = outcome.wrote; findings = outcome.findings ?? []; ran = outcome.ran;
       }
     }
     delete state.waiting;
-    recordStep(ctx, step, ledgerDecider, cli, exit, wrote, vars);
+    if (step.id === "manifest" && state.publication && exit === 0) {
+      // B4: the manifest is the release candidate the verb wrote, read from its files (never the first file it names).
+      const manifest = manifestOf(root, state.publication, wrote);
+      if (manifest) state.vars.manifest = manifest;
+      else exit = 1;
+    }
+    const recorded = recordStep(ctx, step, ledgerDecider, cli, exit, wrote, vars, ran);
     state.findings = [...findings];
-    const manifest = step.id === "manifest" && wrote?.length ? wrote[0]! : undefined;
-    if (manifest) state.vars.manifest = manifest.split("/").pop()!;
-    const result = await afterStep(ctx, step, exit, findings, subject);
+    if (recorded.why && !step.onFail) return stop(ctx, `step ${step.id} failed: ${recorded.why}`, 1);
+    const result = await afterStep(ctx, step, recorded.exit, findings, subject);
     if (result) return result;
   }
   return finish(ctx);
+}
+
+/** The release candidate a manifest step wrote: `publisher/release.<pub>/candidates/<name>`. */
+function manifestOf(root: string, publication: string, wrote: readonly string[] | undefined): string | undefined {
+  const prefix = `publisher/release.${publication}/candidates/`;
+  for (const file of wrote ?? []) {
+    const rel = ledgerPath(root, file);
+    if (!rel.startsWith(prefix)) continue;
+    const name = rel.slice(prefix.length);
+    if (CANDIDATE_NAME.test(name) && existsSync(join(agentsDir(root), rel))) return name;
+  }
+  return undefined;
 }
 
 /** The two code steps the runner runs itself. */
@@ -393,14 +565,7 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
     const names = raised.map(entryName);
     return stop(ctx, `${step.id} failed; ${names.length ? `raised ${names.join(", ")}; ` : ""}${step.onFail.then} runs from ${names[0] ?? "the open entry"}`, 1);
   }
-  if (step.onFail.raise === "queue.clarify") {
-    const entry = raiseFor(ctx, "queue.clarify", subject, `${label} failed${subject ? ` for ${refOf(subject)}` : ""}: what should it do?`, at, false);
-    if (!entry) return stop(ctx, `step ${step.id} failed and no clarify entry could be raised`, 1);
-    state.raised.push(entryName(entry));
-    state.status = "waiting"; state.waiting = { step: step.id, on: "entry", entry: entryName(entry), then: "retry" };
-    saveState(root, state);
-    return { exitCode: 0, state, entry: entryName(entry), message: `run ${state.runId}: ${step.id} failed; waits for the owner on ${entryName(entry)}` };
-  }
+  if (step.onFail.raise === "queue.clarify") return waitOnClarify(ctx, step, subject);
   state.round++;
   if (state.round > version.maxRounds) {
     const entry = raiseFor(ctx, "queue.clarify", subject, `${version.maxRounds} rounds of ${state.loop} did not pass ${step.id}${subject ? ` for ${refOf(subject)}` : ""}`, at, false);
@@ -419,13 +584,57 @@ async function afterStep(ctx: Context, step: LoopStep, exit: Exit, findings: rea
   return null;
 }
 
-function raiseFor(ctx: Context, queue: "queue.fix" | "queue.clarify", subject: SlotSubject | undefined, ask: string, at: Iso, dedupe = true): QueueEntry | undefined {
+function raiseOf(ctx: Context, queue: "queue.fix" | "queue.clarify", subject: SlotSubject | undefined, ask: string): Raise | undefined {
   const publicationRef = ctx.state.publication ? `publisher/release.${ctx.state.publication}` : undefined;
   const to = subject ? refOf(subject) : publicationRef;
   if (!to) return undefined;
   const agent = (subject?.agent ?? "publisher") as AgentId;
   const decider: QueueEntry["decider"] = queue === "queue.fix" ? `agent:${agent}` : "owner";
-  return raiseEntry(ctx.root, { queue, subject: { to: to as Ref["to"], rel: "input" }, decider, ask, slug: to.split("/")[1]! }, at, dedupe).entry;
+  return { queue, subject: { to: to as Ref["to"], rel: "input" }, decider, ask, slug: to.split("/")[1]! };
+}
+
+function raiseFor(ctx: Context, queue: "queue.fix" | "queue.clarify", subject: SlotSubject | undefined, ask: string, at: Iso, dedupe = true): QueueEntry | undefined {
+  const raise = raiseOf(ctx, queue, subject, ask);
+  return raise ? raiseEntry(ctx.root, raise, at, dedupe).entry : undefined;
+}
+
+/** The open entry a run raised at `at` for `raise` before it stopped, if the raise got that far (B9). */
+function raisedBefore(root: string, raise: Raise, at: Iso): QueueEntry | undefined {
+  for (const file of listQueueEntryFiles(root)) {
+    if (file.queue !== raise.queue) continue;
+    const read = readQueueEntry(file);
+    if (!read.ok) continue;
+    const entry = read.entry;
+    if (entry.createdAt === at && entry.subject.to === raise.subject.to && entry.ask === raise.ask && entry.createdBy.actor === "code") return entry;
+  }
+  return undefined;
+}
+
+/**
+ * Raises an owner entry once (B9): the intent is saved before the raise, so a run that stops between the raise and
+ * its next state save adopts the entry it raised instead of raising a second one.
+ */
+function raiseOnce(ctx: Context, step: string, raise: Raise, then?: "retry"): QueueEntry {
+  const { root, state } = ctx;
+  const pending = state.pendingRaise?.step === step && state.pendingRaise.queue === raise.queue ? state.pendingRaise : undefined;
+  const at = pending?.at ?? iso(ctx.now());
+  const adopted = pending ? raisedBefore(root, raise, at) : undefined;
+  if (!pending) { state.pendingRaise = { step, queue: raise.queue, at, ...(then ? { then } : {}) }; saveState(root, state); }
+  const entry = adopted ?? raiseEntry(root, raise, at, false).entry;
+  delete state.pendingRaise;
+  return entry;
+}
+
+/** A failed step whose onFail asks the owner (`queue.clarify` then `retry`): raise once, wait, then run it again. */
+function waitOnClarify(ctx: Context, step: LoopStep, subject: SlotSubject | undefined): Promise<RunResult> {
+  const { root, state } = ctx;
+  const raise = raiseOf(ctx, "queue.clarify", subject, `${state.loop} ${step.id} failed${subject ? ` for ${refOf(subject)}` : ""}: what should it do?`);
+  if (!raise) { delete state.pendingRaise; return stop(ctx, `step ${step.id} failed and no clarify entry could be raised`, 1); }
+  const entry = raiseOnce(ctx, step.id, raise, "retry");
+  if (!state.raised.includes(entryName(entry))) state.raised.push(entryName(entry));
+  state.status = "waiting"; state.waiting = { step: step.id, on: "entry", entry: entryName(entry), then: "retry" };
+  saveState(root, state);
+  return Promise.resolve({ exitCode: 0, state, entry: entryName(entry), message: `run ${state.runId}: ${step.id} failed; waits for the owner on ${entryName(entry)}` });
 }
 
 /** A human step: raise its entry, or read the entry it waits on. Returns a result when the run stops or waits. */
@@ -450,18 +659,27 @@ async function humanStep(ctx: Context, step: LoopStep, subject: SlotSubject | un
     const accepts = entry.queue === "queue.pick" ? option?.candidate !== undefined : answer === "approve" || answer === "ready";
     let wrote: readonly string[] = [];
     let exit: Exit = accepts ? 0 : 1;
+    let why = `the owner answered ${answer} on ${waiting.entry}`;
     if (accepts && entry.queue === "queue.pick" && subject) {
-      const pin = await ctx.hooks.code({ runId: state.runId, step: step.id, cli: `clossys pin ${refOf(subject)} ${option!.candidate} --by owner:${entryName(entry)}`, argv: ["pin", refOf(subject), option!.candidate!, "--by", `owner:${entryName(entry)}`], ref: refOf(subject) });
+      const candidate = option!.candidate!;
+      if (!CANDIDATE_NAME.test(candidate)) return stop(ctx, `${waiting.entry} picks ${JSON.stringify(candidate)}, which is not a candidate name`, 2);
+      const pin = await ctx.hooks.code({ runId: state.runId, step: step.id, cli: `clossys pin ${refOf(subject)} ${candidate} --by owner:${entryName(entry)}`, argv: ["pin", refOf(subject), candidate, "--by", `owner:${entryName(entry)}`], ref: refOf(subject) });
       exit = pin.exit; wrote = pin.wrote ?? [];
     }
+    // B5: the owner's confirm is written on the agent's pin; a reject puts the slot's pin back as the run found it.
+    if (entry.queue === "queue.approve" && state.loop !== "loop.release" && subject) {
+      const done = accepts ? confirmPin(ctx, subject, entry) : revertPin(ctx, subject);
+      wrote = done.wrote;
+      if (done.why) { exit = done.exit; why = done.why; }
+    }
     state.vars.entry = entryName(entry);
-    recordStep(ctx, step, { by: "human", who: "owner", raise: decider.raise }, filled, exit, wrote, vars);
-    if (exit !== 0) return stop(ctx, `the owner answered ${answer} on ${waiting.entry}`, exit === 2 ? 2 : 0);
+    const recorded = recordStep(ctx, step, { by: "human", who: "owner", raise: decider.raise }, filled, exit, wrote, vars);
+    if (recorded.why) return stop(ctx, `step ${step.id} failed: ${recorded.why}`, 1);
+    if (exit !== 0) return stop(ctx, why, exit === 2 ? 2 : accepts ? 1 : 0);
     state.cursor++;
     saveState(root, state);
     return null;
   }
-  const at = iso(ctx.now());
   const to = subject ? refOf(subject) : state.publication ? `publisher/release.${state.publication}` : undefined;
   if (!to) return stop(ctx, `step ${step.id} needs a slot or a publication to ask about`, 2);
   let options: QueueEntry["options"];
@@ -482,14 +700,54 @@ async function humanStep(ctx: Context, step: LoopStep, subject: SlotSubject | un
       : [{ id: "approve", summary: `confirm the agent's pick for ${to}` }, { id: "reject", summary: "keep looking" }];
     fallback = release ? "not-ready" : null;
   }
-  const { entry } = raiseEntry(root, {
+  const entry = raiseOnce(ctx, step.id, {
     queue: decider.raise, subject: { to: to as Ref["to"], rel: "input" }, decider: "owner", ask: `${step.does} (${to})`,
     slug: to.split("/")[1]!, default: fallback, ...(options ? { options } : {}), ...(refs ? { refs } : {}),
-  }, at, false);
-  state.raised.push(entryName(entry));
+  });
+  if (!state.raised.includes(entryName(entry))) state.raised.push(entryName(entry));
   state.status = "waiting"; state.waiting = { step: step.id, on: "entry", entry: entryName(entry), then: "continue" };
   saveState(root, state);
   return { exitCode: 0, state, entry: entryName(entry), message: `run ${state.runId}: ${step.id} waits for the owner on ${entryName(entry)}` };
+}
+
+/** B5: the owner's approve on a confirm step: the agent's pin gains `confirmed` (by the owner, from this entry). */
+function confirmPin(ctx: Context, subject: SlotSubject, entry: QueueEntry): { exit: Exit; wrote: string[]; why?: string } {
+  const { root } = ctx;
+  const { agent, slotId } = subject;
+  const file = pinPath(root, agent, slotId);
+  const read = readPinFile(file, { agent, slotId });
+  if (read.kind !== "pin" || read.issues.length) return { exit: 1, wrote: [], why: `${refOf(subject)} has no valid pin for the owner to confirm${read.kind === "pin" || read.kind === "invalid" || read.kind === "pin/1" ? `: ${read.issues.join("; ")}` : ""}` };
+  const pin = read.doc;
+  if (pin.basis !== "agent") return { exit: 1, wrote: [], why: `${refOf(subject)} is pinned by ${pin.decidedBy} (basis ${pin.basis}); only an agent pick is confirmed` };
+  const at = iso(ctx.now());
+  const answers: Ref = { to: `producer/${entry.queue}` as Ref["to"], record: entry.id, rel: "answers" };
+  const doc = {
+    ...buildPin({
+      agent, slotId, createdBy: pin.createdBy, previous: pin, refs: mergeRefs(pin.refs, [answers]),
+      record: { candidate: pin.candidate, sha256: pin.sha256, decidedBy: pin.decidedBy, basis: pin.basis, at: pin.at, confirmed: { by: "owner", ref: entryName(entry), at } },
+    }),
+    updatedAt: at,
+  };
+  const issues = pinIssues(doc, { agent, slotId });
+  if (issues.length) return { exit: 1, wrote: [], why: `the confirmed pin of ${refOf(subject)} would not be valid: ${issues.join("; ")}` };
+  writePinDoc(file, doc);
+  return { exit: 0, wrote: [`${refOf(subject)}/pin.json`] };
+}
+
+/** B5: the owner rejected the agent's pick: the slot's pin goes back to what it was when the run started. */
+function revertPin(ctx: Context, subject: SlotSubject): { exit: Exit; wrote: string[]; why?: string } {
+  const { root, state } = ctx;
+  const file = pinPath(root, subject.agent, subject.slotId);
+  const before = state.startPinDoc ?? null;
+  const now = existsSync(file) ? readFileSync(file, "utf8") : null;
+  if (now === before) return { exit: 1, wrote: [] };
+  if (before === null) unlinkSync(file);
+  else {
+    const temp = `${file}.${process.pid}.tmp`;
+    writeFileSync(temp, before);
+    renameSync(temp, file);
+  }
+  return { exit: 1, wrote: [`${refOf(subject)}/pin.json`] };
 }
 
 /** The clarify a retry waits on: answered, the step runs again (from advance's loop). */
@@ -509,14 +767,22 @@ async function readRetry(ctx: Context): Promise<RunResult | null> {
 
 async function finish(ctx: Context): Promise<RunResult> {
   const { root, state } = ctx;
+  // B3: the loop's exit checks hold in the files at the end, whatever the steps said.
+  for (const check of EXIT_CHECKS[state.loop]) {
+    if (!VERIFIED_CHECKS.includes(check)) continue;
+    const verified = verifyCheck(ctx, check);
+    state.checks[check] = verified.ok ? "pass" : "fail";
+    if (!verified.ok) return stop(ctx, `the run cannot end done: ${verified.why}`, 1);
+  }
   const last = state.steps[state.steps.length - 1];
   const ready = state.loop === "loop.release" && last?.exit === 0 && state.checks["release.ready"] === "pass";
   const subject = subjectOf(ctx);
-  // The entries this run answers: the one it started from and the fixes it raised on the way (code close, answered by the slot).
+  // The entries this run answers: the one it started from and the fixes it raised on the way (code close, answered by
+  // the slot). Only an agent's queue.fix is closed by code; an owner's clarify is the owner's to answer (B6).
   if (subject) {
     for (const name of [state.from, ...state.raised].filter((n): n is string => n !== undefined)) {
       const entry = readEntry(root, name);
-      if (!entry || entry.status !== "open" || (entry.queue !== "queue.fix" && entry.queue !== "queue.clarify")) continue;
+      if (!entry || entry.status !== "open" || entry.queue !== "queue.fix" || !entry.decider.startsWith("agent:")) continue;
       answerQueueEntry(root, { entry: name, by: RUN_BY, answer: `${state.loop} ${state.runId} done`, answers: refOf(subject) }, ctx.now());
       state.refs.push({ to: `producer/${entry.queue}` as Ref["to"], record: entry.id, rel: "answers" });
     }
@@ -538,9 +804,21 @@ function stop(ctx: Context, why: string, exitCode: Exit): Promise<RunResult> {
   return Promise.resolve(writeLedger(ctx, "stopped", why, exitCode));
 }
 
+/** A run whose ledger entry was written before its state was saved: adopt the entry, never write a second (B9). */
+function adoptLedger(root: string, state: RunState): RunResult | undefined {
+  const file = join(ledgerDir(root, state.loop), `${state.runId}.json`);
+  if (!existsSync(file)) return undefined;
+  const entry = JSON.parse(readFileSync(file, "utf8")) as LedgerEntry;
+  state.status = entry.status as RunState["status"]; state.outcome = entry.outcome; state.ledger = ledgerPath(root, file);
+  delete state.waiting; delete state.pendingRaise;
+  saveState(root, state);
+  return { exitCode: entry.status === "stopped" ? 1 : 0, state, message: `run ${state.runId}: ${entry.status}: ${entry.outcome}` };
+}
+
 function writeLedger(ctx: Context, status: RunState["status"] & LedgerEntry["status"], outcome: string, exitCode: Exit): RunResult {
   const { root, state } = ctx;
   const at = iso(ctx.now());
+  if (state.notRun?.length) outcome = `${outcome}; not run: ${state.notRun.join(", ")}`;
   const seen = new Set<string>();
   const refs = state.refs.filter(ref => { const key = `${ref.to}#${ref.record ?? ""}`; if (seen.has(key)) return false; seen.add(key); return true; });
   const entry: LedgerEntry = {
@@ -564,7 +842,11 @@ function writeLedger(ctx: Context, status: RunState["status"] & LedgerEntry["sta
   if (issues.length) throw new Error(`clossys run: the ledger entry would not be valid: ${issues.map(issue => `${issue.path} ${issue.message}`).join("; ")}`);
   const file = join(ledgerDir(root, state.loop), `${state.runId}.json`);
   mkdirSync(dirname(file), { recursive: true });
-  const fd = openSync(file, "wx");
+  let fd: number;
+  try { fd = openSync(file, "wx"); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    return adoptLedger(root, state)!;
+  }
   try { writeSync(fd, `${JSON.stringify(entry, null, 2)}\n`); } finally { closeSync(fd); }
   state.status = status; state.outcome = outcome; state.ledger = ledgerPath(root, file);
   delete state.waiting;
@@ -593,7 +875,7 @@ export async function runInit(root: string, hooks: RunHooks, options: RunOptions
     { id: "check", cli: "clossys check", checks: ["pins.resolve"] },
   ];
   for (const step of prelude) {
-    const outcome = await hooks.code({ runId: state.runId, step: step.id, cli: step.cli, argv: step.cli.split(" ").slice(1) });
+    const outcome = await hooks.code({ runId: state.runId, step: step.id, cli: step.cli, argv: stepArgv(step.cli, {}).argv.slice(1) });
     state.steps.push({ id: step.id, decider: { by: "code" }, cli: step.cli, exit: outcome.exit, wrote: wroteOf(root, outcome.wrote) });
     for (const check of step.checks) state.checks[check] = outcome.exit === 0 ? "pass" : "fail";
     if (outcome.exit !== 0) return writeLedger(ctx, "stopped", `init stopped at ${step.id} (exit ${outcome.exit})`, outcome.exit);
