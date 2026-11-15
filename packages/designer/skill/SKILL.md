@@ -12,6 +12,25 @@ not write copy, invent facts or assemble pages.
 The CLI is deterministic: it validates, snapshots and installs. Choosing and
 building the item is your work, done through this loop.
 
+## Verbs
+
+Four verbs, one action each; the action file is the contract and its skill is
+the step you run:
+
+| Verb | Action | What it does |
+|---|---|---|
+| create candidates | `actions/designer.candidates/` | build options by the source ladder |
+| pick | `actions/pick.designer/` | judge the passing options and pin one |
+| check | `actions/designer.check/` | read-only traceability check |
+| compile | `actions/designer.compile/` | write generated types and files |
+
+The tree has three L0s: Theme (`themes.*`), Art (`assets.*`) and Interface
+(`components.*`, `sections.*`, `frames.*`). Retired leaves stay placed in
+`src/catalog/ia/<layer>.json` under `retired` and are never offered or reused.
+Every section copy field names a `role` (eyebrow, heading, lead, body, action,
+label, alt); `maxLength.en` never exceeds that role's budget, and a field that
+admits a Director binding lists it in `bindings` and is kind `icu`.
+
 ## Where the records live
 
 These are consumer files in the consumer repository; they do not ship in this package.

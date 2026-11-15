@@ -3,7 +3,7 @@
   "nodes": [
     {
       "id": "colors",
-      "label": "Colors",
+      "label": "Color",
       "children": [
         {
           "id": "colors-surfaces",
@@ -18,15 +18,21 @@
           ]
         },
         {
-          "id": "colors-actions",
-          "label": "Actions",
+          "id": "colors-emphasis",
+          "label": "Emphasis",
           "leaves": [
             "themes.primary",
             "themes.primary-foreground",
             "themes.secondary",
             "themes.secondary-foreground",
             "themes.accent",
-            "themes.accent-foreground",
+            "themes.accent-foreground"
+          ]
+        },
+        {
+          "id": "colors-status",
+          "label": "Status",
+          "leaves": [
             "themes.destructive"
           ]
         },
@@ -42,17 +48,6 @@
           ]
         },
         {
-          "id": "colors-charts",
-          "label": "Charts",
-          "leaves": [
-            "themes.chart-1",
-            "themes.chart-2",
-            "themes.chart-3",
-            "themes.chart-4",
-            "themes.chart-5"
-          ]
-        },
-        {
           "id": "colors-sidebar",
           "label": "Sidebar",
           "leaves": [
@@ -65,18 +60,16 @@
             "themes.sidebar-border",
             "themes.sidebar-ring"
           ]
-        }
-      ]
-    },
-    {
-      "id": "shape",
-      "label": "Shape",
-      "children": [
+        },
         {
-          "id": "shape-corners",
-          "label": "Corners",
+          "id": "colors-charts",
+          "label": "Chart palette",
           "leaves": [
-            "themes.radius"
+            "themes.chart-1",
+            "themes.chart-2",
+            "themes.chart-3",
+            "themes.chart-4",
+            "themes.chart-5"
           ]
         }
       ]
@@ -87,17 +80,17 @@
       "children": [
         {
           "id": "typography-fonts",
-          "label": "Fonts",
+          "label": "Families",
           "leaves": [
             "themes.font-sans",
-            "themes.font-heading",
+            "themes.font-serif",
             "themes.font-mono",
-            "themes.font-serif"
+            "themes.font-heading"
           ]
         },
         {
-          "id": "typography-tracking",
-          "label": "Tracking",
+          "id": "typography-scale",
+          "label": "Type sizes",
           "leaves": [
             "themes.tracking-tight"
           ]
@@ -105,26 +98,21 @@
       ]
     },
     {
-      "id": "space",
-      "label": "Space",
+      "id": "layout",
+      "label": "Layout",
       "children": [
         {
-          "id": "space-rhythm",
-          "label": "Rhythm",
+          "id": "layout-space",
+          "label": "Space",
           "leaves": [
             "themes.spacing"
           ]
-        }
-      ]
-    },
-    {
-      "id": "depth",
-      "label": "Depth",
-      "children": [
+        },
         {
-          "id": "depth-effects",
-          "label": "Effects",
+          "id": "layout-shape",
+          "label": "Shape",
           "leaves": [
+            "themes.radius",
             "themes.shadow"
           ]
         }
@@ -145,5 +133,43 @@
         }
       ]
     }
+  ],
+  "retired": [],
+  "starter": [
+    "themes.background",
+    "themes.foreground",
+    "themes.card",
+    "themes.card-foreground",
+    "themes.popover",
+    "themes.popover-foreground",
+    "themes.primary",
+    "themes.primary-foreground",
+    "themes.secondary",
+    "themes.secondary-foreground",
+    "themes.accent",
+    "themes.accent-foreground",
+    "themes.destructive",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.border",
+    "themes.input",
+    "themes.ring",
+    "themes.sidebar",
+    "themes.sidebar-foreground",
+    "themes.sidebar-primary",
+    "themes.sidebar-primary-foreground",
+    "themes.sidebar-accent",
+    "themes.sidebar-accent-foreground",
+    "themes.sidebar-border",
+    "themes.sidebar-ring",
+    "themes.font-sans",
+    "themes.font-serif",
+    "themes.font-mono",
+    "themes.font-heading",
+    "themes.tracking-tight",
+    "themes.spacing",
+    "themes.radius",
+    "themes.shadow",
+    "themes.animate-marquee"
   ]
 }

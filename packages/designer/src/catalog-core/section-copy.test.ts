@@ -28,7 +28,7 @@ describe("registered section copy", () => {
       expect(row.sourceLocale).toBe("en");
       expect(row.status).toBe("draft");
       for (const field of row.fields) {
-        expect(Object.keys(field).sort()).toEqual(["dir", "key", "kind", "maxLength", "required"]);
+        expect(Object.keys(field).sort()).toEqual(["dir", "key", "kind", "maxLength", "required", "role"]);
         expect(field.maxLength.en).toBeGreaterThan(0);
         expect(field.dir).toBe("auto");
       }
@@ -66,7 +66,7 @@ describe("registered section copy", () => {
   });
 
   it.each([
-    ["kind", "html", "invalid kind"], ["dir", "vertical", "invalid dir"], ["required", "yes", "boolean required"],
+    ["kind", "html", "invalid kind"], ["role", "title", "invalid role"], ["dir", "vertical", "invalid dir"], ["required", "yes", "boolean required"],
     ["key", "items.*.label", "invalid field key"], ["maxLength", {}, "per-locale maxLength"],
     ["maxLength", { en: 0 }, "per-locale maxLength"], ["maxLength", { en: 1.5 }, "per-locale maxLength"],
     ["maxLength", { en: 120, bad_locale: 120 }, "per-locale maxLength"],
@@ -79,7 +79,7 @@ describe("registered section copy", () => {
     expect(findings(contract => { contract.copy.sourceLocale = "not_a_locale"; }).join()).toContain("requires sourceLocale and fields");
     expect(findings(contract => { contract.copy.fields[0].maxLength.ar = 180; contract.copy.fields[0].dir = "rtl"; })).toEqual([]);
     expect(findings(contract => { contract.copy.fields[0].dir = "ltr"; })).toEqual([]);
-    expect(findings(contract => { contract.copy.fields[0].unregistered = true; }).join()).toContain("and dir only");
+    expect(findings(contract => { contract.copy.fields[0].unregistered = true; }).join()).toContain("optional bindings, only");
     expect(findings(contract => { contract.copy.fields = []; }, "sections.logo-hero").join()).toContain("missing copy slot name");
   });
 

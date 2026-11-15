@@ -2,87 +2,47 @@
   "layer": "frames",
   "nodes": [
     {
-      "id": "page-shells",
-      "label": "Page shells",
+      "id": "frames",
+      "label": "Frames",
       "children": [
         {
-          "id": "page-shells-documents",
-          "label": "Documents",
+          "id": "frames-site",
+          "label": "Site",
           "leaves": [
             "frames.site-shell",
+            "frames.auth-shell",
+            "frames.site-header",
+            "frames.site-footer",
             "frames.document"
           ]
         },
         {
-          "id": "page-shells-workspaces",
-          "label": "Workspaces",
+          "id": "frames-app",
+          "label": "App",
           "leaves": [
-            "frames.app-shell"
-          ]
-        },
-        {
-          "id": "page-shells-authentication",
-          "label": "Authentication",
-          "leaves": [
-            "frames.auth-shell"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "regions",
-      "label": "Regions",
-      "children": [
-        {
-          "id": "headers",
-          "label": "Headers",
-          "leaves": [
-            "frames.site-header",
-            "frames.app-header"
-          ]
-        },
-        {
-          "id": "navigation",
-          "label": "Navigation",
-          "leaves": [
-            "frames.app-sidebar"
-          ]
-        },
-        {
-          "id": "panels",
-          "label": "Panels",
-          "leaves": [
-            "frames.inspector"
-          ]
-        },
-        {
-          "id": "footers",
-          "label": "Footers",
-          "leaves": [
-            "frames.site-footer"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "overlay-shells",
-      "label": "Overlay shells",
-      "children": [
-        {
-          "id": "overlay-shells-panels",
-          "label": "Panels",
-          "leaves": [
-            "frames.sheet"
-          ]
-        },
-        {
-          "id": "overlay-shells-commands",
-          "label": "Commands",
-          "leaves": [
+            "frames.app-shell",
+            "frames.app-header",
+            "frames.app-sidebar",
+            "frames.inspector",
+            "frames.sheet",
             "frames.command"
           ]
         }
       ]
     }
+  ],
+  "retired": [
+    "frames.command",
+    "frames.document",
+    "frames.sheet"
+  ],
+  "starter": [
+    "frames.site-shell",
+    "frames.auth-shell",
+    "frames.site-header",
+    "frames.site-footer",
+    "frames.app-shell",
+    "frames.app-header",
+    "frames.app-sidebar"
   ]
 }

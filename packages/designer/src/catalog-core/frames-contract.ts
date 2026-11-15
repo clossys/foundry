@@ -21,7 +21,7 @@ export interface FrameContract {
   slots: readonly {
     id: string;
     required: boolean;
-    accepts: "view" | "host-node" | `components.${string}` | "sections.*";
+    accepts: "view" | "host-node" | `components.${string}` | "sections.*" | `sections.${string}`;
   }[];
   /** Closed configuration values use axis.value names. Header position.sticky/static is independent of its surface. */
   members: { mode: "closed"; names: readonly string[] };

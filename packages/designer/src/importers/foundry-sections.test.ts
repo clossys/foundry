@@ -115,9 +115,9 @@ describe("Foundry section package descriptors", () => {
     expect(descriptor.slotMap["header.eyebrow"]).toBe("./blocks#Hero.eyebrow");
     expect(descriptor.slotMap["header.description"]).toBe("./blocks#Hero.description");
     expect(contract.copy.fields.filter(field => ["header.heading", "header.eyebrow", "header.description"].includes(field.key))).toEqual([
-      { key: "header.heading", kind: "plain", required: true, maxLength: { en: 160 }, dir: "auto" },
-      { key: "header.eyebrow", kind: "plain", required: false, maxLength: { en: 120 }, dir: "auto" },
-      { key: "header.description", kind: "plain", required: false, maxLength: { en: 480 }, dir: "auto" },
+      { key: "header.heading", kind: "plain", role: "heading", required: true, maxLength: { en: 60 }, dir: "auto" },
+      { key: "header.eyebrow", kind: "plain", role: "eyebrow", required: false, maxLength: { en: 48 }, dir: "auto" },
+      { key: "header.description", kind: "plain", role: "lead", required: false, maxLength: { en: 200 }, dir: "auto" },
     ]);
   });
 
@@ -132,8 +132,8 @@ describe("Foundry section package descriptors", () => {
     expect(contract.slots.find(slot => slot.name === "aside")).toEqual({ name: "aside", type: "region", required: false });
     expect(contract.allowedComposes).toContain("components.card");
     expect(contract.copy!.fields.filter(field => field.key.startsWith("aside[]"))).toEqual([
-      { key: "aside[].label", kind: "plain", required: false, maxLength: { en: 120 }, dir: "auto" },
-      { key: "aside[].value", kind: "plain", required: false, maxLength: { en: 480 }, dir: "auto" },
+      { key: "aside[].label", kind: "plain", role: "label", required: false, maxLength: { en: 120 }, dir: "auto" },
+      { key: "aside[].value", kind: "plain", role: "body", required: false, maxLength: { en: 480 }, dir: "auto" },
     ]);
   });
 

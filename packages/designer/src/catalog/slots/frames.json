@@ -56,6 +56,12 @@
       "root": "div",
       "landmarks": [
         {
+          "slot": "consent",
+          "role": "region",
+          "topLevel": true,
+          "nameRequired": true
+        },
+        {
           "slot": "header",
           "role": "banner",
           "topLevel": true,
@@ -96,7 +102,7 @@
         {
           "id": "consent",
           "required": false,
-          "accepts": "sections.*"
+          "accepts": "sections.consent"
         },
         {
           "id": "header",
@@ -724,7 +730,7 @@
         {
           "id": "tree",
           "required": true,
-          "accepts": "components.navigation-tree"
+          "accepts": "components.sidebar"
         },
         {
           "id": "account",
@@ -799,7 +805,7 @@
         ]
       },
       "composes": [
-        "components.navigation-tree",
+        "components.sidebar",
         "components.link",
         "components.button",
         "components.tooltip",

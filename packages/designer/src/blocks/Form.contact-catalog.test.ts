@@ -38,7 +38,7 @@ describe("contact form catalog contract", () => {
     const passage = passages.find(row => row.id === "passages.form")!.contract;
     expect(passage.copy).toEqual(section.copy);
     for (const key of ["success.message", "error.message"]) {
-      expect(section.copy.fields).toContainEqual({ key, kind: "plain", required: false, maxLength: { en: 480 }, dir: "auto" });
+      expect(section.copy.fields).toContainEqual({ key, kind: "plain", role: "body", required: false, maxLength: { en: 480 }, dir: "auto" });
     }
   });
 });

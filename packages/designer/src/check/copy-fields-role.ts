@@ -11,7 +11,7 @@ export type CopyRole = (typeof COPY_ROLES)[number];
 /** Source-locale (en) budgets in Unicode code points, one per role. ia-target designer.md 9.4.3 fixes eyebrow, heading,
  * lead, action and alt; label and body are package defaults (body admits long-form document text). */
 export const ROLE_BUDGET: Readonly<Record<CopyRole, number>> = {
-  eyebrow: 48, heading: 60, lead: 200, body: 48_000, action: 24, label: 80, alt: 140,
+  eyebrow: 48, heading: 60, lead: 200, body: 48_000, action: 24, label: 160, alt: 140,
 };
 export const BUDGET_LOCALE = "en";
 

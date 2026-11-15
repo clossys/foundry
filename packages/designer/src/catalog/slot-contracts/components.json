@@ -4,7 +4,7 @@
     "slot": "components.avatar",
     "package": "designer",
     "layer": "components",
-    "purpose": "Avatar component (root presentational), under Display / Media.",
+    "purpose": "Avatar component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "size",
@@ -85,7 +85,7 @@
     "slot": "components.badge",
     "package": "designer",
     "layer": "components",
-    "purpose": "Badge component (root presentational), under Display / Labels.",
+    "purpose": "Badge component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "tone",
@@ -175,7 +175,7 @@
     "slot": "components.banner",
     "package": "designer",
     "layer": "components",
-    "purpose": "Banner component (root presentational), under Feedback / Messages.",
+    "purpose": "Banner component (root presentational), under Components / Feedback.",
     "inputs": [
       {
         "name": "tone",
@@ -266,7 +266,7 @@
     "slot": "components.breadcrumbs",
     "package": "designer",
     "layer": "components",
-    "purpose": "Breadcrumbs component (root rac:Breadcrumbs; APG breadcrumb pattern), under Navigation / Links.",
+    "purpose": "Breadcrumbs component (root rac:Breadcrumbs; APG breadcrumb pattern), under Components / Navigation.",
     "inputs": [
       {
         "name": "current",
@@ -329,7 +329,7 @@
     "slot": "components.button",
     "package": "designer",
     "layer": "components",
-    "purpose": "Button component (root rac:Button; APG button pattern), under Actions / Buttons.",
+    "purpose": "Button component (root rac:Button; APG button pattern), under Components / Actions.",
     "inputs": [
       {
         "name": "variant",
@@ -455,7 +455,7 @@
     "slot": "components.calendar",
     "package": "designer",
     "layer": "components",
-    "purpose": "Calendar component (root rac:Calendar; APG grid pattern), under Inputs / Date.",
+    "purpose": "Calendar component (root rac:Calendar; APG grid pattern), under Components / Inputs.",
     "inputs": [
       {
         "name": "selection",
@@ -542,7 +542,7 @@
     "slot": "components.card",
     "package": "designer",
     "layer": "components",
-    "purpose": "Card component (root presentational), under Containment / Structure.",
+    "purpose": "Card component (root presentational), under Components / Structure.",
     "inputs": [
       {
         "name": "themes.border",
@@ -606,7 +606,7 @@
     "slot": "components.chart-area",
     "package": "designer",
     "layer": "components",
-    "purpose": "Chart area component (root engine:none), under Display / Core charts.",
+    "purpose": "Chart area component (root engine:none), under Components / Collections.",
     "inputs": [
       {
         "name": "series",
@@ -689,7 +689,7 @@
     "slot": "components.chart-bar",
     "package": "designer",
     "layer": "components",
-    "purpose": "Chart bar component (root engine:none), under Display / Core charts.",
+    "purpose": "Chart bar component (root engine:none), under Components / Collections.",
     "inputs": [
       {
         "name": "series",
@@ -772,7 +772,7 @@
     "slot": "components.chart-heatmap",
     "package": "designer",
     "layer": "components",
-    "purpose": "Chart heatmap component (root engine:none), under Display / Analytic charts.",
+    "purpose": "Chart heatmap component (root engine:none), under Components / Collections.",
     "inputs": [
       {
         "name": "series",
@@ -963,7 +963,7 @@
     "slot": "components.chart-line",
     "package": "designer",
     "layer": "components",
-    "purpose": "Chart line component (root engine:none), under Display / Core charts.",
+    "purpose": "Chart line component (root engine:none), under Components / Collections.",
     "inputs": [
       {
         "name": "series",
@@ -1046,7 +1046,7 @@
     "slot": "components.chart-range",
     "package": "designer",
     "layer": "components",
-    "purpose": "Chart range component (root engine:none), under Display / Analytic charts.",
+    "purpose": "Chart range component (root engine:none), under Components / Collections.",
     "inputs": [
       {
         "name": "series",
@@ -1237,7 +1237,7 @@
     "slot": "components.chart-scatter",
     "package": "designer",
     "layer": "components",
-    "purpose": "Chart scatter component (root engine:none), under Display / Analytic charts.",
+    "purpose": "Chart scatter component (root engine:none), under Components / Collections.",
     "inputs": [
       {
         "name": "series",
@@ -1428,7 +1428,7 @@
     "slot": "components.chart-sparkline",
     "package": "designer",
     "layer": "components",
-    "purpose": "Chart sparkline component (root engine:none), under Display / Compact charts.",
+    "purpose": "Chart sparkline component (root engine:none), under Components / Collections.",
     "inputs": [
       {
         "name": "series",
@@ -1511,7 +1511,7 @@
     "slot": "components.chart-status-strip",
     "package": "designer",
     "layer": "components",
-    "purpose": "Chart status strip component (root engine:none), under Display / Compact charts.",
+    "purpose": "Chart status strip component (root engine:none), under Components / Collections.",
     "inputs": [
       {
         "name": "series",
@@ -1702,7 +1702,7 @@
     "slot": "components.chart-waterfall",
     "package": "designer",
     "layer": "components",
-    "purpose": "Chart waterfall component (root engine:none), under Display / Analytic charts.",
+    "purpose": "Chart waterfall component (root engine:none), under Components / Collections.",
     "inputs": [
       {
         "name": "series",
@@ -1893,7 +1893,7 @@
     "slot": "components.checkbox",
     "package": "designer",
     "layer": "components",
-    "purpose": "Checkbox component (root rac:Checkbox; APG checkbox pattern), under Inputs / Choice.",
+    "purpose": "Checkbox component (root rac:Checkbox; APG checkbox pattern), under Components / Inputs.",
     "inputs": [
       {
         "name": "scope",
@@ -1970,7 +1970,7 @@
     "slot": "components.color-picker",
     "package": "designer",
     "layer": "components",
-    "purpose": "Color picker component (root rac:ColorPicker), under Inputs / Color.",
+    "purpose": "Color picker component (root rac:ColorPicker), under Components / Inputs.",
     "inputs": [
       {
         "name": "part",
@@ -2025,7 +2025,7 @@
     "slot": "components.combo-box",
     "package": "designer",
     "layer": "components",
-    "purpose": "Combo box component (root rac:ComboBox; APG combobox pattern), under Inputs / Choice.",
+    "purpose": "Combo box component (root rac:ComboBox; APG combobox pattern), under Components / Inputs.",
     "inputs": [
       {
         "name": "allows-custom",
@@ -2154,7 +2154,7 @@
     "slot": "components.date-field",
     "package": "designer",
     "layer": "components",
-    "purpose": "Date field component (root rac:DateField), under Inputs / Date.",
+    "purpose": "Date field component (root rac:DateField), under Components / Inputs.",
     "inputs": [
       {
         "name": "content",
@@ -2324,7 +2324,7 @@
     "slot": "components.date-picker",
     "package": "designer",
     "layer": "components",
-    "purpose": "Date picker component (root rac:DatePicker; APG dialog-modal pattern), under Inputs / Date.",
+    "purpose": "Date picker component (root rac:DatePicker; APG dialog-modal pattern), under Components / Inputs.",
     "inputs": [
       {
         "name": "selection",
@@ -2361,7 +2361,7 @@
     "slot": "components.dialog",
     "package": "designer",
     "layer": "components",
-    "purpose": "Dialog component (root rac:Dialog; APG dialog-modal pattern), under Containment / Overlays.",
+    "purpose": "Dialog component (root rac:Dialog; APG dialog-modal pattern), under Components / Overlays.",
     "inputs": [
       {
         "name": "role",
@@ -2443,7 +2443,7 @@
     "slot": "components.disclosure",
     "package": "designer",
     "layer": "components",
-    "purpose": "Disclosure component (root rac:Disclosure; APG disclosure pattern), under Containment / Structure.",
+    "purpose": "Disclosure component (root rac:Disclosure; APG disclosure pattern), under Components / Structure.",
     "inputs": [
       {
         "name": "scope",
@@ -2484,7 +2484,7 @@
     "slot": "components.field",
     "package": "designer",
     "layer": "components",
-    "purpose": "Field component (root rac:Label+Text+FieldError), under Inputs / Form.",
+    "purpose": "Field component (root rac:Label+Text+FieldError), under Components / Inputs.",
     "inputs": [
       {
         "name": "part",
@@ -2560,7 +2560,7 @@
     "slot": "components.file-trigger",
     "package": "designer",
     "layer": "components",
-    "purpose": "File trigger component (root rac:FileTrigger), under Inputs / Files.",
+    "purpose": "File trigger component (root rac:FileTrigger), under Components / Inputs.",
     "inputs": [
       {
         "name": "multiple",
@@ -2602,7 +2602,7 @@
     "slot": "components.form",
     "package": "designer",
     "layer": "components",
-    "purpose": "Form component (root rac:Form), under Inputs / Form.",
+    "purpose": "Form component (root rac:Form), under Components / Inputs.",
     "inputs": [
       {
         "name": "validation",
@@ -2637,7 +2637,7 @@
     "slot": "components.grid-list",
     "package": "designer",
     "layer": "components",
-    "purpose": "Grid list component (root rac:GridList; APG grid pattern), under Display / Data.",
+    "purpose": "Grid list component (root rac:GridList; APG grid pattern), under Components / Collections.",
     "inputs": [
       {
         "name": "layout",
@@ -2700,7 +2700,7 @@
     "slot": "components.icon",
     "package": "designer",
     "layer": "components",
-    "purpose": "Icon component (root presentational), under Display / Assets.",
+    "purpose": "Icon component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "size",
@@ -2928,7 +2928,7 @@
     "slot": "components.keyboard",
     "package": "designer",
     "layer": "components",
-    "purpose": "Keyboard component (root rac:Keyboard), under Display / Labels.",
+    "purpose": "Keyboard component (root rac:Keyboard), under Components / Text and media.",
     "inputs": [
       {
         "name": "scope",
@@ -2988,7 +2988,7 @@
     "slot": "components.link",
     "package": "designer",
     "layer": "components",
-    "purpose": "Link component (root rac:Link; APG link pattern), under Navigation / Links.",
+    "purpose": "Link component (root rac:Link; APG link pattern), under Components / Navigation.",
     "inputs": [
       {
         "name": "appearance",
@@ -3084,7 +3084,7 @@
     "slot": "components.logo",
     "package": "designer",
     "layer": "components",
-    "purpose": "Logo component (root presentational), under Display / Assets.",
+    "purpose": "Logo component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "content",
@@ -3184,7 +3184,7 @@
     "slot": "components.menu",
     "package": "designer",
     "layer": "components",
-    "purpose": "Menu component (root rac:Menu; APG menu pattern), under Actions / Menus.",
+    "purpose": "Menu component (root rac:Menu; APG menu pattern), under Components / Actions.",
     "inputs": [
       {
         "name": "presentation",
@@ -3287,7 +3287,7 @@
     "slot": "components.meter",
     "package": "designer",
     "layer": "components",
-    "purpose": "Meter component (root rac:Meter; APG meter pattern), under Display / Data.",
+    "purpose": "Meter component (root rac:Meter; APG meter pattern), under Components / Feedback.",
     "inputs": [
       {
         "name": "tone",
@@ -3355,7 +3355,7 @@
     "slot": "components.native-action",
     "package": "designer",
     "layer": "components",
-    "purpose": "Native action component (root engine:none; APG button pattern), under Actions / Buttons.",
+    "purpose": "Native action component (root engine:none; APG button pattern), under Components / Actions.",
     "inputs": [
       {
         "name": "appearance",
@@ -3492,7 +3492,7 @@
     "slot": "components.navigation-tree",
     "package": "designer",
     "layer": "components",
-    "purpose": "Navigation tree component (root rac:NavigationTree; APG treeview pattern), under Navigation / Trees.",
+    "purpose": "Navigation tree component (root rac:NavigationTree; APG treeview pattern), under Components / Navigation.",
     "inputs": [
       {
         "name": "expand",
@@ -3580,7 +3580,7 @@
     "slot": "components.number-field",
     "package": "designer",
     "layer": "components",
-    "purpose": "Number field component (root rac:NumberField; APG spinbutton pattern), under Inputs / Number.",
+    "purpose": "Number field component (root rac:NumberField; APG spinbutton pattern), under Components / Inputs.",
     "inputs": [
       {
         "name": "format",
@@ -3762,7 +3762,7 @@
     "slot": "components.popover",
     "package": "designer",
     "layer": "components",
-    "purpose": "Popover component (root rac:Popover), under Containment / Overlays.",
+    "purpose": "Popover component (root rac:Popover), under Components / Overlays.",
     "inputs": [
       {
         "name": "placement",
@@ -3827,7 +3827,7 @@
     "slot": "components.progress-bar",
     "package": "designer",
     "layer": "components",
-    "purpose": "Progress bar component (root rac:ProgressBar), under Feedback / Progress.",
+    "purpose": "Progress bar component (root rac:ProgressBar), under Components / Feedback.",
     "inputs": [
       {
         "name": "progress",
@@ -3888,7 +3888,7 @@
     "slot": "components.radio-group",
     "package": "designer",
     "layer": "components",
-    "purpose": "Radio group component (root rac:RadioGroup; APG radio pattern), under Inputs / Choice.",
+    "purpose": "Radio group component (root rac:RadioGroup; APG radio pattern), under Components / Inputs.",
     "inputs": [
       {
         "name": "orientation",
@@ -3971,7 +3971,7 @@
     "slot": "components.resize-handle",
     "package": "designer",
     "layer": "components",
-    "purpose": "Resize handle component (root engine:none; APG windowsplitter pattern), under Containment / Structure.",
+    "purpose": "Resize handle component (root engine:none; APG windowsplitter pattern), under Components / Structure.",
     "inputs": [
       {
         "name": "orientation",
@@ -4007,7 +4007,7 @@
     "slot": "components.search-field",
     "package": "designer",
     "layer": "components",
-    "purpose": "Search field component (root rac:SearchField), under Inputs / Text.",
+    "purpose": "Search field component (root rac:SearchField), under Components / Inputs.",
     "inputs": [
       {
         "name": "part",
@@ -4089,7 +4089,7 @@
     "slot": "components.select",
     "package": "designer",
     "layer": "components",
-    "purpose": "Select component (root rac:Select; APG listbox pattern), under Inputs / Choice.",
+    "purpose": "Select component (root rac:Select; APG listbox pattern), under Components / Inputs.",
     "inputs": [
       {
         "name": "selection",
@@ -4213,7 +4213,7 @@
     "slot": "components.semantic-content",
     "package": "designer",
     "layer": "components",
-    "purpose": "Semantic content component (root presentational), under Display / Content.",
+    "purpose": "Semantic content component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "as",
@@ -4235,7 +4235,7 @@
     "slot": "components.separator",
     "package": "designer",
     "layer": "components",
-    "purpose": "Separator component (root rac:Separator), under Containment / Structure.",
+    "purpose": "Separator component (root rac:Separator), under Components / Structure.",
     "inputs": [
       {
         "name": "orientation",
@@ -4270,7 +4270,7 @@
     "slot": "components.skeleton",
     "package": "designer",
     "layer": "components",
-    "purpose": "Skeleton component (root presentational), under Feedback / Progress.",
+    "purpose": "Skeleton component (root presentational), under Components / Feedback.",
     "inputs": [
       {
         "name": "shape",
@@ -4310,7 +4310,7 @@
     "slot": "components.slider",
     "package": "designer",
     "layer": "components",
-    "purpose": "Slider component (root rac:Slider; APG slider pattern), under Inputs / Number.",
+    "purpose": "Slider component (root rac:Slider; APG slider pattern), under Components / Inputs.",
     "inputs": [
       {
         "name": "selection",
@@ -4373,7 +4373,7 @@
     "slot": "components.spinner",
     "package": "designer",
     "layer": "components",
-    "purpose": "Spinner component (root rac:ProgressBar), under Feedback / Progress.",
+    "purpose": "Spinner component (root rac:ProgressBar), under Components / Feedback.",
     "inputs": [
       {
         "name": "size",
@@ -4403,7 +4403,7 @@
     "slot": "components.status-mark",
     "package": "designer",
     "layer": "components",
-    "purpose": "Status mark component (root presentational), under Feedback / Indicators.",
+    "purpose": "Status mark component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "tone",
@@ -4468,7 +4468,7 @@
     "slot": "components.switch",
     "package": "designer",
     "layer": "components",
-    "purpose": "Switch component (root rac:Switch; APG switch pattern), under Inputs / Choice.",
+    "purpose": "Switch component (root rac:Switch; APG switch pattern), under Components / Inputs.",
     "inputs": [
       {
         "name": "state",
@@ -4549,7 +4549,7 @@
     "slot": "components.table",
     "package": "designer",
     "layer": "components",
-    "purpose": "Table component (root rac:Table; APG table pattern), under Display / Data.",
+    "purpose": "Table component (root rac:Table; APG table pattern), under Components / Collections.",
     "inputs": [
       {
         "name": "selection",
@@ -4612,7 +4612,7 @@
     "slot": "components.tabs",
     "package": "designer",
     "layer": "components",
-    "purpose": "Tabs component (root rac:Tabs; APG tabs pattern), under Navigation / Panels.",
+    "purpose": "Tabs component (root rac:Tabs; APG tabs pattern), under Components / Navigation.",
     "inputs": [
       {
         "name": "orientation",
@@ -4693,7 +4693,7 @@
     "slot": "components.tag-group",
     "package": "designer",
     "layer": "components",
-    "purpose": "Tag group component (root rac:TagGroup), under Inputs / Tags.",
+    "purpose": "Tag group component (root rac:TagGroup), under Components / Inputs.",
     "inputs": [
       {
         "name": "removable",
@@ -4769,7 +4769,7 @@
     "slot": "components.text-field",
     "package": "designer",
     "layer": "components",
-    "purpose": "Text field component (root rac:TextField), under Inputs / Text.",
+    "purpose": "Text field component (root rac:TextField), under Components / Inputs.",
     "inputs": [
       {
         "name": "line",
@@ -4845,7 +4845,7 @@
     "slot": "components.toast",
     "package": "designer",
     "layer": "components",
-    "purpose": "Toast component (root rac:UNSTABLE_Toast), under Feedback / Messages.",
+    "purpose": "Toast component (root rac:UNSTABLE_Toast), under Components / Feedback.",
     "inputs": [
       {
         "name": "tone",
@@ -4908,7 +4908,7 @@
     "slot": "components.toggle-button",
     "package": "designer",
     "layer": "components",
-    "purpose": "Toggle button component (root rac:ToggleButton; APG button pattern), under Actions / Buttons.",
+    "purpose": "Toggle button component (root rac:ToggleButton; APG button pattern), under Components / Actions.",
     "inputs": [
       {
         "name": "variant",
@@ -4991,7 +4991,7 @@
     "slot": "components.toggle-group",
     "package": "designer",
     "layer": "components",
-    "purpose": "Toggle group component (root rac:ToggleButtonGroup), under Inputs / Choice.",
+    "purpose": "Toggle group component (root rac:ToggleButtonGroup), under Components / Actions.",
     "inputs": [
       {
         "name": "selection",
@@ -5043,7 +5043,7 @@
     "slot": "components.toolbar",
     "package": "designer",
     "layer": "components",
-    "purpose": "Toolbar component (root rac:Toolbar; APG toolbar pattern), under Actions / Toolbars.",
+    "purpose": "Toolbar component (root rac:Toolbar; APG toolbar pattern), under Components / Actions.",
     "inputs": [
       {
         "name": "orientation",
@@ -5095,7 +5095,7 @@
     "slot": "components.tooltip",
     "package": "designer",
     "layer": "components",
-    "purpose": "Tooltip component (root rac:Tooltip; APG tooltip pattern), under Containment / Overlays.",
+    "purpose": "Tooltip component (root rac:Tooltip; APG tooltip pattern), under Components / Overlays.",
     "inputs": [
       {
         "name": "placement",
@@ -5146,7 +5146,7 @@
     "slot": "components.tree",
     "package": "designer",
     "layer": "components",
-    "purpose": "Tree component (root rac:Tree; APG treeview pattern), under Display / Data.",
+    "purpose": "Tree component (root rac:Tree; APG treeview pattern), under Components / Collections.",
     "inputs": [
       {
         "name": "selection",
@@ -5198,7 +5198,7 @@
     "slot": "components.sidebar",
     "package": "designer",
     "layer": "components",
-    "purpose": "Sidebar component (root presentational), under Navigation / Trees.",
+    "purpose": "Sidebar component (root presentational), under Components / Navigation.",
     "inputs": [
       {
         "name": "themes.background",
@@ -5283,7 +5283,7 @@
     "slot": "components.command",
     "package": "designer",
     "layer": "components",
-    "purpose": "Command component (root rac:Autocomplete), under Actions / Menus.",
+    "purpose": "Command component (root rac:Autocomplete), under Components / Actions.",
     "inputs": [
       {
         "name": "themes.border",
@@ -5368,7 +5368,7 @@
     "slot": "components.sheet",
     "package": "designer",
     "layer": "components",
-    "purpose": "Sheet component (root rac:Dialog+Modal+ModalOverlay), under Containment / Overlays.",
+    "purpose": "Sheet component (root rac:Dialog+Modal+ModalOverlay), under Components / Overlays.",
     "inputs": [
       {
         "name": "themes.border",
@@ -5433,7 +5433,7 @@
     "slot": "components.empty",
     "package": "designer",
     "layer": "components",
-    "purpose": "Empty component (root presentational), under Feedback / Messages.",
+    "purpose": "Empty component (root presentational), under Components / Feedback.",
     "inputs": [
       {
         "name": "themes.foreground",
@@ -5492,7 +5492,7 @@
     "slot": "components.item",
     "package": "designer",
     "layer": "components",
-    "purpose": "Item component (root presentational), under Display / Content.",
+    "purpose": "Item component (root presentational), under Components / Collections.",
     "inputs": [
       {
         "name": "themes.border",
@@ -5551,7 +5551,7 @@
     "slot": "components.scroll-area",
     "package": "designer",
     "layer": "components",
-    "purpose": "Scroll area component (root presentational), under Containment / Structure.",
+    "purpose": "Scroll area component (root presentational), under Components / Structure.",
     "inputs": [
       {
         "name": "themes.border",
@@ -5585,7 +5585,7 @@
     "slot": "components.dropdown-menu",
     "package": "designer",
     "layer": "components",
-    "purpose": "Dropdown menu component (root rac:Menu), under Actions / Menus.",
+    "purpose": "Dropdown menu component (root rac:Menu), under Components / Actions.",
     "inputs": [
       {
         "name": "themes.accent",
@@ -5675,7 +5675,7 @@
     "slot": "components.rich-text",
     "package": "designer",
     "layer": "components",
-    "purpose": "Rich text component (root presentational), under Display / Content.",
+    "purpose": "Rich text component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "value",
@@ -5869,7 +5869,7 @@
     "slot": "components.media-player",
     "package": "designer",
     "layer": "components",
-    "purpose": "Media player component (root presentational), under Display / Media.",
+    "purpose": "Media player component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "video",
@@ -6004,7 +6004,7 @@
     "slot": "components.specimen-swatch",
     "package": "designer",
     "layer": "components",
-    "purpose": "Specimen swatch component (root presentational), under Display / Specimens.",
+    "purpose": "Specimen swatch component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "items",
@@ -6082,7 +6082,7 @@
     "slot": "components.specimen-ladder",
     "package": "designer",
     "layer": "components",
-    "purpose": "Specimen ladder component (root presentational), under Display / Specimens.",
+    "purpose": "Specimen ladder component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "items",
@@ -6160,7 +6160,7 @@
     "slot": "components.specimen-player",
     "package": "designer",
     "layer": "components",
-    "purpose": "Specimen player component (root presentational), under Display / Specimens.",
+    "purpose": "Specimen player component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "items",
@@ -6233,7 +6233,7 @@
     "slot": "components.specimen-grid",
     "package": "designer",
     "layer": "components",
-    "purpose": "Specimen grid component (root presentational), under Display / Specimens.",
+    "purpose": "Specimen grid component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "items",
@@ -6311,7 +6311,7 @@
     "slot": "components.specimen-matrix",
     "package": "designer",
     "layer": "components",
-    "purpose": "Specimen matrix component (root presentational), under Display / Specimens.",
+    "purpose": "Specimen matrix component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "items",
@@ -6369,7 +6369,7 @@
     "slot": "components.specimen-viewport",
     "package": "designer",
     "layer": "components",
-    "purpose": "Specimen viewport component (root presentational), under Display / Specimens.",
+    "purpose": "Specimen viewport component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "items",
@@ -6432,7 +6432,7 @@
     "slot": "components.specimen-passage",
     "package": "designer",
     "layer": "components",
-    "purpose": "Specimen passage component (root presentational), under Display / Specimens.",
+    "purpose": "Specimen passage component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "items",
@@ -6490,7 +6490,7 @@
     "slot": "components.specimen-copy-in-context",
     "package": "designer",
     "layer": "components",
-    "purpose": "Specimen copy in context component (root presentational), under Display / Specimens.",
+    "purpose": "Specimen copy in context component (root presentational), under Components / Text and media.",
     "inputs": [
       {
         "name": "items",
@@ -6548,7 +6548,7 @@
     "slot": "components.canvas-zoom",
     "package": "designer",
     "layer": "components",
-    "purpose": "Canvas zoom component (root presentational), under Navigation / Canvas.",
+    "purpose": "Canvas zoom component (root presentational), under Components / Navigation.",
     "inputs": [
       {
         "name": "value",
@@ -6616,7 +6616,7 @@
     "slot": "components.canvas-map",
     "package": "designer",
     "layer": "components",
-    "purpose": "Canvas map component (root presentational), under Navigation / Canvas.",
+    "purpose": "Canvas map component (root presentational), under Components / Navigation.",
     "inputs": [
       {
         "name": "label",

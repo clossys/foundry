@@ -2,35 +2,45 @@
   "layer": "assets",
   "nodes": [
     {
-      "id": "logo",
-      "label": "Logo",
+      "id": "logos",
+      "label": "Logos",
       "children": [
         {
-          "id": "logo-artwork",
-          "label": "Artwork",
+          "id": "logos-marks",
+          "label": "Marks",
           "leaves": [
             "assets.lockup",
             "assets.mark"
+          ]
+        },
+        {
+          "id": "logos-app-icons",
+          "label": "App icons",
+          "leaves": [
+            "assets.favicon",
+            "assets.app-icon"
           ]
         }
       ]
     },
     {
-      "id": "app-identity",
-      "label": "App identity",
+      "id": "imagery",
+      "label": "Imagery",
       "children": [
         {
-          "id": "app-identity-browser",
-          "label": "Browser",
+          "id": "imagery-media",
+          "label": "Media",
           "leaves": [
-            "assets.favicon"
+            "assets.image",
+            "assets.video"
           ]
         },
         {
-          "id": "app-identity-application",
-          "label": "Application",
+          "id": "imagery-treatments",
+          "label": "Treatments",
           "leaves": [
-            "assets.app-icon"
+            "assets.image-ratio",
+            "assets.pattern"
           ]
         }
       ]
@@ -40,11 +50,11 @@
       "label": "Icons",
       "children": [
         {
-          "id": "icons-navigation",
-          "label": "Navigation",
+          "id": "icons-directions",
+          "label": "Directions",
           "leaves": [
-            "assets.icon-chevron-down",
             "assets.icon-chevron-up",
+            "assets.icon-chevron-down",
             "assets.icon-chevron-left",
             "assets.icon-chevron-right",
             "assets.icon-arrow-right",
@@ -54,8 +64,8 @@
           ]
         },
         {
-          "id": "icons-actions",
-          "label": "Actions",
+          "id": "icons-commands",
+          "label": "Commands",
           "leaves": [
             "assets.icon-search",
             "assets.icon-close",
@@ -69,8 +79,8 @@
           ]
         },
         {
-          "id": "icons-status",
-          "label": "Status",
+          "id": "icons-alerts",
+          "label": "Alerts",
           "leaves": [
             "assets.icon-success",
             "assets.icon-warning",
@@ -79,60 +89,76 @@
           ]
         },
         {
-          "id": "icons-objects",
-          "label": "Objects",
+          "id": "icons-entities",
+          "label": "Entities",
           "leaves": [
             "assets.icon-user",
             "assets.icon-team",
             "assets.icon-organization",
-            "assets.icon-website",
+            "assets.icon-business",
             "assets.icon-institution",
-            "assets.icon-guide",
+            "assets.icon-website"
+          ]
+        },
+        {
+          "id": "icons-documents",
+          "label": "Documents",
+          "leaves": [
             "assets.icon-document",
             "assets.icon-document-approved",
             "assets.icon-folder",
+            "assets.icon-guide",
+            "assets.icon-legal",
+            "assets.icon-package",
+            "assets.icon-layers"
+          ]
+        },
+        {
+          "id": "icons-properties",
+          "label": "Properties",
+          "leaves": [
             "assets.icon-date",
             "assets.icon-time",
             "assets.icon-payment",
             "assets.icon-receipt",
-            "assets.icon-business",
             "assets.icon-security",
             "assets.icon-locked",
-            "assets.icon-legal",
-            "assets.icon-package",
-            "assets.icon-layers",
             "assets.icon-integration"
           ]
         }
       ]
-    },
-    {
-      "id": "imagery",
-      "label": "Media",
-      "children": [
-        {
-          "id": "imagery-framing",
-          "label": "Framing",
-          "leaves": [
-            "assets.image-ratio"
-          ]
-        },
-        {
-          "id": "imagery-resources",
-          "label": "Resources",
-          "leaves": [
-            "assets.image",
-            "assets.video"
-          ]
-        },
-        {
-          "id": "imagery-patterns",
-          "label": "Patterns",
-          "leaves": [
-            "assets.pattern"
-          ]
-        }
-      ]
     }
+  ],
+  "retired": [],
+  "starter": [
+    "assets.lockup",
+    "assets.mark",
+    "assets.favicon",
+    "assets.app-icon",
+    "assets.image",
+    "assets.image-ratio",
+    "assets.icon-chevron-up",
+    "assets.icon-chevron-down",
+    "assets.icon-chevron-left",
+    "assets.icon-chevron-right",
+    "assets.icon-arrow-right",
+    "assets.icon-external-link",
+    "assets.icon-home",
+    "assets.icon-panel-left",
+    "assets.icon-search",
+    "assets.icon-close",
+    "assets.icon-check",
+    "assets.icon-settings",
+    "assets.icon-theme-light",
+    "assets.icon-theme-dark",
+    "assets.icon-theme-system",
+    "assets.icon-success",
+    "assets.icon-warning",
+    "assets.icon-danger",
+    "assets.icon-info",
+    "assets.icon-user",
+    "assets.icon-document",
+    "assets.icon-guide",
+    "assets.icon-legal"
   ]
 }

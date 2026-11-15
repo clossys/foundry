@@ -1,3 +1,5 @@
+import { COPY_ROLES, type CopyRole } from "../check/copy-fields-role.js";
+
 /** Designer owns copy shape and layout limits; consumers own text and locale content. */
 export interface CopyField {
   key: string;
@@ -9,6 +11,10 @@ export interface SectionCopyField {
   /** Dotted content path; [] addresses each collection value (array item or keyed record), never a data id. */
   key: string;
   kind: "plain" | "rich" | "icu";
+  /** Writer role; it fixes the source-locale budget `maxLength.en` may not exceed (`check/copy-fields-role.ts`). */
+  role: CopyRole;
+  /** Director bindings the field admits (for example `brand`); a field with bindings is kind icu. */
+  bindings?: readonly string[];
   /** Within the containing optional slot, record item or state when it is present. */
   required: boolean;
   /** Unicode code-point ceiling by BCP-47 locale. Only explicitly authored locale limits are declared. */
@@ -49,7 +55,7 @@ export function sectionCopySchemaFindings(slot: {
   const keys = new Set<string>();
   const roots = new Set([...contract.slots.map(row => row.name), "labels", ...(contract.anatomy.header ? ["header"] : [])]);
   for (const field of schema.fields) {
-    if (!object(field) || !exact(field, ["key", "kind", "required", "maxLength", "dir"])) { add("field requires key, kind, required, maxLength and dir only"); continue; }
+    if (!object(field) || !(exact(field, ["key", "kind", "role", "required", "maxLength", "dir"]) || exact(field, ["key", "kind", "role", "bindings", "required", "maxLength", "dir"]))) { add("field requires key, kind, role, required, maxLength and dir, plus optional bindings, only"); continue; }
     const key = field.key;
     if (typeof key !== "string" || !/^[a-z][a-zA-Z0-9-]*(?:\[\])?(?:\.[a-z][a-zA-Z0-9-]*(?:\[\])?)*$/.test(key)) { add("invalid field key"); continue; }
     if (keys.has(key)) add(`duplicate field ${key}`);
@@ -59,6 +65,7 @@ export function sectionCopySchemaFindings(slot: {
       if (!(contract.states ?? []).includes(key.split(".")[1] ?? "")) add(`${key} names an undeclared state`);
     } else if (!roots.has(root)) add(`${key} names an undeclared content root`);
     if ((typeof field.kind !== "string" || !["plain", "rich", "icu"].includes(field.kind))) add(`${key} has invalid kind`);
+    if (typeof field.role !== "string" || !(COPY_ROLES as readonly string[]).includes(field.role)) add(`${key} has invalid role`);
     if (typeof field.required !== "boolean") add(`${key} requires boolean required`);
     if ((typeof field.dir !== "string" || !["ltr", "rtl", "auto"].includes(field.dir))) add(`${key} has invalid dir`);
     if (!object(field.maxLength) || !Object.hasOwn(field.maxLength, schema.sourceLocale as string)

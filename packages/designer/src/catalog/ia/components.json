@@ -2,167 +2,59 @@
   "layer": "components",
   "nodes": [
     {
-      "id": "actions",
-      "label": "Actions",
+      "id": "components",
+      "label": "Components",
       "children": [
         {
-          "id": "actions-buttons",
-          "label": "Buttons",
+          "id": "components-actions",
+          "label": "Actions",
           "leaves": [
             "components.button",
-            "components.native-action",
-            "components.toggle-button"
-          ]
-        },
-        {
-          "id": "actions-menus",
-          "label": "Menus",
-          "leaves": [
+            "components.toggle-button",
+            "components.toggle-group",
+            "components.toolbar",
             "components.menu",
             "components.command",
+            "components.native-action",
             "components.dropdown-menu"
           ]
         },
         {
-          "id": "actions-toolbars",
-          "label": "Toolbars",
-          "leaves": [
-            "components.toolbar"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "inputs",
-      "label": "Inputs",
-      "children": [
-        {
-          "id": "inputs-form",
-          "label": "Form",
+          "id": "components-inputs",
+          "label": "Inputs",
           "leaves": [
             "components.field",
-            "components.form"
-          ]
-        },
-        {
-          "id": "inputs-text",
-          "label": "Text",
-          "leaves": [
+            "components.form",
             "components.text-field",
-            "components.search-field"
-          ]
-        },
-        {
-          "id": "inputs-choice",
-          "label": "Choice",
-          "leaves": [
+            "components.search-field",
             "components.checkbox",
             "components.radio-group",
             "components.switch",
+            "components.slider",
             "components.select",
             "components.combo-box",
-            "components.toggle-group"
-          ]
-        },
-        {
-          "id": "inputs-tags",
-          "label": "Tags",
-          "leaves": [
-            "components.tag-group"
-          ]
-        },
-        {
-          "id": "inputs-number",
-          "label": "Number",
-          "leaves": [
-            "components.number-field",
-            "components.slider"
-          ]
-        },
-        {
-          "id": "inputs-date",
-          "label": "Date",
-          "leaves": [
+            "components.tag-group",
+            "components.file-trigger",
+            "components.color-picker",
             "components.date-field",
             "components.date-picker",
-            "components.calendar"
+            "components.calendar",
+            "components.number-field"
           ]
         },
         {
-          "id": "inputs-color",
-          "label": "Color",
-          "leaves": [
-            "components.color-picker"
-          ]
-        },
-        {
-          "id": "inputs-files",
-          "label": "Files",
-          "leaves": [
-            "components.file-trigger"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "display",
-      "label": "Display",
-      "children": [
-        {
-          "id": "display-data",
-          "label": "Data",
+          "id": "components-collections",
+          "label": "Collections",
           "leaves": [
             "components.table",
             "components.grid-list",
+            "components.item",
             "components.tree",
-            "components.meter"
-          ]
-        },
-        {
-          "id": "display-labels",
-          "label": "Labels",
-          "leaves": [
-            "components.badge",
-            "components.keyboard"
-          ]
-        },
-        {
-          "id": "display-media",
-          "label": "Media",
-          "leaves": [
-            "components.avatar",
-            "components.media-player"
-          ]
-        },
-        {
-          "id": "display-assets",
-          "label": "Assets",
-          "leaves": [
-            "components.icon",
-            "components.logo"
-          ]
-        },
-        {
-          "id": "charts-core",
-          "label": "Core charts",
-          "leaves": [
             "components.chart-bar",
             "components.chart-line",
-            "components.chart-area"
-          ]
-        },
-        {
-          "id": "charts-compact",
-          "label": "Compact charts",
-          "leaves": [
+            "components.chart-area",
             "components.chart-sparkline",
-            "components.chart-status-strip"
-          ]
-        },
-        {
-          "id": "charts-analytic",
-          "label": "Analytic charts",
-          "leaves": [
+            "components.chart-status-strip",
             "components.chart-scatter",
             "components.chart-heatmap",
             "components.chart-range",
@@ -170,18 +62,44 @@
           ]
         },
         {
-          "id": "display-content",
-          "label": "Content",
+          "id": "components-navigation",
+          "label": "Navigation",
           "leaves": [
-            "components.semantic-content",
-            "components.rich-text",
-            "components.item"
+            "components.link",
+            "components.breadcrumbs",
+            "components.tabs",
+            "components.sidebar",
+            "components.navigation-tree",
+            "components.canvas-zoom",
+            "components.canvas-map"
           ]
         },
         {
-          "id": "display-specimens",
-          "label": "Specimens",
+          "id": "components-feedback",
+          "label": "Feedback",
           "leaves": [
+            "components.banner",
+            "components.toast",
+            "components.progress-bar",
+            "components.meter",
+            "components.spinner",
+            "components.skeleton",
+            "components.empty"
+          ]
+        },
+        {
+          "id": "components-text-and-media",
+          "label": "Text and media",
+          "leaves": [
+            "components.semantic-content",
+            "components.rich-text",
+            "components.badge",
+            "components.status-mark",
+            "components.keyboard",
+            "components.avatar",
+            "components.media-player",
+            "components.icon",
+            "components.logo",
             "components.specimen-swatch",
             "components.specimen-ladder",
             "components.specimen-player",
@@ -191,117 +109,102 @@
             "components.specimen-passage",
             "components.specimen-copy-in-context"
           ]
-        }
-      ]
-    },
-    {
-      "id": "feedback",
-      "label": "Feedback",
-      "children": [
-        {
-          "id": "feedback-messages",
-          "label": "Messages",
-          "leaves": [
-            "components.banner",
-            "components.toast",
-            "components.empty"
-          ]
         },
         {
-          "id": "feedback-indicators",
-          "label": "Indicators",
-          "leaves": [
-            "components.status-mark"
-          ]
-        },
-        {
-          "id": "feedback-progress",
-          "label": "Progress",
-          "leaves": [
-            "components.progress-bar",
-            "components.spinner",
-            "components.skeleton"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "navigation",
-      "label": "Navigation",
-      "children": [
-        {
-          "id": "navigation-links",
-          "label": "Links",
-          "leaves": [
-            "components.link",
-            "components.breadcrumbs"
-          ]
-        },
-        {
-          "id": "navigation-panels",
-          "label": "Panels",
-          "leaves": [
-            "components.tabs"
-          ]
-        },
-        {
-          "id": "navigation-trees",
-          "label": "Trees",
-          "leaves": [
-            "components.navigation-tree",
-            "components.sidebar"
-          ]
-        },
-        {
-          "id": "navigation-canvas",
-          "label": "Canvas",
-          "leaves": [
-            "components.canvas-zoom",
-            "components.canvas-map"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "containment",
-      "label": "Containment",
-      "children": [
-        {
-          "id": "containment-structure",
+          "id": "components-structure",
           "label": "Structure",
           "leaves": [
             "components.card",
-            "components.separator",
             "components.disclosure",
-            "components.resize-handle",
-            "components.scroll-area"
+            "components.scroll-area",
+            "components.separator",
+            "components.resize-handle"
           ]
         },
         {
-          "id": "containment-overlays",
+          "id": "components-overlays",
           "label": "Overlays",
           "leaves": [
             "components.dialog",
+            "components.sheet",
             "components.popover",
-            "components.tooltip",
-            "components.sheet"
+            "components.tooltip"
           ]
         }
       ]
     }
   ],
+  "retired": [
+    "components.canvas-map",
+    "components.canvas-zoom",
+    "components.chart-heatmap",
+    "components.chart-range",
+    "components.chart-scatter",
+    "components.chart-sparkline",
+    "components.chart-status-strip",
+    "components.chart-waterfall",
+    "components.dropdown-menu",
+    "components.native-action",
+    "components.navigation-tree",
+    "components.number-field",
+    "components.specimen-copy-in-context",
+    "components.specimen-grid",
+    "components.specimen-ladder",
+    "components.specimen-matrix",
+    "components.specimen-passage",
+    "components.specimen-player",
+    "components.specimen-swatch",
+    "components.specimen-viewport"
+  ],
+  "starter": [
+    "components.button",
+    "components.toggle-button",
+    "components.menu",
+    "components.command",
+    "components.field",
+    "components.form",
+    "components.text-field",
+    "components.search-field",
+    "components.checkbox",
+    "components.switch",
+    "components.select",
+    "components.combo-box",
+    "components.table",
+    "components.item",
+    "components.link",
+    "components.breadcrumbs",
+    "components.tabs",
+    "components.sidebar",
+    "components.banner",
+    "components.toast",
+    "components.spinner",
+    "components.skeleton",
+    "components.empty",
+    "components.semantic-content",
+    "components.badge",
+    "components.keyboard",
+    "components.avatar",
+    "components.card",
+    "components.disclosure",
+    "components.scroll-area",
+    "components.separator",
+    "components.dialog",
+    "components.sheet",
+    "components.popover",
+    "components.tooltip"
+  ],
   "parked": [
     {
       "leaf": "components.chart-area",
-      "basis": "register §20 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
+      "basis": "register \u00a720 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
     },
     {
       "leaf": "components.chart-bar",
-      "basis": "register §20 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
+      "basis": "register \u00a720 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
     },
     {
       "leaf": "components.chart-line",
-      "basis": "register §20 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
+      "basis": "register \u00a720 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
     },
     {
       "leaf": "components.chart-sparkline",

@@ -12,9 +12,9 @@ import { emitCopyPortTypes } from "../../scripts/generate-copy-ports.mjs";
 const section = sections.find(row => row.id === "sections.media")!;
 const passage = passages.find(row => row.id === "passages.media")!;
 const newCopy = [
-  { key: "figure.chrome-label", kind: "plain", required: false, maxLength: { en: 160 }, dir: "auto" },
-  { key: "callouts.label", kind: "plain", required: false, maxLength: { en: 160 }, dir: "auto" },
-  { key: "callouts.items[].body", kind: "plain", required: false, maxLength: { en: 480 }, dir: "auto" },
+  { key: "figure.chrome-label", kind: "plain", role: "label", required: false, maxLength: { en: 160 }, dir: "auto" },
+  { key: "callouts.label", kind: "plain", role: "label", required: false, maxLength: { en: 160 }, dir: "auto" },
+  { key: "callouts.items[].body", kind: "plain", role: "body", required: false, maxLength: { en: 480 }, dir: "auto" },
 ];
 const copyPortRow = (text: string) => text.match(/  readonly "sections\.media": \{\n[\s\S]*?\n  \};/)?.[0];
 const catalogDirectory = dirname(fileURLToPath(import.meta.url));

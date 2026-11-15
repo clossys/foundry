@@ -349,10 +349,15 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
       });
     }
     for (const [slot, fills] of Object.entries(binding.frameSlots)) {
-      if (!frameContract.slots.some(item => item.id === slot && item.accepts === "sections.*") || !descriptors.frame!.slots.includes(slot)) fail("refused", `unsupported frame section slot ${slot}`);
-      fills.forEach((selected, index) => resolveFill(selected, `frameSlots.${slot}.${index}`, "section"));
+      const port = frameContract.slots.find(item => item.id === slot && item.accepts.startsWith("sections."));
+      if (!port || !descriptors.frame!.slots.includes(slot)) fail("refused", `unsupported frame section slot ${slot}`);
+      fills.forEach((selected, index) => {
+        // A named section port (for example site-shell consent accepts sections.consent) takes that leaf only.
+        if (port!.accepts !== "sections.*" && selected.leaf !== port!.accepts) fail("refused", `frameSlots.${slot}.${index}: section not accepted`);
+        resolveFill(selected, `frameSlots.${slot}.${index}`, "section");
+      });
     }
-    for (const slot of frameContract.slots.filter(slot => slot.required)) if (slot.accepts === "view" ? slot.id !== "main" : slot.accepts === "sections.*" ? !binding.frameSlots[slot.id]?.length : slot.accepts !== "host-node") fail("pending", `required frame slot ${slot.id} missing`);
+    for (const slot of frameContract.slots.filter(slot => slot.required)) if (slot.accepts === "view" ? slot.id !== "main" : slot.accepts.startsWith("sections.") ? !binding.frameSlots[slot.id]?.length : slot.accepts !== "host-node") fail("pending", `required frame slot ${slot.id} missing`);
     const sectionPaths = Object.values(paths).flat();
     if (!sectionPaths.length) fail("pending", "real section content required");
     const references = binding.body ? binding.body.kind === "flow" ? binding.body.sections : binding.body.boards.map(board => board.section) : undefined;
