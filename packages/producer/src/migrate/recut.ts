@@ -33,11 +33,13 @@ import type { AgentId, CandidateHeader, Iso } from "../records/types.js";
 import { planIaSync } from "../cli/ia-sync.js";
 import { migratePins } from "./pin-1-to-2.js";
 import { migrateSlot1To2, planSlot1To2 } from "./slot-1-to-2.js";
-import { planLibraryCells, removeLibraryCell, type CellRoute, type LibraryPlan } from "./library-cells.js";
+import { LIBRARY_DIR, planLibraryCells, removeLibraryCell, type CellRoute, type LibraryPlan } from "./library-cells.js";
 
 export const RECUT = "recut";
 export const RECUT_CLI = "clossys migrate recut";
 export const RECUT_BY = `code:${RECUT_CLI}`;
+/** Who an ia.json `retired` row names (clossys.retire/1 `by`: migration[:<name>]). */
+export const RECUT_RETIRE_BY = `migration:${RECUT}`;
 /** Where a retired slot folder goes: the `clossys retire --slot` place, a non-slot (`_`) folder of the agent. */
 export const RETIRED_SLOTS = "_retired";
 /** The agents whose packages ship a recut tree and a retired.json. */
@@ -271,6 +273,8 @@ function nextFreeName(name: string, taken: (candidate: string) => boolean): stri
 
 /** One agent ia.json without the moved and retired ids, with each move's target placed where it was, and a `retired` row per retired folder. */
 function recutIa(file: string, agent: RecutAgent, table: PackageTable, folders: readonly FolderMove[], at: Iso, unknown: string[]): FileWrite | undefined {
+  // A moved or retired id stays placed while its folder stays (not every record of it moves).
+  const stays = (id: string) => isDir(join(dirname(file), id)) && !folders.some(folder => folder.agent === agent && folder.id === id);
   if (!existsSync(file)) return undefined;
   const text = readFileSync(file, "utf8");
   const doc = JSON.parse(text) as Record<string, unknown>;
@@ -286,19 +290,20 @@ function recutIa(file: string, agent: RecutAgent, table: PackageTable, folders: 
     child.slots = (child.slots as unknown[]).flatMap(id => {
       if (typeof id !== "string") return [id];
       const { fate, target } = fateOf(table, id);
+      if ((fate === "move" || fate === "retire") && stays(id)) return [id];
       if (fate === "move" && target && !placed.has(target)) { placed.add(target); return [target]; }
       return fate === "move" || fate === "retire" ? [] : [id];
     });
   }
-  if (Array.isArray(next.extensions)) next.extensions = (next.extensions as unknown[]).filter(id => typeof id !== "string" || fateOf(table, id).fate === "live");
+  if (Array.isArray(next.extensions)) next.extensions = (next.extensions as unknown[]).filter(id => typeof id !== "string" || fateOf(table, id).fate === "live" || stays(id));
   const history = Array.isArray(next.retired) ? next.retired as unknown[] : [];
   const recorded = new Set(history.flatMap(row => (object(row) && typeof row.slot === "string" ? [row.slot] : [])));
   const rows = folders.filter(folder => folder.agent === agent && !recorded.has(`${agent}/${folder.id}`)).map(folder => {
     const slotFile = join(folder.from, "slot.json");
     const { target } = fateOf(table, folder.id);
     return {
-      schema: RETIRE_SCHEMA, slot: `${agent}/${folder.id}`, sha256: existsSync(slotFile) ? fileState(readFileSync(slotFile)).sha256 : null, by: RECUT_BY,
-      reason: target ? `recut: @clossys/${agent} retired.json moves it to ${agent}/${target}` : `recut: @clossys/${agent} retired.json retires it`, at,
+      schema: RETIRE_SCHEMA, slot: `${agent}/${folder.id}`, sha256: existsSync(slotFile) ? fileState(readFileSync(slotFile)).sha256 : null, by: RECUT_RETIRE_BY,
+      reason: target ? `superseded: recut, @clossys/${agent} retired.json moves it to ${agent}/${target}` : `not-needed: recut, @clossys/${agent} retired.json retires it`, at,
     };
   });
   if (rows.length) next.retired = [...history, ...rows];
@@ -421,9 +426,16 @@ export function planRecut(dir: string, options: { readonly at: Iso; readonly ver
   const route = (slot: string): CellRoute => {
     const holders = RECUT_AGENTS.filter(agent => fateOf(tables[agent], slot).fate !== "unknown");
     const agent = holders.includes("designer") ? "designer" : holders[0];
-    if (!agent) return { finding: `slot ${slot} is in no package tree and no retired.json` };
+    if (!agent) {
+      plan.unknown.push(`${LIBRARY_DIR}/${slot}`);
+      return { finding: `slot ${slot} is in no package tree and no retired.json` };
+    }
     const { fate, target } = fateOf(tables[agent], slot);
-    if (fate === "retire") return { agent, slotId: slot, dir: join(consumer, "agents", agent, RETIRED_SLOTS, slot), record: false };
+    if (fate === "retire") {
+      // The slot folder moves to _retired/<slot> before the cell lands there: its candidates are the clash set.
+      const moving = plan.folders.find(folder => folder.agent === agent && folder.id === slot);
+      return { agent, slotId: slot, dir: join(consumer, "agents", agent, RETIRED_SLOTS, slot), record: false, ...(moving ? { arriving: moving.from } : {}) };
+    }
     const slotId = fate === "move" ? target! : slot;
     return { agent, slotId, dir: join(consumer, "agents", agent, slotId), record: true };
   };
@@ -470,10 +482,40 @@ export interface RecutResult extends FollowUp { readonly written: number; readon
 const write = (file: string, bytes: string, flag?: "wx") => { mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, bytes, flag ? { flag } : undefined); };
 const dropEmpty = (dir: string) => { if (isDir(dir) && readdirSync(dir).length === 0) rmdirSync(dir); };
 
-/** Applies a plan: refuses (throws) while an id is unknown. Then runs slot-1-to-2, pin-1-to-2 and ia sync. */
+/**
+ * Why a plan cannot apply whole: an unknown id, a finding, or a write that would land on a file (checked
+ * against the tree as it stands after every earlier step, folder moves included). Empty when every write fits.
+ */
+export function recutProblems(plan: RecutPlan): string[] {
+  const problems = [...plan.unknown.map(id => `unknown: ${id}`), ...plan.findings];
+  const targets = new Set<string>();
+  const after = (file: string): boolean => {
+    if (existsSync(file) || targets.has(file)) return true;
+    for (const folder of plan.folders) if (file.startsWith(folder.to + sep) && existsSync(join(folder.from, file.slice(folder.to.length + 1)))) return true;
+    return false;
+  };
+  const claim = (file: string) => {
+    if (after(file)) problems.push(`${posix(plan.consumer, file)}: the write would land on a file that exists`);
+    targets.add(file);
+  };
+  for (const change of plan.candidates) if (change.from !== change.to && change.bytes !== undefined) claim(change.to);
+  for (const folder of plan.folders) {
+    if (!isDir(folder.from)) problems.push(`${posix(plan.consumer, folder.from)}: the folder to move is gone`);
+    if (existsSync(folder.to)) problems.push(`${posix(plan.consumer, folder.to)}: the folder move would land on one that exists`);
+  }
+  for (const conversion of plan.library.conversions) claim(conversion.file);
+  return problems;
+}
+
+/**
+ * Applies a plan whole or not at all: refuses (throws, nothing written) while recutProblems names anything.
+ * Then runs slot-1-to-2, pin-1-to-2 and ia sync.
+ */
 export function applyRecut(plan: RecutPlan): RecutResult {
   if (plan.missingRetired.length) throw new Error(`STOP: ${plan.missingRetired.join(", ")} ship no src/catalog/retired.json row for ${plan.unknown.join(", ")}`);
   if (plan.unknown.length) throw new Error(`unknown slot ids (in no package tree and no retired.json): ${plan.unknown.join(", ")}`);
+  const problems = recutProblems(plan);
+  if (problems.length) throw new Error(`the recut does not apply whole; nothing written: ${problems.join("; ")}`);
   let written = 0;
   const events: RewrittenFile[] = [];
   const record = (to: string, from: FileState, toState: FileState) => {
