@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import type { ReactNode } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { specimenDataset } from "../studio/specimen-dataset.js";
+import { specimenDataset } from "../specimen/specimen-dataset.js";
 import { ShellCopyProvider } from "../components/Banner.copy-context.js";
 import { shellCopyFixtureResolver } from "../frames/__fixtures__/shell-copy.js";
 import { surfaceRuntimeRenderers } from "./index.js";

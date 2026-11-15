@@ -406,6 +406,8 @@ const JS_SUBPATHS = [
   "./catalog/server",
   "./catalog/node",
   "./catalog/dogfood/node",
+  "./specimen",
+  "./queries",
   "./studio",
   "./studio/queries",
   "./studio/state",

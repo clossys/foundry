@@ -118,6 +118,14 @@
       "types": "./dist/catalog-core/dogfood-node.d.ts",
       "import": "./dist/catalog-core/dogfood-node.js"
     },
+    "./specimen": {
+      "types": "./dist/specimen/index.d.ts",
+      "import": "./dist/specimen/index.js"
+    },
+    "./queries": {
+      "types": "./dist/queries/designer-layer-boards.d.ts",
+      "import": "./dist/queries/designer-layer-boards.js"
+    },
     "./studio": {
       "types": "./dist/studio/index.d.ts",
       "import": "./dist/studio/index.js"

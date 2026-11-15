@@ -11,8 +11,8 @@ import { scanProvenance } from "../../catalog-core/provenance-scan.js";
 import { checkWiring } from "../../catalog-core/wiring.js";
 import { GROUP_A_CONTENT, GROUP_A_LEAVES, GROUP_A_MEMBERS, groupASectionInput, type GroupAFillDocument, type GroupALeaf } from "./group-a-dataset.js";
 import { GROUP_A_SECTION_INPUTS, GROUP_A_SECTION_RENDERERS } from "./group-a.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
-import defaultProfile from "../../studio/default-component-preview-profile.json" with { type: "json" };
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
+import defaultProfile from "../../specimen/default-component-preview-profile.json" with { type: "json" };
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fill = (leaf: GroupALeaf): GroupAFillDocument => JSON.parse(readFileSync(resolve(here, `../../catalog/fills/foundry/sections.${leaf}.json`), "utf8")) as GroupAFillDocument;

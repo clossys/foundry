@@ -17,7 +17,7 @@ import { runtimeHash } from "../../catalog-core/runtime-ports.js";
 import { surfaceRuntimeRenderers } from "../index.js";
 import { renderCards } from "./cards.js";
 import { editorialDate } from "../../blocks/PageHeaderMetadata.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 const source = { id: "editorial-fixture", kind: "consumer", author: "consumer", license: "MIT" } as const;
 let selection: ConsumerComponentSelection;

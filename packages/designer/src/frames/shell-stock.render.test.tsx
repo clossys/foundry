@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountMenu } from "../blocks/AccountMenu.js";
 import { CommandMenu as ShellFixtureCommandMenu } from "../blocks/CommandMenu.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
-import { marketingComponentSelection } from "../studio/marketing-component-selection.js";
+import { marketingComponentSelection } from "../specimen/marketing-component-selection.js";
 import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
 import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
 import { withShellCopy } from "./__fixtures__/shell-copy.js";

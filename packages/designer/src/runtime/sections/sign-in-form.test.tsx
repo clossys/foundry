@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { signInFormInputs, signInFormRenderer as entry } from "./sign-in-form.js";
 
 // R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" next to its control; the form-level regions are the other alerts.

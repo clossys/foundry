@@ -19,7 +19,7 @@ const { NavGrid } = await import("../dist/blocks/NavGrid.js");
 const { ContentSection } = await import("../dist/blocks/ContentSection.js");
 const { withoutDsAttrs } = await import("../dist/catalog-core/provenance-attrs.js");
 const { ConsumerComponentProvider } = await import("../dist/runtime/component-leaf.client.js");
-const { marketingComponentSelection } = await import("../dist/studio/marketing-component-selection.js");
+const { marketingComponentSelection } = await import("../dist/specimen/marketing-component-selection.js");
 const selection = marketingComponentSelection();
 
 const retainedBlocks = { FeatureGrid, NavGrid, ContentSection };

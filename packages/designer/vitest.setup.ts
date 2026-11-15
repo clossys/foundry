@@ -48,7 +48,7 @@ vi.mock("./dist/runtime/component-leaf.js", async importOriginal => (await impor
 // still pending when that test renders synchronously.
 const settle = async () => {
   const { settleHarness } = await import("./vitest.harness.js");
-  await settleHarness(() => import("./src/studio/marketing-component-selection.js"));
+  await settleHarness(() => import("./src/specimen/marketing-component-selection.js"));
 };
 beforeAll(settle);
 beforeEach(settle);

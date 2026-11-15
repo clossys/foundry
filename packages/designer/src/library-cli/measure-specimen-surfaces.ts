@@ -33,7 +33,7 @@ async function compile<T>(request: object): Promise<{ result: T; command: Surfac
 
 /** Read installed runtime exports and compiler-visible declarations before source preparation. */
 export async function specimenSurfaceEnvironment(input: CompositeEngineInput) {
-  const modules = new Set<string>(["@clossys/designer/studio"]);
+  const modules = new Set<string>(["@clossys/designer/specimen"]);
   for (const doc of input.library.components.fills) {
     const component = Object.values(doc.components)[0]!;
     if (component.impl.kind === "package") {

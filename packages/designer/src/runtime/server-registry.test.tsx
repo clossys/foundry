@@ -4,7 +4,7 @@ import { afterEach, expect, it } from "vitest";
 import type { RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
 import { surfaceRuntimeRenderers as clientRenderers, surfaceRuntimeCallbacks as clientCallbacks, surfaceRuntimePointers as clientPointers } from "./index.js";
 import { surfaceRuntimeRenderers, surfaceRuntimeCallbacks, surfaceRuntimePointers, surfaceRendererId, SURFACE_RUNTIME_POINTER } from "./server-registry.js";
-import { specimenDataset } from "../studio/specimen-dataset.js";
+import { specimenDataset } from "../specimen/specimen-dataset.js";
 import { ConsumerComponentProvider } from "./component-leaf.client.js";
 import { fixtureConsumerComponents } from "../catalog-core/__fixtures__/surface-consumer-components.js";
 

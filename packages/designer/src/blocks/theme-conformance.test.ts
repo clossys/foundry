@@ -11,7 +11,7 @@ import { checkTokenContrast } from "../tokens/contrast-gate.js";
 import { CONTRAST_PAIRS, contrastPairsForTheme } from "../tokens/contrast-pairs.js";
 import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "../catalog/blocks.js";
 import { BLOCK_THEME_CONFORMANCE, NON_BLOCK_THEME_EXPORTS, type BlockThemeRegistration } from "./theme-conformance.js";
-import { marketingComponentSelection } from "../studio/marketing-component-selection.js";
+import { marketingComponentSelection } from "../specimen/marketing-component-selection.js";
 import { STOCK_COLOR_BY_PROPERTY, STOCK_COLOR_KEYS, THEME_CONTRAST_PAIRS, shippedThemeCss } from "../catalog-core/theme-vocabulary.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");

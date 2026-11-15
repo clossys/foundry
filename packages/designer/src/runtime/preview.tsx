@@ -9,8 +9,8 @@ import { SemanticContent } from "../components/SemanticContent.js";
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import type { CompositeResolved } from "../catalog-core/types.js";
 import { runtimeHash, SECTION_HEADER_CONTENT_KEY, type RuntimeContent, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../studio/specimen-dataset.js";
-import { MarketingComponentProvider } from "../studio/marketing-component-selection.js";
+import { specimenDataset } from "../specimen/specimen-dataset.js";
+import { MarketingComponentProvider } from "../specimen/marketing-component-selection.js";
 import { surfaceRendererId } from "./contract.js";
 import { surfaceRuntimeRenderers } from "./index.js";
 

@@ -8,7 +8,7 @@ import { I18nProvider, isRTL, useLocale } from "react-aria-components";
 import { canonicalLocale, directionFor, type WriterManifest } from "@clossys/writer";
 import { ResizeHandle } from "../../components/ResizeHandle.js";
 import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
 import { shellCopyFixtureResolver } from "../../frames/__fixtures__/shell-copy.js";
 import { appShellRenderer } from "./app-shell.js";

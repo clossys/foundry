@@ -5,7 +5,7 @@ import { I18nProvider } from "react-aria-components";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as stockMenu from "../components/preview-runtime/components/menu/dropdown-menu.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
-import { marketingComponentSelection } from "../studio/marketing-component-selection.js";
+import { marketingComponentSelection } from "../specimen/marketing-component-selection.js";
 import { AccountMenu, type AccountMenuProps } from "./AccountMenu.js";
 
 const actor = { name: "Jordan Vale", secondaryText: "jordan@example.test" };

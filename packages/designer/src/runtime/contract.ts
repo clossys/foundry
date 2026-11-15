@@ -6,7 +6,7 @@
  */
 import type { ReactNode } from "react";
 import type { RuntimeJson, RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
-import type { SpecimenDataset } from "../studio/specimen-dataset.js";
+import type { SpecimenDataset } from "../specimen/specimen-dataset.js";
 
 export type SurfaceRuntimeLeaf = `frames.${string}` | `sections.${string}`;
 export type SurfaceRuntimeRenderer = (input: RuntimeRenderInput<ReactNode>) => ReactNode;

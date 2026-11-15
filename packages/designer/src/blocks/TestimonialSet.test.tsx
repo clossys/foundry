@@ -5,7 +5,7 @@ import { ConsumerComponentProvider, type ConsumerComponentSelection } from "../r
 import { componentDescriptorHash, verifyComponentOutput, type ComponentCandidate, type ResolvedComponents } from "../catalog-core/resolve-components.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import cardDocument from "../catalog/fills/shadcn@aria/components.card.json" with { type: "json" };
-import selectedProfile from "../studio/default-component-preview-profile.json" with { type: "json" };
+import selectedProfile from "../specimen/default-component-preview-profile.json" with { type: "json" };
 import { SectionFrame as S4Frame } from "./SectionFrame.js";
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ResourceList } from "../../blocks/ResourceList.js";
 import { PaginationRegion, ToggleToolbarRegion, type PaginationRegionContent, type ToggleToolbarContent } from "./group-b-parts.js";
 import { entryOf, recordsOf, stateOf, type GroupBSection, type SectionRenderInput, type SelectionRecord } from "./group-b-support.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 
 /** One resource record: the block's item without its React-node or callback fields. */
 export interface ResourceRecord { readonly id: string; readonly title: string; readonly description?: string; readonly meta?: string; readonly status?: string; readonly href?: string }

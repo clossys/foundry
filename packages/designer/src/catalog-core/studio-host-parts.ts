@@ -4,20 +4,20 @@ import type { Resolved, ResolvedMember, Slot, TokenContract } from './types.js';
 /** Studio infrastructure identities are separate from consumer design leaves. */
 export const STUDIO_SPECIMEN_HOST_PARTS = {
   'studio.specimen-swatch': {
-    module: '@clossys/designer/studio',
+    module: '@clossys/designer/specimen',
     export: 'renderSpecimenSwatchHostPart',
-    source: 'studio/specimen-token-host-parts.tsx',
+    source: 'specimen/specimen-token-host-parts.tsx',
     tokenInputs: ['memberId'],
     styleProperties: ['background'],
-    styleConstructor: { module: '@clossys/designer/studio', export: 'studioSpecimenTokenStyle' },
+    styleConstructor: { module: '@clossys/designer/specimen', export: 'studioSpecimenTokenStyle' },
   },
   'studio.specimen-contrast': {
-    module: '@clossys/designer/studio',
+    module: '@clossys/designer/specimen',
     export: 'renderSpecimenContrastHostPart',
-    source: 'studio/specimen-token-host-parts.tsx',
+    source: 'specimen/specimen-token-host-parts.tsx',
     tokenInputs: ['backgroundMemberId', 'colorMemberId', 'pairMemberId'],
     styleProperties: ['background', 'color'],
-    styleConstructor: { module: '@clossys/designer/studio', export: 'studioSpecimenTokenStyle' },
+    styleConstructor: { module: '@clossys/designer/specimen', export: 'studioSpecimenTokenStyle' },
   },
 } as const;
 export type StudioSpecimenHostPartId = keyof typeof STUDIO_SPECIMEN_HOST_PARTS;

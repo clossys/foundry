@@ -7,7 +7,7 @@
 import { isValidElement } from "react";
 import { describe, expect, it } from "vitest";
 import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { GROUP_A_CONTENT, GROUP_A_LEAVES } from "./group-a-dataset.js";
 import { groupBDataset } from "./group-b-dataset.js";
 import { GROUP_C_LEAVES, sectionDatasetC } from "./group-c.js";
