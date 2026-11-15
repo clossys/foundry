@@ -4,8 +4,9 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { pickRepin, repinFinding } from './compile-pure-repin.mjs';
+import { consumerPath } from './consumer-root.mjs';
 
-const actions = join(dirname(fileURLToPath(import.meta.url)), '../../../clossys/agents/writer/strings.actions/candidates');
+const actions = consumerPath('agents', 'writer', 'strings.actions', 'candidates');
 const memory = files => name => Buffer.from(files[name]);
 
 test('foundry-audit-0004: a byte-identical pair (strings.actions studio-v1/v2) is SKIP no-distinct-candidate, never a re-pin', () => {

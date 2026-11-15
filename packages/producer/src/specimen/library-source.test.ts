@@ -10,6 +10,7 @@ import { sha256Hex } from "../records/hash.js";
 import { canonicalLibrary } from "./__fixtures__/canonical-library.js";
 import { createSpecimenBuilder } from "@clossys/publisher/specimen";
 import { aliasProvider, libraryRecordSource, PINNED_THEME_ID, pinnedLibraryTheme, SPECIMEN_STATE_FILE, libraryRecordStore, listLibraryElements, locateLibraryElement, pinnedLibraryVersion } from "./library-source.js";
+import { consumerPath } from "../consumer-root.js";
 
 let root: string;
 beforeEach(async () => { root = await canonicalLibrary(mkdtempSync(join(tmpdir(), "producer-slot-source-"))); });
@@ -48,7 +49,7 @@ describe("canonical specimen records through the common slot reader", () => {
   });
 
   it("answers a specimen that names no theme with every pinned theme variable, light and dark", async () => {
-    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const consumer = consumerPath();
     const theme = await libraryRecordSource({ roots: [consumer] }).theme();
     expect(theme).toEqual(pinnedLibraryTheme([consumer]));
     expect(theme!.id).toBe(PINNED_THEME_ID);
@@ -61,7 +62,7 @@ describe("canonical specimen records through the common slot reader", () => {
   });
 
   it("mounts an item of a slot with a declared specimen state through the state module, its own bytes unchanged", async () => {
-    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const consumer = consumerPath();
     const row = await libraryRecordStore([consumer]).load("components.toast/toast");
     expect(row).toBeDefined();
     const pin = listSlots(consumer, "designer").find(entry => entry.id === "components.toast")!.pin!;
@@ -79,7 +80,7 @@ describe("canonical specimen records through the common slot reader", () => {
   });
 
   it("adds no state module for a candidate that is its slot's provider or never reads it, and none on the installed path", async () => {
-    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const consumer = consumerPath();
     const host = libraryRecordStore([consumer]), installed = libraryRecordStore([consumer], { slotStates: false });
     const stateOf = (row: Awaited<ReturnType<typeof host.load>>) => row?.files.some(file => file.path === SPECIMEN_STATE_FILE);
     // sidebar-v2's fixture is SidebarProvider itself; navigation-tree-v1 never imports the sidebar module.
@@ -95,7 +96,7 @@ describe("canonical specimen records through the common slot reader", () => {
   });
 
   it.each(["frames.studio-shell/studio-shell", "sections.studio.home/studio-home", "sections.studio.checks/studio-checks"])("reads actual canonical Studio %s from its pin or remains unresolved", async id => {
-    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const consumer = consumerPath();
     const source = libraryRecordSource({ roots: [consumer] });
     const [slot] = id.split("/");
     const entry = listSlots(consumer, "designer").find(entry => entry.id === slot);
@@ -120,7 +121,7 @@ describe("canonical specimen records through the common slot reader", () => {
   });
 
   it("loads every pinned canonical element in bounded time (a full slot scan per load hung Studio startup)", async () => {
-    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const consumer = consumerPath();
     const pinned = listSlots(consumer, "designer").flatMap(entry => {
       const element = entry.pin && /^(.+)-v\d+\.json$/.exec(entry.pin.candidate)?.[1];
       return element ? [`${entry.id}/${element}`] : [];

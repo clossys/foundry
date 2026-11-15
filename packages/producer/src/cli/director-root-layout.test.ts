@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, it } from "vitest";
 // Director's own fixtures (test-only source import; @clossys/director ships them in no export).
@@ -79,10 +79,10 @@ it("compiled clossys director check never selects populated old roots or creates
   expect(run(nested, "status").code).toBe(2);
   expect(existsSync(root)).toBe(false);
   // An explicit old root is read, but only a `<consumer>/agents/director` root reaches evidence, so it cannot ground.
-  const ground = run(nested, "ground", "../../surfaces", "--root", "../../clossys/director");
+  const ground = run(nested, "ground", "../../surfaces", "--root", relative(nested, old));
   expect(ground.code).toBe(2);
   expect(JSON.parse(ground.output)).toMatchObject({ state: "indeterminate", findings: [] });
-  expect(run(nested, "status", "--root", "../../clossys/director").code).toBe(1);
+  expect(run(nested, "status", "--root", relative(nested, old)).code).toBe(1);
   expect(existsSync(root)).toBe(false);
 }, 30_000);
 

@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import ts from 'typescript';
+import { pathToFileURL } from 'node:url';
 
 // R2F-03: Home's stock parts are the pinned components.studio.home-grid composition of stock shadcn
 // parts, qualified natively by the ref-verbatim composition check; the earlier exact-range extraction
 // (studio-home-stock-source/) is superseded and kept only as the vendored reference record.
 const here = new URL('./', import.meta.url);
-const designer = new URL('../../../clossys/agents/designer/', here);
+const designer = process.env.CLOSSYS_ROOT ? pathToFileURL(`${process.env.CLOSSYS_ROOT}/clossys/agents/designer/`) : new URL('../../producer/test-fixtures/consumer/clossys/agents/designer/', here);
 const pinned = slot => {
   const pin = JSON.parse(readFileSync(new URL(`${slot}/pin.json`, designer), 'utf8'));
   return JSON.parse(readFileSync(new URL(`${slot}/candidates/${pin.candidate}`, designer), 'utf8'));

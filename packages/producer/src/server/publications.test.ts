@@ -7,6 +7,7 @@ import { afterEach, beforeEach, expect, it } from "vitest";
 import { agentModule, agentRoot } from "./cells.js";
 import { startProducerServer, type ProducerServer } from "./index.js";
 import { consumerApps } from "./publications.js";
+import { consumerPath } from "../consumer-root.js";
 
 // Flat Publisher slots: agents/publisher/<slot-id>/{slot.json,candidates/,pin.json}. Publication tree
 // names are Writer keys (COPY-SLOT-CONTRACT D3), so the pinned Writer strings come with the slots.
@@ -116,9 +117,9 @@ it("exposes only an explicitly declared local app server URL", async () => {
 
 it("projects the repository's own pinned Studio publication from its slots", async () => {
   const publisher = agentRoot(root, "publisher");
-  await cp(fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url)), publisher, { recursive: true });
+  await cp(consumerPath("agents", "publisher"), publisher, { recursive: true });
   // The publication's titles are Writer keys: the pinned Writer strings come too.
-  const writer = fileURLToPath(new URL("../../../../clossys/agents/writer", import.meta.url));
+  const writer = consumerPath("agents", "writer");
   await cp(writer, agentRoot(root, "writer"), { recursive: true, filter: source => source === writer || source === join(writer, "ia.json") || source.startsWith(join(writer, "strings.")) });
   const before = await snapshot(root);
   const apps = await consumerApps(root);

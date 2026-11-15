@@ -280,7 +280,7 @@ export const WORKSPACE_IA_AGENTS = SLOT_AGENTS.filter(agent => !(SYNC_AGENTS as 
 
 /**
  * A workspace-owned IA whose `source` does not resolve (SOURCE-MIGRATE step 6: the Publisher's
- * `consumer#agents/publisher/tree.json` named a file that no longer exists). The sync repoints it to
+ * source named its retired tree file, which no longer exists). The sync repoints it to
  * `workspace#owner`; nothing else in the file changes.
  */
 export function workspaceSourceRepairs(consumer: string): { agent: SlotAgent; detail: string; path: string; bytes: string }[] {

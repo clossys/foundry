@@ -131,7 +131,7 @@ describe("page conformance", () => {
   });
 
   it("passes the repository's pinned Studio pages through their declared archetype and format", () => {
-    const root = resolve(import.meta.dirname, "../../../../clossys/agents/publisher");
+    const root = resolve(process.env.CLOSSYS_ROOT ? resolve(process.env.CLOSSYS_ROOT, "clossys") : resolve(import.meta.dirname, "../../../producer/test-fixtures/consumer/clossys"), "agents/publisher");
     const text = (path: string) => { try { return readFileSync(join(root, path), "utf8"); } catch (cause) { if ((cause as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw cause; } };
     const { map, routePack } = projectPinnedPublication({
       ia: () => text("ia.json"), record: (id, file) => text(join(id, file)),

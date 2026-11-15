@@ -9,8 +9,9 @@ import { readPinnedPublication } from '../dist/publish/pinned-publication.js';
 import { projectNavigation, projectCommands } from '@clossys/publisher/content-map';
 import { HANDLERS, assemblyOf, checkManifest, designerContracts, generateStudioMap } from './generate-studio-map.mjs';
 import { pinnedBindings } from './studio-draft-items.mjs';
+import { consumerPath } from './consumer-root.mjs';
 
-const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
+const clossys = consumerPath();
 /** Every Designer slot the Studio pages assemble. */
 const STUDIO_SLOTS = ['frames.studio-shell', ...['checks', 'outline'].map(id => `sections.module.${id}`),
   ...['pipeline-flow', 'pipeline-legend', 'system-empty', 'team-strip'].map(id => `sections.producer.${id}`),

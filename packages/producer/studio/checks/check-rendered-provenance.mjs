@@ -38,9 +38,10 @@ import { chrome, loadStudioMap } from './studio-dom-check.mjs';
 import { pinned } from '../../scripts/check-generated-derived.mjs';
 import { studioOrigin } from './studio-origin.mjs';
 import { nextStreamingScriptShape } from '@clossys/publisher/install';
+import { consumerPath } from '../../scripts/consumer-root.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const CLOSSYS = resolve(here, '../../../../clossys');
+const CLOSSYS = consumerPath();
 const sleep = ms => new Promise(done => setTimeout(done, ms));
 
 /** At most this many Chrome workers at once: the heavy-gate cap of three concurrent heavy runs. */

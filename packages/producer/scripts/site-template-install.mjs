@@ -27,7 +27,7 @@ export const SITE_CONSUMER = Object.freeze({
   publication: 'example-site',
   selection: 'component-selection.ts',
 });
-/** Where the site project sits inside the consumer: the template script's `--selection ../../clossys/...` assumes it. */
+/** Where the site project sits inside the consumer: the template script's consumer-relative `--selection` assumes it. */
 export const SITE_DIR = 'apps/site';
 
 export const posix = file => file.split(path.sep).join('/');

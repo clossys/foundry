@@ -44,7 +44,7 @@
  * (node builtins only), so it runs in check:gates' safety job.
  *
  * Usage: node scripts/check-source-ladder.mjs [--root <designer package dir>] [--consumer <consumer dir>] [--json]
- * The consumer defaults to <root>/../../clossys (this repository's dogfood consumer); a missing
+ * The consumer defaults to $CLOSSYS_ROOT/clossys, else the synthetic fixture consumer; a missing
  * consumer is unreadable input (exit 2), never a silent skip.
  * Exit 0 clean, 1 findings, 2 unreadable input.
  */
@@ -269,7 +269,8 @@ export function consumerFrom(consumer) {
   return { consumerSlots: consumerSlots.sort(), consumerPins: consumerPins.sort((a, b) => a.slot.localeCompare(b.slot)) };
 }
 
-export function loadInputs(designer, consumer = path.resolve(designer, "../../clossys")) {
+export const defaultConsumer = designer => process.env.CLOSSYS_ROOT ? path.join(path.resolve(process.env.CLOSSYS_ROOT), "clossys") : path.resolve(designer, "../producer/test-fixtures/consumer/clossys");
+export function loadInputs(designer, consumer = defaultConsumer(designer)) {
   const read = file => fs.readFileSync(path.join(designer, file), "utf8");
   const roster = JSON.parse(read("src/catalog/rules/source-roster.json"));
   const vendored = path.join(designer, "references/shadcn-aria");

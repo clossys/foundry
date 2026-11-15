@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 // GATES-RED G5: every selected-Button consumer passes only variants the components.button slot
 // contract names; the dropped Foundry-only variants (tonal, quiet) throw "NEED component selection".
 const packageRoot = resolve(import.meta.dirname, "../..");
-const slot = JSON.parse(readFileSync(resolve(packageRoot, "../../clossys/agents/designer/components.button/slot.json"), "utf8")) as { contract: { members: { names: string[] } } };
+const slot = JSON.parse(readFileSync(join(process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : resolve(packageRoot, "../producer/test-fixtures/consumer/clossys"), "agents/designer/components.button/slot.json"), "utf8")) as { contract: { members: { names: string[] } } };
 const contracted = new Set(slot.contract.members.names.filter(name => name.startsWith("variant.")).map(name => name.slice("variant.".length)));
 
 function sources(dir: string): string[] {

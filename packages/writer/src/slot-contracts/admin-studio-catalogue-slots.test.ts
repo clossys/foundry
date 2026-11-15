@@ -6,12 +6,14 @@ import { listSlots, readCandidate, readSlot } from "../../../producer/src/record
 import { parseFrontmatter, validateCandidate } from "../../../producer/src/records/slot-model/index.js";
 import { recordSpecimenInput, slotGallery } from "../../../producer/src/server/slot-gallery.js";
 import { parseWriterSlotBody } from "../slot-body.js";
+import { join } from "node:path";
+const CONSUMER = process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : fileURLToPath(new URL("../../../producer/test-fixtures/consumer/clossys", import.meta.url));
 
 /** Rows in source order through the canonical Writer slot-body parser (the legacy migrate reader is gone). */
 const writerRecords = (body: string, locales: readonly string[]) => parseWriterSlotBody(body, locales)
   .map(({ locale, record: { context, text, ...meta }, bindings }) => ({ locale, key: context, meta: { ...meta, bindings } as Record<string, unknown>, text: text ?? "" }));
 
-const consumer = fileURLToPath(new URL("../../../../clossys/", import.meta.url));
+const consumer = `${CONSUMER}/`;
 const sourcePath = "packages/writer/src/catalog/records/admin-studio.r1.en.json";
 const sourceBytes = readFileSync(new URL("../catalog/records/admin-studio.r1.en.json", import.meta.url), "utf8");
 const catalogue = JSON.parse(sourceBytes);

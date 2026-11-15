@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { listSlots, readCandidate, readSlot } from '../records/slots.js';
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from '../records/slot-model/index.js';
 import { CODE_FILE, DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind } from '@clossys/designer/ref-verbatim';
+import { consumerPath } from '../consumer-root.js';
 
 /**
  * AMEND-1 ds-only check for every Studio section and frame the page records place: each folder
@@ -37,7 +38,7 @@ const FRAME_FOLDERS = folders(FRAMES);
 const COMPONENT_LAYER = DS_COMPONENT_LAYER;
 const FRAME_LANDMARKS = DS_FRAME_LANDMARKS;
 const FRAME_RUNTIME = new Set(['react', 'next/navigation', 'lucide-react', '../../components/StudioProviders', '../../lib/studio-icons']);
-const CLOSSYS = resolve(STUDIO, '../../../clossys');
+const CLOSSYS = consumerPath();
 const REFERENCES = resolve(STUDIO, '../../designer/references/shadcn');
 
 const filesUnder = (root: string): string[] => readdirSync(root, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? filesUnder(join(root, entry.name)) : [join(root, entry.name)]);

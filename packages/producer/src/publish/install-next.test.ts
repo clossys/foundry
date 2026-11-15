@@ -6,9 +6,10 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { NEXT_ROUTE_MARKER } from "@clossys/publisher/install";
 import { nextFailed, publishNext } from "./install-next.js";
+import { consumerPath } from "../consumer-root.js";
 
 let root: string;
-const agentsDir = (agent: string) => fileURLToPath(new URL(`../../../../clossys/agents/${agent}/`, import.meta.url));
+const agentsDir = (agent: string) => consumerPath("agents", agent);
 const designerIa = () => join(root, "clossys", "agents", "designer", "ia.json");
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), "producer-install-next-"));

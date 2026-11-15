@@ -464,7 +464,7 @@
     {
       "id": "designer check-section-tokens",
       "cwd": "packages/designer",
-      "run": "node scripts/check-section-tokens.mjs --root ../../clossys --components ui/components.json",
+      "run": "node scripts/check-section-tokens.mjs --root \"${CLOSSYS_ROOT:-../producer/test-fixtures/consumer}/clossys\" --components ui/components.json",
       "kind": "static"
     },
     {

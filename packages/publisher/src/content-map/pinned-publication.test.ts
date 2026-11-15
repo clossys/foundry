@@ -9,6 +9,7 @@ import { adminContentMap } from "./__fixtures__/admin.js";
 import type { ContentMap } from "./contract.js";
 import { pageId } from "./page-identity.js";
 import { projectPinnedPublication, type PinnedPublicationSource } from "./pinned-publication.js";
+const CONSUMER = process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : fileURLToPath(new URL("../../../producer/test-fixtures/consumer/clossys", import.meta.url));
 
 type JsonObject = Record<string, any>;
 // Test-only record source over a fixture folder. Production records come from the one
@@ -133,7 +134,7 @@ it("NATIVE ignores a newer unselected candidate and preserves exact migration id
 });
 
 it("NATIVE reads the repository's actual selected Studio publication and page payloads", async () => {
-  const path = fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url));
+  const path = join(CONSUMER, "agents", "publisher");
   const ia = JSON.parse(await readFile(join(path, "ia.json"), "utf8"));
   const locations = new Map<string, string>();
   for (const node of ia.nodes) for (const child of node.children) for (const id of child.slots) locations.set(id, join(path, id));

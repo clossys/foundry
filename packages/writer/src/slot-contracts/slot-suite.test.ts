@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseWriterSlotBody } from "../slot-body.js";
 import { runWriterSlotSuite, type WriterPinnedSlot } from "./checks.js";
+const CONSUMER = process.env.CLOSSYS_ROOT ? join(process.env.CLOSSYS_ROOT, "clossys") : fileURLToPath(new URL("../../../producer/test-fixtures/consumer/clossys", import.meta.url));
 
 const slot = (id: string, body: string, locales = ["en"]): WriterPinnedSlot => ({ slot: id, path: `agents/writer/${id}/candidates/test-v1.md`, locales, rows: parseWriterSlotBody(body, locales) });
 const text = (id: string, value: string, meta: Record<string, unknown> = {}) => `### ${id}\n<!-- ${JSON.stringify({ id, bindings: [], ...meta })} -->\n${value}\n\n`;
@@ -102,7 +103,7 @@ describe("writer.copy.v1 over pinned slot candidates", () => {
   });
 
   it("runs over the consumer's pinned Writer candidates with a contract for every pinned slot", () => {
-    const writer = fileURLToPath(new URL("../../../../clossys/agents/writer/", import.meta.url));
+    const writer = join(CONSUMER, "agents", "writer");
     if (!existsSync(writer)) return;
     const slots: WriterPinnedSlot[] = [];
     for (const id of readdirSync(writer).sort()) {

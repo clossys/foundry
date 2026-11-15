@@ -6,8 +6,9 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { assertPreviewContext, draftStudioItems, pinnedBindings, previewArguments, previewDescriptor, previewOptions, PREVIEW_BINDINGS_ENV } from './studio-draft-items.mjs';
+import { consumerPath } from './consumer-root.mjs';
 
-const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
+const clossys = consumerPath();
 const slot = 'sections.studio.options', element = 'example', at = '2026-10-31T12:00:00Z';
 const slotPath = `agents/designer/${slot}`;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');

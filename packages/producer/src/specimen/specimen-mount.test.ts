@@ -9,11 +9,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createSpecimenBuilder, renderSpecimenPage } from "@clossys/publisher/specimen";
 import { libraryRecordSource } from "./library-source.js";
+import { consumerPath } from "../consumer-root.js";
 
 const require = createRequire(import.meta.url);
 const { JSDOM } = require("jsdom") as { JSDOM: new (html: string, options: object) => { window: any } };
 const workspace = fileURLToPath(new URL("../../../../", import.meta.url));
-const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+const consumer = consumerPath();
 const registryBase = dirname(require.resolve("@clossys/designer-ui"));
 const source = libraryRecordSource({ roots: [consumer], registryBase });
 const builder = createSpecimenBuilder({ workspace });

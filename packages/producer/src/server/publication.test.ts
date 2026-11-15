@@ -18,6 +18,7 @@ const readPinnedPublication = (publisher: string, id: string) => readPinned(dirn
 import { slotGallery } from "./slot-gallery.js";
 import { writerCopy } from "../records/writer-copy.js";
 import { repoConsumer } from "../cli/__fixtures__/flat-consumer.js";
+import { consumerPath } from "../consumer-root.js";
 
 let root: string;
 let server: ProducerServer | undefined;
@@ -169,8 +170,8 @@ it("reads installs written with --out from the folder produce --out names, under
 // Writer records come too: a publication's titles are Writer keys, resolved from the pinned copy.
 async function nativePublisherFixture() {
   const publisher = agentRoot(root, "publisher");
-  await cp(fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url)), publisher, { recursive: true });
-  const writer = fileURLToPath(new URL("../../../../clossys/agents/writer", import.meta.url));
+  await cp(consumerPath("agents", "publisher"), publisher, { recursive: true });
+  const writer = consumerPath("agents", "writer");
   await cp(writer, agentRoot(root, "writer"), { recursive: true, filter: source => source === writer || source === join(writer, "ia.json") || source.startsWith(join(writer, "strings.")) });
   return publisher;
 }
@@ -302,7 +303,7 @@ it("applies the preview theme on <html> without dropping the page's own classes"
 it("lists the Studio publication's installed pages as ready with frame previews once publish --install --next put them in the app Producer serves", async () => {
   await nativePublisherFixture();
   // Parameterized page records expand through each agent's IA, so the fixture carries those too.
-  for (const agent of ["director", "designer", "writer"] as const) await cp(fileURLToPath(new URL(`../../../../clossys/agents/${agent}/ia.json`, import.meta.url)), join(agentRoot(root, agent), "ia.json"));
+  for (const agent of ["director", "designer", "writer"] as const) await cp(consumerPath("agents", agent, "ia.json"), join(agentRoot(root, agent), "ia.json"));
   const app = join(root, "studio", "app"), outs = join(root, "outs");
   const install = await publishNext({ root, publication: "studio", app, assembly: "../components/StudioInstalledPage.tsx", live: true, out: join(outs, "next-studio") });
   expect(install.findings).toEqual([]);

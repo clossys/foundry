@@ -4,10 +4,11 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, it } from "vitest";
 import { readPinnedPublication } from "./pinned-publication.js";
+import { consumerPath } from "../consumer-root.js";
 
 // The one slot reader (records/slots.ts) feeds Publisher's pure projection. These cases
 // pin the refusals that belong to the reader: links and drift in the slot model.
-const repository = fileURLToPath(new URL("../../../../clossys/", import.meta.url));
+const repository = consumerPath();
 const roots: string[] = [];
 afterEach(async () => { await Promise.all(roots.splice(0).map(path => rm(path, { recursive: true, force: true }))); });
 

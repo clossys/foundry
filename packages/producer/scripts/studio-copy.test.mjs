@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { studioCopyRegistry } from './generate-studio-map.mjs';
 import { createCopyResolver, resolveCopyRef } from '@clossys/writer/resolve';
+import { consumerPath } from './consumer-root.mjs';
 
 const preview = { target: 'preview', absentPin: 'newest-draft' };
 async function fixture(t, placement = 'strings.interface/interface-field-labels/strings.common') {
@@ -62,7 +63,7 @@ test('Studio copy refuses relevant corrupt pins and never selects an unpinned ca
 });
 
 test('Foundry migrated copy resolves counts and current visible wording without approval claims', async () => {
-  const root = new URL('../../../clossys/', import.meta.url).pathname;
+  const root = consumerPath();
   // The stored registry is what generate writes in place: the pinned copy, no draft preview, as the Writer package default.
   const registry = await studioCopyRegistry(root);
   const stored = JSON.parse(await readFile(new URL('../../writer/templates/studio-copy.en.json', import.meta.url), 'utf8'));
@@ -79,7 +80,7 @@ test('Foundry migrated copy resolves counts and current visible wording without 
 
 
 test('Every migrated Studio message uses Writer ICU and retains singular/plural option wording', async () => {
-  const registry = await studioCopyRegistry(new URL('../../../clossys/', import.meta.url).pathname, preview);
+  const registry = await studioCopyRegistry(consumerPath(), preview);
   for (const entry of registry.entries) {
     const missing = resolveCopyRef(registry, { id: entry.id }, { target: 'preview' });
     const values = Object.fromEntries(missing.issues.filter(issue => issue.reason === 'missing-placeholder-value')

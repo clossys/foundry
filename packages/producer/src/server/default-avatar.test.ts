@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { consumerPath } from "../consumer-root.js";
 
 const brand = vi.hoisted(() => ({ value: {} as { name?: string; mark?: { light: string; dark: string } } }));
 vi.mock("./designer-globals.js", async original => ({ ...(await original<typeof import("./designer-globals.js")>()), consumerBrand: async () => brand.value }));
@@ -11,7 +12,7 @@ const { DEFAULT_AVATAR_PATH, defaultAvatarSvg, pinnedMarkSvg, pinnedPlaceholderS
 const { startProducerServer } = await import("./index.js");
 
 /** Foundry's own consumer library: its pinned assets.image placeholder is the default avatar. */
-const LIBRARY = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+const LIBRARY = consumerPath();
 const MARK_SLOT = join(LIBRARY, "agents", "designer", "assets.mark");
 const IMAGE_SLOT = join(LIBRARY, "agents", "designer", "assets.image");
 const STUDIO_MARK = fileURLToPath(new URL("../../studio/public/studio-mark.svg", import.meta.url));

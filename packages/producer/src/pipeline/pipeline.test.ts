@@ -19,6 +19,7 @@ import { llmSourceOf, readSeat } from "./seats.js";
 import { pipelineStatus, slotCounts } from "./status.js";
 import { STEPS } from "./steps/index.js";
 import { createHash } from "node:crypto";
+import { consumerPath } from "../consumer-root.js";
 
 /** A seat as its slot folder holds it (D5): slot.json of kind seat, one candidate file and the pin.json that chooses it. */
 function writeSeat(root: string, step: string, value: unknown): void {
@@ -293,7 +294,7 @@ describe("port schemas", () => {
   it("keeps the library element port schema equal to the record schema, and no selection store or port is left", () => {
     expect(loadSchema("library-element")).toEqual(JSON.parse(JSON.stringify(ELEMENT_SCHEMA)));
     // The legacy selection store went with its writer and its last readers (WIRING-LOCK-2): pins live only in the slot model.
-    expect(existsSync(fileURLToPath(new URL("../../../../clossys/selection.json", import.meta.url)))).toBe(false);
+    expect(existsSync(consumerPath("selection.json"))).toBe(false);
     expect(existsSync(fileURLToPath(new URL("../../pipeline/schemas/selection.schema.json", import.meta.url)))).toBe(false);
     expect(STEPS.some(step => step.id === "selection" || [...step.inputs, ...step.outputs].some(port => (typeof port === "string" ? port : port.glob).includes("selection.json")))).toBe(false);
   });

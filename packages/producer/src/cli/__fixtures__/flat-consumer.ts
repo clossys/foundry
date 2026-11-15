@@ -10,10 +10,11 @@ import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { SlotAgent } from "../../records/slot-model/index.js";
+import { consumerPath } from "../../consumer-root.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const entry = resolve(here, "../../../dist/cli/index.js");
-export const repoConsumer = resolve(here, "../../../../../clossys");
+export const repoConsumer = consumerPath();
 
 /** A temp root whose `clossys/` holds copies of the named agents' slot folders. */
 export function flatConsumer(agents: readonly SlotAgent[]): string {

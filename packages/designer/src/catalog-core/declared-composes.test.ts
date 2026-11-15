@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { pathToFileURL } from "node:url";
 
 /**
  * GATES-RED G3: every component or surface a Foundry frame or section actually composes, as the
@@ -9,7 +10,9 @@ import { describe, expect, it } from "vitest";
  * for a section. The consumer mirror under clossys/agents/designer declares the same set.
  */
 const pkg = new URL("../../", import.meta.url);
-const json = <T>(path: string): T => JSON.parse(readFileSync(new URL(path, pkg), "utf8")) as T;
+const json = <T>(path: string | URL): T => JSON.parse(readFileSync(new URL(path, pkg), "utf8")) as T;
+/** The consumer a mirror is read from: $CLOSSYS_ROOT, else the synthetic fixture consumer. */
+const consumer = process.env.CLOSSYS_ROOT ? pathToFileURL(`${process.env.CLOSSYS_ROOT}/clossys/`) : new URL("../producer/test-fixtures/consumer/clossys/", pkg);
 interface Contract { kind: string; composes?: string[]; allowedComposes?: string[]; parts?: string[] }
 interface Slot { id: string; contract: Contract }
 interface Measured { consumption: { scannedComposes: string[]; scannedReads: { components: string[] } } }
@@ -29,7 +32,7 @@ describe("declared composes follow the real import graph", () => {
     for (const [id, row] of Object.entries(measured)) {
       const slot = slots.get(id);
       expect(slot, id).toBeDefined();
-      const mirror = json<Slot>(`../../clossys/agents/designer/${id}/slot.json`);
+      const mirror = json<Slot>(new URL(`agents/designer/${id}/slot.json`, consumer));
       for (const compose of observed(row)) {
         if (!declared(slot!.contract).has(compose)) missing.push(`${id} ${compose}`);
         if (!declared(mirror.contract).has(compose)) missing.push(`${id} ${compose} (consumer mirror)`);
