@@ -4,9 +4,10 @@
  * (`DF.<agent>.<LOOP>`), judged by probes of the repo. Each probe reproduces the row's failure as a fact
  * the repo either still has (red) or no longer has. The empty-L2 probe runs the real constitution over a
  * temporary copy of the consumer with one empty L2 group added per agent, and the contract probe runs the
- * real `clossys ia --contract --dry` on a temporary copy; the rest read files.
+ * real `clossys ia --contract --dry` on a temporary copy, and the pin probe runs the real `clossys pin` on a
+ * temporary copy with a hand-placed candidate; the rest read files.
  */
-import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { standardTastePath } from "../cli/critique.js";
@@ -26,7 +27,11 @@ export interface ProbeFacts {
   readonly critiqueMonorepoPath: boolean;
   /** Per agent: what `clossys ia --contract` did with an invalid contract per held kind family, or why it could not run. */
   readonly iaContract?: Readonly<Record<string, readonly IaContractResult[] | string>>;
+  /** Per agent: what `clossys pin` did with a hand-placed candidate (no submit record), or why it could not run. */
+  readonly pinGate?: Readonly<Record<string, PinGateResult | string>>;
 }
+
+export interface PinGateResult { readonly target: string; readonly candidate: string; readonly accepted: boolean; readonly message: string }
 
 export interface IaContractResult { readonly target: string; readonly contract: string; readonly accepted: boolean; readonly message: string }
 
@@ -71,7 +76,9 @@ export async function probeIaContract(consumer: string, agents: readonly AgentMo
         const under = l1 ? `${l1.id}/${l1.l2[0]!.id}` : "conform/probe";
         const result = await runIaCli([target, "--under", under, "--kind", family, "--contract", file, "--dry"], temp);
         const message = (result.message ?? "").split("\n")[0]!;
-        if (result.exitCode !== 0 && !(result.exitCode === 1 && isContractRefusal(message, target, [temp, file]))) { out[agent.agent] = `ia --contract probe failed for ${target}: exit ${result.exitCode}: ${message}`; break; }
+        // An "already placed" refusal is the probe hitting a live slot, never a contract verdict: a failure, whatever else it says.
+        const placed = /\balready placed\b/.test(message);
+        if (placed || (result.exitCode !== 0 && !(result.exitCode === 1 && isContractRefusal(message, target, [temp, file])))) { out[agent.agent] = `ia --contract probe failed for ${target}: exit ${result.exitCode}: ${message}`; break; }
         results.push({ target, contract: JSON.stringify(contract), accepted: result.exitCode === 0, message });
       }
       out[agent.agent] ??= results;
@@ -86,6 +93,50 @@ export async function probeIaContract(consumer: string, agents: readonly AgentMo
 }
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** The name of the hand-placed candidate the pin probe writes. */
+export const PIN_PROBE_NAME = "conform-probe";
+
+/**
+ * Runs the real `clossys pin <agent>/<slot>[#<record>] <conform-probe-v1.ext> --by planner` on a temporary copy of
+ * the consumer, once per agent, against its first live slot/2 slot (one with a candidate first): the probe copies that
+ * slot's newest candidate under a new name by hand, so the file has no submit record. Accepted means exit 0; a refusal
+ * counts only when it is the CHOOSE gate's (no submit record, no passing verdict); any other outcome is the probe failing.
+ */
+export async function probePinGate(consumer: string, agents: readonly AgentModel[]): Promise<Record<string, PinGateResult | string>> {
+  await import("../cli/main.js");
+  const { runPinCli } = await import("../cli/pin.js");
+  const { isRecordSlot } = await import("../records/resolve.js");
+  const temp = realpathSync(mkdtempSync(join(tmpdir(), "conform-pin-")));
+  const out: Record<string, PinGateResult | string> = {};
+  try {
+    cpSync(consumer, join(temp, "clossys"), { recursive: true });
+    for (const agent of agents) {
+      const slots = agent.live.filter(slot => slot.schema === "clossys.slot/2" && slot.kind !== "release")
+        .map(slot => ({ slot, dir: join(temp, "clossys", "agents", agent.agent, slot.id, "candidates") }))
+        .map(item => ({ ...item, names: existsSync(item.dir) ? readdirSync(item.dir).filter(name => /-v\d+\.(md|json|svg)$/.test(name)).sort() : [] }));
+      const pick = slots.find(item => item.names.length) ?? slots[0];
+      if (!pick) { out[agent.agent] = `pin probe: ${agent.agent} has no live clossys.slot/2 slot`; continue; }
+      const source = pick.names.at(-1);
+      const ext = source?.split(".").pop() ?? (["director", "writer"].includes(agent.agent) ? "md" : "json");
+      const candidate = `${PIN_PROBE_NAME}-v1.${ext}`;
+      mkdirSync(pick.dir, { recursive: true });
+      writeFileSync(join(pick.dir, candidate), source ? readFileSync(join(pick.dir, source)) : ext === "json" ? "{}\n" : "---\n---\n");
+      const record = isRecordSlot(temp, agent.agent as never, pick.slot.id) ? `#${PIN_PROBE_NAME}` : "";
+      const target = `${agent.agent}/${pick.slot.id}${record}`;
+      const result = await runPinCli([target, candidate, "--by", "planner", "--root", temp], temp);
+      const message = (result.message ?? "").split("\n").slice(0, 2).join(" ").trim();
+      if (result.exitCode !== 0 && !(result.exitCode === 1 && /no submit record|no passing verdict/.test(result.message ?? ""))) { out[agent.agent] = `pin probe failed for ${target}: exit ${result.exitCode}: ${message}`; continue; }
+      out[agent.agent] = { target, candidate, accepted: result.exitCode === 0, message };
+    }
+  } catch (error) {
+    const message = `pin probe failed: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`;
+    for (const agent of agents) out[agent.agent] ??= message;
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+  return out;
+}
 
 /** Runs the real constitution over a copy of the consumer with one empty L2 group per agent. */
 export function probeEmptyL2(repo: string, consumer: string, agents: readonly string[]): Record<string, boolean | string> {
@@ -141,6 +192,7 @@ export async function readProbeFacts(model: ConformModel): Promise<ProbeFacts> {
     requestVerb: /head === "request"/.test(runner) || (actions.actions ?? []).some(action => /(^|\/)request(\/|$)/.test(action.path ?? "")),
     critiqueMonorepoPath: probeCritiquePath(model),
     iaContract: await probeIaContract(model.consumer, model.agents),
+    pinGate: await probePinGate(model.consumer, model.agents),
   };
 }
 
@@ -158,7 +210,7 @@ export const PROBES: Readonly<Record<string, Probe>> = {
   ]),
   "invalid-contract": (agent, model, facts) => ASSERTIONS.L3!(agent, model, facts),
   "critique-path": (_agent, _model, facts) => pass(facts.critiqueMonorepoPath ? ["critique-packet reads packages/<agent>/standards under the workspace root, absent from an install"] : []),
-  "pin-verdict": (agent, model) => ASSERTIONS.C3!(agent, model),
+  "pin-verdict": (agent, model, facts) => ASSERTIONS.C3!(agent, model, facts),
   "repin-stale": (agent, model) => ASSERTIONS.X1!(agent, model),
   "skill-craft": agent => {
     if (agent.skillText === undefined) return pass([`${agent.adapter?.skill ?? "skill"} is missing`]);

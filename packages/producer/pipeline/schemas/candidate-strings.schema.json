@@ -25,6 +25,12 @@
     "source": {
       "$ref": "source.schema.json"
     },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "The pinned Director slot the copy realises (director:<slot-id>), or default:<ref> plus a director: citation: the Writer equivalent of meta.element.reason (R20.2, records/director-trace.ts). validateStrings accepts it."
+    },
     "vary": {
       "type": "object",
       "propertyNames": {

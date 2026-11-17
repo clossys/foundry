@@ -7,6 +7,10 @@
  * `vary: {"<axis>": "<value>"}` (frontmatter, or `meta.vary` in JSON). A candidate
  * with no tag counts once, as the slot's baseline (the pre-options candidate whose
  * bytes a pin already hashes), so tagging never forces a repin.
+ *
+ * A slot whose slot.json carries `family` (clossys.slot/2, foundry-build-0048 U3) is judged by it: the family is the
+ * slot's own data and the option table only seeds it (`clossys migrate contracts`). A family the table's class for
+ * the slot disagrees with is `options-drift`, so a reseed is visible; a slot with no family falls back to the table.
  */
 import { parseFrontmatter } from "./slot-model/frontmatter.js";
 import { OPTION_TABLE, type OptionClass, type OptionTable } from "./slot-model/option-classes.js";
@@ -64,11 +68,24 @@ export function candidateVary(name: string, bytes: string): Record<string, strin
 
 function groupOf(entry: SlotEntry): string { return `${entry.position.l1}/${entry.position.l2}`; }
 
+/** The slot's own family as an option class (`family.class` names the class it was seeded from), when it carries one. */
+export function familyClass(doc: Pick<SlotDoc, "family">): OptionClass | undefined {
+  const family = doc.family;
+  if (!family) return undefined;
+  return {
+    id: family.class ?? `family.${family.options}`, options: family.options,
+    ...(family.options > 1 && family.varyOn ? { varyOn: family.varyOn, values: [...family.values] } : {}),
+    summary: "the slot's family (slot.json)",
+  };
+}
+const sameClass = (a: OptionClass, b: OptionClass) => a.options === b.options && (a.varyOn ?? null) === (b.varyOn ?? null)
+  && JSON.stringify(a.values ?? []) === JSON.stringify(b.values ?? []);
+
 /** One slot's options view (what `clossys options` prints and the check judges). */
 export function slotOptions(consumer: string, entry: SlotEntry, table: OptionTable = OPTION_TABLE): SlotOptions {
   const group = groupOf(entry);
-  const klass: OptionClass | undefined = (() => { const c = classify(entry.agent, entry.id, group, table)?.classId; return c ? table.classes[c] : undefined; })();
   const doc = inspectSlot(consumer, entry.agent, entry.id).doc as SlotDoc;
+  const klass: OptionClass | undefined = familyClass(doc) ?? (() => { const c = classify(entry.agent, entry.id, group, table)?.classId; return c ? table.classes[c] : undefined; })();
   const options = klass?.options ?? doc.options ?? 1;
   const varyOn = klass?.varyOn ?? doc.varyOn ?? null;
   const candidates = entry.candidates.map(name => {
@@ -86,23 +103,34 @@ export function slotOptions(consumer: string, entry: SlotEntry, table: OptionTab
   };
 }
 
-/** Every mapped agent's slots, with findings. Unmapped agents (Designer, Publisher) are skipped. */
+/** Every slot that carries a family, and every mapped agent's slots, with findings; other slots of unmapped agents are skipped. */
 export function checkSlotOptions(consumer: string, table: OptionTable = OPTION_TABLE): { findings: SlotOptionsFinding[]; slots: SlotOptions[] } {
   const findings: SlotOptionsFinding[] = [];
   const slots: SlotOptions[] = [];
   for (const agent of SLOT_AGENTS) {
-    if (!table.groups[agent]) continue;
     for (const entry of listSlots(consumer, agent)) {
       const add = (code: SlotOptionsCode, message: string) => findings.push({ code, agent, slot: entry.id, message });
       const group = groupOf(entry);
-      const classId = classify(agent, entry.id, group, table)?.classId;
-      if (!classId) { add("options-unclassified", `L2 group ${group} has no option class`); continue; }
-      const klass = table.classes[classId];
-      if (!klass) { add("options-unknown-class", `class ${classId} is not defined`); continue; }
       const doc = inspectSlot(consumer, agent, entry.id).doc as SlotDoc;
-      const stored = doc.options ?? 1;
-      if (stored !== klass.options || (doc.varyOn ?? undefined) !== klass.varyOn) {
-        add("options-drift", `slot.json options ${stored}${doc.varyOn ? `/${doc.varyOn}` : ""} != class ${klass.id} ${klass.options}${klass.varyOn ? `/${klass.varyOn}` : ""}; run clossys options --classes`);
+      const own = familyClass(doc);
+      if (!own && !table.groups[agent]) continue;
+      const classId = classify(agent, entry.id, group, table)?.classId;
+      const seeded = classId ? table.classes[classId] : undefined;
+      let klass: OptionClass;
+      if (own) {
+        klass = own;
+        const tableSays = classify(agent, entry.id, group, table) === null ? familyClass({ family: { options: 1, varyOn: null, values: [] } })! : seeded;
+        if (tableSays && !sameClass(own, tableSays)) {
+          add("options-drift", `slot.json family ${own.options}${own.varyOn ? `/${own.varyOn}` : ""} != class ${tableSays.id} ${tableSays.options}${tableSays.varyOn ? `/${tableSays.varyOn}` : ""}; run clossys migrate contracts`);
+        }
+      } else {
+        if (!classId) { add("options-unclassified", `L2 group ${group} has no option class`); continue; }
+        if (!seeded) { add("options-unknown-class", `class ${classId} is not defined`); continue; }
+        klass = seeded;
+        const stored = doc.options ?? 1;
+        if (stored !== klass.options || (doc.varyOn ?? undefined) !== klass.varyOn) {
+          add("options-drift", `slot.json options ${stored}${doc.varyOn ? `/${doc.varyOn}` : ""} != class ${klass.id} ${klass.options}${klass.varyOn ? `/${klass.varyOn}` : ""}; run clossys options --classes`);
+        }
       }
       const view = slotOptions(consumer, entry, table);
       slots.push(view);

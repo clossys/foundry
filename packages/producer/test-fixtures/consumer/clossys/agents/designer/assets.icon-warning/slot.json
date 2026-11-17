@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -103,7 +104,23 @@
     "modes": [
       "light"
     ],
-    "grid": 24
+    "grid": 24,
+    "requirements": [
+      {
+        "check": "derive.director"
+      },
+      {
+        "check": "asset.svg-files"
+      },
+      {
+        "check": "source.ref"
+      }
+    ]
   },
-  "tighten": []
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
 }

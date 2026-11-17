@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -277,7 +278,23 @@
           "dir": "auto"
         }
       ]
-    }
+    },
+    "requirements": [
+      {
+        "check": "compose.layers"
+      },
+      {
+        "check": "source.ref"
+      },
+      {
+        "check": "tokens.only"
+      }
+    ]
   },
-  "tighten": []
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
 }

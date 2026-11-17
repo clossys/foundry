@@ -18,6 +18,20 @@
           "leaves": [
             "ledger.refine"
           ]
+        },
+        {
+          "id": "build-runs-create",
+          "label": "Create runs",
+          "leaves": [
+            "ledger.create"
+          ]
+        },
+        {
+          "id": "build-runs-choose",
+          "label": "Choose runs",
+          "leaves": [
+            "ledger.choose"
+          ]
         }
       ]
     },

@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [],
   "base": null,
   "standard": "brief.measure",
@@ -51,7 +52,33 @@
         "Because",
         "Watch"
       ]
-    }
+    },
+    "requirements": [
+      {
+        "check": "brief.sections"
+      },
+      {
+        "check": "brief.keys"
+      },
+      {
+        "check": "brief.derived-upstream"
+      },
+      {
+        "check": "brief.because-cited"
+      },
+      {
+        "check": "brief.watch-trigger"
+      },
+      {
+        "check": "brief.plain-direction"
+      },
+      {
+        "check": "brief.quantified"
+      },
+      {
+        "check": "brief.direction-values"
+      }
+    ]
   },
   "tighten": []
 }

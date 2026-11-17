@@ -141,6 +141,12 @@ A page candidate (`clossys.page/1`):
 
 ## Loop (one page)
 
+A page with no fitting candidate goes through CREATE: record the slot's verdict
+(`clossys verdict`), craft the page record with the `assemble.page` recipe (assembly only: brief,
+diverge, render, critique), then submit;
+the certifier checks the route fixture, frame, sections and copy refs, and `pin`
+refuses a page without a passing verdict.
+
 1. **Pick the frame and sections.** Read the Designer candidates under
    `clossys/agents/designer/` and choose one `frames.*` slot and the
    `sections.*` slots the page needs, in reading order. Work from candidates;

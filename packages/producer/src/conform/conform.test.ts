@@ -3,20 +3,21 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { ASSERTIONS, OVERLAP_MIN } from "./assertions.js";
-import { isContractRefusal, judgeDogfood, probeIaContract, PROBES, type ProbeFacts } from "./dogfood.js";
+import { isContractRefusal, judgeDogfood, probeIaContract, probePinGate, PROBES, type ProbeFacts } from "./dogfood.js";
 import { adapterIssues, CONFORM_AGENTS, missingPaths, readConformModel, type Adapter, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
 import { cellOf, conform, formatReport, readRegistry } from "./run.js";
 
 const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
 const FIXTURE = join(REPO, "packages/producer/test-fixtures/consumer/clossys");
 const refused = (agent: string) => [{ target: `${agent}/conform.contract-probe-brief`, contract: "{}", accepted: false, message: "ia refused: contract" }];
-const GOOD_FACTS: ProbeFacts = { emptyL2Detected: { director: true, writer: true }, requestVerb: true, critiqueMonorepoPath: false, iaContract: { director: refused("director"), writer: refused("writer") } };
+const gateRefused = (agent: string) => ({ target: `${agent}/a.x`, candidate: "conform-probe-v1.md", accepted: false, message: "pin refused: a.x conform-probe-v1.md: conform-probe-v1.md has no submit record" });
+const GOOD_FACTS: ProbeFacts = { emptyL2Detected: { director: true, writer: true }, requestVerb: true, critiqueMonorepoPath: false, iaContract: { director: refused("director"), writer: refused("writer") }, pinGate: { director: gateRefused("director"), writer: gateRefused("writer") } };
 
 const slot = (id: string, inputs: string[], extra: Partial<LiveSlot> = {}): LiveSlot => ({
   id, source: "placed", schema: "clossys.slot/2", kind: "brief",
-  contract: { requirements: [{ criterion: "text.nonempty" }], fixture: {} }, inputs, uses: [], standard: "std",
-  family: { options: [], varyOn: [], values: [] }, ledger: [{ op: "slot", decision: "create", overlaps: [] }],
-  pin: { verdict: { pass: true }, basis: "scorecard:a" }, ...extra,
+  contract: { requirements: [{ check: "text.nonempty" }], fixture: {} }, inputs, uses: [], standard: "std",
+  family: { options: 1, varyOn: null, values: [] }, ledger: [{ op: "slot", decision: "create", overlaps: [] }],
+  pin: { basis: "picked", refs: [{ to: "producer/checks.scorecard", rel: "cites", record: `director/${id}` }] }, ...extra,
 });
 
 /** An agent and world on which every assertion and probe is green; each test mutates one fact. */
@@ -78,10 +79,10 @@ const MUTATIONS: Record<string, Mutation> = {
   K2: agent => { agent.defaults = new Set(["a.x"]); },
   K3: (_agent, machinery) => { machinery.rules.set("R05.1", { status: "building", enforcedFor: [] }); },
   K4: agent => { delete agent.recipes[0].fixture; },
-  C1: agent => { agent.live[1] = slot("a.y", ["b.other"], { family: { options: [] } }); },
-  C2: agent => { agent.live[0] = slot("a.x", ["b.in"], { contract: { requirements: [{ criterion: "text.unregistered" }] } }); },
-  C3: agent => { agent.live[0] = slot("a.x", ["b.in"], { pin: { verdict: { pass: false }, basis: "scorecard:a" } }); },
-  C4: agent => { agent.live[0] = slot("a.x", ["b.in"], { pin: { verdict: { pass: true }, basis: "picked" } }); },
+  C1: agent => { agent.live[1] = slot("a.y", ["b.other"], { family: { options: 3, varyOn: "tone", values: ["plain"] } }); },
+  C2: agent => { agent.live[0] = slot("a.x", ["b.in"], { contract: { requirements: [{ check: "text.unregistered" }] } }); },
+  C3: (_agent, _machinery, _other, facts) => { facts.pinGate.director = { ...facts.pinGate.director, accepted: true }; },
+  C4: agent => { agent.live[0] = slot("a.x", ["b.in"], { pin: { basis: "picked", refs: [] } }); },
   X1: (_agent, machinery) => { machinery.rules.set("R07.5", { status: "pending", enforcedFor: [] }); },
   X2: agent => { agent.edges.push({ from: "a.x", to: "writer/b.retired", scope: "placed" }); },
   X3: agent => { agent.actions[0].reads.push("consumer:agents/writer/*/candidates/*"); },
@@ -170,7 +171,7 @@ describe("conformance runner", () => {
       agent.packageOnly.push(slot("sections.hero.copy", ["designer/sections.hero"], { source: "package", contract: {} }));
     });
     expect(ASSERTIONS.S4!(dual.agent, dual.model).rows).toEqual(["passages.hero and sections.hero.copy: both are for sections.hero (same purpose)"]);
-    const requirements = { requirements: [{ criterion: "text.nonempty" }, { criterion: "text.short" }] };
+    const requirements = { requirements: [{ check: "text.nonempty" }, { check: "text.short" }] };
     const oneL2 = world(agent => {
       agent.live.push(slot("a.alpha", ["z.one"], { contract: requirements }), slot("a.omega", ["z.one"], { contract: requirements }));
       agent.l2Of.set("a.alpha", "a/a3"); agent.l2Of.set("a.omega", "a/a3");
@@ -230,9 +231,14 @@ describe("conformance over the repo and its fixture", () => {
     for (const agent of report.agents) {
       expect(agent.cells).toHaveLength(23);
       expect(agent.dogfood).toHaveLength(5);
-      // Shared today: placement records no decision, no cascade, no family data, no five loops.
-      for (const id of ["L1", "L2", "C1", "X1", "X4", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
+      // Shared today: placement records no decision, no cascade, no five loops.
+      for (const id of ["L1", "L2", "X1", "X4", "W1"]) expect(agent.cells.find(cell => cell.id === id)!.red, `${agent.agent} ${id}`).toBe(true);
     }
+    // C1 (family): Designer's slots carry the one-candidate family the contracts migration seeded; Director and Writer
+    // still name the groups the option table does not class, and Publisher's slot/1 slots carry none.
+    const c1 = (agent: string) => report.agents.find(item => item.agent === agent)!.cells.find(cell => cell.id === "C1")!;
+    expect(c1("designer").red).toBe(false);
+    for (const agent of ["director", "writer", "publisher"]) expect(c1(agent).red, agent).toBe(true);
     const director = report.agents.find(agent => agent.agent === "director")!;
     expect(director.cells.find(cell => cell.id === "K3")!.red).toBe(false);
     expect(report.agents.find(agent => agent.agent === "publisher")!.cells.find(cell => cell.id === "X3")!.red).toBe(true);
@@ -243,6 +249,27 @@ describe("conformance over the repo and its fixture", () => {
     expect(x2("designer").red).toBe(true);
     expect(x2("designer").rows.filter(row => / -> themes\.[a-z-]+\.[a-z]+: no such package slot$/.test(row)).length).toBe(258);
     expect(report.ok).toBe(false);
+  });
+});
+
+describe("pin gate probe (the real pin verb on a temporary copy)", () => {
+  const model = readConformModel(REPO, FIXTURE);
+  it("pins no hand-placed candidate for any agent: each refusal names the missing submit record or verdict", async () => {
+    const results = await probePinGate(FIXTURE, model.agents);
+    // Publisher's live slots are clossys.slot/1 (no CREATE and CHOOSE contract yet), so its probe names that gap.
+    expect(results.publisher).toBe("pin probe: publisher has no live clossys.slot/2 slot");
+    for (const agent of ["director", "designer", "writer"]) {
+      const result = results[agent];
+      expect(typeof result, `${agent}: ${String(result)}`).toBe("object");
+      const gate = result as { target: string; accepted: boolean; message: string };
+      expect(gate.accepted, gate.target).toBe(false);
+      expect(gate.message, gate.target).toMatch(/no submit record|no passing verdict/);
+    }
+    // The C3 cell reads the probe: green on these refusals, red once one agent's pin accepts.
+    const facts = { emptyL2Detected: {}, requestVerb: true, critiqueMonorepoPath: false, iaContract: {}, pinGate: results };
+    for (const agent of model.agents) expect(ASSERTIONS.C3!(agent, model, facts).rows.filter(row => row.startsWith("pin ") && row.includes("accepted")), agent.agent).toEqual([]);
+    const accepted = { ...facts, pinGate: { ...results, director: { ...(results.director as object), accepted: true } } };
+    expect(ASSERTIONS.C3!(model.agents.find(agent => agent.agent === "director")!, model, accepted as ProbeFacts).rows.some(row => /accepted a hand-placed candidate/.test(row))).toBe(true);
   });
 });
 

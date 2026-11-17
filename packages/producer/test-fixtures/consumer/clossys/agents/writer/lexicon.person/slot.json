@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/identity.verbal.voice",
@@ -41,7 +42,21 @@
     "shape": "voice.person",
     "value": "we-you, you-only or third",
     "check": "pronoun scan",
-    "defaults": "defaults/lexicon.person/"
+    "defaults": "defaults/lexicon.person/",
+    "requirements": [
+      {
+        "check": "copy.voice-derived"
+      },
+      {
+        "check": "copy.derived-upstream"
+      },
+      {
+        "check": "copy.entries"
+      },
+      {
+        "check": "lexicon.record"
+      }
+    ]
   },
   "tighten": []
 }

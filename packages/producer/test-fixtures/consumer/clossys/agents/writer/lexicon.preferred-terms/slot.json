@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/identity.verbal.voice",
@@ -69,7 +70,21 @@
     "shape": "voice.preferred-terms",
     "value": "map avoid to use",
     "check": "deterministic",
-    "defaults": "defaults/lexicon.preferred-terms/"
+    "defaults": "defaults/lexicon.preferred-terms/",
+    "requirements": [
+      {
+        "check": "copy.voice-derived"
+      },
+      {
+        "check": "copy.derived-upstream"
+      },
+      {
+        "check": "copy.entries"
+      },
+      {
+        "check": "lexicon.record"
+      }
+    ]
   },
   "tighten": []
 }

@@ -960,6 +960,25 @@ function currentSlotWrite(file: string, verb: string, at: string, change: (slot:
   return { before, after: serializeSlot(next), slot: next };
 }
 
+/**
+ * Rewrites one slot/2 slot.json through `change` (`clossys migrate contracts`: family, contract.requirements and
+ * contract.fixture seeded from package data) with one `slot` event of verb migrate carrying `fields` (R14.1).
+ * False when the change leaves the bytes as they are; refuses a slot/1 doc and a package-synced slot.
+ */
+export function writeSlotSeed(consumer: string, agent: ModelAgent, id: string, change: (slot: Slot) => Slot, input: { at: string; fields: Readonly<Record<string, unknown>> }, given?: WriteProvenance): boolean {
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+    const current = currentSlotWrite(slotFile(entry.dir), "migrate contracts", input.at, change);
+    if (!current) throw new Error(`migrate contracts refused: ${agent}/${id} slot.json is not a clossys.slot/2`);
+    if (current.before === current.after) return false;
+    const who = provenance({ verb: "migrate", by: "planner", skill: actionContractPath("producer", "migrate") }, given);
+    readLedger(entry.dir, "slot");
+    replaceFile(slotFile(entry.dir), current.after);
+    appendEvent(entry.dir, "slot", ledgerEvent("slot", input.at, who, { ...input.fields }, [recordState(entry.dir, "slot.json")]));
+    return true;
+  });
+}
+
 /** Mark a slot not needed: slot.json `notNeeded {reason, since, decidedBy}` (slot/2: `contract.notNeeded`, status parked), and any pin.json removed. */
 export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded, given?: WriteProvenance & { readonly at?: string }): SlotDoc {
   const { entry } = located(consumer, agent, id);

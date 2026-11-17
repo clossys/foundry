@@ -10,6 +10,8 @@
  * - `package:<name>-v<n>.<ext>`, a package default that is not installed under the slot's package defaults folder;
  * - a record of a Writer record slot that neither the pin map nor a package default lists;
  * - a queue or ledger entry (`producer/queue.<kind>` or `producer/ledger.<loop>` with `record`) that does not exist;
+ * - a check record (`producer/checks.<name>` with record `<agent>/<slot>`, the pin's CHOOSE scorecard) whose
+ *   `.clossys/checks/<agent>/<slot>/<name>.json` does not exist;
  * - `facts` when `clossys/facts.json` does not exist.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -40,6 +42,11 @@ export function danglingReason(root: string, ref: Ref): string | undefined {
     const folder = join(root, "clossys", "agents", "producer", slotId);
     if (ref.record === undefined) return isDir(folder) ? undefined : `${ref.to}: no such queue or ledger folder`;
     return existsSync(join(folder, "entries", `${ref.record}.json`)) ? undefined : `${ref.to}#${ref.record}: no such entry`;
+  }
+  if (agent === "producer" && /^checks\.[a-z][a-z0-9-]*$/.test(slotId)) {
+    if (ref.record === undefined || !/^[a-z]+\/[a-z0-9][a-z0-9.-]*$/.test(ref.record)) return `${ref.to}: a check record names <agent>/<slot> as its record`;
+    const file = join(root, ".clossys", "checks", ...ref.record.split("/"), `${slotId.slice("checks.".length)}.json`);
+    return existsSync(file) ? undefined : `${ref.to}#${ref.record}: no such check record`;
   }
   if (parsed.packageDefault) {
     const name = parsed.candidate!;

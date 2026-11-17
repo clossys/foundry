@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.ledger/1",
+  "events": [
+    {
+      "op": "slot",
+      "at": "2026-11-17T00:00:00Z",
+      "by": "planner",
+      "verb": "migrate",
+      "skill": {
+        "path": "packages/producer/actions/migrate/action.json",
+        "sha256": "8b07b093fc4ab43ae85ccd8c821f1d2cc02970225d90a986b2521806d9024342"
+      },
+      "model": "none",
+      "tier": "none",
+      "migration": "contracts",
+      "changed": [
+        "requirements",
+        "fixture"
+      ],
+      "records": [
+        {
+          "file": "slot.json",
+          "sha256": "32bab623eab9243ec5ff15d6431d36d10cf8ce7d8d3d2d6c6c0cc4b5fa155cec"
+        }
+      ]
+    }
+  ]
+}

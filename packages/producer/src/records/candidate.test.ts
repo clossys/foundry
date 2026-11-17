@@ -81,7 +81,7 @@ describe("candidate header (clossys.candidate/1)", () => {
 
   it("B11: the Producer package default dir is where the package ships its loops (loops/<slot-id>/)", () => {
     const repo = join(PRODUCER_ROOT, "..", "..");
-    for (const loop of ["loop.fill", "loop.refine", "loop.release", "loop.audit"]) {
+    for (const loop of ["loop.fill", "loop.refine", "loop.create", "loop.choose", "loop.release", "loop.audit"]) {
       const dir = packageDefaultDir(repo, "producer", loop);
       expect(existsSync(dir), dir).toBe(true);
       expect(readdirSync(dir), loop).toContain(`${loop.slice(5)}-v1.json`);

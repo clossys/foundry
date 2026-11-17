@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/identity.verbal.voice",
@@ -51,7 +52,21 @@
     "shape": "voice.energy",
     "value": "1-5 scale + max ! per 1k words",
     "check": "proxy deterministic",
-    "defaults": "defaults/lexicon.energy/"
+    "defaults": "defaults/lexicon.energy/",
+    "requirements": [
+      {
+        "check": "copy.voice-derived"
+      },
+      {
+        "check": "copy.derived-upstream"
+      },
+      {
+        "check": "copy.entries"
+      },
+      {
+        "check": "lexicon.record"
+      }
+    ]
   },
   "tighten": []
 }

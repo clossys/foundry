@@ -20,6 +20,7 @@ import { CONFIRMED_BY, OWNER_WORDS_REF, OWNER_WORDS_REF_FORM, PIN_BASES, SLOT_AG
 import { listSlots, readSlotEntry } from "../records/slots.js";
 import { GuardRefusal, writeConfirm, writeNotNeeded, writePin, type WriteGuard } from "../records/slot-write.js";
 import "../constitution/guard.js"; // registers the write guard's runner
+import { pinGate, writeScorecard } from "../constitution/pin-gate.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
 import { discoverRoot } from "./root.js";
@@ -35,7 +36,10 @@ export const PIN_USAGE = "Usage: clossys pin <agent>/<slot> <candidate-id> [--by
   + "             agent:<seat> decider and records confirmed {by, ref, at}. --ref names where the owner's words are.\n"
   + "  A pin refuses on any finding of a constitution check whose rules.json guard lists pin (pick for an agent:<seat>\n"
   + "  pick) about the pinned candidate, pin.json or slot.json: an uncertified candidate (R05), an unresolved citation\n"
-  + "  (R07.1) or a region no frame composes (R07.6) is never pinned.";
+  + "  (R07.1) or a region no frame composes (R07.6) is never pinned.\n"
+  + "  A clossys.slot/2 pin also needs the candidate's submit record (its sha256 the bytes now; a file placed by hand\n"
+  + "  is refused) and a passing verdict (certify); it writes the ranked .clossys/checks/<agent>/<slot>/scorecard.json\n"
+  + "  and cites it in the pin's refs (producer/checks.scorecard).";
 export const DECISIONS_USAGE = "Usage: clossys decisions [--root <dir>] [--json]\n"
   + "  every slot as pinned | not-needed | open, with counts";
 
@@ -210,16 +214,22 @@ function runTargetPin(root: string, agent: string, target: string, candidateId: 
   if (answer && !existsSync(join(root, "clossys", "agents", answer.to, "entries", `${answer.record}.json`))) {
     return { exitCode: 1, message: `pin refused: ${answer.to}#${answer.record} is not a queue entry` };
   }
-  if (agent === "publisher" && isReleaseSlot(agent, slotId) && record === undefined) {
+  const releasePin = agent === "publisher" && isReleaseSlot(agent, slotId) && record === undefined;
+  if (releasePin) {
     // A release pin marks a version ready (flows.md F8): refused unless release.ready would pass for it. The
     // owner's entry must name this candidate with the sha256 of its bytes now (ready.ts answerIssues).
     const findings = readyFindings(root, publicationOf(root, slotId), { candidate, decidedBy: by, basis, at: toIsoZ(at)! });
     if (findings.length) return { exitCode: 1, message: `pin refused: ${agent}/${slotId} ${candidate} is not ready:\n${findings.map(row => `  ${row.check ?? "release.ready"}  ${row.subject}  ${row.detail}`).join("\n")}`, output: { findings } };
   }
+  // CHOOSE gate (foundry-build-0048 U3): a submitted candidate with a passing verdict, or no pin; the ranked scorecard is cited.
+  // A release slot's verdict is the release.ready check above (owner answer bound to the manifest's bytes).
+  const gate = pinGate(root, join(root, "clossys"), agent, slotId, candidate, toIsoZ(at)!, releasePin ? { verdict: "release.ready" } : {});
+  if (gate.refusals.length) return { exitCode: 1, message: `pin refused: ${agent}/${target} ${candidate}:\n${gate.refusals.map(line => `  ${line}`).join("\n")}`, output: { schema: "clossys.pin-refused/1", slot: `${agent}/${slotId}`, refusals: gate.refusals, scorecard: gate.scorecard } };
   try {
+    const scorecard = writeScorecard(root, agent, slotId, gate.scorecard);
     const doc = writeTargetPin(root, {
       agent: agent as AgentId, slotId, ...(record !== undefined ? { record } : {}),
-      candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: answer ? [answer] : [], createdBy: cliActor("clossys pin"),
+      candidate, decidedBy: by, basis, at: toIsoZ(at)!, refs: [...(answer ? [answer] : []), scorecard], createdBy: cliActor("clossys pin"),
     });
     const pinned = doc.kind === "pin-map" ? doc.records[record!]! : doc;
     return { exitCode: 0, message: `${agent}/${target}: pinned ${pinned.candidate} (${pinned.sha256.slice(0, 12)}), decided by ${pinned.decidedBy} (${pinned.basis})`, output: doc };

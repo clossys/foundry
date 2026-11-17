@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/identity.verbal.voice",
@@ -51,7 +52,21 @@
     "shape": "voice.avoid-terms",
     "value": "term list (absorbs the quoted words from Director voice Never)",
     "check": "deterministic",
-    "defaults": "defaults/lexicon.avoid-terms/"
+    "defaults": "defaults/lexicon.avoid-terms/",
+    "requirements": [
+      {
+        "check": "copy.voice-derived"
+      },
+      {
+        "check": "copy.derived-upstream"
+      },
+      {
+        "check": "copy.entries"
+      },
+      {
+        "check": "lexicon.record"
+      }
+    ]
   },
   "tighten": []
 }

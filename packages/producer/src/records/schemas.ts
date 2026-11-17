@@ -602,6 +602,17 @@ export const SLOT_CONTRACT_SCHEMA: JsonSchema = {
     references: { type: "array", items: { $ref: "#/$defs/referenceRef" } },
     checkSuite: { type: "string", minLength: 1 },
     specimenKind: { enum: ["visual", "text", "data", "media", "flow"] },
+    requirements: {
+      type: "array",
+      description: "The requirement checks CREATE must pass, merged by check id over the standard's (records/standards.ts resolveRequirements); `clossys migrate contracts` seeds every check of the slot's standard.",
+      items: {
+        type: "object",
+        required: ["check"],
+        additionalProperties: false,
+        properties: { check: { type: "string", minLength: 1 }, params: { type: "object" } },
+      },
+    },
+    fixture: { type: "object", description: "The sample the certifier fits a candidate to (R05.1): an element-preview/1 fixture for a mounted element (records/slot-model/validate.ts fixtureShapeIssues)." },
   },
 };
 

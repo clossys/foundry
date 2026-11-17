@@ -12,7 +12,7 @@ import { loadRecipes, produceIssues, recipesFor, type Recipe } from "../../recor
 import type { ModelAgent } from "../../records/slot-model/index.js";
 import { modelExists, readModelText } from "../../records/slots.js";
 import {
-  exemplarIssues, ledgerEvents, loadStandards, readStandardPolicy, requirementIssues, seedIssues, standardFits, standardFor, tasteIssues,
+  exemplarIssues, ledgerEvents, loadStandards, readStandardPolicy, requirementIssues, seedIssues, standardFits, standardFor, targetKindOf, tasteIssues,
   type Standard, type StandardPolicy,
 } from "../../records/standards.js";
 import { criterionIds } from "../criteria/core/catalog.js";
@@ -53,12 +53,13 @@ const slotRow = (check: string, slot: SlotRecord, reason: string, path = `${slot
   ({ rule: "R15", check, agent: slot.agent, slot: slot.id, ...(candidate ? { candidate } : {}), reason, path });
 
 /** The slot.json fields R15 reads, when slot.json parsed. */
-function slotFields(slot: SlotRecord): { kind?: string; standard?: string; contract?: unknown } | undefined {
+function slotFields(slot: SlotRecord): { kind?: string; standard?: string; target?: string; contract?: unknown } | undefined {
   const doc = slotDoc(slot);
   if (!isObject(doc)) return undefined;
   return {
     ...(typeof doc.kind === "string" ? { kind: doc.kind } : {}),
     ...(typeof doc.standard === "string" ? { standard: doc.standard } : {}),
+    ...((target => target ? { target } : {})(targetKindOf(slot.slot?.value))),
     contract: doc.contract,
   };
 }
@@ -74,8 +75,8 @@ export const r15_1: Check = ctx => {
     const standard = standardFor(world.standards, slot.agent, fields.standard);
     if (!standard) { rows.push(slotRow("R15.1", slot, `standard ${fields.standard} does not exist under packages/${slot.agent}/standards/`)); continue; }
     if (!standard.doc) continue; // invalid standard: R15.2
-    if (!fields.kind || !standardFits(standard.doc, fields.kind, fields.contract)) {
-      rows.push(slotRow("R15.1", slot, `standard ${fields.standard} serves ${standard.doc.kinds.join(", ")}, not this slot's kind ${fields.kind ?? "(none)"}${isObject(fields.contract) && typeof fields.contract.kind === "string" ? `/${fields.contract.kind}` : ""}`));
+    if (!fields.kind || !standardFits(standard.doc, fields.kind, fields.contract, fields.target)) {
+      rows.push(slotRow("R15.1", slot, `standard ${fields.standard} serves ${standard.doc.kinds.join(", ")}, not this slot's kind ${fields.target ?? fields.kind ?? "(none)"}${isObject(fields.contract) && typeof fields.contract.kind === "string" ? `/${fields.contract.kind}` : ""}`));
     }
   }
   return rows;

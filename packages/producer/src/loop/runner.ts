@@ -35,11 +35,12 @@ import type { AgentId, Decider, DeciderVerb, Iso, LedgerEntry, LoopStep, LoopVer
 import { RUN_BY, RUN_CLI, entryName, producerVersion, raiseEntry, routeFindings, type Finding, type Raise } from "./route.js";
 import { dependantsOf, fillNames, MissingSkillError, nextFillSlot, readSubject, refOf, skillFor, slotCandidates, slotVars, stepArgv, whenMatches, type SlotSubject } from "./slots.js";
 import {
-  AGENT_PICK_VERB, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
+  AGENT_PICK_VERB, CANDIDATES_CERTIFIED, CANDIDATE_NAME, ENTRY_NAME, EXIT_CHECKS, LOOP_SUBJECT, LOOP_TRIGGERS, OWNER_OF_SLOT, OWNER_PICK_RAISE, PUBLICATION_ID, RELEASE_READY, RUN_ID,
   SLOT_REF, TRIGGER_CODE, TRIGGER_KINDS, VERIFIED_CHECKS, ledgerOf, loopStem, type LoopName,
 } from "./names.js";
 import { loadLoopVersion, type LoadedLoop } from "./version.js";
 import { checkReleaseReady } from "../release/ready.js";
+import { pinGate } from "../constitution/pin-gate.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -243,6 +244,8 @@ function triggerOf(loop: LoopName, input: StartInput, subject: SlotSubject | und
   if (loop === "loop.release") return "T8";
   if (loop === "loop.audit") return "T6";
   if (loop === "loop.fill") return from ? "T4" : "T2";
+  // CREATE and CHOOSE with no entry: a dependant marked needs-refresh (T7), else the slot's starter fill (T2).
+  if ((loop === "loop.create" || loop === "loop.choose") && !from) return subject?.slot.status === "needs-refresh" ? "T7" : "T2";
   if (from) return from.queue === "queue.fix" && from.createdBy.actor === "owner" ? "T5" : "T6";
   return subject?.slot.status === "needs-refresh" ? "T7" : "T3";
 }
@@ -423,6 +426,17 @@ export function verifyCheck(ctx: { readonly root: string; readonly state: RunSta
     const ready = checkReleaseReady(root, pub);
     if (ready.status === "fail") return { ok: false, why: `${RELEASE_READY}: ${ready.findings.map(row => `${row.subject} ${row.detail}`).join("; ")}` };
     return { ok: true };
+  }
+  if (name === CANDIDATES_CERTIFIED) {
+    if (!state.subject) return { ok: false, why: `${CANDIDATES_CERTIFIED}: the run has no slot` };
+    const { agent, slotId } = state.subject;
+    const want = readSubject(root, agent, slotId)?.slot.family?.options ?? 1;
+    const { scorecard } = pinGate(root, join(root, "clossys"), agent, slotId, "", state.startedAt);
+    const passing = scorecard.candidates.filter(row => row.submitted && row.certified);
+    if (passing.length >= want) return { ok: true };
+    const failing = scorecard.candidates.filter(row => !(row.submitted && row.certified))
+      .map(row => `${row.candidate} (${!row.submitted ? "no matching submit record" : row.reasons.map(reason => `[${reason.code}] ${reason.message}`).join("; ")})`);
+    return { ok: false, why: `${CANDIDATES_CERTIFIED}: ${agent}/${slotId} holds ${passing.length} of ${want} submitted, certified candidates${failing.length ? `; not passing: ${failing.join("; ")}` : ""}` };
   }
   return { ok: false, why: `${name} is not a check clossys run computes` };
 }

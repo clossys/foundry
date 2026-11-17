@@ -16,6 +16,7 @@
     "version": "0.1.0"
   },
   "createdAt": "2026-11-17T00:00:00Z",
+  "updatedAt": "2026-11-17T00:00:00Z",
   "refs": [
     {
       "to": "director/advantage.proposition.promise",
@@ -118,7 +119,23 @@
     "modes": [
       "light"
     ],
-    "tier": "scale"
+    "tier": "scale",
+    "requirements": [
+      {
+        "check": "derive.director"
+      },
+      {
+        "check": "token.dtcg"
+      },
+      {
+        "check": "source.ref"
+      }
+    ]
   },
-  "tighten": []
+  "tighten": [],
+  "family": {
+    "options": 1,
+    "varyOn": null,
+    "values": []
+  }
 }

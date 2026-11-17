@@ -30,7 +30,8 @@ describe("Director interview skill", () => {
     expect(section("Owner words are evidence")).toMatch(/verbatim[\s\S]*source: user[\s\S]*Informs:/);
     const loop = section("Loop");
     expect(loop).toMatch(/Pin only on an explicit yes/);
-    expect(loop).toContain("npx clossys pin director/<id> <name>-v<N> --by owner --basis picked");
+    expect(loop).toContain("npx clossys pin director/<id> <name>-v<N> --by owner:queue.pick#<entry id>");
+    expect(skill).not.toMatch(/--basis picked/);
     expect(skill).not.toMatch(/--basis (?:bulk|planner|agent)\b/);
   });
 

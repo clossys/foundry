@@ -231,15 +231,36 @@ export function standardFor(standards: readonly Standard[], agent: string, id: s
   return standards.find(standard => standard.agent === agent && standard.id === id);
 }
 
-/** A slot's kind as a standard matches it: `kind`, or `kind/<contract.kind>` when the contract names one. */
-export function slotKinds(kind: string, contract: unknown): string[] {
-  const sub = isRecord(contract) && typeof contract.kind === "string" ? contract.kind : undefined;
-  return sub ? [`${kind}/${sub}`, kind] : [kind];
+/**
+ * The standard kinds a current (slot/2) target kind is served by, beyond the target kind itself. The
+ * reader folds `copy`, `voice` and `prose` into the `strings` family, so a strings standard names the
+ * sub-kind each target kind realises (`voice` is a lexicon, `prose` a narrative, `copy` a passage,
+ * pattern or string); `layout` and `chrome` are pages and `release` a publication.
+ */
+export const TARGET_STANDARD_KINDS: Readonly<Record<string, readonly string[]>> = {
+  voice: ["strings/lexicon"], prose: ["strings/narrative"], copy: ["strings/passage", "strings/pattern", "strings/string"],
+  layout: ["page"], chrome: ["page"], release: ["publication"],
+};
+
+/** The current target kind of a stored slot.json (`copy`, `element/token`), or undefined for the old format. */
+export function targetKindOf(value: unknown): string | undefined {
+  return isRecord(value) && value.schema === "clossys.slot/2" && typeof value.kind === "string" ? value.kind : undefined;
 }
 
-/** Whether a standard serves a slot of `kind` with `contract` (R15.1): one of its kinds is the slot's kind or kind/sub. */
-export function standardFits(doc: Pick<StandardDoc, "kinds">, kind: string, contract: unknown): boolean {
-  const wanted = slotKinds(kind, contract);
+/**
+ * A slot's kind as a standard matches it: `kind`, or `kind/<contract.kind>` when the contract names one,
+ * plus the current target kind and the standard kinds it is served by (TARGET_STANDARD_KINDS).
+ */
+export function slotKinds(kind: string, contract: unknown, target?: string): string[] {
+  const sub = isRecord(contract) && typeof contract.kind === "string" ? contract.kind : undefined;
+  const out = sub ? [`${kind}/${sub}`, kind] : [kind];
+  if (target !== undefined) for (const entry of [target, ...(TARGET_STANDARD_KINDS[target] ?? [])]) if (!out.includes(entry)) out.push(entry);
+  return out;
+}
+
+/** Whether a standard serves a slot of `kind` with `contract` (R15.1): one of its kinds is the slot's kind, kind/sub or target kind. */
+export function standardFits(doc: Pick<StandardDoc, "kinds">, kind: string, contract: unknown, target?: string): boolean {
+  const wanted = slotKinds(kind, contract, target);
   return doc.kinds.some(entry => wanted.includes(entry));
 }
 

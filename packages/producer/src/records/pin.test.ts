@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -28,6 +28,13 @@ function world() {
       const file = candidatePath(root, agent, slotId, name);
       mkdirSync(dirname(file), { recursive: true });
       return writeCandidateFile(file, serializeCandidate(name, header, content));
+    },
+    /** Records a submit event for `name` at `sha256` in the slot ledger (what the candidates verb writes). */
+    submit(agent: AgentId, slotId: string, name: string, sha256: string): void {
+      const file = join(slotDir(root, agent, slotId), "ledger.json");
+      let events: unknown[] = [];
+      try { events = JSON.parse(readFileSync(file, "utf8")).events; } catch { /* no ledger yet */ }
+      put(file, JSON.stringify({ events: [...events, { op: "submit", at, by: "planner", verb: "submit", name, sha256 }] }));
     },
     packageDefault(agent: AgentId, slotId: string, name: string): string {
       const header = buildCandidateHeader({ agent, slotId, name, createdBy: candidateCreatedBy(root, { actor: "package", agent }), createdAt: at, source: { kind: "package-default", ref: [] }, packageDefault: true });
@@ -102,12 +109,14 @@ describe("clossys.pin/2 rules", () => {
     expect(toIsoZ("yesterday")).toBeUndefined();
   });
 
-  it("the pin verb writes pin/2 for a clossys.slot/2 slot, and never invents an owner basis", async () => {
+  it("the pin verb never invents an owner basis, and its CHOOSE gate refuses an uncertified Designer candidate", async () => {
+    // The certified owner-form pin itself runs on a fixture consumer copy (constitution/pin-gate.test.ts).
     const w = world();
     mkdirSync(join(w.root, "clossys"), { recursive: true });
     writeFileSync(join(w.root, "clossys", "clossys.config.ts"), "export default {};\n");
     w.slot("designer", "sections.hero");
     const sha = w.candidate("designer", "sections.hero", "hero-v1.json");
+    w.submit("designer", "sections.hero", "hero-v1.json", sha);
     const bare = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", "owner", "--at", AT], w.root, false);
     expect(bare.exitCode).toBe(1);
     expect(bare.message).toMatch(/names no queue answer/);
@@ -116,10 +125,10 @@ describe("clossys.pin/2 rules", () => {
     const missing = await runPinCli(["designer/sections.hero", "hero-v2.json", "--by", "planner", "--at", AT], w.root, false);
     expect(missing.message).toMatch(/no candidate hero-v2.json/);
     w.queueEntry("pick", QUEUE_ID);
-    const ok = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT], w.root, false);
-    expect(ok.exitCode).toBe(0);
-    const pin = w.readJson("designer/sections.hero/pin.json");
-    expect(pin).toMatchObject({ schema: "clossys.pin/2", sha256: sha, basis: "picked", decidedBy: `owner:queue.pick#${QUEUE_ID}`, refs: [answers], createdBy: { actor: "code", cli: "clossys pin" } });
-    expect(pinIssues(pin, { agent: "designer", slotId: "sections.hero" })).toEqual([]);
+    const refused = await runPinCli(["designer/sections.hero", "hero-v1.json", "--by", `owner:queue.pick#${QUEUE_ID}`, "--at", AT], w.root, false);
+    expect(refused.exitCode).toBe(1);
+    expect(refused.message).toMatch(/hero-v1\.json has no passing verdict: \[invalid\] slot sections\.hero has no known kind; \[no-standard\]/);
+    expect(refused.output).toMatchObject({ schema: "clossys.pin-refused/1", slot: "designer/sections.hero", scorecard: { candidates: [{ rank: 1, candidate: "hero-v1.json", sha256: sha, submitted: true, certified: false }] } });
+    expect(existsSync(join(w.root, "clossys", "agents", "designer", "sections.hero", "pin.json"))).toBe(false);
   });
 });

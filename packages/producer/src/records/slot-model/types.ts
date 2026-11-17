@@ -166,6 +166,8 @@ export interface SlotDoc {
   readonly options?: typeof OPTION_COUNTS[number];
   /** The axis candidates differ on (e.g. `tone`); required when options > 1. Each candidate tags its value as `vary: {"<axis>": "<value>"}`. */
   readonly varyOn?: string;
+  /** The option family as slot data (a slot/2 `family`): readers take it before the option table. */
+  readonly family?: { readonly options: typeof OPTION_COUNTS[number]; readonly varyOn: string | null; readonly values: readonly string[]; readonly class?: string };
   /** A consumer extension leaf (R01.14): listed in ia.json `extensions`, under a Foundry L1. */
   readonly extension?: boolean;
 }

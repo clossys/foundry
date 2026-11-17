@@ -4,6 +4,7 @@
  * Empty is red: an assertion that judged nothing (`evidence` 0) is red as vacuous, never green.
  */
 import { validateValue } from "../pipeline/schema.js";
+import { SCORECARD_REF_TO } from "../constitution/pin-gate.js";
 import { EXEMPLARS_MAX, EXEMPLARS_MIN } from "../records/standards.js";
 import type { ProbeFacts } from "./dogfood.js";
 import { refsIn, SLOT_REF, slotLeaves, treeLeaves, upstreamOf, type AgentModel, type ConformModel, type Edge, type LiveSlot } from "./model.js";
@@ -60,6 +61,17 @@ const sameList = (a: readonly unknown[], b: readonly unknown[]) => a.length > 0 
 const requirementsOf = (slot: LiveSlot): unknown[] => Array.isArray(slot.contract.requirements) ? slot.contract.requirements : [];
 /** At this many slot-id literals one module holds a fixed list, not a derivation. */
 export const FIXED_LIST_MIN = 5;
+
+/** Why a slot's `family` is not the slot/2 shape {options 1|2|3, varyOn, values}, or undefined when it is. */
+export function familyIssue(family: unknown): string | undefined {
+  if (!object(family)) return "no family {options, varyOn, values}";
+  const { options, varyOn, values } = family;
+  if (options !== 1 && options !== 2 && options !== 3) return `family.options ${JSON.stringify(options)} is not 1, 2 or 3`;
+  if (!Array.isArray(values) || values.some(value => typeof value !== "string")) return "family.values is not a list of strings";
+  if (options === 1) return varyOn === null && values.length === 0 ? undefined : "a one-option family varies on nothing (varyOn null, values [])";
+  if (typeof varyOn !== "string" || !varyOn) return `a ${options}-option family names no varyOn`;
+  return values.length === options ? undefined : `a ${options}-option family lists ${values.length} values`;
+}
 
 export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
   S1: agent => {
@@ -200,31 +212,35 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     evidence: agent.recipes.length,
   }),
   C1: agent => ({
-    rows: agent.live.filter(slot => !(object(slot.family) && ["options", "varyOn", "values"].every(key => Array.isArray((slot.family as Record<string, unknown>)[key]))))
-      .map(slot => `${slot.id}: no family {options, varyOn, values}`),
+    rows: agent.live.flatMap(slot => {
+      const issue = familyIssue(slot.family);
+      return issue ? [`${slot.id}: ${issue}`] : [];
+    }),
     evidence: agent.live.length,
   }),
   C2: (agent, model) => ({
     rows: agent.live.flatMap(slot => {
       const requirements = slot.contract.requirements;
       if (!Array.isArray(requirements) || !requirements.length) return [`${slot.id}: contract carries no requirements`];
-      const unknown = requirements.map(item => object(item) ? String(item.criterion ?? item.id ?? "") : String(item)).filter(id => !model.machinery.criteria.has(id));
-      return unknown.length ? [`${slot.id}: unregistered criteria ${unknown.join(", ")}`] : [];
+      const ids = requirements.map(item => object(item) && typeof item.check === "string" ? item.check : "");
+      const unknown = ids.filter(id => !model.machinery.criteria.has(id));
+      return unknown.length ? [`${slot.id}: unregistered requirement checks ${unknown.map(id => id || "(no check)").join(", ")}`] : [];
     }),
     evidence: agent.live.length,
   }),
-  C3: (agent, model) => {
-    const pinned = pins(agent);
-    return {
-      rows: [...ruleRow(model, "R05.2", agent.agent), ...pinned.filter(slot => !(object(slot.pin!.verdict) && (slot.pin!.verdict as Record<string, unknown>).pass === true))
-        .map(slot => `${slot.id}: pinned without a passing verdict`)],
-      evidence: pinned.length,
-    };
+  C3: (agent, model, facts) => {
+    // The real path: `clossys pin` run on a temporary consumer copy with a hand-placed candidate (dogfood.ts probePinGate).
+    const rows = ruleRow(model, "R05.2", agent.agent);
+    const probe = facts?.pinGate?.[agent.agent];
+    if (probe === undefined) return { rows: [...rows, "pin was not probed"], evidence: 0 };
+    if (typeof probe === "string") return { rows: [...rows, probe], evidence: 0 };
+    return { rows: [...rows, ...(probe.accepted ? [`pin ${probe.target} ${probe.candidate} accepted a hand-placed candidate with no submit record (exit 0)`] : [])], evidence: agent.live.length ? 1 : 0 };
   },
   C4: agent => {
     const pinned = pins(agent);
     return {
-      rows: pinned.filter(slot => !(typeof slot.pin!.basis === "string" && /scorecard/.test(slot.pin!.basis))).map(slot => `${slot.id}: pin basis cites no scorecard`),
+      rows: pinned.filter(slot => !(Array.isArray(slot.pin!.refs) && slot.pin!.refs.some(ref => object(ref) && ref.to === SCORECARD_REF_TO)))
+        .map(slot => `${slot.id}: pin cites no scorecard (${SCORECARD_REF_TO})`),
       evidence: pinned.length,
     };
   },
