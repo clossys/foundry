@@ -1,13 +1,17 @@
 "use client";
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import { prepareRegisteredRoute } from "./registered-route-binding.js";
+import { prepareRegisteredRoutePage } from "./registered-route-binding.js";
 import type { PreparedRegisteredPage, RegisteredRoutePageProps } from "./registered-route-binding.js";
 import { isRegionPageRouteRegistration } from "../core/route-identities.js";
 import { normalizeRegionPageRoute } from "../core/route-identities.js";
 import type { RegionPageRouteRegistry } from "../core/route-registry.js";
-import type { RegisteredRouteRuntime } from "./registered-route-binding.js";
+import type { RegisteredPageHeaderLease, RegisteredRouteRuntime } from "./registered-route-binding.js";
+import { PageHeaderModule } from "@clossys/designer/shell";
 import { RegisteredPublicationOutlet } from "./registered-publication-outlet.js";
 import { registeredPublicationSnapshot } from "./registered-route-query.js";
+// Every registered route page holds its one Frame header lease here, by construction: the binder places
+// it in the Frame's main slot and the Frame keeps the header data without rendering a second lease.
+const leasePageHeader: RegisteredPageHeaderLease = header => <PageHeaderModule key="registered-page-header" id={header.id} header={{ ...header.data, ...(header.actions ? { actions: { render: header.actions.render } } : {}) }} />;
 const noSubscribe = () => () => {};
 const zeroRevision = () => 0;
 export function RegisteredRoutePage({ registry, routeId, useRuntime, renderActions, publication }: RegisteredRoutePageProps) {
@@ -30,7 +34,7 @@ export function StaticRegisteredRoutePage({ registry, routeId, useRuntime, rende
   let result: PreparedRegisteredPage | undefined, node: import("react").ReactNode, regions: ReturnType<NonNullable<PreparedRegisteredPage["renderRegions"]>> | undefined;
   try {
     if (runtime && failure === undefined) {
-      result = prepareRegisteredRoute(registry, routeId, runtime, renderActions);
+      result = prepareRegisteredRoutePage(registry, routeId, runtime, renderActions, leasePageHeader);
       if (publication && result.renderRegions) regions = result.renderRegions(runtime.cell);
       else if (result.status === "ready") node = result.assembly.render(runtime.cell);
     }

@@ -44,7 +44,7 @@ function fixture(options: { failingDescendant?: boolean } = {}) {
         renderers: { [content.renderer.id]: section, [frame.renderer.id]: input => {
           const header = input.pageHeader!;
           return <AppFrame brand={{ markSrc: "/mark.svg", wordmark: "Example", label: "Example workspace", ...header.brand }} navigation={{ tree: [], activeId: "", label: "Workspace" }} account={{ signedOutLabel: "Signed out", sections: [] }} commands={{ heading: "Commands", searchLabel: "Search commands", closeLabel: "Close", emptyMessage: "Empty", triggerLabel: "Commands", groups: [] }} onNavigate={() => {}}>
-            <PageHeaderModule id={header.id} header={{ ...header.data, actions: { render: header.actions!.render } }} />{input.slots.main}
+            {!header.leasedByPage && <PageHeaderModule id={header.id} header={{ ...header.data, actions: { render: header.actions!.render } }} />}{input.slots.main}
           </AppFrame>;
         } }, resolveContent: () => undefined },
       themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(profile, "layouts.stack", "stack.focus") }], assets: [] },

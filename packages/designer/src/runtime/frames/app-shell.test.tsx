@@ -9,6 +9,7 @@ import { DS_ATTR } from "../../catalog-core/provenance-attrs.js";
 import { specimenDataset } from "../../specimen/specimen-dataset.js";
 import { surfaceRuntimeRenderers } from "../index.js";
 import { appShellProps, guardedNavigate } from "./app-shell.js";
+import { PageHeaderModule } from "../../shell/FrameSlots.js";
 import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
 import { shellCopyFixtureResolver } from "../../frames/__fixtures__/shell-copy.js";
 
@@ -109,6 +110,19 @@ describe("frames.app-shell runtime renderer", () => {
   it("takes the page header from the leased PageHeaderModule only", async () => {
     render(<>{entry.render(input({ pageHeader: { id: "route.home", data: { title: "Leased title" }, module: { package: "@clossys/designer/shell", export: "PageHeaderModule" } } as unknown as RuntimeRenderInput<ReactNode>["pageHeader"] }))}</>);
     await waitFor(() => expect(document.querySelector('[data-application-frame-region="header"]')).toHaveTextContent("Leased title"));
+  });
+
+  it("renders no second lease when the page composition already holds it (leasedByPage)", async () => {
+    const header = { id: "route.home", data: { title: "Page leased title" }, module: { package: "@clossys/designer/shell", export: "PageHeaderModule" }, leasedByPage: true } as unknown as RuntimeRenderInput<ReactNode>["pageHeader"];
+    const base = input({ pageHeader: header });
+    // Without the page's own lease the frame shows no leased title: it did not lease.
+    render(<>{entry.render(base)}</>);
+    await waitFor(() => expect(shell()).toBeInTheDocument());
+    expect(document.querySelector('[data-application-frame-region="header"]')?.textContent ?? "").not.toContain("Page leased title");
+    cleanup();
+    // The page's single lease inside main registers once; a frame lease beside it would throw "already leased".
+    render(<>{entry.render({ ...base, slots: { main: [<PageHeaderModule key="lease" id="route.home" header={{ title: "Page leased title" }} />, <p key="body">Route body</p>] } })}</>);
+    await waitFor(() => expect(document.querySelector('[data-application-frame-region="header"]')).toHaveTextContent("Page leased title"));
   });
 });
 

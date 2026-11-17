@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { isValidElement, type ReactNode } from "react";
 import { FrameStage, frameSectionRefKey } from "@clossys/designer/frames";
 import { liveDesignerQueries } from "./registered-route-provider-context.js";
 import { prepareRuntimeAssembly, resolve, libraryHash, runtimeHash, runtimeSnapshot, runtimeSourceFindings } from "@clossys/designer/catalog";
@@ -48,19 +48,27 @@ export type PreparedRegisteredPage = PreparedStaticRoute | ({ readonly status: "
 const only = (value: object, keys: readonly string[]) => Object.keys(value).every(key => keys.includes(key));
 /** The closed binder owns page composition. Hosts cannot return a body node,
  * page callback, Layout port, replacement header or old page wrapper. */
+/** The registered route page's own static Frame header lease (a PageHeaderModule element). The
+ * binder places it first in the Frame's main slot and marks the header leasedByPage, so the page
+ * composition holds the route's one lease by construction and the Frame renders no second one. */
+export type RegisteredPageHeaderLease = (header: NonNullable<RuntimeRenderInput<ReactNode>["pageHeader"]>) => ReactNode;
 export function prepareRegisteredRoute(registry: RouteRegistry, routeId: string, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions): PreparedRegisteredRoute;
 export function prepareRegisteredRoute(registry: RegionPageRouteRegistry, routeId: string, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions): PreparedRegisteredPage;
 export function prepareRegisteredRoute(registry: RouteRegistry | RegionPageRouteRegistry, routeId: string, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions): PreparedRegisteredPage;
 export function prepareRegisteredRoute(registry: RouteRegistry | RegionPageRouteRegistry, routeId: string, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions): PreparedRegisteredPage {
+  return prepareRegisteredRoutePage(registry, routeId, runtime, renderActions);
+}
+/** Package-internal (not a public export): the registered route page passes its own static header lease. */
+export function prepareRegisteredRoutePage(registry: RouteRegistry | RegionPageRouteRegistry, routeId: string, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions, leaseHeader?: RegisteredPageHeaderLease): PreparedRegisteredPage {
   try {
     const route = registry.routes.find(row => row.routeId === routeId);
     if (route && isRegionPageRouteRegistration(route)) {
       if (!runtime.page?.options.publication || runtime.page.options.routeId !== routeId || runtimeHash(runtime.page.options.publication.publication) !== runtimeHash(registry.publication)) return { status: "refused", findings: ["Region page requires the same persistent publication host"] };
       const lowered = normalizeRegionPageRoute(registry as RegionPageRouteRegistry, route);
       if (runtimeHash(runtime.page.options.page) !== runtimeHash(route.composition.binding) && runtimeHash(runtime.page.options.page) !== runtimeHash(lowered.composition.binding)) return { status: "refused", findings: ["Page loader session differs from the registered region page"] };
-      return prepareRegionStream(registry as RegionPageRouteRegistry, lowered, runtime, renderActions);
+      return prepareRegionStream(registry as RegionPageRouteRegistry, lowered, runtime, renderActions, leaseHeader);
     }
-    const result = prepareRoute(registry as RouteRegistry, routeId, runtime, renderActions);
+    const result = prepareRoute(registry as RouteRegistry, routeId, runtime, renderActions, undefined, undefined, leaseHeader);
     return { ...result, ...(runtime.page?.frameState() ? { routeState: runtime.page.frameState() } : {}) };
   } catch { return { status: "refused", findings: ["Invalid registered publication page inputs"] }; }
 }
@@ -68,7 +76,7 @@ const samePlacement = (section: import("../content/taxonomy.js").PageOutlinePlac
   (section.slot === scope.placement.slot || section.slot === "main" && scope.placement.slot === mainSlot) && section.index === scope.placement.index
   && runtimeHash(section.children ?? []) === runtimeHash(scope.placement.children ?? [])
   && (section.keys ? runtimeHash(section.keys) === runtimeHash(scope.keys) : section.key === undefined || section.key === scope.key);
-function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegistration, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions): PreparedRegisteredPage {
+function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegistration, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions, leaseHeader?: RegisteredPageHeaderLease): PreparedRegisteredPage {
   const page = runtime.page!, slot = registry.publication!.mainSlot, binding = route.composition.binding;
   const read = (reference: ContentRef) => { const current = page.read(reference); return current.status === "ready" ? current.content : reference.lazy || current.owned ? undefined : runtime.assembly.ports.resolveContent(staticContentReference(reference)); };
   const normalized = normalizeRepeatedSections(binding, read);
@@ -107,7 +115,7 @@ function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegi
         const chunkBinding: FlowInstanceBinding = { ...normalized.binding, layout: registry.publication!.layout, fills: { [slot]: fills }, body: { kind: "flow", source: { kind: "static" }, sections: fills.map((_, index) => ({ slot, index })) } };
         const chunkRoute = { ...route, composition: { ...route.composition, binding: chunkBinding } };
         const routes = registry.routes.map(row => row.routeId === route.routeId ? chunkRoute : normalizeRegionPageRoute(registry, row));
-        result = prepareRoute({ ...registry, routes }, route.routeId, runtime, renderActions, undefined, { ...normalized, binding: chunkBinding, scopes: scoped, keys, lazy });
+        result = prepareRoute({ ...registry, routes }, route.routeId, runtime, renderActions, undefined, { ...normalized, binding: chunkBinding, scopes: scoped, keys, lazy }, leaseHeader);
       }
     }
     chunks.push({ id: chunk.id, result });
@@ -131,7 +139,7 @@ function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegi
       const routes = registry.routes.map(row => row.routeId === route.routeId ? headerRoute : normalizeRegionPageRoute(registry, row));
       const references = [...Object.values(headerBinding.frame.content ?? {}), ...Object.values(headerBinding.frame.slotFills ?? {}).flatMap(current => Object.values(current.content))];
       const lazy = Object.fromEntries(references.flatMap(reference => { const value = normalized.lazy[contentReferenceKey(reference)]; return value ? [[contentReferenceKey(value), value]] : []; }));
-      regionsAssembly = prepareRoute({ ...registry, routes }, route.routeId, runtime, renderActions, undefined, { ...normalized, binding: headerBinding, scopes, keys: {}, lazy });
+      regionsAssembly = prepareRoute({ ...registry, routes }, route.routeId, runtime, renderActions, undefined, { ...normalized, binding: headerBinding, scopes, keys: {}, lazy }, leaseHeader);
       if (regionsAssembly.status === "refused") return regionsAssembly;
     }
   }
@@ -149,7 +157,7 @@ function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegi
 const plainDisplay = Symbol("plain display, never authenticated");
 const verifiedNode = Symbol("verified Node source operation");
 type PlainDisplayContext = { readonly token: typeof plainDisplay | typeof verifiedNode; readonly derivation?: Extract<PlainRegisteredRouteProjection["routes"][number], { kind: "derived-route-view" }>["derivation"] };
-function prepareRoute(registry: RouteRegistry, routeId: string, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions, display?: PlainDisplayContext, lowered?: Extract<RepeatedSectionsResult, { status: "ready" }>): PreparedStaticRoute {
+function prepareRoute(registry: RouteRegistry, routeId: string, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions, display?: PlainDisplayContext, lowered?: Extract<RepeatedSectionsResult, { status: "ready" }>, leaseHeader?: RegisteredPageHeaderLease): PreparedStaticRoute {
   try {
     if (!registry || "kind" in registry || "authentication" in registry) return { status: "refused", findings: ["Plain projections are not authenticated registries"] };
     if (display?.token === plainDisplay && (runtime.source || runtime.designerQuery || runtime.assembly.query)) return { status: "refused", findings: ["Plain display cannot accept a receipt or query proof"] };
@@ -244,7 +252,17 @@ function prepareRoute(registry: RouteRegistry, routeId: string, runtime: Registe
           navigate: (href: string) => href.startsWith("#") ? page.navigate(href) : value.host!.navigate(href),
           onCommandQueryChange: (query: string) => { void page.search(query).catch(() => {}); },
         } : value.host;
-        const next = { ...value, ...(host ? { host } : {}) }; capturedFrame = next; return originalFrame(next);
+        const next = { ...value, ...(host ? { host } : {}) }; capturedFrame = next;
+        if (!leaseHeader) return originalFrame(next);
+        // The registered route page holds its single static header lease (leaseHeader): the frame
+        // keeps the header data (leasedByPage) and renders no second lease.
+        const header = next.pageHeader;
+        if (!header) throw new TypeError("Registered route frame requires its page header");
+        const lease = leaseHeader(header);
+        // The lease must carry exactly this route's header id and data; it is never a replacement header.
+        const props = isValidElement<{ id?: unknown; header?: { title?: unknown } }>(lease) ? lease.props : undefined;
+        if (!props || props.id !== header.id || props.header?.title !== header.data.title) throw new TypeError("Registered page header lease differs from its route header");
+        return originalFrame({ ...next, pageHeader: { ...header, leasedByPage: true }, slots: { ...next.slots, main: [lease, ...(next.slots.main ?? [])] } });
       };
       if (!current.stage) return forward(current);
       const stage = current.stage;

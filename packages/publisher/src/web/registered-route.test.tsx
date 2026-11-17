@@ -15,6 +15,7 @@ import { labels as boardLabels } from "../../../designer/dist/studio/__fixtures_
 import { loadBuildCatalog, runtimeHash, resolve, runtimeAssemblyCells, libraryHash, runRuntimeAssemblyEvidence, prepareRuntimeAssembly } from "@clossys/designer/catalog";
 import { RegisteredRoutePage, RegisteredRouteProjectionPage, prepareRegisteredRoute, prepareRegisteredRouteFromNode, prepareRegisteredRouteProjection } from "./registered-route.js";
 import type { PlainRegisteredRouteProjection, RegisteredRouteRuntime } from "./registered-route.js";
+import { prepareRegisteredRoutePage } from "./registered-route-binding.js";
 import type { FlowInstanceBinding } from "../core/instance-binding.js";
 import { plainRouteProjectionRegistry } from "../core/route-projection.js";
 import { deriveRouteRuntimeBinding } from "../core/route-runtime.js";
@@ -76,7 +77,7 @@ function fixture(hostContent = false) {
         renderers: { [content.renderer.id]: () => <article aria-label="SYNTHETIC body">{compiled.module.Content!()}</article>, [frame.renderer.id]: input => {
           const header = input.pageHeader!;
           return <ShellCopyProvider resolver={resolveShellLabel}><AppFrame {...(hostContent ? { skipLabel: input.content["skip-link"]!.value as string, mainId: "app-main" } : {})} brand={{ markSrc: "/mark.svg", wordmark: "Example", label: "Example workspace", ...header.brand }} navigation={{ tree: [], activeId: "", label: "Workspace" }} account={{ signedOutLabel: "Signed out", sections: [] }} commands={{ heading: "Commands", searchLabel: "Search commands", closeLabel: "Close", emptyMessage: "Empty", triggerLabel: "Commands", groups: [] }} onNavigate={() => {}}>
-            <PageHeaderModule id={header.id} header={{ ...header.data, actions: { render: header.actions!.render } }} />{input.slots.main}
+            {!header.leasedByPage && <PageHeaderModule id={header.id} header={{ ...header.data, actions: { render: header.actions!.render } }} />}{input.slots.main}
           </AppFrame></ShellCopyProvider>;
         } }, resolveContent: () => undefined }, themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(profile, "layouts.stack", "stack.focus") }], assets: [] },
     instanceLibrary: { id: consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === "stack.focus" ? { library: consumer, leaf, config, headings: [], states: ["default"], renderer: source } : undefined, resolveContent: ref => ref },
@@ -137,6 +138,31 @@ describe("fixed registered route execution, explicitly synthetic selection proof
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     await userEvent.click(screen.getByRole("button", { name: "original:false:0" }));
     expect(screen.getByRole("button", { name: "original:false:1" })).toBeInTheDocument();
+  });
+  it("the registered route page supplies the Frame's one header lease; a bare binder call leaves the Frame its own", () => {
+    const { route, registry, runtime } = fixture();
+    const leases: Array<boolean | undefined> = [];
+    const renderers = Object.fromEntries(Object.entries(runtime.assembly.ports.renderers).map(([id, renderer]) => [id, (input: Parameters<typeof renderer>[0]) => {
+      if (input.pageHeader) leases.push(input.pageHeader.leasedByPage);
+      return renderer(input);
+    }]));
+    const observed = { ...runtime, assembly: { ...runtime.assembly, ports: { ...runtime.assembly.ports, renderers } } } satisfies RegisteredRouteRuntime;
+    render(<RegisteredRoutePage registry={registry} routeId={route.routeId} useRuntime={() => observed} renderActions={({ compact }) => <Action compact={compact} />} />);
+    expect(leases.length).toBeGreaterThan(0);
+    expect(new Set(leases)).toEqual(new Set([true]));
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    cleanup(); leases.length = 0;
+    const bare = prepareRegisteredRoute(registry, route.routeId, observed, ({ compact }) => <Action compact={compact} />);
+    expect(bare.status, JSON.stringify(bare)).toBe("ready");
+    if (bare.status === "ready") render(<>{bare.assembly.render(runtime.cell)}</>);
+    expect(new Set(leases)).toEqual(new Set([undefined]));
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    // A lease is never a replacement header: other markup or another header id is refused.
+    for (const lease of [() => <h1>SYNTHETIC replacement</h1>, () => <PageHeaderModule id="SYNTHETIC-other" header={{ title: "SYNTHETIC other" }} />]) {
+      const replaced = prepareRegisteredRoutePage(registry, route.routeId, observed, ({ compact }) => <Action compact={compact} />, lease);
+      expect(replaced.status).toBe("ready");
+      if (replaced.status === "ready") expect(() => replaced.assembly.render(runtime.cell)).toThrow(/lease differs/);
+    }
   });
   it("transports an explicit original host-content reference into the real AppFrame skip link", () => {
     const { route, registry, runtime } = fixture(true);

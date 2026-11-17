@@ -143,7 +143,7 @@
           },
           {
             "path": "packages/designer/src/catalog-core/runtime-ports.ts",
-            "sha256": "a57803847077519760f54df3277337f466bca2adb42c3e92aed53ea584f1ef45"
+            "sha256": "3dec329c3e54be3d6871f0baa8eccb19c909cd74441ef84d1c4b0f5f29536b36"
           },
           {
             "path": "packages/designer/src/catalog-core/runtime-snapshot-identity.ts",

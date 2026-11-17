@@ -81,6 +81,11 @@ export interface RuntimeFramePageHeader<Node> {
     readonly state: RuntimeJson;
     readonly render: (options: { readonly compact: boolean }) => Node;
   };
+  /** Set only by a host whose page composition itself renders this exact
+   * PageHeaderModule lease inside the Frame (the Publisher registered binder).
+   * The Frame then keeps the header data and renders no second lease. Never
+   * accepted as assembly input: the bounded assembly header refuses it. */
+  readonly leasedByPage?: true;
 }
 export interface RuntimeFillDescriptor {
   readonly kind: "frame" | "section";
