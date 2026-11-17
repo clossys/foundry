@@ -331,6 +331,15 @@ describe("publisher.check over clossys.page/1 records (DECISION 0048-PAGE-SHAPE,
       /page\.no-inline-copy {2}\S+: page\.home: page: meta\.title is inline text "Hello world"/],
     ["a section entry that is not an id", record => { record.sections.push({ text: "Hello there" }); },
       /page\.no-inline-copy {2}\S+: page\.home: sections\[6\]: a section entry is a Designer section id/],
+    // Fix round 2: the record's own copy map and the closed meta and nav sets.
+    ["inline words in the record's copy map (copy.tagline)", record => { record.copy.tagline = "Build faster today"; },
+      /page\.no-inline-copy {2}\S+: page\.home: page\.copy\.tagline: "Build faster today" is not a Writer ref/],
+    ["inline words in copy.meta next to a valid title", record => { record.copy.meta = "Hello world, welcome"; },
+      /page\.no-inline-copy {2}\S+: page\.home: page\.copy\.meta: "Hello world, welcome" is not a Writer ref/],
+    ["an unknown meta key (meta.blurb)", record => { record.meta.blurb = "Our story so far"; },
+      /page\.no-inline-copy {2}\S+: page\.home: meta\.blurb: not a page record meta field/],
+    ["an unknown nav key (nav.items)", record => { record.nav = { nav: true, items: [{ name: "Home" }] }; },
+      /page\.no-inline-copy {2}\S+: page\.home: nav\.items: not a nav field/],
   ];
   for (const [name, edit, line] of inline) {
     it(`mutation: the real command fails ${name} (exit 1)`, () => {
@@ -340,18 +349,45 @@ describe("publisher.check over clossys.page/1 records (DECISION 0048-PAGE-SHAPE,
     });
   }
 
-  it("publisher.release refuses a page record with styling; no release step runs", async () => {
+  it("publisher.release refuses a page record with styling or inline copy; no release step runs", async () => {
     const calls: (readonly string[])[] = [];
     const release: ReleaseRunner = async argv => { calls.push(argv); return { exitCode: 0, message: "" }; };
-    const styled = await releasePublisher(pageConsumer(record => { record.bindings["sections.hero"].className = "text-red-500"; }), "site", [], { release });
-    expect(styled.released).toBe(false);
-    expect(styled.message).toMatch(/^publisher\.release: refused/);
+    for (const edit of [
+      (record: Record<string, any>) => { record.bindings["sections.hero"].className = "text-red-500"; },
+      (record: Record<string, any>) => { record.copy.tagline = "Build faster today"; },
+      (record: Record<string, any>) => { record.copy.meta = "Hello world, welcome"; },
+      (record: Record<string, any>) => { record.meta.blurb = "Our story so far"; },
+    ]) {
+      const refused = await releasePublisher(pageConsumer(edit), "site", [], { release });
+      expect(refused.released).toBe(false);
+      expect(refused.message).toMatch(/^publisher\.release: refused/);
+    }
     expect(calls).toEqual([]);
+    const clean = await releasePublisher(pageConsumer(), "site", [], { release });
+    expect(clean.released, clean.message).toBe(true);
+    expect(calls).toHaveLength(1);
   });
 
-  it("judges style keys the way the option form does (the real Publisher inlineCopyFindings)", async () => {
+  /** The alternatives of a flat `STYLE_KEYS = /^(?:a|b|...)$/i` literal in a source or built file; throws when absent. */
+  const styleKeysIn = (file: string): string[] => {
+    const match = /STYLE_KEYS = \/\^\(\?:([A-Za-z|]+)\)\$\/i;/.exec(readFileSync(file, "utf8"));
+    if (!match) throw new Error(`${file} has no flat STYLE_KEYS literal to compare`);
+    return match[1]!.split("|");
+  };
+
+  it("judges style keys the way the option form does, on the union of both key lists", async () => {
+    const lists = {
+      publisherSource: styleKeysIn(join(PUBLISHER, "src", "check", "page-sections-instance.ts")),
+      publisherBuilt: styleKeysIn(join(PUBLISHER, "dist", "check", "page-sections-instance.js")),
+      adapter: styleKeysIn(join(PRODUCER_ROOT, "src", "actions", "page-option.ts")),
+    };
+    // The lists are the same keys on every side: a key added or dropped on one side only fails here.
+    expect([...lists.adapter].sort()).toEqual([...lists.publisherSource].sort());
+    expect([...lists.publisherBuilt].sort()).toEqual([...lists.publisherSource].sort());
+    // And the running checks agree on every key of the union (plus case variants and fields that are not style keys).
+    const union = [...new Set([...lists.publisherSource, ...lists.publisherBuilt, ...lists.adapter])];
     const api = await loadPublisherCheckApi(PUBLISHER) as PublisherCheckApi & { inlineCopyFindings(content: Record<string, unknown>): readonly { check: string }[] };
-    for (const key of ["class", "className", "style", "styles", "css", "tw", "color", "background", "font", "fontSize", "padding", "margin", "spacing", "theme", "Style", "variant", "copy", "links", "tone", "size"]) {
+    for (const key of [...union, ...union.map(key => key.toUpperCase()), "variant", "copy", "links", "tone", "size", "border"]) {
       const option = api.inlineCopyFindings({ meta: { copy: "writer/page.home.meta#home.meta" }, sections: [{ role: "hero", [key]: "x" }] }).some(finding => finding.check === "page.no-style");
       const record = checks((await checkPublisherPages(pageConsumer(doc => { doc.bindings["sections.hero"][key] = "x"; }))).findings).includes("page.no-style");
       expect(record, key).toBe(option);

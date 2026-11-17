@@ -11,10 +11,10 @@
  * - the page metadata record is the record's `title`, which must be a Writer ref (never text, no fallback);
  * - the route is the record's own `path`, which must be the page slot's path.
  *
- * The option keeps only refs, so the record itself is scanned for words and styling before it is read (fix round 1):
+ * The option keeps only refs, so the record itself is scanned for words and styling before it is read (fix rounds 1-2):
  * every display string anywhere in it must be a Writer key (the ST-P `page.no-inline-copy` scan), no key anywhere is a
- * style key (the style keys the option form's `page.no-style` refuses), a binding carries only `copy` refs, and a
- * section entry is a Designer section id string.
+ * style key (the style keys the option form's `page.no-style` refuses), the record's `copy` map and every binding carry
+ * only Writer refs, `meta` and `nav` are closed sets, and a section entry is a Designer section id string.
  *
  * Pure: the caller passes the page slot contract, a layout lookup and the Designer catalog.
  */
@@ -30,6 +30,13 @@ export interface PageSlotContract { readonly kind?: string; readonly path?: stri
 const PAGE_RECORD_FIELDS = new Set(["schema", "path", "slug", "title", "frame", "sections", "copy", "bindings", "nav", "meta"]);
 /** The fields a section binding carries (validate.ts: section instance key -> copy slot -> Writer key). */
 const BINDING_FIELDS = new Set(["copy"]);
+/**
+ * The closed `meta` and `nav` sets (fix round 2), as the option form closes its own `meta`: candidate provenance
+ * (candidate.schema.json meta: source, vary, slot) plus the migrated publication entry; the Studio nav flags R01 reads.
+ */
+const META_FIELDS = new Set(["source", "vary", "slot", "entry"]);
+const NAV_FIELDS = new Set(["nav", "hidden", "group"]);
+const NAV_GROUP = /^[a-z][a-z0-9-]*$/;
 /**
  * Style keys: the same keys Publisher's option-form `inlineCopyFindings` refuses as `page.no-style`
  * (packages/publisher/src/check/page-sections-instance.ts STYLE_KEYS); publisher.test.ts pins the two verdicts equal.
@@ -126,6 +133,21 @@ function recordWordsAndStyle(record: Record<string, unknown>): PageOptionFinding
   for (const failure of noInlineCopy({ kind: "page", text: "", json: record }, {})) if (!failure.startsWith("title ")) copy("page", failure);
   if (record.title !== undefined && (typeof record.title !== "string" || !COPY_REF.test(record.title))) {
     copy("page.title", `${JSON.stringify(record.title)} is not a Writer ref <writer slot>#<key>; the title names the page's Writer meta record`);
+  }
+  // The record's own copy map: every value is a Writer ref, never words (fix round 2).
+  if (record.copy !== undefined && !isRecord(record.copy)) copy("page.copy", "maps copy slots to Writer refs <writer slot>#<key>");
+  if (isRecord(record.copy)) for (const [slot, ref] of Object.entries(record.copy)) {
+    if (!STYLE_KEYS.test(slot) && (typeof ref !== "string" || !COPY_REF.test(ref))) copy(`page.copy.${slot}`, `${JSON.stringify(ref)} is not a Writer ref <writer slot>#<key>; words come from a Writer record`);
+  }
+  if (record.meta !== undefined && !isRecord(record.meta)) copy("meta", "meta is the record's provenance object");
+  if (isRecord(record.meta)) for (const key of Object.keys(record.meta)) {
+    if (!META_FIELDS.has(key) && !STYLE_KEYS.test(key)) copy(`meta.${key}`, "not a page record meta field; page metadata words come from the Writer meta record");
+  }
+  if (record.nav !== undefined && !isRecord(record.nav)) copy("nav", "nav is {nav, hidden, group} flags");
+  if (isRecord(record.nav)) for (const [key, value] of Object.entries(record.nav)) {
+    if (STYLE_KEYS.test(key)) continue;
+    if (!NAV_FIELDS.has(key)) copy(`nav.${key}`, "not a nav field (nav, hidden, group); words come from a Writer record");
+    else if (key === "group" ? typeof value !== "string" || !NAV_GROUP.test(value) : typeof value !== "boolean") copy(`nav.${key}`, key === "group" ? "a nav group is an id, never text" : "a nav flag is true or false");
   }
   if (Array.isArray(record.sections)) record.sections.forEach((entry, index) => {
     if (typeof entry !== "string") copy(`sections[${index}]`, "a section entry is a Designer section id <slot>[#n], never an object or text");
