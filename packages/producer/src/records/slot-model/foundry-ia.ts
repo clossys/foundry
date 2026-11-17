@@ -45,15 +45,20 @@ const readOptionalJson = (root: string, path: string): any => {
   try { text = readFileSync(join(root, path), "utf8"); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
   return JSON.parse(text);
 };
+/**
+ * Writer: the frozen defaults of the retired five-layer store (foundry-build-0033). slot-defaults.json holds the
+ * target leaves only; a consumer that still places a retired old id keeps that slot's standard from this file.
+ */
+export const WRITER_RETIRED_DEFAULTS_FILE = "src/catalog/retired-slot-defaults.json";
 /** A package's per-slot defaults; empty when an older agent build ships none, a malformed file surfaces. */
-export function readSlotDefaults(root: string, agent: SlotAgent): ReadonlyMap<string, SlotDefaults> {
-  const doc = readOptionalJson(root, SLOT_DEFAULTS_FILE) as { schema?: unknown; agent?: unknown; slots?: unknown } | undefined;
+export function readSlotDefaults(root: string, agent: SlotAgent, file: string = SLOT_DEFAULTS_FILE): ReadonlyMap<string, SlotDefaults> {
+  const doc = readOptionalJson(root, file) as { schema?: unknown; agent?: unknown; slots?: unknown } | undefined;
   if (doc === undefined) return new Map();
-  if (doc.schema !== SLOT_DEFAULTS_SCHEMA || doc.agent !== agent || !doc.slots || typeof doc.slots !== "object") throw new Error(`${agent} ${SLOT_DEFAULTS_FILE}: expected ${SLOT_DEFAULTS_SCHEMA} for ${agent}`);
+  if (doc.schema !== SLOT_DEFAULTS_SCHEMA || doc.agent !== agent || !doc.slots || typeof doc.slots !== "object") throw new Error(`${agent} ${file}: expected ${SLOT_DEFAULTS_SCHEMA} for ${agent}`);
   const out = new Map<string, SlotDefaults>();
   for (const [id, row] of Object.entries(doc.slots as Record<string, { standard?: unknown; inputs?: unknown }>)) {
-    if (row.standard !== undefined && typeof row.standard !== "string") throw new Error(`${agent} ${SLOT_DEFAULTS_FILE}: ${id} standard must be a string`);
-    if (row.inputs !== undefined && !(Array.isArray(row.inputs) && row.inputs.every(item => typeof item === "string"))) throw new Error(`${agent} ${SLOT_DEFAULTS_FILE}: ${id} inputs must be slot ids`);
+    if (row.standard !== undefined && typeof row.standard !== "string") throw new Error(`${agent} ${file}: ${id} standard must be a string`);
+    if (row.inputs !== undefined && !(Array.isArray(row.inputs) && row.inputs.every(item => typeof item === "string"))) throw new Error(`${agent} ${file}: ${id} inputs must be slot ids`);
     out.set(id, { ...(row.standard !== undefined ? { standard: row.standard as string } : {}), ...(row.inputs !== undefined ? { inputs: [...row.inputs as string[]] } : {}) });
   }
   return out;
@@ -179,14 +184,21 @@ export function studioDesignerSlots(): readonly StudioDesignerSlot[] {
   return doc.slots;
 }
 
-/** Writer: the five Writer IA layers (136 leaves); a slot is one Writer leaf (D5). */
+/**
+ * Writer: the five-layer placement every consumer that has not run `clossys migrate recut` still holds (137 leaves;
+ * a slot is one Writer leaf, D5). Since foundry-build-0033 that store is retired as live IA: the Writer's live
+ * leaves are its voice, prose and copy trees (`clossys write --brief` reads those), and recut moves or retires the
+ * old ids. Each slot's behaviour is the Writer's own data: a kept id (one the target trees also place) takes its
+ * target default from slot-defaults.json, a retired id its frozen default from retired-slot-defaults.json, so
+ * `ia sync` never strips the standard of a slot the consumer has not yet recut.
+ */
 export function writerIa(): FoundryIa {
   const root = resolveAgent("writer").packageRoot;
   type WriterNode = { id: string; label: string; children?: WriterNode[]; leaves?: string[] };
   const flat = (node: WriterNode): string[] => node.leaves ? [...node.leaves] : (node.children ?? []).flatMap(flat);
   const nodes: IaNode[] = [];
   const slots = new Map<string, FoundrySlot>();
-  const defaults = readSlotDefaults(root, "writer");
+  const defaults = new Map([...readSlotDefaults(root, "writer", WRITER_RETIRED_DEFAULTS_FILE), ...readSlotDefaults(root, "writer")]);
   for (const layer of WRITER_LAYERS) {
     const placement = readJson(root, `src/catalog/ia/${layer}.json`) as { nodes: WriterNode[] };
     const contracts = new Map((readJson(root, `src/catalog/slots/${layer}.json`) as { id: string; contract: Record<string, unknown>; requires: string[] }[]).map(slot => [slot.id, slot]));
