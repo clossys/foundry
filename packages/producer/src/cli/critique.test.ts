@@ -1,10 +1,12 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
 import "./main.js";
-import { runCritiqueCli, runCritiquePacketCli, type PacketItem } from "./critique.js";
+import { createHash } from "node:crypto";
+import { installedPackageRoot } from "../package-path.js";
+import { runCritiqueCli, runCritiquePacketCli, standardTastePath, type PacketItem } from "./critique.js";
 
 const ID = "components.button";
 const AT = "2026-11-14T12:00:00.000Z";
@@ -57,6 +59,35 @@ describe("clossys critique-packet", () => {
     expect((await packet(...renders, "--exemplar", "x", "--exemplar", "y", "--exemplar", "z", "--exemplar", "w")).message).toMatch(/at most 3/);
     rmSync(join(workspace, "packages", "designer", "standards", STANDARD, "taste.md"));
     expect((await packet(...renders)).message).toMatch(/taste.md is missing/);
+  });
+});
+
+describe("clossys critique-packet from a consumer repo (no packages/ folder)", () => {
+  it("reads the standard's taste.md from the installed package, cited by its package ref", async () => {
+    // A consumer outside the monorepo: no packages/ folder, so standards resolve through @clossys/designer.
+    rmSync(join(workspace, "packages"), { recursive: true, force: true });
+    const installed = installedPackageRoot("designer");
+    expect(installed).toBeDefined();
+    const taste = join(installed!, "standards", "component", "taste.md");
+    expect(standardTastePath(workspace, "designer", "component")).toBe(taste);
+    const result = await runCritiquePacketCli([`designer/${ID}`, "--standard", "component", ...renders], workspace);
+    expect(result.exitCode, result.message).toBe(0);
+    const items = (result.output as { items: PacketItem[] }).items;
+    expect(items[0]).toEqual({ role: "taste", ref: "packages/designer/standards/component/taste.md", sha256: createHash("sha256").update(readFileSync(taste)).digest("hex") });
+    // The exemplars come from the installed package's folder too, cited by package ref with the installed bytes' sha.
+    const folder = join(installed!, "standards", "component", "exemplars");
+    const names = readdirSync(folder).sort().slice(0, 3);
+    expect(names.length).toBeGreaterThan(0);
+    expect(items.filter(item => item.role === "exemplar")).toEqual(names.map(name => ({
+      role: "exemplar", ref: `packages/designer/standards/component/exemplars/${name}`, sha256: createHash("sha256").update(readFileSync(join(folder, name))).digest("hex"),
+    })));
+    expect(items.filter(item => item.role === "render").map(item => item.label)).toEqual(["A", "B", "C"]);
+  });
+
+  it("still refuses a standard the installed package does not ship", async () => {
+    rmSync(join(workspace, "packages"), { recursive: true, force: true });
+    expect((await runCritiquePacketCli([`designer/${ID}`, "--standard", "no-such-standard", ...renders], workspace)).message)
+      .toMatch(/packages\/designer\/standards\/no-such-standard\/taste.md is missing/);
   });
 });
 

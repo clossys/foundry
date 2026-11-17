@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { ASSERTIONS, OVERLAP_MIN } from "./assertions.js";
-import { judgeDogfood, probeIaContract, PROBES, type ProbeFacts } from "./dogfood.js";
+import { isContractRefusal, judgeDogfood, probeIaContract, PROBES, type ProbeFacts } from "./dogfood.js";
 import { adapterIssues, CONFORM_AGENTS, missingPaths, readConformModel, type Adapter, type AgentModel, type ConformModel, type LiveSlot } from "./model.js";
 import { cellOf, conform, formatReport, readRegistry } from "./run.js";
 
@@ -266,6 +266,24 @@ describe("ia --contract probe (the real verb on a temporary copy)", () => {
     }
     // Mutation: a clossys.slot-contract/1 contract missing its fields is refused by the same path, so the probe sees refusals.
     const refusedAll = await probeIaContract(FIXTURE, model.agents, { schema: "clossys.slot-contract/1" });
-    for (const agent of CONFORM_AGENTS) expect((refusedAll[agent] as { accepted: boolean }[]).every(result => !result.accepted), agent).toBe(true);
+    for (const agent of CONFORM_AGENTS) {
+      const results = refusedAll[agent] as { target: string; accepted: boolean; message: string }[];
+      expect(Array.isArray(results), `${agent}: ${String(refusedAll[agent])}`).toBe(true);
+      for (const result of results) {
+        expect(result.accepted, result.target).toBe(false);
+        // The refusal reason is the contract's own validation issue, not any message that mentions "contract".
+        expect(result.message, result.target).toMatch(/contract \$\.slot is required \(clossys\.slot-contract\/1\)/);
+        expect(isContractRefusal(result.message, result.target), result.target).toBe(true);
+      }
+    }
+  });
+
+  it("classifies only contract-content refusals: the probe id and paths are stripped before matching", () => {
+    const target = "director/conform.contract-probe-brief";
+    expect(isContractRefusal("ia refused: contract $.slot is required (clossys.slot-contract/1)", target)).toBe(true);
+    // Mutation: "already placed" names the probe id, which holds "contract"; it is not a contract refusal.
+    expect(isContractRefusal(`ia refused: ${target} is already placed; --under only places a new slot`, target)).toBe(false);
+    expect(isContractRefusal("ia refused: --contract /tmp/conform-contract-x/contract.json is not a readable JSON file", target, ["/tmp/conform-contract-x"])).toBe(false);
+    expect(isContractRefusal(`ia refused: ${target} has no position in director ia.json`, target)).toBe(false);
   });
 });

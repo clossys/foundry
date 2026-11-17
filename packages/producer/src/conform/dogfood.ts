@@ -6,9 +6,10 @@
  * temporary copy of the consumer with one empty L2 group added per agent, and the contract probe runs the
  * real `clossys ia --contract --dry` on a temporary copy; the rest read files.
  */
-import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { standardTastePath } from "../cli/critique.js";
 import { runConstitution } from "../constitution/run.js";
 import { ASSERTIONS, KIND_FAMILY, type Judgement } from "./assertions.js";
 import type { AgentModel, ConformModel } from "./model.js";
@@ -21,7 +22,7 @@ export interface ProbeFacts {
   readonly emptyL2Detected: Readonly<Record<string, boolean | string>>;
   /** A request verb (head or step) exists. */
   readonly requestVerb: boolean;
-  /** critique-packet resolves standards against the workspace root (`packages/<agent>/standards`). */
+  /** critique-packet cannot resolve a standard's taste.md from a consumer root (no packages/ folder). */
   readonly critiqueMonorepoPath: boolean;
   /** Per agent: what `clossys ia --contract` did with an invalid contract per held kind family, or why it could not run. */
   readonly iaContract?: Readonly<Record<string, readonly IaContractResult[] | string>>;
@@ -32,6 +33,18 @@ export interface IaContractResult { readonly target: string; readonly contract: 
 /** A contract no kind's contract may be: an unknown `kind` field and nothing else. */
 export const INVALID_CONTRACT: Readonly<Record<string, unknown>> = { kind: "nonsense" };
 const PROBE_SLOT = "conform.contract-probe";
+
+/**
+ * Whether an `ia` refusal is about the contract's content: a validation issue `contract $<path> ...`.
+ * The target id (which itself holds "contract") and every path are stripped first, so a refusal such as
+ * "<target> is already placed" or an unreadable `--contract <file>` never counts as a contract refusal.
+ */
+export function isContractRefusal(message: string, target: string, paths: readonly string[] = []): boolean {
+  let text = message.replace(/^ia refused:\s*/, "");
+  for (const literal of [...paths, target, target.split("/").slice(1).join("/")].filter(Boolean).sort((a, b) => b.length - a.length)) text = text.split(literal).join("<id>");
+  text = text.replace(/(^|\s)\/[^\s;]+/g, "$1<path>");
+  return /(?:^|; )contract \$[^\s;]* /.test(text);
+}
 
 /**
  * Runs the real `clossys ia <agent>/<probe> --under <l1>/<l2> --kind <family> --contract <file> --dry` on a
@@ -58,7 +71,7 @@ export async function probeIaContract(consumer: string, agents: readonly AgentMo
         const under = l1 ? `${l1.id}/${l1.l2[0]!.id}` : "conform/probe";
         const result = await runIaCli([target, "--under", under, "--kind", family, "--contract", file, "--dry"], temp);
         const message = (result.message ?? "").split("\n")[0]!;
-        if (result.exitCode !== 0 && !(result.exitCode === 1 && /contract/.test(message))) { out[agent.agent] = `ia --contract probe failed for ${target}: exit ${result.exitCode}: ${message}`; break; }
+        if (result.exitCode !== 0 && !(result.exitCode === 1 && isContractRefusal(message, target, [temp, file]))) { out[agent.agent] = `ia --contract probe failed for ${target}: exit ${result.exitCode}: ${message}`; break; }
         results.push({ target, contract: JSON.stringify(contract), accepted: result.exitCode === 0, message });
       }
       out[agent.agent] ??= results;
@@ -99,16 +112,34 @@ export function probeEmptyL2(repo: string, consumer: string, agents: readonly st
   }
 }
 
+/**
+ * Resolves each agent's first standard's taste.md the way critique-packet does, from a consumer root with
+ * no packages/ folder (a temp folder outside the monorepo, real path). Red (true) when any resolves under
+ * that consumer root or to no file: a consumer cannot build the packet.
+ */
+export function probeCritiquePath(model: ConformModel): boolean {
+  const temp = realpathSync(mkdtempSync(join(tmpdir(), "conform-critique-")));
+  try {
+    const judged = model.agents.flatMap(agent => agent.standards.slice(0, 1).map(standard => ({ agent: agent.agent, id: standard.id })));
+    if (!judged.length) return true;
+    return judged.some(({ agent, id }) => {
+      const path = standardTastePath(temp, agent, id);
+      return path.startsWith(temp) || !existsSync(path);
+    });
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+}
+
 /** Reads the cheap probe facts and runs the empty-L2 and ia --contract probes. */
 export async function readProbeFacts(model: ConformModel): Promise<ProbeFacts> {
   const producer = join(model.repo, "packages/producer");
   const runner = readFileSync(join(producer, "src/pipeline/runner.ts"), "utf8");
   const actions = JSON.parse(readFileSync(join(producer, "pipeline/actions.json"), "utf8")) as { actions?: { path?: string }[] };
-  const critique = readFileSync(join(producer, "src/cli/critique.ts"), "utf8");
   return {
     emptyL2Detected: probeEmptyL2(model.repo, model.consumer, model.agents.map(agent => agent.agent)),
     requestVerb: /head === "request"/.test(runner) || (actions.actions ?? []).some(action => /(^|\/)request(\/|$)/.test(action.path ?? "")),
-    critiqueMonorepoPath: /`packages\/\$\{agent\}\/standards/.test(critique),
+    critiqueMonorepoPath: probeCritiquePath(model),
     iaContract: await probeIaContract(model.consumer, model.agents),
   };
 }

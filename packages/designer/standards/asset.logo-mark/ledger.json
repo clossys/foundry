@@ -18,6 +18,24 @@
         "requirements.json": "924666da4190b8790b9d24ce26198519a08187a8c04dc32fd7076000fd464a0a",
         "taste.md": "e4af4e86edee68f32a575c7948a12331396637c71a5afd51c118f5f1f10af8db"
       }
+    },
+    {
+      "op": "standard",
+      "at": "2026-11-17T19:00:00.000Z",
+      "by": "planner",
+      "verb": "standard",
+      "model": "none",
+      "tier": "none",
+      "standard": {
+        "agent": "designer",
+        "id": "asset.logo-mark",
+        "sha256": "87900eba42bae422e23aec835e1e0edf9cd629670ece69bc9ed1d704f3ffefcf"
+      },
+      "files": {
+        "exemplars/exemplars.json": "5cead62861c0e4bc2763fbf65055505a406a35418f7a77b4fb46f8a89812a211",
+        "requirements.json": "db0d0c495b2649913764262ff5464a358f6e357f3f03b6b6c6dbb400039ff9f4",
+        "taste.md": "e4af4e86edee68f32a575c7948a12331396637c71a5afd51c118f5f1f10af8db"
+      }
     }
   ]
 }
