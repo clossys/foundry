@@ -4,13 +4,16 @@ import { componentRegistryFindings, loadBuildCatalog, loadCatalog, loadComponent
 
 // Independent audit inventory: permanent ids are separate from the editable IA view.
 // foundry-build-0018 recut (designer.md Interface > Components): one L1, eight L2 families, 78 permanent ids.
+// foundry-build-0035 (audit P17): the charts and the retired specimens each move to their own family (ten).
 const families: Record<string, readonly string[]> = {
   "components-actions": ["button", "toggle-button", "toggle-group", "toolbar", "menu", "command", "native-action", "dropdown-menu"],
   "components-inputs": ["field", "form", "text-field", "search-field", "checkbox", "radio-group", "switch", "slider", "select", "combo-box", "tag-group", "file-trigger", "color-picker", "date-field", "date-picker", "calendar", "number-field"],
-  "components-collections": ["table", "grid-list", "item", "tree", "chart-bar", "chart-line", "chart-area", "chart-sparkline", "chart-status-strip", "chart-scatter", "chart-heatmap", "chart-range", "chart-waterfall"],
+  "components-collections": ["table", "grid-list", "item", "tree"],
+  "components-charts": ["chart-bar", "chart-line", "chart-area", "chart-sparkline", "chart-status-strip", "chart-scatter", "chart-heatmap", "chart-range", "chart-waterfall"],
   "components-navigation": ["link", "breadcrumbs", "tabs", "sidebar", "navigation-tree", "canvas-zoom", "canvas-map"],
   "components-feedback": ["banner", "toast", "progress-bar", "meter", "spinner", "skeleton", "empty"],
-  "components-text-and-media": ["semantic-content", "rich-text", "badge", "status-mark", "keyboard", "avatar", "media-player", "icon", "logo", "specimen-swatch", "specimen-ladder", "specimen-player", "specimen-grid", "specimen-matrix", "specimen-viewport", "specimen-passage", "specimen-copy-in-context"],
+  "components-text-and-media": ["semantic-content", "rich-text", "badge", "status-mark", "keyboard", "avatar", "media-player", "icon", "logo"],
+  "components-specimens": ["specimen-swatch", "specimen-ladder", "specimen-player", "specimen-grid", "specimen-matrix", "specimen-viewport", "specimen-passage", "specimen-copy-in-context"],
   "components-structure": ["card", "disclosure", "scroll-area", "separator", "resize-handle"],
   "components-overlays": ["dialog", "sheet", "popover", "tooltip"],
 };
@@ -43,8 +46,9 @@ describe("component build IA registry", () => {
     const registry = loadComponentRegistry();
     // foundry-build-0032 (audit P7): the six zero-caller charts planner:r2f-53 deleted are retired only, no longer also parked.
     const deleted = ["sparkline", "status-strip", "scatter", "heatmap", "range", "waterfall"].map(leaf => `components.chart-${leaf}`);
-    expect(registry.placement.parked?.map(entry => entry.leaf)).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line"]);
-    for (const entry of registry.placement.parked ?? []) expect(entry.basis).toMatch(/H4c/);
+    // foundry-build-0035 (audit P15): tree, color-picker and rich-text are parked too.
+    expect(registry.placement.parked?.map(entry => entry.leaf)).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line", "components.color-picker", "components.rich-text", "components.tree"]);
+    for (const entry of registry.placement.parked ?? []) expect(entry.basis).toMatch(/H4c|P15/);
     for (const id of deleted) expect(registry.placement.retired, id).toContain(id);
     const forged = { ...registry, placement: { ...registry.placement, parked: [...registry.placement.parked!, { leaf: "components.unplaced", basis: "x" }] } };
     expect(componentRegistryFindings(forged)).toEqual(["parked: components.unplaced is not a placed component leaf"]);
@@ -64,10 +68,10 @@ describe("component build IA registry", () => {
     expect(componentRegistryFindings(registry)).toEqual([]);
   });
 
-  it("places every id once under the one Components group and its eight recut families", () => {
+  it("places every id once under the one Components group and its ten families (eight recut, plus Charts and Specimens from foundry-build-0035 audit P17)", () => {
     const registry = loadComponentRegistry();
     expect(registry.placement.nodes.map(node => node.id)).toEqual(["components"]);
-    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(8);
+    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(10);
     const nodes = leafNodes(registry.placement.nodes);
     expect(Object.fromEntries(nodes.map(node => [node.id, "leaves" in node ? node.leaves : []]))).toEqual(Object.fromEntries(Object.entries(families).map(([id, leaves]) => [id, leaves.map(fullId)])));
     expect(nodes.flatMap(node => "leaves" in node ? node.leaves : []).sort()).toEqual(inventory);

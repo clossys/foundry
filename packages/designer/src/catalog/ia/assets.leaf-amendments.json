@@ -10,9 +10,11 @@
     "assets.pattern",
     "assets.video"
   ],
-  "pending": {
-    "status": "pending-owner-ratification",
-    "source": "auto-decided 2026-10-28, pending owner ratification",
+  "ratifiedMemberChanges": {
+    "status": "owner-signed",
+    "source": "auto-decided 2026-10-28",
+    "ratifiedAt": "2026-11-07",
+    "ratifiedBy": "owner approvals 2026-11-07 (ratify consumed leaves); recorded by foundry-build-0035",
     "memberChanges": [
       {
         "id": "assets.pattern",

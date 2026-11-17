@@ -302,7 +302,7 @@
     "slot": "assets.icon-chevron-down",
     "package": "designer",
     "layer": "assets",
-    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Directions.",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
     "inputs": [
       {
         "name": "default",
@@ -333,7 +333,7 @@
     "slot": "assets.icon-chevron-up",
     "package": "designer",
     "layer": "assets",
-    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Directions.",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
     "inputs": [
       {
         "name": "default",
@@ -364,7 +364,7 @@
     "slot": "assets.icon-chevron-left",
     "package": "designer",
     "layer": "assets",
-    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Directions.",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
     "inputs": [
       {
         "name": "default",
@@ -395,7 +395,7 @@
     "slot": "assets.icon-chevron-right",
     "package": "designer",
     "layer": "assets",
-    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Directions.",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
     "inputs": [
       {
         "name": "default",
@@ -426,7 +426,7 @@
     "slot": "assets.icon-arrow-right",
     "package": "designer",
     "layer": "assets",
-    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Directions.",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
     "inputs": [
       {
         "name": "default",
@@ -457,7 +457,7 @@
     "slot": "assets.icon-external-link",
     "package": "designer",
     "layer": "assets",
-    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Directions.",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
     "inputs": [
       {
         "name": "default",
@@ -488,7 +488,7 @@
     "slot": "assets.icon-home",
     "package": "designer",
     "layer": "assets",
-    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Directions.",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
     "inputs": [
       {
         "name": "default",
@@ -1554,7 +1554,7 @@
     "slot": "assets.icon-panel-left",
     "package": "designer",
     "layer": "assets",
-    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Directions.",
+    "purpose": "Glyph asset with member default on a 24px grid, under Icons / Navigation.",
     "inputs": [
       {
         "name": "default",

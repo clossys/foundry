@@ -18,6 +18,14 @@
  *   (sections 51 live -> 45; sections stay 66 placed);
  * - assets.icon-business and assets.icon-institution retire into configs of assets.icon-organization (assets 49 -> 47);
  * - so live L3 is 212 -> 204 and retirements 41 -> 49; placed stays 253. Sections starters drop the six slides (31 -> 25).
+ *
+ * foundry-build-0035 (owner 2026-11-16, "go with your recommendation"; ia-audit 2026-11-16 P14-P18) re-pins, ids unchanged:
+ * - themes: colors-status folds into Emphasis, typography-sizes into Fonts and tracking, layout-space into Space and
+ *   shape (Theme 11 L2 -> 8); components gain a parked Charts L2 and a retired Specimens L2 (live 8 -> 9); sections gain
+ *   a Navigation L2 (live 6 -> 7); frames regroup by role (Shells, Bars, Panels; still 3), surface is a leaf property;
+ * - so L2 is 38 -> 37 and no live L2 holds a single leaf;
+ * - sections starters re-derive from Publisher layouts: comparison, notices, people and timeline in; band, section-header
+ *   and sectioned-document out (25 -> 26); consent stays behind the site-shell consent region.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -65,15 +73,15 @@ const STUDIO_IDS = [
 describe("Designer tree counts (3 L0)", () => {
   const counts = countTree(DESIGNER_TREES, DESIGNER_RETIRED);
 
-  it("has 3 L0, 10 L1, 38 L2 and 204 live L3 (39 L2 and 212 L3 before build-0032: six slides and two entity icons retire in place, and the slides L2 holds only retired leaves so it no longer counts)", () => {
-    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 38, l3: 204 });
+  it("has 3 L0, 10 L1, 37 L2 and 204 live L3 (38 L2 before build-0035's regroup; 39 L2 and 212 L3 before build-0032)", () => {
+    expect({ l0: counts.l0, l1: counts.l1, l2: counts.l2, l3: counts.l3 }).toEqual({ l0: 3, l1: 10, l2: 37, l3: 204 });
   });
 
   it("counts per L0 in owner order: Theme, Art, Interface", () => {
     expect(counts.byL0).toEqual({
-      theme: { l1: 4, l2: 11, l3: 42 },
+      theme: { l1: 4, l2: 8, l3: 42 },
       art: { l1: 3, l2: 10, l3: 47 },
-      interface: { l1: 3, l2: 17, l3: 115 },
+      interface: { l1: 3, l2: 19, l3: 115 },
     });
     expect(counts.byLayer).toEqual({ themes: 42, assets: 47, components: 59, sections: 45, frames: 11 });
   });
@@ -85,8 +93,16 @@ describe("Designer tree counts (3 L0)", () => {
     expect(counts.placed - counts.retired).toBe(counts.l3);
   });
 
-  it("has no single-leaf L2 outside the three Theme families waiting on NEW leaves and the one deck frame", () => {
-    expect(counts.singleLeafL2).toEqual(["themes/colors/colors-status", "themes/typography/typography-sizes", "themes/layout/layout-space", "frames/frames/frames-deck"]);
+  it("has no single-leaf L2 (build-0035, audit P16 and P18; four before)", () => {
+    expect(counts.singleLeafL2).toEqual([]);
+  });
+
+  it("mutation: a family left with one live leaf is reported", () => {
+    const trees = clone(DESIGNER_TREES) as LayerTree[];
+    const layout = tree(trees, "themes").nodes.find(node => node.id === "layout") as { children: { id: string; label: string; leaves: string[] }[] };
+    layout.children.push({ id: "layout-space", label: "Space", leaves: ["themes.spacing"] });
+    layout.children[0]!.leaves = layout.children[0]!.leaves.filter(id => id !== "themes.spacing");
+    expect(countTree(trees, DESIGNER_RETIRED).singleLeafL2).toEqual(["themes/layout/layout-space"]);
   });
 
   it("labels the L1s by the target tree", () => {
@@ -153,8 +169,8 @@ describe("starter leaves resolve to a package default", () => {
     ...packageDefaults.keys(),
   ]);
 
-  it("lists 132 starter leaves (themes 35, assets 29, components 35, sections 25, frames 8; the six retired slides left)", () => {
-    expect(DESIGNER_TREES.map(layer => [layer.layer, layer.starter?.length ?? 0])).toEqual([["themes", 35], ["assets", 29], ["components", 35], ["sections", 25], ["frames", 8]]);
+  it("lists 133 starter leaves (themes 35, assets 29, components 35, sections 26, frames 8; build-0035 re-derived sections from Publisher layouts)", () => {
+    expect(DESIGNER_TREES.map(layer => [layer.layer, layer.starter?.length ?? 0])).toEqual([["themes", 35], ["assets", 29], ["components", 35], ["sections", 26], ["frames", 8]]);
   });
 
   it("every starter leaf, including steps, pricing, table-of-contents and consent, has a default fill", () => {
@@ -240,7 +256,7 @@ describe("Slides: frames.deck registered, six slide sections retired into their 
   it("places frames.deck in ia/frames.json as a starter and keeps the six slides placed, retired and off the starter list", () => {
     const frames = tree(DESIGNER_TREES as LayerTree[], "frames");
     const sections = tree(DESIGNER_TREES as LayerTree[], "sections");
-    expect((framesIa.nodes[0] as { children: { id: string; leaves: string[] }[] }).children.find(node => node.id === "frames-deck")?.leaves).toEqual(["frames.deck"]);
+    expect((framesIa.nodes[0] as { children: { id: string; leaves: string[] }[] }).children.find(node => node.id === "frames-shells")?.leaves).toContain("frames.deck");
     expect(framesIa.starter).toContain("frames.deck");
     expect(DESIGNER_SLIDES.families.map(family => family.layer)).toEqual(["sections"]);
     expect((sections.nodes[0] as { children: { id: string; leaves: string[] }[] }).children.find(node => node.id === "sections-slides")?.leaves).toEqual(SLIDE_SECTIONS);
@@ -351,5 +367,58 @@ describe("slot-defaults.json carries live leaves only (build-0032, audit P9)", (
       "sections.unplaced: slot-defaults.json row for a leaf that is not placed",
       "sections.hero: live leaf with no slot-defaults.json row",
     ]);
+  });
+});
+
+describe("build-0035 IA data (ia-audit 2026-11-16 P11, P14-P18, P24)", () => {
+  type Family = { id: string; label: string; leaves: string[] };
+  const families = (layer: { nodes: unknown }): Family[] => (layer.nodes as { children: Family[] }[]).flatMap(node => node.children);
+  const family = (layer: { nodes: unknown }, id: string) => families(layer).find(node => node.id === id)?.leaves;
+  const parked = (layer: { parked?: { leaf: string; basis: string }[] }) => (layer.parked ?? []).map(entry => entry.leaf);
+  const rows = (slotDefaults as { slots: Record<string, { inputs?: string[] }> }).slots;
+
+  it("P14: sections starters are the sections Publisher layouts place, plus consent", () => {
+    for (const id of ["sections.comparison", "sections.notices", "sections.people", "sections.timeline", "sections.consent"]) expect(sectionsIa.starter, id).toContain(id);
+    for (const id of ["sections.band", "sections.section-header", "sections.sectioned-document"]) expect(sectionsIa.starter, id).not.toContain(id);
+  });
+
+  it("P15: parked marks sit on the unconsumed leaves, none of them a starter or retired", () => {
+    expect(parked(themesIa)).toEqual(["themes.animate-marquee-vertical", "themes.animate-shiny-text"]);
+    expect(parked(componentsIa)).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line", "components.color-picker", "components.rich-text", "components.tree"]);
+    expect(parked(sectionsIa)).toEqual(["sections.account-summary", "sections.column-mapper", "sections.explorer", "sections.filter-builder", "sections.wizard"]);
+    const retired = new Set(DESIGNER_RETIRED.map(entry => entry.id));
+    for (const layer of [themesIa, componentsIa, sectionsIa]) for (const entry of layer.parked ?? []) {
+      expect(layer.starter, entry.leaf).not.toContain(entry.leaf);
+      expect(retired.has(entry.leaf), entry.leaf).toBe(false);
+      expect(entry.basis, entry.leaf).toMatch(/H4c|P15/);
+    }
+  });
+
+  it("P16 and P17: regrouped families keep every leaf id", () => {
+    expect(family(themesIa, "colors-emphasis")).toContain("themes.destructive");
+    expect(family(themesIa, "typography-fonts")).toContain("themes.tracking-tight");
+    expect(family(themesIa, "layout-shape")).toContain("themes.spacing");
+    expect(families(assetsIa).find(node => node.id === "icons-navigation")?.label).toBe("Navigation");
+    expect(family(sectionsIa, "sections-navigation")).toEqual(["sections.pagination", "sections.table-of-contents"]);
+    expect(family(sectionsIa, "sections-story")).toContain("sections.comparison");
+    expect(family(componentsIa, "components-charts")?.every(id => id.startsWith("components.chart-"))).toBe(true);
+    expect(family(componentsIa, "components-collections")?.some(id => id.startsWith("components.chart-"))).toBe(false);
+    expect(family(componentsIa, "components-specimens")?.every(id => id.startsWith("components.specimen-"))).toBe(true);
+    expect(family(componentsIa, "components-text-and-media")?.some(id => id.startsWith("components.specimen-"))).toBe(false);
+  });
+
+  it("P18: frames group by role and carry surface as a leaf property", () => {
+    expect(families(framesIa).map(node => [node.id, node.label])).toEqual([["frames-shells", "Shells"], ["frames-bars", "Bars"], ["frames-panels", "Panels"]]);
+    const surface = (framesIa as unknown as { surface: Record<string, string> }).surface;
+    expect(Object.keys(surface).sort()).toEqual(families(framesIa).flatMap(node => node.leaves).sort());
+    for (const [id, value] of Object.entries(surface)) expect(["site", "app", "deck"], id).toContain(value);
+    expect(surface["frames.deck"]).toBe("deck");
+  });
+
+  it("P11: lockup and mark read the Director name; every theme reads the Director visual identity", () => {
+    for (const id of ["assets.lockup", "assets.mark"]) expect(rows[id]?.inputs, id).toContain("identity.naming.name");
+    const themes = Object.keys(rows).filter(id => id.startsWith("themes."));
+    expect(themes).toHaveLength(42);
+    for (const id of themes) expect(rows[id]?.inputs, id).toEqual(expect.arrayContaining(["identity.visual.style", "identity.visual.imagery"]));
   });
 });

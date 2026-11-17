@@ -136,9 +136,10 @@ describe("owner-signed leaf membership", () => {
 describe("owner-signed Media leaf amendment", () => {
   const added = ["assets.image", "assets.pattern", "assets.video"];
   it("adds exactly image, video and pattern to the unchanged 45 signed IDs: 48 leaves, 0 removals", () => {
-    const { pending, ...signedAmendment } = assetAmendments;
+    const { ratifiedMemberChanges, ...signedAmendment } = assetAmendments;
     expect(signedAmendment).toEqual({ schemaVersion: 1, layer: "assets", baseSignedHead: assetFreeze.signedHead, status: "owner-signed", ownerSignoffComment: "6408363557", receiptComment: "6404876885", addedLeafIds: added });
-    expect(pending).toEqual({ status: "pending-owner-ratification", source: "auto-decided 2026-10-28, pending owner ratification", memberChanges: [{ id: "assets.pattern", addedMembers: ["grain", "noise", "topo"] }] });
+    // foundry-build-0035 (audit P24): the owner ratified the pattern member change on 2026-11-07.
+    expect(ratifiedMemberChanges).toEqual({ status: "owner-signed", source: "auto-decided 2026-10-28", ratifiedAt: "2026-11-07", ratifiedBy: expect.stringContaining("2026-11-07"), memberChanges: [{ id: "assets.pattern", addedMembers: ["grain", "noise", "topo"] }] });
     expect(assetFreeze.leafIds).toHaveLength(45);
     expect(sha256([...assetFreeze.leafIds].sort().join("\n"))).toBe("dc3c75b4dee91fb500da9548a147fa0bf530215764b58df7a9ec12b2a966ae54");
     const ids = assetSlots.map(slot => slot.id).filter(id => !draftAssetAmendments.addedLeafIds.includes(id)).sort();
@@ -183,7 +184,8 @@ describe("themes leaf set", () => {
 describe("explicit local component amendment", () => {
   const amendedId = "components.semantic-content";
   it("records an explicit versioned proposal against the unchanged signed baseline", () => {
-    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId, "components.sidebar", "components.command", "components.sheet", "components.empty", "components.item", "components.scroll-area", "components.dropdown-menu", "components.rich-text", "components.media-player", ...CANVAS_LEAVES] });
+    // foundry-build-0035 (audit P24): ratified by the owner on 2026-11-07, still listed against the unchanged signed baseline.
+    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "owner-signed", ratifiedAt: "2026-11-07", ratifiedBy: expect.stringContaining("2026-11-07"), addedLeafIds: ["components.native-action", amendedId, "components.sidebar", "components.command", "components.sheet", "components.empty", "components.item", "components.scroll-area", "components.dropdown-menu", "components.rich-text", "components.media-player", ...CANVAS_LEAVES] });
     expect(OWNER_RESIGN.signoff).toBe("owner re-sign 2026-11-02");
   });
   const inputs = () => ({ ia: structuredClone(componentIA) as Placement, slots: structuredClone(componentSlots) });
@@ -222,7 +224,7 @@ describe("explicit local component amendment", () => {
 });
 
 it("keeps the NativeAction amendment explicit and refuses missing or coordinated foreign native capabilities", () => {
-  expect(componentAmendments.status).toBe("pending-owner-ratification");
+  expect(componentAmendments.status).toBe("owner-signed");
   expect(componentFreeze.leafIds).toHaveLength(57);
   expect(componentFreeze.leafIds).not.toContain("components.native-action");
   for (const replacement of [undefined, "components.unknown-action"]) {
@@ -261,6 +263,12 @@ describe("owner-signed specimen component amendment (2026-11-05)", () => {
     const value = { ia: structuredClone(componentIA) as Placement, slots: structuredClone(componentSlots) };
     value.slots.push({ ...value.slots[0]!, id: "components.specimen-unsigned" });
     expect(checkFrozenLeafSets([value.ia], value.slots, ["components"]).map(finding => finding.source)).toEqual(["slots"]);
+  });
+});
+
+describe("ratified icon amendment (foundry-build-0035, audit P24)", () => {
+  it("records assets.icon-panel-left as owner-signed on 2026-11-07", () => {
+    expect(draftAssetAmendments).toMatchObject({ status: "owner-signed", ratifiedAt: "2026-11-07", addedLeafIds: ["assets.icon-panel-left"] });
   });
 });
 

@@ -133,10 +133,16 @@
       "standard": "asset.media-rule"
     },
     "assets.lockup": {
-      "standard": "asset.logo-mark"
+      "standard": "asset.logo-mark",
+      "inputs": [
+        "identity.naming.name"
+      ]
     },
     "assets.mark": {
-      "standard": "asset.logo-mark"
+      "standard": "asset.logo-mark",
+      "inputs": [
+        "identity.naming.name"
+      ]
     },
     "assets.pattern": {
       "standard": "asset.media-rule"
@@ -581,130 +587,298 @@
       "standard": "section.adaptive"
     },
     "themes.accent": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.accent-foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.animate-marquee": {
-      "standard": "token.scale"
+      "standard": "token.scale",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.animate-marquee-vertical": {
-      "standard": "token.scale"
+      "standard": "token.scale",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.animate-shiny-text": {
-      "standard": "token.scale"
+      "standard": "token.scale",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.background": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.border": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.card": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.card-foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.chart-1": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.chart-2": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.chart-3": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.chart-4": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.chart-5": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.destructive": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.font-heading": {
-      "standard": "token.typeface"
+      "standard": "token.typeface",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.font-mono": {
-      "standard": "token.typeface"
+      "standard": "token.typeface",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.font-sans": {
-      "standard": "token.typeface"
+      "standard": "token.typeface",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.font-serif": {
-      "standard": "token.typeface"
+      "standard": "token.typeface",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.input": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.muted": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.muted-foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.popover": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.popover-foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.primary": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.primary-foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.radius": {
-      "standard": "token.scale"
+      "standard": "token.scale",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.ring": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.secondary": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.secondary-foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.shadow": {
-      "standard": "token.scale"
+      "standard": "token.scale",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.sidebar": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.sidebar-accent": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.sidebar-accent-foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.sidebar-border": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.sidebar-foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.sidebar-primary": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.sidebar-primary-foreground": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.sidebar-ring": {
-      "standard": "token.color"
+      "standard": "token.color",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.spacing": {
-      "standard": "token.scale"
+      "standard": "token.scale",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     },
     "themes.tracking-tight": {
-      "standard": "token.scale"
+      "standard": "token.scale",
+      "inputs": [
+        "identity.visual.style",
+        "identity.visual.imagery"
+      ]
     }
   }
 }

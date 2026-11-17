@@ -473,7 +473,7 @@
     "slot": "themes.destructive",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Color token emitted as --destructive (role tier; light and dark modes), under Color / Status.",
+    "purpose": "Color token emitted as --destructive (role tier; light and dark modes), under Color / Emphasis.",
     "inputs": [
       {
         "name": "default",
@@ -506,7 +506,7 @@
     "slot": "themes.font-heading",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Font family token emitted as --font-heading (scale tier; light mode), under Typography / Families.",
+    "purpose": "Font family token emitted as --font-heading (scale tier; light mode), under Typography / Fonts and tracking.",
     "inputs": [
       {
         "name": "default",
@@ -539,7 +539,7 @@
     "slot": "themes.font-mono",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Font family token emitted as --font-mono (scale tier; light mode), under Typography / Families.",
+    "purpose": "Font family token emitted as --font-mono (scale tier; light mode), under Typography / Fonts and tracking.",
     "inputs": [
       {
         "name": "default",
@@ -572,7 +572,7 @@
     "slot": "themes.font-sans",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Font family token emitted as --font-sans (scale tier; light mode), under Typography / Families.",
+    "purpose": "Font family token emitted as --font-sans (scale tier; light mode), under Typography / Fonts and tracking.",
     "inputs": [
       {
         "name": "default",
@@ -605,7 +605,7 @@
     "slot": "themes.font-serif",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Font family token emitted as --font-serif (scale tier; light mode), under Typography / Families.",
+    "purpose": "Font family token emitted as --font-serif (scale tier; light mode), under Typography / Fonts and tracking.",
     "inputs": [
       {
         "name": "default",
@@ -902,7 +902,7 @@
     "slot": "themes.radius",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Dimension token emitted as --radius (scale tier; light mode), under Layout / Shape.",
+    "purpose": "Dimension token emitted as --radius (scale tier; light mode), under Layout / Space and shape.",
     "inputs": [
       {
         "name": "default",
@@ -1034,7 +1034,7 @@
     "slot": "themes.shadow",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Shadow token emitted as --shadow-2xs, --shadow-xs, --shadow-sm, --shadow-md, --shadow-lg, --shadow-xl and --shadow-2xl (scale tier; light mode), under Layout / Shape.",
+    "purpose": "Shadow token emitted as --shadow-2xs, --shadow-xs, --shadow-sm, --shadow-md, --shadow-lg, --shadow-xl and --shadow-2xl (scale tier; light mode), under Layout / Space and shape.",
     "inputs": [
       {
         "name": "2xs",
@@ -1373,7 +1373,7 @@
     "slot": "themes.spacing",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Dimension token emitted as --spacing (scale tier; light mode), under Layout / Space.",
+    "purpose": "Dimension token emitted as --spacing (scale tier; light mode), under Layout / Space and shape.",
     "inputs": [
       {
         "name": "default",
@@ -1406,7 +1406,7 @@
     "slot": "themes.tracking-tight",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Number token emitted as --tracking-tight (scale tier; light mode), under Typography / Type sizes.",
+    "purpose": "Number token emitted as --tracking-tight (scale tier; light mode), under Typography / Fonts and tracking.",
     "inputs": [
       {
         "name": "default",

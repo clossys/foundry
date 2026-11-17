@@ -26,13 +26,7 @@
             "themes.secondary",
             "themes.secondary-foreground",
             "themes.accent",
-            "themes.accent-foreground"
-          ]
-        },
-        {
-          "id": "colors-status",
-          "label": "Status",
-          "leaves": [
+            "themes.accent-foreground",
             "themes.destructive"
           ]
         },
@@ -80,18 +74,12 @@
       "children": [
         {
           "id": "typography-fonts",
-          "label": "Families",
+          "label": "Fonts and tracking",
           "leaves": [
             "themes.font-sans",
             "themes.font-heading",
             "themes.font-mono",
-            "themes.font-serif"
-          ]
-        },
-        {
-          "id": "typography-sizes",
-          "label": "Type sizes",
-          "leaves": [
+            "themes.font-serif",
             "themes.tracking-tight"
           ]
         }
@@ -102,16 +90,10 @@
       "label": "Layout",
       "children": [
         {
-          "id": "layout-space",
-          "label": "Space",
-          "leaves": [
-            "themes.spacing"
-          ]
-        },
-        {
           "id": "layout-shape",
-          "label": "Shape",
+          "label": "Space and shape",
           "leaves": [
+            "themes.spacing",
             "themes.radius",
             "themes.shadow"
           ]
@@ -171,5 +153,15 @@
     "themes.radius",
     "themes.shadow",
     "themes.animate-marquee"
+  ],
+  "parked": [
+    {
+      "leaf": "themes.animate-marquee-vertical",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "themes.animate-shiny-text",
+      "basis": "foundry-build-0035 (IA audit 2026-11-16 P15, owner-approved 2026-11-16): not consumed today (consumed-only rule); no fill is required while parked"
+    }
   ]
 }

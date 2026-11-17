@@ -13,10 +13,10 @@ describe("document frame catalog registration", () => {
     expect(loadBuildCatalog().retiredByLayer.frames?.some(frame => frame.id === id)).toBe(false);
   });
 
-  it("places the document once under Frames > Site and retires it in place (foundry-build-0018, designer.md section 7)", () => {
+  it("places the document once under Frames > Shells and retires it in place (foundry-build-0018, designer.md section 7; 0035 audit P18)", () => {
     const homes = placement.nodes.flatMap(group => group.children.flatMap(family =>
       family.leaves.includes(id) ? [{ group: group.id, label: group.label, family: family.id, familyLabel: family.label }] : []));
-    expect(homes).toEqual([{ group: "frames", label: "Frames", family: "frames-site", familyLabel: "Site" }]);
+    expect(homes).toEqual([{ group: "frames", label: "Frames", family: "frames-shells", familyLabel: "Shells" }]);
     expect(placement.retired).toContain(id);
     expect(loadBuildCatalog().retired.some(entry => entry.id === id)).toBe(true);
     expect(placement.nodes.flatMap(group => group.children.flatMap(family => family.leaves)).filter(leaf => leaf === id)).toHaveLength(1);

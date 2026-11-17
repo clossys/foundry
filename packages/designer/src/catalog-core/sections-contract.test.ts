@@ -202,9 +202,12 @@ describe("section build IA registry", () => {
     expect(registry.placement.layer).toBe("sections");
     expect(registry.placement.nodes.map(node => node.id)).toEqual(["sections"]);
     const root = registry.placement.nodes[0]!;
-    expect("children" in root && root.children.map(node => node.id)).toEqual(["sections-parts", "sections-story", "sections-reading", "sections-records", "sections-forms", "sections-states"]);
+    expect("children" in root && root.children.map(node => node.id)).toEqual(["sections-parts", "sections-navigation", "sections-story", "sections-reading", "sections-records", "sections-forms", "sections-states"]);
     const parts = "children" in root ? root.children.find(node => node.id === "sections-parts") : undefined;
-    expect(parts && "leaves" in parts ? parts.leaves : []).toEqual(expect.arrayContaining(families.parts!.map(id)));
+    // foundry-build-0035 (audit P17): pagination stays a contract part but is placed with table-of-contents under Navigation.
+    expect(parts && "leaves" in parts ? parts.leaves : []).toEqual(["band", "section-header"].map(id));
+    const navigation = "children" in root ? root.children.find(node => node.id === "sections-navigation") : undefined;
+    expect(navigation && "leaves" in navigation ? navigation.leaves : []).toEqual(["pagination", "table-of-contents"].map(id));
     expect(leaves(registry.placement.nodes).sort()).toEqual(inventory);
   });
 

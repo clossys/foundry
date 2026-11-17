@@ -50,8 +50,8 @@
       "label": "Icons",
       "children": [
         {
-          "id": "icons-directions",
-          "label": "Directions",
+          "id": "icons-navigation",
+          "label": "Navigation",
           "leaves": [
             "assets.icon-chevron-up",
             "assets.icon-chevron-down",
