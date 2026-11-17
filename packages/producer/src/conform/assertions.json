@@ -1,0 +1,430 @@
+{
+  "schema": "clossys.conform-assertions/1",
+  "agents": [
+    "director",
+    "designer",
+    "writer",
+    "publisher"
+  ],
+  "assertions": [
+    {
+      "id": "S1",
+      "lens": "scope",
+      "statement": "the placed tree equals the package tree; counts derived, not hand-pinned",
+      "check": "placed-equals-package",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "S2",
+      "lens": "scope",
+      "statement": "each L1 has at least 2 L2",
+      "check": "l1-breadth",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "S3",
+      "lens": "scope",
+      "statement": "every L2 has a live L3; no orphan or unplaced leaf",
+      "check": "placed-integrity",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "S4",
+      "lens": "scope",
+      "statement": "no two live leaves overlap (same kind and inputs, similar purpose)",
+      "check": "leaf-overlap",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "S5",
+      "lens": "scope",
+      "statement": "the leaf freeze covers every L0",
+      "check": "freeze-coverage",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "L1",
+      "lens": "slot",
+      "statement": "every slotless need becomes a slot-request record; none dropped",
+      "check": "slot-requests",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "L2",
+      "lens": "slot",
+      "statement": "placement runs the overlap check and records reuse-or-create",
+      "check": "placement-decision",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "L3",
+      "lens": "slot",
+      "statement": "ia --contract validates against the kind contract schema",
+      "check": "contract-schema",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "L4",
+      "lens": "slot",
+      "statement": "on placement the requester is linked slot-to-slot and notified",
+      "check": "request-closure",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "L5",
+      "lens": "slot",
+      "statement": "derived slots follow source data, with no fixed lists",
+      "check": "derive-from-source",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "K1",
+      "lens": "create",
+      "statement": "R15 is enforced: standard of the kind, requirements, taste, 5-12 exemplars",
+      "check": "standard-complete",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "K2",
+      "lens": "create",
+      "statement": "every live slot has a default or seed, or its standard declares createOnly with a reason",
+      "check": "default-or-seed",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "K3",
+      "lens": "create",
+      "statement": "a certifier exists for every held kind (R05.1)",
+      "check": "certifier-per-kind",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "K4",
+      "lens": "create",
+      "statement": "each recipe fixture output certifies under its slot contract",
+      "check": "recipe-fixture",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "C1",
+      "lens": "choose",
+      "statement": "every slot carries family (options, varyOn, values) as slot data",
+      "check": "family-data",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "C2",
+      "lens": "choose",
+      "statement": "every contract carries requirements (registered criteria)",
+      "check": "contract-requirements",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "C3",
+      "lens": "choose",
+      "statement": "a pin is refused unless its verdict passes",
+      "check": "pin-verdict",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "C4",
+      "lens": "choose",
+      "statement": "the pick writes a ranked scorecard, and basis cites it",
+      "check": "pick-scorecard",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "X1",
+      "lens": "cascade",
+      "statement": "a repin re-verdicts its dependents (R07.5 enforced)",
+      "check": "repin-cascade",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "X2",
+      "lens": "cascade",
+      "statement": "every edge resolves to a live slot; a dangling edge fails",
+      "check": "edges-resolve",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "X3",
+      "lens": "cascade",
+      "statement": "no input or action reads a candidate file",
+      "check": "no-candidate-reads",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "X4",
+      "lens": "cascade",
+      "statement": "release is refused while any slot is needs-refresh",
+      "check": "release-refresh-gate",
+      "status": "building",
+      "enforcedFor": []
+    },
+    {
+      "id": "W1",
+      "lens": "wiring",
+      "statement": "all five loop versions reach the agent; the skills it names exist and are hash-registered",
+      "check": "loop-wiring",
+      "status": "building",
+      "enforcedFor": []
+    }
+  ],
+  "dogfood": [
+    {
+      "id": "DF.director.SCOPE",
+      "agent": "director",
+      "loop": "SCOPE",
+      "result": "RAN-WEAK",
+      "finding": "an L2 with no L3 is reported by no check",
+      "probes": [
+        "empty-l2"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.director.SLOT-CREATE",
+      "agent": "director",
+      "loop": "SLOT-CREATE",
+      "result": "CANNOT-RUN",
+      "finding": "no request path; ia accepts a bad contract",
+      "probes": [
+        "request-path",
+        "invalid-contract"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.director.CREATE",
+      "agent": "director",
+      "loop": "CREATE",
+      "result": "RAN-FAILED",
+      "finding": "critique-packet reads the monorepo standards path; the skill never names the craft stages",
+      "probes": [
+        "critique-path",
+        "skill-craft"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.director.CHOOSE",
+      "agent": "director",
+      "loop": "CHOOSE",
+      "result": "RAN-WEAK",
+      "finding": "the skill pin verb is refused; pin accepts a non-qualifying candidate",
+      "probes": [
+        "skill-basis",
+        "pin-verdict"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.director.CASCADE",
+      "agent": "director",
+      "loop": "CASCADE",
+      "result": "RAN-WEAK",
+      "finding": "a bad pin still compiles; dependents are not marked stale",
+      "probes": [
+        "repin-stale",
+        "pin-verdict"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.designer.SCOPE",
+      "agent": "designer",
+      "loop": "SCOPE",
+      "result": "RAN-WEAK",
+      "finding": "an empty L2 group is reported by no command",
+      "probes": [
+        "empty-l2"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.designer.SLOT-CREATE",
+      "agent": "designer",
+      "loop": "SLOT-CREATE",
+      "result": "RAN-WEAK",
+      "finding": "no request path for a downstream agent; ia accepts an invalid contract",
+      "probes": [
+        "request-path",
+        "invalid-contract"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.designer.CREATE",
+      "agent": "designer",
+      "loop": "CREATE",
+      "result": "RAN-WEAK",
+      "finding": "no qualifying candidate can be made; no shipped slot has contract.fixture",
+      "probes": [
+        "contract-fixture"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.designer.CHOOSE",
+      "agent": "designer",
+      "loop": "CHOOSE",
+      "result": "CANNOT-RUN",
+      "finding": "nothing got through CREATE, so nothing can be pinned",
+      "probes": [
+        "contract-fixture",
+        "pin-verdict"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.designer.CASCADE",
+      "agent": "designer",
+      "loop": "CASCADE",
+      "result": "CANNOT-RUN",
+      "finding": "no upstream Director slot is pinned, so no cascade can be triggered",
+      "probes": [
+        "upstream-pinned",
+        "repin-stale"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.writer.SCOPE",
+      "agent": "writer",
+      "loop": "SCOPE",
+      "result": "RAN-WEAK",
+      "finding": "no check catches an empty L2 group",
+      "probes": [
+        "empty-l2"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.writer.SLOT-CREATE",
+      "agent": "writer",
+      "loop": "SLOT-CREATE",
+      "result": "RAN-WEAK",
+      "finding": "feedback refuses a missing slot; a broken contract is accepted",
+      "probes": [
+        "request-path",
+        "invalid-contract"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.writer.CREATE",
+      "agent": "writer",
+      "loop": "CREATE",
+      "result": "RAN-FAILED",
+      "finding": "no contract has contract.fixture; critique and craft stages are blocked",
+      "probes": [
+        "contract-fixture",
+        "critique-path"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.writer.CHOOSE",
+      "agent": "writer",
+      "loop": "CHOOSE",
+      "result": "CANNOT-RUN",
+      "finding": "refusals are about the slot (old format), not the candidate",
+      "probes": [
+        "current-format",
+        "pin-verdict"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.writer.CASCADE",
+      "agent": "writer",
+      "loop": "CASCADE",
+      "result": "RAN-WEAK",
+      "finding": "a not-needed input still reads as unpinned; no Writer pin to cascade",
+      "probes": [
+        "upstream-pinned",
+        "repin-stale"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.publisher.SCOPE",
+      "agent": "publisher",
+      "loop": "SCOPE",
+      "result": "RAN-WEAK",
+      "finding": "an empty L2 is caught by no check",
+      "probes": [
+        "empty-l2"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.publisher.SLOT-CREATE",
+      "agent": "publisher",
+      "loop": "SLOT-CREATE",
+      "result": "RAN-WEAK",
+      "finding": "no verb files a request; a wrong-kind contract is accepted",
+      "probes": [
+        "request-path",
+        "invalid-contract"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.publisher.CREATE",
+      "agent": "publisher",
+      "loop": "CREATE",
+      "result": "RAN-FAILED",
+      "finding": "the skill omits the craft stages; critique-packet resolves against the consumer root",
+      "probes": [
+        "skill-craft",
+        "critique-path"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.publisher.CHOOSE",
+      "agent": "publisher",
+      "loop": "CHOOSE",
+      "result": "RAN-WEAK",
+      "finding": "pin accepts a hand-placed candidate with no submit event",
+      "probes": [
+        "pin-verdict"
+      ],
+      "status": "building"
+    },
+    {
+      "id": "DF.publisher.CASCADE",
+      "agent": "publisher",
+      "loop": "CASCADE",
+      "result": "RAN-WEAK",
+      "finding": "a repinned section does not mark the page stale",
+      "probes": [
+        "repin-stale"
+      ],
+      "status": "building"
+    }
+  ]
+}

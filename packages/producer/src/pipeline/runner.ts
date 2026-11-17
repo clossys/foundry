@@ -139,6 +139,8 @@ async function run(argv: readonly string[], cwd: string, steps: readonly Step[],
     if (head === "gaps") return await (await import("../cli/gaps.js")).runGapsCli(argv.slice(1), cwd, steps);
     // The workspace read model (system.md 12.2) reads only, like gaps.
     if (head === "status") return await (await import("../cli/status.js")).runStatusCli(argv.slice(1), cwd, steps);
+    // The conformance report (foundry-build-0048) reads only; report-only, no gate runs it.
+    if (head === "conform") return await (await import("../cli/conform.js")).runConformCli(argv.slice(1), cwd);
     if (head === "slot") return await (await import("../cli/slot.js")).runSlotCli(argv.slice(1), cwd);
     // The brief read and its append-only tighten (system.md 6.1): the loops' refine-brief step writes through it.
     if (head === "brief") return await (await import("../cli/brief.js")).runBriefCli(argv.slice(1), cwd);

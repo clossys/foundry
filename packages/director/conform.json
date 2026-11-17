@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.conform-adapter/1",
+  "agent": "director",
+  "trees": [
+    {
+      "file": "src/catalog/ia/strategy.json",
+      "freeze": "src/catalog/ia/strategy.leaf-freeze.json"
+    }
+  ],
+  "kinds": [
+    "brief"
+  ],
+  "defaults": [
+    "src/catalog/defaults"
+  ],
+  "recipes": [
+    {
+      "dir": "recipes/create.statement"
+    },
+    {
+      "dir": "recipes/create.structured"
+    }
+  ],
+  "derive": [],
+  "edgeFiles": [
+    "src/slot-contracts/contracts.json"
+  ],
+  "skill": "skill/SKILL.md",
+  "skills": {
+    "scope": null,
+    "slot": "packages/producer/actions/ia/skill.md",
+    "create": "packages/director/actions/director.candidates/skill.md",
+    "choose": "packages/director/actions/pick.director/skill.md",
+    "cascade": null
+  }
+}

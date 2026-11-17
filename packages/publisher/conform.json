@@ -1,0 +1,43 @@
+{
+  "schema": "clossys.conform-adapter/1",
+  "agent": "publisher",
+  "trees": [
+    {
+      "file": "src/catalog/ia/composition.json",
+      "freeze": null
+    },
+    {
+      "file": "src/catalog/ia/directory.json",
+      "freeze": null
+    },
+    {
+      "file": "src/catalog/ia/release.json",
+      "freeze": null
+    }
+  ],
+  "kinds": [
+    "page",
+    "layout",
+    "chrome",
+    "publication",
+    "release"
+  ],
+  "defaults": [
+    "defaults"
+  ],
+  "recipes": [
+    {
+      "dir": "recipes/assemble.page"
+    }
+  ],
+  "derive": [],
+  "edgeFiles": [],
+  "skill": "skill/SKILL.md",
+  "skills": {
+    "scope": null,
+    "slot": "packages/producer/actions/ia/skill.md",
+    "create": "packages/publisher/actions/publisher.candidates/skill.md",
+    "choose": "packages/publisher/actions/pick.publisher/skill.md",
+    "cascade": null
+  }
+}
