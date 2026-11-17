@@ -68,6 +68,19 @@ describe("records/standards", () => {
     expect(issuesWith({ createOnly: false, createOnlyReason: "why" })).toMatch(/createOnly/);
   });
 
+  it("createOnly is a craft standard's only: never adopt-first, and never with seeds", () => {
+    const root = workspace();
+    const file = join(root, "packages", "writer", "standards", "fixture-headline", "requirements.json");
+    const base = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+    const issuesWith = (extra: Record<string, unknown>) => { put(file, JSON.stringify({ ...base, ...extra })); return readStandard(root, "writer", "fixture-headline").issues.join("\n"); };
+    const createOnly = { createOnly: true, createOnlyReason: "every candidate is crafted from the brief" };
+    // Control: adopt-first without createOnly, and craft with createOnly and empty seeds, are both valid.
+    expect(issuesWith({ mode: "adopt-first", createGaps: ["missing-behavior"] })).toBe("");
+    expect(issuesWith({ ...createOnly, seeds: [] })).toBe("");
+    expect(issuesWith({ mode: "adopt-first", createGaps: ["missing-behavior"], ...createOnly })).toMatch(/oneOf/);
+    expect(issuesWith({ ...createOnly, seeds: ["shadcn/button"] })).toMatch(/anyOf/);
+  });
+
   it("loads every agent's standards in agent then id order and finds one by agent", () => {
     const root = workspace();
     cpSync(FIXTURE, join(root, "packages", "director", "standards", "brief.voice"), { recursive: true });

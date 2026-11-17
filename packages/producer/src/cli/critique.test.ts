@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -74,6 +74,13 @@ describe("clossys critique-packet from a consumer repo (no packages/ folder)", (
     expect(result.exitCode, result.message).toBe(0);
     const items = (result.output as { items: PacketItem[] }).items;
     expect(items[0]).toEqual({ role: "taste", ref: "packages/designer/standards/component/taste.md", sha256: createHash("sha256").update(readFileSync(taste)).digest("hex") });
+    // The exemplars come from the installed package's folder too, cited by package ref with the installed bytes' sha.
+    const folder = join(installed!, "standards", "component", "exemplars");
+    const names = readdirSync(folder).sort().slice(0, 3);
+    expect(names.length).toBeGreaterThan(0);
+    expect(items.filter(item => item.role === "exemplar")).toEqual(names.map(name => ({
+      role: "exemplar", ref: `packages/designer/standards/component/exemplars/${name}`, sha256: createHash("sha256").update(readFileSync(join(folder, name))).digest("hex"),
+    })));
     expect(items.filter(item => item.role === "render").map(item => item.label)).toEqual(["A", "B", "C"]);
   });
 

@@ -32,7 +32,18 @@
       "type": "array",
       "items": { "type": "object", "required": ["module"], "additionalProperties": false, "properties": { "module": { "type": "string", "minLength": 1 } } }
     },
-    "edgeFiles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "edgeFiles": {
+      "$comment": "slots: {slots: [{id, inputs, feeds}]}, feeds resolving in feedsTo's package tree; slot-contracts: [{slot, inputs: [{name, kind}]}]; usage-graph: {edges: [{from, to}]} within this agent.",
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["file", "format"], "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string", "minLength": 1 },
+          "format": { "enum": ["slots", "slot-contracts", "usage-graph"] },
+          "feedsTo": { "enum": ["director", "designer", "writer", "publisher"] }
+        }
+      }
+    },
     "skill": { "type": "string", "minLength": 1 },
     "skills": {
       "type": "object", "required": ["scope", "slot", "create", "choose", "cascade"], "additionalProperties": false,
