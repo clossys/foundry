@@ -13,6 +13,7 @@ import { standardTastePath } from "../cli/critique.js";
 import { runConstitution } from "../constitution/run.js";
 import { ASSERTIONS, KIND_FAMILY, type Judgement } from "./assertions.js";
 import type { AgentModel, ConformModel } from "./model.js";
+import { probeRecipePages, type RecipePageFacts } from "./recipe-page.js";
 
 export const EMPTY_L2 = "conform-probe-empty";
 
@@ -22,6 +23,8 @@ export interface ProbeFacts {
   readonly emptyL2Detected: Readonly<Record<string, boolean | string>>;
   /** A request verb (head or step) exists. */
   readonly requestVerb: boolean;
+  /** Per `<agent>:<recipe dir>`: the Publisher page check over each recipe's clossys.page/1 fixture (recipe-page.ts). */
+  readonly recipePages?: RecipePageFacts;
   /** critique-packet cannot resolve a standard's taste.md from a consumer root (no packages/ folder). */
   readonly critiqueMonorepoPath: boolean;
   /** Per agent: what `clossys ia --contract` did with an invalid contract per held kind family, or why it could not run. */
@@ -139,6 +142,7 @@ export async function readProbeFacts(model: ConformModel): Promise<ProbeFacts> {
   return {
     emptyL2Detected: probeEmptyL2(model.repo, model.consumer, model.agents.map(agent => agent.agent)),
     requestVerb: /head === "request"/.test(runner) || (actions.actions ?? []).some(action => /(^|\/)request(\/|$)/.test(action.path ?? "")),
+    recipePages: await probeRecipePages(model),
     critiqueMonorepoPath: probeCritiquePath(model),
     iaContract: await probeIaContract(model.consumer, model.agents),
   };

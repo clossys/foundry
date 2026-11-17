@@ -27,7 +27,11 @@
   ],
   "recipes": [
     {
-      "dir": "recipes/assemble.page"
+      "dir": "recipes/assemble.page",
+      "fixture": {
+        "output": "recipes/assemble.page/fixture/page.home.json",
+        "slot": "page.home"
+      }
     }
   ],
   "derive": [],

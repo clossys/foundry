@@ -22,6 +22,7 @@ import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
 import { installedPackageRoot } from "../package-path.js";
 import { slotDir } from "../records/candidate.js";
+import { isPageRecord, PAGE_SCHEMA, pageRecordFindings, type PageSlotContract } from "./page-option.js";
 
 export type Exit = 0 | 1 | 2;
 
@@ -128,16 +129,27 @@ export async function checkPublisherPages(start: string, options: PublisherActio
       checked.push(subject);
       if (record.error) { findings.push({ check: "page.record", subject, detail: record.error }); continue; }
       if (!page || page.kind !== "page") { findings.push({ check: "page.slot-known", subject, detail: `${slotId} is not a Publisher page slot` }); continue; }
-      let content: unknown;
-      try { content = (JSON.parse(readFileSync(join(slotDir(root, "publisher", slotId), record.file), "utf8")) as { content?: unknown }).content; } catch (error) {
+      let doc: unknown;
+      try { doc = JSON.parse(readFileSync(join(slotDir(root, "publisher", slotId), record.file), "utf8")); } catch (error) {
         findings.push({ check: "page.record", subject, detail: existsSync(join(slotDir(root, "publisher", slotId), record.file)) ? `not JSON (${error instanceof Error ? error.message : String(error)})` : "the pinned candidate does not exist" });
         continue;
       }
-      if (!isRecord(content)) { findings.push({ check: "page.record", subject, detail: "a page candidate holds its option under content" }); continue; }
-      const layoutId = typeof content.layout === "string" ? content.layout.replace(/^publisher\//, "") : "";
-      const layout = layoutId ? api.slotContract(layoutId) : undefined;
-      for (const finding of api.checkPageOption(slotId, content, page, layout?.kind === "layout" ? layout : undefined, designer)) {
-        findings.push({ check: finding.check, subject, detail: finding.message });
+      let layoutId: string;
+      let layout: ReturnType<PublisherCheckApi["slotContract"]>;
+      if (isPageRecord(doc)) {
+        // The one page shape (DECISION 0048-PAGE-SHAPE): a clossys.page/1 record, read as the option checkPageOption judges.
+        const judged = pageRecordFindings(api, slotId, doc, page as PageSlotContract, designer);
+        for (const finding of judged.findings) findings.push({ check: finding.check, subject, detail: finding.message });
+        layoutId = judged.layoutId ?? "";
+        layout = judged.layout;
+      } else {
+        const content = isRecord(doc) ? doc.content : undefined;
+        if (!isRecord(content)) { findings.push({ check: "page.record", subject, detail: `a page candidate is a ${PAGE_SCHEMA} record (or holds a layout-role option under content)` }); continue; }
+        layoutId = typeof content.layout === "string" ? content.layout.replace(/^publisher\//, "") : "";
+        layout = layoutId ? api.slotContract(layoutId) : undefined;
+        for (const finding of api.checkPageOption(slotId, content, page, layout?.kind === "layout" ? layout : undefined, designer)) {
+          findings.push({ check: finding.check, subject, detail: finding.message });
+        }
       }
       if (layout?.kind === "layout" && !layoutsSeen.has(layoutId)) {
         layoutsSeen.add(layoutId);

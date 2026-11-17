@@ -7,6 +7,11 @@ import { validateValue } from "../pipeline/schema.js";
 import { EXEMPLARS_MAX, EXEMPLARS_MIN } from "../records/standards.js";
 import type { ProbeFacts } from "./dogfood.js";
 import { refsIn, SLOT_REF, slotLeaves, treeLeaves, upstreamOf, type AgentModel, type ConformModel, type Edge, type LiveSlot } from "./model.js";
+// U4b: a page recipe fixture is judged by the real Publisher page check (recipe-page.ts).
+import { isPageRecord, pageFixtureOf } from "../actions/page-option.js";
+import { requirementsVerdictSync } from "../constitution/certify/requirements.js";
+import type { JsonSchema } from "../pipeline/schema.js";
+import { recipePageKey } from "./recipe-page.js";
 
 export interface Judgement { readonly rows: readonly string[]; readonly evidence: number }
 /** `facts` carries what the runner probed by running real verbs on a temporary copy (dogfood.ts readProbeFacts). */
@@ -38,6 +43,32 @@ function jaccard(a: Set<string>, b: Set<string>): number {
 const placedIds = (agent: AgentModel): string[] => agent.placedTree.flatMap(l1 => l1.l2.flatMap(l2 => l2.slots));
 const standardOf = (agent: AgentModel, slot: LiveSlot) => slot.standard === undefined ? undefined : agent.standards.find(standard => standard.id === slot.standard);
 const pins = (agent: AgentModel) => agent.live.filter(slot => slot.pin !== undefined);
+/**
+ * K4 for a clossys.page/1 fixture (U4b): the contract fixture is the record's own route, which the slot contract's
+ * schema validates; the record passes the page standard's requirements; and the real Publisher page check (the
+ * recipe-page probe) finds nothing, so a section the layout disallows is red.
+ */
+function pageFixtureRows(agent: AgentModel, slot: LiveSlot, dir: string, output: string, record: Record<string, unknown>, schema: JsonSchema, facts?: ProbeFacts): string[] {
+  const rows: string[] = [];
+  const fixture = pageFixtureOf(record);
+  if (!fixture) rows.push(`${dir}: fixture page names no route path`);
+  else rows.push(...validateValue({ ...slot.contract, fixture }, schema).map(issue => `${dir}: fixture ${issue.path} ${issue.message}`));
+  const standard = standardOf(agent, slot) ?? agent.standards.find(item => item.doc?.kinds.includes(slot.kind ?? ""));
+  if (!standard?.doc) rows.push(`${dir}: no ${slot.kind} standard to certify the fixture under`);
+  else {
+    const verdict = requirementsVerdictSync({
+      candidate: { name: output.split("/").pop()!, bytes: JSON.stringify(record) }, kind: slot.kind ?? "page",
+      standard: { id: standard.id, sha256: standard.sha256, requirements: standard.doc.requirements.map(item => ({ check: item.check, params: item.params ?? {} })) },
+      contract: slot.contract, pinSet: "",
+    });
+    for (const result of verdict.results) if (!result.pass) rows.push(`${dir}: fixture fails ${standard.id} ${result.check} (${result.failures.join("; ")})`);
+  }
+  const checked = facts?.recipePages?.[recipePageKey(agent.agent, dir)];
+  if (checked === undefined) rows.push(`${dir}: the Publisher page check did not run on the fixture`);
+  else if (typeof checked === "string") rows.push(`${dir}: ${checked}`);
+  else rows.push(...checked.map(finding => `${dir}: fixture ${finding}`));
+  return rows;
+}
 /** A slot id literal in source: `"a.b"`-shaped quoted strings. */
 const ID_LITERAL = /["'`]([a-z][a-z0-9-]*\.[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)?)["'`]/g;
 /** Above this name similarity two same-kind, same-input leaves overlap (`primary-foreground` vs `sidebar-primary-foreground` is 0.67: token siblings, not overlap). Pinned by conform.test.ts. */
@@ -199,7 +230,7 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
     }
     return { rows, evidence: agent.adapter?.kinds.length ?? 0 };
   },
-  K4: (agent, model) => ({
+  K4: (agent, model, facts) => ({
     rows: agent.recipes.flatMap(recipe => {
       if (!recipe.exists) return [`${recipe.dir}: no recipe.json`];
       if (!recipe.fixture) return [`${recipe.dir}: ships no fixture output`];
@@ -208,6 +239,7 @@ export const ASSERTIONS: Readonly<Record<string, Assertion>> = {
       const family = slot?.kind && (KIND_FAMILY[slot.kind] ?? slot.kind);
       const schema = family ? model.machinery.contractSchemas.get(family) : undefined;
       if (!slot || !schema) return [`${recipe.dir}: fixture slot ${recipe.fixture.slot} has no contract schema`];
+      if (family === "page" && isPageRecord(recipe.fixture.value)) return pageFixtureRows(agent, slot, recipe.dir, recipe.fixture.output, recipe.fixture.value, schema, facts);
       return validateValue({ ...slot.contract, fixture: recipe.fixture.value }, schema).map(issue => `${recipe.dir}: fixture ${issue.path} ${issue.message}`);
     }),
     evidence: agent.recipes.length,
